@@ -11,6 +11,8 @@ This is the Kubernetes implementation of the service broker concept, which is
 joint effort amongst the different member organizations of the
 [CNCF](https://cncf.io/).
 
+Interested in contributing?  Check out the [documentation](./CONTRIBUTING.md)
+
 ### Use Cases
 
 A very basic set of use cases to describe the problem space is:
