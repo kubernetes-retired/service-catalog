@@ -91,3 +91,12 @@ adds it to their namespace.  When the developer adds the service from the
 catalog into their own namespace, they receive a copy of each of the resources
 (Secrets, ConfigMaps, etc) that the service publisher has associated with that
 service in their namespace.
+
+## Contributing
+
+We have a google mailing list: https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog
+
+We have a SIG Slack Channel: https://kubernetes.slack.com/archives/sig-service-catalog
+
+We have a weekly call: https://plus.google.com/hangouts/_/google.com/k8s-sig-service-catalog   at 1pm PT on Mondays
+- And an agenda doc: https://docs.google.com/document/d/10VsJjstYfnqeQKCgXGgI43kQWnWFSx8JTH7wFh8CmPA/edit
