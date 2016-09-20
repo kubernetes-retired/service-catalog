@@ -30,6 +30,7 @@ Broker.
 The service-catalog SIG will focus on a few key tasks:
 
 #### Service Catalog:
+
 1. Support a Service Catalog similar to what Cloud Foundry supports via
    their Cloud Controller APIs. This Service Catalog will support the
    notion of managing registered Service Brokers, which in turn dictates the
@@ -42,6 +43,7 @@ The service-catalog SIG will focus on a few key tasks:
    use the service instance provided to the application.
 
 #### Service Brokers
+
 1. Provide a framework to aide in the development of a Kubernetes-hosted 
    Service Broker that can then be registered into a Service Catalog - 
    either a Kubernetes Service Catalog or a Cloud Foundry one.
@@ -52,6 +54,7 @@ The service-catalog SIG will focus on a few key tasks:
    create a new set of DB tables per instance.
 
 #### Service Recipes
+
 1. Provide a Deployment Catalog that includes a list of pre-built deployable
    resources that can then be instantiated into a Kubernetes environment.
    Note that these may or may not be "Services" as defined above.
@@ -59,11 +62,11 @@ The service-catalog SIG will focus on a few key tasks:
    registered into the Service Broker for use by applications on the
    platform.
 
-This is the Kubernetes implementation of the service broker concept, which is
-joint effort amongst the different member organizations of the
-[CNCF](https://cncf.io/).
+The SIG will also monitor and discuss the progress made by the
+[Service Broker working group](https://github.com/servicebroker/servicebroker).
 
-Interested in contributing?  Check out the [documentation](./CONTRIBUTING.md)
+We are currently scoping our **v1** milestone [here](./docs/v1). Interested
+in contributing?  Check out the [documentation](./CONTRIBUTING.md)
 
 ### Use Cases
 
@@ -85,7 +88,7 @@ A very basic set of use cases to describe the problem space is:
 
 #### Advertising services and recipes
 
-Within and outside a Kubernetes cluster, there are services that users wish to
+Inside and outside a Kubernetes cluster, there are services that users wish to
 highlight and make available to other users.  Users might also wish to publish
 recipes that allow other users to run their own services.  Some examples:
 
