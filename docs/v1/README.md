@@ -1,4 +1,4 @@
-## service-catalog v1 milestone
+## V1 Milestone
 
 This directory contains design documents for the v1 milestone.
 
