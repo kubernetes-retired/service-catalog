@@ -1,4 +1,4 @@
-## service-catalog v1 use cases
+## V1 Use Cases
 
 This document contains the complete list of accepted use-cases for the v1 version of `service-catalog`.
 
