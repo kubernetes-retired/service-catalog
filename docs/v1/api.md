@@ -1,6 +1,6 @@
 # Service Catalog API
 
-This document proposes a Kubernetes-native service broker API. It is a formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit#slide=id.p) that he gave at the sig-service-catalog meeting on 10/10/2016.
+This document proposes a Kubernetes-native service broker API. It is a formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit?usp=sharing) that he gave at the sig-service-catalog meeting on 10/10/2016.
 
 # Motivations
 
