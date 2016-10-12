@@ -225,6 +225,6 @@ Since `ServiceInstance`s are cluster-global, operators must be able to restrict 
 
 We propose restricting provision and bind operations by namespace using standard quotas. This section is in need of additional detail.
 
-##Final Note
+## Final Note
 
 Service catalog controllers will be responsible for enforcing both the policies and the quotas.
