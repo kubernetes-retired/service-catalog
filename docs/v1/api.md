@@ -218,7 +218,7 @@ Since `ServiceClass`es are cluster-global, operators must be able to restrict th
 - This resource is optional. If it doesn’t exist, there will be no blacklist applied
 - In the future, we may add a whitelist or other more advanced filtering features
 
-## BindingPolicy
+## `BindingPolicy`
 
 Since `ServiceInstance`s are cluster-global, operators must be able to restrict the namespaces that can bind to each `ServiceInstance`. A `BindingPolicy` is a cluster-global resource that holds a blacklist that contains the namespaces that cannot bind to each `ServiceInstance`. A few additional notes:
 
