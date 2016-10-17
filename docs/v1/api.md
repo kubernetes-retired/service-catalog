@@ -6,12 +6,17 @@ This document defines a Kubernetes-native service broker API. It is a formalizat
 
 Two different demos were given at [10/3/2016’s sig-service-catalog meeting](https://www.youtube.com/watch?v=Kfar5Uw7CRg), both extremely promising. Each differed in quite a few ways, including how consumers used Kubernetes resources to communicate.
 
-This document details a standard API, including a schema for standard Kubernetes-native resources, to:
+This document details a standard API, including a schema for standard
+Kubernetes-native resources, to:
 
-- Guide the continuing efforts shown in those demos
-- Improve the user experience (both cluster operator and application developer)
-- Attempt to extend the Kubernetes API instead of relying on comparatively clunky Third Party Resource types (long-term goal)
-- Ensure a consistent user experience regardless of implementation, without undermining competition or choice
+- Formalize an API around the service broker concept as a first-class Kubernetes
+  (or Kubernetes-like) API for all to develop against.
+- Follow established patterns in the Kubernetes core API for globally-available
+  and namespaced resources
+- Facilitate the development of Kubernetes-like controllers in support of the
+  API, without undermining competition or choice
+- Ensure a smooth, consistent UX for users of the API and implementors of the
+  controllers
 
 # API Precedents in Kubernetes
 
