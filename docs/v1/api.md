@@ -33,7 +33,11 @@ Specifically, we believe that the following existing types provide a good model 
 
 Today, operators choose their own implementation of an ingress controller. Kubernetes gives the operator the ability to specify any ingress controller, and the complete freedom to implement it themselves.
 
-Similarly, permitting operators to implement or select their own service catalog controller would encourage freedom of choice and diversity. We propose a system similar to that defined in ingress controllers to do so.
+Similarly, permitting operators to implement or select their own service catalog controller would encourage freedom of choice and diversity. The analog to an ingress controller for the service catalog system is called a _service catalog controller_. Like ingress, these controllers run inside a standard pod. Anyone can write and deploy a service catalog controller, with no changes necessary to the Kubernetes install.
+
+Service catalog controllers vary, however, from ingress controllers, because a cluster can consist of many different controllers, each of which handles actions on a subset of the available service-related resources. For example, a cluster can run a service controller to handle AWS RDS databases, and a completely separate one to handle AWS Elastic Load Balancer instances.
+
+As we'll detail below, each service controller implementation must to conform to an implementation spec, but that spec allows for a heterogenous set of controllers in a cluster. We believe this allowance encourages flexibility in a cluster's service catalog.
 
 # Kubernetes Resources
 
