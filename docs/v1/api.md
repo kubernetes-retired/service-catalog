@@ -13,7 +13,7 @@ This document details a standard API, including a schema for standard Kubernetes
 - Attempt to extend the Kubernetes API instead of relying on comparatively clunky Third Party Resource types (long-term goal)
 - Ensure a consistent user experience regardless of implementation, without undermining competition or choice
 
-# Inspiration
+# API Precedents in Kubernetes
 
 Broadly speaking, the system detailed herein can list services and allow consumers to provision, bind, unbind and deprovision them.
 
