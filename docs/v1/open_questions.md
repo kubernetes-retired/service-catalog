@@ -65,7 +65,7 @@ implementation is easier and less error-prone?
 
 ## 5. How will quotas work?
 
-The section entitled "Quotas" is TBD. It needs far more thought and detail.
+The section entitled "Quotas" is TBD. It needs more thought and detail.
 
 ## 6. Can we provide a reference implementation of a controller?
 
