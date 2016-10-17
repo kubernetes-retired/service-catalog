@@ -60,8 +60,8 @@ will be non-trivial, redundant if every controller has to implement it, and
 error-prone.
 
 Regardless of whether we keep these policy objects (see (3) above), can we add
-some functionality, a library, or something else to make this implementation
-easier and less error-prone?
+some functionality, a library, or make some other design changes to ensure this
+implementation is easier and less error-prone?
 
 ## 5. How will quotas work?
 
