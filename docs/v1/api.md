@@ -21,7 +21,7 @@ We've drawn inspiration from the [Persistent Volumes](http://kubernetes.io/docs/
 
 ## Persistent Volumes
 
-First, this problem space is symmetric to that of persistent volumes. We model the data structures herein after those in persistent volumes primarily because we believe that consistency is a virtue. More importantly, the community benefits when similar problems have similar solutions.
+First, this problem space is similar to that of persistent volumes. We model the data structures herein after those in persistent volumes primarily because we believe that consistency is a virtue. More importantly, the community benefits when similar problems have similar solutions.
 
 Specifically, we believe that the following existing types provide a good model for the mechanics of how the services offered by a broker can be used in Kubernetes:
 
