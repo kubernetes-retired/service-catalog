@@ -67,7 +67,40 @@ implementation is easier and less error-prone?
 
 The section entitled "Quotas" is TBD. It needs more thought and detail.
 
-## 6. Can we provide a reference implementation of a controller?
+## 6. Should we have a `ServiceController` resource?
+
+Currently, we don't surface the existence or function of service catalog
+controllers in the cluster. They've been abstracted away from consumers, and
+they must maintain a list internally of `ServiceClass`es that they support.
+
+They must do so to determine which `ServiceInstanceClaim`s they should take
+action on.
+
+Should we add a resource, called `ServiceController` or similar, to do the
+below?
+
+1. Surface the existence of service controllers in the cluster
+  (we expect only operators to use this information)
+1. Provide an in-cluster record of the existence of each service controller
+1. Provide a resource for each `ServiceClass` to reference, indicating that
+   all operations on it should be done by the referenced controller
+
+## 7. Should we split `ServiceInstanceClaim`s into two distinct types?
+
+Currently, `ServiceInstanceClaim`s can refer to either a `ServiceClass` or
+`ServiceInstance`. In the former case, a controller will do a provision and a
+bind, ensuring that the provisioned resource is dedicated to the consumer.
+In the latter case, a controller will just do a bind, allowing the
+already-provisioned resource to be shared among many consumers.
+
+These very-different behaviors are toggled by a simple change to the same
+resource kind. Should we split this resource into separate ones to make clear
+the difference between referring to a `ServiceClass` and a `ServiceInstance`.
+
+The resulting two resources may be called `ServiceClassClaim` and
+`ServiceInstanceClaim`.
+
+## 7. Can we provide a reference implementation of a controller?
 
 This is a question I have an answer to! We should provide an implementation for
 backing CloudFoundry service brokers. Not only should it be a reference, it
