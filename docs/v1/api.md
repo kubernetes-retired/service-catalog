@@ -44,7 +44,7 @@ As we'll detail below, each service controller implementation must to conform to
 Given these inspirations, the following resources will be added to the Kubernetes API:
 
 - `ServiceClass`
-  - Describes a _kind_ of service (similar to how a `StorageClass` defines a _kind_ of persistent volume)
+  - Describes a _kind_ of service. This resource is semantically similar to how a `StorageClass` defines a _kind_ of persistent volume, but we expect that, in practice, the kinds of services represented here will be more coarse grained than the kinds of volumes represented in `StorageClass`es
   - References a service ID and plan ID, which is managed and understood by a service controller (see below)
   - Created by an operator or tool
 - `ServiceInstance`
