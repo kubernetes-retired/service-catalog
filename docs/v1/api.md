@@ -1,12 +1,12 @@
 # Service Catalog API
 
-This document proposes a Kubernetes-native service broker API. It is a formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit?usp=sharing) that he gave to the sig-service-catalog meeting on 10/10/2016.
+This document defines a Kubernetes-native service broker API. It is a formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit?usp=sharing) that he gave to the sig-service-catalog meeting on 10/10/2016.
 
 # Motivations
 
 Two different demos were given at [10/3/2016’s sig-service-catalog meeting](https://www.youtube.com/watch?v=Kfar5Uw7CRg), both extremely promising. Each differed in quite a few ways, including how consumers used Kubernetes resources to communicate.
 
-This proposal aims to define a standard API, including a schema for standard Kubernetes-native resources, to:
+This document details a standard API, including a schema for standard Kubernetes-native resources, to:
 
 - Guide the continuing efforts shown in those demos
 - Improve the user experience (both cluster operator and application developer)
@@ -15,13 +15,13 @@ This proposal aims to define a standard API, including a schema for standard Kub
 
 # Inspiration
 
-Broadly speaking, we're proposing a system that can list services and allow consumers to provision, bind, unbind and deprovision them.
+Broadly speaking, the system detailed herein can list services and allow consumers to provision, bind, unbind and deprovision them.
 
-We'll draw inspiration from the [Persistent Volumes](http://kubernetes.io/docs/user-guide/persistent-volumes/) API and the [Ingress Controllers](http://kubernetes.io/docs/user-guide/ingress/) system. The remainder of this section explains these inspirations in further detail.
+We've drawn inspiration from the [Persistent Volumes](http://kubernetes.io/docs/user-guide/persistent-volumes/) API and the [Ingress Controllers](http://kubernetes.io/docs/user-guide/ingress/) system. The remainder of this section explains these inspirations in further detail.
 
 ## Persistent Volumes
 
-First, this problem space is symmetric to that of persistent volumes. We propose to model the data structures herein after those in persistent volumes primarily because we believe that consistency is a virtue. More importantly, the community benefits when similar problems have similar solutions.
+First, this problem space is symmetric to that of persistent volumes. We model the data structures herein after those in persistent volumes primarily because we believe that consistency is a virtue. More importantly, the community benefits when similar problems have similar solutions.
 
 Specifically, we believe that the following existing types provide a good model for a service catalog API:
 
@@ -35,9 +35,9 @@ Today, operators choose their own implementation of an ingress controller. Kuber
 
 Similarly, permitting operators to implement or select their own service catalog controller would encourage freedom of choice and diversity. We propose a system similar to that defined in ingress controllers to do so.
 
-# Proposed Resources
+# Kubernetes Resources
 
-Given these inspirations, we propose adding the following resources to the Kubernetes API:
+Given these inspirations, the following resources will be added to the Kubernetes API:
 
 - `ServiceClass`
   - Describes a _kind_ of service (similar to how a `StorageClass` defines a _kind_ of persistent volume)
@@ -56,7 +56,7 @@ Given these inspirations, we propose adding the following resources to the Kuber
   - Holds a record of an application that’s bound to a service
 
 
-The below diagram shows the expected interactions between these resources:
+The below diagram shows the interactions between these resources:
 
 ![Resource Interactions](./img/partial-flow.png)
 
@@ -195,7 +195,7 @@ The below diagram shows all of the interactions that all service catalog control
 
 The visibility of each resource and system described above is important to the functionality and ease-of-use in this system.
 
-As usual, we propose following most of what both the persistent volumes and ingress systems specify.
+The aforementioned Kubernetes resources share many of the same visibility rules as those in the persistent volumes and ingress systems.
 
 - `ServiceClasse`s are cluster-global (just as `StorageClass`es are)
 - `ServiceInstance`s are cluster-global (just as `PersistentVolume`s are)
@@ -205,7 +205,7 @@ As usual, we propose following most of what both the persistent volumes and ingr
 
 # Security
 
-We expect that many cluster operators will need to restrict usage of many provisionable and bindable resources. We propose building in the following mechanisms to do so:
+We expect that many cluster operators will need to restrict usage of many provisionable and bindable resources. We provide several mechanism for implementing these restrictions:
 
 ## `ProvisioningPolicy`
 
@@ -223,7 +223,7 @@ Since `ServiceInstance`s are cluster-global, operators must be able to restrict 
 
 ## Quotas
 
-We propose restricting provision and bind operations by namespace using standard quotas. This section is in need of additional detail.
+Provision and bind operations may be subject to namespace-scoped quotas, similar to those already in existence on other resources in Kubernetes. This section is in need of additional detail.
 
 ## Final Note
 
