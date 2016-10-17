@@ -6,7 +6,7 @@ This document proposes a Kubernetes-native service broker API. It is a formaliza
 
 Two different demos were given at [10/3/2016’s sig-service-catalog meeting](https://www.youtube.com/watch?v=Kfar5Uw7CRg), both extremely promising. Each differed in quite a few ways, including how consumers used Kubernetes resources to communicate.
 
-This proposal aims to define a standard API, including a schema for Kubernetes-native resources, to:
+This proposal aims to define a standard API, including a schema for standard Kubernetes-native resources, to:
 
 - Guide the continuing efforts shown in those demos
 - Improve the user experience (both cluster operator and application developer)
