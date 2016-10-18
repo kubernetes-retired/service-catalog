@@ -1,10 +1,15 @@
 # Service Catalog API
 
-This document defines a Kubernetes-native service broker API. It is a formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit?usp=sharing) that he gave to the sig-service-catalog meeting on 10/10/2016.
+This document defines a Kubernetes-native service broker API. It is a
+formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit?usp=sharing)
+that he gave to the sig-service-catalog meeting on 10/10/2016.
 
 # Motivations
 
-Two different demos were given at [10/3/2016’s sig-service-catalog meeting](https://www.youtube.com/watch?v=Kfar5Uw7CRg), both extremely promising. Each differed in quite a few ways, including how consumers used Kubernetes resources to communicate.
+Two different demos were given at
+[10/3/2016’s sig-service-catalog meeting](https://www.youtube.com/watch?v=Kfar5Uw7CRg),
+both extremely promising. Each differed in quite a few ways, including how
+consumers used Kubernetes resources to communicate.
 
 This document details a standard API, including a schema for standard
 Kubernetes-native resources, to:
@@ -20,15 +25,24 @@ Kubernetes-native resources, to:
 
 # API Precedents in Kubernetes
 
-Broadly speaking, the system detailed herein can list services and allow consumers to provision, bind, unbind and deprovision them.
+Broadly speaking, the system detailed herein can list services and allow
+consumers to provision, bind, unbind and deprovision them.
 
-We've drawn inspiration from the [Persistent Volumes](http://kubernetes.io/docs/user-guide/persistent-volumes/) API and the [Ingress Controllers](http://kubernetes.io/docs/user-guide/ingress/) system. The remainder of this section explains these inspirations in further detail.
+We've drawn inspiration from the
+[Persistent Volumes](http://kubernetes.io/docs/user-guide/persistent-volumes/)
+API and the [Ingress Controllers](http://kubernetes.io/docs/user-guide/ingress/)
+system. The remainder of this section explains these inspirations in further detail.
 
 ## Persistent Volumes
 
-First, this problem space is similar to that of persistent volumes. We model the data structures herein after those in persistent volumes primarily because we believe that consistency is a virtue. More importantly, the community benefits when similar problems have similar solutions.
+First, this problem space is similar to that of persistent volumes. We model
+the data structures herein after those in persistent volumes primarily because
+we believe that consistency is a virtue. More importantly, the community
+benefits when similar problems have similar solutions.
 
-Specifically, we believe that the following existing types provide a good model for the mechanics of how the services offered by a broker can be used in Kubernetes:
+Specifically, we believe that the following existing types provide a good model
+for the mechanics of how the services offered by a broker can be used in
+Kubernetes:
 
 - `StorageClass`
 - `PersistentVolume`
@@ -36,29 +50,54 @@ Specifically, we believe that the following existing types provide a good model 
 
 ## Ingress Controllers
 
-Today, operators choose their own implementation of an ingress controller. Kubernetes gives the operator the ability to specify any ingress controller, and the complete freedom to implement it themselves.
+Today, operators choose their own implementation of an ingress controller.
+Kubernetes gives the operator the ability to specify any ingress controller,
+and the complete freedom to implement it themselves.
 
-Similarly, permitting operators to implement or select their own service catalog controller would encourage freedom of choice and diversity. The analog to an ingress controller for the service catalog system is called a _service catalog controller_. Like ingress, these controllers run inside a standard pod. Anyone can write and deploy a service catalog controller, with no changes necessary to the Kubernetes install.
+Similarly, permitting operators to implement or select their own service catalog
+controller would encourage freedom of choice and diversity. The analog to an
+ingress controller for the service catalog system is called a _service catalog
+controller_. Like ingress, these controllers run inside a standard pod. Anyone
+can write and deploy a service catalog controller, with no changes necessary to
+the Kubernetes install.
 
-Service catalog controllers vary, however, from ingress controllers, because a cluster can consist of many different controllers, each of which handles actions on a subset of the available service-related resources. For example, a cluster can run a service controller to handle AWS RDS databases, and a completely separate one to handle AWS Elastic Load Balancer instances.
+Service catalog controllers vary, however, from ingress controllers, because a
+cluster can consist of many different controllers, each of which handles actions
+on a subset of the available service-related resources. For example, a cluster
+can run a service controller to handle AWS RDS databases, and a completely
+separate one to handle AWS Elastic Load Balancer instances.
 
-As we'll detail below, each service controller implementation must to conform to an implementation spec, but that spec allows for a heterogenous set of controllers in a cluster. We believe this allowance encourages flexibility in a cluster's service catalog.
+As we'll detail below, each service controller implementation must to conform
+to an implementation spec, but that spec allows for a heterogenous set of
+controllers in a cluster. We believe this allowance encourages flexibility in
+a cluster's service catalog.
 
 # Kubernetes Resources
 
-Given these inspirations, the following resources will be added to the Kubernetes API:
+Given these inspirations, the following resources will be added to the
+Kubernetes API:
 
 - `ServiceClass`
-  - Describes a _kind_ of service. This resource is semantically similar to how a `StorageClass` defines a _kind_ of persistent volume, but we expect that, in practice, the kinds of services represented here will be more coarse grained than the kinds of volumes represented in `StorageClass`es
-  - References a service ID and plan ID, which is managed and understood by a service controller (see below)
+  - Describes a _kind_ of service. This resource is semantically similar to how
+    a `StorageClass` defines a _kind_ of persistent volume, but we expect that,
+    in practice, the kinds of services represented here will be more coarse-
+    grained than the kinds of volumes represented in `StorageClass`es
+  - References a service ID and plan ID, which is managed and understood by a
+    service controller (see below)
   - Created by an operator or tool
 - `ServiceInstance`
-  - An instance of a `ServiceClass` -- an in-cluster representation of a provisioned service
-  - Can be statically provisioned by an operator, to enable multiple consumers to bind to it (enables multi-tenancy)
-  - Can be dynamically provisioned and bound to by a consumer, to guarantee an app’s exclusive use of the resource (guarantees single-tenancy)
+  - An instance of a `ServiceClass` -- an in-cluster representation of a
+    provisioned service
+  - Can be statically provisioned by an operator, to enable multiple consumers
+    to bind to it (enables multi-tenancy)
+  - Can be dynamically provisioned and bound to by a consumer, to guarantee an
+    app’s exclusive use of the resource (guarantees single-tenancy)
 - `ServiceInstanceClaim`
-  - Created by a consumer to bind to an existing ServiceInstance by name. As written above, this workflow enables multi-tenant usage of a resource
-  - Created by a consumer to provision and bind to an existing ServiceClass. As written above, this workflow enables dedicated, single-tenant usage of a resource
+  - Created by a consumer to bind to an existing ServiceInstance by name. As
+    written above, this workflow enables multi-tenant usage of a resource
+  - Created by a consumer to provision and bind to an existing ServiceClass. As
+    written above, this workflow enables dedicated, single-tenant usage of a
+    resource
 - `ServiceInstanceBinding`
   - Created in response to a successful bind operation
   - References credentials created as a result of the bind operation
@@ -96,7 +135,9 @@ spec:
 
 ## ServiceInstanceClaim - Single Tenant
 
-This example shows a `ServiceInstanceClaim` that directly references a `ServiceClass`. The controller that executes this claim will do a provision, then a bind.
+This example shows a `ServiceInstanceClaim` that directly references a
+`ServiceClass`. The controller that executes this claim will do a provision,
+then a bind.
 
 ```yaml
 kind: ServiceInstanceClaim
@@ -114,7 +155,9 @@ spec:
 
 ## ServiceInstanceBinding - Single Tenant
 
-This example shows the output of a single-tenant `ServiceInstanceClaim`. It is the result of a controller executing a claim that directly references a `ServiceClass`.
+This example shows the output of a single-tenant `ServiceInstanceClaim`. It is
+the result of a controller executing a claim that directly references a
+`ServiceClass`.
 
 ```yaml
 kind: ServiceInstanceBinding
@@ -133,7 +176,8 @@ status:
 
 ## ServiceInstanceClaim - Multi Tenant
 
-This example shows a `ServiceInstanceClaim` that references a `ServiceInstance`. The controller that executes this claim will only do a bind.
+This example shows a `ServiceInstanceClaim` that references a `ServiceInstance`.
+The controller that executes this claim will only do a bind.
 
 ```yaml
 kind: ServiceInstanceClaim
@@ -150,7 +194,9 @@ spec:
 
 ## ServiceInstanceBinding - Multi Tenant
 
-This example shows the output of a multi-tenant `ServiceInstanceClaim`. It is the result of a controller executing a claim that just references a `ServiceInstance`.
+This example shows the output of a multi-tenant `ServiceInstanceClaim`. It is
+the result of a controller executing a claim that just references a
+`ServiceInstance`.
 
 ```yaml
 kind: ServiceInstanceBinding
@@ -169,23 +215,38 @@ status:
 
 # The Service Catalog Controller
 
-As indicated above, application developers and cluster operators interact with the aforementioned Kubernetes resources. The service catalog controller watches these resources and takes action on them.
+As indicated above, application developers and cluster operators interact with
+the aforementioned Kubernetes resources. The service catalog controller watches
+these resources and takes action on them.
 
-Like ingress controllers, the operator is free to choose any service controller they prefer. All implementations, however, must satisfy the following requirements:
+Like ingress controllers, the operator is free to choose any service controller
+they prefer. All implementations, however, must satisfy the following
+requirements:
 
-- Watch the event stream for new or deleted `ServiceInstance`s and `ServiceInstanceClaim`s
+- Watch the event stream for new or deleted `ServiceInstance`s and
+  `ServiceInstanceClaim`s
 - On `ServiceInstance` creation, the controller must do a provision
-- On `ServiceInstance` deletion, the controller must do a deprovision. The controller should not delete any existing `ServiceInstanceClaim`s or `ServiceInstanceBinding`s that reference the deleted `ServiceInstance`
+- On `ServiceInstance` deletion, the controller must do a deprovision. The
+  controller should not delete any existing `ServiceInstanceClaim`s or
+  `ServiceInstanceBinding`s that reference the deleted `ServiceInstance`
 - On `ServiceInstanceClaim` creation:
-  - If the claim references an existing `ServiceInstance`, the controller must do a bind
-  - If the claim references an existing `ServiceClass`, the controller must do a provision, then bind. The controller should not create a publicly-accessible `ServiceInstance`. This ensures that the provisioned/bound resource will be single-tenant and dedicated
+  - If the claim references an existing `ServiceInstance`, the controller must
+    do a bind
+  - If the claim references an existing `ServiceClass`, the controller must do
+    a provision, then bind. The controller should not create a
+    publicly-accessible `ServiceInstance`. This ensures that the
+    provisioned/bound resource will be single-tenant and dedicated
 - On `ServiceInstanceClaim` deletion:
-  - If the claim referenced an existing `ServiceInstance`, the controller must do an unbind
-  - If the claim referenced an existing `ServiceClass`, the controller must do an unbind, then a deprovision
-- Any successful provision operation must change the `status` field of the applicable `ServiceInstanceClaim` to `provisioned`
+  - If the claim referenced an existing `ServiceInstance`, the controller must
+    do an unbind
+  - If the claim referenced an existing `ServiceClass`, the controller must do
+    an unbind, then a deprovision
+- Any successful provision operation must change the `status` field of the
+  applicable `ServiceInstanceClaim` to `provisioned`
 - Any successful bind operation must:
   - Change the `ServiceInstanceClaim`'s `status` field to `bound`
-  - Create the appropriate resources (`Secret`s, `ConfigMap`s) to hold credential and other resource-specific bind information
+  - Create the appropriate resources (`Secret`s, `ConfigMap`s) to hold
+    credential and other resource-specific bind information
   - Create a new `ServiceInstanceBinding`:
     - With the same name as the claim’s `targetBinding` field
     - In the same namespace as the claim itself
@@ -193,47 +254,70 @@ Like ingress controllers, the operator is free to choose any service controller 
 - Any successful unbind operation must:
   - Change the claim’s `status` field to `unbound`
   - Delete the `ServiceInstanceBinding` that was created in the bind operation
-  - Delete all resources that the aforementioned `ServiceInstanceBinding` points to
-- Any failed operation must change the status field of the `ServiceInstanceClaim` to `failed`, and should write the reason of the failure into the `statusDescription` field
+  - Delete all resources that the aforementioned `ServiceInstanceBinding`
+    points to
+- Any failed operation must change the status field of the
+  `ServiceInstanceClaim` to `failed`, and should write the reason of the
+  failure into the `statusDescription` field
 
-The below diagram shows all of the interactions that all service catalog controllers are expected to have.
+The below diagram shows all of the interactions that all service catalog
+controllers are expected to have.
 
 ![Complete System](./img/entire-flow.png)
 
 # Visibility
 
-The visibility of each resource and system described above is important to the functionality and ease-of-use in this system.
+The visibility of each resource and system described above is important to the
+functionality and ease-of-use in this system.
 
-The aforementioned Kubernetes resources share many of the same visibility rules as those in the persistent volumes and ingress systems.
+The aforementioned Kubernetes resources share many of the same visibility rules
+as those in the persistent volumes and ingress systems.
 
 - `ServiceClasse`s are cluster-global (just as `StorageClass`es are)
 - `ServiceInstance`s are cluster-global (just as `PersistentVolume`s are)
-- `ServiceInstanceClaim`s are namespace-scoped (just as `PersistentVolumeClaim`s are)
+- `ServiceInstanceClaim`s are namespace-scoped (just as
+  `PersistentVolumeClaim`s are)
 - `ServiceInstanceBinding`s are namespace-scoped
-- Service catalog controllers may run on any number of namespaces, including cluster-global
+- Service catalog controllers may run on any number of namespaces, including
+  cluster-global
 
 # Security
 
-We expect that many cluster operators will need to restrict usage of many provisionable and bindable resources. We provide several mechanism for implementing these restrictions:
+We expect that many cluster operators will need to restrict usage of many
+provisionable and bindable resources. We provide several mechanism for
+implementing these restrictions:
 
 ## `ProvisioningPolicy`
 
-Since `ServiceClass`es are cluster-global, operators must be able to restrict the namespaces that can provision and bind to each `ServiceClass`. A `ProvisioningPolicy` is a cluster-global resource that holds a blacklist that contains the namespaces that cannot provision and bind to each `ServiceClass`. A few additional notes:
+Since `ServiceClass`es are cluster-global, operators must be able to restrict
+the namespaces that can provision and bind to each `ServiceClass`. A
+`ProvisioningPolicy` is a cluster-global resource that holds a blacklist that
+contains the namespaces that cannot provision and bind to each `ServiceClass`.
+A few additional notes:
 
-- This resource is optional. If it doesn’t exist, there will be no blacklist applied
-- In the future, we may add a whitelist or other more advanced filtering features
+- This resource is optional. If it doesn’t exist, there will be no blacklist
+  applied
+- In the future, we may add a whitelist or other more advanced filtering
+  features
 
 ## `BindingPolicy`
 
-Since `ServiceInstance`s are cluster-global, operators must be able to restrict the namespaces that can bind to each `ServiceInstance`. A `BindingPolicy` is a cluster-global resource that holds a blacklist that contains the namespaces that cannot bind to each `ServiceInstance`. A few additional notes:
+Since `ServiceInstance`s are cluster-global, operators must be able to restrict
+the namespaces that can bind to each `ServiceInstance`. A `BindingPolicy` is a
+cluster-global resource that holds a blacklist that contains the namespaces
+that cannot bind to each `ServiceInstance`. A few additional notes:
 
-- This resource is optional. If it doesn’t exist, there will be no blacklist applied
+- This resource is optional. If it doesn’t exist, there will be no blacklist
+  applied
 - In the future, we may add a whitelist or other advanced filtering features
 
 ## Quotas
 
-Provision and bind operations may be subject to namespace-scoped quotas, similar to those already in existence on other resources in Kubernetes. This section is in need of additional detail.
+Provision and bind operations may be subject to namespace-scoped quotas,
+similar to those already in existence on other resources in Kubernetes. This
+section is in need of additional detail.
 
 ## Final Note
 
-Service catalog controllers will be responsible for enforcing both the policies and the quotas.
+Service catalog controllers will be responsible for enforcing both the policies
+and the quotas.
