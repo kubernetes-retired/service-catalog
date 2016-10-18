@@ -20,7 +20,13 @@ consumers to provision, bind, unbind and deprovision them.
 We've drawn inspiration from the
 [Persistent Volumes](http://kubernetes.io/docs/user-guide/persistent-volumes/)
 API and the [Ingress Controllers](http://kubernetes.io/docs/user-guide/ingress/)
-system. The remainder of this section explains these inspirations in further detail.
+system. The remainder of this section explains these inspirations in further
+detail.
+
+Additionally, we've adhered, wherever possible, to Kubernetes's declarative
+API. That is, the resources we've defined herein describe the _desired end
+state_ of the applicable systems. Kubernetes and the service controller
+implementations (see below) are responsible for fulfilling that end state.
 
 ## Persistent Volumes
 
