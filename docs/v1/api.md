@@ -143,7 +143,7 @@ to give an application single-tenant, dedicated access to a backing resource.
 The developer should create a `ServiceClassClaim` resource, and the system
 should do the `provision` operation, then `bind` immediately thereafter.
 
-### ServiceClassClaim
+### `ServiceClassClaim`
 
 ```yaml
 kind: ServiceClassClaim
@@ -189,7 +189,7 @@ created the `ServiceInstance` to which the `ServiceInstanceClaim` and
 `ServiceInstanceBinding` refers.
 
 
-### ServiceInstanceClaim
+### `ServiceInstanceClaim`
 
 ```yaml
 kind: ServiceInstanceClaim
@@ -204,7 +204,7 @@ spec:
   statusDescription: unknown # only written by the service controller
 ```
 
-### ServiceInstanceBinding
+### `ServiceInstanceBinding`
 
 This example shows the output of a multi-tenant `ServiceInstanceClaim`.
 
