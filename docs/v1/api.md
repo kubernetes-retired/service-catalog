@@ -1,16 +1,5 @@
 # Service Catalog API
 
-This document defines a Kubernetes-native service broker API. It is a
-formalization of [@krancour](http://github.com/krancour)'s [presentation](https://docs.google.com/presentation/d/1Fm3qG9zQ4R8ZbhtTObmQjO3UZYJ0ruYI4qr5w_gEKN8/edit?usp=sharing)
-that he gave to the sig-service-catalog meeting on 10/10/2016.
-
-# Motivations
-
-Two different demos were given at
-[10/3/2016’s sig-service-catalog meeting](https://www.youtube.com/watch?v=Kfar5Uw7CRg),
-both extremely promising. Each differed in quite a few ways, including how
-consumers used Kubernetes resources to communicate.
-
 This document details a standard API, including a schema for standard
 Kubernetes-native resources, to:
 
@@ -101,7 +90,7 @@ Kubernetes API:
 - `ServiceInstanceBinding`
   - Created in response to a successful bind operation
   - References credentials created as a result of the bind operation
-  - Holds a record of an application that’s bound to a service
+  - Holds a record of an application that’s bound to a service instance
 
 
 The below diagram shows the interactions between these resources:
