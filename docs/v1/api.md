@@ -81,16 +81,23 @@ Kubernetes API:
     to bind to it (enables multi-tenancy)
   - Can be dynamically provisioned and bound to by a consumer, to guarantee an
     app’s exclusive use of the resource (guarantees single-tenancy)
-- `ServiceInstanceClaim`
-  - Created by a consumer to bind to an existing ServiceInstance by name. As
-    written above, this workflow enables multi-tenant usage of a resource
-  - Created by a consumer to provision and bind to an existing ServiceClass. As
-    written above, this workflow enables dedicated, single-tenant usage of a
-    resource
-- `ServiceInstanceBinding`
-  - Created in response to a successful bind operation
+- `ServiceClassClaim`
+  - Created by a consumer to provision an instance of a `ServiceClass`, then
+    bind to the provisioned. Enables dedicated, single-tenant usage of a
+    provisioned resource
+- `ServiceClassBinding`
+  - Created in response to a successfully executed `ServiceClassClaim`
   - References credentials created as a result of the bind operation
-  - Holds a record of an application that’s bound to a service instance
+  - Holds a record of an application that created a `ServiceClassClaim` which
+    was successfully executed
+- `ServiceInstanceClaim`
+  - Created by a consumer to bind to an existing `ServiceInstance` by name.
+    Enables multi-tenant usage of a provisioned resource
+- `ServiceInstanceBinding`
+  - Created in response to a successfully executed `ServiceInstanceClaim`
+  - References credentials created as a result of the bind operation
+  - Holds a record of an application that created a `ServiceInstance` which
+    was successfully executed
 
 
 The below diagram shows the interactions between these resources:
@@ -99,7 +106,7 @@ The below diagram shows the interactions between these resources:
 
 # Example Resources
 
-## ServiceClass
+## `ServiceClass`
 
 ```yaml
 kind: ServiceClass
@@ -111,7 +118,7 @@ spec:
   planID: c68cd6b1-be9f…
 ```
 
-## ServiceInstance
+## `ServiceInstance`
 
 ```yaml
 kind: ServiceInstance
@@ -122,14 +129,18 @@ spec:
   serviceClass: postgres-small
 ```
 
-## ServiceInstanceClaim - Single Tenant
+## Single Tenant / Dedicated Resources
 
-This example shows a `ServiceInstanceClaim` that directly references a
-`ServiceClass`. The controller that executes this claim will do a provision,
-then a bind.
+The `ServiceClassClaim` and `ServiceClassBinding` resources are created
+to give an application single-tenant, dedicated access to a backing resource.
+
+The developer should create a `ServiceClassClaim` resource, and the system
+should do the `provision` operation, then `bind` immediately thereafter.
+
+### ServiceClassClaim
 
 ```yaml
-kind: ServiceInstanceClaim
+kind: ServiceClassClaim
 apiVersion: service-catalog.k8s.io/alpha
 metadata:
   name: my-app-db-claim
@@ -142,11 +153,9 @@ spec:
   statusDescription: unknown # only written by the service controller
 ```
 
-## ServiceInstanceBinding - Single Tenant
+### `ServiceClassBinding`
 
-This example shows the output of a single-tenant `ServiceInstanceClaim`. It is
-the result of a controller executing a claim that directly references a
-`ServiceClass`.
+This example shows the output of a single-tenant `ServiceInstanceClaim`.
 
 ```yaml
 kind: ServiceInstanceBinding
@@ -163,10 +172,18 @@ status:
     - my-zip-code-creds-conn-info
 ```
 
-## ServiceInstanceClaim - Multi Tenant
+## Multi Tenant / Shared Resources
 
-This example shows a `ServiceInstanceClaim` that references a `ServiceInstance`.
-The controller that executes this claim will only do a bind.
+The `ServiceInstanceClaim` and `ServiceInstanceBinding` resources are created
+to give an application multi-tenant, shared access to a backing resource.
+
+The developer should create a `ServiceInstanceClaim` resource, and the system
+should do the `bind` operation. It's assumed that an operator will have already
+created the `ServiceInstance` to which the `ServiceInstanceClaim` and
+`ServiceInstanceBinding` refers.
+
+
+### ServiceInstanceClaim
 
 ```yaml
 kind: ServiceInstanceClaim
@@ -181,11 +198,9 @@ spec:
   statusDescription: unknown # only written by the service controller
 ```
 
-## ServiceInstanceBinding - Multi Tenant
+### ServiceInstanceBinding
 
-This example shows the output of a multi-tenant `ServiceInstanceClaim`. It is
-the result of a controller executing a claim that just references a
-`ServiceInstance`.
+This example shows the output of a multi-tenant `ServiceInstanceClaim`.
 
 ```yaml
 kind: ServiceInstanceBinding
