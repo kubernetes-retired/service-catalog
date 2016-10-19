@@ -8,7 +8,9 @@ This section lists descriptions of Kubernetes resource types.
 
 ## `ServiceClass`
 
-This resource indicates a kind of backing service that a consumer may request.
+This resource indicates a general kind of backing service that a consumer
+may request. The 'service kind' concept is purposefully arbitrary. We expect
+each cluster operator team to assign specific meaning to the ones they choose.
 
 ## `ServiceInstance`
 
