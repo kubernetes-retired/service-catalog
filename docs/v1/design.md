@@ -21,14 +21,12 @@ begin using the backing service it represents.
 This resource is used by the consumer to get credentials for the backing service
 that a pre-existing `ServiceInstance` represents.
 
-## `ServiceInstanceBinding`
+The byproducts of a successfully executed claim will be binding information
+in the form of other, standard Kubernetes resources. We expect these to be
+`ConfigMap`s and `Secret`s initially, but the number and types of these
+resources will be implementation-dependent. The claim will contain
+Kubernetes-style reference links for each Kubernetes resource that was created
+upon successful execution.
 
-This resource is a byproduct of a successfully executed `ServiceInstanceClaim`.
-It contains the following information:
-
-1. A record of what `ServiceInstanceClaim` was successfully executed
-1. A list of Kubernetes-style reference links for each Kubernetes resource
-   that was created to hold binding information (such as authentication data).
-   We expect `ServiceInstanceBinding`s to hold links to `ConfigMap`s and
-   `Secret`s initially, but the number and types of these resources will be
-   implementation-dependent.
+Successfully executed claims will also serve as a record of an application that's
+bound to a backing service.
