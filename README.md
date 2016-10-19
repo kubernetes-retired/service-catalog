@@ -20,6 +20,25 @@ those Service Brokers.
 the Service Catalog requesting a new Service Instance from the owning Service
 Broker.
 
+**Cluster operator**: the team of people responsible for operating a Kubernetes
+cluster. This team may operate the cluster on behalf of other users, or may
+operate the cluster to facilitate their own work. The cluster operator "team"
+may be one person
+
+**Application developer**: the team of people responsible for developing consumer
+applications. This "team" may be one person. Additionally, it may overlap
+(partially or completely) with the cluster operator team
+
+**Resource type**: a logical Kubernetes concept. Examples include:
+
+  - [Pod](http://kubernetes.io/docs/user-guide/pods/)s
+  - [Service](http://kubernetes.io/docs/user-guide/services/)s
+  - [Secret](http://kubernetes.io/docs/user-guide/secrets/)s
+
+**Resource**: a specific instantiation of an aforementioned resource type,
+often represented as a YAML or JSON file that is submitted or retrieved via the
+standard Kubernetes API (or via `kubectl`)
+
 ### Purpose and Scope
 
 The exact purpose of the SIG will grow over time, and as such, please see
