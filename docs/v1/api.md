@@ -18,10 +18,9 @@ This resource indicates that a request by a consumer for a usable `ServiceClass`
 has been successfully executed. Consumers may reference these resources to
 begin using the backing service it represents.
 
-## `ServiceInstanceClaim`
+## `ServiceClaim`
 
-This resource is used by the consumer to get credentials for the backing service
-that a pre-existing `ServiceInstance` represents.
+This resource is used by the consumer to get credentials for a backing service.
 
 The byproducts of a successfully executed claim will be binding information
 in the form of other, standard Kubernetes resources. We expect these to be
