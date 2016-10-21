@@ -4,7 +4,11 @@ This document contains the Kubernetes resource types for the v1 service catalog.
 
 # Resource Types
 
-This section lists descriptions of Kubernetes resource types.
+This section lists descriptions of the resources in the service catalog API.
+
+__Note:__ All names herein are tentative, and should be considered placeholders
+and used as placeholders for purposes of discussion only. This note will be
+removed when names are finalized.
 
 ## `ServiceClass`
 
