@@ -20,14 +20,14 @@ those Service Brokers.
 the Service Catalog requesting a new Service Instance from the owning Service
 Broker.
 
-**Cluster operator**: the team of people responsible for operating a Kubernetes
+**Cluster operator**: the person or team responsible for operating a Kubernetes
 cluster. This team may operate the cluster on behalf of other users, or may
-operate the cluster to facilitate their own work. The cluster operator "team"
-may be one person
+operate the cluster to facilitate their own work
 
-**Application developer**: the team of people responsible for developing consumer
-applications. This "team" may be one person. Additionally, it may overlap
-(partially or completely) with the cluster operator team
+**Application operator**: the person or team responsible for deploying a
+consumer application. Users in this role, at minimum, have access to their own
+application's namespace. In some cases, users in this role may also be an
+application developer or a cluster operator
 
 **Resource type**: a logical Kubernetes concept. Examples include:
 
