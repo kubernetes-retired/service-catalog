@@ -152,11 +152,11 @@ apiVersion: service-catalog.k8s.io/alpha
 metadata:
   name: my-app-db-claim
   namespace: my-app
-status: unknown
+status:
+  state: unknown
 spec:
   serviceClass: postgres-large
   targetBinding: my-app-binding
-  status: unknown # only written by the service catalog controller
   statusDescription: unknown # only written by the service catalog controller
 ```
 
@@ -198,10 +198,11 @@ apiVersion: service-catalog.k8s.io/alpha
 metadata:
   name: my-zip-code-db-claim
   namespace: my-app
+status:
+  state: unknown
 spec:
   serviceInstance: zip-code-db
   targetBinding: my-zip-code-binding
-  status: unknown # only written by the service catalog controller
   statusDescription: unknown # only written by the service catalog controller
 ```
 
