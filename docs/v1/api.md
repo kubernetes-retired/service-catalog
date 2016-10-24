@@ -25,7 +25,7 @@ detail.
 
 Additionally, we've adhered, wherever possible, to Kubernetes's declarative
 API. That is, the resources we've defined herein describe the _desired end
-state_ of the applicable systems. Kubernetes and the service controller
+state_ of the applicable systems. Kubernetes and the service catalog controller
 implementations (see below) are responsible for fulfilling that end state.
 
 ## Persistent Volumes
@@ -59,8 +59,9 @@ the Kubernetes install.
 Also as in the case of ingress controllers, a cluster may contain many
 different service catalog controllers, each of which handles operations for a
 designated subset of the applicable resource type. For example, a cluster may
-contain a service controller to handle AWS RDS databases, and a completely
-separate service catalog controller to handle on-cluster Redis instances.
+contain a service catalog controller to handle AWS RDS databases, and a
+completely separate service catalog controller to handle on-cluster Redis
+instances.
 
 As we'll detail below, each service catalog controller implementation must
 conform to an implementation spec, but that spec allows for a heterogenous set
@@ -78,7 +79,7 @@ Kubernetes API:
     in practice, the kinds of services represented here will be more coarse-
     grained than the kinds of volumes represented in `StorageClass`es
   - References a service ID and plan ID, which is managed and understood by a
-    service controller (see below)
+    service catalog controller (see below)
   - Created by an operator or tool
 - `ServiceInstance`
   - An instance of a `ServiceClass` -- an in-cluster representation of a
@@ -155,8 +156,8 @@ status: unknown
 spec:
   serviceClass: postgres-large
   targetBinding: my-app-binding
-  status: unknown # only written by the service controller
-  statusDescription: unknown # only written by the service controller
+  status: unknown # only written by the service catalog controller
+  statusDescription: unknown # only written by the service catalog controller
 ```
 
 ### `ServiceClassBinding`
@@ -200,8 +201,8 @@ metadata:
 spec:
   serviceInstance: zip-code-db
   targetBinding: my-zip-code-binding
-  status: unknown # only written by the service controller
-  statusDescription: unknown # only written by the service controller
+  status: unknown # only written by the service catalog controller
+  statusDescription: unknown # only written by the service catalog controller
 ```
 
 ### `ServiceInstanceBinding`
@@ -229,9 +230,9 @@ As indicated above, application developers and cluster operators interact with
 the aforementioned Kubernetes resources. The service catalog controller watches
 these resources and takes action on them.
 
-Like ingress controllers, the operator is free to choose any service controller
-they prefer. All implementations, however, must satisfy the following
-requirements:
+Like ingress controllers, the operator is free to choose any service catalog
+controller(s) they prefer. All implementations, however, must satisfy the
+following requirements:
 
 - Watch the event stream for new or deleted `ServiceInstance`s and
   `ServiceInstanceClaim`s
