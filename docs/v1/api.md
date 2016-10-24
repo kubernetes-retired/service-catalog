@@ -162,10 +162,10 @@ spec:
 
 ### `ServiceClassBinding`
 
-This example shows the output of a single-tenant `ServiceInstanceClaim`.
+This example shows the output of a single-tenant `ServiceClassBinding`.
 
 ```yaml
-kind: ServiceInstanceBinding
+kind: ServiceClassBinding
 apiVersion: service-catalog.k8s.io/alpha
 metadata:
   name: my-app-binding # same as the previous 'targetBinding' field
