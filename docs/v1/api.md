@@ -56,16 +56,16 @@ controller_. Like ingress, these controllers run inside a standard pod. Anyone
 can write and deploy a service catalog controller, with no changes necessary to
 the Kubernetes install.
 
-Service catalog controllers vary, however, from ingress controllers, because a
-cluster can consist of many different controllers, each of which handles actions
-on a subset of the available service-related resources. For example, a cluster
-can run a service controller to handle AWS RDS databases, and a completely
-separate one to handle AWS Elastic Load Balancer instances.
+Also as in the case of ingress controllers, a cluster may contain many
+different service catalog controllers, each of which handles operations for a
+designated subset of the applicable resource type. For example, a cluster may
+contain a service controller to handle AWS RDS databases, and a completely
+separate service catalog controller to handle on-cluster Redis instances.
 
-As we'll detail below, each service controller implementation must to conform
-to an implementation spec, but that spec allows for a heterogenous set of
-controllers in a cluster. We believe this allowance encourages flexibility in
-a cluster's service catalog.
+As we'll detail below, each service catalog controller implementation must
+conform to an implementation spec, but that spec allows for a heterogenous set
+of controllers in a cluster. We believe this allowance encourages flexibility
+in a cluster's service catalog.
 
 # Kubernetes Resources
 
