@@ -3,6 +3,24 @@
 This document contains the complete list of accepted use-cases for the v1
 version of the service catalog.
 
+## SIG Meeting
+
+### Use Cases
+
+1.  Adding service brokers into catalog
+2.  Catalog curation: which broker-provided services are globally visible?
+3.  Catalog curation: which namespaces can see which catalog services?
+4.  As a consumer of a service, how do I indicate that I want to consume a particular service?
+5.  As a consumer of a service, how do I indicate that I want to bind to an instance of a service?
+6.  What is the unit of consumption of a service?  Namespace?  Pod? Something else? (brian to comment)
+7.  What is the versioning and update story for a service: example: what happens when a broker changes the services it provides?
+8.  When a user binds to an instance of a service, what does that look like?  Which resources are created in their namespace?
+9.  What is the update story for bindings to a service instance?
+10. How does the catalog support multiple consumers in different Kubernetes namespaces of the same instance of a service? 
+11. How do I control the number and identity of consumers allowed to bind to my instance?
+11. Curation: how do I control who can see a service instance that I have provisioned?
+12. Curation: how do I control the number of consumers of my service instance?
+
 ## High-Level Use Cases
 
 These are the high-level, user-facing use cases the v1 service catalog will
