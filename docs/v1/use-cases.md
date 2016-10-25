@@ -11,15 +11,15 @@
 
 ## Catalog Publishing/Curation/Discovery
 
-* As a Catalog Operator, I want to be able to register a Service Broker with the Kubernetes
-  Service Catalog, so that the Service Catalog is aware of the Services that
-  Broker offers
-* As a Catalog Operator, I want to be able to update a registered Service Broker so that the
-  Service Catalog can maintain the most recent versions of Services that Broker
-  offers
-* As a Catalog Operator, I want to be able to delete a Service Broker from the Service
-  Catalog, so that I can keep the Service Catalog clean of Service Brokers I no
-  longer want to support
+* As a Catalog Operator, I want to be able to register a Service Broker with the
+  Kubernetes Service Catalog, so that the Service Catalog is aware of the
+  Services that Broker offers
+* As a Catalog Operator, I want to be able to update a registered Service Broker
+  so that the Service Catalog can maintain the most recent versions of Services
+  that Broker offers
+* As a Catalog Operator, I want to be able to delete a Service Broker from the
+  Service Catalog, so that I can keep the Service Catalog clean of Service
+  Brokers I no longer want to support
 
 * Can I export a list of Service Brokers and types from my Service Controller?
 * Is there an auth story for adding Service Brokers?
@@ -28,6 +28,16 @@
   from my local environment without needing to establish a formal business
   relationship with each service provider.
 
+## Searching and Browsing Services:
+    1.  As a consumer, I'm able to search my catalog for services by attributes
+        such as category
+    2.  As a consumer, I'm able to see metadata about a service prior to 
+        creation which allows me to see if this service fits my need
+    3.  As a consumer, I'm able to see all the required and optional parameters
+        the service takes in order to create it
+    4.  As a consumer, when listing services I see a union of the catalogs
+        from all brokers that are registered. However, if I want to restrict the
+        list to a specific broker I can pass that in as a flag.
 
 * How are Services identified: name, service name/id, plan name/id?
 * Who can see which Services? (TODO: Include scope? Global/Namespaced)
@@ -64,6 +74,66 @@ whether deleting a broker should:
 1. Cascade down to the Service Instances for the broker
 2. Leave orphaned Service Instances in the Service Catalog
 3. Fail if Service Instances still exist for the broker
+
+
+### Search and Browsing Services
+
+#### Searching Services
+
+Consumers should be be able to search or filter their catalog by labels. For
+example, if I search for all services with 'catalog=database' the catalog
+will return the list of services that match that label. This assumes, of
+course, that producers are able to label their service offerings.
+
+#### Service Metadata
+
+Each service should have a list of metadata that it exposes in the catalog.
+If we're following the Cloud Foundry model you can view the list of metadata
+fields [here](https://docs.cloudfoundry.org/services/catalog-metadata.html).
+
+We should consider what metadata needs to be exposed for a strong CLI and UI
+experience. Here are some suggestions for metadata fields:
+
+    * name
+    * short description
+    * long desciption
+    * documentation/support urls
+    * icon URL
+    * image URLs - a list of images that could be displayed in a UI
+    * TOS (terms of service) link
+    * a list of plans
+        * plan name
+        * plan description
+        * plan cost
+    * construction parameters
+        * name
+        * description
+        * default value
+    * category label/tags
+    * version
+    * publisher name
+    * publisher contact url
+    * publisher website
+
+#### Viewing Service Parameters
+
+Each service offering may have a list of parameters (e.g., configuration)
+required  to create that service. For example, if consuming a hosted database, I
+may need to  specify the region, size, a link to a startup scripts, or other
+parameters.
+
+For each service, I'm able to see the list of required and optional parameters
+that I can pass in during service creation. Service producers are able to
+specify default values for these parameters.
+
+#### Listing Services
+
+When listing all services available to be created, users will see a union of the
+catalog offerings from all brokers registered. However, users have the option of
+passing in a flag to limit results to just a specific registered broker.
+
+TODO: How to deal with name conflicts for {broker, service}.
+
 
 ## Requesting Services (Consumer)
 
