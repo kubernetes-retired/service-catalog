@@ -94,3 +94,22 @@ designing the architecture of the catalog.
 
 For more information, see the
 [Cloud Foundry documentation on registering service brokers](https://docs.cloudfoundry.org/services/managing-service-brokers.html#register-broker).
+
+## Consuming bound services
+
+Consumers of a service provisioned through the Service Catalog should be able
+to access credentials for the new Service Instance using standard Kubernetes
+mechanisms.
+
+1. A Secret maintains a 1:1 relationship with a Service Instance Binding
+1. The Secret should be written into the consuming application's namespace
+1. The Secret should contain enough information for the consuming application
+   to successfully find, connect, and authenticate to the Service Instance
+   (e.g. hostname, port, protocol, username, password, etc.)
+1. The consuming application may safely assume that network connectivity to the
+   Service Instance is available
+
+Consuming applications that need specific handling of credentials or
+configuration should be able to use additional Kubernetes facilities to
+adapt/transform the contents of the Secret. This includes, but is not limited
+to, side-car and init containers.
