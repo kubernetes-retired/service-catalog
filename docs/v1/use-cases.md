@@ -104,7 +104,6 @@ Consumers of a service provisioned through the Service Catalog should be able
 to access credentials for the new Service Instance using standard Kubernetes
 mechanisms.
 
-1. A Secret maintains a 1:1 relationship with a Service Instance Binding
 1. The Secret should be written into the consuming application's namespace
 1. The Secret should contain enough information for the consuming application
    to successfully find, connect, and authenticate to the Service Instance
