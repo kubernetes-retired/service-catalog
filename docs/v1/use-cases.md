@@ -105,10 +105,10 @@ to access credentials for the new Service Instance using standard Kubernetes
 mechanisms.
 
 1. The Secret should be written into the consuming application's namespace
-1. The Secret should contain enough information for the consuming application
+2. The Secret should contain enough information for the consuming application
    to successfully find, connect, and authenticate to the Service Instance
    (e.g. hostname, port, protocol, username, password, etc.)
-1. The consuming application may safely assume that network connectivity to the
+3. The consuming application may safely assume that network connectivity to the
    Service Instance is available
 
 Consuming applications that need specific handling of credentials or
