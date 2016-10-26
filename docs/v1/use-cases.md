@@ -92,8 +92,8 @@ evaluate where all broker deletes should:
 * What is the unit of consumption of a service? Namespace? Pod? Something else?
   (brian to comment)
 * As a User consuming a Service, I need to be able to understand the structure
-  of the resources that I get, so that I can configure my application
-  appropriately.
+  of the Kubernetes resources that are created when a new binding to a service
+  instance is created, so that I can configure my application appropriately.
 * As a User, I want to be able to understand the relationship between a Secret
   and Service Instance, so that I can properly configure my application (e.g.
   app connecting to sharded database).
