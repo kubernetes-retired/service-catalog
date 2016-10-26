@@ -17,7 +17,7 @@
 
 ### Registering a service broker with the catalog
 
-An user must register each service broker with the service catalog to advertise
+A user must register each service broker with the service catalog to advertise
 the services it offers to the catalog. After the broker has been registered
 with the catalog, the catalog makes a call to the service broker's `/v2/catalog`
 endpoint. The broker's returns a list of services offered by that broker. Each
