@@ -62,7 +62,7 @@ evaluate where all broker deletes should:
 ## Requesting Services (Consumer)
 
 * As a User, how do I ask for a new service from the Catalog?
-* As a User, how do I ask for access to an existing service?
+* As a User, how do I bind an application to an existing Service Instance?
 * How does the catalog support multiple consumers in different Kubernetes
   namespaces of the same instance of a service?
 
