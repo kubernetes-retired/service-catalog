@@ -3,6 +3,13 @@
 * TODO: scrub doc post glossary
 * TODO: add CF SB API as the lingua franca for blackbox services
 
+## Personas
+
+* User
+* Developer
+* Broker Operator
+* Service Provider
+
 ## Catalog Publishing/Curation/Discovery
 
 * As a User, I want to be able to register a Service Broker with the Kubernetes
