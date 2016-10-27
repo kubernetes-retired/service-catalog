@@ -49,9 +49,8 @@ TODO: spell out various update scenarios and how they affect end-users
 
 ### Delete a service broker
 
-There must be a way to delete brokers from the catalog. In Cloud Foundry, it is
-possible to delete a broker and leave orphaned service instances. We should
-evaluate where all broker deletes should:
+There must be a way to delete brokers from the catalog. We should evaluate
+whether deleting a broker should:
 
 1. Cascade down to the service instances for the broker
 2. Leave orphaned service instances in the catalog
