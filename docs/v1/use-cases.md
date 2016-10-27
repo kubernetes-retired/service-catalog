@@ -1,60 +1,63 @@
 # Service Catalog Use Cases
 
-TODO: add glossary
-TODO: scrub doc post glossary
-TODO: add CF SB API as the lingua franca for blackbox services
+* TODO: scrub doc post glossary
+* TODO: add CF SB API as the lingua franca for blackbox services
 
 ## Catalog Publishing/Curation/Discovery
 
-* As a user, I want to be able to register a broker with the Kubernetes service
-  catalog, so that the catalog is aware of the services that broker offers
-* As a user, I want to be able to update a registered broker so that the
-  catalog can maintain the most recent versions of services that broker offers
-* As a user, I want to be able to delete a broker from the catalog, so that I
-  can keep the catalog clean of brokers I no longer want to support
+* As a User, I want to be able to register a Service Broker with the Kubernetes
+  Service Catalog, so that the Service Catalog is aware of the Services that
+  Broker offers
+* As a User, I want to be able to update a registered Service Broker so that the
+  Service Catalog can maintain the most recent versions of Services that Broker
+  offers
+* As a User, I want to be able to delete a Service Broker from the Service
+  Catalog, so that I can keep the Service Catalog clean of Service Brokers I no
+  longer want to support
 
-* Can I export a list of service brokers and types from my service controller?
-* Is there an auth story for adding service brokers?
-* As a developer, working outside of the normal production cluster, I would like
-  to be able to use the services available to me from the production cluster
+* Can I export a list of Service Brokers and types from my Service Controller?
+* Is there an auth story for adding Service Brokers?
+* As a Developer, working outside of the normal production cluster, I would like
+  to be able to use the Services available to me from the production cluster
   from my local environment without needing to establish a formal business
   relationship with each service provider.
 
 
-* How are services identified: name, service name/id, plan name/id?
-* Who can see which services? (TODO: Include scope? Global/Namespaced)
-* Who can see which service instances? (TODO: Include scope? Global/Namespaced)
+* How are Services identified: name, service name/id, plan name/id?
+* Who can see which Services? (TODO: Include scope? Global/Namespaced)
+* Who can see which Service Instances? (TODO: Include scope? Global/Namespaced)
 * The Service Catalog should contain Services and not Service Instances
 
-### Registering a service broker with the catalog
+### Registering a Service Broker with the Service Catalog
 
-A user must register each service broker with the service catalog to advertise
-the services it offers to the catalog. After the broker has been registered
-with the catalog, the catalog makes a call to the service broker's `/v2/catalog`
-endpoint. The broker's returns a list of services offered by that broker. Each
-Service has a set of plans that differentiate the tiers of that service.
+A User must register each Service Broker with the Service Catalog to advertise
+the Services it offers in the Service Catalog. After the Service Broker has been
+registered with the Service Catalog, the Service Controller makes a call to the
+Service Broker's `/v2/catalog` endpoint. The Service Broker returns a list of
+Services offered by that broker. Each Service has a set of plans that
+differentiate the tiers of that Service.
 
-### Updating a service broker
+### Updating a Service Broker
 
-Broker authors make changes to the services their brokers offer. To refresh the
-services a broker offers, the catalog should re-list the `/v2/catalog` endpoint.
-The catalog should apply the result of re-listing the broker to its internal
-representation of that broker's services:
+Broker operators make changes to the services their brokers offer. To refresh
+the services a broker offers, the Service Controller should re-list the
+`/v2/catalog` endpoint.  The Service Controller should apply the result of
+re-listing the broker to its internal representation of that broker's services:
 
-1. New service present in the re-list results are added
+1. New services present in the re-list results are added
 2. Existing services are updated if a diff is present
 3. Existing services missing from the re-list are deleted
 
 TODO: spell out various update scenarios and how they affect end-users
 
-### Delete a service broker
+### Delete a Service Broker
 
 There must be a way to delete brokers from the catalog. We should evaluate
 whether deleting a broker should:
 
-1. Cascade down to the service instances for the broker
-2. Leave orphaned service instances in the catalog
-3. Fail if service instances still exist for the broker
+1. Cascade down to the Service Instances for the broker
+2. Leave orphaned Service Instances in the Service Catalog
+3. Fail if Service Instances still exist for the broker
 
 ## Requesting Services (Consumer)
 
@@ -79,16 +82,16 @@ whether deleting a broker should:
 * As a Broker operator, I want to control the number of bindings to a Service
   Instance so that I may provide limits for services (e.g. free plan with 3
   bindings). (TODO: Do we care?)
-* As a user of a service instance, I want a predictable set of Kubernetes
-  resources (Secrets, ConfigMap) created after binding, so that I know how to
-  configure my application to use the Service Instance.
-* As a catalog operator, I want to be able to discover what applications are
-  bound to services I am responsible for, so that I may operate the service
-  properly.
-* As a User I should be able to see what service instances my applications are
+* As a user of a Service Instance, I want a predictable set of Kubernetes
+  resources (Secrets, ConfigMap, etc.) created after binding, so that I know how
+  to configure my application to use the Service Instance.
+* As a broker operator, I want to be able to discover what applications are
+  bound to Service Instances I am responsible for, so that I may operate the
+  service properly.
+* As a User I should be able to see what Service Instances my applications are
   bound to.
-* As a User I should be able to pass paramters when binding to a service
-  instance so that I may indicate what type of binding my application needs.
+* As a User I should be able to pass paramters when binding to a Service
+  Instance so that I may indicate what type of binding my application needs.
   (e.g. credential type, admin binding, ro binding, rw binding)
 
 As a User, I should be able to accomplish the following sets of bindings:
@@ -102,8 +105,8 @@ As a User, I should be able to accomplish the following sets of bindings:
 ## Using/Consuming a Service Instance
 
 * As a User consuming a Service Instance, I need to be able to understand the structure
-  of the Kubernetes resources that are created when a new binding to a service
-  instance is created, so that I can configure my application appropriately.
+  of the Kubernetes resources that are created when a new Binding to a Service
+  Instance is created, so that I can configure my application appropriately.
 * As a User, I want to be able to understand the relationship between a Secret
   and Service Instance, so that I can properly configure my application (e.g.
   app connecting to sharded database).
@@ -132,9 +135,9 @@ variables, volumes, etc.
   capabilities to end users.
 * As a User of a Service Instance, I want to be able to change the Service
   Instance plan so that I may size it appropriately for my needs.
-* What is the update story for bindings to a service instance?
-* What is the versioning and update story for a service instance: what happens
-  when a broker changes the services it provides?
+* What is the update story for bindings to a Service Instance?
+* What is the versioning and update story for a Service Instance: what happens
+  when a broker changes the Services it provides?
 
 ## Unbinding from a Service Instance
 
