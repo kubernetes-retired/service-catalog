@@ -8,7 +8,6 @@
 * User
 * Developer
 * Broker Operator
-* Service Provider
 
 ## Catalog Publishing/Curation/Discovery
 
