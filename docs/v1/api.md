@@ -35,3 +35,9 @@ upon successful execution.
 
 Successfully executed claims will also serve as a record of an application that's
 bound to a backing service.
+
+## `ServiceProducer`
+
+This resource represents an entity that may publish one or more service
+classes into the catalog.  The `ServiceProducer` resource is global to the
+catalog.
