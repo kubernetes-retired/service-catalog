@@ -5,8 +5,7 @@
 
 ## Personas
 
-* User
-* Developer
+* Application Operator
 * Broker Operator
 
 ## Catalog Publishing/Curation/Discovery
@@ -67,14 +66,14 @@ whether deleting a broker should:
 
 ## Requesting Services (Consumer)
 
-* As a User, how do I cause a new Service Instance to be created from the
+* As an Application Operator, how do I cause a new Service Instance to be created from the
   Service Catalog?
-* As a User, how do I bind an application to an existing Service Instance?
+* As an Application Operator, how do I bind an application to an existing Service Instance?
 * How does the catalog support multiple consumers in different Kubernetes
   namespaces of the same Service Instance?
-* As a User, who has requested a Service Instance, know that a request for a
+* As an Application Operator, who has requested a Service Instance, know that a request for a
   service instance has been fulfilled?
-* As a User, I should be able to pass parameters to be used by the Service
+* As an Application Operator, I should be able to pass parameters to be used by the Service
   Instance or Binding when causing a new Service Instance to be created, so that
   I may change the attributes of the Service Instance or Binding.
 
@@ -94,13 +93,13 @@ whether deleting a broker should:
 * As a broker operator, I want to be able to discover what applications are
   bound to Service Instances I am responsible for, so that I may operate the
   service properly.
-* As a User I should be able to see what Service Instances my applications are
+* As an Application Operator I should be able to see what Service Instances my applications are
   bound to.
-* As a User I should be able to pass paramters when binding to a Service
+* As an Application Operator I should be able to pass paramters when binding to a Service
   Instance so that I may indicate what type of binding my application needs.
   (e.g. credential type, admin binding, ro binding, rw binding)
 
-As a User, I should be able to accomplish the following sets of bindings:
+As an Application Operator, I should be able to accomplish the following sets of bindings:
 
 * One application may binding to many Service Instances
 * Many different applications may bind to a single Service Instance
@@ -110,10 +109,10 @@ As a User, I should be able to accomplish the following sets of bindings:
 
 ## Using/Consuming a Service Instance
 
-* As a User consuming a Service Instance, I need to be able to understand the structure
+* As an Application Operator consuming a Service Instance, I need to be able to understand the structure
   of the Kubernetes resources that are created when a new Binding to a Service
   Instance is created, so that I can configure my application appropriately.
-* As a User, I want to be able to understand the relationship between a Secret
+* As an Application Operator, I want to be able to understand the relationship between a Secret
   and Service Instance, so that I can properly configure my application (e.g.
   app connecting to sharded database).
 * The consuming application may safely assume that network connectivity to the
@@ -139,7 +138,7 @@ variables, volumes, etc.
 * As a Service Provider, I should be able to indicate that a Service Instance
   _may_ be upgraded (plan updateable), so that I can communicate Service
   capabilities to end users.
-* As a User of a Service Instance, I want to be able to change the Service
+* As an Application Operator of a Service Instance, I want to be able to change the Service
   Instance plan so that I may size it appropriately for my needs.
 * What is the update story for bindings to a Service Instance?
 * What is the versioning and update story for a Service Instance: what happens
