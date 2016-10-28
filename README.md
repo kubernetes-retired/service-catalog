@@ -6,8 +6,6 @@
 Traditionally, services are available via HTTP REST endpoints, but this is not
 a requirement.
 
-**Service Controller**:
-
 **Service Broker**: An endpoint that manages a set of services.
 
 **Service Catalog**: An endpoint that manages 1) a set of registered Service
