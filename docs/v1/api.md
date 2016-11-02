@@ -32,15 +32,15 @@ service broker has made available.
 *TODO: what happens in the below cases?*
 
 1. *The `Broker` that caused the `ServiceClass` was deleted*
-2. *The `ServiceClass` itself was deleted*
+1. *The `ServiceClass` itself was deleted*
 
 ## `Instance`
 
 This resource is created by a service consumer to indicate their desire to
 provision a service. When the service catalog's controller event loop sees an
 `Instance` created, it calls the provision endpoint on the backing CF service
-broker and writes the provision response back into the `Instance`'s `status`
-section.
+broker and writes `provisioned` into the `status.status` field of the
+`Instance`.
 
 *TODO: what happens when an `Instance` resource is deleted?*
 
@@ -51,9 +51,10 @@ should be bound to an instance. When the service catalog's controller event
 loop sees a `Binding` created, it calls the bind endpoint on the backing CF
 service broker. When a successful response is returned, it does the following:
 
+1. Writes `bound` into the `status.status` field of the `Binding`
 1. Writes the contents of `credentials` map into a secret (naming of the secret
    to be discussed later)
-2. Updates the `Binding`'s status section with the fully qualified path to the
+1. Updates the `Binding`'s status section with the fully qualified path to the
    aforementioned secret
-  
+
 *TODO: what happens when a `Binding` resource is deleted?*
