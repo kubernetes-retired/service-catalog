@@ -10,34 +10,31 @@ _ __Note:__ All names herein are tentative, and should be considered placeholder
 and used as placeholders for purposes of discussion only. This note will be
 removed when names are finalized._
 
+## `Broker`
+
+This resource is created by an administrator to instruct the service catalog's
+controller event loop to do the following:
+
+1. Make a request against a given CF service broker's catalog endpoint
+   (`GET /v2/catalog`)
+2. Translate the response to a list of `ServiceClass`es
+3. Write each translated `ServiceClass` to stable storage
+
+TODO: should we call out what happens when a `Broker` resource is deleted?
+
 ## `ServiceClass`
 
-This resource indicates a general kind of backing service that a consumer
-may request. The 'service kind' concept is purposefully arbitrary. We expect
-each cluster operator team to assign specific meaning to the ones they choose.
+This resource is created by the service catalog's controller event loop to
+represent a service ID & plan ID that a CF service broker has made available.
 
-## `ServiceInstance`
+## `Instance`
 
-This resource indicates that a request by a consumer for a usable `ServiceClass`
-has been successfully executed. Consumers may reference these resources to
-begin using the backing service it represents.
+This resource is created by a service consumer to indicate that the service
+catalog's controller event loop should provision the backing CF service broker
+and write the provision response back into the `Instance`'s `status` section.
 
-## `ServiceClaim`
+## `Binding`
 
-This resource is used by the consumer to get credentials for a backing service.
-
-The byproducts of a successfully executed claim will be binding information
-in the form of other, standard Kubernetes resources. We expect these to be
-`ConfigMap`s and `Secret`s initially, but the number and types of these
-resources will be implementation-dependent. The claim will contain
-Kubernetes-style reference links for each Kubernetes resource that was created
-upon successful execution.
-
-Successfully executed claims will also serve as a record of an application that's
-bound to a backing service.
-
-## `ServiceProducer`
-
-This resource represents an entity that may publish one or more service
-classes into the catalog.  The `ServiceProducer` resource is global to the
-catalog.
+This resource is created by a service consumer to indicate that the service
+catalog's controller event loop should issue a bind request on the backing CF
+service broker.
