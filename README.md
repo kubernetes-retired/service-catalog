@@ -6,7 +6,9 @@
 Traditionally, services are available via HTTP REST endpoints, but this is not
 a requirement.
 
-**Service Broker**: An endpoint that manages a set of services.
+**Service Broker**: An endpoint that manages a set of services. Responsible for
+translating Service Catalog activities (like provision, bind, unbind, deprovision)
+into appropriate actions for the service.
 
 **Service Catalog**: An endpoint that manages 1) a set of registered Service
 Brokers and 2) the list of services that are available for instantiation from
@@ -15,6 +17,9 @@ those Service Brokers.
 **Service Instance**: Each request for a unique use of a Service will result in
 the Service Catalog requesting a new Service Instance from the owning Service
 Broker.
+
+**Service Consumer**: any person or application that will use a Service from
+the catalog.
 
 **Application**: code that will access or consume a Service. While in Kubernetes
 the code that is deployed is often called a "Service", to avoid confusion, this
@@ -29,8 +34,15 @@ application developer or a cluster operator
 cluster. This team may operate the cluster on behalf of other users, or may
 operate the cluster to facilitate their own work
 
+**Catalog operator**: the person or team responsible for adminstration of the
+Service Catalog, including catalog curation and Service Broker registration
+
 **Broker operator**: the person or team responsible for running and managing one
 or more **Service Brokers**.
+
+**Service Producer**: the person or team who authors and/or operates a Service
+available from the Service Catalog. As part of creating a service, the Service
+Producer may also be running a Service Broker.
 
 **Resource type**: a logical Kubernetes concept. Examples include:
 
