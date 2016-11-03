@@ -5,18 +5,19 @@
 
 ## Personas
 
-* Application Operator
-* Broker Operator
+* Service Consumer
+* Service Producer
+* Catalog Operator
 
 ## Catalog Publishing/Curation/Discovery
 
-* As a Cluster Operator, I want to be able to register a Service Broker with the Kubernetes
+* As a Catalog Operator, I want to be able to register a Service Broker with the Kubernetes
   Service Catalog, so that the Service Catalog is aware of the Services that
   Broker offers
-* As a Cluster Operator, I want to be able to update a registered Service Broker so that the
+* As a Catalog Operator, I want to be able to update a registered Service Broker so that the
   Service Catalog can maintain the most recent versions of Services that Broker
   offers
-* As a Cluster Operator, I want to be able to delete a Service Broker from the Service
+* As a Catalog Operator, I want to be able to delete a Service Broker from the Service
   Catalog, so that I can keep the Service Catalog clean of Service Brokers I no
   longer want to support
 
