@@ -28,8 +28,8 @@ controller event loop to do the following:
 
 This resource is created by the service catalog's controller event loop after
 it has received a `Broker` resource and successfully called the backing CF
-broker's catalog endpoint. It represents a service ID & plan ID that a CF
-service broker has made available.
+broker's catalog endpoint. It represents a single (serviceID, planID) pair that
+a CF service broker has made available.
 
 *TODO: what happens in the below cases?*
 
@@ -41,7 +41,7 @@ service broker has made available.
 This resource is created by a service consumer to indicate their desire to
 provision a service. When the service catalog's controller event loop sees an
 `Instance` created, it calls the provision endpoint on the backing CF service
-broker and writes `provisioned` into the `status.status` field of the
+broker and writes `provisioned` into a `status` field of the
 `Instance`.
 
 *TODO: what happens when an `Instance` resource is deleted?*
@@ -51,9 +51,10 @@ broker and writes `provisioned` into the `status.status` field of the
 This resource is created by a service consumer to indicate that an application
 should be bound to an instance. When the service catalog's controller event
 loop sees a `Binding` created, it calls the bind endpoint on the backing CF
-service broker. When a successful response is returned, it does the following:
+service broker. When a successful response is returned, the event loop does
+the following:
 
-1. Writes `bound` into the `status.status` field of the `Binding`
+1. Writes `bound` into a `status` field of the `Binding`
 1. Writes the contents of `credentials` map into a secret (naming of the secret
    to be discussed later)
 1. Updates the `Binding`'s status section with the fully qualified path to the
