@@ -1,6 +1,8 @@
 # V1 API
 
-This document contains the Kubernetes resource types for the v1 service catalog.
+This document contains resource types and their standard usage in v1 service
+catalog. Although this API will be implemented in Kubernetes, other systems
+are not precluded from implementing it as well.
 
 # Resource Types
 
