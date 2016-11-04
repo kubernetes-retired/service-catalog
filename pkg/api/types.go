@@ -13,15 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package api
 
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/unversioned"
+	kunversioned "k8s.io/kubernetes/pkg/api/unversioned"
 )
 
 type Broker struct {
-	unversioned.TypeMeta
+	kunversioned.TypeMeta
 	kapi.ObjectMeta // not namespaced. document
 
 	Spec   BrokerSpec
@@ -47,9 +48,8 @@ const (
 )
 
 type ServiceClass struct {
-	// BOILERPLATE VILLE DOUG NOW YOU ARE HAPPY
-
-	// WATCH THE MAIL FOR MY INVOICE
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
 
 	ID              string
 	Description     string
@@ -69,11 +69,11 @@ type ServicePlan struct {
 	Description string
 	Metadata    interface{}
 	Free        bool
-	// OTHER?
 }
 
 type Instance struct {
-	// boilerplate
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
 
 	Spec   InstanceSpec
 	Status InstanceStatus
@@ -122,6 +122,9 @@ type BindingStatus struct {
 }
 
 type ServiceInjectionPolicy struct {
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
+
 	ServiceRef       string
 	AppLabelSelector kapi.LabelSelector
 	// for later: the service consumer's preference on how to expose CM and secret (env or volume)
