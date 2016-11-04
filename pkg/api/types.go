@@ -1,23 +1,48 @@
+/*
+Copyright 2016 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package api
 
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/unversioned"
+	kunversioned "k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type Broker struct {
-	unversioned.TypeMeta
-	kapi.ObjectMeta // not namespaced. document
+// +nonNamespaced=true
 
-	Spec BrokerSpec
+type Broker struct {
+	kunversioned.TypeMeta
+	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	kapi.ObjectMeta
+
+	Spec   BrokerSpec
 	Status BrokerStatus
 }
 
 type BrokerSpec struct {
-	BrokerURL string
+	URL string
+
+	// Auth credentials should live in an api.Secret that
+	// is documented to have "username" and "password" keys
 	AuthUsername string
 	AuthPassword string
-	GUID string
+
+	// CF-specific; move to annotation
+	// CFGUID is the identity of this object for use with the CF SB API.
+	CFGUID string
 }
 
 type BrokerStatus struct {
@@ -27,87 +52,152 @@ type BrokerStatus struct {
 type BrokerState string
 
 const (
-	BrokerStatePending BrokerState = "PENDING"
-	BrokerStateAvailable BrokerState = "AVAILABLE"
+	BrokerStatePending   BrokerState = "Pending"
+	BrokerStateAvailable BrokerState = "Available"
+	BrokerStateFailed    BrokerState = "Failed"
 )
 
 type ServiceClass struct {
-	// BOILERPLATE VILLE DOUG NOW YOU ARE HAPPY
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
 
-	// WATCH THE MAIL FOR MY INVOICE
+	// BrokerName is the reference to the Broker that provides this service.
+	BrokerName string
 
-	ID string
+	Bindable      bool
+	Plans         []ServicePlan
+	PlanUpdatable bool // Do we support this?
+
+	// Move to annotation
 	Description string
-	Bindable bool
-	PlanUpdatable bool // TODO: do we support this? document if we don't
-	Tags []string
-	Requires []string
-	Metadata interface{}
-	Plans []ServicePlan
-	DashboardClient interface{}
-	BrokerName string // broker object name
+
+	// CF-specific; move to annotation
+	// CFGUID is the identity of this object for use with the CF SB API.
+	// Immutable.
+	CFGUID string
+
+	// CF-specific; move to annotations
+	CFTags                    []string
+	CFRequires                []string
+	CFMaxDBPerNode            string
+	CFMetadata                interface{}
+	CFDashboardOAuth2ClientID string
+	CFDashboardSecret         string
+	CFDashboardRedirectURI    string
 }
 
 type ServicePlan struct {
-	ID string
+	// CLI-friendly name of this plan
 	Name string
+
+	// Move to annotation
 	Description string
-	Metadata interface{}
-	Free bool
-	// OTHER?
+
+	// CF-specific; move to annotation
+	// CFGUID is the identity of this object for use with the CF SB API.
+	// Immutable.
+	CFGUID string
+
+	// CF-specific; move to annotations
+	CFMetadata interface{}
+	CFFree     bool
 }
 
 type Instance struct {
-	// boilerplate
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
 
-	Spec InstanceSpec
+	Spec   InstanceSpec
 	Status InstanceStatus
 }
 
 type InstanceSpec struct {
-	ServiceClassName string // name of service class resource
+	// ServiceClassName is the reference to the ServiceClass this is an instance of.
+	ServiceClassName string
+	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
-	InstanceGUID string // may move this to an annotation
-	Credentials string // this is legacy CF stuff
-	DashboardURL string
-	InternalID string // came from ville. remove? nobody likes that guy
-	CFServiceID string
-	CFPlanID string
-	CFType string // may move this to an annotation
-	CFSpaceGUID string // may move this to an annotation
-	CFLastOperation string // TODO: talk about supporting async provision
-	CFParameters map[string]interface{}
+
+	Parameters map[string]interface{}
+
+	// CF-specific; move to annotation
+	// CFGUID is the identity of this object for use with the CF SB API.
+	// Immutable.
+	CFGUID string
+
+	// CF-specific; move to annotations
+	CFCredentials   string
+	CFDashboardURL  string
+	CFInternalID    string // came from ville. remove? nobody likes that guy
+	CFServiceID     string
+	CFPlanID        string
+	CFType          string
+	CFSpaceGUID     string
+	CFLastOperation string
 }
 
 type InstanceStatus struct {
-	Status string // TODO: make this an "enum" (constant + type)
+	State InstanceState
 }
 
-type Binding struct {
-	// boilerplate
+type InstanceState string
 
-	Spec BindingSpec
+const (
+	InstanceStatePending     InstanceState = "Pending"
+	InstanceStateProvisioned InstanceState = "Provisioned"
+	InstanceStateFailed      InstanceState = "Failed"
+)
+
+type Binding struct {
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
+
+	Spec   BindingSpec
 	Status BindingStatus
 }
 
 type BindingSpec struct {
-	BindingGUID string // may move this to annotation
-	AppLabelSelector kapi.LabelSelector // this is the "from"
-	InstanceRef kapi.ObjectReference // this is the "to". the controller can follow this pointer to get the instance ID
+	// InstanceRef is the reference to the Instance this binding is to.
+	InstanceRef kapi.ObjectReference
+	// AppLabelSelector selects the pods in the Binding's namespace that should be injected with the results of the binding
+	AppLabelSelector kapi.LabelSelector
+
 	Parameters map[string]interface{}
-	SecretRef string
-	ServiceRef string
-	ConfigMapRef string
+
+	// References to objects to create
+	SecretRef                 string
+	ServiceRef                string
+	ConfigMapRef              string
 	ServiceInjectionPolicyRef string
-	// for later: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
+
+	// CF-specific; move to annotation
+	// CFGUID is the identity of this object for use with the CF SB API.
+	// Immutable.
+	CFGUID string
+
+	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }
 
 type BindingStatus struct {
-	Status string // either pending or bound
+	State BindingState
 }
 
+type BindingState string
+
+const (
+	BindingStatePending BindingState = "Pending"
+	BindingStateBound   BindingState = "Bound"
+	BindingStateFailed  BindingState = "Failed"
+)
+
+// Core resource; prototype here for now
 type ServiceInjectionPolicy struct {
+	kunversioned.TypeMeta
+	kapi.ObjectMeta
+
+	// ServiceRef is the reference to the core Service this InjectPolicy sources.
 	ServiceRef string
+	// AppLabelSelector selects the pods in the SIP's namespace to apply the injection policy to.
 	AppLabelSelector kapi.LabelSelector
-	// for later: the service consumer's preference on how to expose CM and secret (env or volume)
+
+	// TODO: the service consumer's preference on how to expose CM and secret (env or volume)
 }
