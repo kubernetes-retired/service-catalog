@@ -43,8 +43,9 @@ type BrokerStatus struct {
 type BrokerState string
 
 const (
-	BrokerStatePending   BrokerState = "PENDING"
-	BrokerStateAvailable BrokerState = "AVAILABLE"
+	BrokerStatePending   BrokerState = "Pending"
+	BrokerStateAvailable BrokerState = "Available"
+	BrokerStateFailed    BrokerState = "Failed"
 )
 
 type ServiceClass struct {
@@ -95,8 +96,16 @@ type InstanceSpec struct {
 }
 
 type InstanceStatus struct {
-	Status string // TODO: make this an "enum" (constant + type)
+	State InstanceState
 }
+
+type InstanceState string
+
+const (
+	InstanceStatePending     InstanceState = "Pending"
+	InstanceStateProvisioned InstanceState = "Provisioned"
+	InstanceStateFailed      InstanceState = "Failed"
+)
 
 type Binding struct {
 	// boilerplate
@@ -118,9 +127,18 @@ type BindingSpec struct {
 }
 
 type BindingStatus struct {
-	Status string // either pending or bound
+	State BindingState
 }
 
+type BindingState string
+
+const (
+	BindingStatePending BindingState = "Pending"
+	BindingStateBound   BindingState = "Bound"
+	BindingStateFailed  BindingState = "Failed"
+)
+
+// Core resource
 type ServiceInjectionPolicy struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
