@@ -75,3 +75,66 @@ function retry() {
     ((N++))
   done
 }
+
+# Will wait until the output of the passed command contains the
+# expected substring.
+# If the negate flag is passed, waits until output does not contain
+# the expected substring.
+function wait_for_expected_output() {
+  local OPTIND OPTARG ARG
+  local negate=''
+  local count=0
+  local sleep_amount=5
+  local max_sleep=60
+  local expected=''
+
+  while getopts ":xn:s:t:e:" ARG; do
+    case ${ARG} in
+      x) negate='YES';;
+      n) count=${OPTARG};;
+      s) sleep_amount=${OPTARG};;
+      t) max_sleep=${OPTARG};;
+      e) expected=${OPTARG};;
+      *) echo "Unrecognized argument: -${OPTARG}";;
+    esac
+  done
+
+  shift $((OPTIND-1))
+
+  # If there is no command, abort early.
+  [[ ${#} -le 0 ]] && { echo "No command specified, aborting."; return 1; }
+
+  if [[ -n "${negate:-}" ]]; then
+    retry -n ${count} -s ${sleep_amount} -t ${max_sleep} \
+        output_does_not_contain_substring -e "${expected}" "${@}" \
+      || { echo 'Retry timed out.'; return 1; }
+  else
+    retry -n ${count} -s ${sleep_amount} -t ${max_sleep} \
+        output_contains_substring -e "${expected}" "${@}" \
+      || { echo 'Retry timed out.'; return 1; }
+  fi
+}
+
+function output_contains_substring() {
+  local OPTIND OPTARG ARG
+  local expected=''
+
+  while getopts ":e:" ARG; do
+    case ${ARG} in
+      e) expected=${OPTARG};;
+      *) echo "Unrecognized argument: -${OPTARG}";;
+    esac
+  done
+
+  shift $((OPTIND-1))
+
+  # If there is no command, abort early.
+  [[ ${#} -le 0 ]] && { echo "No command specified, aborting."; return 1; }
+
+  [[ "$("${@}")" == *"${expected}"* ]]
+}
+
+function output_does_not_contain_substring() {
+  output_contains_substring "$@" && return 1
+  return 0
+}

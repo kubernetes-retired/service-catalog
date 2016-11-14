@@ -116,7 +116,8 @@ node {
     if (currentBuild.result == 'FAILURE') {
       sh """${env.ROOT}/script/cleanup_cluster.sh ${clustername} \
             --project ${test_project} \
-            --zone ${test_zone}"""
+            --zone ${test_zone} \
+            --namespace ${namespace}"""
       error 'Build failed.'
     }
 
@@ -133,7 +134,8 @@ node {
     } finally {
       sh """${env.ROOT}/script/cleanup_cluster.sh ${clustername} \
             --project ${test_project} \
-            --zone ${test_zone}"""
+            --zone ${test_zone} \
+            --namespace ${namespace}"""
     }
 
     notifyBuild(currentBuild.result)
