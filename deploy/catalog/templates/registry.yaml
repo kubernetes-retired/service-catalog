@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  namespace: {{ default "catalog" .Values.namespace }}
+  name: registry
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: {{ .Values.registry }}/registry:{{ if .Values.registryVersion }}{{ .Values.registryVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: {{ default "catalog" .Values.namespace }}
+  name: registry
+spec:
+{{ if .Values.debug }}
+  type: LoadBalancer
+{{ end }}
+  selector:
+    app: registry
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
+

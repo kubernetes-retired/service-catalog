@@ -1,0 +1,23 @@
+package: github.com/kubernetes-incubator/service-catalog
+import:
+- package: github.com/ghodss/yaml
+- package: github.com/gorilla/handlers
+- package: github.com/gorilla/mux
+- package: github.com/satori/go.uuid
+- package: github.com/spf13/cobra
+- package: k8s.io/client-go
+  version: "1.5"
+  subpackages:
+  - 1.5/dynamic
+  - 1.5/kubernetes
+  - 1.5/kubernetes/typed/extensions/v1beta1
+  - 1.5/pkg/api
+  - 1.5/pkg/api/unversioned
+  - 1.5/pkg/api/v1
+  - 1.5/pkg/apis/extensions/v1beta1
+  - 1.5/pkg/runtime
+  - 1.5/pkg/util/intstr
+  - 1.5/pkg/watch
+  - 1.5/tools/clientcmd
+- package: github.com/onsi/ginkgo
+- package: github.com/onsi/gomega

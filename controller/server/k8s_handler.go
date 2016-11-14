@@ -1,0 +1,165 @@
+/*
+Copyright 2016 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package server
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/kubernetes-incubator/service-catalog/controller/watch"
+	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+
+	"k8s.io/client-go/1.5/pkg/runtime"
+	k8swatch "k8s.io/client-go/1.5/pkg/watch"
+)
+
+type K8sHandler struct {
+	controller ServiceController
+	watcher    *watch.Watcher
+}
+
+func NewK8sHandler(c ServiceController, w *watch.Watcher) (*K8sHandler, error) {
+	ret := &K8sHandler{
+		controller: c,
+		watcher:    w,
+	}
+	if w != nil {
+		log.Printf("Starting to watch for new Service Brokers\n")
+		err := w.Watch(watch.ServiceBroker, "default", ret.ServiceBrokerCallback)
+		if err != nil {
+			log.Printf("Failed to start a watcher for Service Brokers: %v\n", err)
+		}
+
+		log.Printf("Starting to watch for new Service Instances\n")
+		err = w.Watch(watch.ServiceInstance, "default", ret.ServiceInstanceCallback)
+		if err != nil {
+			log.Printf("Failed to start a watcher for Service Instances: %v\n", err)
+		}
+
+		log.Printf("Starting to watch for new Service Bindings\n")
+		err = w.Watch(watch.ServiceBinding, "default", ret.ServiceBindingCallback)
+		if err != nil {
+			log.Printf("Failed to start a watcher for Service Bindings: %v\n", err)
+			return nil, err
+		}
+	} else {
+		log.Printf("No watcher (was nil), so not interfacing with kubernetes directly\n")
+		return nil, fmt.Errorf("No watcher (was nil)")
+	}
+
+	return ret, nil
+}
+
+func (s *K8sHandler) ServiceInstanceCallback(e k8swatch.Event) error {
+	var si scmodel.ServiceInstance
+	err := TPRObjectToSCObject(e.Object, &si)
+	if err != nil {
+		log.Printf("Failed to decode the received object %#v", err)
+	}
+
+	if e.Type == "ADDED" || e.Type == "MODIFIED" {
+		if si.LastOperation != nil {
+			log.Printf("%s already created, skipping: %v\n", si.Name, si.LastOperation)
+			return nil
+		}
+		created, err := s.controller.CreateServiceInstance(&si)
+		if err != nil {
+			log.Printf("Failed to create service instance: %v\n", err)
+			return err
+		}
+		log.Printf("Created Service Instance: %s\n", created.Name)
+	}
+	return nil
+}
+
+func (s *K8sHandler) ServiceBindingCallback(e k8swatch.Event) error {
+	var sb scmodel.ServiceBinding
+	err := TPRObjectToSCObject(e.Object, &sb)
+	if err != nil {
+		log.Printf("Failed to decode the received object %#v", err)
+	}
+
+	if e.Type == "ADDED" || e.Type == "MODIFIED" {
+		if sb.Credentials.Hostname != "" {
+			log.Printf("Bindings have already been created, skipping: %s\n", sb.Name)
+			return nil
+		}
+		created, err := s.controller.CreateServiceBinding(&sb)
+		if err != nil {
+			log.Printf("Failed to create service binding: %v\n", err)
+			return err
+		}
+		log.Printf("Created Service Binding: %s\n%v\n", sb.Name, created)
+	}
+	return nil
+}
+
+func (s *K8sHandler) ServiceBrokerCallback(e k8swatch.Event) error {
+	var sb scmodel.ServiceBroker
+	err := TPRObjectToSCObject(e.Object, &sb)
+	if err != nil {
+		log.Printf("Failed to decode the received object %#v", err)
+		return err
+	}
+
+	if e.Type == "ADDED" || e.Type == "MODIFIED" {
+		created, err := s.controller.CreateServiceBroker(&sb)
+		if err != nil {
+			log.Printf("Failed to create service broker: %v\n", err)
+			return err
+		}
+		log.Printf("Created Service Broker: %s\n", created.Name)
+	} else {
+		return fmt.Errorf("Delete Service Broker not implemented yet")
+	}
+	return nil
+}
+
+//  TPRObjectToSCObject converts a Kubernetes Third Party Resource
+//  object into a Service Controller model object
+func TPRObjectToSCObject(o runtime.Object, object interface{}) error {
+	m, err := json.Marshal(o)
+	if err != nil {
+		log.Printf("Failed to marshal %#v : %v", o, err)
+		return err
+	}
+
+	err = json.Unmarshal(m, &object)
+	if err != nil {
+		log.Printf("Failed to unmarshal: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+// SCObjectToTPRObject converts a Service Controller model object into
+// a Kubernetes Third Party Resource object
+func SCObjectToTPRObject(object interface{}) (*runtime.Unstructured, error) {
+	m, err := json.Marshal(object)
+	if err != nil {
+		log.Printf("Failed to marshal %#v : %v", object, err)
+		return nil, err
+	}
+	var ret runtime.Unstructured
+	err = json.Unmarshal(m, &ret)
+	if err != nil {
+		log.Printf("Failed to unmarshal: %v\n", err)
+		return nil, err
+	}
+	return &ret, nil
+}

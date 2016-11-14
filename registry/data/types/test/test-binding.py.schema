@@ -1,0 +1,14 @@
+required:
+- requiredParam
+
+properties:
+  requiredParam:
+    type: string
+    description: A required string parameter.
+  intParam:
+    type: integer
+    description: An integer parameter.
+  boolParam:
+    type: boolean
+    description: A boolean parameter.
+

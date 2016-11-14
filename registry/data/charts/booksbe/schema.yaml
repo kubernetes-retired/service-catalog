@@ -1,0 +1,22 @@
+required:
+- rootPassword
+- username
+- password
+- database
+
+properties:
+  version:
+    type: string
+    description: Version of mysql image to use.
+  rootPassword:
+    type: string
+    description: Root password to use with the MySQL database.
+  username:
+    type: string
+    description: A MySQL user name.
+  password:
+    type: string
+    description: A password for the MySQL user.
+  database:
+    type: string
+    description: A database name.

@@ -1,0 +1,19 @@
+required:
+- bindings
+
+properties:
+  bindings:
+    type: object
+    patternProperties:
+      ".*":
+        type: object
+        properties:
+          hostname:
+            type: string
+          port:
+            type: string
+          username:
+            type: string
+          password:
+            type: string
+

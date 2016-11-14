@@ -1,0 +1,9 @@
+# BC Binding
+apiVersion: catalog.k8s.io/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: bookstore-database
+name: bookstore-database
+from: my-frontend
+to: backend
+

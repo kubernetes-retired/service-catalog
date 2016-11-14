@@ -1,0 +1,11 @@
+# Binding Consumer
+apiVersion: catalog.k8s.io/v1alpha1
+kind: ServiceInstance
+metadata:
+  name: my-frontend
+name: my-frontend
+service: binding-consumer
+plan: default
+space_guid: default
+parameters:
+  clientName: bookstore-nodejs

@@ -1,0 +1,9 @@
+*.iml
+*.swp
+*~
+kubeconfig
+log/**
+pid/**
+vendor/**
+.idea/
+.DS_Store

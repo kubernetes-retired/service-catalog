@@ -1,0 +1,5 @@
+version: latest
+username: admin
+password: mypassword
+database: bookstore
+rootPassword: mypassword
