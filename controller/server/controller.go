@@ -26,22 +26,23 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/controller/utility"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+
 	"github.com/satori/go.uuid"
 )
 
 const (
-	CATALOG_URL_FMT_STR      = "%s/v2/catalog"
-	SERVICE_INSTANCE_FMT_STR = "%s/v2/service_instances/%s"
-	BIND_FMT_STR             = "%s/v2/service_instances/%s/service_bindings/%s"
-	DEFAULT_NAMESPACE        = "default"
+	catalogURLFormatString      = "%s/v2/catalog"
+	serviceInstanceFormatString = "%s/v2/service_instances/%s"
+	bindingFormatString         = "%s/v2/service_instances/%s/service_bindings/%s"
+	defaultNamespace            = "default"
 )
 
-type Controller struct {
+type controller struct {
 	k8sStorage ServiceStorage
 }
 
-func CreateController(k8sStorage ServiceStorage) *Controller {
-	return &Controller{
+func createController(k8sStorage ServiceStorage) *controller {
+	return &controller{
 		k8sStorage: k8sStorage,
 	}
 }
@@ -50,7 +51,7 @@ func CreateController(k8sStorage ServiceStorage) *Controller {
 // Inventory.
 //
 
-func (c *Controller) Inventory(w http.ResponseWriter, r *http.Request) {
+func (c *controller) Inventory(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inventory")
 
 	i, err := c.k8sStorage.GetInventory()
@@ -66,7 +67,7 @@ func (c *Controller) Inventory(w http.ResponseWriter, r *http.Request) {
 // Service Broker.
 //
 
-func (c *Controller) ListServiceBrokers(w http.ResponseWriter, r *http.Request) {
+func (c *controller) ListServiceBrokers(w http.ResponseWriter, r *http.Request) {
 	l, err := c.k8sStorage.ListBrokers()
 	if err != nil {
 		log.Printf("Got Error: %#v\n", err)
@@ -76,7 +77,7 @@ func (c *Controller) ListServiceBrokers(w http.ResponseWriter, r *http.Request) 
 	utils.WriteResponse(w, 200, l)
 }
 
-func (c *Controller) GetServiceBroker(w http.ResponseWriter, r *http.Request) {
+func (c *controller) GetServiceBroker(w http.ResponseWriter, r *http.Request) {
 	id := utils.ExtractVarFromRequest(r, "broker")
 	log.Printf("GetServiceBroker: %s\n", id)
 
@@ -89,11 +90,11 @@ func (c *Controller) GetServiceBroker(w http.ResponseWriter, r *http.Request) {
 	utils.WriteResponse(w, 200, b)
 }
 
-func (c *Controller) DeleteServiceBroker(w http.ResponseWriter, r *http.Request) {
+func (c *controller) DeleteServiceBroker(w http.ResponseWriter, r *http.Request) {
 	utils.WriteResponse(w, 400, "IMPLEMENT ME")
 }
 
-func (c *Controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request) {
+func (c *controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request) {
 	id := utils.ExtractVarFromRequest(r, "broker")
 
 	sb, err := c.k8sStorage.GetBroker(id)
@@ -105,7 +106,7 @@ func (c *Controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request
 	}
 
 	// Fetch the catalog from the broker
-	u := fmt.Sprintf(CATALOG_URL_FMT_STR, sb.BrokerURL)
+	u := fmt.Sprintf(catalogURLFormatString, sb.BrokerURL)
 	req, err := http.NewRequest("GET", u, nil)
 	req.SetBasicAuth(sb.AuthUsername, sb.AuthPassword)
 	resp, err := http.DefaultClient.Do(req)
@@ -134,10 +135,10 @@ func (c *Controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request
 // Service Instances.
 //
 
-func (c *Controller) ListServiceInstances(w http.ResponseWriter, r *http.Request) {
+func (c *controller) ListServiceInstances(w http.ResponseWriter, r *http.Request) {
 	ns := utils.ExtractVarFromRequest(r, "namespace")
 	if ns == "" {
-		ns = DEFAULT_NAMESPACE
+		ns = defaultNamespace
 	}
 	instances, err := c.k8sStorage.ListServices(ns)
 	if err != nil {
@@ -148,12 +149,12 @@ func (c *Controller) ListServiceInstances(w http.ResponseWriter, r *http.Request
 	utils.WriteResponse(w, 200, instances)
 }
 
-func (c *Controller) GetServiceInstance(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Getting Service Instance\n")
+func (c *controller) GetServiceInstance(w http.ResponseWriter, r *http.Request) {
+	log.Println("Getting Service Instance")
 	id := utils.ExtractVarFromRequest(r, "service")
 	ns := utils.ExtractVarFromRequest(r, "namespace")
 	if ns == "" {
-		ns = DEFAULT_NAMESPACE
+		ns = defaultNamespace
 	}
 
 	si, err := c.k8sStorage.GetService(ns, id)
@@ -166,14 +167,14 @@ func (c *Controller) GetServiceInstance(w http.ResponseWriter, r *http.Request) 
 	utils.WriteResponse(w, 200, si)
 }
 
-func (c *Controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
+func (c *controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
 	// Currently there's no difference between create / update,
 	// but for prepping for future, split these into two different
 	// methods for now.
 	return c.createServiceInstance(in)
 }
 
-func (c *Controller) createServiceInstance(in *scmodel.ServiceInstance) error {
+func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	params := in.Parameters
 
 	// Inject all the bindings that are supposed to be injected (IE, these are direction 'FROM').
@@ -219,13 +220,13 @@ func (c *Controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 		return err
 	}
 
-	url := fmt.Sprintf(SERVICE_INSTANCE_FMT_STR, broker.BrokerURL, in.ID)
+	url := fmt.Sprintf(serviceInstanceFormatString, broker.BrokerURL, in.ID)
 
 	// TODO: Handle the auth
-	createHttpReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
+	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
 	client := &http.Client{}
 	log.Printf("Doing a request to: %s\n", url)
-	resp, err := client.Do(createHttpReq)
+	resp, err := client.Do(createHTTPReq)
 	if err != nil {
 		return err
 	}
@@ -240,18 +241,18 @@ func (c *Controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	return nil
 }
 
-func (c *Controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Deleting Service Instance\n")
+func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Request) {
+	log.Println("Deleting Service Instance")
 	id := utils.ExtractVarFromRequest(r, "service")
 	ns := utils.ExtractVarFromRequest(r, "namespace")
 	if ns == "" {
-		ns = DEFAULT_NAMESPACE
+		ns = defaultNamespace
 	}
 
 	si, err := c.k8sStorage.GetService(ns, id)
 	if err != nil {
 		log.Printf("Service id doesn't exist: %s\n", id)
-		err := fmt.Errorf("Service id %s doesn't exist\n", id)
+		err := fmt.Errorf("Service id %s doesn't exist", id)
 		utils.WriteResponse(w, 400, err)
 		return
 	}
@@ -267,7 +268,7 @@ func (c *Controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 
 	if len(bindings) > 0 {
 		log.Printf("There are %d active findings to this service, cowardly refusing to delete it\n", len(bindings))
-		err = fmt.Errorf("There are %d active findings to this service, cowardly refusing to delete it\n", len(bindings))
+		err = fmt.Errorf("There are %d active findings to this service, cowardly refusing to delete it", len(bindings))
 		utils.WriteResponse(w, 400, err)
 		return
 	}
@@ -280,10 +281,10 @@ func (c *Controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	url := fmt.Sprintf(SERVICE_INSTANCE_FMT_STR, broker.BrokerURL, si.ID)
+	url := fmt.Sprintf(serviceInstanceFormatString, broker.BrokerURL, si.ID)
 
 	// TODO: Handle the auth
-	deleteHttpReq, err := http.NewRequest("DELETE", url, nil)
+	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		log.Printf("Failed to create new HTTP request: %v", err)
 		utils.WriteResponse(w, 400, err)
@@ -292,7 +293,7 @@ func (c *Controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 
 	client := &http.Client{}
 	log.Printf("Doing a request to: %s\n", url)
-	resp, err := client.Do(deleteHttpReq)
+	resp, err := client.Do(deleteHTTPReq)
 	if err != nil {
 		log.Printf("Failed to DELETE: %#v\n", err)
 		utils.WriteResponse(w, 400, err)
@@ -308,7 +309,7 @@ func (c *Controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (c *Controller) ListServiceBindings(w http.ResponseWriter, r *http.Request) {
+func (c *controller) ListServiceBindings(w http.ResponseWriter, r *http.Request) {
 	l, err := c.k8sStorage.ListServiceBindings()
 	if err != nil {
 		log.Printf("Got Error: %#v\n", err)
@@ -318,8 +319,8 @@ func (c *Controller) ListServiceBindings(w http.ResponseWriter, r *http.Request)
 	utils.WriteResponse(w, 200, l)
 }
 
-func (c *Controller) GetServiceBinding(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Getting Service Binding\n")
+func (c *controller) GetServiceBinding(w http.ResponseWriter, r *http.Request) {
+	log.Println("Getting Service Binding")
 	id := utils.ExtractVarFromRequest(r, "binding")
 
 	b, err := c.k8sStorage.GetServiceBinding(id)
@@ -332,14 +333,14 @@ func (c *Controller) GetServiceBinding(w http.ResponseWriter, r *http.Request) {
 	utils.WriteResponse(w, 200, b)
 }
 
-func (c *Controller) DeleteServiceBinding(w http.ResponseWriter, r *http.Request) {
+func (c *controller) DeleteServiceBinding(w http.ResponseWriter, r *http.Request) {
 	id := utils.ExtractVarFromRequest(r, "binding")
 
 	// TODO: Update user of this binding...
 	c.k8sStorage.DeleteServiceBinding(id)
 }
 
-func (c *Controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error) {
+func (c *controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error) {
 	broker, err := c.k8sStorage.GetBrokerByService(serviceID)
 	if err != nil {
 		return nil, err
@@ -351,7 +352,7 @@ func (c *Controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error)
 // fetchServicePlanGUID fetches the GUIDs for Service and Plan, also
 // returns the name of the plan since it might get defaulted.
 // If Plan is not given and there's only one plan for a given service, we'll choose that.
-func (c *Controller) fetchServicePlanGUID(service string, plan string) (string, string, string, error) {
+func (c *controller) fetchServicePlanGUID(service string, plan string) (string, string, string, error) {
 	s, err := c.k8sStorage.GetServiceType(service)
 	if err != nil {
 		return "", "", "", err
@@ -373,7 +374,7 @@ func (c *Controller) fetchServicePlanGUID(service string, plan string) (string, 
 ///////////////////////////////////////////////////////////////////////////////
 // All the methods implementing ServiceController API go here for clarity sake.
 ///////////////////////////////////////////////////////////////////////////////
-func (c *Controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
+func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
 	serviceID, planID, planName, err := c.fetchServicePlanGUID(in.Service, in.Plan)
 	if err != nil {
 		log.Printf("Error fetching service ID: %v\n", err)
@@ -403,11 +404,11 @@ func (c *Controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmode
 	return in, c.k8sStorage.SetService(in)
 }
 
-func (c *Controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
+func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
 	log.Printf("Creating Service Binding: %v\n", in)
 
 	// Get instance information for service being bound to.
-	to, err := c.k8sStorage.GetService(DEFAULT_NAMESPACE, in.To)
+	to, err := c.k8sStorage.GetService(defaultNamespace, in.To)
 	if err != nil {
 		log.Printf("To service does not exist %s: %v\n", in.To, err)
 		return nil, err
@@ -438,13 +439,13 @@ func (c *Controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		log.Printf("Error fetching broker for service: %s : %v\n", to.Service, err)
 		return nil, err
 	}
-	url := fmt.Sprintf(BIND_FMT_STR, broker.BrokerURL, to.ID, in.ID)
+	url := fmt.Sprintf(bindingFormatString, broker.BrokerURL, to.ID, in.ID)
 
 	// TODO: Handle the auth
-	createHttpReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
+	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
 	client := &http.Client{}
 	log.Printf("Doing a request to: %s\n", url)
-	resp, err := client.Do(createHttpReq)
+	resp, err := client.Do(createHTTPReq)
 	if err != nil {
 		log.Printf("Failed to PUT: %#v\n", err)
 		return nil, err
@@ -468,7 +469,7 @@ func (c *Controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	}
 
 	// If FROM already exists, we need to update it here...
-	fromSI, err := c.k8sStorage.GetService(DEFAULT_NAMESPACE, in.From)
+	fromSI, err := c.k8sStorage.GetService(defaultNamespace, in.From)
 	if err == nil && fromSI != nil {
 		// Update the Service Instance with the new bindings
 		log.Printf("Found existing FROM Service: %s, should update it\n", fromSI.Name)
@@ -481,9 +482,9 @@ func (c *Controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	return &in.Credentials, nil
 }
 
-func (c *Controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.ServiceBroker, error) {
+func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.ServiceBroker, error) {
 	// Fetch the catalog from the broker
-	u := fmt.Sprintf(CATALOG_URL_FMT_STR, in.BrokerURL)
+	u := fmt.Sprintf(catalogURLFormatString, in.BrokerURL)
 	req, err := http.NewRequest("GET", u, nil)
 	req.SetBasicAuth(in.AuthUsername, in.AuthPassword)
 	resp, err := http.DefaultClient.Do(req)

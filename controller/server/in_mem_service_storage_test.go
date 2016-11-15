@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	BROKER_UUID   = "126b8154-a24a-4e79-9185-3df2eb4d18a8"
-	BROKER_UUID_2 = "2b0c42ed-c43a-4724-b883-e5ba878a8bfd"
+	brokerOneUUID = "126b8154-a24a-4e79-9185-3df2eb4d18a8"
+	brokerTwoUUID = "2b0c42ed-c43a-4724-b883-e5ba878a8bfd"
 )
 
 func TestNoBrokers(t *testing.T) {
@@ -39,7 +39,7 @@ func TestNoBrokers(t *testing.T) {
 	}
 	b, err := s.GetBroker("NOT THERE")
 	if err == nil {
-		t.Fatalf("GetBroker did not fail")
+		t.Fatal("GetBroker did not fail")
 	}
 	if b != nil {
 		t.Fatalf("Got back a broker: %#v", b)
@@ -65,7 +65,7 @@ func TestAddBroker(t *testing.T) {
 		t.Fatalf("GetBroker failed: %#v", err)
 	}
 	if b2 == nil {
-		t.Fatalf("Did not get back a broker")
+		t.Fatal("Did not get back a broker")
 	}
 	if strings.Compare(b2.Name, b.Name) != 0 {
 		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, b2.Name)
@@ -91,14 +91,14 @@ func TestAddDuplicateBroker(t *testing.T) {
 		t.Fatalf("GetBroker failed: %#v", err)
 	}
 	if b2 == nil {
-		t.Fatalf("Did not get back a broker")
+		t.Fatal("Did not get back a broker")
 	}
 	if strings.Compare(b2.Name, b.Name) != 0 {
 		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, b2.Name)
 	}
 	err = s.AddBroker(b, &cat)
 	if err == nil {
-		t.Fatalf("AddBroker did not fail with duplicate")
+		t.Fatal("AddBroker did not fail with duplicate")
 	}
 	if !strings.Contains(err.Error(), "already exists") {
 		t.Fatalf("Unexpected error, wanted 'already exists' but got %#v", err)
@@ -150,7 +150,7 @@ func TestUpdateBroker(t *testing.T) {
 		t.Fatalf("GetBroker failed: %#v", err)
 	}
 	if b3 == nil {
-		t.Fatalf("Did not get back a broker")
+		t.Fatal("Did not get back a broker")
 	}
 	if strings.Compare(b3.Name, b2.Name) != 0 {
 		t.Fatalf("Names don't match, expected: '%s', got '%s'", b2.Name, b3.Name)
@@ -179,7 +179,7 @@ func TestUpdateNonExistentBroker(t *testing.T) {
 	err := s.UpdateBroker(b, &cat)
 
 	if err == nil {
-		t.Fatalf("UpdateBroker did not fail with duplicate")
+		t.Fatal("UpdateBroker did not fail with duplicate")
 	}
 	if !strings.Contains(err.Error(), "does not exist") {
 		t.Fatalf("Unexpected error, wanted 'does not exist' but got %#v", err)
@@ -188,7 +188,7 @@ func TestUpdateNonExistentBroker(t *testing.T) {
 
 func TestDeleteBroker(t *testing.T) {
 	s := CreateInMemServiceStorage()
-	b := &model.ServiceBroker{GUID: BROKER_UUID}
+	b := &model.ServiceBroker{GUID: brokerOneUUID}
 	cat := model.Catalog{
 		Services: []*model.Service{},
 	}
@@ -200,34 +200,34 @@ func TestDeleteBroker(t *testing.T) {
 	if len(l) != 1 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	b2, err := s.GetBroker(BROKER_UUID)
+	b2, err := s.GetBroker(brokerOneUUID)
 	if err != nil {
 		t.Fatalf("GetBroker failed: %#v", err)
 	}
 	if b2 == nil {
-		t.Fatalf("Did not get back a broker")
+		t.Fatal("Did not get back a broker")
 	}
 	if strings.Compare(b2.Name, b.Name) != 0 {
 		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, b2.Name)
 	}
-	err = s.DeleteBroker(BROKER_UUID)
+	err = s.DeleteBroker(brokerOneUUID)
 	if err != nil {
-		t.Fatalf("Failed to delete broker: %s : %#v", BROKER_UUID, err)
+		t.Fatalf("Failed to delete broker: %s : %#v", brokerOneUUID, err)
 	}
 	l, err = s.ListBrokers()
 	if len(l) != 0 {
 		t.Fatalf("Expected 0 broker, got %d", len(l))
 	}
-	b2, err = s.GetBroker(BROKER_UUID)
+	b2, err = s.GetBroker(brokerOneUUID)
 	if err == nil {
-		t.Fatalf("GetBroker returned a broker when there should be none")
+		t.Fatal("GetBroker returned a broker when there should be none")
 	}
 }
 
 func TestDeleteBrokerMultiple(t *testing.T) {
 	s := CreateInMemServiceStorage()
-	b := &model.ServiceBroker{GUID: BROKER_UUID}
-	b2 := &model.ServiceBroker{GUID: BROKER_UUID_2}
+	b := &model.ServiceBroker{GUID: brokerOneUUID}
+	b2 := &model.ServiceBroker{GUID: brokerTwoUUID}
 	cat := model.Catalog{
 		Services: []*model.Service{{Name: "first"}},
 	}
@@ -246,12 +246,12 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 	if len(l) != 2 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	bRet, err := s.GetBroker(BROKER_UUID)
+	bRet, err := s.GetBroker(brokerOneUUID)
 	if err != nil {
 		t.Fatalf("GetBroker failed: %#v", err)
 	}
 	if bRet == nil {
-		t.Fatalf("Did not get back a broker")
+		t.Fatal("Did not get back a broker")
 	}
 	if strings.Compare(bRet.Name, b.Name) != 0 {
 		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, bRet.Name)
@@ -264,25 +264,25 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 		t.Fatalf("Expected 2 services from GetInventory, got %s ", len(catRet.Services))
 	}
 
-	err = s.DeleteBroker(BROKER_UUID)
+	err = s.DeleteBroker(brokerOneUUID)
 	if err != nil {
-		t.Fatalf("Failed to delete broker: %s : %#v", BROKER_UUID, err)
+		t.Fatalf("Failed to delete broker: %s : %#v", brokerOneUUID, err)
 	}
 	l, err = s.ListBrokers()
 	if len(l) != 1 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	bRet, err = s.GetBroker(BROKER_UUID)
+	bRet, err = s.GetBroker(brokerOneUUID)
 	if err == nil {
-		t.Fatalf("GetBroker returned a broker when there should be none")
+		t.Fatal("GetBroker returned a broker when there should be none")
 	}
-	bRet, err = s.GetBroker(BROKER_UUID_2)
+	bRet, err = s.GetBroker(brokerTwoUUID)
 	if err != nil {
-		t.Fatalf("GetBroker failed for entry that should be there")
+		t.Fatal("GetBroker failed for entry that should be there")
 	}
 
 	if bRet == nil {
-		t.Fatalf("Did not get back a broker")
+		t.Fatal("Did not get back a broker")
 	}
 	if strings.Compare(bRet.Name, b2.Name) != 0 {
 		t.Fatalf("Names don't match, expected: '%s', got '%s'", b2.Name, bRet.Name)

@@ -204,7 +204,7 @@ func initCluster(clientset *kubernetes.Clientset) error {
 }
 
 func checkCluster(client *dynamic.Client) error {
-	log.Printf("initCluster\n")
+	log.Println("initCluster")
 
 	for _, rt := range resourceTypes {
 		c := getResourceClient(client, rt, "default")
@@ -250,7 +250,7 @@ func (w *Watcher) Watch(t resourceType, ns string, wcb watchCallback) error {
 
 func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 	for {
-		log.Printf("List all existing Deployments\n")
+		log.Println("List all existing Deployments")
 		// First do List on the resource to bring things up to date.
 		l, err := di.List(api.ListOptions{})
 		for _, d := range l.Items {
@@ -262,30 +262,30 @@ func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 			wcb(event)
 		}
 
-		watch, err := di.Watch(api.ListOptions{})
+		w, err := di.Watch(api.ListOptions{})
 		if err != nil {
 			log.Printf("Failed to start a watch: %v\n", err)
 			continue
 		}
-		c := watch.ResultChan()
+		c := w.ResultChan()
 
-		log.Printf("Entering watch loop\n")
+		log.Println("Entering watch loop")
 		done := false
 		for {
 			select {
 			case <-time.After(1 * time.Minute):
-				log.Printf("*** select heartbeat ***\n")
+				log.Println("*** select heartbeat ***")
 			case e := <-c:
 				log.Printf("Watch called with event Type: %s\n", e.Type)
 				if e.Object == nil {
-					log.Printf("Watch appears to have failed, restarting watch loop...\n")
+					log.Println("Watch appears to have failed, restarting watch loop...")
 					done = true
 				} else {
 					wcb(e)
 				}
 			}
 			if done {
-				log.Printf("Bailing from select for loop\n")
+				log.Println("Bailing from select for loop")
 				break
 			}
 		}
@@ -308,30 +308,30 @@ func thirdPartyWatcher(rc *dynamic.ResourceClient, wcb watchCallback) {
 			}
 
 		*/
-		watch, err := rc.Watch(&v1.ListOptions{})
+		w, err := rc.Watch(&v1.ListOptions{})
 		if err != nil {
 			log.Printf("Failed to start a watch: %v\n", err)
 			continue
 		}
-		c := watch.ResultChan()
+		c := w.ResultChan()
 
-		log.Printf("Entering watch loop\n")
+		log.Println("Entering watch loop")
 		done := false
 		for {
 			select {
 			case <-time.After(1 * time.Minute):
-				log.Printf("*** select heartbeat ***\n")
+				log.Println("*** select heartbeat ***")
 			case e := <-c:
 				log.Printf("Watch called with event Type: %s\n", e.Type)
 				if e.Object == nil {
-					log.Printf("Watch appears to have failed, restarting watch loop...\n")
+					log.Println("Watch appears to have failed, restarting watch loop...")
 					done = true
 				} else {
 					wcb(e)
 				}
 			}
 			if done {
-				log.Printf("Bailing from select for loop\n")
+				log.Println("Bailing from select for loop")
 				break
 			}
 		}

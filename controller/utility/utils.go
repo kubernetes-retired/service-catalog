@@ -25,6 +25,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// WriteResponse returns an HTTP response with the specified response code
+// and the body created by marshalling the object as JSON.
 func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
 	data, err := json.Marshal(object)
 	if err != nil {
@@ -36,6 +38,8 @@ func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
 	fmt.Fprintf(w, string(data))
 }
 
+// BodyToObject reads the HTTP request body JSON and parses
+// it into the provided object.
 func BodyToObject(r *http.Request, object interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -50,6 +54,8 @@ func BodyToObject(r *http.Request, object interface{}) error {
 	return nil
 }
 
+// ResponseBodyToObject reads the HTTP response body JSON and parses
+// it into the provided object.
 func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -64,6 +70,7 @@ func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	return nil
 }
 
+// ExtractVarFromRequest extracts URL path variables from the HTTP request.
 func ExtractVarFromRequest(r *http.Request, varName string) string {
 	return mux.Vars(r)[varName]
 }

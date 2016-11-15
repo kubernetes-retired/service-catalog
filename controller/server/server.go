@@ -28,17 +28,19 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Server is an instance of the service controller server.
 type Server struct {
-	controller  *Controller
-	httpHandler *HttpHandler
+	controller  *controller
+	httpHandler *httpHandler
 	port        int
-	k8sHandler  *K8sHandler
+	k8sHandler  interface{}
 }
 
+// CreateServer creates an instance of the service controller server.
 func CreateServer(serviceStorage ServiceStorage, port int, w *watch.Watcher) (*Server, error) {
 	k8sStorage := NewThirdPartyServiceStorage(w)
-	c := CreateController(k8sStorage)
-	k8sHandler, err := NewK8sHandler(c, w)
+	c := createController(k8sStorage)
+	k8sHandler, err := createK8sHandler(c, w)
 	if err != nil {
 		log.Printf("Couldn't create the k8s native handler, watcher will not be installed: %v\n", err)
 		return nil, err
@@ -46,11 +48,12 @@ func CreateServer(serviceStorage ServiceStorage, port int, w *watch.Watcher) (*S
 	return &Server{
 		controller:  c,
 		port:        port,
-		httpHandler: NewHttpHandler(c, k8sStorage),
+		httpHandler: newHTTPHandler(c, k8sStorage),
 		k8sHandler:  k8sHandler,
 	}, nil
 }
 
+// Start starts the server and begins listening on a TCP port.
 func (s *Server) Start() {
 	router := mux.NewRouter()
 

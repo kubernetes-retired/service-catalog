@@ -15,7 +15,6 @@
 BIN=controller
 PKG=github.com/kubernetes-incubator/service-catalog/controller
 DOCKER=$(BIN)
-GOLINT_IGNORE_ERRORS=1
 
 include ../script/Makefile.mk
 

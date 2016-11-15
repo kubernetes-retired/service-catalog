@@ -32,13 +32,11 @@ import (
 	"k8s.io/client-go/1.5/tools/clientcmd"
 )
 
-type Options struct {
+var options struct {
 	ConfigPath string
 	Port       int
 	kubeconfig string
 }
-
-var options Options
 
 func init() {
 	flag.StringVar(&options.ConfigPath, "c", ".", "use '-c' option to specify the config file path")

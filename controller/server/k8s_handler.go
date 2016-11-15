@@ -18,7 +18,7 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 
 	"github.com/kubernetes-incubator/service-catalog/controller/watch"
@@ -28,44 +28,44 @@ import (
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
 )
 
-type K8sHandler struct {
+type k8sHandler struct {
 	controller ServiceController
 	watcher    *watch.Watcher
 }
 
-func NewK8sHandler(c ServiceController, w *watch.Watcher) (*K8sHandler, error) {
-	ret := &K8sHandler{
+func createK8sHandler(c ServiceController, w *watch.Watcher) (interface{}, error) {
+	ret := &k8sHandler{
 		controller: c,
 		watcher:    w,
 	}
 	if w != nil {
-		log.Printf("Starting to watch for new Service Brokers\n")
-		err := w.Watch(watch.ServiceBroker, "default", ret.ServiceBrokerCallback)
+		log.Println("Starting to watch for new Service Brokers")
+		err := w.Watch(watch.ServiceBroker, "default", ret.serviceBrokerCallback)
 		if err != nil {
 			log.Printf("Failed to start a watcher for Service Brokers: %v\n", err)
 		}
 
-		log.Printf("Starting to watch for new Service Instances\n")
-		err = w.Watch(watch.ServiceInstance, "default", ret.ServiceInstanceCallback)
+		log.Println("Starting to watch for new Service Instances")
+		err = w.Watch(watch.ServiceInstance, "default", ret.serviceInstanceCallback)
 		if err != nil {
 			log.Printf("Failed to start a watcher for Service Instances: %v\n", err)
 		}
 
-		log.Printf("Starting to watch for new Service Bindings\n")
-		err = w.Watch(watch.ServiceBinding, "default", ret.ServiceBindingCallback)
+		log.Println("Starting to watch for new Service Bindings")
+		err = w.Watch(watch.ServiceBinding, "default", ret.serviceBindingCallback)
 		if err != nil {
 			log.Printf("Failed to start a watcher for Service Bindings: %v\n", err)
 			return nil, err
 		}
 	} else {
-		log.Printf("No watcher (was nil), so not interfacing with kubernetes directly\n")
-		return nil, fmt.Errorf("No watcher (was nil)")
+		log.Println("No watcher (was nil), so not interfacing with kubernetes directly")
+		return nil, errors.New("No watcher (was nil)")
 	}
 
 	return ret, nil
 }
 
-func (s *K8sHandler) ServiceInstanceCallback(e k8swatch.Event) error {
+func (s *k8sHandler) serviceInstanceCallback(e k8swatch.Event) error {
 	var si scmodel.ServiceInstance
 	err := TPRObjectToSCObject(e.Object, &si)
 	if err != nil {
@@ -87,7 +87,7 @@ func (s *K8sHandler) ServiceInstanceCallback(e k8swatch.Event) error {
 	return nil
 }
 
-func (s *K8sHandler) ServiceBindingCallback(e k8swatch.Event) error {
+func (s *k8sHandler) serviceBindingCallback(e k8swatch.Event) error {
 	var sb scmodel.ServiceBinding
 	err := TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
@@ -109,7 +109,7 @@ func (s *K8sHandler) ServiceBindingCallback(e k8swatch.Event) error {
 	return nil
 }
 
-func (s *K8sHandler) ServiceBrokerCallback(e k8swatch.Event) error {
+func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
 	var sb scmodel.ServiceBroker
 	err := TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
@@ -125,13 +125,13 @@ func (s *K8sHandler) ServiceBrokerCallback(e k8swatch.Event) error {
 		}
 		log.Printf("Created Service Broker: %s\n", created.Name)
 	} else {
-		return fmt.Errorf("Delete Service Broker not implemented yet")
+		return errors.New("Delete Service Broker not implemented yet")
 	}
 	return nil
 }
 
-//  TPRObjectToSCObject converts a Kubernetes Third Party Resource
-//  object into a Service Controller model object
+// TPRObjectToSCObject converts a Kubernetes Third Party Resource
+// object into a Service Controller model object
 func TPRObjectToSCObject(o runtime.Object, object interface{}) error {
 	m, err := json.Marshal(o)
 	if err != nil {
