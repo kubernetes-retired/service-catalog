@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  namespace: {{ default "catalog" .Values.namespace }}
+  name: controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: controller
+    spec:
+      containers:
+      - name: controller
+        image: {{ .Values.registry }}/controller:{{ if .Values.controllerVersion }}{{ .Values.controllerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 10000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: {{ default "catalog" .Values.namespace }}
+  name: controller
+spec:
+{{ if .Values.debug }}
+  type: LoadBalancer
+{{ end }}
+  selector:
+    app: controller
+  ports:
+  - protocol: TCP
+    port: 10000
+    targetPort: 10000

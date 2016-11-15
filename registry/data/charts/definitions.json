@@ -1,0 +1,47 @@
+[
+  {
+    "name": "booksbe",
+    "id": "5F21BAA6-CF52-43DF-8797-3A7D3C1F5629",
+    "description": "Bookstore MySQL database",
+    "plans": [
+      {
+        "name": "default",
+        "id": "0CEC1E1F-CAFA-40C7-9761-491D0B164204",
+        "metadata": {
+          "instanceType": "gs://helm-sb-test/booksbe-0.0.2.tgz"
+        }
+      }
+    ],
+    "bindable": true
+  },
+  {
+    "name": "booksfe",
+    "id": "1407E960-13C4-447E-A0AA-A2F51F06D3B8",
+    "description": "Bookstore Node.js frontend",
+    "plans": [
+      {
+        "name": "default",
+        "id": "70E9DB0B-82BA-402E-A9E4-B460C3199E97",
+        "metadata": {
+          "instanceType": "gs://helm-sb-test/booksfe-0.0.3.tgz"
+        }
+      }
+    ],
+    "bindable": false
+  },
+  {
+    "name": "binding-consumer",
+    "id": "1CE83BF5-8368-45B6-9A47-58F9FAF4D9E1",
+    "description": "Kubernetes binding consumer",
+    "plans": [
+      {
+        "name": "default",
+        "id": "67EBBF95-D153-4A3F-8FA8-43B1299CC27F",
+        "metadata": {
+          "instanceType": "gs://helm-sb-test/user-provided-client-0.0.1.tgz"
+        }
+      }
+    ],
+    "bindable": false
+  }
+]

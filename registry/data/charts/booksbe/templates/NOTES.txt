@@ -1,0 +1,4 @@
+hostname: {{template "fullname" .}}
+port: 3306
+username: {{ .Values.username }}
+password: {{ .Values.password }}

@@ -1,0 +1,15 @@
+imports:
+- path: dataset.jinja
+
+resources:
+- name: bqtest
+  type: dataset.jinja
+  properties:
+    dataset: test_dataset
+    table: test_table
+
+outputs:
+- name: ip
+  value: $(ref.bqtest.ip)
+- name: port
+  value: $(ref.bqtest.port)

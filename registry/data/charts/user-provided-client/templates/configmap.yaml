@@ -1,0 +1,11 @@
+namespace: default
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.clientName }}
+data:
+{{ range $service, $cred := .Values.bindings }}
+{{ range $k, $v := $cred }}
+  {{ $service }}.{{ $k }}: "{{ $v }}"
+{{ end }}
+{{ end }}

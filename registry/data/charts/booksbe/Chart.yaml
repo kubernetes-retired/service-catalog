@@ -1,0 +1,3 @@
+description: A Bookstore MySQL Helm chart for Kubernetes.
+name: booksbe
+version: 0.0.2

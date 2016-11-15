@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{template "fullname" .}}
+  annotations:
+    protocol: tcp
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{template "fullname" .}}
+    spec:
+      volumes:
+      - name: sql-volume
+        configMap:
+          name: {{template "fullname" .}}
+      containers:
+      - name: mysql
+        image: mysql:{{ .Values.version }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: {{ .Values.rootPassword }}
+        - name: MYSQL_USER
+          value: {{ .Values.username }}
+        - name: MYSQL_PASSWORD
+          value: {{ .Values.password }}
+        - name: MYSQL_DATABASE
+          value: {{ .Values.database }}
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: sql-volume
+          readOnly: true
+          mountPath: /docker-entrypoint-initdb.d

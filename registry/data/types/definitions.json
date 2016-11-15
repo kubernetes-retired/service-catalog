@@ -1,0 +1,18 @@
+[
+  {
+    "name": "bq-dataset",
+    "id": "2C8EA5D2-F0A6-40BF-ACB7-8D0C3B484586",
+    "description": "BigQuery Dataset with service account access",
+    "plans": [
+      {
+        "name": "default",
+        "id": "FA6B20EC-8BE6-425E-B95A-64A68AE2571C",
+        "metadata": {
+          "instanceType": "gs://cf-catalog/bq-dataset/dataset.jinja",
+          "bindingType": "gs://cf-catalog/bq-dataset/dataset-binding.jinja"
+        }
+      }
+    ],
+    "bindable": true
+  }
+]
