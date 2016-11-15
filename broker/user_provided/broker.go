@@ -27,11 +27,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )
 
-type Options struct {
+var options struct {
 	Port int
 }
-
-var options Options
 
 func init() {
 	flag.IntVar(&options.Port, "port", 8005, "use '--port' option to specify the port for broker to listen on")
