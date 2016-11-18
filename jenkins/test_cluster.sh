@@ -41,6 +41,22 @@ done
 [[ -n "${NAMESPACE}" ]] \
   || error_exit "Missing required --namespace parameter"
 
+function print_logs() {
+  # Print logs for controller & broker on error
+  if [[ $? -ne 0 ]]; then
+    local pods_list="$(kubectl get pods --namespace "${NAMESPACE}")"
+    local controller_pod="$(echo ${pods_list} | sed 's/.*\(controller[a-z0-9\-]*\).*/\1/')"
+    local broker_pod="$(echo ${pods_list} | sed 's/.*\(k8s-broker[a-z0-9\-]*\).*/\1/')"
+
+    echo '#### CONTROLLER LOGS ####'
+    kubectl logs --namespace "${NAMESPACE}" "${controller_pod}"
+    echo '#### BROKER LOGS ####'
+    kubectl logs --namespace "${NAMESPACE}" "${broker_pod}"
+  fi
+}
+
+trap print_logs EXIT
+
 GCR="${GCR:-gcr.io/${PROJECT}/catalog}"
 VERSION="${VERSION:-$(git rev-parse --verify HEAD)}" \
   || error_exit 'Cannot determine Git commit SHA'
