@@ -91,51 +91,45 @@ node {
     def clustername = "jenkins-" + sh([returnStdout: true, script: '''openssl rand \
         -base64 100 | tr -dc a-z0-9 | cut -c -25''']).trim()
 
-    // These are done in parallel since creating the cluster takes a while, and the build
-    // doesn't depend on it.
-    parallel(
-      'Initialize Kubernetes cluster': {
-        withCredentials([file(credentialsId: "${test_account}", variable: 'TEST_SERVICE_ACCOUNT')]) {
-          sh """${env.ROOT}/hack/init_cluster.sh ${clustername} \
-                --project ${test_project} \
-                --zone ${test_zone} \
-                --credentials ${env.TEST_SERVICE_ACCOUNT}"""
-        }
-      },
-      'Build': {
-        try {
+    try {
+      // These are done in parallel since creating the cluster takes a while,
+      // and the build doesn't depend on it.
+      parallel(
+        'Cluster': {
+          withCredentials([file(credentialsId: "${test_account}", variable: 'TEST_SERVICE_ACCOUNT')]) {
+            sh """${env.ROOT}/hack/init_cluster.sh ${clustername} \
+                  --project ${test_project} \
+                  --zone ${test_zone} \
+                  --credentials ${env.TEST_SERVICE_ACCOUNT}"""
+          }
+        },
+        'Build': {
           sh """${env.ROOT}/hack/build.sh --no-docker-compile \
                 --project ${test_project}"""
-        } catch (Exception e) {
-          currentBuild.result = 'FAILURE'
-          notifyBuild(currentBuild.result)
         }
-      }
-    )
+      )
 
-    if (currentBuild.result == 'FAILURE') {
-      sh """${env.ROOT}/hack/cleanup_cluster.sh ${clustername} \
-            --project ${test_project} \
-            --zone ${test_zone}"""
-      error 'Build failed.'
-    }
-
-    // Run end-2-end tests on the deployed cluster.
-    try {
+      // Run end-2-end tests on the deployed cluster.
       sh """${env.ROOT}/hack/test_deploy.sh \
             --project ${test_project} \
             --namespace ${namespace}
       """
     } catch (Exception e) {
       currentBuild.result = 'FAILURE'
-      notifyBuild(currentBuild.result)
-      error 'End-to-end tests failed.'
     } finally {
-      sh """${env.ROOT}/hack/cleanup_cluster.sh ${clustername} \
-            --project ${test_project} \
-            --zone ${test_zone}"""
+      try {
+        sh """${env.ROOT}/hack/cleanup_cluster.sh ${clustername} \
+              --project ${test_project} \
+              --zone ${test_zone}"""
+      } catch (Exception e) {
+        currentBuild.result = 'FAILURE'
+      }
     }
 
     notifyBuild(currentBuild.result)
+
+    if (currentBuild.result == 'FAILURE') {
+      error 'Build failed.'
+    }
   }
 }
