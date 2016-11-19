@@ -46,15 +46,32 @@ type BrokerSpec struct {
 }
 
 type BrokerStatus struct {
-	State BrokerState
+	Conditions []BrokerCondition
 }
 
-type BrokerState string
+type BrokerCondition struct {
+	Type    BrokerConditionType
+	Status  ConditionStatus
+	Reason  string
+	Message string
+}
+
+type BrokerConditionType string
 
 const (
-	BrokerStatePending   BrokerState = "Pending"
-	BrokerStateAvailable BrokerState = "Available"
-	BrokerStateFailed    BrokerState = "Failed"
+	BrokerConditionReady BrokerConditionType = "Ready"
+)
+
+type ConditionStatus string
+
+// These are valid condition statuses. "ConditionTrue" means a resource is in the condition;
+// "ConditionFalse" means a resource is not in the condition; "ConditionUnknown" means kubernetes
+// can't decide if a resource is in the condition or not. In the future, we could add other
+// intermediate conditions, e.g. ConditionDegraded.
+const (
+	ConditionTrue    ConditionStatus = "True"
+	ConditionFalse   ConditionStatus = "False"
+	ConditionUnknown ConditionStatus = "Unknown"
 )
 
 type ServiceClass struct {
@@ -136,15 +153,24 @@ type InstanceSpec struct {
 }
 
 type InstanceStatus struct {
-	State InstanceState
+	Conditions []InstanceCondition
 }
 
-type InstanceState string
+type InstanceCondition struct {
+	Type    InstanceConditionType
+	Status  ConditionStatus
+	Reason  string
+	Message string
+}
+
+type InstanceConditionType string
 
 const (
-	InstanceStatePending     InstanceState = "Pending"
-	InstanceStateProvisioned InstanceState = "Provisioned"
-	InstanceStateFailed      InstanceState = "Failed"
+	InstanceConditionProvisioning      InstanceConditionType = "Provisioning"
+	InstanceConditionReady             InstanceConditionType = "Ready"
+	InstanceConditionProvisionFailed   InstanceConditionType = "ProvisionFailed"
+	InstanceConditionDeprovisioning    InstanceConditionType = "Deprovisioning"
+	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
 type Binding struct {
@@ -178,15 +204,21 @@ type BindingSpec struct {
 }
 
 type BindingStatus struct {
-	State BindingState
+	Conditions []BindingCondition
 }
 
-type BindingState string
+type BindingCondition struct {
+	Type    BindingConditionType
+	Status  ConditionStatus
+	Reason  string
+	Message string
+}
+
+type BindingConditionType string
 
 const (
-	BindingStatePending BindingState = "Pending"
-	BindingStateBound   BindingState = "Bound"
-	BindingStateFailed  BindingState = "Failed"
+	BindingConditionReady  BindingConditionType = "Ready"
+	BindingConditionFailed BindingConditionType = "Failed"
 )
 
 // Core resource; prototype here for now
