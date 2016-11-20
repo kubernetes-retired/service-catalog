@@ -120,7 +120,7 @@ IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
 
 echo 'Waiting for frontend service to unblock...'
 wait_for_expected_output -x -e 'blocked' -n 20 -s 30 -t 60 \
-    curl "http://${IP}:8080/shelves" \
+    curl --silent "http://${IP}:8080/shelves" \
   || error_exit 'Access to frontend service still blocked after unexpected amount of time.'
 
 echo 'Deployment to Kubernetes cluster succeeded.'
