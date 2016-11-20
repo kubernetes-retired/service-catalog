@@ -76,10 +76,10 @@ func main() {
 		panic(fmt.Sprintf("Failed to create a watcher: %v\n", err))
 	}
 
-	s, err := server.CreateServer(server.CreateInMemServiceStorage(), options.Port, w)
+	s, err := server.CreateServer(server.CreateInMemServiceStorage(), w)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating server [%s]...", err.Error))
 	}
 
-	s.Start()
+	s.Start(options.Port)
 }

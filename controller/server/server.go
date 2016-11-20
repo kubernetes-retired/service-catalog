@@ -29,12 +29,11 @@ import (
 // Server is an instance of the service controller server.
 type Server struct {
 	controller *controller
-	port       int
 	k8sHandler *k8sHandler
 }
 
 // CreateServer creates an instance of the service controller server.
-func CreateServer(serviceStorage ServiceStorage, port int, w *watch.Watcher) (*Server, error) {
+func CreateServer(serviceStorage ServiceStorage, w *watch.Watcher) (*Server, error) {
 	k8sStorage := NewThirdPartyServiceStorage(w)
 	c := createController(k8sStorage)
 	k8sHandler, err := createK8sHandler(c, w)
@@ -44,18 +43,17 @@ func CreateServer(serviceStorage ServiceStorage, port int, w *watch.Watcher) (*S
 	}
 	return &Server{
 		controller: c,
-		port:       port,
 		k8sHandler: k8sHandler,
 	}, nil
 }
 
 // Start starts the server and begins listening on a TCP port.
-func (s *Server) Start() {
+func (s *Server) Start(serverPort int) {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 	router.HandleFunc("/healthz", healthZHandler).Methods("GET")
 
-	port := strconv.Itoa(s.port)
+	port := strconv.Itoa(serverPort)
 	log.Println("Server started on port " + port)
 	err := http.ListenAndServe(":"+port, nil)
 	log.Println(err.Error())
