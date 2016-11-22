@@ -70,7 +70,8 @@ node {
         },
         'Build': {
           sh """${env.ROOT}/hack/build.sh --no-docker-compile \
-                --project ${test_project}"""
+                --project ${test_project} \
+                --coverage '${env.WORKSPACE}/coverage.html'"""
         }
       )
 
@@ -95,4 +96,6 @@ node {
       error 'Build failed.'
     }
   }
+
+  archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true, onlyIfSuccessful: true
 }
