@@ -35,9 +35,6 @@ type userProvidedController struct {
 	instanceMap map[string]*userProvidedServiceInstance
 }
 
-// Verify that Controller implements the broker Controller interface.
-var _ controller.Controller = (*userProvidedController)(nil)
-
 // CreateController creates an instance of a User Provided service broker controller.
 func CreateController() controller.Controller {
 	var instanceMap = make(map[string]*userProvidedServiceInstance)

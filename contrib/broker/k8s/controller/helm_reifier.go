@@ -52,9 +52,6 @@ type helmReifier struct {
 	cmd    string
 }
 
-// Verify that HelmReifier implements the Reifier interface
-var _ Reifier = (*helmReifier)(nil)
-
 // NewHelmReifier creates an instance of a Reifier interface which uses Helm
 // as the underlying deployment implementation.
 func NewHelmReifier(client string, server string) Reifier {
