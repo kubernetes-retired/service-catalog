@@ -17,9 +17,9 @@ include ./script/Makefile.mk
 # Directories that the make will recurse into.
 DIRS := \
   registry \
-  broker/k8s \
-  broker/user_provided \
-  broker/server \
+  contrib/broker/k8s \
+  contrib/broker/user_provided \
+  contrib/broker/server \
   controller
 
 ALL := all build build-linux build-darwin clean docker push test lint

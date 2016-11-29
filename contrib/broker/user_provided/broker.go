@@ -22,8 +22,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/kubernetes-incubator/service-catalog/broker/server"
-	"github.com/kubernetes-incubator/service-catalog/broker/user_provided/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/broker/server"
+	"github.com/kubernetes-incubator/service-catalog/contrib/broker/user_provided/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )
 

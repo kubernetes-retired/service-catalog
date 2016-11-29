@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/kubernetes-incubator/service-catalog/broker/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 
 	"errors"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
