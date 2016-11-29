@@ -106,13 +106,19 @@ function wait_for_expected_output() {
 
   if [[ -n "${negate:-}" ]]; then
     retry -n ${count} -s ${sleep_amount} -t ${max_sleep} \
-        output_does_not_contain_substring -e "${expected}" "${@}" \
-      || { echo 'Retry timed out.'; return 1; }
+        output_does_not_contain_substring -e "${expected}" "${@}" > /dev/null \
+      && return 0
+
+    echo "Waited unsuccessfully for no occurrence of \"${expected}\" in: \"$("${@}")\""
   else
     retry -n ${count} -s ${sleep_amount} -t ${max_sleep} \
-        output_contains_substring -e "${expected}" "${@}" \
-      || { echo 'Retry timed out.'; return 1; }
+        output_contains_substring -e "${expected}" "${@}" > /dev/null \
+      && return 0
+
+    echo "Waited unsuccessfully for occurrence of \"${expected}\" in: \"$("${@}")\""
   fi
+
+  return 1
 }
 
 function output_contains_substring() {
