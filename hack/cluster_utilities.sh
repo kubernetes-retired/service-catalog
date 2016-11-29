@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ux
+set -u
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 . "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
@@ -33,4 +35,14 @@ function wipe_cluster() {
       kubectl delete namespace "${namespace}"
     fi
   done
+
+  kubectl delete serviceinstances,serviceclasses,servicebindings,servicebrokers --all #TODO: Eventually this should work.
+
+  # Temporarily, delete all by name.
+  kubectl delete serviceinstances backend frontend
+  kubectl delete serviceclasses binding-consumer booksbe booksfe user-provided-service
+  kubectl delete servicebindings database
+  kubectl delete servicebrokers k8s ups
+
+  return 0
 }

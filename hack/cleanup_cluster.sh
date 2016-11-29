@@ -15,6 +15,8 @@
 
 set -u
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 . "${ROOT}/hack/cluster_utilities.sh" || { echo 'Cannot load cluster utilities'; exit 1; }
 . "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
@@ -22,22 +24,39 @@ while [[ $# -ne 0 ]]; do
   case "$1" in
     --project)    PROJECT="$2" ; shift ;;
     --zone)       ZONE="$2" ; shift ;;
+    --kubeconfig) CONFIG="$2" ; shift ;;
     *)            CLUSTERNAME="$1" ;;
   esac
   shift
 done
 
-[[ -n "${CLUSTERNAME:-}" ]] \
-  || { echo 'Cluster name must be provided.'; exit 1; }
+DELETECONFIG='NO'
 
-[[ -n "${ZONE:-}" ]] \
-  || { echo 'Zone must be provided.'; exit 1; }
+if [[ -n "${CONFIG:-}" ]]; then
+  CONTEXT="$(KUBECONFIG="${CONFIG}" kubectl config current-context)"
 
-[[ -n "${PROJECT:-}" ]] \
-  || { echo 'Project must be provided.'; exit 1; }
+  CLUSTERNAME="$(echo "${CONTEXT}" | sed 's/.*_\(.*\)/\1/')"
+  ZONE="$(echo "${CONTEXT}" | sed 's/.*_\(.*\)_.*/\1/')"
+  PROJECT="$(echo "${CONTEXT}" | sed 's/.*_\(.*\)_.*_.*/\1/')"
+else
+  [[ -n "${CLUSTERNAME:-}" ]] && [[ -n "${PROJECT:-}" ]] && [[ -n "${ZONE:-}" ]] \
+    || error_exit 'Either kubeconfig or cluster, project, and zone must be provided.'
 
-wipe_cluster \
+  CONFIG='/tmp/kubeconfig'
+  KUBECONFIG="${CONFIG}" gcloud container clusters get-credentials "${CLUSTERNAME}" \
+      --project "${PROJECT}" --zone "${ZONE}" \
+    || error_exit "Could not get credentials for cluster ${CLUSTERNAME} in project ${PROJECT}."
+
+  DELETECONFIG='YES'
+fi
+
+KUBECONFIG="${CONFIG}" wipe_cluster \
   || error_exit 'Failed to shutdown Kubernetes resources on cluster.'
 
 gcloud container clusters delete "${CLUSTERNAME}" --project="${PROJECT}" \
-    --zone="${ZONE}" --quiet --async
+    --zone="${ZONE}" --quiet --async \
+  || error_exit 'Failed to delete cluster on Google Cloud Platform.'
+
+if [[ "${DELETECONFIG}" == 'YES' ]]; then
+  rm "${CONFIG}"
+fi
