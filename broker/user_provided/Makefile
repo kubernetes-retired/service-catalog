@@ -15,7 +15,6 @@
 BIN=user-broker
 PKG=github.com/kubernetes-incubator/service-catalog/broker/user_provided
 DOCKER=$(BIN)
-GOLINT_IGNORE_ERRORS=1
 
 include ../../script/Makefile.mk
 

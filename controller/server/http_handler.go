@@ -27,20 +27,23 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-type HttpHandler struct {
+// httpHandler handles service controller HTTP requests.
+type httpHandler struct {
 	controller ServiceController
 	k8sStorage ServiceStorage
 }
 
-func NewHttpHandler(c ServiceController, k8sStorage ServiceStorage) *HttpHandler {
-	return &HttpHandler{
+// NewHTTPHandler creates an instance of the HttpHandler object.
+func newHTTPHandler(c ServiceController, k8sStorage ServiceStorage) *httpHandler {
+	return &httpHandler{
 		controller: c,
 		k8sStorage: k8sStorage,
 	}
 }
 
-func (h *HttpHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Creating Service Instance\n")
+// CreateServiceInstance handles the 'create service instance' API request.
+func (h *httpHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request) {
+	log.Println("Creating Service Instance")
 
 	var req scmodel.CreateServiceInstanceRequest
 	err := utils.BodyToObject(r, &req)
@@ -67,7 +70,8 @@ func (h *HttpHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Reque
 	utils.WriteResponse(w, 200, instance)
 }
 
-func (h *HttpHandler) CreateServiceBinding(w http.ResponseWriter, r *http.Request) {
+// CreateServiceBinding handles the 'create service binding' API request.
+func (h *httpHandler) CreateServiceBinding(w http.ResponseWriter, r *http.Request) {
 	var req scmodel.CreateServiceBindingRequest
 	err := utils.BodyToObject(r, &req)
 	if err != nil {
@@ -92,7 +96,8 @@ func (h *HttpHandler) CreateServiceBinding(w http.ResponseWriter, r *http.Reques
 	utils.WriteResponse(w, 200, binding)
 }
 
-func (h *HttpHandler) CreateServiceBroker(w http.ResponseWriter, r *http.Request) {
+// CreateServiceBroker handles the 'create service broker' API request.
+func (h *httpHandler) CreateServiceBroker(w http.ResponseWriter, r *http.Request) {
 	var sbReq scmodel.CreateServiceBrokerRequest
 	err := utils.BodyToObject(r, &sbReq)
 	if err != nil {

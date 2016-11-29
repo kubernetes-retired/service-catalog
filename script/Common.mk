@@ -64,14 +64,8 @@ test:
 	$(ECHO) echo "Testing $(PKG)"
 	$(ECHO) $(GO) test "$(PKG)/..."
 
-ifeq ($(origin GOLINT_IGNORE_ERRORS),undefined)
-  GOLINT_EXIT=--set_exit_status
-else
-  GOLINT_EXIT=
-endif
-
 lint: $(BINDIR)/$(GOLINT)
-	$(ECHO) $(BINDIR)/$(GOLINT) $(GOLINT_EXIT) "$(PKG)/..."
+	$(ECHO) $(BINDIR)/$(GOLINT) --set_exit_status "$(PKG)/..."
 	$(ECHO) $(GO) vet "$(PKG)/..."
 
 %:

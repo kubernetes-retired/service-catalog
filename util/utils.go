@@ -18,6 +18,7 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -124,7 +125,7 @@ func FetchObject(u string, object interface{}) error {
 func FetchChartToFile(chart string, f *os.File) error {
 	defer f.Close()
 	if !strings.HasPrefix(chart, "gs://") {
-		return fmt.Errorf("chart must look like gs://...")
+		return errors.New("chart name format gs://... is requried")
 	}
 	u := strings.Replace(chart, "gs://", "https://storage.googleapis.com/", 1)
 	bytes, err := Fetch(u)

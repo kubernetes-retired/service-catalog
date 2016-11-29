@@ -26,26 +26,27 @@ import (
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 )
 
-type UserProvidedServiceInstance struct {
+type userProvidedServiceInstance struct {
 	Name       string
 	Credential *sbmodel.Credential
 }
 
-type Controller struct {
-	instanceMap map[string]*UserProvidedServiceInstance
+type userProvidedController struct {
+	instanceMap map[string]*userProvidedServiceInstance
 }
 
 // Verify that Controller implements the broker Controller interface.
-var _ controller.Controller = (*Controller)(nil)
+var _ controller.Controller = (*userProvidedController)(nil)
 
-func CreateController() *Controller {
-	var instanceMap map[string]*UserProvidedServiceInstance = make(map[string]*UserProvidedServiceInstance)
-	return &Controller{
+// CreateController creates an instance of a User Provided service broker controller.
+func CreateController() controller.Controller {
+	var instanceMap = make(map[string]*userProvidedServiceInstance)
+	return &userProvidedController{
 		instanceMap: instanceMap,
 	}
 }
 
-func (c *Controller) Catalog() (*sbmodel.Catalog, error) {
+func (c *userProvidedController) Catalog() (*sbmodel.Catalog, error) {
 	return &sbmodel.Catalog{
 		Services: []*sbmodel.Service{
 			{
@@ -64,7 +65,7 @@ func (c *Controller) Catalog() (*sbmodel.Catalog, error) {
 	}, nil
 }
 
-func (c *Controller) CreateServiceInstance(id string, req *sbmodel.ServiceInstanceRequest) (*sbmodel.CreateServiceInstanceResponse, error) {
+func (c *userProvidedController) CreateServiceInstance(id string, req *sbmodel.ServiceInstanceRequest) (*sbmodel.CreateServiceInstanceResponse, error) {
 	credString, ok := req.Parameters["credentials"]
 	if !ok {
 		log.Printf("Didn't find creds\n %+v\n", req)
@@ -79,7 +80,7 @@ func (c *Controller) CreateServiceInstance(id string, req *sbmodel.ServiceInstan
 	var cred sbmodel.Credential
 	err = json.Unmarshal(jsonCred, &cred)
 
-	c.instanceMap[id] = &UserProvidedServiceInstance{
+	c.instanceMap[id] = &userProvidedServiceInstance{
 		Name:       id,
 		Credential: &cred,
 	}
@@ -88,26 +89,26 @@ func (c *Controller) CreateServiceInstance(id string, req *sbmodel.ServiceInstan
 	return &sbmodel.CreateServiceInstanceResponse{}, nil
 }
 
-func (c *Controller) GetServiceInstance(id string) (string, error) {
+func (c *userProvidedController) GetServiceInstance(id string) (string, error) {
 	return "", errors.New("Unimplemented")
 }
 
-func (c *Controller) RemoveServiceInstance(id string) error {
+func (c *userProvidedController) RemoveServiceInstance(id string) error {
 	_, ok := c.instanceMap[id]
 	if ok {
 		delete(c.instanceMap, id)
 		return nil
-	} else {
-		return errors.New("Not found")
 	}
+
+	return errors.New("Not found")
 }
 
-func (c *Controller) Bind(instanceId string, bindingId string, req *sbmodel.BindingRequest) (*sbmodel.CreateServiceBindingResponse, error) {
-	cred := c.instanceMap[instanceId].Credential
+func (c *userProvidedController) Bind(instanceID string, bindingID string, req *sbmodel.BindingRequest) (*sbmodel.CreateServiceBindingResponse, error) {
+	cred := c.instanceMap[instanceID].Credential
 	return &sbmodel.CreateServiceBindingResponse{Credentials: *cred}, nil
 }
 
-func (c *Controller) UnBind(instanceId string, bindingId string) error {
+func (c *userProvidedController) UnBind(instanceID string, bindingID string) error {
 	// Since we don't persist the binding, there's nothing to do here.
 	return nil
 }

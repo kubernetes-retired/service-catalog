@@ -20,11 +20,16 @@ import (
 	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 )
 
+// BindingDirection is an integer type used for expressing direction of the
+// service binding (from, to, or both).
 type BindingDirection int
 
 const (
+	// To represents the 'to' direction of the service binding.
 	To BindingDirection = iota
+	// From represents the 'from' direction of the service binding.
 	From
+	// Both represents both directions of the service binding.
 	Both
 )
 
@@ -39,6 +44,7 @@ type Broker interface {
 	DeleteBroker(string) error
 }
 
+// The ServiceTyper interface provides functions to deal with service types.
 type ServiceTyper interface {
 	GetServiceType(string) (*model.Service, error)
 }
