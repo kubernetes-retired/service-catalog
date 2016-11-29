@@ -22,8 +22,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ${ROOT}/hack/deploy.sh "${@}" \
   || error_exit 'Deployment to Kubernetes cluster failed.'
 
-IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
+IP="$(kubectl get services | xargs echo -n | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')"
 
-${ROOT}/hack/bookstore_client.py --host="${IP}:8080" \
-    --verify --count=1 \
+${ROOT}/hack/bookstore_client.py --host="${IP}:8080" --api_key=123 \
+    --verify --verbose=true --count=1 \
   || error_exit 'Tests failed.'
