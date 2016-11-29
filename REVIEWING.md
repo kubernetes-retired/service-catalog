@@ -1,7 +1,9 @@
 # Reviewing and Merging Pull Requests
 
 This document is a guideline for how core contributors should review and merge
-pull requests (PRs).
+pull requests (PRs). It is intended to outline the lightweight process that
+we’ll use for now. It’s assumed that we’ll operate on good faith for now in
+situations for which process is not specified.
 
 PRs may only be merged after the following criteria are met:
 
