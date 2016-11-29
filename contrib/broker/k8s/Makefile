@@ -13,10 +13,10 @@
 # limitations under the License.
 
 BIN=k8s-broker
-PKG=github.com/kubernetes-incubator/service-catalog/broker/k8s
+PKG=github.com/kubernetes-incubator/service-catalog/contrib/broker/k8s
 DOCKER=$(BIN)
 
-include ../../script/Makefile.mk
+include ../../../script/Makefile.mk
 
 HELM_VERSION := v2.0.0-rc.2
 
@@ -27,4 +27,4 @@ docker::
 clean::
 	$(ECHO) rm -f $(BINDIR)/linux_$(ARCH)/helm-$(HELM_VERSION)-linux-amd64.tar.gz
 
-include ../../script/Common.mk
+include ../../../script/Common.mk

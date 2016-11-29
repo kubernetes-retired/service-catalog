@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kubernetes-incubator/service-catalog/broker/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	"github.com/kubernetes-incubator/service-catalog/util"
 

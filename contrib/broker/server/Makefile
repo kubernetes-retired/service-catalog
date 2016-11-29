@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PKG=github.com/kubernetes-incubator/service-catalog/broker/server
+PKG=github.com/kubernetes-incubator/service-catalog/contrib/broker/server
 
-include ../../script/Makefile.mk
-include ../../script/Common.mk
+include ../../../script/Makefile.mk
+include ../../../script/Common.mk

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 BIN=user-broker
-PKG=github.com/kubernetes-incubator/service-catalog/broker/user_provided
+PKG=github.com/kubernetes-incubator/service-catalog/contrib/broker/user_provided
 DOCKER=$(BIN)
 
-include ../../script/Makefile.mk
+include ../../../script/Makefile.mk
 
-include ../../script/Common.mk
+include ../../../script/Common.mk

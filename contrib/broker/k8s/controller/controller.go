@@ -24,7 +24,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/broker/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/model"
 	"github.com/kubernetes-incubator/service-catalog/util"
 
