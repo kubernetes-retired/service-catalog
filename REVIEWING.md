@@ -11,8 +11,8 @@ PRs may only be merged after the following criteria are met:
 
 ## LGTMs
 
-When a reviewer deems a PR ready for review, they should add a comment to the PR
-thread that simply reads 'LGTM'. If they do not deem it ready for review,
+When a reviewer deems a PR good enough to merge, they should add a comment to the PR
+thread that simply reads 'LGTM'. If they do not deem it ready for merge,
 they should add comments -- either inline or on the PR thread -- that indicate
 changes they believe should be made before merge.
 
