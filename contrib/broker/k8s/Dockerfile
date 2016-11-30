@@ -20,13 +20,15 @@ RUN export DEBIAN_FRONTEND=noninteractive \
  && apt-get update \
  && apt-get install -y \
     ca-certificates \
+    curl \
+ && curl -Ls -o /tmp/helm-${HELM_VERSION}-linux-amd64.tar.gz \
+    http://storage.googleapis.com/kubernetes-helm/helm-${HELM_VERSION}-linux-amd64.tar.gz \
+ && mkdir -p /opt/services \
+ && tar -C /opt/services -x -z -f /tmp/helm-${HELM_VERSION}-linux-amd64.tar.gz \
+    --strip-components=1 linux-amd64/helm \
+ && rm -f /tmp/helm-${HELM_VERSION}-linux-amd64.tar.gz \
+ && apt-get purge -y --auto-remove curl \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-
-COPY helm-${HELM_VERSION}-linux-amd64.tar.gz k8s-broker /opt/services/
-RUN tar -C /opt/services -x -z -f /opt/services/helm-${HELM_VERSION}-linux-amd64.tar.gz \
-    --strip-components=1 linux-amd64/helm \
- && rm -f /opt/services/helm-${HELM_VERSION}-linux-amd64.tar.gz
-
 
 ENTRYPOINT ["/opt/services/k8s-broker", "--helm_binary", "/opt/services/helm"]

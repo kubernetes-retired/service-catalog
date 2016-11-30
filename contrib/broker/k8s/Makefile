@@ -18,13 +18,4 @@ DOCKER=$(BIN)
 
 include ../../../script/Makefile.mk
 
-HELM_VERSION := v2.0.0-rc.2
-
-docker::
-	$(ECHO) mkdir -p $(BINDIR)/linux_$(ARCH)
-	$(ECHO) cp $(ROOT)/deps/helm-$(HELM_VERSION)-linux-amd64.tar.gz $(BINDIR)/linux_$(ARCH)/
-
-clean::
-	$(ECHO) rm -f $(BINDIR)/linux_$(ARCH)/helm-$(HELM_VERSION)-linux-amd64.tar.gz
-
 include ../../../script/Common.mk
