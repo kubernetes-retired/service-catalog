@@ -24,7 +24,6 @@ ROOT := $(ROOT:/script/=)
 export GOPATH := $(ROOT:/src/github.com/kubernetes-incubator/service-catalog=)
 
 export VERSION ?= $(shell git describe --always --abbrev=40 --dirty)
-export GCLOUD  ?= gcloud
 export HOST_OS ?= $(shell uname -s | tr A-Z a-z)
 
 GO             := go
@@ -42,26 +41,20 @@ else
 endif
 
 #
-# If PROJECT is defined, compute default GCR name (unless explicitly defined).
+# If REGISTRY is defined, prepare to push images.
 #
-ifneq ($(origin PROJECT),undefined)
-GCR ?= gcr.io/$(PROJECT)/catalog
-endif
-
-#
-# If GCR is defined, prepare to push images.
-#
-ifeq ($(origin GCR),undefined)
+ifeq ($(origin REGISTRY),undefined)
 define docker_push
-  $(info Not pushing $(PKG). Please set GCR or PROJECT variable.)
+  $(info Not pushing $(PKG). Please set REGISTRY variable.)
+  @false
 endef
 else
-export GCR
+export REGISTRY
 define docker_push
   $(ECHO) echo 'Pushing $(PKG)'
-  $(ECHO) echo '  tagging '$(1):$(VERSION)' as $(GCR)/$(1):$(VERSION)'
-  $(ECHO) docker tag '$(1):$(VERSION)' '$(GCR)/$(1):$(VERSION)'
-  $(ECHO) $(GCLOUD) docker -- push '$(GCR)/$(1):$(VERSION)'
+  $(ECHO) echo '  tagging '$(1):$(VERSION)' as $(REGISTRY)/$(1):$(VERSION)'
+  $(ECHO) docker tag '$(1):$(VERSION)' '$(REGISTRY)/$(1):$(VERSION)'
+  $(ECHO) docker push '$(REGISTRY)/$(1):$(VERSION)'
 endef
 endif
 
@@ -127,4 +120,3 @@ endif
 
 # The first target in the makefile is the default.
 all: build test lint
-
