@@ -41,7 +41,7 @@ $(SUB): %.sub:
 	$(ECHO) for dir in $(DIRS); do $(MAKE) --no-print-directory -C "$${dir}" $* || exit $$? ; done
 
 init:
-	$(ECHO) $(ROOT)/deps/glide/$(HOST_OS)-$(ARCH)/glide install
+	$(ECHO) glide install
 
 format:
 	$(ECHO) gofmt -w -s $(addprefix ./,$(DIRS))
