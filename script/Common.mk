@@ -68,5 +68,8 @@ lint: $(BINDIR)/$(GOLINT)
 	$(ECHO) $(BINDIR)/$(GOLINT) --set_exit_status "$(PKG)/..."
 	$(ECHO) $(GO) vet "$(PKG)/..."
 
+coverage:
+	$(ECHO) $(ROOT)/script/coverage.sh --html "$(CURDIR)/$(BIN)-coverage.html" "$(PKG)"
+
 %:
 	$(ECHO) echo "Not building $* in $(CURDIR)"

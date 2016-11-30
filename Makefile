@@ -22,7 +22,7 @@ DIRS := \
   contrib/broker/server \
   controller
 
-ALL := all build build-linux build-darwin clean docker push test lint
+ALL := all build build-linux build-darwin clean docker push test lint coverage
 SUB := $(addsuffix .sub, $(ALL))
 .PHONY: $(ALL) $(SUB) format
 
@@ -45,3 +45,6 @@ init:
 
 format:
 	$(ECHO) gofmt -w -s $(addprefix ./,$(DIRS))
+
+coverage:
+	$(ECHO) $(ROOT)/script/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(DIRS))
