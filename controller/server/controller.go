@@ -23,7 +23,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/kubernetes-incubator/service-catalog/controller/utility"
+	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 
@@ -57,10 +57,10 @@ func (c *controller) Inventory(w http.ResponseWriter, r *http.Request) {
 	i, err := c.k8sStorage.GetInventory()
 	if err != nil {
 		log.Printf("Got Error: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, i)
+	util.WriteResponse(w, 200, i)
 }
 
 //
@@ -71,37 +71,37 @@ func (c *controller) ListServiceBrokers(w http.ResponseWriter, r *http.Request) 
 	l, err := c.k8sStorage.ListBrokers()
 	if err != nil {
 		log.Printf("Got Error: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, l)
+	util.WriteResponse(w, 200, l)
 }
 
 func (c *controller) GetServiceBroker(w http.ResponseWriter, r *http.Request) {
-	id := utils.ExtractVarFromRequest(r, "broker")
+	id := util.ExtractVarFromRequest(r, "broker")
 	log.Printf("GetServiceBroker: %s\n", id)
 
 	b, err := c.k8sStorage.GetBroker(id)
 	if err != nil {
 		log.Printf("Got Error: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, b)
+	util.WriteResponse(w, 200, b)
 }
 
 func (c *controller) DeleteServiceBroker(w http.ResponseWriter, r *http.Request) {
-	utils.WriteResponse(w, 400, "IMPLEMENT ME")
+	util.WriteResponse(w, 400, "IMPLEMENT ME")
 }
 
 func (c *controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request) {
-	id := utils.ExtractVarFromRequest(r, "broker")
+	id := util.ExtractVarFromRequest(r, "broker")
 
 	sb, err := c.k8sStorage.GetBroker(id)
 	if err != nil {
 		log.Printf("Broker not found: %s\n", id)
 		log.Printf("err: %#v\n", err)
-		utils.WriteResponse(w, 404, "Not Found")
+		util.WriteResponse(w, 404, "Not Found")
 		return
 	}
 
@@ -113,22 +113,22 @@ func (c *controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Printf("Failed to fetch catalog from %s\n%v\n", u, resp)
 		log.Printf("err: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
 	// TODO: the model from SB is fetched and stored directly as the one in the SC model (which the
 	// storage operates on). We should convert it from the SB model to SC model before storing.
 	var catalog scmodel.Catalog
-	err = utils.ResponseBodyToObject(resp, &catalog)
+	err = util.ResponseBodyToObject(resp, &catalog)
 	if err != nil {
 		log.Printf("Failed to unmarshal catalog: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
 	err = c.k8sStorage.UpdateBroker(sb, &catalog)
-	utils.WriteResponse(w, 200, "{}")
+	util.WriteResponse(w, 200, "{}")
 }
 
 //
@@ -136,23 +136,23 @@ func (c *controller) RefreshServiceBroker(w http.ResponseWriter, r *http.Request
 //
 
 func (c *controller) ListServiceInstances(w http.ResponseWriter, r *http.Request) {
-	ns := utils.ExtractVarFromRequest(r, "namespace")
+	ns := util.ExtractVarFromRequest(r, "namespace")
 	if ns == "" {
 		ns = defaultNamespace
 	}
 	instances, err := c.k8sStorage.ListServices(ns)
 	if err != nil {
 		log.Printf("Couldn't list services: %v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, instances)
+	util.WriteResponse(w, 200, instances)
 }
 
 func (c *controller) GetServiceInstance(w http.ResponseWriter, r *http.Request) {
 	log.Println("Getting Service Instance")
-	id := utils.ExtractVarFromRequest(r, "service")
-	ns := utils.ExtractVarFromRequest(r, "namespace")
+	id := util.ExtractVarFromRequest(r, "service")
+	ns := util.ExtractVarFromRequest(r, "namespace")
 	if ns == "" {
 		ns = defaultNamespace
 	}
@@ -160,11 +160,11 @@ func (c *controller) GetServiceInstance(w http.ResponseWriter, r *http.Request) 
 	si, err := c.k8sStorage.GetService(ns, id)
 	if err != nil {
 		log.Printf("Couldn't fetch the service: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
-	utils.WriteResponse(w, 200, si)
+	util.WriteResponse(w, 200, si)
 }
 
 func (c *controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
@@ -234,7 +234,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 
 	// TODO: Align this with the actual response model.
 	si := scmodel.ServiceInstance{}
-	err = utils.ResponseBodyToObject(resp, &si)
+	err = util.ResponseBodyToObject(resp, &si)
 	if err != nil {
 		return err
 	}
@@ -243,8 +243,8 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 
 func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting Service Instance")
-	id := utils.ExtractVarFromRequest(r, "service")
-	ns := utils.ExtractVarFromRequest(r, "namespace")
+	id := util.ExtractVarFromRequest(r, "service")
+	ns := util.ExtractVarFromRequest(r, "namespace")
 	if ns == "" {
 		ns = defaultNamespace
 	}
@@ -253,7 +253,7 @@ func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		log.Printf("Service id doesn't exist: %s\n", id)
 		err := fmt.Errorf("Service id %s doesn't exist", id)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -262,14 +262,14 @@ func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	bindings, err := c.k8sStorage.GetBindingsForService(id, To)
 	if err != nil {
 		log.Printf("Failed to get bindings for %s\n", id)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
 	if len(bindings) > 0 {
 		log.Printf("There are %d active findings to this service, cowardly refusing to delete it\n", len(bindings))
 		err = fmt.Errorf("There are %d active findings to this service, cowardly refusing to delete it", len(bindings))
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -277,7 +277,7 @@ func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	broker, err := c.getBroker(si.ServiceID)
 	if err != nil {
 		log.Printf("Error fetching service: %v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -287,7 +287,7 @@ func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		log.Printf("Failed to create new HTTP request: %v", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -296,7 +296,7 @@ func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	resp, err := client.Do(deleteHTTPReq)
 	if err != nil {
 		log.Printf("Failed to DELETE: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 	defer resp.Body.Close()
@@ -304,7 +304,7 @@ func (c *controller) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	err = c.k8sStorage.DeleteService(id)
 	if err != nil {
 		log.Printf("Failed to delete: %v", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 }
@@ -313,28 +313,28 @@ func (c *controller) ListServiceBindings(w http.ResponseWriter, r *http.Request)
 	l, err := c.k8sStorage.ListServiceBindings()
 	if err != nil {
 		log.Printf("Got Error: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, l)
+	util.WriteResponse(w, 200, l)
 }
 
 func (c *controller) GetServiceBinding(w http.ResponseWriter, r *http.Request) {
 	log.Println("Getting Service Binding")
-	id := utils.ExtractVarFromRequest(r, "binding")
+	id := util.ExtractVarFromRequest(r, "binding")
 
 	b, err := c.k8sStorage.GetServiceBinding(id)
 	if err != nil {
 		log.Printf("%#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
-	utils.WriteResponse(w, 200, b)
+	util.WriteResponse(w, 200, b)
 }
 
 func (c *controller) DeleteServiceBinding(w http.ResponseWriter, r *http.Request) {
-	id := utils.ExtractVarFromRequest(r, "binding")
+	id := util.ExtractVarFromRequest(r, "binding")
 
 	// TODO: Update user of this binding...
 	c.k8sStorage.DeleteServiceBinding(id)
@@ -453,7 +453,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	defer resp.Body.Close()
 
 	sbr := scmodel.CreateServiceBindingResponse{}
-	err = utils.ResponseBodyToObject(resp, &sbr)
+	err = util.ResponseBodyToObject(resp, &sbr)
 	if err != nil {
 		log.Printf("Failed to unmarshal: %#v\n", err)
 		return nil, err
@@ -497,7 +497,7 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 	// TODO: the model from SB is fetched and stored directly as the one in the SC model (which the
 	// storage operates on). We should convert it from the SB model to SC model before storing.
 	var catalog scmodel.Catalog
-	err = utils.ResponseBodyToObject(resp, &catalog)
+	err = util.ResponseBodyToObject(resp, &catalog)
 	if err != nil {
 		log.Printf("Failed to unmarshal catalog: %#v\n", err)
 		return nil, err

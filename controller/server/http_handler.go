@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kubernetes-incubator/service-catalog/controller/utility"
+	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 
 	"github.com/satori/go.uuid"
@@ -46,10 +46,10 @@ func (h *httpHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Reque
 	log.Println("Creating Service Instance")
 
 	var req scmodel.CreateServiceInstanceRequest
-	err := utils.BodyToObject(r, &req)
+	err := util.BodyToObject(r, &req)
 	if err != nil {
 		log.Printf("Error unmarshaling: %v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -64,19 +64,19 @@ func (h *httpHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Reque
 	err = h.k8sStorage.AddService(&instance)
 	if err != nil {
 		log.Printf("Error creating a service instance: %v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, instance)
+	util.WriteResponse(w, 200, instance)
 }
 
 // CreateServiceBinding handles the 'create service binding' API request.
 func (h *httpHandler) CreateServiceBinding(w http.ResponseWriter, r *http.Request) {
 	var req scmodel.CreateServiceBindingRequest
-	err := utils.BodyToObject(r, &req)
+	err := util.BodyToObject(r, &req)
 	if err != nil {
 		log.Printf("Error unmarshaling: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -90,19 +90,19 @@ func (h *httpHandler) CreateServiceBinding(w http.ResponseWriter, r *http.Reques
 	err = h.k8sStorage.AddServiceBinding(&binding, nil)
 	if err != nil {
 		log.Printf("Error creating a service binding %s: %v\n", req.Name, err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
-	utils.WriteResponse(w, 200, binding)
+	util.WriteResponse(w, 200, binding)
 }
 
 // CreateServiceBroker handles the 'create service broker' API request.
 func (h *httpHandler) CreateServiceBroker(w http.ResponseWriter, r *http.Request) {
 	var sbReq scmodel.CreateServiceBrokerRequest
-	err := utils.BodyToObject(r, &sbReq)
+	err := util.BodyToObject(r, &sbReq)
 	if err != nil {
 		log.Printf("Error unmarshaling: %#v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 
@@ -122,7 +122,7 @@ func (h *httpHandler) CreateServiceBroker(w http.ResponseWriter, r *http.Request
 	created, err := h.controller.CreateServiceBroker(&sb)
 	if err != nil {
 		log.Printf("Error creating a service broker: %v\n", err)
-		utils.WriteResponse(w, 400, err)
+		util.WriteResponse(w, 400, err)
 		return
 	}
 	sbRes := scmodel.CreateServiceBrokerResponse{
@@ -137,5 +137,5 @@ func (h *httpHandler) CreateServiceBroker(w http.ResponseWriter, r *http.Request
 			AuthUsername: created.AuthUsername,
 		},
 	}
-	utils.WriteResponse(w, 200, sbRes)
+	util.WriteResponse(w, 200, sbRes)
 }
