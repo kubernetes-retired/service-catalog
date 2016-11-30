@@ -3,3 +3,4 @@ go:
   - 1.7.3
 go_import_path: github.com/kubernetes-incubator/service-catalog
 install: make init
+script: make build test coverage lint

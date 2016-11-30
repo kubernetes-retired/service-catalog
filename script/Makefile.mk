@@ -33,6 +33,7 @@ GO_VERSION     := 1.7.3
 BINDIR         := $(GOPATH)/bin
 PKG_ROOT       := github.com/kubernetes-incubator/service-catalog
 ARCH           := amd64
+COVERAGE       ?= $(CURDIR)/coverage.html
 
 ifeq "$(V)" "1"
   $(info Makefile.mk included from $(CURDIR))
