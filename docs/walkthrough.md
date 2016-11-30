@@ -7,6 +7,8 @@ You will need to have the following prerequisites:
 * [Docker](https://www.docker.com) installed locally
 * [Go](https://golang.org) set up locally (with proper `$GOPATH`
   and (optionally) `$GOPATH/bin` in your local `PATH`)
+* [Glide](https://github.com/masterminds/glide) v0.12.3 or higher installed
+  and on your `PATH`
 * Working Kubernetes cluster and `kubectl` installed in your local `PATH`.
   The version of Kubernetes and `kubectl` must be >= 1.4
 * [Helm](https://helm.sh) installed in your Kubernetes cluster,
