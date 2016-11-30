@@ -35,9 +35,9 @@ Container Registry you are going to need Google Cloud Project ID:
     cd "${GOPATH}/src/github.com/kubernetes-incubator/service-catalog"
     export PROJECT_ID=<your project id>
     export VERSION=$(git rev-parse --short --verify HEAD)
+    export GCR=gcr.io/${PROJECT_ID}/catalog
 
-    make GCR=gcr.io/${PROJECT_ID}/catalog VERSION=${VERSION} \
-         init build docker push
+    make init build docker push
 
 This will build Docker images for the service controller, Kubernetes service
 broker, and service classes registry. The images are also pushed to Google
