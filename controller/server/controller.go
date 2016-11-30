@@ -57,25 +57,12 @@ func (c *controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
 func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	params := in.Parameters
 
-	// Inject all the bindings that are supposed to be injected (IE, these are direction 'FROM').
+	// Inject all the bindings that are from this service instance.
 	fromBindings := make(map[string]*scmodel.Credential)
-	bindings, err := c.k8sStorage.GetBindingsForService(in.Name, From)
-	if err != nil {
-		log.Printf("Failed to fetch bindings for %s : %v\n", in.Name, err)
+	if err := c.getBindingsFrom(in.Name, fromBindings); err != nil {
 		return err
 	}
-	for _, b := range bindings {
-		log.Printf("Found binding %s for service %s\n", b.Name, in.Name)
-		fromBindings[b.Name] = &b.Credentials
-	}
 
-	// Binding data is passed to the service broker right now as part of the
-	// parameters in the form:
-	//
-	// parameters:
-	//   bindings:
-	//     <service-name>:
-	//       <credential>
 	if len(fromBindings) > 0 {
 		if params == nil {
 			params = make(map[string]interface{})
@@ -121,6 +108,28 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	return nil
 }
 
+// getBindingsFrom returns the set of bindings for a consuming service instance.
+//
+// Binding data is passed to the service broker right now as part of the
+// parameters in the form:
+//
+// parameters:
+//   bindings:
+//     <service-name>:
+//       <credential>
+func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
+	bindings, err := c.k8sStorage.GetBindingsForService(sName, From)
+	if err != nil {
+		log.Printf("Failed to fetch bindings for %s : %v\n", sName, err)
+		return err
+	}
+	for _, b := range bindings {
+		log.Printf("Found binding %s for service %s\n", b.Name, sName)
+		fromBindings[b.Name] = &b.Credentials
+	}
+	return nil
+}
+
 func (c *controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error) {
 	broker, err := c.k8sStorage.GetBrokerByService(serviceID)
 	if err != nil {
@@ -150,6 +159,23 @@ func (c *controller) fetchServicePlanGUID(service string, plan string) (string, 
 		}
 	}
 	return "", "", "", fmt.Errorf("Can't find a service / plan : %s/%s", service, plan)
+}
+
+// injectBindingIntoInstance causes a consuming service instance to be updated
+// with new binding information. The actual binding injection happens during the
+// instance update process.
+func (c *controller) injectBindingIntoInstance(ID string) error {
+	fromSI, err := c.k8sStorage.GetService(defaultNamespace, ID)
+	if err == nil && fromSI != nil {
+		// Update the Service Instance with the new bindings
+		log.Printf("Found existing FROM Service: %s, should update it\n", fromSI.Name)
+		err = c.updateServiceInstance(fromSI)
+		if err != nil {
+			log.Printf("Failed to update existing FROM service %s : %v\n", fromSI.Name, err)
+			return err
+		}
+	}
+	return nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,17 +275,13 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		return nil, err
 	}
 
-	// If FROM already exists, we need to update it here...
-	fromSI, err := c.k8sStorage.GetService(defaultNamespace, in.From)
-	if err == nil && fromSI != nil {
-		// Update the Service Instance with the new bindings
-		log.Printf("Found existing FROM Service: %s, should update it\n", fromSI.Name)
-		err = c.updateServiceInstance(fromSI)
-		if err != nil {
-			log.Printf("Failed to update existing FROM service %s : %v\n", fromSI.Name, err)
-			return nil, err
-		}
+	// NOTE: this is the plug-in point for changing binding injection. This
+	// current function will inject binding information into a consuming service
+	// instance.
+	if err := c.injectBindingIntoInstance(in.From); err != nil {
+		return nil, err
 	}
+
 	return &in.Credentials, nil
 }
 
