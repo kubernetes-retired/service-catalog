@@ -40,7 +40,7 @@ func CreateHandler(c controller.Controller) http.Handler {
 		controller: c,
 	}
 
-	var router *mux.Router = mux.NewRouter()
+	var router = mux.NewRouter()
 
 	router.HandleFunc("/v2/catalog", s.catalog).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{instance_id}", s.getServiceInstance).Methods("GET")
