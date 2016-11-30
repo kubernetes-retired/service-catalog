@@ -49,15 +49,14 @@ The images are tagged with the current Git commit SHA.
 
 ## Deploying to Kubernetes
 
-**NOTE**: Do not forget to create a Kubernetes namespace where the system will
-be deployed:
-
-    kubectl create namespace catalog
+**NOTE**: Do not forget to specify a Kubernetes namespace where the system will
+be deployed. Here, we will use `catalog`.
 
 Use Helm to create the Kubernetes deployments:
 
     helm install \
-        --set "registry=gcr.io/${PROJECT_ID}/catalog,version=${VERSION},namespace=catalog" \
+        --set "registry=gcr.io/${PROJECT_ID}/catalog,version=${VERSION}" \
+        --namespace catalog \
         ./deploy/catalog
 
 After the deployment, observe the deployments and services:

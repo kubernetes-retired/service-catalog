@@ -1,7 +1,6 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  namespace: {{ default "catalog" .Values.namespace }}
   name: controller
 spec:
   replicas: 1
@@ -20,7 +19,6 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  namespace: {{ default "catalog" .Values.namespace }}
   name: controller
 spec:
 {{ if .Values.debug }}

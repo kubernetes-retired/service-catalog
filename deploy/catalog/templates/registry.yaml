@@ -1,7 +1,6 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  namespace: {{ default "catalog" .Values.namespace }}
   name: registry
 spec:
   replicas: 1
@@ -20,7 +19,6 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  namespace: {{ default "catalog" .Values.namespace }}
   name: registry
 spec:
 {{ if .Values.debug }}
@@ -32,4 +30,3 @@ spec:
   - protocol: TCP
     port: 8001
     targetPort: 8001
-
