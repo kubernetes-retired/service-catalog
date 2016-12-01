@@ -92,7 +92,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
 	client := &http.Client{}
-	log.Printf("Doing a request to: %s\n", url)
+	log.Printf("Doing a request to: %s", url)
 	resp, err := client.Do(createHTTPReq)
 	if err != nil {
 		return err
@@ -120,11 +120,11 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
 	bindings, err := c.k8sStorage.GetBindingsForService(sName, From)
 	if err != nil {
-		log.Printf("Failed to fetch bindings for %s : %v\n", sName, err)
+		log.Printf("Failed to fetch bindings for %s : %v", sName, err)
 		return err
 	}
 	for _, b := range bindings {
-		log.Printf("Found binding %s for service %s\n", b.Name, sName)
+		log.Printf("Found binding %s for service %s", b.Name, sName)
 		fromBindings[b.Name] = &b.Credentials
 	}
 	return nil
@@ -149,7 +149,7 @@ func (c *controller) fetchServicePlanGUID(service string, plan string) (string, 
 	}
 	// No plan specified and only one plan, use it.
 	if plan == "" && len(s.Plans) == 1 {
-		log.Printf("Found Service Plan GUID as %s for %s : %s\n", s.Plans[0].ID, service, s.Plans[0].Name)
+		log.Printf("Found Service Plan GUID as %s for %s : %s", s.Plans[0].ID, service, s.Plans[0].Name)
 		return s.ID, s.Plans[0].ID, s.Plans[0].Name, nil
 	}
 	for _, p := range s.Plans {
@@ -168,10 +168,10 @@ func (c *controller) injectBindingIntoInstance(ID string) error {
 	fromSI, err := c.k8sStorage.GetService(defaultNamespace, ID)
 	if err == nil && fromSI != nil {
 		// Update the Service Instance with the new bindings
-		log.Printf("Found existing FROM Service: %s, should update it\n", fromSI.Name)
+		log.Printf("Found existing FROM Service: %s, should update it", fromSI.Name)
 		err = c.updateServiceInstance(fromSI)
 		if err != nil {
-			log.Printf("Failed to update existing FROM service %s : %v\n", fromSI.Name, err)
+			log.Printf("Failed to update existing FROM service %s : %v", fromSI.Name, err)
 			return err
 		}
 	}
@@ -184,7 +184,7 @@ func (c *controller) injectBindingIntoInstance(ID string) error {
 func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
 	serviceID, planID, planName, err := c.fetchServicePlanGUID(in.Service, in.Plan)
 	if err != nil {
-		log.Printf("Error fetching service ID: %v\n", err)
+		log.Printf("Error fetching service ID: %v", err)
 		return nil, err
 	}
 	in.ServiceID = serviceID
@@ -194,30 +194,30 @@ func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmode
 		in.ID = uuid.NewV4().String()
 	}
 
-	log.Printf("Instantiating service %s using service/plan %s : %s\n", in.Name, serviceID, planID)
+	log.Printf("Instantiating service %s using service/plan %s : %s", in.Name, serviceID, planID)
 
 	err = c.createServiceInstance(in)
 	op := scmodel.LastOperation{}
 	if err != nil {
 		op.State = "FAILED"
 		op.Description = err.Error()
-		log.Printf("Failed to create service instance: %v\n", err)
+		log.Printf("Failed to create service instance: %v", err)
 	} else {
 		op.State = "CREATED"
 	}
 	in.LastOperation = &op
 
-	log.Printf("Updating Service %s with State\n%v\n", in.Name, in.LastOperation)
+	log.Printf("Updating Service %s with State\n%v", in.Name, in.LastOperation)
 	return in, c.k8sStorage.SetService(in)
 }
 
 func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
-	log.Printf("Creating Service Binding: %v\n", in)
+	log.Printf("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
 	to, err := c.k8sStorage.GetService(defaultNamespace, in.To)
 	if err != nil {
-		log.Printf("To service does not exist %s: %v\n", in.To, err)
+		log.Printf("To service does not exist %s: %v", in.To, err)
 		return nil, err
 	}
 
@@ -230,7 +230,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 
 	jsonBytes, err := json.Marshal(createReq)
 	if err != nil {
-		log.Printf("Failed to marshal: %#v\n", err)
+		log.Printf("Failed to marshal: %#v", err)
 		return nil, err
 	}
 
@@ -238,12 +238,12 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 
 	st, err := c.k8sStorage.GetServiceType(to.Service)
 	if err != nil {
-		log.Printf("Failed to fetch service type %s : %v\n", to.Service, err)
+		log.Printf("Failed to fetch service type %s : %v", to.Service, err)
 		return nil, err
 	}
 	broker, err := c.k8sStorage.GetBroker(st.Broker)
 	if err != nil {
-		log.Printf("Error fetching broker for service: %s : %v\n", to.Service, err)
+		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
 	}
 	url := fmt.Sprintf(bindingFormatString, broker.BrokerURL, to.ID, in.ID)
@@ -251,10 +251,10 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
 	client := &http.Client{}
-	log.Printf("Doing a request to: %s\n", url)
+	log.Printf("Doing a request to: %s", url)
 	resp, err := client.Do(createHTTPReq)
 	if err != nil {
-		log.Printf("Failed to PUT: %#v\n", err)
+		log.Printf("Failed to PUT: %#v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -262,7 +262,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	sbr := scmodel.CreateServiceBindingResponse{}
 	err = util.ResponseBodyToObject(resp, &sbr)
 	if err != nil {
-		log.Printf("Failed to unmarshal: %#v\n", err)
+		log.Printf("Failed to unmarshal: %#v", err)
 		return nil, err
 	}
 
@@ -271,7 +271,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 
 	err = c.k8sStorage.UpdateServiceBinding(in)
 	if err != nil {
-		log.Printf("Failed to update service binding %s : %v\n", in.Name, err)
+		log.Printf("Failed to update service binding %s : %v", in.Name, err)
 		return nil, err
 	}
 
@@ -292,8 +292,8 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 	req.SetBasicAuth(in.AuthUsername, in.AuthPassword)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("Failed to fetch catalog from %s\n%v\n", u, resp)
-		log.Printf("err: %#v\n", err)
+		log.Printf("Failed to fetch catalog from %s\n%v", u, resp)
+		log.Printf("err: %#v", err)
 		return nil, err
 	}
 
@@ -302,11 +302,11 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 	var catalog scmodel.Catalog
 	err = util.ResponseBodyToObject(resp, &catalog)
 	if err != nil {
-		log.Printf("Failed to unmarshal catalog: %#v\n", err)
+		log.Printf("Failed to unmarshal catalog: %#v", err)
 		return nil, err
 	}
 
-	log.Printf("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
+	log.Printf("Adding a broker %s catalog:\n%v", in.Name, catalog)
 
 	err = c.k8sStorage.AddBroker(in, &catalog)
 	if err != nil {
