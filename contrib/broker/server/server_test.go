@@ -30,9 +30,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Check tha our controller satisfies the interface.
-var _ controller.Controller = (*Controller)(nil)
-
 var _ = Describe("Server", func() {
 
 	Describe("/v2/catalog", func() {

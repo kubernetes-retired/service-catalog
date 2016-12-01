@@ -23,6 +23,4 @@ import (
 )
 
 func TestController(t *testing.T) {
-	// Verify that Controller implements the broker Controller interface.
-	var _ controller.Controller = (*userProvidedController)(nil)
 }

@@ -19,6 +19,4 @@ package controller
 import "testing"
 
 func TestHelmReifier(t *testing.T) {
-	// Verify that HelmReifier implements the Reifier interface
-	var _ Reifier = (*helmReifier)(nil)
 }
