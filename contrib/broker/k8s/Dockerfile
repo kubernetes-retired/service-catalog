@@ -14,7 +14,7 @@
 
 FROM debian
 
-ENV HELM_VERSION=v2.0.0-rc.2
+ENV HELM_VERSION=v2.0.0
 
 RUN export DEBIAN_FRONTEND=noninteractive \
  && apt-get update \
