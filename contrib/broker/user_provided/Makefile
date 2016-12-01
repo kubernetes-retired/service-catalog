@@ -16,6 +16,6 @@ BIN=user-broker
 PKG=github.com/kubernetes-incubator/service-catalog/contrib/broker/user_provided
 DOCKER=$(BIN)
 
-include ../../../script/Makefile.mk
+include ../../../hack/Makefile.mk
 
-include ../../../script/Common.mk
+include ../../../hack/Common.mk

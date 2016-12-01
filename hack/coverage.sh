@@ -17,7 +17,7 @@
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. "${ROOT}/script/utilities.sh" || { echo 'Cannot load utilities.'; exit 1; }
+. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load utilities.'; exit 1; }
 
 function usage() {
   [[ -n "${1:-}" ]] && { echo "${1}"; echo ; }

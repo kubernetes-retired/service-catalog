@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ./script/Makefile.mk
+include ./hack/Makefile.mk
 
 # Directories that the make will recurse into.
 DIRS := \
@@ -47,4 +47,4 @@ format:
 	$(ECHO) gofmt -w -s $(addprefix ./,$(DIRS))
 
 coverage:
-	$(ECHO) $(ROOT)/script/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(DIRS))
+	$(ECHO) $(ROOT)/hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(DIRS))

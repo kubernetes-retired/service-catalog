@@ -18,8 +18,8 @@
 .PHONY: all build build-darwin build-linux docker push test
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-# Strip /script/ suffix to get root of the Git client.
-ROOT := $(ROOT:/script/=)
+# Strip /hack/ suffix to get root of the Git client.
+ROOT := $(ROOT:/hack/=)
 # Strip the /src/github.com/kubernetes-incubator/service-catalog suffix to get the GOPATH.
 export GOPATH := $(ROOT:/src/github.com/kubernetes-incubator/service-catalog=)
 
