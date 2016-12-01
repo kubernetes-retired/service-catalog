@@ -16,6 +16,6 @@ BIN=controller
 PKG=github.com/kubernetes-incubator/service-catalog/controller
 DOCKER=$(BIN)
 
-include ../script/Makefile.mk
+include ../hack/Makefile.mk
 
-include ../script/Common.mk
+include ../hack/Common.mk

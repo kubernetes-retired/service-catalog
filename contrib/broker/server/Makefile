@@ -14,5 +14,5 @@
 
 PKG=github.com/kubernetes-incubator/service-catalog/contrib/broker/server
 
-include ../../../script/Makefile.mk
-include ../../../script/Common.mk
+include ../../../hack/Makefile.mk
+include ../../../hack/Common.mk

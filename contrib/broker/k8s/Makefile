@@ -16,6 +16,6 @@ BIN=k8s-broker
 PKG=github.com/kubernetes-incubator/service-catalog/contrib/broker/k8s
 DOCKER=$(BIN)
 
-include ../../../script/Makefile.mk
+include ../../../hack/Makefile.mk
 
-include ../../../script/Common.mk
+include ../../../hack/Common.mk

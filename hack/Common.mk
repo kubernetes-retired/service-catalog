@@ -69,7 +69,7 @@ lint: $(BINDIR)/$(GOLINT)
 	$(ECHO) $(GO) vet "$(PKG)/..."
 
 coverage:
-	$(ECHO) $(ROOT)/script/coverage.sh --html "$(CURDIR)/$(BIN)-coverage.html" "$(PKG)"
+	$(ECHO) $(ROOT)/hack/coverage.sh --html "$(CURDIR)/$(BIN)-coverage.html" "$(PKG)"
 
 %:
 	$(ECHO) echo "Not building $* in $(CURDIR)"
