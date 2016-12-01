@@ -52,6 +52,7 @@ func CreateServer(serviceStorage ServiceStorage, port int, w *watch.Watcher) (*S
 // Start starts the server and begins listening on a TCP port.
 func (s *Server) Start() {
 	router := mux.NewRouter()
+	router.StrictSlash(true)
 	router.HandleFunc("/healthz", healthZHandler).Methods("GET")
 
 	port := strconv.Itoa(s.port)
