@@ -13,10 +13,10 @@
 # limitations under the License.
 
 BIN=registry
-PKG=github.com/kubernetes-incubator/service-catalog/registry
+PKG=github.com/kubernetes-incubator/service-catalog/contrib/registry
 DOCKER=$(BIN)
 
-include ../script/Makefile.mk
+include ../../script/Makefile.mk
 
 docker:: ./data/charts/definitions.json
 	$(ECHO) mkdir -p $(BINDIR)/linux_$(ARCH)
@@ -25,4 +25,4 @@ docker:: ./data/charts/definitions.json
 clean::
 	$(ECHO) rm -f $(BINDIR)/linux_$(ARCH)/definitions.json
 
-include ../script/Common.mk
+include ../../script/Common.mk

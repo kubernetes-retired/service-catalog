@@ -16,7 +16,7 @@ include ./script/Makefile.mk
 
 # Directories that the make will recurse into.
 DIRS := \
-  registry \
+  contrib/registry \
   contrib/broker/k8s \
   contrib/broker/user_provided \
   contrib/broker/server \
