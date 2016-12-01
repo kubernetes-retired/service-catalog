@@ -62,9 +62,6 @@ type k8sController struct {
 	reifier Reifier
 }
 
-// Verify that Controller implements the broker Controller interface.
-var _ controller.Controller = (*k8sController)(nil)
-
 // CreateController creates an instance of a Kubernetes broker controller.
 func CreateController(host string, port int, reifier Reifier) (controller.Controller, error) {
 	return &k8sController{
