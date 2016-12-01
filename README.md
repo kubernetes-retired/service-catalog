@@ -1,5 +1,7 @@
 ## `service-catalog`
 
+[![Build Status](https://travis-ci.org/kubernetes-incubator/service-catalog.svg?branch=master)](https://travis-ci.org/kubernetes-incubator/service-catalog)
+
 ### Terminology
 
 **Service**: running code that is made available for use by an application.
