@@ -2,7 +2,7 @@
 
 ## Prerequisites and Setup
 
-You will need to have the following prerequisites:
+You will need to meet the following prerequisites:
 
 * [Docker](https://www.docker.com) installed locally
 * [Go](https://golang.org) set up locally (with proper `$GOPATH`
@@ -15,8 +15,9 @@ You will need to have the following prerequisites:
   and the `helm` binary in your `PATH`
 * Cluster credentials in ./kubeconfig file
 * GNU Make
-* Google Cloud SDK installed and `gcloud` in your `PATH`
 * [git](https://git-scm.com)
+* Must be pre-authenticated to any Docker registry to which you intend to push
+  images
 
 ## Getting Sources
 
@@ -35,9 +36,8 @@ Build the source. In order to build and push Docker images to Google
 Container Registry you are going to need Google Cloud Project ID:
 
     cd "${GOPATH}/src/github.com/kubernetes-incubator/service-catalog"
-    export PROJECT_ID=<your project id>
     export VERSION=$(git rev-parse --short --verify HEAD)
-    export GCR=gcr.io/${PROJECT_ID}/catalog
+    export REGISTRY=<registry URL> # Up to, but excluding the image name and its preceding slash
 
     make init build docker push
 
@@ -57,7 +57,7 @@ be deployed. Here, we will use `catalog`.
 Use Helm to create the Kubernetes deployments:
 
     helm install \
-        --set "registry=gcr.io/${PROJECT_ID}/catalog,version=${VERSION}" \
+        --set "registry=${REGISTRY},version=${VERSION}" \
         --namespace catalog \
         ./deploy/catalog
 
