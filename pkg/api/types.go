@@ -17,8 +17,8 @@ limitations under the License.
 package api
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
-	kunversioned "k8s.io/kubernetes/pkg/api/unversioned"
+	kapi "k8s.io/client-go/1.5/pkg/api"
+	kunversioned "k8s.io/client-go/1.5/pkg/api/unversioned"
 )
 
 // +nonNamespaced=true

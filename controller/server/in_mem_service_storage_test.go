@@ -261,7 +261,7 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 		t.Fatalf("Failed to get inventory: %#v", err)
 	}
 	if len(catRet.Services) != 2 {
-		t.Fatalf("Expected 2 services from GetInventory, got %s ", len(catRet.Services))
+		t.Fatalf("Expected 2 services from GetInventory, got %d ", len(catRet.Services))
 	}
 
 	err = s.DeleteBroker(brokerOneUUID)
@@ -292,6 +292,6 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 		t.Fatalf("Failed to get inventory: %#v", err)
 	}
 	if len(catRet.Services) != 1 {
-		t.Fatalf("Expected 1 service from GetInventory, got %s ", len(catRet.Services))
+		t.Fatalf("Expected 1 service from GetInventory, got %d ", len(catRet.Services))
 	}
 }
