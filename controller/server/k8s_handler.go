@@ -33,7 +33,7 @@ type k8sHandler struct {
 	watcher    *watch.Watcher
 }
 
-func createK8sHandler(c ServiceController, w *watch.Watcher) (interface{}, error) {
+func createK8sHandler(c ServiceController, w *watch.Watcher) (*k8sHandler, error) {
 	ret := &k8sHandler{
 		controller: c,
 		watcher:    w,

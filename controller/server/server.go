@@ -19,21 +19,18 @@ package server
 import (
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
 // Server is an instance of the service controller server.
 type Server struct {
-	controller  *controller
-	httpHandler *httpHandler
-	port        int
-	k8sHandler  interface{}
+	controller *controller
+	port       int
+	k8sHandler *k8sHandler
 }
 
 // CreateServer creates an instance of the service controller server.
@@ -46,46 +43,24 @@ func CreateServer(serviceStorage ServiceStorage, port int, w *watch.Watcher) (*S
 		return nil, err
 	}
 	return &Server{
-		controller:  c,
-		port:        port,
-		httpHandler: newHTTPHandler(c, k8sStorage),
-		k8sHandler:  k8sHandler,
+		controller: c,
+		port:       port,
+		k8sHandler: k8sHandler,
 	}, nil
 }
 
 // Start starts the server and begins listening on a TCP port.
 func (s *Server) Start() {
 	router := mux.NewRouter()
-
-	// TODO: the actual inventory API should be /v2/services[/...] and
-	// /v2/service_plans[/...].
-	router.HandleFunc("/v2/service_plans", s.controller.Inventory).Methods("GET")
-
-	// Broker related stuff
-	router.HandleFunc("/v2/service_brokers", s.controller.ListServiceBrokers).Methods("GET")
-	router.HandleFunc("/v2/service_brokers", s.httpHandler.CreateServiceBroker).Methods("POST")
-	router.HandleFunc("/v2/service_brokers/{broker}", s.controller.GetServiceBroker).Methods("GET")
-	router.HandleFunc("/v2/service_brokers/{broker}", s.controller.DeleteServiceBroker).Methods("DELETE")
-	router.HandleFunc("/v2/service_brokers/{broker}:refresh", s.controller.RefreshServiceBroker).Methods("POST")
-	// TODO: implement updating a service broker.
-	// router.HandleFunc("/v2/service_brokers/{broker_id}", s.Controller.UpdateServiceBroker).Methods.("PUT")
-
-	router.HandleFunc("/v2/service_instances", s.controller.ListServiceInstances).Methods("GET")
-	router.HandleFunc("/v2/service_instances", s.httpHandler.CreateServiceInstance).Methods("POST")
-	router.HandleFunc("/v2/service_instances/{service}", s.controller.GetServiceInstance).Methods("GET")
-	router.HandleFunc("/v2/service_instances/{service}", s.controller.DeleteServiceInstance).Methods("DELETE")
-	// TODO: implement list service bindings for this service instance.
-	// router.HandleFunc("/v2/service_instances/{service_id}/service_bindings", s.controller.ListServiceInstanceBindings).Methods("GET")
-
-	router.HandleFunc("/v2/service_bindings", s.controller.ListServiceBindings).Methods("GET")
-	router.HandleFunc("/v2/service_bindings", s.httpHandler.CreateServiceBinding).Methods("POST")
-	router.HandleFunc("/v2/service_bindings/{binding}", s.controller.GetServiceBinding).Methods("GET")
-	router.HandleFunc("/v2/service_bindings/{binding}", s.controller.DeleteServiceBinding).Methods("DELETE")
-
-	http.Handle("/", handlers.LoggingHandler(os.Stderr, router))
+	router.StrictSlash(true)
+	router.HandleFunc("/healthz", healthZHandler).Methods("GET")
 
 	port := strconv.Itoa(s.port)
 	log.Println("Server started on port " + port)
 	err := http.ListenAndServe(":"+port, nil)
 	log.Println(err.Error())
+}
+
+func healthZHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
