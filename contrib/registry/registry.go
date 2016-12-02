@@ -23,7 +23,7 @@ import (
 	"path"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg"
-	"github.com/kubernetes-incubator/service-catalog/registry/server"
+	"github.com/kubernetes-incubator/service-catalog/contrib/registry/server"
 )
 
 type registryOptions struct {
