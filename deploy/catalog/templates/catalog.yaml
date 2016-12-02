@@ -15,18 +15,3 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 10000
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: controller
-spec:
-{{ if .Values.debug }}
-  type: LoadBalancer
-{{ end }}
-  selector:
-    app: controller
-  ports:
-  - protocol: TCP
-    port: 10000
-    targetPort: 10000
