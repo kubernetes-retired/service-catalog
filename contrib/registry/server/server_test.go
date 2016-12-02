@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	"github.com/kubernetes-incubator/service-catalog/contrib/registry/server"
+	"github.com/kubernetes-incubator/service-catalog/model/service_broker"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
