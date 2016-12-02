@@ -22,16 +22,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	. "github.com/kubernetes-incubator/service-catalog/contrib/broker/server"
 	brokerModel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-// Check tha our controller satisfies the interface.
-var _ controller.Controller = (*Controller)(nil)
 
 var _ = Describe("Server", func() {
 

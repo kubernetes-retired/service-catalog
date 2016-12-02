@@ -26,8 +26,6 @@ func NewThirdPartyServiceStorage(w *watch.Watcher) ServiceStorage {
 	}
 }
 
-var _ ServiceStorage = (*thirdPartyServiceStorage)(nil)
-
 func (s *thirdPartyServiceStorage) ListBrokers() ([]*scmodel.ServiceBroker, error) {
 	l, err := s.watcher.GetResourceClient(watch.ServiceBroker, "default").List(&v1.ListOptions{})
 	if err != nil {

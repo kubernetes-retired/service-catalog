@@ -41,8 +41,6 @@ type inMemServiceStorage struct {
 	bindings map[string]*bindingPair
 }
 
-var _ ServiceStorage = (*inMemServiceStorage)(nil)
-
 // CreateInMemServiceStorage creates an instance of ServiceStorage interface,
 // backed by memory.
 func CreateInMemServiceStorage() ServiceStorage {
