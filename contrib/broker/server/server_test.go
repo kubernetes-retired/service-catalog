@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	. "github.com/kubernetes-incubator/service-catalog/contrib/broker/server"
 	brokerModel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 

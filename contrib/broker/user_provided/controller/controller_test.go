@@ -18,8 +18,6 @@ package controller
 
 import (
 	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 )
 
 func TestController(t *testing.T) {
