@@ -23,8 +23,6 @@ limitations under the License.
 // TEST_PROJECT:   Google Cloud Project ID of the project to use for testing.
 // TEST_ZONE:      GCP Zone in which to create test GKE cluster
 // TEST_ACCOUNT:   GCP service account credentials (JSON file) to use for testing.
-// GERRIT_ACCOUNT: GCP service account credentials (from metadata) to use for
-//                 Gerrit API access.
 
 // Verify required parameters
 if (! params.TEST_PROJECT) {
@@ -35,46 +33,11 @@ if (! params.TEST_ACCOUNT) {
   error 'Missing required parameter TEST_ACCOUNT'
 }
 
-if (! params.GERRIT_ACCOUNT) {
-  error 'Missing required parameter GERRIT_ACCOUNT'
-}
-
 def test_project = params.TEST_PROJECT
 def test_account = params.TEST_ACCOUNT
 def test_zone    = params.TEST_ZONE ?: 'us-west1-b'
 def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
-
-def notifyBuild(buildStatus) {
-  def gerrit_credentials = params.GERRIT_ACCOUNT
-  def gerrit_url         = 'https://plori-review.googlesource.com'
-
-  buildStatus = buildStatus ?: 'SUCCESS'
-  def message = "Jenkins ${env.JOB_NAME} build ${currentBuild.displayName} status: " +
-      "${buildStatus}. View log at: ${currentBuild.absoluteUrl}consoleFull"
-
-  def BUILD_RESULTS = [SUCCESS: 1, FAILURE: -1, STARTED: 0]
-  def verified = BUILD_RESULTS.get(buildStatus)
-  if (verified == null) verified = -1
-
-  def label = verified == 0 ? '' : """, "labels": { "Verified": ${verified}}"""
-  def payload = """{"message": "${message}"${label}}"""
-
-  withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "source:${gerrit_credentials}",
-      passwordVariable: 'PASS', usernameVariable: 'USER']]) {
-
-    sh """
-CHANGE_ID="\$(git log --format=%B -n 1 HEAD | awk '/^Change-Id: / {print \$2}')"
-HEAD_SHA="\$(git rev-parse --verify HEAD)"
-
-curl --request POST --silent \
-     --header 'Content-type: application/json' \
-     --header 'Authorization: Bearer ${env.PASS}' \
-     --url "${gerrit_url}/a/changes/\${CHANGE_ID}/revisions/\${HEAD_SHA}/review" \
-     --data '${payload}'
-"""
-  }
-}
 
 node {
   // Checkout the source code.
@@ -86,7 +49,6 @@ node {
 
   dir([path: env.ROOT]) {
     // Run build.
-    notifyBuild('STARTED')
 
     def clustername = "jenkins-" + sh([returnStdout: true, script: '''openssl rand \
         -base64 100 | tr -dc a-z0-9 | cut -c -25''']).trim()
@@ -128,8 +90,6 @@ node {
         currentBuild.result = 'FAILURE'
       }
     }
-
-    notifyBuild(currentBuild.result)
 
     if (currentBuild.result == 'FAILURE') {
       error 'Build failed.'
