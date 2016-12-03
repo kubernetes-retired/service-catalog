@@ -21,6 +21,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSIONS="/tmp/.versions"
 GO_VERSION='1.7.3'
 HELM_VERSION='v2.0.0'
+GLIDE_VERSION='v0.12.3'
 
 function update-golang() {
   # Check version of golang
@@ -60,9 +61,30 @@ function update-helm() {
 }
 
 
+function update-glide() {
+  # Check version of glide
+  local current_glide_version="$(cat "${VERSIONS}/glide" || echo "unknown")"
+
+  if [[ "${current_glide_version}" == "${GLIDE_VERSION}" ]]; then
+    echo "Glide is up-to-date: ${current_glide_version}"
+  else
+    echo "Upgrading Glide ${current_glide_version} to ${GLIDE_VERSION}"
+
+    # Install new Glide.
+    local glide_url='https://github.com/Masterminds/glide/releases/download/'
+    glide_url+="${GLIDE_VERSION}/glide-${GLIDE_VERSION}-linux-amd64.tar.gz"
+
+    curl -sSL "${glide_url}" \
+        | tar -C /usr/local/bin -xz --strip-components=1 linux-amd64/glide \
+      || { echo "Cannot upgrade glide to ${GLIDE_VERSION}"; return 1; }
+  fi
+}
+
+
 function main() {
   update-golang || error_exit 'Failed to update golang'
   update-helm   || error_exit 'Failed to update helm'
+  update-glide  || error_exit 'Failed to update glide'
 }
 
 main
