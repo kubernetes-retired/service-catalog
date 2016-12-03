@@ -87,22 +87,22 @@ retry kubectl get serviceclasses,serviceinstances,servicebrokers,servicebindings
 
 echo 'Creating resources...'
 
-kubectl create -f "${ROOT}/examples/walkthrough/broker.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/broker.yaml" \
   || error_exit 'Cannot create broker.'
 
 sleep 10 #TODO: check that the broker actually came up.
 
-kubectl create -f "${ROOT}/examples/walkthrough/backend.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/backend.yaml" \
   || error_exit 'Cannot create backend.'
 
 sleep 10
 
-kubectl create -f "${ROOT}/examples/walkthrough/binding.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/binding.yaml" \
   || error_exit 'Cannot create binding.'
 
 sleep 10
 
-kubectl create -f "${ROOT}/examples/walkthrough/frontend.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/frontend.yaml" \
   || error_exit 'Cannot create frontend.'
 
 echo 'Waiting for frontend service to come up...'
