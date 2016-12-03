@@ -64,7 +64,7 @@ if [[ "$(uname -s)" == "Linux" ]]; then
   make "${MAKE_VARS[@]}" docker \
     || error_exit 'make docker failed.'
 
-  make "${MAKE_VARS[@]}" GCR=gcr.io/${PROJECT}/catalog push \
+  make "${MAKE_VARS[@]}" REGISTRY=gcr.io/${PROJECT}/catalog push \
     || error_exit 'make push failed.'
 
   docker images \
