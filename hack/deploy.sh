@@ -72,6 +72,7 @@ kubectl create namespace "${NAMESPACE}"
 retry -n 10 -s 10 -t 60 \
     helm install "${ROOT}/deploy/catalog" \
     --set "registry=${GCR},version=${VERSION}" \
+    --namespace "${NAMESPACE}" \
   || error_exit 'Error deploying to Kubernetes cluster.'
 
 echo 'Waiting on services to spin up...'
