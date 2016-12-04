@@ -20,58 +20,66 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/contrib/registry/server"
 	"github.com/kubernetes-incubator/service-catalog/model/service_broker"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Server", func() {
-	Describe("/services", func() {
-		It("returns HTTP error on error", func() {
-			handler := server.CreateHandler(&testController{
-				listServices: func() ([]*model.Service, error) {
-					return nil, errors.New("Cannot list services")
-				},
-			})
+//
+// Tests of the registry /services endpoint.
+//
 
-			rr := httptest.NewRecorder()
-			handler.ServeHTTP(rr, httptest.NewRequest("GET", "/services", nil))
-			Ω(rr.Code).To(Equal(http.StatusBadRequest))
-		})
+// Registry /services returns HTTP error on error.
+func TestRegistryReturnsHTTPErrorOnError(t *testing.T) {
 
-		It("returns list of services", func() {
-			handler := server.CreateHandler(&testController{
-				listServices: func() ([]*model.Service, error) {
-					return []*model.Service{
-						{
-							Name:        "backend",
-							ID:          "backend-id",
-							Description: "Backend Service",
-						},
-						{
-							Name:        "frontend",
-							ID:          "frontend-id",
-							Description: "Frontend Service",
-						},
-					}, nil
-				},
-			})
-
-			rr := httptest.NewRecorder()
-			handler.ServeHTTP(rr, httptest.NewRequest("GET", "/services", nil))
-			Ω(rr.Code).To(Equal(http.StatusOK))
-
-			// TODO: Validate more values
-		})
+	handler := server.CreateHandler(&testController{
+		listServices: func() ([]*model.Service, error) {
+			return nil, errors.New("Cannot list services")
+		},
 	})
 
-	// TODO: Add tests for all other API methods.
-})
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, httptest.NewRequest("GET", "/services", nil))
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected HTTP status http.StatusBadRequest (%d), got %d", http.StatusBadRequest, rr.Code)
+	}
+}
+
+// Registry /services returns a valid list of services with success.
+func TestRegistryReturnsListOfServices(t *testing.T) {
+	handler := server.CreateHandler(&testController{
+		listServices: func() ([]*model.Service, error) {
+			return []*model.Service{
+				{
+					Name:        "backend",
+					ID:          "backend-id",
+					Description: "Backend Service",
+				},
+				{
+					Name:        "frontend",
+					ID:          "frontend-id",
+					Description: "Frontend Service",
+				},
+			}, nil
+		},
+	})
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, httptest.NewRequest("GET", "/services", nil))
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("Expected HTTP status http.StatusOK (%d), got %d", http.StatusOK, rr.Code)
+	}
+
+	// TODO: Validate more values
+}
+
+// TODO: Add tests for all other API methods.
 
 type testController struct {
+	t *testing.T
 	listServices  func() ([]*model.Service, error)
 	getService    func(serviceID string) (*model.Service, error)
 	createService func(s *model.Service) error
@@ -79,21 +87,29 @@ type testController struct {
 }
 
 func (c *testController) ListServices() ([]*model.Service, error) {
-	Ω(c.listServices).ToNot(BeNil())
+	if c.listServices == nil {
+		c.t.Error("Test failed to provide 'listServices' handler")
+	}
 	return c.listServices()
 }
 
 func (c *testController) GetService(serviceID string) (*model.Service, error) {
-	Ω(c.getService).ToNot(BeNil())
+	if c.getService == nil {
+		c.t.Error("Test failed to provide 'getService' handler")
+	}
 	return c.getService(serviceID)
 }
 
 func (c *testController) CreateService(s *model.Service) error {
-	Ω(c.createService).ToNot(BeNil())
+	if c.createService == nil {
+		c.t.Error("Test failed to provide 'createService' handler")
+	}
 	return c.createService(s)
 }
 
 func (c *testController) DeleteService(serviceID string) error {
-	Ω(c.deleteService).ToNot(BeNil())
+	if c.deleteService == nil {
+		c.t.Error("Test failed to provide 'deleteService' handler")
+	}
 	return c.deleteService(serviceID)
 }
