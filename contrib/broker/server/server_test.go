@@ -21,74 +21,102 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	. "github.com/kubernetes-incubator/service-catalog/contrib/broker/server"
 	brokerModel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Server", func() {
+//
+// Test of server /v2/catalog endpoint.
+//
 
-	Describe("/v2/catalog", func() {
-		It("returns HTTP error on error", func() {
-			handler := CreateHandler(&Controller{
-				catalog: func() (*brokerModel.Catalog, error) {
-					return nil, errors.New("Catalog retrieval error")
-				},
-			})
-
-			rr := httptest.NewRecorder()
-			handler.ServeHTTP(rr, httptest.NewRequest("GET", "/v2/catalog", nil))
-
-			Ω(rr.Code).To(Equal(http.StatusBadRequest))
-			Ω(rr.Header().Get("content-type")).To(Equal("application/json"))
-
-			// TODO: This is a bug. We should be returning an error string.
-			Ω(rr.Body.String()).To(Equal("{}"))
-		})
-
-		It("returns compliant JSON", func() {
-			handler := CreateHandler(&Controller{
-				catalog: func() (*brokerModel.Catalog, error) {
-					return &brokerModel.Catalog{Services: []*brokerModel.Service{
-						{
-							Name: "foo",
-						},
-					}}, nil
-				}})
-
-			rr := httptest.NewRecorder()
-			handler.ServeHTTP(rr, httptest.NewRequest("GET", "/v2/catalog", nil))
-			Ω(rr.Code).To(Equal(http.StatusOK))
-			Ω(rr.Header().Get("content-type")).To(Equal("application/json"))
-
-			catalog := readJson(rr)
-
-			Ω(catalog).Should(HaveLen(1))
-			Ω(catalog).Should(HaveKey("services"))
-
-			services := catalog["services"].([]interface{})
-			Ω(services).ToNot(BeNil())
-
-			var service map[string]interface{}
-			service = services[0].(map[string]interface{})
-
-			Ω(service).Should(HaveKey("name"))
-			Ω(service["name"]).Should(Equal("foo"))
-		})
+// /v2/catalog returns HTTP error on error.
+func TestCatalogReturnsHTTPErrorOnError(t *testing.T) {
+	handler := CreateHandler(&Controller{
+		t: t,
+		catalog: func() (*brokerModel.Catalog, error) {
+			return nil, errors.New("Catalog retrieval error")
+		},
 	})
-})
 
-func readJson(rr *httptest.ResponseRecorder) map[string]interface{} {
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, httptest.NewRequest("GET", "/v2/catalog", nil))
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected HTTP status http.StatusBadRequest (%d), got %d", http.StatusBadRequest, rr.Code)
+	}
+
+	if contentType := rr.Header().Get("content-type"); contentType != "application/json" {
+		t.Errorf("Expected response content-type 'application/json', got '%s'", contentType)
+	}
+
+	// TODO: This is a bug. We should be returning an error string.
+	if body := rr.Body.String(); body != "{}" {
+		t.Errorf("Expected (albeit incorrectly) an empty JSON object as a response; got '%s'", body)
+	}
+}
+
+// /v2/catalog returns compliant JSON
+func TestCatalogReturnsCompliantJSON(t *testing.T) {
+	handler := CreateHandler(&Controller{
+		t: t,
+		catalog: func() (*brokerModel.Catalog, error) {
+			return &brokerModel.Catalog{Services: []*brokerModel.Service{
+				{
+					Name: "foo",
+				},
+			}}, nil
+		}})
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, httptest.NewRequest("GET", "/v2/catalog", nil))
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("Expected HTTP status http.StatusOK (%d), got %d", http.StatusOK, rr.Code)
+	}
+
+	if contentType := rr.Header().Get("content-type"); contentType != "application/json" {
+		t.Errorf("Expected response content-type 'application/json', got '%s'", contentType)
+	}
+
+	catalog, err := readJson(rr)
+	if err != nil {
+		t.Errorf("Failed to parse JSON response with error %v", err)
+	}
+
+	if len(catalog) != 1 {
+		t.Errorf("Expected catalog to have 1 element, got %d", len(catalog))
+	}
+
+	if _, ok := catalog["services"]; !ok {
+		t.Errorf("Expected catalog %v to contain key 'services'", catalog)
+	}
+
+	services := catalog["services"].([]interface{})
+	if services == nil {
+		t.Error("Expected 'services' property of the returned catalog to be not nil, got nil")
+	}
+
+	var service map[string]interface{}
+	service = services[0].(map[string]interface{})
+
+	if name, ok := service["name"]; !ok {
+		t.Error("Returned service doesn't have a 'name' property.")
+	} else if name != "foo" {
+		t.Errorf("Expected returned service name to be 'foo', got '%s'", name)
+	}
+}
+
+func readJson(rr *httptest.ResponseRecorder) (map[string]interface{}, error) {
 	var result map[string]interface{}
 	err := json.Unmarshal(rr.Body.Bytes(), &result)
-	Ω(err).To(BeNil())
-	return result
+	return result, err
 }
 
 type Controller struct {
+	t *testing.T
+
 	catalog               func() (*brokerModel.Catalog, error)
 	getServiceInstance    func(id string) (string, error)
 	createServiceInstance func(id string, req *brokerModel.ServiceInstanceRequest) (*brokerModel.CreateServiceInstanceResponse, error)
@@ -98,31 +126,49 @@ type Controller struct {
 }
 
 func (controller *Controller) Catalog() (*brokerModel.Catalog, error) {
-	Ω(controller.catalog).ToNot(BeNil())
+	if controller.catalog == nil {
+		controller.t.Error("Test failed to provide 'catalog' handler")
+	}
+
 	return controller.catalog()
 }
 
 func (controller *Controller) GetServiceInstance(id string) (string, error) {
-	Ω(controller.getServiceInstance).ToNot(BeNil())
+	if controller.getServiceInstance == nil {
+		controller.t.Error("Test failed to provide 'getServiceInstance' handler")
+	}
+
 	return controller.getServiceInstance(id)
 }
 
 func (controller *Controller) CreateServiceInstance(id string, req *brokerModel.ServiceInstanceRequest) (*brokerModel.CreateServiceInstanceResponse, error) {
-	Ω(controller.createServiceInstance).ToNot(BeNil())
+	if controller.createServiceInstance == nil {
+		controller.t.Error("Test failed to provide 'createServiceInstance' handler")
+	}
+
 	return controller.createServiceInstance(id, req)
 }
 
 func (controller *Controller) RemoveServiceInstance(id string) error {
-	Ω(controller.removeServiceInstance).ToNot(BeNil())
+	if controller.removeServiceInstance == nil {
+		controller.t.Error("Test failed to provide 'removeServiceInstance' handler")
+	}
+
 	return controller.removeServiceInstance(id)
 }
 
 func (controller *Controller) Bind(instanceId string, bindingId string, req *brokerModel.BindingRequest) (*brokerModel.CreateServiceBindingResponse, error) {
-	Ω(controller.bind).ToNot(BeNil())
+	if controller.bind == nil {
+		controller.t.Error("Test failed to provide 'bind' handler")
+	}
+
 	return controller.bind(instanceId, bindingId, req)
 }
 
 func (controller *Controller) UnBind(instanceId string, bindingId string) error {
-	Ω(controller.unBind).ToNot(BeNil())
+	if controller.unBind == nil {
+		controller.t.Error("Test failed to provide 'unBind' handler")
+	}
+
 	return controller.unBind(instanceId, bindingId)
 }
