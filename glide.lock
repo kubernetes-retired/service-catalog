@@ -1,5 +1,5 @@
-hash: b4501d2f7c7f27797672295bfe7854884d983de96d5e2b7087f205e2999c20ff
-updated: 2016-11-12T19:45:55.480576872-08:00
+hash: 9580d32ca800b2caa3d02b55df2f31249457c72444ae4f360b2acb8439024489
+updated: 2016-12-04T12:22:48.384717955-08:00
 imports:
 - name: github.com/blang/semver
   version: 60ec3488bfea7cca02b021d106d9911120d25fe9
@@ -74,39 +74,6 @@ imports:
   - buffer
   - jlexer
   - jwriter
-- name: github.com/onsi/ginkgo
-  version: a8ccd817611666211fdf6e6a752174a0db8374a8
-  subpackages:
-  - config
-  - internal/codelocation
-  - internal/containernode
-  - internal/failer
-  - internal/leafnodes
-  - internal/remote
-  - internal/spec
-  - internal/specrunner
-  - internal/suite
-  - internal/testingtproxy
-  - internal/writer
-  - reporters
-  - reporters/stenographer
-  - reporters/stenographer/support/go-colorable
-  - reporters/stenographer/support/go-isatty
-  - types
-- name: github.com/onsi/gomega
-  version: 16f4cfdc64db0987ed3e7baf813c13bdc253b24b
-  subpackages:
-  - format
-  - internal/assertion
-  - internal/asyncassertion
-  - internal/oraclematcher
-  - internal/testingtsupport
-  - matchers
-  - matchers/support/goraph/bipartitegraph
-  - matchers/support/goraph/edge
-  - matchers/support/goraph/node
-  - matchers/support/goraph/util
-  - types
 - name: github.com/pborman/uuid
   version: 3d4f2ba23642d3cfd06bd4b54cf03d99d95c0f1b
 - name: github.com/PuerkitoBio/purell
@@ -118,7 +85,7 @@ imports:
 - name: github.com/spf13/cobra
   version: 856b96dcb49d6427babe192998a35190a12c2230
 - name: github.com/spf13/pflag
-  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+  version: 5644820622454e71517561946e3d94b9f9db6842
 - name: github.com/ugorji/go
   version: faddd6128c66c4708f45fdc007f575f75e592a3c
   subpackages:

@@ -19,5 +19,3 @@ import:
   - 1.5/pkg/util/intstr
   - 1.5/pkg/watch
   - 1.5/tools/clientcmd
-- package: github.com/onsi/ginkgo
-- package: github.com/onsi/gomega
