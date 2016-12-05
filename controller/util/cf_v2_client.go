@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
@@ -28,10 +29,13 @@ const (
 	catalogFormatString         = "%s/v2/catalog"
 	serviceInstanceFormatString = "%s/v2/service_instances/%s"
 	bindingFormatString         = "%s/v2/service_instances/%s/service_bindings/%s"
+
+	httpTimeoutSeconds = 15
 )
 
 type cfV2BrokerClient struct {
 	broker *scmodel.ServiceBroker
+	client *http.Client
 }
 
 // CreateCFV2BrokerClient creates an instance of BrokerClient for communicating
@@ -39,6 +43,9 @@ type cfV2BrokerClient struct {
 func CreateCFV2BrokerClient(b *scmodel.ServiceBroker) BrokerClient {
 	return &cfV2BrokerClient{
 		broker: b,
+		client: &http.Client{
+			Timeout: httpTimeoutSeconds * time.Second,
+		},
 	}
 }
 
@@ -47,7 +54,7 @@ func (c *cfV2BrokerClient) GetCatalog() (*model.Catalog, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	req.SetBasicAuth(c.broker.AuthUsername, c.broker.AuthPassword)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		log.Printf("Failed to fetch catalog from %s\n%v", url, resp)
 		log.Printf("err: %#v", err)
@@ -55,8 +62,7 @@ func (c *cfV2BrokerClient) GetCatalog() (*model.Catalog, error) {
 	}
 
 	var catalog model.Catalog
-	err = ResponseBodyToObject(resp, &catalog)
-	if err != nil {
+	if err = ResponseBodyToObject(resp, &catalog); err != nil {
 		log.Printf("Failed to unmarshal catalog: %#v", err)
 		return nil, err
 	}
@@ -74,9 +80,8 @@ func (c *cfV2BrokerClient) CreateServiceInstance(ID string, req *model.ServiceIn
 
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
-	client := &http.Client{}
 	log.Printf("Doing a request to: %s", url)
-	resp, err := client.Do(createHTTPReq)
+	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +96,7 @@ func (c *cfV2BrokerClient) CreateServiceInstance(ID string, req *model.ServiceIn
 }
 
 func (c *cfV2BrokerClient) UpdateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
+	// TODO: https://github.com/kubernetes-incubator/service-catalog/issues/114
 	return nil, fmt.Errorf("Not implemented")
 }
 
@@ -104,9 +110,8 @@ func (c *cfV2BrokerClient) DeleteServiceInstance(ID string) error {
 		return err
 	}
 
-	client := &http.Client{}
 	log.Printf("Doing a request to: %s", url)
-	resp, err := client.Do(deleteHTTPReq)
+	resp, err := c.client.Do(deleteHTTPReq)
 	if err != nil {
 		log.Printf("Failed to DELETE: %#v", err)
 		return err
@@ -127,9 +132,8 @@ func (c *cfV2BrokerClient) CreateServiceBinding(sID, bID string, req *model.Bind
 
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
-	client := &http.Client{}
 	log.Printf("Doing a request to: %s", url)
-	resp, err := client.Do(createHTTPReq)
+	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
 		log.Printf("Failed to PUT: %#v", err)
 		return nil, err
@@ -156,9 +160,8 @@ func (c *cfV2BrokerClient) DeleteServiceBinding(sID, bID string) error {
 		return err
 	}
 
-	client := &http.Client{}
 	log.Printf("Doing a request to: %s", url)
-	resp, err := client.Do(deleteHTTPReq)
+	resp, err := c.client.Do(deleteHTTPReq)
 	if err != nil {
 		log.Printf("Failed to DELETE: %#v", err)
 		return err
