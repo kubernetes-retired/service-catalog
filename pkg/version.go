@@ -16,4 +16,5 @@ limitations under the License.
 
 package pkg
 
+// VERSION is the version string for the service catalog. It's intended to be set at build time
 var VERSION = "UNKNOWN"

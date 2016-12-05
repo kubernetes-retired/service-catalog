@@ -23,6 +23,7 @@ import (
 
 // +nonNamespaced=true
 
+// Broker represents the broker resource
 type Broker struct {
 	kunversioned.TypeMeta
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
@@ -32,6 +33,7 @@ type Broker struct {
 	Status BrokerStatus
 }
 
+// BrokerSpec represents the data under the 'spec' section of a broker
 type BrokerSpec struct {
 	URL string
 
@@ -45,10 +47,12 @@ type BrokerSpec struct {
 	CFGUID string
 }
 
+// BrokerStatus represents the data under the 'status' section of a broker
 type BrokerStatus struct {
 	Conditions []BrokerCondition
 }
 
+// BrokerCondition represents a single condition inside a broker status
 type BrokerCondition struct {
 	Type    BrokerConditionType
 	Status  ConditionStatus
@@ -56,12 +60,15 @@ type BrokerCondition struct {
 	Message string
 }
 
+// BrokerConditionType is the type that defines a broker's condition type
 type BrokerConditionType string
 
 const (
+	// BrokerConditionReady is the a broker's readiness condition
 	BrokerConditionReady BrokerConditionType = "Ready"
 )
 
+// ConditionStatus is the type that defines a broker's condition status
 type ConditionStatus string
 
 // These are valid condition statuses. "ConditionTrue" means a resource is in the condition;
@@ -69,11 +76,15 @@ type ConditionStatus string
 // can't decide if a resource is in the condition or not. In the future, we could add other
 // intermediate conditions, e.g. ConditionDegraded.
 const (
-	ConditionTrue    ConditionStatus = "True"
-	ConditionFalse   ConditionStatus = "False"
+	// ConditionTrue indicates that a broker's condition is true
+	ConditionTrue ConditionStatus = "True"
+	// ConditionFalse indicates that a broker's condition is false
+	ConditionFalse ConditionStatus = "False"
+	// ConditionUnknown indicates that a broker's condition is unknown
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
+// ServiceClass represents the service class resource
 type ServiceClass struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
@@ -103,6 +114,7 @@ type ServiceClass struct {
 	CFDashboardRedirectURI    string
 }
 
+// ServicePlan is a single service plan inside a service class
 type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string
@@ -120,6 +132,7 @@ type ServicePlan struct {
 	CFFree     bool
 }
 
+// Instance represents an instance resource
 type Instance struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
@@ -128,6 +141,7 @@ type Instance struct {
 	Status InstanceStatus
 }
 
+// InstanceSpec represents the data under an instance's 'spec' field
 type InstanceSpec struct {
 	// ServiceClassName is the reference to the ServiceClass this is an instance of.
 	ServiceClassName string
@@ -152,10 +166,12 @@ type InstanceSpec struct {
 	CFLastOperation string
 }
 
+// InstanceStatus represents the data under an instance's 'status' field
 type InstanceStatus struct {
 	Conditions []InstanceCondition
 }
 
+// InstanceCondition represents a condition under an instance's 'status' field
 type InstanceCondition struct {
 	Type    InstanceConditionType
 	Status  ConditionStatus
@@ -163,16 +179,23 @@ type InstanceCondition struct {
 	Message string
 }
 
+// InstanceConditionType represents the name of an instance's condition
 type InstanceConditionType string
 
 const (
-	InstanceConditionProvisioning      InstanceConditionType = "Provisioning"
-	InstanceConditionReady             InstanceConditionType = "Ready"
-	InstanceConditionProvisionFailed   InstanceConditionType = "ProvisionFailed"
-	InstanceConditionDeprovisioning    InstanceConditionType = "Deprovisioning"
+	// InstanceConditionProvisioning represents an instance's provisioning condition
+	InstanceConditionProvisioning InstanceConditionType = "Provisioning"
+	// InstanceConditionReady represents an instance's ready condition
+	InstanceConditionReady InstanceConditionType = "Ready"
+	// InstanceConditionProvisionFailed represents an instance's provisioning failed condition
+	InstanceConditionProvisionFailed InstanceConditionType = "ProvisionFailed"
+	// InstanceConditionDeprovisioning represents an instance's deprovisioning condition
+	InstanceConditionDeprovisioning InstanceConditionType = "Deprovisioning"
+	// InstanceConditionDeprovisionFailed represents an instance's deprovisioning failed condition
 	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
+// Binding represents a binding resource
 type Binding struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
@@ -181,6 +204,7 @@ type Binding struct {
 	Status BindingStatus
 }
 
+// BindingSpec represents the data under a binding's 'spec' field
 type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	InstanceRef kapi.ObjectReference
@@ -203,10 +227,12 @@ type BindingSpec struct {
 	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }
 
+// BindingStatus represents the data under a binding's 'status' field
 type BindingStatus struct {
 	Conditions []BindingCondition
 }
 
+// BindingCondition represents a condition under the binding's 'status' field
 type BindingCondition struct {
 	Type    BindingConditionType
 	Status  ConditionStatus
@@ -214,14 +240,18 @@ type BindingCondition struct {
 	Message string
 }
 
+// BindingConditionType represents a single binding condition
 type BindingConditionType string
 
 const (
-	BindingConditionReady  BindingConditionType = "Ready"
+	// BindingConditionReady represents a binding's readiness condition
+	BindingConditionReady BindingConditionType = "Ready"
+	// BindingConditionFailed represents a binding's failure condition
 	BindingConditionFailed BindingConditionType = "Failed"
 )
 
-// Core resource; prototype here for now
+// ServiceInjectionPolicy represents a service injection policy resource. It is a core resource, but
+// prototyped here for now
 type ServiceInjectionPolicy struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
