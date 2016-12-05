@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	// "runtime"
 
@@ -25,6 +26,7 @@ func main() {
 
 	cmd := server.NewCommandServer(os.Stdout)
 	if err := cmd.Execute(); err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }
