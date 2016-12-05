@@ -31,4 +31,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+COPY k8s-broker /opt/services/
+
 ENTRYPOINT ["/opt/services/k8s-broker", "--helm_binary", "/opt/services/helm"]
