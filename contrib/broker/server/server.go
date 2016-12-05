@@ -49,8 +49,7 @@ func CreateHandler(c controller.Controller) http.Handler {
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.bind).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.unBind).Methods("DELETE")
 
-	var handler http.Handler = router
-	return handler
+	return router
 }
 
 // Start creates the HTTP handler based on an implementation of a
