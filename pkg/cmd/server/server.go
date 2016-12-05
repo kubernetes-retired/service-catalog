@@ -42,7 +42,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 func (serverOptions ServerOptions) runServer() error {
 	fmt.Println("set up the server")
 	// options
-	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts("localhost"); err != nil {
+	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts("localhost"); err != nil { // XXX add a flag for the hostname
 		fmt.Printf("Error creating self-signed certificates: %v", err)
 		return err
 	}
