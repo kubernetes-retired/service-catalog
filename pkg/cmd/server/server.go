@@ -12,17 +12,23 @@ import (
 
 // ServerOptions contains the aggregation of configuration structs for the service-catalog server
 type ServerOptions struct {
-	// for etcd storage ?
-	EtcdOptions *genericserveroptions.EtcdOptions
 	// for the http stuff ?
 	SecureServingOptions *genericserveroptions.SecureServingOptions
+
+	// for etcd storage ?
+	EtcdOptions *genericserveroptions.EtcdOptions
 }
+
+const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
 
 func NewCommandServer(out io.Writer) *cobra.Command {
 	options := &ServerOptions{
-		EtcdOptions:          genericserveroptions.NewEtcdOptions(),
 		SecureServingOptions: genericserveroptions.NewSecureServingOptions(),
+
+		EtcdOptions: genericserveroptions.NewEtcdOptions(),
 	}
+
+	options.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
 
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -32,8 +38,12 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 		},
 	}
 
-	// eventually we pass flags to sub options to configure them.
-	// flags := cmd.Flags()
+	// We pass flags object to sub option structs to have them configure
+	// themselves. Each options adds it's own command line flags
+	// in addition to the flags that are defined above.
+	flags := cmd.Flags()
+	options.SecureServingOptions.AddFlags(flags)
+	options.EtcdOptions.AddFlags(flags)
 
 	return cmd
 }
@@ -42,12 +52,20 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 func (serverOptions ServerOptions) runServer() error {
 	fmt.Println("set up the server")
 	// options
+	// server configuration options
+	fmt.Println("set up serving options")
 	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts("localhost"); err != nil { // XXX add a flag for the hostname
 		fmt.Printf("Error creating self-signed certificates: %v", err)
 		return err
 	}
+	// etcd configuration options
+	fmt.Println("set up etcd options")
+	if err := serverOptions.EtcdOptions.Validate(); 0 != len(err) {
+		return err[0]
+	}
 
 	// config
+	fmt.Println("set up config object")
 	config := genericapiserver.NewConfig()
 	secureConfig, err := config.ApplySecureServingOptions(serverOptions.SecureServingOptions)
 	if err != nil {
@@ -57,6 +75,7 @@ func (serverOptions ServerOptions) runServer() error {
 	completedconfig := secureConfig.Complete()
 
 	// make the server
+	fmt.Println("make the server")
 	server, err := completedconfig.New()
 	if err != nil {
 		return err
