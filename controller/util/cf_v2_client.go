@@ -53,6 +53,10 @@ func (c *cfV2BrokerClient) GetCatalog() (*model.Catalog, error) {
 	url := fmt.Sprintf(catalogFormatString, c.broker.BrokerURL)
 
 	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	req.SetBasicAuth(c.broker.AuthUsername, c.broker.AuthPassword)
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -80,6 +84,10 @@ func (c *cfV2BrokerClient) CreateServiceInstance(ID string, req *model.ServiceIn
 
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
+	if err != nil {
+		return nil, err
+	}
+
 	log.Printf("Doing a request to: %s", url)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
@@ -132,6 +140,10 @@ func (c *cfV2BrokerClient) CreateServiceBinding(sID, bID string, req *model.Bind
 
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
+	if err != nil {
+		return nil, err
+	}
+
 	log.Printf("Doing a request to: %s", url)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {

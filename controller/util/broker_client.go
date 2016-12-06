@@ -33,16 +33,29 @@ type CatalogClient interface {
 // InstanceClient defines the interface for managing service instances with a
 // broker.
 type InstanceClient interface {
-	// TODO: these should return appropriate response objects.
+	// TODO: these should return appropriate response objects (https://github.com/kubernetes-incubator/service-catalog/issues/116).
+
+	// CreateServiceInstance creates a service instance in the respective broker.
+	// This method handles all asynchronous request handling.
 	CreateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error)
+
+	// UpdateServiceInstance updates an existing service instance in the respective
+	// broker. This method handles all asynchronous request handling.
 	UpdateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error)
 
+	// DeleteServiceInstance deletes an existing service instance in the respective
+	// broker. This method handles all asynchronous request handling.
 	DeleteServiceInstance(ID string) error
 }
 
 // BindingClient defines the interface for managing service bindings with a
 // broker.
 type BindingClient interface {
+	// CreateServiceBinding creates a service binding in the respective broker.
+	// This method handles all asynchronous request handling.
 	CreateServiceBinding(sID, bID string, req *model.BindingRequest) (*model.CreateServiceBindingResponse, error)
+
+	// DeleteServiceBinding deletes an existing service binding in the respective
+	// broker. This method handles all asynchronous request handling.
 	DeleteServiceBinding(sID, bID string) error
 }
