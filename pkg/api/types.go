@@ -23,6 +23,8 @@ import (
 
 // +nonNamespaced=true
 
+// Broker represents an entity that provides ServiceClasses for use in the
+// service catalog.
 type Broker struct {
 	kunversioned.TypeMeta
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
@@ -32,7 +34,15 @@ type Broker struct {
 	Status BrokerStatus
 }
 
+const (
+	// DescriptionKey is the key of an annotation that holds the brief
+	// description of an API resource
+	DescriptionKey = "alpha.service-catalog.kubernetes.io/description"
+)
+
+// BrokerSpec represents a description of a Broker.
 type BrokerSpec struct {
+	// The URL to communicate with the Broker via..
 	URL string
 
 	// Auth credentials should live in an api.Secret that
@@ -45,10 +55,12 @@ type BrokerSpec struct {
 	CFGUID string
 }
 
+// BrokerStatus represents the current status of a Broker.
 type BrokerStatus struct {
 	Conditions []BrokerCondition
 }
 
+// BrokerCondition represents an aspect of a Broker's status.
 type BrokerCondition struct {
 	Type    BrokerConditionType
 	Status  ConditionStatus
@@ -64,29 +76,29 @@ const (
 
 type ConditionStatus string
 
-// These are valid condition statuses. "ConditionTrue" means a resource is in the condition;
-// "ConditionFalse" means a resource is not in the condition; "ConditionUnknown" means kubernetes
-// can't decide if a resource is in the condition or not. In the future, we could add other
-// intermediate conditions, e.g. ConditionDegraded.
+// These are valid condition statuses. "ConditionTrue" means a resource is in
+// the condition; "ConditionFalse" means a resource is not in the condition;
+// "ConditionUnknown" means kubernetes can't decide if a resource is in the
+// condition or not. In the future, we could add other intermediate
+// conditions, e.g. ConditionDegraded.
 const (
 	ConditionTrue    ConditionStatus = "True"
 	ConditionFalse   ConditionStatus = "False"
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
+// ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
 
 	// BrokerName is the reference to the Broker that provides this service.
+	// Immutable.
 	BrokerName string
 
 	Bindable      bool
 	Plans         []ServicePlan
 	PlanUpdatable bool // Do we support this?
-
-	// Move to annotation
-	Description string
 
 	// CF-specific; move to annotation
 	// CFGUID is the identity of this object for use with the CF SB API.
@@ -103,12 +115,10 @@ type ServiceClass struct {
 	CFDashboardRedirectURI    string
 }
 
+// ServicePlan represents a tier of a ServiceClass.
 type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string
-
-	// Move to annotation
-	Description string
 
 	// CF-specific; move to annotation
 	// CFGUID is the identity of this object for use with the CF SB API.
@@ -120,6 +130,7 @@ type ServicePlan struct {
 	CFFree     bool
 }
 
+// Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
@@ -128,8 +139,10 @@ type Instance struct {
 	Status InstanceStatus
 }
 
+// InstanceSpec represents a description of an Instance.
 type InstanceSpec struct {
-	// ServiceClassName is the reference to the ServiceClass this is an instance of.
+	// ServiceClassName is the reference to the ServiceClass this is an
+	// instance of.  Immutable.
 	ServiceClassName string
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
@@ -144,7 +157,7 @@ type InstanceSpec struct {
 	// CF-specific; move to annotations
 	CFCredentials   string
 	CFDashboardURL  string
-	CFInternalID    string // came from ville. remove? nobody likes that guy
+	CFInternalID    string
 	CFServiceID     string
 	CFPlanID        string
 	CFType          string
@@ -152,10 +165,12 @@ type InstanceSpec struct {
 	CFLastOperation string
 }
 
+// InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
 	Conditions []InstanceCondition
 }
 
+// InstanceCondition represents an aspect of an Instance's status.
 type InstanceCondition struct {
 	Type    InstanceConditionType
 	Status  ConditionStatus
@@ -173,6 +188,8 @@ const (
 	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
+// Binding represents a "used by" relationship between an application and an
+// Instance.
 type Binding struct {
 	kunversioned.TypeMeta
 	kapi.ObjectMeta
@@ -181,10 +198,13 @@ type Binding struct {
 	Status BindingStatus
 }
 
+// BindingSpec represents a description of a Binding.
 type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
+	// Immutable.
 	InstanceRef kapi.ObjectReference
-	// AppLabelSelector selects the pods in the Binding's namespace that should be injected with the results of the binding
+	// AppLabelSelector selects the pods in the Binding's namespace that
+	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector kapi.LabelSelector
 
 	Parameters map[string]interface{}
@@ -203,10 +223,12 @@ type BindingSpec struct {
 	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }
 
+// BindingStatus represents the current status of a Binding.
 type BindingStatus struct {
 	Conditions []BindingCondition
 }
 
+// BindingCondition represents an aspect of a Binding's status.
 type BindingCondition struct {
 	Type    BindingConditionType
 	Status  ConditionStatus
@@ -220,16 +242,3 @@ const (
 	BindingConditionReady  BindingConditionType = "Ready"
 	BindingConditionFailed BindingConditionType = "Failed"
 )
-
-// Core resource; prototype here for now
-type ServiceInjectionPolicy struct {
-	kunversioned.TypeMeta
-	kapi.ObjectMeta
-
-	// ServiceRef is the reference to the core Service this InjectPolicy sources.
-	ServiceRef string
-	// AppLabelSelector selects the pods in the SIP's namespace to apply the injection policy to.
-	AppLabelSelector kapi.LabelSelector
-
-	// TODO: the service consumer's preference on how to expose CM and secret (env or volume)
-}
