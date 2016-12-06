@@ -20,10 +20,6 @@ func main() {
 	// logs.InitLogs()
 	// defer logs
 
-	// if len(os.Getenv("GOMAXPROCS")) == 0 {
-	// 	runtime.GOMAXPROCS(runtime.NumCPU())
-	// }
-
 	cmd := server.NewCommandServer(os.Stdout)
 	if err := cmd.Execute(); err != nil {
 		fmt.Println(err)

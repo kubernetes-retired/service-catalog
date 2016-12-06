@@ -14,9 +14,6 @@ import (
 type ServerOptions struct {
 	// for the http stuff ?
 	SecureServingOptions *genericserveroptions.SecureServingOptions
-
-	// for etcd storage ?
-	EtcdOptions *genericserveroptions.EtcdOptions
 }
 
 const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
@@ -24,11 +21,7 @@ const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
 func NewCommandServer(out io.Writer) *cobra.Command {
 	options := &ServerOptions{
 		SecureServingOptions: genericserveroptions.NewSecureServingOptions(),
-
-		EtcdOptions: genericserveroptions.NewEtcdOptions(),
 	}
-
-	options.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
 
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -43,7 +36,6 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	// in addition to the flags that are defined above.
 	flags := cmd.Flags()
 	options.SecureServingOptions.AddFlags(flags)
-	options.EtcdOptions.AddFlags(flags)
 
 	return cmd
 }
@@ -54,14 +46,9 @@ func (serverOptions ServerOptions) runServer() error {
 	// options
 	// server configuration options
 	fmt.Println("set up serving options")
-	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts("localhost"); err != nil { // XXX add a flag for the hostname
+	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(""); err != nil { // XXX add a flag for the hostname
 		fmt.Printf("Error creating self-signed certificates: %v", err)
 		return err
-	}
-	// etcd configuration options
-	fmt.Println("set up etcd options")
-	if err := serverOptions.EtcdOptions.Validate(); 0 != len(err) {
-		return err[0]
 	}
 
 	// config
