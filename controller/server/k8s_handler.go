@@ -17,14 +17,13 @@ limitations under the License.
 package server
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 
+	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 
-	"k8s.io/client-go/1.5/pkg/runtime"
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
 )
 
@@ -67,7 +66,7 @@ func createK8sHandler(c ServiceController, w *watch.Watcher) (*k8sHandler, error
 
 func (s *k8sHandler) serviceInstanceCallback(e k8swatch.Event) error {
 	var si scmodel.ServiceInstance
-	err := TPRObjectToSCObject(e.Object, &si)
+	err := util.TPRObjectToSCObject(e.Object, &si)
 	if err != nil {
 		log.Printf("Failed to decode the received object %#v", err)
 	}
@@ -89,7 +88,7 @@ func (s *k8sHandler) serviceInstanceCallback(e k8swatch.Event) error {
 
 func (s *k8sHandler) serviceBindingCallback(e k8swatch.Event) error {
 	var sb scmodel.ServiceBinding
-	err := TPRObjectToSCObject(e.Object, &sb)
+	err := util.TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
 		log.Printf("Failed to decode the received object %#v", err)
 	}
@@ -111,7 +110,7 @@ func (s *k8sHandler) serviceBindingCallback(e k8swatch.Event) error {
 
 func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
 	var sb scmodel.ServiceBroker
-	err := TPRObjectToSCObject(e.Object, &sb)
+	err := util.TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
 		log.Printf("Failed to decode the received object %#v", err)
 		return err
@@ -128,38 +127,4 @@ func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
 		return errors.New("Delete Service Broker not implemented yet")
 	}
 	return nil
-}
-
-// TPRObjectToSCObject converts a Kubernetes Third Party Resource
-// object into a Service Controller model object
-func TPRObjectToSCObject(o runtime.Object, object interface{}) error {
-	m, err := json.Marshal(o)
-	if err != nil {
-		log.Printf("Failed to marshal %#v : %v", o, err)
-		return err
-	}
-
-	err = json.Unmarshal(m, &object)
-	if err != nil {
-		log.Printf("Failed to unmarshal: %v\n", err)
-		return err
-	}
-	return nil
-}
-
-// SCObjectToTPRObject converts a Service Controller model object into
-// a Kubernetes Third Party Resource object
-func SCObjectToTPRObject(object interface{}) (*runtime.Unstructured, error) {
-	m, err := json.Marshal(object)
-	if err != nil {
-		log.Printf("Failed to marshal %#v : %v", object, err)
-		return nil, err
-	}
-	var ret runtime.Unstructured
-	err = json.Unmarshal(m, &ret)
-	if err != nil {
-		log.Printf("Failed to unmarshal: %v\n", err)
-		return nil, err
-	}
-	return &ret, nil
 }

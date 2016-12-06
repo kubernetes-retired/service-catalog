@@ -23,6 +23,7 @@ import (
 	"path"
 
 	"github.com/kubernetes-incubator/service-catalog/controller/server"
+	"github.com/kubernetes-incubator/service-catalog/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 
@@ -76,7 +77,7 @@ func main() {
 		panic(fmt.Sprintf("Failed to create a watcher: %v\n", err))
 	}
 
-	s, err := server.CreateServer(server.CreateInMemServiceStorage(), w)
+	s, err := server.CreateServer(storage.CreateInMemServiceStorage(), w)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating server [%s]...", err.Error))
 	}

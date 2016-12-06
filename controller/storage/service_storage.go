@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package server
+package storage
 
 import (
 	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"

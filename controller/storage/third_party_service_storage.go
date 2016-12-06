@@ -1,10 +1,11 @@
-package server
+package storage
 
 import (
 	"errors"
 	"fmt"
 	"log"
 
+	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 
@@ -34,7 +35,7 @@ func (s *thirdPartyServiceStorage) ListBrokers() ([]*scmodel.ServiceBroker, erro
 	var ret []*scmodel.ServiceBroker
 	for _, i := range l.(*runtime.UnstructuredList).Items {
 		var tmp scmodel.ServiceBroker
-		err := TPRObjectToSCObject(i, &tmp)
+		err := util.TPRObjectToSCObject(i, &tmp)
 		if err != nil {
 			log.Printf("Failed to convert object: %v\n", err)
 			return nil, err
@@ -52,7 +53,7 @@ func (s *thirdPartyServiceStorage) GetBroker(name string) (*scmodel.ServiceBroke
 		return nil, err
 	}
 	var tmp scmodel.ServiceBroker
-	err = TPRObjectToSCObject(sb, &tmp)
+	err = util.TPRObjectToSCObject(sb, &tmp)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (s *thirdPartyServiceStorage) GetInventory() (*scmodel.Catalog, error) {
 	var catalog scmodel.Catalog
 	for _, i := range l.(*runtime.UnstructuredList).Items {
 		var tmp scmodel.Service
-		err := TPRObjectToSCObject(i, &tmp)
+		err := util.TPRObjectToSCObject(i, &tmp)
 		if err != nil {
 			log.Printf("Failed to convert object: %v\n", err)
 			return nil, err
@@ -114,7 +115,7 @@ func (s *thirdPartyServiceStorage) GetInventory() (*scmodel.Catalog, error) {
 func (s *thirdPartyServiceStorage) AddBroker(broker *scmodel.ServiceBroker, catalog *scmodel.Catalog) error {
 	broker.Kind = watch.ServiceBrokerKind
 	broker.APIVersion = watch.FullAPIVersion
-	tprObj, err := SCObjectToTPRObject(broker)
+	tprObj, err := util.SCObjectToTPRObject(broker)
 	if err != nil {
 		log.Printf("Failed to convert object %#v : %v", broker, err)
 		return err
@@ -131,7 +132,7 @@ func (s *thirdPartyServiceStorage) AddBroker(broker *scmodel.ServiceBroker, cata
 		// TODO: Investigate using Metadata.ownerReference instead
 		// (or in conjunction) with this
 		st.Broker = broker.Name
-		tprObj, err := SCObjectToTPRObject(st)
+		tprObj, err := util.SCObjectToTPRObject(st)
 		if err != nil {
 			log.Printf("Failed to convert object %#v : %v", st, err)
 			return err
@@ -159,7 +160,7 @@ func (s *thirdPartyServiceStorage) GetServiceType(name string) (*scmodel.Service
 		return nil, err
 	}
 	var tmp scmodel.Service
-	err = TPRObjectToSCObject(si, &tmp)
+	err = util.TPRObjectToSCObject(si, &tmp)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +176,7 @@ func (s *thirdPartyServiceStorage) ListServices(ns string) ([]*scmodel.ServiceIn
 	var ret []*scmodel.ServiceInstance
 	for _, i := range l.(*runtime.UnstructuredList).Items {
 		var tmp scmodel.ServiceInstance
-		err := TPRObjectToSCObject(i, &tmp)
+		err := util.TPRObjectToSCObject(i, &tmp)
 		if err != nil {
 			log.Printf("Failed to convert object: %v\n", err)
 			return nil, err
@@ -192,7 +193,7 @@ func (s *thirdPartyServiceStorage) GetService(ns string, name string) (*scmodel.
 		return nil, err
 	}
 	var tmp scmodel.ServiceInstance
-	err = TPRObjectToSCObject(si, &tmp)
+	err = util.TPRObjectToSCObject(si, &tmp)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +211,7 @@ func (s *thirdPartyServiceStorage) ServiceExists(ns string, name string) bool {
 func (s *thirdPartyServiceStorage) AddService(si *scmodel.ServiceInstance) error {
 	si.Kind = watch.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
-	tprObj, err := SCObjectToTPRObject(si)
+	tprObj, err := util.SCObjectToTPRObject(si)
 	if err != nil {
 		log.Printf("Failed to convert object %#v : %v", si, err)
 		return err
@@ -227,7 +228,7 @@ func (s *thirdPartyServiceStorage) AddService(si *scmodel.ServiceInstance) error
 func (s *thirdPartyServiceStorage) SetService(si *scmodel.ServiceInstance) error {
 	si.Kind = watch.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
-	tprObj, err := SCObjectToTPRObject(si)
+	tprObj, err := util.SCObjectToTPRObject(si)
 	if err != nil {
 		log.Printf("Failed to convert object %#v : %v", si, err)
 		return err
@@ -255,7 +256,7 @@ func (s *thirdPartyServiceStorage) ListServiceBindings() ([]*scmodel.ServiceBind
 	var ret []*scmodel.ServiceBinding
 	for _, i := range l.(*runtime.UnstructuredList).Items {
 		var tmp scmodel.ServiceBinding
-		err := TPRObjectToSCObject(i, &tmp)
+		err := util.TPRObjectToSCObject(i, &tmp)
 		if err != nil {
 			log.Printf("Failed to convert object: %v\n", err)
 			return nil, err
@@ -271,7 +272,7 @@ func (s *thirdPartyServiceStorage) GetServiceBinding(string) (*scmodel.ServiceBi
 func (s *thirdPartyServiceStorage) AddServiceBinding(in *scmodel.ServiceBinding, cred *scmodel.Credential) error {
 	in.Kind = watch.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
-	tprObj, err := SCObjectToTPRObject(in)
+	tprObj, err := util.SCObjectToTPRObject(in)
 	if err != nil {
 		log.Printf("Failed to convert object %#v : %v", in, err)
 		return err
@@ -286,7 +287,7 @@ func (s *thirdPartyServiceStorage) AddServiceBinding(in *scmodel.ServiceBinding,
 func (s *thirdPartyServiceStorage) UpdateServiceBinding(in *scmodel.ServiceBinding) error {
 	in.Kind = watch.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
-	tprObj, err := SCObjectToTPRObject(in)
+	tprObj, err := util.SCObjectToTPRObject(in)
 	if err != nil {
 		log.Printf("Failed to convert object %#v : %v", in, err)
 		return err

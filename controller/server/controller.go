@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 
+	cstorage "github.com/kubernetes-incubator/service-catalog/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
@@ -35,12 +36,12 @@ const (
 )
 
 type controller struct {
-	k8sStorage ServiceStorage
+	k8sStorage cstorage.ServiceStorage
 }
 
-func createController(k8sStorage ServiceStorage) *controller {
+func createController(s cstorage.ServiceStorage) *controller {
 	return &controller{
-		k8sStorage: k8sStorage,
+		k8sStorage: s,
 	}
 }
 
@@ -94,7 +95,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 //     <service-name>:
 //       <credential>
 func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
-	bindings, err := c.k8sStorage.GetBindingsForService(sName, From)
+	bindings, err := c.k8sStorage.GetBindingsForService(sName, cstorage.From)
 	if err != nil {
 		log.Printf("Failed to fetch bindings for %s : %v", sName, err)
 		return err
