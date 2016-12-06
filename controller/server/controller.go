@@ -17,7 +17,6 @@ limitations under the License.
 package server
 
 import (
-	"fmt"
 	"log"
 
 	cstorage "github.com/kubernetes-incubator/service-catalog/controller/storage"
@@ -36,12 +35,12 @@ const (
 )
 
 type controller struct {
-	k8sStorage cstorage.ServiceStorage
+	storage cstorage.ServiceStorage
 }
 
 func createController(s cstorage.ServiceStorage) *controller {
 	return &controller{
-		k8sStorage: s,
+		storage: s,
 	}
 }
 
@@ -95,7 +94,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 //     <service-name>:
 //       <credential>
 func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
-	bindings, err := c.k8sStorage.GetBindingsForService(sName, cstorage.From)
+	bindings, err := c.storage.GetBindingsForService(sName, cstorage.From)
 	if err != nil {
 		log.Printf("Failed to fetch bindings for %s : %v", sName, err)
 		return err
@@ -108,7 +107,7 @@ func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmo
 }
 
 func (c *controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error) {
-	broker, err := c.k8sStorage.GetBrokerByService(serviceID)
+	broker, err := c.storage.GetBrokerByService(serviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +119,7 @@ func (c *controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error)
 // returns the name of the plan since it might get defaulted.
 // If Plan is not given and there's only one plan for a given service, we'll choose that.
 func (c *controller) fetchServicePlanGUID(service string, plan string) (string, string, string, error) {
-	s, err := c.k8sStorage.GetServiceType(service)
+	s, err := c.storage.GetServiceType(service)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -142,7 +141,7 @@ func (c *controller) fetchServicePlanGUID(service string, plan string) (string, 
 // with new binding information. The actual binding injection happens during the
 // instance update process.
 func (c *controller) injectBindingIntoInstance(ID string) error {
-	fromSI, err := c.k8sStorage.GetService(defaultNamespace, ID)
+	fromSI, err := c.storage.GetService(defaultNamespace, ID)
 	if err == nil && fromSI != nil {
 		// Update the Service Instance with the new bindings
 		log.Printf("Found existing FROM Service: %s, should update it", fromSI.Name)
@@ -185,26 +184,26 @@ func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmode
 	in.LastOperation = &op
 
 	log.Printf("Updating Service %s with State\n%v", in.Name, in.LastOperation)
-	return in, c.k8sStorage.SetService(in)
+	return in, c.storage.SetService(in)
 }
 
 func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
 	log.Printf("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
-	to, err := c.k8sStorage.GetService(defaultNamespace, in.To)
+	to, err := c.storage.GetService(defaultNamespace, in.To)
 	if err != nil {
 		log.Printf("To service does not exist %s: %v", in.To, err)
 		return nil, err
 	}
 
 	// Get broker associated with the service.
-	st, err := c.k8sStorage.GetServiceType(to.Service)
+	st, err := c.storage.GetServiceType(to.Service)
 	if err != nil {
 		log.Printf("Failed to fetch service type %s : %v", to.Service, err)
 		return nil, err
 	}
-	broker, err := c.k8sStorage.GetBroker(st.Broker)
+	broker, err := c.storage.GetBroker(st.Broker)
 	if err != nil {
 		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
@@ -230,7 +229,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	}
 	in.Credentials = *creds
 
-	err = c.k8sStorage.UpdateServiceBinding(in)
+	err = c.storage.UpdateServiceBinding(in)
 	if err != nil {
 		log.Printf("Failed to update service binding %s : %v", in.Name, err)
 		return nil, err
@@ -256,8 +255,9 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 	if err != nil {
 		return nil, err
 	}
+
 	log.Printf("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
-	err = c.k8sStorage.AddBroker(in, catalog)
+	err = c.storage.AddBroker(in, catalog)
 	if err != nil {
 		return nil, err
 	}
