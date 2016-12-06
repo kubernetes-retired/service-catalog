@@ -12,15 +12,19 @@ import (
 
 // ServerOptions contains the aggregation of configuration structs for the service-catalog server
 type ServerOptions struct {
-	// for the http stuff ?
+	// the runtime configuration of our server
+	GenericServerRunOptions *genericserveroptions.ServerRunOptions
+	// the https configuration. certs, etc
 	SecureServingOptions *genericserveroptions.SecureServingOptions
 }
 
 const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
 
 func NewCommandServer(out io.Writer) *cobra.Command {
+	// initalize our sub options
 	options := &ServerOptions{
-		SecureServingOptions: genericserveroptions.NewSecureServingOptions(),
+		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
+		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
 	}
 
 	cmd := &cobra.Command{
@@ -35,6 +39,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	// themselves. Each options adds it's own command line flags
 	// in addition to the flags that are defined above.
 	flags := cmd.Flags()
+	options.GenericServerRunOptions.AddUniversalFlags(flags)
 	options.SecureServingOptions.AddFlags(flags)
 
 	return cmd
@@ -44,9 +49,13 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 func (serverOptions ServerOptions) runServer() error {
 	fmt.Println("set up the server")
 	// options
+
+	if err := serverOptions.GenericServerRunOptions.DefaultExternalAddress(serverOptions.SecureServingOptions, nil); err != nil {
+		return err
+	}
 	// server configuration options
 	fmt.Println("set up serving options")
-	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(""); err != nil { // XXX add a flag for the hostname
+	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(serverOptions.GenericServerRunOptions.AdvertiseAddress.String()); err != nil {
 		fmt.Printf("Error creating self-signed certificates: %v", err)
 		return err
 	}
