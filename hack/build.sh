@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-[[ -n "${PROJECT}" ]] \
+[[ -n "${PROJECT:-}" ]] \
   || error_exit '--project is a required parameter'
 
 # Install package dependencies into vendor.
@@ -56,7 +56,7 @@ if [[ "$(uname -s)" == "Linux" ]]; then
     VERSION="${VERSION:-${GIT_HEAD}}"
   )
 
-  [[ -n "${NO_DOCKER_COMPILE}" ]] && MAKE_VARS+=(NO_DOCKER_COMPILE=1)
+  [[ -n "${NO_DOCKER_COMPILE:-}" ]] && MAKE_VARS+=(NO_DOCKER_COMPILE=1)
 
   make "${MAKE_VARS[@]}" build-linux \
     || error_exit 'build linux failed.'
