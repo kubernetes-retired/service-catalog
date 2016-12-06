@@ -9,3 +9,5 @@ vendor/**
 .idea/
 .DS_Store
 .glide
+.scBuildImage
+.dockerInit

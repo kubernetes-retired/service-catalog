@@ -32,18 +32,43 @@ SUB := $(addsuffix .sub, $(ALL))
 build: build.sub
 build-linux: build-linux.sub
 build-darwin: build-darwin.sub
-clean: clean.sub
 docker: docker.sub
 lint: lint.sub
 push: push.sub
 test: test.sub
+
+clean: clean.sub
+	rm -f .dockerInit
+	rm -f .scBuildImage
+	docker rmi -f scbuildimage > /dev/null 2>&1 || true
+
+# Use this target when you want to build everything using docker containers.
+# Good for cases when you don't have the tools installed (like glide or go).
+docker-all: .scBuildImage
+	docker run --rm -ti \
+	  -v $(PWD):/go/src/github.com/kubernetes-incubator/service-catalog \
+	  scbuildimage \
+	  make .dockerInit all
+
+# .dockerInit tells us if our vendor stuff if out of date or not.
+# And if so we'll run init under our docker build.  For non-docker builds
+# it is assumed you'll run "make init" manually.
+.dockerInit: glide.yaml
+	make init
+	echo > .dockerInit
+
+# .scBuildImage is used to know when the docker image ("scbuildimage") is out
+# of date with the Dockerfile.
+.scBuildImage: hack/Dockerfile
+	docker build -t scbuildimage - < hack/Dockerfile
+	echo > .scBuildImage
 
 # Build the same target recursively in all directories.
 $(SUB): %.sub:
 	$(ECHO) for dir in $(DIRS); do $(MAKE) --no-print-directory -C "$${dir}" $* || exit $$? ; done
 
 init:
-	$(ECHO) glide install
+	$(ECHO) glide install --strip-vendor
 
 format:
 	$(ECHO) gofmt -w -s $(addprefix ./,$(DIRS))
