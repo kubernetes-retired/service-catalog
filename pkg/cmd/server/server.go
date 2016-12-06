@@ -62,7 +62,7 @@ func (serverOptions ServerOptions) runServer() error {
 
 	// config
 	fmt.Println("set up config object")
-	config := genericapiserver.NewConfig()
+	config := genericapiserver.NewConfig().ApplyOptions(serverOptions.GenericServerRunOptions)
 	secureConfig, err := config.ApplySecureServingOptions(serverOptions.SecureServingOptions)
 	if err != nil {
 		return err
