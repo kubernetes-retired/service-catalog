@@ -15,13 +15,13 @@
 
 set -u
 
+. "${ROOT}/script/cluster_utilities.sh" || { echo 'Cannot load cluster utilities'; exit 1; }
 . "${ROOT}/script/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 while [[ $# -ne 0 ]]; do
   case "$1" in
     --project)    PROJECT="$2" ; shift ;;
     --zone)       ZONE="$2" ; shift ;;
-    --namespace)  NAMESPACE="$2" ; shift ;;
     *)            CLUSTERNAME="$1" ;;
   esac
   shift
@@ -36,22 +36,8 @@ done
 [[ -n "${PROJECT:-}" ]] \
   || { echo 'Project must be provided.'; exit 1; }
 
-[[ -n "${NAMESPACE:-}" ]] \
-  || { echo 'Namespace must be provided.'; exit 1; }
-
-# Cleanup services in Kubernetes to prevent network resource leaking
-for namespace in $(kubectl get namespaces -oname | grep -v kube-system); do
-  kubectl delete deployments,services,configmaps,pods,replicasets \
-      --all --namespace ${namespace##*/}
-done
-
-wait_for_expected_output -x -e 'Terminating' -n 20 -s 2 -t 60 \
-    kubectl get pods \
-  || error_exit 'Kubernetes resources failed to terminate.'
-
-wait_for_expected_output -x -e 'Terminating' -n 20 -s 2 -t 60 \
-    kubectl get pods --namespace ${NAMESPACE} \
-  || error_exit 'Kubernetes resources failed to terminate.'
+wipe_cluster \
+  || error_exit 'Failed to shutdown Kubernetes resources on cluster.'
 
 gcloud container clusters delete "${CLUSTERNAME}" --project="${PROJECT}" \
     --zone="${ZONE}" --quiet --async
