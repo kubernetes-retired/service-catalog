@@ -68,12 +68,15 @@ type BrokerCondition struct {
 	Message string
 }
 
+// BrokerConditionType represents a broker condition value
 type BrokerConditionType string
 
 const (
+	// BrokerConditionReady represents the fact that a given broker condition is in ready state
 	BrokerConditionReady BrokerConditionType = "Ready"
 )
 
+// ConditionStatus represents a condition's status
 type ConditionStatus string
 
 // These are valid condition statuses. "ConditionTrue" means a resource is in
@@ -82,8 +85,11 @@ type ConditionStatus string
 // condition or not. In the future, we could add other intermediate
 // conditions, e.g. ConditionDegraded.
 const (
-	ConditionTrue    ConditionStatus = "True"
-	ConditionFalse   ConditionStatus = "False"
+	// ConditionTrue represents the fact that a given condition is true
+	ConditionTrue ConditionStatus = "True"
+	// ConditionFalse represents the fact that a given condition is false
+	ConditionFalse ConditionStatus = "False"
+	// ConditionUnknown represents the fact that a given condition is unknown
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
@@ -178,13 +184,24 @@ type InstanceCondition struct {
 	Message string
 }
 
+// InstanceConditionType represents a instance condition value
 type InstanceConditionType string
 
 const (
-	InstanceConditionProvisioning      InstanceConditionType = "Provisioning"
-	InstanceConditionReady             InstanceConditionType = "Ready"
-	InstanceConditionProvisionFailed   InstanceConditionType = "ProvisionFailed"
-	InstanceConditionDeprovisioning    InstanceConditionType = "Deprovisioning"
+	// InstanceConditionProvisioning represents that a given instance condition is in
+	// provisioning state
+	InstanceConditionProvisioning InstanceConditionType = "Provisioning"
+	// InstanceConditionReady represents that a given instance condition is in
+	// ready state
+	InstanceConditionReady InstanceConditionType = "Ready"
+	// InstanceConditionProvisionFailed represents that a given instance condition is in
+	// failed state
+	InstanceConditionProvisionFailed InstanceConditionType = "ProvisionFailed"
+	// InstanceConditionDeprovisioning represents that a given instance condition is in
+	// deprovisioning state
+	InstanceConditionDeprovisioning InstanceConditionType = "Deprovisioning"
+	// InstanceConditionDeprovisionFailed represents that a given instance condition is in
+	// deprovision failed state
 	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
@@ -236,9 +253,12 @@ type BindingCondition struct {
 	Message string
 }
 
+// BindingConditionType represents a binding condition value
 type BindingConditionType string
 
 const (
-	BindingConditionReady  BindingConditionType = "Ready"
+	// BindingConditionReady represents a binding condition is in ready state
+	BindingConditionReady BindingConditionType = "Ready"
+	// BindingConditionFailed represents a binding condition is in failed state
 	BindingConditionFailed BindingConditionType = "Failed"
 )
