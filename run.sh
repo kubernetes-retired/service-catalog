@@ -17,6 +17,6 @@
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. ${ROOT}/script/run_utilities.sh
+. ${ROOT}/hack/run_utilities.sh
 
 run_main "$@"
