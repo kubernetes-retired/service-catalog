@@ -92,6 +92,9 @@ node {
         -base64 100 | tr -dc a-z0-9 | cut -c -25''']).trim()
 
     try {
+      // Initialize build, for example, updating installed software.
+      sh """${env.ROOT}/hack/jenkins/init_build.sh"""
+
       // These are done in parallel since creating the cluster takes a while,
       // and the build doesn't depend on it.
       parallel(
