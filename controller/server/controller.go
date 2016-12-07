@@ -35,10 +35,10 @@ const (
 )
 
 type controller struct {
-	storage storage.ServiceStorage
+	storage storage.Storage
 }
 
-func createController(s storage.ServiceStorage) *controller {
+func createController(s storage.Storage) *controller {
 	return &controller{
 		storage: s,
 	}
@@ -109,7 +109,7 @@ func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmo
 // with new binding information. The actual binding injection happens during the
 // instance update process.
 func (c *controller) injectBindingIntoInstance(ID string) error {
-	fromSI, err := c.storage.GetService(defaultNamespace, ID)
+	fromSI, err := c.storage.GetServiceInstance(defaultNamespace, ID)
 	if err == nil && fromSI != nil {
 		// Update the Service Instance with the new bindings
 		log.Printf("Found existing FROM Service: %s, should update it", fromSI.Name)
@@ -152,21 +152,21 @@ func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmode
 	in.LastOperation = &op
 
 	log.Printf("Updating Service %s with State\n%v", in.Name, in.LastOperation)
-	return in, c.storage.SetService(in)
+	return in, c.storage.UpdateServiceInstance(in)
 }
 
 func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
 	log.Printf("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
-	to, err := c.storage.GetService(defaultNamespace, in.To)
+	to, err := c.storage.GetServiceInstance(defaultNamespace, in.To)
 	if err != nil {
 		log.Printf("To service does not exist %s: %v", in.To, err)
 		return nil, err
 	}
 
 	// Get broker associated with the service.
-	st, err := c.storage.GetServiceType(to.Service)
+	st, err := c.storage.GetServiceClass(to.Service)
 	if err != nil {
 		log.Printf("Failed to fetch service type %s : %v", to.Service, err)
 		return nil, err

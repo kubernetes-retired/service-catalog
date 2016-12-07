@@ -14,19 +14,19 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
-type thirdPartyServiceStorage struct {
+type tprStorage struct {
 	watcher *watch.Watcher
 }
 
-// CreateTPRStorage creates an instance of ServiceStorage
-// backed by Kubernetes third-party resources.
-func CreateTPRStorage(w *watch.Watcher) ServiceStorage {
-	return &thirdPartyServiceStorage{
+// CreateTPRStorage creates an instance of Storage backed by Kubernetes
+// third-party resources.
+func CreateTPRStorage(w *watch.Watcher) Storage {
+	return &tprStorage{
 		watcher: w,
 	}
 }
 
-func (s *thirdPartyServiceStorage) ListBrokers() ([]*scmodel.ServiceBroker, error) {
+func (s *tprStorage) ListBrokers() ([]*scmodel.ServiceBroker, error) {
 	l, err := s.watcher.GetResourceClient(watch.ServiceBroker, "default").List(&v1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (s *thirdPartyServiceStorage) ListBrokers() ([]*scmodel.ServiceBroker, erro
 	return ret, nil
 }
 
-func (s *thirdPartyServiceStorage) GetBroker(name string) (*scmodel.ServiceBroker, error) {
+func (s *tprStorage) GetBroker(name string) (*scmodel.ServiceBroker, error) {
 	log.Printf("Getting broker: %s\n", name)
 
 	sb, err := s.watcher.GetResourceClient(watch.ServiceBroker, "default").Get(name)
@@ -59,7 +59,7 @@ func (s *thirdPartyServiceStorage) GetBroker(name string) (*scmodel.ServiceBroke
 	return &tmp, nil
 }
 
-func (s *thirdPartyServiceStorage) GetInventory() (*scmodel.Catalog, error) {
+func (s *tprStorage) GetInventory() (*scmodel.Catalog, error) {
 	l, err := s.watcher.GetResourceClient(watch.ServiceType, "default").List(&v1.ListOptions{})
 	if err != nil {
 		log.Printf("Failed to list service types: %v\n", err)
@@ -79,7 +79,7 @@ func (s *thirdPartyServiceStorage) GetInventory() (*scmodel.Catalog, error) {
 
 }
 
-func (s *thirdPartyServiceStorage) AddBroker(broker *scmodel.ServiceBroker, catalog *scmodel.Catalog) error {
+func (s *tprStorage) AddBroker(broker *scmodel.ServiceBroker, catalog *scmodel.Catalog) error {
 	broker.Kind = watch.ServiceBrokerKind
 	broker.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(broker)
@@ -113,15 +113,15 @@ func (s *thirdPartyServiceStorage) AddBroker(broker *scmodel.ServiceBroker, cata
 	return nil
 }
 
-func (s *thirdPartyServiceStorage) UpdateBroker(broker *scmodel.ServiceBroker, catalog *scmodel.Catalog) error {
+func (s *tprStorage) UpdateBroker(broker *scmodel.ServiceBroker, catalog *scmodel.Catalog) error {
 	return errors.New("Not implemented yet")
 }
 
-func (s *thirdPartyServiceStorage) DeleteBroker(id string) error {
+func (s *tprStorage) DeleteBroker(id string) error {
 	return errors.New("Not implemented yet")
 }
 
-func (s *thirdPartyServiceStorage) GetServiceType(name string) (*scmodel.Service, error) {
+func (s *tprStorage) GetServiceClass(name string) (*scmodel.Service, error) {
 	si, err := s.watcher.GetResourceClient(watch.ServiceType, "default").Get(name)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (s *thirdPartyServiceStorage) GetServiceType(name string) (*scmodel.Service
 
 }
 
-func (s *thirdPartyServiceStorage) ListServices(ns string) ([]*scmodel.ServiceInstance, error) {
+func (s *tprStorage) ListServiceInstances(ns string) ([]*scmodel.ServiceInstance, error) {
 	l, err := s.watcher.GetResourceClient(watch.ServiceInstance, ns).List(&v1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (s *thirdPartyServiceStorage) ListServices(ns string) ([]*scmodel.ServiceIn
 }
 
 // GetService returns the service instance with the specified name in the specified namespace
-func (s *thirdPartyServiceStorage) GetService(ns string, name string) (*scmodel.ServiceInstance, error) {
+func (s *tprStorage) GetServiceInstance(ns string, name string) (*scmodel.ServiceInstance, error) {
 	si, err := s.watcher.GetResourceClient(watch.ServiceInstance, ns).Get(name)
 	if err != nil {
 		return nil, err
@@ -167,15 +167,15 @@ func (s *thirdPartyServiceStorage) GetService(ns string, name string) (*scmodel.
 	return &tmp, nil
 }
 
-func (s *thirdPartyServiceStorage) ServiceExists(ns string, name string) bool {
-	_, err := s.GetService(ns, name)
+func (s *tprStorage) ServiceInstanceExists(ns string, name string) bool {
+	_, err := s.GetServiceInstance(ns, name)
 	return err == nil
 }
 
 // AddService creates a Service Instance Data. This method is
 // deprecated and should be replaced with the one below.
 // TODO: Get rid of this method and rename AddServiceRaw to this one...
-func (s *thirdPartyServiceStorage) AddService(si *scmodel.ServiceInstance) error {
+func (s *tprStorage) AddServiceInstance(si *scmodel.ServiceInstance) error {
 	si.Kind = watch.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(si)
@@ -192,7 +192,7 @@ func (s *thirdPartyServiceStorage) AddService(si *scmodel.ServiceInstance) error
 	return nil
 }
 
-func (s *thirdPartyServiceStorage) SetService(si *scmodel.ServiceInstance) error {
+func (s *tprStorage) UpdateServiceInstance(si *scmodel.ServiceInstance) error {
 	si.Kind = watch.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(si)
@@ -209,13 +209,13 @@ func (s *thirdPartyServiceStorage) SetService(si *scmodel.ServiceInstance) error
 
 }
 
-func (s *thirdPartyServiceStorage) DeleteService(string) error {
+func (s *tprStorage) DeleteServiceInstance(string) error {
 	return errors.New("Not implemented yet")
 }
 
 // ListServiceBindings returns all the bindings.
 // TODO: wire in namespaces.
-func (s *thirdPartyServiceStorage) ListServiceBindings() ([]*scmodel.ServiceBinding, error) {
+func (s *tprStorage) ListServiceBindings() ([]*scmodel.ServiceBinding, error) {
 	l, err := s.watcher.GetResourceClient(watch.ServiceBinding, "default").List(&v1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -232,11 +232,11 @@ func (s *thirdPartyServiceStorage) ListServiceBindings() ([]*scmodel.ServiceBind
 	}
 	return ret, nil
 }
-func (s *thirdPartyServiceStorage) GetServiceBinding(string) (*scmodel.ServiceBinding, error) {
+func (s *tprStorage) GetServiceBinding(string) (*scmodel.ServiceBinding, error) {
 	return nil, errors.New("Not implemented yet")
 }
 
-func (s *thirdPartyServiceStorage) AddServiceBinding(in *scmodel.ServiceBinding, cred *scmodel.Credential) error {
+func (s *tprStorage) AddServiceBinding(in *scmodel.ServiceBinding, cred *scmodel.Credential) error {
 	in.Kind = watch.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(in)
@@ -251,7 +251,7 @@ func (s *thirdPartyServiceStorage) AddServiceBinding(in *scmodel.ServiceBinding,
 
 }
 
-func (s *thirdPartyServiceStorage) UpdateServiceBinding(in *scmodel.ServiceBinding) error {
+func (s *tprStorage) UpdateServiceBinding(in *scmodel.ServiceBinding) error {
 	in.Kind = watch.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(in)
@@ -266,6 +266,6 @@ func (s *thirdPartyServiceStorage) UpdateServiceBinding(in *scmodel.ServiceBindi
 
 }
 
-func (s *thirdPartyServiceStorage) DeleteServiceBinding(string) error {
+func (s *tprStorage) DeleteServiceBinding(string) error {
 	return errors.New("Not implemented yet")
 }

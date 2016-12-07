@@ -29,7 +29,7 @@ type bindingPair struct {
 	credential *model.Credential
 }
 
-type inMemServiceStorage struct {
+type memStorage struct {
 	brokers map[string]*model.ServiceBroker
 	// This gets fetched when a SB is created (or possibly later when refetched).
 	// It's static for now to keep compatibility, seems like this could be more dynamic.
@@ -41,10 +41,9 @@ type inMemServiceStorage struct {
 	bindings map[string]*bindingPair
 }
 
-// CreateInMemServiceStorage creates an instance of ServiceStorage interface,
-// backed by memory.
-func CreateInMemServiceStorage() ServiceStorage {
-	return &inMemServiceStorage{
+// CreateMemStorage creates an instance of Storage interface, backed by memory.
+func CreateMemStorage() Storage {
+	return &memStorage{
 		brokers:  make(map[string]*model.ServiceBroker),
 		catalogs: make(map[string]*model.Catalog),
 		services: make(map[string]*model.ServiceInstance),
@@ -52,7 +51,7 @@ func CreateInMemServiceStorage() ServiceStorage {
 	}
 }
 
-func (s *inMemServiceStorage) GetInventory() (*model.Catalog, error) {
+func (s *memStorage) GetInventory() (*model.Catalog, error) {
 	services := []*model.Service{}
 	for _, v := range s.catalogs {
 		services = append(services, v.Services...)
@@ -60,7 +59,7 @@ func (s *inMemServiceStorage) GetInventory() (*model.Catalog, error) {
 	return &model.Catalog{Services: services}, nil
 }
 
-func (s *inMemServiceStorage) ListBrokers() ([]*model.ServiceBroker, error) {
+func (s *memStorage) ListBrokers() ([]*model.ServiceBroker, error) {
 	b := []*model.ServiceBroker{}
 	for _, v := range s.brokers {
 		b = append(b, v)
@@ -68,14 +67,14 @@ func (s *inMemServiceStorage) ListBrokers() ([]*model.ServiceBroker, error) {
 	return b, nil
 }
 
-func (s *inMemServiceStorage) GetBroker(id string) (*model.ServiceBroker, error) {
+func (s *memStorage) GetBroker(id string) (*model.ServiceBroker, error) {
 	if b, ok := s.brokers[id]; ok {
 		return b, nil
 	}
 	return nil, fmt.Errorf("No such broker: %s", id)
 }
 
-func (s *inMemServiceStorage) AddBroker(broker *model.ServiceBroker, catalog *model.Catalog) error {
+func (s *memStorage) AddBroker(broker *model.ServiceBroker, catalog *model.Catalog) error {
 	if _, ok := s.brokers[broker.GUID]; ok {
 		return fmt.Errorf("Broker %s already exists", broker.Name)
 	}
@@ -84,7 +83,7 @@ func (s *inMemServiceStorage) AddBroker(broker *model.ServiceBroker, catalog *mo
 	return nil
 }
 
-func (s *inMemServiceStorage) UpdateBroker(broker *model.ServiceBroker, catalog *model.Catalog) error {
+func (s *memStorage) UpdateBroker(broker *model.ServiceBroker, catalog *model.Catalog) error {
 	if _, ok := s.brokers[broker.GUID]; !ok {
 		return fmt.Errorf("Broker %s does not exist", broker.Name)
 	}
@@ -93,7 +92,7 @@ func (s *inMemServiceStorage) UpdateBroker(broker *model.ServiceBroker, catalog 
 	return nil
 }
 
-func (s *inMemServiceStorage) DeleteBroker(id string) error {
+func (s *memStorage) DeleteBroker(id string) error {
 	_, err := s.GetBroker(id)
 	if err != nil {
 		return fmt.Errorf("Broker %s does not exist", id)
@@ -105,7 +104,7 @@ func (s *inMemServiceStorage) DeleteBroker(id string) error {
 	return nil
 }
 
-func (s *inMemServiceStorage) GetServiceType(name string) (*model.Service, error) {
+func (s *memStorage) GetServiceClass(name string) (*model.Service, error) {
 	c, err := s.GetInventory()
 	if err != nil {
 		return nil, err
@@ -118,14 +117,12 @@ func (s *inMemServiceStorage) GetServiceType(name string) (*model.Service, error
 	return nil, fmt.Errorf("ServiceType %s not found", name)
 }
 
-// ServiceExists returns true if service exists
-// Only supports "default" namespace for now.
-func (s *inMemServiceStorage) ServiceExists(ns string, id string) bool {
-	_, err := s.GetService(ns, id)
+func (s *memStorage) ServiceInstanceExists(ns string, id string) bool {
+	_, err := s.GetServiceInstance(ns, id)
 	return err == nil
 }
 
-func (s *inMemServiceStorage) ListServices(ns string) ([]*model.ServiceInstance, error) {
+func (s *memStorage) ListServiceInstances(ns string) ([]*model.ServiceInstance, error) {
 	services := []*model.ServiceInstance{}
 	for _, v := range s.services {
 		services = append(services, v)
@@ -133,7 +130,7 @@ func (s *inMemServiceStorage) ListServices(ns string) ([]*model.ServiceInstance,
 	return services, nil
 }
 
-func (s *inMemServiceStorage) GetService(ns string, id string) (*model.ServiceInstance, error) {
+func (s *memStorage) GetServiceInstance(ns string, id string) (*model.ServiceInstance, error) {
 	service, ok := s.services[id]
 	if !ok {
 		return &model.ServiceInstance{}, fmt.Errorf("Service %s does not exist", id)
@@ -142,8 +139,8 @@ func (s *inMemServiceStorage) GetService(ns string, id string) (*model.ServiceIn
 	return service, nil
 }
 
-func (s *inMemServiceStorage) AddService(si *model.ServiceInstance) error {
-	if s.ServiceExists("default", si.ID) {
+func (s *memStorage) AddServiceInstance(si *model.ServiceInstance) error {
+	if s.ServiceInstanceExists("default", si.ID) {
 		return fmt.Errorf("Service %s already exists", si.ID)
 	}
 
@@ -151,12 +148,12 @@ func (s *inMemServiceStorage) AddService(si *model.ServiceInstance) error {
 	return nil
 }
 
-func (s *inMemServiceStorage) SetService(si *model.ServiceInstance) error {
+func (s *memStorage) UpdateServiceInstance(si *model.ServiceInstance) error {
 	s.services[si.ID] = si
 	return nil
 }
 
-func (s *inMemServiceStorage) DeleteService(id string) error {
+func (s *memStorage) DeleteServiceInstance(id string) error {
 	// First delete all the bindings where this ID is either to / from
 	bindings, err := GetBindingsForService(s, id, Both)
 	for _, b := range bindings {
@@ -169,7 +166,7 @@ func (s *inMemServiceStorage) DeleteService(id string) error {
 	return nil
 }
 
-func (s *inMemServiceStorage) ListServiceBindings() ([]*model.ServiceBinding, error) {
+func (s *memStorage) ListServiceBindings() ([]*model.ServiceBinding, error) {
 	bindings := []*model.ServiceBinding{}
 	for _, v := range s.bindings {
 		bindings = append(bindings, v.binding)
@@ -177,7 +174,7 @@ func (s *inMemServiceStorage) ListServiceBindings() ([]*model.ServiceBinding, er
 	return bindings, nil
 }
 
-func (s *inMemServiceStorage) GetServiceBinding(id string) (*model.ServiceBinding, error) {
+func (s *memStorage) GetServiceBinding(id string) (*model.ServiceBinding, error) {
 	b, ok := s.bindings[id]
 	if !ok {
 		return &model.ServiceBinding{}, fmt.Errorf("Binding %s does not exist", id)
@@ -186,7 +183,7 @@ func (s *inMemServiceStorage) GetServiceBinding(id string) (*model.ServiceBindin
 	return b.binding, nil
 }
 
-func (s *inMemServiceStorage) AddServiceBinding(binding *model.ServiceBinding, cred *model.Credential) error {
+func (s *memStorage) AddServiceBinding(binding *model.ServiceBinding, cred *model.Credential) error {
 	_, err := s.GetServiceBinding(binding.ID)
 	if err == nil {
 		return fmt.Errorf("Binding %s already exists", binding.ID)
@@ -196,7 +193,7 @@ func (s *inMemServiceStorage) AddServiceBinding(binding *model.ServiceBinding, c
 	return nil
 }
 
-func (s *inMemServiceStorage) UpdateServiceBinding(binding *model.ServiceBinding) error {
+func (s *memStorage) UpdateServiceBinding(binding *model.ServiceBinding) error {
 	_, err := s.GetServiceBinding(binding.ID)
 	if err != nil {
 		return fmt.Errorf("Binding %s doesn't exist", binding.ID)
@@ -207,14 +204,14 @@ func (s *inMemServiceStorage) UpdateServiceBinding(binding *model.ServiceBinding
 	return nil
 }
 
-func (s *inMemServiceStorage) DeleteServiceBinding(id string) error {
+func (s *memStorage) DeleteServiceBinding(id string) error {
 	log.Printf("Deleting binding: %s\n", id)
 	delete(s.bindings, id)
 	return nil
 }
 
-func (s *inMemServiceStorage) getServiceInstanceByName(name string) (*model.ServiceInstance, error) {
-	siList, err := s.ListServices("default")
+func (s *memStorage) getServiceInstanceByName(name string) (*model.ServiceInstance, error) {
+	siList, err := s.ListServiceInstances("default")
 	if err != nil {
 		return nil, err
 	}

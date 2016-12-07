@@ -45,8 +45,8 @@ func (e serviceNotFound) Error() string {
 //
 // If Plan is not given and there's only one plan for a given service, we'll
 // choose that.
-func GetServicePlanInfo(storage ServiceStorage, service string, plan string) (string, string, string, error) {
-	s, err := storage.GetServiceType(service)
+func GetServicePlanInfo(storage Storage, service string, plan string) (string, string, string, error) {
+	s, err := storage.GetServiceClass(service)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -66,7 +66,7 @@ func GetServicePlanInfo(storage ServiceStorage, service string, plan string) (st
 
 // GetBrokerByServiceClass returns the broker which serves a particular service
 // class.
-func GetBrokerByServiceClass(storage ServiceStorage, id string) (*model.ServiceBroker, error) {
+func GetBrokerByServiceClass(storage Storage, id string) (*model.ServiceBroker, error) {
 	log.Printf("Getting broker by service id %s\n", id)
 
 	c, err := storage.GetInventory()
@@ -83,7 +83,7 @@ func GetBrokerByServiceClass(storage ServiceStorage, id string) (*model.ServiceB
 }
 
 // GetBindingsForService returns all the specific kinds of bindings (to, from, both).
-func GetBindingsForService(storage ServiceStorage, serviceID string, t BindingDirection) ([]*model.ServiceBinding, error) {
+func GetBindingsForService(storage Storage, serviceID string, t BindingDirection) ([]*model.ServiceBinding, error) {
 	var ret []*model.ServiceBinding
 	bindings, err := storage.ListServiceBindings()
 	if err != nil {
