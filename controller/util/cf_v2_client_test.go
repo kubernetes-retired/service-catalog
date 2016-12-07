@@ -14,6 +14,8 @@ limitations under the License.
 package util
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
@@ -21,15 +23,27 @@ import (
 )
 
 func TestUpdateServiceInstance(t *testing.T) {
-	cli := CreateCFV2BrokerClient(&scmodel.ServiceBroker{})
+	fakeBroker := newFakeBroker()
+	defer fakeBroker.Close()
+	const id = "testID"
+	req := &model.ServiceInstanceRequest{
+		OrgID:             "testOrgID",
+		PlanID:            "testPlanID",
+		ServiceID:         "testSvcID",
+		SpaceID:           "testSpaceID",
+		Parameters:        map[string]interface{}{},
+		AcceptsIncomplete: false,
+	}
 
-	_, err := cli.UpdateServiceInstance("foo", &model.ServiceInstanceRequest{})
+	cl := CreateCFV2BrokerClient(&scmodel.ServiceBroker{
+		BrokerURL: fakeBroker.URLStr(),
+	})
+
+	_, err := cl.UpdateServiceInstance(id, req)
 	if err == nil {
 		t.Fatalf("Expected not implemented")
 	}
 	if err.Error() != "Not implemented" {
 		t.Errorf("Expected not implemented, got %v", err)
 	}
-
-	// TODO: test against fake/test broker.
 }
