@@ -17,11 +17,8 @@ limitations under the License.
 package server
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
@@ -70,42 +67,21 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 		params["bindings"] = fromBindings
 	}
 
-	// Then actually make the request to reify the service instance
+	// Get broker for this service class.
+	broker, err := c.getBroker(in.ServiceID)
+	if err != nil {
+		return err
+	}
+	client := util.CreateCFV2BrokerClient(broker)
+
+	// Make the request to instantiate.
 	createReq := &sbmodel.ServiceInstanceRequest{
 		ServiceID:  in.ServiceID,
 		PlanID:     in.PlanID,
 		Parameters: params,
 	}
-
-	jsonBytes, err := json.Marshal(createReq)
-	if err != nil {
-		return err
-	}
-
-	broker, err := c.getBroker(in.ServiceID)
-	if err != nil {
-		return err
-	}
-
-	url := fmt.Sprintf(serviceInstanceFormatString, broker.BrokerURL, in.ID)
-
-	// TODO: Handle the auth
-	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
-	client := &http.Client{}
-	log.Printf("Doing a request to: %s", url)
-	resp, err := client.Do(createHTTPReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// TODO: Align this with the actual response model.
-	si := scmodel.ServiceInstance{}
-	err = util.ResponseBodyToObject(resp, &si)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = client.CreateServiceInstance(in.ID, createReq)
+	return err
 }
 
 // getBindingsFrom returns the set of bindings for a consuming service instance.
@@ -221,21 +197,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		return nil, err
 	}
 
-	// Then actually make the request to create the binding
-	createReq := &sbmodel.BindingRequest{
-		ServiceID:  to.ServiceID,
-		PlanID:     to.PlanID,
-		Parameters: in.Parameters,
-	}
-
-	jsonBytes, err := json.Marshal(createReq)
-	if err != nil {
-		log.Printf("Failed to marshal: %#v", err)
-		return nil, err
-	}
-
-	in.ID = uuid.NewV4().String()
-
+	// Get broker associated with the service.
 	st, err := c.k8sStorage.GetServiceType(to.Service)
 	if err != nil {
 		log.Printf("Failed to fetch service type %s : %v", to.Service, err)
@@ -246,28 +208,26 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
 	}
-	url := fmt.Sprintf(bindingFormatString, broker.BrokerURL, to.ID, in.ID)
+	client := util.CreateCFV2BrokerClient(broker)
 
-	// TODO: Handle the auth
-	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
-	client := &http.Client{}
-	log.Printf("Doing a request to: %s", url)
-	resp, err := client.Do(createHTTPReq)
-	if err != nil {
-		log.Printf("Failed to PUT: %#v", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
+	// Assign UUID to binding.
+	in.ID = uuid.NewV4().String()
 
-	sbr := scmodel.CreateServiceBindingResponse{}
-	err = util.ResponseBodyToObject(resp, &sbr)
-	if err != nil {
-		log.Printf("Failed to unmarshal: %#v", err)
-		return nil, err
+	// Make the request to bind.
+	createReq := &sbmodel.BindingRequest{
+		ServiceID:  to.ServiceID,
+		PlanID:     to.PlanID,
+		Parameters: in.Parameters,
 	}
+	sbr, err := client.CreateServiceBinding(to.ID, in.ID, createReq)
 
 	// Stash the credentials with the binding and update the binding.
-	in.Credentials = sbr.Credentials
+	creds, err := util.ConvertCredential(&sbr.Credentials)
+	if err != nil {
+		log.Printf("Failed to convert creds: %v\n", err)
+		return nil, err
+	}
+	in.Credentials = *creds
 
 	err = c.k8sStorage.UpdateServiceBinding(in)
 	if err != nil {
@@ -286,29 +246,17 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 }
 
 func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.ServiceBroker, error) {
-	// Fetch the catalog from the broker
-	u := fmt.Sprintf(catalogURLFormatString, in.BrokerURL)
-	req, err := http.NewRequest("GET", u, nil)
-	req.SetBasicAuth(in.AuthUsername, in.AuthPassword)
-	resp, err := http.DefaultClient.Do(req)
+	client := util.CreateCFV2BrokerClient(in)
+	sbcat, err := client.GetCatalog()
 	if err != nil {
-		log.Printf("Failed to fetch catalog from %s\n%v", u, resp)
-		log.Printf("err: %#v", err)
 		return nil, err
 	}
-
-	// TODO: the model from SB is fetched and stored directly as the one in the SC model (which the
-	// storage operates on). We should convert it from the SB model to SC model before storing.
-	var catalog scmodel.Catalog
-	err = util.ResponseBodyToObject(resp, &catalog)
+	catalog, err := util.ConvertCatalog(sbcat)
 	if err != nil {
-		log.Printf("Failed to unmarshal catalog: %#v", err)
 		return nil, err
 	}
-
-	log.Printf("Adding a broker %s catalog:\n%v", in.Name, catalog)
-
-	err = c.k8sStorage.AddBroker(in, &catalog)
+	log.Printf("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
+	err = c.k8sStorage.AddBroker(in, catalog)
 	if err != nil {
 		return nil, err
 	}
