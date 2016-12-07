@@ -67,32 +67,17 @@ echo 'Deploying to Kubernetes cluster...'
 # Create the namespace
 kubectl create namespace "${NAMESPACE}"
 
-while : ; do
-  OUTPUT="$(helm install "${ROOT}/deploy/catalog" --set "registry=${GCR},version=${VERSION}" 2>&1)"
-
-  if [[ $? -eq 0 ]]; then
-    break
-  elif [[ "${OUTPUT}" == *could\ not\ find\ a\ ready\ tiller\ pod* ]]; then
-    sleep 15
-    continue
-  else
-    error_exit 'Error deploying to Kubernetes cluster.'
-  fi
-done
+retry -n 10 -s 10 -t 60 \
+    helm install "${ROOT}/deploy/catalog" \
+    --set "registry=${GCR},version=${VERSION}" \
+  || error_exit 'Error deploying to Kubernetes cluster.'
 
 echo 'Waiting on services to spin up...'
 
 # CREATE SERVICES
-COUNT=0
-INTERVAL=10
-LIMIT=240
-while [[ "$(kubectl get pods --namespace ${NAMESPACE})" == *ContainerCreating* ]]; do
-  sleep ${INTERVAL}
-  (( COUNT+=${INTERVAL} ))
-  if [[ ${COUNT} -gt ${LIMIT} ]]; then
-    error_exit 'Services took an unexpected amount of time to spin up.'
-  fi
-done
+wait_for_expected_output -x -e 'ContainerCreating' -n 20 -s 10 -t 60  \
+    kubectl get pods --namespace ${NAMESPACE} \
+  || error_exit 'Services took an unexpected amount of time to spin up.'
 
 # Check to see if Kubernetes resources have finished being created.
 retry kubectl get serviceclasses,serviceinstances,servicebrokers,servicebindings \
@@ -119,43 +104,22 @@ kubectl create -f "${ROOT}/examples/walkthrough/frontend.yaml" \
   || error_exit 'Cannot create frontend.'
 
 echo 'Waiting for frontend service to come up...'
-COUNT=0
-INTERVAL=10
-LIMIT=120
-while [[ "$(kubectl get services)" != *booksfe* ]]; do
-  sleep ${INTERVAL}
-  (( COUNT+=${INTERVAL} ))
-  if [[ ${COUNT} -gt ${LIMIT} ]]; then
-    error_exit 'Frontend service took unexpected amount of time to come up.'
-  fi
-done
+wait_for_expected_output -e 'booksfe' -n 20 -s 10 -t 60 \
+    kubectl get services \
+  || error_exit 'Frontend service took unexpected amount of time to come up.'
 
 echo 'Waiting for external IP for frontend...'
-COUNT=0
-INTERVAL=10
-LIMIT=200
-while [[ "$(kubectl get services)" == *pending* ]]; do
-  sleep ${INTERVAL}
-  (( COUNT+=${INTERVAL} ))
-  if [[ ${COUNT} -gt ${LIMIT} ]]; then
-    error_exit 'Frontend service took unexpected amount of time to get external IP.'
-  fi
-done
+wait_for_expected_output -x -e 'pending' -n 20 -s 10 -t 60 \
+    kubectl get services \
+  || error_exit 'Frontend service took unexpected amount of time to get external IP.'
 
 IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
 echo "Frontend external IP assigned: ${IP}"
 
 echo 'Waiting for frontend service to unblock...'
-COUNT=0
-INTERVAL=30
-LIMIT=300
-while [[ "$(curl "http://${IP}:8080/shelves")" == *blocked* ]]; do
-  sleep ${INTERVAL}
-  (( COUNT+=${INTERVAL} ))
-  if [[ ${COUNT} -gt ${LIMIT} ]]; then
-    error_exit 'Access to frontend service still blocked after unexpected amount of time.'
-  fi
-done
+wait_for_expected_output -x -e 'blocked' -n 20 -s 30 -t 60 \
+    curl "http://${IP}:8080/shelves" \
+  || error_exit 'Access to frontend service still blocked after unexpected amount of time.'
 
 # TESTS
 echo "Running tests..."
