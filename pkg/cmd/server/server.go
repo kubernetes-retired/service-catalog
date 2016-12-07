@@ -16,6 +16,8 @@ type ServerOptions struct {
 	GenericServerRunOptions *genericserveroptions.ServerRunOptions
 	// the https configuration. certs, etc
 	SecureServingOptions *genericserveroptions.SecureServingOptions
+	// storage with etcd
+	EtcdOptions *genericserveroptions.EtcdOptions
 }
 
 const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
@@ -25,7 +27,12 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	options := &ServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
+		EtcdOptions:             genericserveroptions.NewEtcdOptions(),
 	}
+
+	// when our etcd resources are created, put them in a location
+	// specific to us
+	options.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
 
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -41,6 +48,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	flags := cmd.Flags()
 	options.GenericServerRunOptions.AddUniversalFlags(flags)
 	options.SecureServingOptions.AddFlags(flags)
+	options.EtcdOptions.AddFlags(flags)
 
 	return cmd
 }
