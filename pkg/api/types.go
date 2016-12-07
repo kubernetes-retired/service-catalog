@@ -205,7 +205,7 @@ type BindingSpec struct {
 	InstanceRef kapi.ObjectReference
 	// AppLabelSelector selects the pods in the Binding's namespace that
 	// should be injected with the results of the binding.  Immutable.
-	AppLabelSelector kapi.LabelSelector
+	AppLabelSelector kunversioned.LabelSelector
 
 	Parameters map[string]interface{}
 
