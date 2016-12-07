@@ -122,7 +122,7 @@ node {
 
     // Run end-2-end tests on the deployed cluster.
     try {
-      sh """${env.ROOT}/jenkins/test_cluster.sh \
+      sh """${env.ROOT}/script/test_deploy.sh \
             --project ${test_project} \
             --namespace ${namespace}
       """

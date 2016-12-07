@@ -23,7 +23,7 @@ Steps:
    To use https protocol, HOST should start with https://
    Otherwise http protocol will be used.
 2) Run:
-   ./bookstore_client.py --host=$HOST
+   ./bookstore_client.py --host=$HOST --api_key=$KEY
 """
 
 import argparse

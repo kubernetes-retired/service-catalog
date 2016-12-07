@@ -15,6 +15,8 @@
 
 set -ux
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 . "${ROOT}/script/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
 
 while [[ $# -gt 0 ]]; do
@@ -32,13 +34,13 @@ done
 
 # kubectl accepts kubeconfig on the command line but HELM doesn't
 # so we need to export the variable :(
-[[ -n "${KUBECONFIG}" ]] \
+[[ -n "${KUBECONFIG:-}" ]] \
   && export KUBECONFIG
 
-[[ -n "${PROJECT}" ]] \
+[[ -n "${PROJECT:-}" ]] \
   || error_exit "Missing required --project parameter"
 
-[[ -n "${NAMESPACE}" ]] \
+[[ -n "${NAMESPACE:-}" ]] \
   || error_exit "Missing required --namespace parameter"
 
 function print_logs() {
@@ -114,56 +116,10 @@ wait_for_expected_output -x -e 'pending' -n 20 -s 10 -t 60 \
   || error_exit 'Frontend service took unexpected amount of time to get external IP.'
 
 IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
-echo "Frontend external IP assigned: ${IP}"
 
 echo 'Waiting for frontend service to unblock...'
 wait_for_expected_output -x -e 'blocked' -n 20 -s 30 -t 60 \
     curl "http://${IP}:8080/shelves" \
   || error_exit 'Access to frontend service still blocked after unexpected amount of time.'
 
-# TESTS
-echo "Running tests..."
-
-TEST='List of shelves'
-OUTPUT="$(curl "http://${IP}:8080/shelves")"
-if [[ "${OUTPUT}" != *Fiction* ]]; then
-  error_exit "Unexpected output fot test: ${TEST}."
-fi
-
-TEST='List a specific shelf without providing an API key'
-OUTPUT="$(curl "http://${IP}:8080/shelves/1")"
-if [[ "${OUTPUT}" != *Fiction* ]]; then
-  error_exit "Unexpected output fot test: ${TEST}."
-fi
-
-TEST='Create a new shelf'
-OUTPUT="$(curl -H 'Content-Type: application/json' \
-     -H 'x-api-key: 123' \
-     -d '{ "theme": "Travel" }' \
-     "http://${IP}:8080/shelves")"
-if [[ "${OUTPUT}" != *Travel* ]]; then
-  error_exit "Unexpected output fot test: ${TEST}."
-fi
-
-TEST='Create a book on the shelf'
-OUTPUT="$(curl -H 'Content-Type: application/json' \
-     -H 'x-api-key: 123' \
-     -d '{ "author": "Rick Steves", "title": "Travel as a Political Act" }' \
-     "http://${IP}:8080/shelves/3/books")"
-if [[ "${OUTPUT}" != *Steves* ]]; then
-  error_exit "Unexpected output fot test: ${TEST}."
-fi
-
-TEST='List the books on the travel shelf'
-OUTPUT="$(curl -H 'x-api-key: 123' "http://${IP}:8080/shelves/3/books")"
-if [[ "${OUTPUT}" != *books*Steves* ]]; then
-  error_exit "Unexpected output fot test: ${TEST}."
-fi
-
-TEST='Get the book'
-OUTPUT="$(curl -H 'x-api-key: 123' "http://${IP}:8080/shelves/3/books/3")"
-if [[ "${OUTPUT}" != *Steves* ]]; then
-  error_exit "Unexpected output fot test: ${TEST}."
-fi
-
-echo 'Tests on Kubernetes deployment successful.'
+echo 'Deployment to Kubernetes cluster succeeded.'
