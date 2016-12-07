@@ -37,7 +37,9 @@ Container Registry you are going to need Google Cloud Project ID:
 
     cd "${GOPATH}/src/github.com/kubernetes-incubator/service-catalog"
     export VERSION=$(git rev-parse --short --verify HEAD)
-    export REGISTRY=<registry URL> # Up to, but excluding the image name and its preceding slash
+    # Registry URL is the portion up to, but excluding the image name and its
+    # preceding slash, e.g., "gcr.io/my-repo", "my-docker-id"
+    export REGISTRY=<registry URL>
 
     make init build docker push
 
@@ -82,7 +84,7 @@ walkthrough, you can delete them using `script/cleanup.sh`.
 Now we are ready to use service catalog. First, register service broker with the
 catalog:
 
-    cd examples/walkthrough/
+    cd contrib/examples/walkthrough/
 
     kubectl create -f broker.yaml
 
@@ -184,16 +186,16 @@ Create a Kubernetes deployment. Even though this deployment is hosted in the
 Kubernetes cluster, for the walkthrough it assumes the role of an external,
 user-provided service:
 
-    kubectl create -f examples/user-bookstore-mysql/bookstore.yaml
+    kubectl create -f contrib/examples/user-bookstore-mysql/bookstore.yaml
 
 Create a User-provided Service instance to make your service bindable. You will
 need to specify the hostname (either the service name from above or the IP
 address of the service), port, username, and password.
 
-    kubectl create -f examples/walkthrough/ups-backend.yaml
+    kubectl create -f contrib/examples/walkthrough/ups-backend.yaml
 
 Now you can use the same steps as above to create a binding and a consuming
 service.
 
-    kubectl create -f examples/walkthrough/frontend.yaml
-    kubectl create -f examples/walkthrough/binding.yaml
+    kubectl create -f contrib/examples/walkthrough/frontend.yaml
+    kubectl create -f contrib/examples/walkthrough/binding.yaml
