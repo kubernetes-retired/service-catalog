@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/kubernetes-incubator/service-catalog/controller/util"
@@ -58,38 +57,6 @@ func (s *thirdPartyServiceStorage) GetBroker(name string) (*scmodel.ServiceBroke
 		return nil, err
 	}
 	return &tmp, nil
-}
-
-func (s *thirdPartyServiceStorage) GetBrokerByName(name string) (*scmodel.ServiceBroker, error) {
-	log.Printf("Getting broker: %s\n", name)
-	l, err := s.ListBrokers()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, sb := range l {
-		if sb.Name == name {
-			return sb, nil
-		}
-	}
-
-	return nil, fmt.Errorf("Broker with name %s not found", name)
-}
-
-func (s *thirdPartyServiceStorage) GetBrokerByService(id string) (*scmodel.ServiceBroker, error) {
-	log.Printf("Getting broker by service id %s\n", id)
-
-	c, err := s.GetInventory()
-	if err != nil {
-		return nil, err
-	}
-	for _, service := range c.Services {
-		if service.ID == id {
-			log.Printf("Found service type %s\n", service.Name)
-			return s.GetBrokerByName(service.Broker)
-		}
-	}
-	return nil, fmt.Errorf("Can't find the service with id: %s", id)
 }
 
 func (s *thirdPartyServiceStorage) GetInventory() (*scmodel.Catalog, error) {
@@ -301,29 +268,4 @@ func (s *thirdPartyServiceStorage) UpdateServiceBinding(in *scmodel.ServiceBindi
 
 func (s *thirdPartyServiceStorage) DeleteServiceBinding(string) error {
 	return errors.New("Not implemented yet")
-}
-
-func (s *thirdPartyServiceStorage) GetBindingsForService(service string, t BindingDirection) ([]*scmodel.ServiceBinding, error) {
-	bindings, err := s.ListServiceBindings()
-	if err != nil {
-		return nil, err
-	}
-	var ret []*scmodel.ServiceBinding
-	for _, b := range bindings {
-		switch t {
-		case Both:
-			if b.From == service || b.To == service {
-				ret = append(ret, b)
-			}
-		case From:
-			if b.From == service {
-				ret = append(ret, b)
-			}
-		case To:
-			if b.To == service {
-				ret = append(ret, b)
-			}
-		}
-	}
-	return ret, nil
 }

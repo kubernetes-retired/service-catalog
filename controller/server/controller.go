@@ -19,7 +19,7 @@ package server
 import (
 	"log"
 
-	cstorage "github.com/kubernetes-incubator/service-catalog/controller/storage"
+	"github.com/kubernetes-incubator/service-catalog/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
@@ -35,10 +35,10 @@ const (
 )
 
 type controller struct {
-	storage cstorage.ServiceStorage
+	storage storage.ServiceStorage
 }
 
-func createController(s cstorage.ServiceStorage) *controller {
+func createController(s storage.ServiceStorage) *controller {
 	return &controller{
 		storage: s,
 	}
@@ -67,8 +67,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 		params["bindings"] = fromBindings
 	}
 
-	// Get broker for this service class.
-	broker, err := c.getBroker(in.ServiceID)
+	broker, err := storage.GetBrokerByServiceClass(c.storage, in.ServiceID)
 	if err != nil {
 		return err
 	}
@@ -94,7 +93,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 //     <service-name>:
 //       <credential>
 func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
-	bindings, err := c.storage.GetBindingsForService(sName, cstorage.From)
+	bindings, err := storage.GetBindingsForService(c.storage, sName, storage.From)
 	if err != nil {
 		log.Printf("Failed to fetch bindings for %s : %v", sName, err)
 		return err
@@ -104,37 +103,6 @@ func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmo
 		fromBindings[b.Name] = &b.Credentials
 	}
 	return nil
-}
-
-func (c *controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error) {
-	broker, err := c.storage.GetBrokerByService(serviceID)
-	if err != nil {
-		return nil, err
-	}
-
-	return broker, nil
-}
-
-// fetchServicePlanGUID fetches the GUIDs for Service and Plan, also
-// returns the name of the plan since it might get defaulted.
-// If Plan is not given and there's only one plan for a given service, we'll choose that.
-func (c *controller) fetchServicePlanGUID(service string, plan string) (string, string, string, error) {
-	s, err := c.storage.GetServiceType(service)
-	if err != nil {
-		return "", "", "", err
-	}
-	// No plan specified and only one plan, use it.
-	if plan == "" && len(s.Plans) == 1 {
-		log.Printf("Found Service Plan GUID as %s for %s : %s", s.Plans[0].ID, service, s.Plans[0].Name)
-		return s.ID, s.Plans[0].ID, s.Plans[0].Name, nil
-	}
-	for _, p := range s.Plans {
-		if p.Name == plan {
-			fmt.Printf("Found Service Plan GUID as %s for %s : %s", p.ID, service, plan)
-			return s.ID, p.ID, p.Name, nil
-		}
-	}
-	return "", "", "", fmt.Errorf("Can't find a service / plan : %s/%s", service, plan)
 }
 
 // injectBindingIntoInstance causes a consuming service instance to be updated
@@ -158,7 +126,7 @@ func (c *controller) injectBindingIntoInstance(ID string) error {
 // All the methods implementing ServiceController API go here for clarity sake.
 ///////////////////////////////////////////////////////////////////////////////
 func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
-	serviceID, planID, planName, err := c.fetchServicePlanGUID(in.Service, in.Plan)
+	serviceID, planID, planName, err := storage.GetServicePlanInfo(c.storage, in.Service, in.Plan)
 	if err != nil {
 		log.Printf("Error fetching service ID: %v", err)
 		return nil, err

@@ -37,7 +37,6 @@ const (
 type Broker interface {
 	ListBrokers() ([]*model.ServiceBroker, error)
 	GetBroker(string) (*model.ServiceBroker, error)
-	GetBrokerByService(string) (*model.ServiceBroker, error)
 	GetInventory() (*model.Catalog, error)
 	AddBroker(*model.ServiceBroker, *model.Catalog) error
 	UpdateBroker(*model.ServiceBroker, *model.Catalog) error
@@ -67,8 +66,6 @@ type Binder interface {
 	AddServiceBinding(*model.ServiceBinding, *model.Credential) error
 	UpdateServiceBinding(*model.ServiceBinding) error
 	DeleteServiceBinding(string) error
-	// GetBindingsForService returns bindings for a given service instance and direction.
-	GetBindingsForService(string, BindingDirection) ([]*model.ServiceBinding, error)
 }
 
 // The ServiceStorage interface provides a comprehensive combined

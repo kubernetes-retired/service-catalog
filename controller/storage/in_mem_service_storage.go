@@ -75,17 +75,6 @@ func (s *inMemServiceStorage) GetBroker(id string) (*model.ServiceBroker, error)
 	return nil, fmt.Errorf("No such broker: %s", id)
 }
 
-func (s *inMemServiceStorage) GetBrokerByService(id string) (*model.ServiceBroker, error) {
-	for k, v := range s.catalogs {
-		for _, service := range v.Services {
-			if service.ID == id {
-				return s.brokers[k], nil
-			}
-		}
-	}
-	return nil, fmt.Errorf("No service matching ID %s", id)
-}
-
 func (s *inMemServiceStorage) AddBroker(broker *model.ServiceBroker, catalog *model.Catalog) error {
 	if _, ok := s.brokers[broker.GUID]; ok {
 		return fmt.Errorf("Broker %s already exists", broker.Name)
@@ -169,7 +158,7 @@ func (s *inMemServiceStorage) SetService(si *model.ServiceInstance) error {
 
 func (s *inMemServiceStorage) DeleteService(id string) error {
 	// First delete all the bindings where this ID is either to / from
-	bindings, err := s.GetBindingsForService(id, Both)
+	bindings, err := GetBindingsForService(s, id, Both)
 	for _, b := range bindings {
 		err = s.DeleteServiceBinding(b.ID)
 		if err != nil {
@@ -237,31 +226,4 @@ func (s *inMemServiceStorage) getServiceInstanceByName(name string) (*model.Serv
 	}
 
 	return nil, fmt.Errorf("Service instance %s was not found", name)
-}
-
-// GetBindingsForService returns all the specific kinds of bindings (to, from, both).
-func (s *inMemServiceStorage) GetBindingsForService(serviceID string, t BindingDirection) ([]*model.ServiceBinding, error) {
-	var ret []*model.ServiceBinding
-	bindings, err := s.ListServiceBindings()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, b := range bindings {
-		switch t {
-		case Both:
-			if b.From == serviceID || b.To == serviceID {
-				ret = append(ret, b)
-			}
-		case From:
-			if b.From == serviceID {
-				ret = append(ret, b)
-			}
-		case To:
-			if b.To == serviceID {
-				ret = append(ret, b)
-			}
-		}
-	}
-	return ret, nil
 }
