@@ -16,4 +16,6 @@ limitations under the License.
 
 package pkg
 
+// VERSION is the version string for built artifacts. It's set by the build system, and should
+// not be changed in this codebase
 var VERSION = "UNKNOWN"
