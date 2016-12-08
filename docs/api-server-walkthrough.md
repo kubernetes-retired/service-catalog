@@ -2,7 +2,11 @@
 
 kubernetes genericapiserver base
 
-CURRENTLY TRACKING MASTER in k8s. Earliest possible release to directly have the required binary compatibility may be k8s v1.6
+CURRENTLY TRACKING MASTER in k8s. Earliest possible release to
+directly have the required binary compatibility may be k8s v1.6. K8s
+changes on a daily basis so thing may break w/o being updated as K8s
+changes.
+
 
 Invoking `make apiserver` in the root directory will result in `apiserver` binary in the root directory.
 
