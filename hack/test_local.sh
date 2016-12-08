@@ -13,10 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -ux
 
-. "${ROOT}/script/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GOPATH="${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}"
+
+. "${ROOT}/hack/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
 
 #trap shutdown_processes EXIT
 run_main \

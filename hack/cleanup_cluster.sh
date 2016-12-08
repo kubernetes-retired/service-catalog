@@ -15,8 +15,8 @@
 
 set -u
 
-. "${ROOT}/script/cluster_utilities.sh" || { echo 'Cannot load cluster utilities'; exit 1; }
-. "${ROOT}/script/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/hack/cluster_utilities.sh" || { echo 'Cannot load cluster utilities'; exit 1; }
+. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 while [[ $# -ne 0 ]]; do
   case "$1" in

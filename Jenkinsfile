@@ -96,7 +96,7 @@ node {
     parallel(
       'Initialize Kubernetes cluster': {
         withCredentials([file(credentialsId: "${test_account}", variable: 'TEST_SERVICE_ACCOUNT')]) {
-          sh """${env.ROOT}/script/init_cluster.sh ${clustername} \
+          sh """${env.ROOT}/hack/init_cluster.sh ${clustername} \
                 --project ${test_project} \
                 --zone ${test_zone} \
                 --credentials ${env.TEST_SERVICE_ACCOUNT}"""
@@ -104,7 +104,7 @@ node {
       },
       'Build': {
         try {
-          sh """${env.ROOT}/script/build.sh --no-docker-compile \
+          sh """${env.ROOT}/hack/build.sh --no-docker-compile \
                 --project ${test_project}"""
         } catch (Exception e) {
           currentBuild.result = 'FAILURE'
@@ -114,7 +114,7 @@ node {
     )
 
     if (currentBuild.result == 'FAILURE') {
-      sh """${env.ROOT}/script/cleanup_cluster.sh ${clustername} \
+      sh """${env.ROOT}/hack/cleanup_cluster.sh ${clustername} \
             --project ${test_project} \
             --zone ${test_zone}"""
       error 'Build failed.'
@@ -122,7 +122,7 @@ node {
 
     // Run end-2-end tests on the deployed cluster.
     try {
-      sh """${env.ROOT}/jenkins/test_cluster.sh \
+      sh """${env.ROOT}/hack/test_deploy.sh \
             --project ${test_project} \
             --namespace ${namespace}
       """
@@ -131,7 +131,7 @@ node {
       notifyBuild(currentBuild.result)
       error 'End-to-end tests failed.'
     } finally {
-      sh """${env.ROOT}/script/cleanup_cluster.sh ${clustername} \
+      sh """${env.ROOT}/hack/cleanup_cluster.sh ${clustername} \
             --project ${test_project} \
             --zone ${test_zone}"""
     }
