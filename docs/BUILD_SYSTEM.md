@@ -37,21 +37,8 @@ a few variables, and the remainder of the `Makefile` code is included from
 [`hack/Makefile.mk`](./hack/Makefile.mk) and
 [`hack/Common.mk`](./hack/Common.mk).
 
-Below is a rough outline of one of these subdirectory `Makefile`s (eliding the
-copyright notice):
-
-```console
-BIN=${BINARY_NAME}
-PKG=github.com/kubernetes-incubator/service-catalog/${SUBDIRECTORY_PATH}
-DOCKER=${DOCKER_IMAGE_NAME, most commonly $(BIN)}
-
-# if the directory is more than 1 level below the top, these paths may
-# need more '..' chars!
-# the make executes in the current directory and include clauses use relative paths
-# to include Makefile.mk and Common.mk.
-include ../hack/Makefile.mk
-include ../hack/Common.mk
-```
+A rough outline of a subdirectory `Makefile` can be found in
+[`./controller/Makefile`](./controller/Makefile).
 
 ## Common Code
 
