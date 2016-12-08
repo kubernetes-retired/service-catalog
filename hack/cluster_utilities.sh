@@ -15,7 +15,7 @@
 
 set -ux
 
-. "${ROOT}/script/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 # Cleanup services in Kubernetes to prevent network resource leaking
 function wipe_cluster() {
