@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	//"k8s.io/kubernetes/pkg/api"
+	//"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 )
@@ -20,7 +22,13 @@ type ServerOptions struct {
 	EtcdOptions *genericserveroptions.EtcdOptions
 }
 
+// I made this up to match some existing paths. I am not sure if there
+// are any restrictions on the format or structure beyond text
+// separated by slashes.
 const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
+
+// I made this up. Maybe we'll need it.
+const GroupName = "service-catalog.incubator.k8s.io"
 
 func NewCommandServer(out io.Writer) *cobra.Command {
 	// initalize our sub options
@@ -34,8 +42,14 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	// specific to us
 	options.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
 
+	// I have no idea what this line does but I keep seeing it. Do
+	// we have our own `GroupName`? Is it like the pathPrefix for
+	// etcd?
+	//
+	// options.EtcdOptions.StorageConfig.Codec = api.Codecs.LegacyCodec(registered.EnabledVersionsForGroup(api.GroupName)...)
+
+	// this is the one thing that this program does. It runs the apiserver.
 	cmd := &cobra.Command{
-		Use:   "start",
 		Short: "run a service-catalog server",
 		Run: func(c *cobra.Command, args []string) {
 			options.runServer()
@@ -57,7 +71,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 func (serverOptions ServerOptions) runServer() error {
 	fmt.Println("set up the server")
 	// options
-
+	// runtime options
 	if err := serverOptions.GenericServerRunOptions.DefaultExternalAddress(serverOptions.SecureServingOptions, nil); err != nil {
 		return err
 	}
@@ -66,6 +80,12 @@ func (serverOptions ServerOptions) runServer() error {
 	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(serverOptions.GenericServerRunOptions.AdvertiseAddress.String()); err != nil {
 		fmt.Printf("Error creating self-signed certificates: %v", err)
 		return err
+	}
+
+	// etcd options
+	fmt.Println("set up etcd options, do you have `--etcd-servers localhost` set?")
+	if errs := serverOptions.EtcdOptions.Validate(); len(errs) > 0 {
+		return errs[0]
 	}
 
 	// config
