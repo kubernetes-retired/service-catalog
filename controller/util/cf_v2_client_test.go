@@ -22,7 +22,7 @@ import (
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 )
 
-func TestUpdateServiceInstance(t *testing.T) {
+func TestCreateServiceInstance(t *testing.T) {
 	fakeBroker := newFakeBroker()
 	defer fakeBroker.Close()
 	const id = "testID"
@@ -39,7 +39,15 @@ func TestUpdateServiceInstance(t *testing.T) {
 		BrokerURL: fakeBroker.URLStr(),
 	})
 
-	_, err := cl.UpdateServiceInstance(id, req)
+	_, err := cl.CreateServiceInstance(id, req)
+	if err != nil {
+		t.Fatalf("error in create service instance (%s)", err)
+	}
+}
+
+func TestUpdateServiceInstance(t *testing.T) {
+	cl := CreateCFV2BrokerClient(&scmodel.ServiceBroker{})
+	_, err := cl.UpdateServiceInstance("foo", &model.ServiceInstanceRequest{})
 	if err == nil {
 		t.Fatalf("Expected not implemented")
 	}
