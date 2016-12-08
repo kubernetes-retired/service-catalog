@@ -121,11 +121,13 @@ func (serverOptions ServerOptions) runServer() error {
 			return err
 		}
 	*/
-	if _, err := config.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
-		fmt.Println(err)
-		return err
-	}
-
+	// having this enabled causes the server to crash for any call
+	/*
+		if _, err := config.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
+			fmt.Println(err)
+			return err
+		}
+	*/
 	completedconfig := config.Complete()
 
 	// make the server
