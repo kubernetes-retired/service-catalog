@@ -34,7 +34,8 @@ operate on subset of the code base.
 Each subdirectory that contains code that must be built into an artifact has
 a `Makefile` in it. Generally, these `Makefile`s are simple because they specify
 a few variables, and the remainder of the `Makefile` code is included from
-`hack/Makefile.mk` and `hack/Common.mk`.
+[`hack/Makefile.mk`](./hack/Makefile.mk) and
+[`hack/Common.mk`](./hack/Common.mk).
 
 Below is a rough outline of one of these subdirectory `Makefile`s (eliding the
 copyright notice):
