@@ -21,6 +21,7 @@ import (
 
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 
@@ -35,13 +36,20 @@ const (
 )
 
 type controller struct {
-	storage storage.Storage
+	storage  storage.Storage
+	injector injector.BindingInjector
 }
 
-func createController(s storage.Storage) *controller {
-	return &controller{
-		storage: s,
+func createController(s storage.Storage) (*controller, error) {
+	bi, err := injector.CreateK8sBindingInjector()
+	if err != nil {
+		return nil, err
 	}
+
+	return &controller{
+		storage:  s,
+		injector: bi,
+	}, nil
 }
 
 func (c *controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
@@ -52,21 +60,6 @@ func (c *controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
 }
 
 func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
-	params := in.Parameters
-
-	// Inject all the bindings that are from this service instance.
-	fromBindings := make(map[string]*scmodel.Credential)
-	if err := c.getBindingsFrom(in.Name, fromBindings); err != nil {
-		return err
-	}
-
-	if len(fromBindings) > 0 {
-		if params == nil {
-			params = make(map[string]interface{})
-		}
-		params["bindings"] = fromBindings
-	}
-
 	broker, err := storage.GetBrokerByServiceClass(c.storage, in.ServiceID)
 	if err != nil {
 		return err
@@ -77,49 +70,10 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	createReq := &sbmodel.ServiceInstanceRequest{
 		ServiceID:  in.ServiceID,
 		PlanID:     in.PlanID,
-		Parameters: params,
+		Parameters: in.Parameters,
 	}
 	_, err = client.CreateServiceInstance(in.ID, createReq)
 	return err
-}
-
-// getBindingsFrom returns the set of bindings for a consuming service instance.
-//
-// Binding data is passed to the service broker right now as part of the
-// parameters in the form:
-//
-// parameters:
-//   bindings:
-//     <service-name>:
-//       <credential>
-func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
-	bindings, err := storage.GetBindingsForService(c.storage, sName, storage.From)
-	if err != nil {
-		log.Printf("Failed to fetch bindings for %s : %v", sName, err)
-		return err
-	}
-	for _, b := range bindings {
-		log.Printf("Found binding %s for service %s", b.Name, sName)
-		fromBindings[b.Name] = &b.Credentials
-	}
-	return nil
-}
-
-// injectBindingIntoInstance causes a consuming service instance to be updated
-// with new binding information. The actual binding injection happens during the
-// instance update process.
-func (c *controller) injectBindingIntoInstance(ID string) error {
-	fromSI, err := c.storage.GetServiceInstance(defaultNamespace, ID)
-	if err == nil && fromSI != nil {
-		// Update the Service Instance with the new bindings
-		log.Printf("Found existing FROM Service: %s, should update it", fromSI.Name)
-		err = c.updateServiceInstance(fromSI)
-		if err != nil {
-			log.Printf("Failed to update existing FROM service %s : %v", fromSI.Name, err)
-			return err
-		}
-	}
-	return nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -203,10 +157,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		return nil, err
 	}
 
-	// NOTE: this is the plug-in point for changing binding injection. This
-	// current function will inject binding information into a consuming service
-	// instance.
-	if err := c.injectBindingIntoInstance(in.From); err != nil {
+	if err := c.injector.Inject(in); err != nil {
 		return nil, err
 	}
 
