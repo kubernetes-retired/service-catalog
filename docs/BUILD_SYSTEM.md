@@ -25,7 +25,7 @@ For example, typing `make build` at the top level will effectively run
 The subdirectory Makefiles are designed to be used both by calling
 `make <target>` from top level (in which case `make <target>` in all
 subdirectories will be executed) but also as standalone Makefiles. This is
-to make it possible to run make in each individual subdirectory, and
+to make it possible to run `make` in each individual subdirectory, and
 operate on subset of the code base.
 
 
