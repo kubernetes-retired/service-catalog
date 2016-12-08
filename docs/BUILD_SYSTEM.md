@@ -68,9 +68,8 @@ file:
     - Determining whether a docker-container-based binary build should be
       executed based on parameters in the subdirectory's `Makefile`. If so,
       executing the container-based build in the subdirectory's `Makefile`
-    - Defines the `all` target, which loves to be the first target defined in
-      the `Makefile` and is therefore defined in
-      [`Makefile.mk`](./hack/Makefile.mk) which is included first
+    - Defines the `all` target in order to make if the first target defined
+      the `Makefile`
 - [`Common.mk`](./hack/Common.mk) - defines all common build targets (e.g.
   `build`, `test`) except for `all`. The common build targets use the
   variables defined by the subdirectory's `Makefile` to define the make
