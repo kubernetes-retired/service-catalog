@@ -74,5 +74,5 @@ file:
   `build`, `test`) except for `all`. The common build targets use the
   variables defined by the subdirectory's `Makefile` to define the make
   targets. For example, if the `BIN` variable is set in a subdirectory's
-  `Makefile`, the build target will run an appropriate go build command.
+  `Makefile`, the build target will run an appropriate `go build` command.
   Otherwise, that target is a no-op
