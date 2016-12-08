@@ -17,13 +17,13 @@ set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-. "${ROOT}/script/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
-${ROOT}/script/deploy.sh "${@}" \
+${ROOT}/hack/deploy.sh "${@}" \
   || error_exit 'Deployment to Kubernetes cluster failed.'
 
 IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
 
-${ROOT}/script/bookstore_client.py --host="${IP}:8080" \
+${ROOT}/hack/bookstore_client.py --host="${IP}:8080" \
     --verify --count=1 \
   || error_exit 'Tests failed.'
