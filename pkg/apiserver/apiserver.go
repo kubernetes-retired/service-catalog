@@ -2,7 +2,7 @@ package apiserver
 
 import (
 	"k8s.io/kubernetes/pkg/genericapiserver"
-	//"k8s.io/kubernetes/pkg/version"
+	"k8s.io/kubernetes/pkg/version"
 )
 
 //
@@ -24,9 +24,12 @@ type completedConfig struct {
 func (c *Config) Complete() completedConfig {
 	c.GenericConfig.Complete()
 
-	// not sure we need this
-	// version := version.Get()
-	// c.GenericConfig.Version = &version
+	version := version.Get()
+	// Setting this var enables the version resource. We should
+	// populate the fields of the object from above if we wish to
+	// have our own output. Or establish our own version object
+	// somewhere else.
+	c.GenericConfig.Version = &version
 
 	return completedConfig{c}
 }
