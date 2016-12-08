@@ -1,6 +1,6 @@
 # The Service-Catalog Build System
 
-This document aims to overview the build system in this repository.
+This document presents an overview of the build system in this repository.
 
 ## Composition
 
