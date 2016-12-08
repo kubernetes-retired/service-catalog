@@ -243,7 +243,7 @@ func (w *Watcher) Watch(t resourceType, ns string, wcb watchCallback) error {
 		go deploymentWatcher(rc, wcb)
 	} else {
 		rc := w.GetResourceClient(t, ns)
-		go thirdPartyWatcher(rc, wcb)
+		go thirdPartyWatcher(newRealDynamicResourceClient(rc), wcb)
 	}
 	return nil
 }
@@ -293,7 +293,7 @@ func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 
 }
 
-func thirdPartyWatcher(rc *dynamic.ResourceClient, wcb watchCallback) {
+func thirdPartyWatcher(rc dynamicResourceClient, wcb watchCallback) {
 	for {
 		// First do List on the resource to bring things up to date.
 		/*

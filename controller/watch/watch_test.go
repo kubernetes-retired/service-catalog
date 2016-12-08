@@ -75,7 +75,7 @@ func TestDeploymentWatcher(t *testing.T) {
 
 	// now add some events to the list
 	addedDepl := &extv1beta1.Deployment{
-		ObjectMeta: v1.ObjectMeta{Name: "depl1"},
+		ObjectMeta: v1.ObjectMeta{Name: "adddepl1"},
 	}
 	fakeWatcher.Add(addedDepl)
 	select {
@@ -89,6 +89,47 @@ func TestDeploymentWatcher(t *testing.T) {
 		}
 	case <-time.After(evtChTimeout):
 		t.Fatalf("no watch event within %s", evtChTimeout)
+	}
+}
+
+func TestThirdPartyWatcher(t *testing.T) {
+	const evtChTimeout = 100 * time.Millisecond
+	evtCh := make(chan watch.Event)
+	cb := watchCallback(func(evt watch.Event) error {
+		evtCh <- evt
+		return nil
+	})
+	fakeWatcher := watch.NewFake()
+	fakeRC := &fakeDynamicResourceClient{watchRet: fakeWatcher, watchRetErr: nil}
+	go thirdPartyWatcher(fakeRC, cb)
+
+	select {
+	case evt := <-evtCh:
+		t.Fatalf("recieved event (%s) before watcher sent any", evt)
+	case <-time.After(evtChTimeout):
+	}
+
+	addedDepl := &extv1beta1.Deployment{ObjectMeta: v1.ObjectMeta{Name: "depl1"}}
+	fakeWatcher.Add(addedDepl)
+
+	select {
+	case evt := <-evtCh:
+		recvDepl, ok := evt.Object.(*extv1beta1.Deployment)
+		if !ok {
+			t.Fatalf("received event was not a deployment")
+		}
+		if !reflect.DeepEqual(addedDepl, recvDepl) {
+			t.Fatalf("received deployment was not equal to sent deployment")
+		}
+	case <-time.After(evtChTimeout):
+		t.Fatalf("no event received after watcher sent (after %s)", evtChTimeout)
+	}
+
+	fakeWatcher.Stop()
+	select {
+	case evt := <-evtCh:
+		t.Fatalf("recieved event (%s) after watcher stopped", evt)
+	case <-time.After(evtChTimeout):
 	}
 }
 
