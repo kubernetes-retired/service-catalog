@@ -20,7 +20,7 @@ There is a top-level [Makefile](./Makefile) that drives high-level actions
 targets in each of the directories listed in the `DIRS` variable.
 
 For example, typing `make build` at the top level will effectively run
-`make -C ${DIR}` build for each DIR in `DIRS`.
+`make -C ${DIR}` build for each component of the project.
 
 The subdirectory Makefiles are designed to be used both by calling
 `make <target>` from top level (in which case `make <target>` in all
