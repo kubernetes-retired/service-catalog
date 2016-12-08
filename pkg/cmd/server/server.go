@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
+
 	//"k8s.io/kubernetes/pkg/api"
 	//"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/genericapiserver"
@@ -106,28 +108,35 @@ func (serverOptions ServerOptions) runServer() error {
 
 	// config
 	fmt.Println("set up config object")
-	config := genericapiserver.NewConfig().ApplyOptions(serverOptions.GenericServerRunOptions)
+	genericconfig := genericapiserver.NewConfig().ApplyOptions(serverOptions.GenericServerRunOptions)
 	// these are all mutators of each specific suboption in serverOptions object.
 	// this repeated pattern seems like we could refactor
-	if _, err := config.ApplySecureServingOptions(serverOptions.SecureServingOptions); err != nil {
+	if _, err := genericconfig.ApplySecureServingOptions(serverOptions.SecureServingOptions); err != nil {
 		fmt.Println(err)
 		return err
 	}
 
 	// need to figure out what's throwing the `missing clientCA file` err
 	/*
-		if _, err := config.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
+		if _, err := genericconfig.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
 			fmt.Println(err)
 			return err
 		}
 	*/
 	// having this enabled causes the server to crash for any call
 	/*
-		if _, err := config.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
+		if _, err := genericconfig.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
 			fmt.Println(err)
 			return err
 		}
 	*/
+
+	// configure our own apiserver using the preconfigured genericApiServer
+	config := apiserver.Config{
+		GenericConfig: genericconfig,
+	}
+
+	// finish config
 	completedconfig := config.Complete()
 
 	// make the server
@@ -137,10 +146,27 @@ func (serverOptions ServerOptions) runServer() error {
 		return err
 	}
 
-	preparedserver := server.PrepareRun() // post api installation setup? We should have set up the api already?
+	// I don't like this. We're reaching in too far to call things.
+	preparedserver := server.GenericAPIServer.PrepareRun() // post api installation setup? We should have set up the api already?
 
 	stop := make(chan struct{})
 	fmt.Println("run the server")
 	preparedserver.Run(stop)
 	return nil
 }
+
+/*
+type restOptionsFactory struct {
+	storageConfig *storagebackend.Config
+}
+*/
+/*
+func (f restOptionsFactory) NewFor(resource schema.GroupResource) generic.RESTOptions {
+	return generic.RESTOptions{
+		StorageConfig:           f.storageConfig,
+		Decorator:               registry.StorageWithCacher,
+		DeleteCollectionWorkers: 1,
+		EnableGarbageCollection: false,
+		ResourcePrefix:          f.storageConfig.Prefix + "/" + resource.Group + "/" + resource.Resource,
+	}
+}*/
