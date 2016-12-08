@@ -50,3 +50,6 @@ format:
 
 coverage:
 	$(ECHO) $(ROOT)/hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(DIRS))
+
+apiserver: cmd/service-catalog/server.go
+	go build -v -o apiserver cmd/service-catalog/server.go
