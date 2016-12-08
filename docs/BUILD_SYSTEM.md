@@ -61,7 +61,7 @@ Two shared `Makefile`s provide common functionality to all subdirectory
 file:
 
 - [`Makefile.mk`](./hack/Makefile.mk) - top-level variable definitions (e.g.
-  the Go binary name, Go version and GOPATH) and macros to automate common
+  the Go binary name, Go version and `GOPATH`) and macros to automate common
   functionality. These macros include but are not limited to:
     - Determining whether a docker push should be executed based on parameters
       in the subdirectory's `Makefile`. If so, executing the push
