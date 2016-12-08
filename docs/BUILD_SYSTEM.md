@@ -19,7 +19,7 @@ There is a top-level [Makefile](./Makefile) that drives high-level actions
 (i.e. installing repository-wide Go dependencies) and recursively builds other
 targets in each of the directories listed in the `DIRS` variable.
 
-For example, typing make build at the top level will effectively run
+For example, typing `make build` at the top level will effectively run
 `make -C ${DIR}` build for each DIR in `DIRS`.
 
 The subdirectory Makefiles are designed to be used both by calling
