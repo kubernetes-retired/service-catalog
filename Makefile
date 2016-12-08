@@ -40,6 +40,7 @@ push: push.sub
 test: test.sub
 
 clean: clean.sub
+	rm -rf $(BINDIR)
 	rm -f .dockerInit
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
@@ -81,4 +82,4 @@ coverage:
 .PHONY: apiserver
 apiserver:
 	go install -v github.com/kubernetes-incubator/service-catalog/cmd/service-catalog
-	go build -v -o apiserver cmd/service-catalog/server.go
+	go build -v -o $(BINDIR)/apiserver cmd/service-catalog/server.go

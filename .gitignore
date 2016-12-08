@@ -6,6 +6,7 @@ kubeconfig
 log/**
 pid/**
 vendor/**
+bin/**
 .idea/
 .DS_Store
 .glide
