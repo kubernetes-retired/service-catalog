@@ -51,5 +51,7 @@ format:
 coverage:
 	$(ECHO) $(ROOT)/hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(DIRS))
 
-apiserver: cmd/service-catalog/server.go
+.PHONY: apiserver
+apiserver:
+	go install -v github.com/kubernetes-incubator/service-catalog/cmd/service-catalog
 	go build -v -o apiserver cmd/service-catalog/server.go

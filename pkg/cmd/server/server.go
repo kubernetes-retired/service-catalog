@@ -12,7 +12,10 @@ import (
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 )
 
-// ServerOptions contains the aggregation of configuration structs for the service-catalog server
+// ServerOptions contains the aggregation of configuration structs for
+// the service-catalog server. The theory here is that any future user
+// of this server will be able to use this options object as a sub
+// options of it's own.
 type ServerOptions struct {
 	// the runtime configuration of our server
 	GenericServerRunOptions *genericserveroptions.ServerRunOptions
@@ -20,6 +23,10 @@ type ServerOptions struct {
 	SecureServingOptions *genericserveroptions.SecureServingOptions
 	// storage with etcd
 	EtcdOptions *genericserveroptions.EtcdOptions
+	// authn
+	AuthenticationOptions *genericserveroptions.DelegatingAuthenticationOptions
+	// authz
+	AuthorizationOptions *genericserveroptions.DelegatingAuthorizationOptions
 }
 
 // I made this up to match some existing paths. I am not sure if there
@@ -31,11 +38,13 @@ const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
 const GroupName = "service-catalog.incubator.k8s.io"
 
 func NewCommandServer(out io.Writer) *cobra.Command {
-	// initalize our sub options
+	// initalize our sub options.
 	options := &ServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
 		EtcdOptions:             genericserveroptions.NewEtcdOptions(),
+		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
+		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 	}
 
 	// when our etcd resources are created, put them in a location
@@ -60,9 +69,16 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	// themselves. Each options adds it's own command line flags
 	// in addition to the flags that are defined above.
 	flags := cmd.Flags()
+	// TODO consider an AddFlags() method on our options
+	// struct. Will need to import pflag.
+	//
+	// repeated pattern seems like it should be refactored if all
+	// options were of an interface type that specified AddFlags.
 	options.GenericServerRunOptions.AddUniversalFlags(flags)
 	options.SecureServingOptions.AddFlags(flags)
 	options.EtcdOptions.AddFlags(flags)
+	options.AuthenticationOptions.AddFlags(flags)
+	options.AuthorizationOptions.AddFlags(flags)
 
 	return cmd
 }
@@ -91,12 +107,26 @@ func (serverOptions ServerOptions) runServer() error {
 	// config
 	fmt.Println("set up config object")
 	config := genericapiserver.NewConfig().ApplyOptions(serverOptions.GenericServerRunOptions)
-	secureConfig, err := config.ApplySecureServingOptions(serverOptions.SecureServingOptions)
-	if err != nil {
+	// these are all mutators of each specific suboption in serverOptions object.
+	// this repeated pattern seems like we could refactor
+	if _, err := config.ApplySecureServingOptions(serverOptions.SecureServingOptions); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
-	completedconfig := secureConfig.Complete()
+	// need to figure out what's throwing the `missing clientCA file` err
+	/*
+		if _, err := config.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
+			fmt.Println(err)
+			return err
+		}
+	*/
+	if _, err := config.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	completedconfig := config.Complete()
 
 	// make the server
 	fmt.Println("make the server")
