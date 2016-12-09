@@ -10,13 +10,14 @@ type dynamicResourceClient interface {
 	Watch(*v1.ListOptions) (watch.Interface, error)
 }
 
-type realDynamicResourceClient dynamic.ResourceClient
+type realDynamicResourceClient struct {
+	rc *dynamic.ResourceClient
+}
 
 func newRealDynamicResourceClient(rc *dynamic.ResourceClient) *realDynamicResourceClient {
-	ret := realDynamicResourceClient(*rc)
-	return &ret
+	return &realDynamicResourceClient{rc: rc}
 }
 
 func (r *realDynamicResourceClient) Watch(opts *v1.ListOptions) (watch.Interface, error) {
-	return r.Watch(opts)
+	return r.rc.Watch(opts)
 }
