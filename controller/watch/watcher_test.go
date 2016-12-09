@@ -50,22 +50,39 @@ func TestDeploymentWatcher(t *testing.T) {
 	}
 	go deploymentWatcher(deplIface, wcb)
 
-	// ensure list of deployments is processed first
-	for i, item := range deplIface.listRet.Items {
+	numRecv := 0
+	numItems := len(deplIface.listRet.Items)
+	done := false
+	// ensure exactly the list of deployments is processed first
+	for {
 		select {
 		case evt := <-evtCh:
+			if numRecv >= numItems {
+				t.Fatal("received more events than the number of listed items")
+			}
+			item := deplIface.listRet.Items[numRecv]
 			if evt.Type != watch.Added {
-				t.Fatalf("listed event %d wasn't ADDED, it was %s", i, evt.Type)
+				t.Fatalf("listed event %d wasn't ADDED, it was %s", numRecv, evt.Type)
 			}
 			retDepl, ok := evt.Object.(*extv1beta1.Deployment)
 			if !ok {
-				t.Fatalf("event %d wasn't a deployment (%s)", i, evt.Object)
+				t.Fatalf("event %d wasn't a deployment (%s)", numRecv, evt.Object)
 			}
 			if reflect.DeepEqual(retDepl, item) {
-				t.Fatalf("deployment %d (%v) wasn't expected (%v)", i, retDepl, item)
+				t.Fatalf("deployment %d (%v) wasn't expected (%v)", numRecv, retDepl, item)
 			}
+			numRecv++
 		case <-time.After(evtChTimeout):
-			t.Fatalf("no event %d within %s", i, evtChTimeout)
+			// if received more than the total number of items, then we haven't received all the
+			// expected items in the list, so fail
+			if numRecv > numItems {
+				t.Fatalf("no event %d within %s", numRecv, evtChTimeout)
+			}
+			done = true
+			break
+		}
+		if done {
+			break
 		}
 	}
 
