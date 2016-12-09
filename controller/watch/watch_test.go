@@ -115,7 +115,7 @@ func TestThirdPartyWatcher(t *testing.T) {
 			t.Fatalf("received event was not a deployment")
 		}
 		if !reflect.DeepEqual(addedDepl, recvDepl) {
-			t.Fatalf("received deployment was not equal to sent deployment")
+			t.Fatal("received deployment was not equal to sent deployment")
 		}
 	case <-time.After(evtChTimeout):
 		t.Fatalf("no event received after watcher sent (after %s)", evtChTimeout)
