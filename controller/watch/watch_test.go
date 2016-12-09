@@ -59,7 +59,7 @@ func TestDeploymentWatcher(t *testing.T) {
 		select {
 		case evt := <-evtCh:
 			if evt.Type != watch.Added {
-				t.Fatalf("listed event %d wasn't ADDED", i)
+				t.Fatalf("listed event %d wasn't ADDED, it was %s", i, evt.Type)
 			}
 			retDepl, ok := evt.Object.(*extv1beta1.Deployment)
 			if !ok {
