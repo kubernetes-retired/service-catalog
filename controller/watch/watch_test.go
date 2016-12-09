@@ -66,7 +66,7 @@ func TestDeploymentWatcher(t *testing.T) {
 				t.Fatalf("event %d wasn't a deployment (%s)", i, evt.Object)
 			}
 			if reflect.DeepEqual(retDepl, item) {
-				t.Fatalf("deployment %d wasn't expected", i)
+				t.Fatalf("deployment %d (%s) wasn't expected (%s)", i, retDepl, item)
 			}
 		case <-time.After(evtChTimeout):
 			t.Fatalf("no event %d within %s", i, evtChTimeout)
