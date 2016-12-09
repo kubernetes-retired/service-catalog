@@ -73,9 +73,9 @@ func TestDeploymentWatcher(t *testing.T) {
 			}
 			numRecv++
 		case <-time.After(evtChTimeout):
-			// if received more than the total number of items, then we haven't received all the
+			// if we haven't yet received all the expected items in the list, fail
 			// expected items in the list, so fail
-			if numRecv > numItems {
+			if numRecv < numItems {
 				t.Fatalf("no event %d within %s", numRecv, evtChTimeout)
 			}
 			done = true
