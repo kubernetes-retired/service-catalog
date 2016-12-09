@@ -43,7 +43,7 @@ $(SUB): %.sub:
 	$(ECHO) for dir in $(DIRS); do $(MAKE) --no-print-directory -C "$${dir}" $* || exit $$? ; done
 
 init:
-	$(ECHO) glide install
+	$(ECHO) glide install --strip-vendor
 
 format:
 	$(ECHO) gofmt -w -s $(addprefix ./,$(DIRS))

@@ -14,11 +14,11 @@ import (
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 )
 
-// ServerOptions contains the aggregation of configuration structs for
+// ServiceCatalogServerOptions contains the aggregation of configuration structs for
 // the service-catalog server. The theory here is that any future user
 // of this server will be able to use this options object as a sub
 // options of it's own.
-type ServerOptions struct {
+type ServiceCatalogServerOptions struct {
 	// the runtime configuration of our server
 	GenericServerRunOptions *genericserveroptions.ServerRunOptions
 	// the https configuration. certs, etc
@@ -31,17 +31,20 @@ type ServerOptions struct {
 	AuthorizationOptions *genericserveroptions.DelegatingAuthorizationOptions
 }
 
-// I made this up to match some existing paths. I am not sure if there
-// are any restrictions on the format or structure beyond text
-// separated by slashes.
-const etcdPathPrefix = "/k8s.io/incubator/service-catalog"
+const (
+	// I made this up to match some existing paths. I am not sure if there
+	// are any restrictions on the format or structure beyond text
+	// separated by slashes.
+	etcdPathPrefix = "/k8s.io/incubator/service-catalog"
 
-// I made this up. Maybe we'll need it.
-const GroupName = "service-catalog.incubator.k8s.io"
+	// GroupName I made this up. Maybe we'll need it.
+	GroupName = "service-catalog.incubator.k8s.io"
+)
 
+// NewCommandServer creates a new cobra command to run our server.
 func NewCommandServer(out io.Writer) *cobra.Command {
 	// initalize our sub options.
-	options := &ServerOptions{
+	options := &ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
 		EtcdOptions:             genericserveroptions.NewEtcdOptions(),
@@ -86,7 +89,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 }
 
 // runServer is a method on the options for composition. allows embedding in a higher level options as we do the etcd and serving options.
-func (serverOptions ServerOptions) runServer() error {
+func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	fmt.Println("set up the server")
 	// options
 	// runtime options
