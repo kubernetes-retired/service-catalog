@@ -37,12 +37,8 @@ func TestDeploymentWatcher(t *testing.T) {
 			TypeMeta: unversioned.TypeMeta{},
 			ListMeta: unversioned.ListMeta{},
 			Items: []extv1beta1.Deployment{
-				extv1beta1.Deployment{
-					ObjectMeta: v1.ObjectMeta{Name: "listdepl1"},
-				},
-				extv1beta1.Deployment{
-					ObjectMeta: v1.ObjectMeta{Name: "listdepl2"},
-				},
+				{ObjectMeta: v1.ObjectMeta{Name: "listdepl1"}},
+				{ObjectMeta: v1.ObjectMeta{Name: "listdepl2"}},
 			},
 		},
 		watchRet: fakeWatcher,
