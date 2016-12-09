@@ -13,8 +13,8 @@
 # limitations under the License.
 
 BIN=api
-PKG=github.com/kubernetes-incubator/service-catalog/pkg/api
+PKG=github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog
 
-include ../../hack/Makefile.mk
+include ../../../hack/Makefile.mk
 
-include ../../hack/Common.mk
+include ../../../hack/Common.mk
