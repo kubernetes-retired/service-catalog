@@ -1,7 +1,6 @@
 # Service Catalog Use Cases
 
 * TODO: scrub doc post glossary
-* TODO: add CF SB API as the lingua franca for blackbox services
 
 ## Personas
 

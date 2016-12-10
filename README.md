@@ -66,12 +66,10 @@ The exact purpose of the SIG will grow over time, and as such, please see
 the various "version" folders under the [docs](./docs) directory for the
 exact list of use-cases, features and design decisions that have been agreed to.
 
-However, this SIG is (initially) focused on an implementation of the
-Cloud Foundry Service Broker APIs. This would include the ability for Service
-Brokers to register themselves with a Kubernetes environment the same way
-they can with a Cloud Foundry environment. Additionally, we will be exploring
-what can be done to help Service developers when they want to expose their
-code via a Service Broker.
+However, this SIG is (initially) focused on implementing integration with the
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
+Additionally, we will be exploring what can be done to help Service developers
+when they want to expose their code via a Service Broker.
 
 We are currently scoping our **v1** milestone [here](./docs/v1). Interested
 in contributing?  Check out the [documentation](./CONTRIBUTING.md)
