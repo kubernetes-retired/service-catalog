@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1 
+package v1alpha1
 
 import (
-	kapi "k8s.io/client-go/1.5/pkg/api/v1"
 	kunversioned "k8s.io/client-go/1.5/pkg/api/unversioned"
+	kapi "k8s.io/client-go/1.5/pkg/api/v1"
 )
 
 // +nonNamespaced=true
