@@ -17,9 +17,9 @@ limitations under the License.
 package server
 
 import (
-	"fmt"
 	"log"
 
+	"github.com/kubernetes-incubator/service-catalog/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
@@ -35,12 +35,12 @@ const (
 )
 
 type controller struct {
-	k8sStorage ServiceStorage
+	storage storage.Storage
 }
 
-func createController(k8sStorage ServiceStorage) *controller {
+func createController(s storage.Storage) *controller {
 	return &controller{
-		k8sStorage: k8sStorage,
+		storage: s,
 	}
 }
 
@@ -67,8 +67,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 		params["bindings"] = fromBindings
 	}
 
-	// Get broker for this service class.
-	broker, err := c.getBroker(in.ServiceID)
+	broker, err := storage.GetBrokerByServiceClass(c.storage, in.ServiceID)
 	if err != nil {
 		return err
 	}
@@ -94,7 +93,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 //     <service-name>:
 //       <credential>
 func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmodel.Credential) error {
-	bindings, err := c.k8sStorage.GetBindingsForService(sName, From)
+	bindings, err := storage.GetBindingsForService(c.storage, sName, storage.From)
 	if err != nil {
 		log.Printf("Failed to fetch bindings for %s : %v", sName, err)
 		return err
@@ -106,42 +105,11 @@ func (c *controller) getBindingsFrom(sName string, fromBindings map[string]*scmo
 	return nil
 }
 
-func (c *controller) getBroker(serviceID string) (*scmodel.ServiceBroker, error) {
-	broker, err := c.k8sStorage.GetBrokerByService(serviceID)
-	if err != nil {
-		return nil, err
-	}
-
-	return broker, nil
-}
-
-// fetchServicePlanGUID fetches the GUIDs for Service and Plan, also
-// returns the name of the plan since it might get defaulted.
-// If Plan is not given and there's only one plan for a given service, we'll choose that.
-func (c *controller) fetchServicePlanGUID(service string, plan string) (string, string, string, error) {
-	s, err := c.k8sStorage.GetServiceType(service)
-	if err != nil {
-		return "", "", "", err
-	}
-	// No plan specified and only one plan, use it.
-	if plan == "" && len(s.Plans) == 1 {
-		log.Printf("Found Service Plan GUID as %s for %s : %s", s.Plans[0].ID, service, s.Plans[0].Name)
-		return s.ID, s.Plans[0].ID, s.Plans[0].Name, nil
-	}
-	for _, p := range s.Plans {
-		if p.Name == plan {
-			fmt.Printf("Found Service Plan GUID as %s for %s : %s", p.ID, service, plan)
-			return s.ID, p.ID, p.Name, nil
-		}
-	}
-	return "", "", "", fmt.Errorf("Can't find a service / plan : %s/%s", service, plan)
-}
-
 // injectBindingIntoInstance causes a consuming service instance to be updated
 // with new binding information. The actual binding injection happens during the
 // instance update process.
 func (c *controller) injectBindingIntoInstance(ID string) error {
-	fromSI, err := c.k8sStorage.GetService(defaultNamespace, ID)
+	fromSI, err := c.storage.GetServiceInstance(defaultNamespace, ID)
 	if err == nil && fromSI != nil {
 		// Update the Service Instance with the new bindings
 		log.Printf("Found existing FROM Service: %s, should update it", fromSI.Name)
@@ -158,7 +126,7 @@ func (c *controller) injectBindingIntoInstance(ID string) error {
 // All the methods implementing ServiceController API go here for clarity sake.
 ///////////////////////////////////////////////////////////////////////////////
 func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
-	serviceID, planID, planName, err := c.fetchServicePlanGUID(in.Service, in.Plan)
+	serviceID, planID, planName, err := storage.GetServicePlanInfo(c.storage, in.Service, in.Plan)
 	if err != nil {
 		log.Printf("Error fetching service ID: %v", err)
 		return nil, err
@@ -184,26 +152,26 @@ func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmode
 	in.LastOperation = &op
 
 	log.Printf("Updating Service %s with State\n%v", in.Name, in.LastOperation)
-	return in, c.k8sStorage.SetService(in)
+	return in, c.storage.UpdateServiceInstance(in)
 }
 
 func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
 	log.Printf("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
-	to, err := c.k8sStorage.GetService(defaultNamespace, in.To)
+	to, err := c.storage.GetServiceInstance(defaultNamespace, in.To)
 	if err != nil {
 		log.Printf("To service does not exist %s: %v", in.To, err)
 		return nil, err
 	}
 
 	// Get broker associated with the service.
-	st, err := c.k8sStorage.GetServiceType(to.Service)
+	st, err := c.storage.GetServiceClass(to.Service)
 	if err != nil {
 		log.Printf("Failed to fetch service type %s : %v", to.Service, err)
 		return nil, err
 	}
-	broker, err := c.k8sStorage.GetBroker(st.Broker)
+	broker, err := c.storage.GetBroker(st.Broker)
 	if err != nil {
 		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
@@ -229,7 +197,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	}
 	in.Credentials = *creds
 
-	err = c.k8sStorage.UpdateServiceBinding(in)
+	err = c.storage.UpdateServiceBinding(in)
 	if err != nil {
 		log.Printf("Failed to update service binding %s : %v", in.Name, err)
 		return nil, err
@@ -255,8 +223,9 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 	if err != nil {
 		return nil, err
 	}
+
 	log.Printf("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
-	err = c.k8sStorage.AddBroker(in, catalog)
+	err = c.storage.AddBroker(in, catalog)
 	if err != nil {
 		return nil, err
 	}

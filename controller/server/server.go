@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/kubernetes-incubator/service-catalog/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 
 	"github.com/gorilla/mux"
@@ -33,9 +34,8 @@ type Server struct {
 }
 
 // CreateServer creates an instance of the service controller server.
-func CreateServer(serviceStorage ServiceStorage, w *watch.Watcher) (*Server, error) {
-	k8sStorage := NewThirdPartyServiceStorage(w)
-	c := createController(k8sStorage)
+func CreateServer(w *watch.Watcher) (*Server, error) {
+	c := createController(storage.CreateTPRStorage(w))
 	k8sHandler, err := createK8sHandler(c, w)
 	if err != nil {
 		log.Printf("Couldn't create the k8s native handler, watcher will not be installed: %v\n", err)
