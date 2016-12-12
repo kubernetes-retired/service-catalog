@@ -13,4 +13,5 @@ install:
   - make init
 script:
   - make build test lint coverage
+  - make docker-all
   - make docker
