@@ -118,7 +118,7 @@ func TestThirdPartyWatcher(t *testing.T) {
 
 	select {
 	case evt := <-evtCh:
-		t.Fatalf("recieved event (%s) before watcher sent any", evt)
+		t.Fatalf("received event (%s) before watcher sent any", evt)
 	case <-time.After(evtChTimeout):
 	}
 
@@ -141,7 +141,7 @@ func TestThirdPartyWatcher(t *testing.T) {
 	fakeWatcher.Stop()
 	select {
 	case evt := <-evtCh:
-		t.Fatalf("recieved event (%s) after watcher stopped", evt)
+		t.Fatalf("received event (%s) after watcher stopped", evt)
 	case <-time.After(evtChTimeout):
 	}
 }
