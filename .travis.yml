@@ -12,6 +12,6 @@ install:
   - export PATH="$HOME/bin:$PATH"
   - make init
 script:
-  - make build test lint coverage
+  - make verify build test lint coverage
   - make docker-all
   - make docker
