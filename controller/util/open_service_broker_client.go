@@ -33,15 +33,15 @@ const (
 	httpTimeoutSeconds = 15
 )
 
-type cfV2BrokerClient struct {
+type openServiceBrokerClient struct {
 	broker *scmodel.ServiceBroker
 	client *http.Client
 }
 
-// CreateCFV2BrokerClient creates an instance of BrokerClient for communicating
-// with brokers which implement the Cloud Foundry Service Broker V2 API.
-func CreateCFV2BrokerClient(b *scmodel.ServiceBroker) BrokerClient {
-	return &cfV2BrokerClient{
+// CreateOpenServiceBrokerClient creates an instance of BrokerClient for communicating
+// with brokers which implement the Open Service Broker API.
+func CreateOpenServiceBrokerClient(b *scmodel.ServiceBroker) BrokerClient {
+	return &openServiceBrokerClient{
 		broker: b,
 		client: &http.Client{
 			Timeout: httpTimeoutSeconds * time.Second,
@@ -49,7 +49,7 @@ func CreateCFV2BrokerClient(b *scmodel.ServiceBroker) BrokerClient {
 	}
 }
 
-func (c *cfV2BrokerClient) GetCatalog() (*model.Catalog, error) {
+func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
 	url := fmt.Sprintf(catalogFormatString, c.broker.BrokerURL)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -74,7 +74,7 @@ func (c *cfV2BrokerClient) GetCatalog() (*model.Catalog, error) {
 	return &catalog, nil
 }
 
-func (c *cfV2BrokerClient) CreateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
+func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -103,12 +103,12 @@ func (c *cfV2BrokerClient) CreateServiceInstance(ID string, req *model.ServiceIn
 	return &si, nil
 }
 
-func (c *cfV2BrokerClient) UpdateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
+func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
 	// TODO: https://github.com/kubernetes-incubator/service-catalog/issues/114
 	return nil, fmt.Errorf("Not implemented")
 }
 
-func (c *cfV2BrokerClient) DeleteServiceInstance(ID string) error {
+func (c *openServiceBrokerClient) DeleteServiceInstance(ID string) error {
 	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.BrokerURL, ID)
 
 	// TODO: Handle the auth
@@ -129,7 +129,7 @@ func (c *cfV2BrokerClient) DeleteServiceInstance(ID string) error {
 	return nil
 }
 
-func (c *cfV2BrokerClient) CreateServiceBinding(sID, bID string, req *model.BindingRequest) (*model.CreateServiceBindingResponse, error) {
+func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *model.BindingRequest) (*model.CreateServiceBindingResponse, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
 		log.Printf("Failed to marshal: %#v", err)
@@ -162,7 +162,7 @@ func (c *cfV2BrokerClient) CreateServiceBinding(sID, bID string, req *model.Bind
 	return &sbr, nil
 }
 
-func (c *cfV2BrokerClient) DeleteServiceBinding(sID, bID string) error {
+func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
 	url := fmt.Sprintf(bindingFormatString, c.broker.BrokerURL, sID, bID)
 
 	// TODO: Handle the auth
