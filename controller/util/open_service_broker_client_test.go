@@ -21,7 +21,7 @@ import (
 )
 
 func TestUpdateServiceInstance(t *testing.T) {
-	cli := CreateCFV2BrokerClient(&scmodel.ServiceBroker{})
+	cli := CreateOpenServiceBrokerClient(&scmodel.ServiceBroker{})
 
 	_, err := cli.UpdateServiceInstance("foo", &model.ServiceInstanceRequest{})
 	if err == nil {

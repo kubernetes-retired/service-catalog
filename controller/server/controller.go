@@ -71,7 +71,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	if err != nil {
 		return err
 	}
-	client := util.CreateCFV2BrokerClient(broker)
+	client := util.CreateOpenServiceBrokerClient(broker)
 
 	// Make the request to instantiate.
 	createReq := &sbmodel.ServiceInstanceRequest{
@@ -176,7 +176,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
 	}
-	client := util.CreateCFV2BrokerClient(broker)
+	client := util.CreateOpenServiceBrokerClient(broker)
 
 	// Assign UUID to binding.
 	in.ID = uuid.NewV4().String()
@@ -214,7 +214,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 }
 
 func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.ServiceBroker, error) {
-	client := util.CreateCFV2BrokerClient(in)
+	client := util.CreateOpenServiceBrokerClient(in)
 	sbcat, err := client.GetCatalog()
 	if err != nil {
 		return nil, err
