@@ -1,6 +1,8 @@
 package apiserver
 
 import (
+	"github.com/golang/glog"
+
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	"k8s.io/kubernetes/pkg/version"
 )
@@ -49,6 +51,8 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	glog.Infoln("Creating the server to run")
 
 	s := &ServiceCatalogAPIServer{
 		GenericAPIServer: genericServer,
