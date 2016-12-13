@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/golang/glog"
 	"os"
 
+	"github.com/golang/glog"
 	// set up logging the k8s way
 	"k8s.io/kubernetes/pkg/util/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/cmd/server"
-	// commented out until I know what this does
+	// this is necessary at startup to register the apis.
+	// mhb doesn't like how disconnected this is from the rest of the setup of the apis.
 	// install all APIs
 	// _ "github.com/openshift/kube-aggregator/pkg/apis/apifederation/install"
 	// _ "k8s.io/kubernetes/pkg/api/install"
