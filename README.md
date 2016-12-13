@@ -5,10 +5,12 @@
 ### Introduction
 
 The service-catalog project is in incubation to bring integration with service
-brokers to the Kubernetes ecosystem.  A service broker is an endpoint that
-manages a set of services.  The end-goal of the service-catalog project is to
-provide a way for Kubernetes users to consume services from brokers and easily
-configure their applications to use those services.
+brokers to the Kubernetes ecosystem via the
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
+A service broker is an endpoint that manages a set of services.  The end-goal of
+the service-catalog project is to provide a way for Kubernetes users to consume
+services from brokers and easily configure their applications to use those
+services.
 
 ---
 
