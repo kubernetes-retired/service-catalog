@@ -1,3 +1,0 @@
-name: user-provided-client
-description: User-provided client which stores configs in ConfigMap.
-version: 0.0.1

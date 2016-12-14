@@ -40,7 +40,7 @@ function wipe_cluster() {
 
   # Temporarily, delete all by name.
   kubectl delete serviceinstances backend frontend
-  kubectl delete serviceclasses binding-consumer booksbe booksfe user-provided-service
+  kubectl delete serviceclasses booksbe user-provided-service
   kubectl delete servicebindings database
   kubectl delete servicebrokers k8s ups
 
