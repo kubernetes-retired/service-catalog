@@ -28,22 +28,22 @@ spec:
         env:
         - name: MYSQL_HOST
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: database
               key: hostname
         - name: MYSQL_PORT
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: database
               key: port
         - name: MYSQL_USER
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: database
               key: username
         - name: MYSQL_PASSWORD
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: database
               key: password
         - name: MYSQL_DATABASE

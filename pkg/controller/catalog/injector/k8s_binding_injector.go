@@ -29,7 +29,7 @@ import (
 // The set of kubernetes objects which are injected into a cluster for a
 // binding
 type injectionSet struct {
-	configMap *v1.ConfigMap
+	secret *v1.Secret
 }
 
 type k8sBindingInjector struct {
@@ -59,7 +59,7 @@ func CreateK8sBindingInjector() (BindingInjector, error) {
 func (b *k8sBindingInjector) Inject(binding *model.ServiceBinding) error {
 	is := makeInjectionSet(binding)
 
-	if err := b.injectConfigMap(is.configMap); err != nil {
+	if err := b.injectSecret(is.secret); err != nil {
 		return err
 	}
 
@@ -70,32 +70,30 @@ func (b *k8sBindingInjector) Uninject(binding *model.ServiceBinding) error {
 	return fmt.Errorf("Not implemented")
 }
 
-func (b *k8sBindingInjector) injectConfigMap(cm *v1.ConfigMap) error {
-	cmc := b.client.Core().ConfigMaps("default")
-	_, err := cmc.Create(cm)
+func (b *k8sBindingInjector) injectSecret(s *v1.Secret) error {
+	cmc := b.client.Core().Secrets("default")
+	_, err := cmc.Create(s)
 	return err
 }
 
 func makeInjectionSet(binding *model.ServiceBinding) *injectionSet {
-	cm := makeConfigMap(binding)
+	secret := makeSecret(binding)
 
 	return &injectionSet{
-		configMap: cm,
+		secret: secret,
 	}
 }
 
-func makeConfigMap(binding *model.ServiceBinding) *v1.ConfigMap {
-	return &v1.ConfigMap{
+func makeSecret(binding *model.ServiceBinding) *v1.Secret {
+	return &v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name: binding.Name,
 		},
-		Data: map[string]string{
-			"hostname": binding.Credentials.Hostname,
-			"port":     binding.Credentials.Port,
-
-			// TODO: Extract these secret fields into a secret rather than CM.
-			"username": binding.Credentials.Username,
-			"password": binding.Credentials.Password,
+		Data: map[string][]byte{
+			"hostname": []byte(binding.Credentials.Hostname),
+			"port":     []byte(binding.Credentials.Port),
+			"username": []byte(binding.Credentials.Username),
+			"password": []byte(binding.Credentials.Password),
 		},
 	}
 }
