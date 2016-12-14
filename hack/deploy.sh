@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ux
+set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -57,7 +57,24 @@ function print_logs() {
   fi
 }
 
-trap print_logs EXIT
+function wait_for_service_host() {
+    if [[ "${#}" -ne 2 ]]; then
+      echo 'Unexpected number of arguments passed.'
+      return 1
+    fi
+
+    local name="${1}"
+    local path="${2}"
+    local services_output="$(kubectl get services --namespace "${NAMESPACE}" | xargs echo -n)"
+    local host="$(echo "${services_output}" | sed "s/.*${name} [0-9.]* \([0-9.]*\) \([0-9]*\).*/\1:\2/")"
+
+    retry -n 20 -s 10 -t 60 \
+        curl --silent --fail "http://${host}/${path}" > /dev/null \
+      && return 0
+
+    echo "Could not communicate with ${host}/${path}. Response: $(curl "http://${host}/${path}")"
+    return 1
+}
 
 GCR="${GCR:-gcr.io/${PROJECT}/catalog}"
 VERSION="${VERSION:-$(git rev-parse --verify HEAD)}" \
@@ -71,26 +88,50 @@ kubectl create namespace "${NAMESPACE}"
 
 retry -n 10 -s 10 -t 60 \
     helm install "${ROOT}/deploy/catalog" \
-    --set "registry=${GCR},version=${VERSION}" \
+    --set "registry=${GCR},version=${VERSION},debug=true" \
   || error_exit 'Error deploying to Kubernetes cluster.'
 
+# CREATE SERVICES
+
+trap print_logs EXIT
+
+# Wait for pods to be up
 echo 'Waiting on services to spin up...'
 
-# CREATE SERVICES
-wait_for_expected_output -x -e 'ContainerCreating' -n 20 -s 10 -t 60  \
-    kubectl get pods --namespace ${NAMESPACE} \
+wait_for_expected_output -x -e 'ContainerCreating' -n 20 -s 10 -t 60 \
+    kubectl get pods --namespace "${NAMESPACE}" \
   || error_exit 'Services took an unexpected amount of time to spin up.'
 
-# Check to see if Kubernetes resources have finished being created.
-retry kubectl get serviceclasses,serviceinstances,servicebrokers,servicebindings \
-  || error_exit 'Kubernetes resources took an unexpected amount of time to spin up.'
+kubectl get pods --namespace "${NAMESPACE}" --no-headers  | grep -v Running \
+  && error_exit 'Pods failed to spin up successfully.'
+
+# Wait for services to respond
+echo 'Waiting on services to respond...'
+
+wait_for_expected_output -x -e 'pending' -n 20 -s 10 -t 60 \
+    kubectl get services --namespace "${NAMESPACE}" \
+  || error_exit 'Services took an unexpected amount of time to spin up.'
+
+wait_for_service_host 'registry' 'services' \
+  || error_exit 'Error when trying to communicate with registry.'
+
+wait_for_service_host 'k8s-broker' 'v2/catalog' \
+  || error_exit 'Error when trying to communicate with k8s broker.'
+
+wait_for_service_host 'ups-broker' 'v2/catalog' \
+  || error_exit 'Error when trying to communicate with ups broker.'
+
+wait_for_service_host 'controller' 'v2/service_brokers' \
+  || error_exit 'Error when trying to communicate with controller.'
 
 echo 'Creating resources...'
 
 kubectl create -f "${ROOT}/examples/walkthrough/broker.yaml" \
-  || error_exit 'Cannot create broker.'
+  || error_exit 'Cannot create brokers.'
 
-sleep 10 #TODO: check that the broker actually came up.
+wait_for_expected_output -e 'booksbe' -n 20 -s 1 -t 60 \
+    kubectl get serviceclasses \
+  || error_exit 'Could not retrieve service classes from broker.'
 
 kubectl create -f "${ROOT}/examples/walkthrough/backend.yaml" \
   || error_exit 'Cannot create backend.'
@@ -105,8 +146,7 @@ sleep 10
 kubectl create -f "${ROOT}/examples/walkthrough/frontend.yaml" \
   || error_exit 'Cannot create frontend.'
 
-echo 'Waiting for frontend service to come up...'
-wait_for_expected_output -e 'booksfe' -n 20 -s 10 -t 60 \
+wait_for_expected_output -e 'booksfe' -n 20 -s 2 -t 60 \
     kubectl get services \
   || error_exit 'Frontend service took unexpected amount of time to come up.'
 
@@ -115,7 +155,7 @@ wait_for_expected_output -x -e 'pending' -n 20 -s 10 -t 60 \
     kubectl get services \
   || error_exit 'Frontend service took unexpected amount of time to get external IP.'
 
-IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
+IP="$(kubectl get services | xargs echo -n | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')"
 
 echo 'Waiting for frontend service to unblock...'
 wait_for_expected_output -x -e 'blocked' -n 20 -s 30 -t 60 \
