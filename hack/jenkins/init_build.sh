@@ -15,7 +15,7 @@
 
 set -u
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "${ROOT}/hack/utilities.sh" || { echo 'Cannot load bash utilities.'; exit 1; }
 
 GO_VERSION='1.7.3'

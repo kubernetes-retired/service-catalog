@@ -72,6 +72,7 @@ kubectl create namespace "${NAMESPACE}"
 retry -n 10 -s 10 -t 60 \
     helm install "${ROOT}/deploy/catalog" \
     --set "registry=${GCR},version=${VERSION}" \
+    --namespace "${NAMESPACE}" \
   || error_exit 'Error deploying to Kubernetes cluster.'
 
 echo 'Waiting on services to spin up...'
@@ -87,22 +88,22 @@ retry kubectl get serviceclasses,serviceinstances,servicebrokers,servicebindings
 
 echo 'Creating resources...'
 
-kubectl create -f "${ROOT}/examples/walkthrough/broker.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/broker.yaml" \
   || error_exit 'Cannot create broker.'
 
 sleep 10 #TODO: check that the broker actually came up.
 
-kubectl create -f "${ROOT}/examples/walkthrough/backend.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/backend.yaml" \
   || error_exit 'Cannot create backend.'
 
 sleep 10
 
-kubectl create -f "${ROOT}/examples/walkthrough/binding.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/binding.yaml" \
   || error_exit 'Cannot create binding.'
 
 sleep 10
 
-kubectl create -f "${ROOT}/examples/walkthrough/frontend.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/frontend.yaml" \
   || error_exit 'Cannot create frontend.'
 
 echo 'Waiting for frontend service to come up...'
@@ -119,7 +120,7 @@ IP=$(echo $(kubectl get services) | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')
 
 echo 'Waiting for frontend service to unblock...'
 wait_for_expected_output -x -e 'blocked' -n 20 -s 30 -t 60 \
-    curl "http://${IP}:8080/shelves" \
+    curl --silent "http://${IP}:8080/shelves" \
   || error_exit 'Access to frontend service still blocked after unexpected amount of time.'
 
 echo 'Deployment to Kubernetes cluster succeeded.'

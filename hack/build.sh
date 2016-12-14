@@ -25,8 +25,9 @@ GOPATH="${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-docker-compile) NO_DOCKER_COMPILE=yes ;;
-    --project)           PROJECT="${2}" ; shift ;;
-    --version)           VERSION="${2}" ; shift ;;
+    --project)           PROJECT="${2:-}" ; shift ;;
+    --version)           VERSION="${2:-}" ; shift ;;
+    --coverage)          COVERAGE="${2:-}"; shift ;;
 
     *) error_exit "Unrecognized command line flag $1" ;;
   esac
@@ -45,6 +46,11 @@ make V=1 build \
 
 make V=1 test \
   || error_exit 'make test failed.'
+
+if [[ -n "${COVERAGE:-}" ]]; then
+  make V=1 COVERAGE="${COVERAGE}" coverage \
+    || error_exit 'make coverage failed'
+fi
 
 make V=1 lint \
   || error_exit 'make lint failed.'
