@@ -159,19 +159,3 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	preparedserver.Run(stop)
 	return nil
 }
-
-/*
-type restOptionsFactory struct {
-	storageConfig *storagebackend.Config
-}
-*/
-/*
-func (f restOptionsFactory) NewFor(resource schema.GroupResource) generic.RESTOptions {
-	return generic.RESTOptions{
-		StorageConfig:           f.storageConfig,
-		Decorator:               registry.StorageWithCacher,
-		DeleteCollectionWorkers: 1,
-		EnableGarbageCollection: false,
-		ResourcePrefix:          f.storageConfig.Prefix + "/" + resource.Group + "/" + resource.Resource,
-	}
-}*/
