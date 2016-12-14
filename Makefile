@@ -23,7 +23,8 @@ DIRS := \
   pkg \
   pkg/apis/servicecatalog \
   pkg/apis/servicecatalog/v1alpha1 \
-  pkg/controller/catalog
+  pkg/controller/catalog \
+  cmd/service-catalog
 
 ALL := all build build-linux build-darwin clean docker push test lint coverage
 SUB := $(addsuffix .sub, $(ALL))
