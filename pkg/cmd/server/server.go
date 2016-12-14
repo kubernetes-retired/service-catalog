@@ -147,7 +147,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.GroupVersion
 	// TODO: do more API group setup before installing it
 	// apiGroupInfo.GroupMeta.GroupVersion = projectapiv1.SchemeGroupVersion
-	if err := server.GenericAPIServer.InstallAPIGroup(apiGroupInfo); err != nil {
+	if err := server.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 		return err
 	}
 
