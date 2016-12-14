@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/pkg/genericapiserver"
@@ -142,7 +143,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 		return err
 	}
 
-	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(GroupName)
+	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(v1alpha1.GroupNameString)
 	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.GroupVersion
 	// TODO: do more API group setup before installing it
 	// apiGroupInfo.GroupMeta.GroupVersion = projectapiv1.SchemeGroupVersion
