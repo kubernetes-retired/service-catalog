@@ -20,9 +20,9 @@ import (
 	"errors"
 	"log"
 
-	"github.com/kubernetes-incubator/service-catalog/controller/util"
-	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
 
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
 )

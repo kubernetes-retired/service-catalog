@@ -19,10 +19,10 @@ package server
 import (
 	"log"
 
-	"github.com/kubernetes-incubator/service-catalog/controller/storage"
-	"github.com/kubernetes-incubator/service-catalog/controller/util"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 
 	"github.com/satori/go.uuid"
 )

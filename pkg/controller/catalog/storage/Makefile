@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PKG=github.com/kubernetes-incubator/service-catalog/controller/storage
+PKG=github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage
 
-include ../../hack/Makefile.mk
+include ../../../../hack/Makefile.mk
 
-include ../../hack/Common.mk
+include ../../../../hack/Common.mk
 

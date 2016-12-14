@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kubernetes-incubator/service-catalog/controller/storage"
-	"github.com/kubernetes-incubator/service-catalog/controller/watch"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
 
 	"github.com/gorilla/mux"
 )

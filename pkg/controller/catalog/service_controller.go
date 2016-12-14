@@ -22,9 +22,9 @@ import (
 	"os"
 	"path"
 
-	"github.com/kubernetes-incubator/service-catalog/controller/server"
-	"github.com/kubernetes-incubator/service-catalog/controller/watch"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
 
 	"k8s.io/client-go/1.5/dynamic"
 	"k8s.io/client-go/1.5/kubernetes"
