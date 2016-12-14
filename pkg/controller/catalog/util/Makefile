@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BIN=controller
-PKG=github.com/kubernetes-incubator/service-catalog/controller
-DOCKER=$(BIN)
+PKG=github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util
 
-include ../hack/Makefile.mk
+include ../../../../hack/Makefile.mk
 
-include ../hack/Common.mk
+include ../../../../hack/Common.mk

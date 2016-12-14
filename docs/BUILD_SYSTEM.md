@@ -38,7 +38,7 @@ a few variables, and the remainder of the `Makefile` code is included from
 [`hack/Common.mk`](./hack/Common.mk).
 
 A rough outline of a subdirectory `Makefile` can be found in
-[`./controller/Makefile`](./controller/Makefile).
+[`pkg/controller/catalog/Makefile`](../pkg/controller/catalog/Makefile).
 
 ## Common Code
 

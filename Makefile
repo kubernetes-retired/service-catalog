@@ -20,10 +20,10 @@ DIRS := \
   contrib/broker/k8s \
   contrib/broker/user_provided \
   contrib/broker/server \
-  controller \
   pkg \
   pkg/apis/servicecatalog \
-  pkg/apis/servicecatalog/v1alpha1
+  pkg/apis/servicecatalog/v1alpha1 \
+  pkg/controller/catalog
 
 ALL := all build build-linux build-darwin clean docker push test lint coverage
 SUB := $(addsuffix .sub, $(ALL))
