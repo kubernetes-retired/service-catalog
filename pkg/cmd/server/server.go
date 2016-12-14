@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/spf13/cobra"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
-
-	//"k8s.io/kubernetes/pkg/api"
-	//"k8s.io/kubernetes/pkg/apimachinery/registered"
+	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 )
@@ -36,9 +32,6 @@ const (
 	// are any restrictions on the format or structure beyond text
 	// separated by slashes.
 	etcdPathPrefix = "/k8s.io/incubator/service-catalog"
-
-	// GroupName I made this up. Maybe we'll need it.
-	GroupName = "service-catalog.incubator.k8s.io"
 )
 
 // NewCommandServer creates a new cobra command to run our server.
@@ -146,6 +139,14 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	fmt.Println("make the server")
 	server, err := completedconfig.New()
 	if err != nil {
+		return err
+	}
+
+	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(GroupName)
+	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.GroupVersion
+	// TODO: do more API group setup before installing it
+	// apiGroupInfo.GroupMeta.GroupVersion = projectapiv1.SchemeGroupVersion
+	if err := server.GenericAPIServer.InstallAPIGroup(apiGroupInfo); err != nil {
 		return err
 	}
 
