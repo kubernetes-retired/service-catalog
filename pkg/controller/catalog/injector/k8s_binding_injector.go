@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
-
 	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api/v1"
 	"k8s.io/client-go/1.5/rest"
@@ -40,7 +39,9 @@ type k8sBindingInjector struct {
 // manages the injection of binding information within the Kubernetes
 // environment.
 func CreateK8sBindingInjector() (BindingInjector, error) {
-	// TODO: may need to support host injection for running outside of cluster.
+	// This assumes that we are running withing a kubernetes cluster. If this
+	// needs to be able to run outside the cluster, it will need to be modified
+	// to take a non-default config.
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, err
