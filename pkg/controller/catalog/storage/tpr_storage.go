@@ -4,10 +4,10 @@ import (
 	"errors"
 	"log"
 
+	"github.com/kubernetes-incubator/service-catalog/model"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
-
 	// Need this for gcp auth
 	_ "k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api/v1"
@@ -80,7 +80,7 @@ func (s *tprStorage) GetInventory() (*scmodel.Catalog, error) {
 }
 
 func (s *tprStorage) AddBroker(broker *scmodel.ServiceBroker, catalog *scmodel.Catalog) error {
-	broker.Kind = watch.ServiceBrokerKind
+	broker.Kind = model.ServiceBrokerKind
 	broker.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(broker)
 	if err != nil {
@@ -94,7 +94,7 @@ func (s *tprStorage) AddBroker(broker *scmodel.ServiceBroker, catalog *scmodel.C
 
 	// Then add all the service types.
 	for _, st := range catalog.Services {
-		st.Kind = watch.ServiceTypeKind
+		st.Kind = model.ServiceTypeKind
 		st.APIVersion = watch.FullAPIVersion
 		// TODO: Investigate using Metadata.ownerReference instead
 		// (or in conjunction) with this
@@ -176,7 +176,7 @@ func (s *tprStorage) ServiceInstanceExists(ns string, name string) bool {
 // deprecated and should be replaced with the one below.
 // TODO: Get rid of this method and rename AddServiceRaw to this one...
 func (s *tprStorage) AddServiceInstance(si *scmodel.ServiceInstance) error {
-	si.Kind = watch.ServiceInstanceKind
+	si.Kind = model.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(si)
 	if err != nil {
@@ -193,7 +193,7 @@ func (s *tprStorage) AddServiceInstance(si *scmodel.ServiceInstance) error {
 }
 
 func (s *tprStorage) UpdateServiceInstance(si *scmodel.ServiceInstance) error {
-	si.Kind = watch.ServiceInstanceKind
+	si.Kind = model.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(si)
 	if err != nil {
@@ -237,7 +237,7 @@ func (s *tprStorage) GetServiceBinding(string) (*scmodel.ServiceBinding, error) 
 }
 
 func (s *tprStorage) AddServiceBinding(in *scmodel.ServiceBinding, cred *scmodel.Credential) error {
-	in.Kind = watch.ServiceBindingKind
+	in.Kind = model.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(in)
 	if err != nil {
@@ -252,7 +252,7 @@ func (s *tprStorage) AddServiceBinding(in *scmodel.ServiceBinding, cred *scmodel
 }
 
 func (s *tprStorage) UpdateServiceBinding(in *scmodel.ServiceBinding) error {
-	in.Kind = watch.ServiceBindingKind
+	in.Kind = model.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(in)
 	if err != nil {

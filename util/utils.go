@@ -135,3 +135,12 @@ func FetchChartToFile(chart string, f *os.File) error {
 	_, err = f.Write([]byte(bytes))
 	return err
 }
+
+// FormatResourceKind formats a CamelCase resource kind to be (1) all lower-case and (2) pluralized
+func FormatResourceKind(str string) string {
+	lastCh := str[len(str)-1]
+	if lastCh != 's' {
+		str = str + "s"
+	}
+	return strings.ToLower(str)
+}
