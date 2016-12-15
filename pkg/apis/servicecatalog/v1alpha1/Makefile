@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BIN=api
 PKG=github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1
 
 include ../../../../hack/Makefile.mk

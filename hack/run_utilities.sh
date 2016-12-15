@@ -17,6 +17,7 @@
 ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 . "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
+BINDIR=${ROOT}/bin
 GOPATH=${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}
 LOG_ROOT="${ROOT}/log"
 PID_ROOT="${ROOT}/pid"
@@ -116,7 +117,7 @@ function run_main() {
 
   deploy 'Kubernetes Registry' "${LOG_ROOT}/k8s_registry.txt" "${PID_ROOT}/k8s_registry.pid" \
       "http://localhost:${k8s_registry_port}/services" \
-      "${GOPATH}/bin/registry" \
+      "${BINDIR}/registry" \
       --port ${k8s_registry_port} \
       --definitions ${GOPATH}/src/${PKG_ROOT}/registry/data/charts/definitions.json \
     || error_exit 'Registry failed to start.'
@@ -126,7 +127,7 @@ function run_main() {
   # K8s
   deploy 'Kubernetes broker' "${LOG_ROOT}/k8s.txt" "${PID_ROOT}/k8s.pid" \
       "http://localhost:${k8s_broker_port}/v2/catalog" \
-      "${GOPATH}/bin/k8s-broker" \
+      "${BINDIR}/k8s-broker" \
       --port ${k8s_broker_port} \
       --registry_port ${k8s_registry_port} \
       --helm_binary '/usr/local/bin/helm' \
@@ -135,14 +136,14 @@ function run_main() {
   # User-provided
   deploy 'User broker' "${LOG_ROOT}/user_provided.txt" "${PID_ROOT}/user_provided.pid" \
       "http://localhost:${user_provided_broker_port}/v2/catalog" \
-      "${GOPATH}/bin/user-broker" \
+      "${BINDIR}/user-broker" \
       --port ${user_provided_broker_port} \
     || error_exit 'User broker failed to start.'
 
   # Controller.
   deploy 'Controller' "${LOG_ROOT}/controller.txt" "${PID_ROOT}/controller.pid" \
       "http://localhost:${controller_port}/v2/service_instances" \
-      "${GOPATH}/bin/controller" \
+      "${BINDIR}/controller" \
       --port ${controller_port} \
       --kubeconfig "${kubeconfig}" \
     || error_exit 'Controller failed to start.'

@@ -29,7 +29,8 @@ export HOST_OS ?= $(shell uname -s | tr A-Z a-z)
 GO             := go
 GOLINT         := golint
 GO_VERSION     := 1.7.3
-BINDIR         := $(GOPATH)/bin
+GOBINDIR       := $(GOPATH)/bin
+BINDIR         := $(ROOT)/bin
 PKG_ROOT       := github.com/kubernetes-incubator/service-catalog
 ARCH           := amd64
 COVERAGE       ?= $(CURDIR)/coverage.html
@@ -60,11 +61,11 @@ endif
 
 define docker_build
   $(ECHO) echo "Building Docker"
-  $(ECHO) cp Dockerfile $(GOPATH)/bin/linux_$(ARCH)/dockerfile.tmp
+  $(ECHO) cp Dockerfile $(BINDIR)/linux_$(ARCH)/dockerfile.tmp
   $(ECHO) docker build -t "$(1):$(VERSION)" \
-        -f '$(GOPATH)/bin/linux_$(ARCH)/dockerfile.tmp' \
-        '$(GOPATH)/bin/linux_$(ARCH)'
-  $(ECHO) rm -rf '$(GOPATH)/bin/linux_$(ARCH)/dockerfile.tmp'
+        -f '$(BINDIR)/linux_$(ARCH)/dockerfile.tmp' \
+        '$(BINDIR)/linux_$(ARCH)'
+  $(ECHO) rm -rf '$(BINDIR)/linux_$(ARCH)/dockerfile.tmp'
 endef
 
 define delete_binaries
@@ -79,7 +80,7 @@ ifeq ($(origin NO_DOCKER_COMPILE),undefined)
   # the platform-specific binaries inside Docker.
   define platform_compile
     $(info Building $(BIN) for $(1))
-    $(ECHO) mkdir -p "$(GOPATH)/bin/$(1)_$(ARCH)"
+    $(ECHO) mkdir -p "$(BINDIR)/$(1)_$(ARCH)"
     $(ECHO) docker run \
         --rm \
         --volume "$(GOPATH)":/go \
@@ -87,7 +88,7 @@ ifeq ($(origin NO_DOCKER_COMPILE),undefined)
         --env GOOS=$(1) \
         --env GOARCH=$(ARCH) \
         golang:$(GO_VERSION) \
-        go build -o /go/bin/$(1)_$(ARCH)/$(BIN) -ldflags "-X github.com/kubernetes-incubator/service-catalog/pkg.VERSION=$(VERSION)" $(PKG)
+        go build -o bin/$(1)_$(ARCH)/$(BIN) -ldflags "-X github.com/kubernetes-incubator/service-catalog/pkg.VERSION=$(VERSION)" $(PKG)
   endef
 
 else

@@ -14,13 +14,14 @@
 
 .PHONY: lint
 
-$(BINDIR)/$(GOLINT):
+$(GOBINDIR)/$(GOLINT):
 	$(GO) get -u github.com/golang/lint/golint
 
 ifneq (,$(BIN))
 
 build:
 	$(ECHO) echo "Building $(PKG)"
+	$(ECHO) mkdir -p "$(BINDIR)"
 	$(ECHO) $(GO) build -o "$(BINDIR)/$(BIN)" -ldflags "-X github.com/kubernetes-incubator/service-catalog/pkg.VERSION=$(VERSION)" "$(PKG)"
 
 build-linux build-darwin: build-%:
@@ -64,8 +65,8 @@ test:
 	$(ECHO) echo "Testing $(PKG)"
 	$(ECHO) $(GO) test "$(PKG)/..."
 
-lint: $(BINDIR)/$(GOLINT)
-	$(ECHO) $(BINDIR)/$(GOLINT) --set_exit_status "$(PKG)/..."
+lint: $(GOBINDIR)/$(GOLINT)
+	$(ECHO) $(GOBINDIR)/$(GOLINT) --set_exit_status "$(PKG)/..."
 	$(ECHO) $(GO) vet "$(PKG)/..."
 
 coverage:
