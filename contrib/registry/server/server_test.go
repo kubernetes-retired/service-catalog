@@ -79,7 +79,7 @@ func TestRegistryReturnsListOfServices(t *testing.T) {
 // TODO: Add tests for all other API methods.
 
 type testController struct {
-	t *testing.T
+	t             *testing.T
 	listServices  func() ([]*model.Service, error)
 	getService    func(serviceID string) (*model.Service, error)
 	createService func(s *model.Service) error

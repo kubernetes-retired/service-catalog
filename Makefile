@@ -82,3 +82,18 @@ coverage:
 apiserver:
 	go install -v github.com/kubernetes-incubator/service-catalog/cmd/service-catalog
 	go build -v -o apiserver cmd/service-catalog/server.go
+
+verify:
+
+# Runs all the presubmission verifications.
+#
+# Args:
+#   BRANCH: Branch to be passed to verify-godeps.sh script.
+#
+# Example:
+#   make verify
+#   make verify BRANCH=branch_x
+.PHONY: verify
+verify:
+	KUBE_VERIFY_GIT_BRANCH=$(BRANCH) hack/verify-all.sh -v
+
