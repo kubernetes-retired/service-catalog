@@ -28,23 +28,23 @@ spec:
         env:
         - name: MYSQL_HOST
           valueFrom:
-            configMapKeyRef:
-              name: bookstore-nodejs
-              key: bookstore-database.hostname
+            secretKeyRef:
+              name: database
+              key: hostname
         - name: MYSQL_PORT
           valueFrom:
-            configMapKeyRef:
-              name: bookstore-nodejs
-              key: bookstore-database.port
+            secretKeyRef:
+              name: database
+              key: port
         - name: MYSQL_USER
           valueFrom:
-            configMapKeyRef:
-              name: bookstore-nodejs
-              key: bookstore-database.username
+            secretKeyRef:
+              name: database
+              key: username
         - name: MYSQL_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              name: bookstore-nodejs
-              key: bookstore-database.password
+            secretKeyRef:
+              name: database
+              key: password
         - name: MYSQL_DATABASE
           value: bookstore

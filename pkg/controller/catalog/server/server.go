@@ -35,7 +35,12 @@ type Server struct {
 
 // CreateServer creates an instance of the service controller server.
 func CreateServer(w *watch.Watcher) (*Server, error) {
-	c := createController(storage.CreateTPRStorage(w))
+	c, err := createController(storage.CreateTPRStorage(w))
+	if err != nil {
+		log.Printf("Couldn't create controller: %v\n", err)
+		return nil, err
+	}
+
 	k8sHandler, err := createK8sHandler(c, w)
 	if err != nil {
 		log.Printf("Couldn't create the k8s native handler, watcher will not be installed: %v\n", err)

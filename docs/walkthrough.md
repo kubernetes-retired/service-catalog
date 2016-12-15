@@ -108,16 +108,24 @@ using bindings:
     # Create binding called 'database'.
     kubectl create -f binding.yaml
 
-    # Create frontend (Node.js Bookstore) instance.
-    kubectl create -f frontend.yaml
+Creating the binding will create a `ConfigMap` for binding consumption. This
+can now be used by a native kubernetes app. You can inspect the config map
+using `kubectl get configmap database`:
 
-Wait for deployments to start and an IP address of the frontend to be
-assigned. You can monitor the external IP address creation using
-`kubectl get services`:
+    NAME       DATA      AGE
+    database   4         55s
+
+Now you can deploy the application that consumes the binding.
+
+    kubectl create -f ../user-bookstore-client/bookstore.yaml
+
+This will create a Kubernetes service `user-bookstore-fe`. Wait for deployments
+to start and an IP address of the frontend to be assigned. You can monitor the
+external IP address creation using `kubectl get services`:
 
     NAME                    CLUSTER-IP       EXTERNAL-IP       PORT(S)    AGE
     cf-i-3a121d22-booksbe   10.107.254.221   <none>            3306/TCP   2m
-    cf-i-a2eac62a-booksfe   10.107.245.157   104.154.153.120   8080/TCP   1m
+    user-bookstore-fe       10.107.254.221   **<pending>**         3306/TCP   2m
     kubernetes              10.107.240.1     <none>            443/TCP    1d
 
 Once the IP address becomes available we can use it to contact the frontend
@@ -152,27 +160,6 @@ And interact with the Bookstore API:
 
     # Get the book:
     curl -H 'x-api-key: 123' "http://${IP}:8080/shelves/3/books/3"
-
-## Deploy a native kubernetes application
-
-Use the `binding-consumer` type to deploy a native kubernetes application that
-uses the same backend.
-
-    kubectl create -f bc-binding.yaml
-    kubectl create -f binding-consumer.yaml
-
-View the output of the `binding-consumer` instance.
-
-    kubectl get configmap bookstore-nodejs -oyaml
-
-And now deploy the application that consumes it.
-
-    kubectl create -f ../user-bookstore-client/bookstore.yaml
-
-This will create a Kubernetes service `user-bookstore-fe`. Once its external
-IP address becomes available (use `kubectl get services` to confirm) you can
-use the above curl commands with the new IP address to interact with the
-bookstore.
 
 ## Consume a user-provided service
 
