@@ -30,11 +30,65 @@ $ curl --cacert /var/run/kubernetes/apiserver.crt https://localhost:6443
 {
   "paths": [
     "/apis",
+    "/apis/servicecatalog.k8s.io",
+    "/apis/servicecatalog.k8s.io/v1alpha1",
     "/healthz",
     "/healthz/ping",
     "/swaggerapi/",
     "/version"
   ]
+}
+```
+
+
+Let's take a look at apis
+
+```
+# curl --cacert /var/run/kubernetes/apiserver.crt https://localhost:6443/apis
+{
+  "kind": "APIGroupList",
+  "groups": [
+    {
+      "name": "servicecatalog.k8s.io",
+      "versions": [],
+      "preferredVersion": {
+        "groupVersion": "servicecatalog.k8s.io/v1alpha1",
+        "version": "v1alpha1"
+      },
+      "serverAddressByClientCIDRs": [
+        {
+          "clientCIDR": "0.0.0.0/0",
+          "serverAddress": "9.52.233.169:6443"
+        }
+      ]
+    }
+  ]
+}
+```
+
+And some of ours:
+```
+# curl --cacert /var/run/kubernetes/apiserver.crt https://localhost:6443/apis/servicecatalog.k8s.io
+{
+  "kind": "APIGroup",
+  "apiVersion": "v1",
+  "name": "servicecatalog.k8s.io",
+  "versions": [],
+  "preferredVersion": {
+    "groupVersion": "servicecatalog.k8s.io/v1alpha1",
+    "version": "v1alpha1"
+  },
+  "serverAddressByClientCIDRs": null
+}
+```
+
+```
+# curl --cacert /var/run/kubernetes/apiserver.crt https://localhost:6443/apis/servicecatalog.k8s.io/v1alpha1
+{
+  "kind": "APIResourceList",
+  "apiVersion": "v1",
+  "groupVersion": "servicecatalog.k8s.io/v1alpha1",
+  "resources": null
 }
 ```
 

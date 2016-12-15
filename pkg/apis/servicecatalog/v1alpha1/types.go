@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	kunversioned "k8s.io/client-go/1.5/pkg/api/unversioned"
 	kapi "k8s.io/client-go/1.5/pkg/api/v1"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 )
 
 // +nonNamespaced=true
@@ -26,7 +27,7 @@ import (
 // Broker represents an entity that provides ServiceClasses for use in the
 // service catalog.
 type Broker struct {
-	kunversioned.TypeMeta
+	metav1.TypeMeta
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
 	kapi.ObjectMeta
 
