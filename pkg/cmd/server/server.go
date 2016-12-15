@@ -17,18 +17,20 @@ limitations under the License.
 package server
 
 import (
+	"fmt"
 	"io"
 
-	"github.com/spf13/cobra"
-
 	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"k8s.io/kubernetes/pkg/api"
+	genericregistry "k8s.io/kubernetes/pkg/registry/generic/registry"
+	"k8s.io/kubernetes/pkg/runtime/schema"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
-
-	//"k8s.io/kubernetes/pkg/api"
-	//"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
+	"k8s.io/kubernetes/pkg/registry/generic"
 )
 
 // ServiceCatalogServerOptions contains the aggregation of configuration structs for
@@ -77,7 +79,8 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	// we have our own `GroupName`? Is it like the pathPrefix for
 	// etcd?
 	//
-	// options.EtcdOptions.StorageConfig.Codec = api.Codecs.LegacyCodec(registered.EnabledVersionsForGroup(api.GroupName)...)
+	// copied from kubernetes-discovery
+	options.EtcdOptions.StorageConfig.Codec = api.Codecs.LegacyCodec(v1alpha1.SchemeGroupVersion)
 
 	// this is the one thing that this program does. It runs the apiserver.
 	cmd := &cobra.Command{
@@ -136,6 +139,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 		return err
 	}
 
+	glog.Infoln("setup authn (disabled)")
 	// need to figure out what's throwing the `missing clientCA file` err
 	/*
 		if _, err := genericconfig.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
@@ -143,6 +147,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 			return err
 		}
 	*/
+	glog.Infoln("setup authz (disabled)")
 	// having this enabled causes the server to crash for any call
 	/*
 		if _, err := genericconfig.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
@@ -150,6 +155,31 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 			return err
 		}
 	*/
+
+	glog.Infoln("setup etcd storage")
+	// I don't understand any of this
+	resourceConfig := genericapiserver.NewResourceConfig()
+	storageGroupsToEncodingVersion, err := serverOptions.GenericServerRunOptions.StorageGroupsToEncodingVersion()
+	if err != nil {
+		glog.Fatalf("error generating storage version map: %s", err)
+	}
+	storageFactory, err := genericapiserver.BuildDefaultStorageFactory(
+		serverOptions.EtcdOptions.StorageConfig, serverOptions.GenericServerRunOptions.DefaultStorageMediaType, api.Codecs,
+		genericapiserver.NewDefaultResourceEncodingConfig(), storageGroupsToEncodingVersion,
+		[]schema.GroupVersionResource{}, resourceConfig, serverOptions.GenericServerRunOptions.RuntimeConfig)
+
+	restOptionsFactory := &restOptionsFactory{
+		storageFactory: storageFactory,
+		// dunno what these two do
+		// enableGarbageCollection: serverOptions.GenericServerRunOptions.EnableGarbageCollection,
+		// deleteCollectionWorkers: serverOptions.GenericServerRunOptions.DeleteCollectionWorkers,
+	}
+	// dunno about this either. hard code to do as little as possible
+	if false { // serverOptions.GenericServerRunOptions.EnableWatchCache {
+		restOptionsFactory.storageDecorator = genericregistry.StorageWithCacher
+	} else {
+		restOptionsFactory.storageDecorator = generic.UndecoratedStorage
+	}
 
 	// configure our own apiserver using the preconfigured genericApiServer
 	config := apiserver.Config{
@@ -161,7 +191,8 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 
 	// make the server
 	glog.Infoln("make the server")
-	server, err := completedconfig.New()
+	server, err := completedconfig.New(restOptionsFactory)
+
 	if err != nil {
 		return err
 	}
@@ -175,18 +206,25 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	return nil
 }
 
-/*
+// copied from federation
+// Implement the RESTOptionsGetter interface
 type restOptionsFactory struct {
-	storageConfig *storagebackend.Config
+	storageFactory          genericapiserver.StorageFactory
+	storageDecorator        generic.StorageDecorator
+	deleteCollectionWorkers int
+	enableGarbageCollection bool
 }
-*/
-/*
-func (f restOptionsFactory) NewFor(resource schema.GroupResource) generic.RESTOptions {
-	return generic.RESTOptions{
-		StorageConfig:           f.storageConfig,
-		Decorator:               registry.StorageWithCacher,
-		DeleteCollectionWorkers: 1,
-		EnableGarbageCollection: false,
-		ResourcePrefix:          f.storageConfig.Prefix + "/" + resource.Group + "/" + resource.Resource,
+
+func (f *restOptionsFactory) GetRESTOptions(resource schema.GroupResource) (generic.RESTOptions, error) {
+	config, err := f.storageFactory.NewConfig(resource)
+	if err != nil {
+		return generic.RESTOptions{}, fmt.Errorf("Unable to find storage config for %v, due to %v", resource, err.Error())
 	}
-}*/
+	return generic.RESTOptions{
+		StorageConfig:           config,
+		Decorator:               f.storageDecorator,
+		DeleteCollectionWorkers: f.deleteCollectionWorkers,
+		EnableGarbageCollection: f.enableGarbageCollection,
+		ResourcePrefix:          f.storageFactory.ResourcePrefix(resource),
+	}, nil
+}

@@ -11,7 +11,7 @@ import:
 - package: github.com/kubernetes/repo-infra
   version: fe0ddb2a8c18deeb18515b9412e459599e6d7f3a
 - package: k8s.io/kubernetes
-  version: 6b9a9442855d16e0ff0c02ab0c82b1c1665cccaf
+  version: 12147a3cd6f52b1831c8af34d14d52e2811a4668
   subpackages:
   - pkg/genericapiserver
 - package: k8s.io/client-go
@@ -28,3 +28,6 @@ import:
   - 1.5/pkg/util/intstr
   - 1.5/pkg/watch
   - 1.5/tools/clientcmd
+- package: github.com/mxk/go-flowrate
+  subpackages:
+  - flowrate
