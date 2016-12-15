@@ -23,9 +23,9 @@ import (
 	"path"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
-
 	"k8s.io/client-go/1.5/dynamic"
 	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api/unversioned"
@@ -63,7 +63,11 @@ func main() {
 		panic(fmt.Sprintf("Failed to create a kubernets client\n:%v\n", err))
 	}
 
-	config.ContentConfig.GroupVersion = &unversioned.GroupVersion{Group: watch.GroupName, Version: watch.APIVersion}
+	// this conversion is probably gonna be done in generated code later. for now, manual :(
+	config.ContentConfig.GroupVersion = &unversioned.GroupVersion{
+		Group:   v1alpha1.GroupVersion.Group,
+		Version: v1alpha1.GroupVersion.Version,
+	}
 	config.APIPath = "apis"
 
 	dynClient, err := dynamic.NewClient(config)
