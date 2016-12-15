@@ -32,7 +32,8 @@ $ curl --cacert /var/run/kubernetes/apiserver.crt https://localhost:6443
     "/apis",
     "/healthz",
     "/healthz/ping",
-    "/swaggerapi/"
+    "/swaggerapi/",
+    "/version"
   ]
 }
 ```
@@ -41,7 +42,7 @@ kubectl seems happy enough:
 ```
 $ kubectl --certificate-authority=/var/run/kubernetes/apiserver.crt --server=https://localhost:6443 version
 Client Version: version.Info{Major:"1", Minor:"4", GitVersion:"v1.4.6+e569a27", GitCommit:"e569a27d02001e343cb68086bc06d47804f62af6", GitTreeState:"not a git tree", BuildDate:"2016-11-12T09:26:56Z", GoVersion:"go1.7.3", Compiler:"gc", Platform:"darwin/amd64"}
-Couldn't read server version from server: the server could not find the requested resource
+Server Version: version.Info{Major:"", Minor:"", GitVersion:"v0.0.0-master+$Format:%h$", GitCommit:"$Format:%H$", GitTreeState:"not a git tree", BuildDate:"1970-01-01T00:00:00Z", GoVersion:"go1.7.3", Compiler:"gc", Platform:"darwin/amd64"}
 ```
 no version resource exists so this is to be expected.
 

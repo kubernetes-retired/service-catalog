@@ -1,10 +1,11 @@
 package server
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
+
+	"github.com/golang/glog"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 
@@ -90,46 +91,46 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 
 // runServer is a method on the options for composition. allows embedding in a higher level options as we do the etcd and serving options.
 func (serverOptions ServiceCatalogServerOptions) runServer() error {
-	fmt.Println("set up the server")
+	glog.Infoln("set up the server")
 	// options
 	// runtime options
 	if err := serverOptions.GenericServerRunOptions.DefaultExternalAddress(serverOptions.SecureServingOptions, nil); err != nil {
 		return err
 	}
 	// server configuration options
-	fmt.Println("set up serving options")
+	glog.Infoln("set up serving options")
 	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(serverOptions.GenericServerRunOptions.AdvertiseAddress.String()); err != nil {
-		fmt.Printf("Error creating self-signed certificates: %v", err)
+		glog.Errorf("Error creating self-signed certificates: %v", err)
 		return err
 	}
 
 	// etcd options
-	fmt.Println("set up etcd options, do you have `--etcd-servers localhost` set?")
 	if errs := serverOptions.EtcdOptions.Validate(); len(errs) > 0 {
+		glog.Errorln("set up etcd options, do you have `--etcd-servers localhost` set?")
 		return errs[0]
 	}
 
 	// config
-	fmt.Println("set up config object")
+	glog.Infoln("set up config object")
 	genericconfig := genericapiserver.NewConfig().ApplyOptions(serverOptions.GenericServerRunOptions)
 	// these are all mutators of each specific suboption in serverOptions object.
 	// this repeated pattern seems like we could refactor
 	if _, err := genericconfig.ApplySecureServingOptions(serverOptions.SecureServingOptions); err != nil {
-		fmt.Println(err)
+		glog.Errorln(err)
 		return err
 	}
 
 	// need to figure out what's throwing the `missing clientCA file` err
 	/*
 		if _, err := genericconfig.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
-			fmt.Println(err)
+			glog.Infoln(err)
 			return err
 		}
 	*/
 	// having this enabled causes the server to crash for any call
 	/*
 		if _, err := genericconfig.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
-			fmt.Println(err)
+			glog.Infoln(err)
 			return err
 		}
 	*/
@@ -143,7 +144,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	completedconfig := config.Complete()
 
 	// make the server
-	fmt.Println("make the server")
+	glog.Infoln("make the server")
 	server, err := completedconfig.New()
 	if err != nil {
 		return err
@@ -153,7 +154,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	preparedserver := server.GenericAPIServer.PrepareRun() // post api installation setup? We should have set up the api already?
 
 	stop := make(chan struct{})
-	fmt.Println("run the server")
+	glog.Infoln("run the server")
 	preparedserver.Run(stop)
 	return nil
 }

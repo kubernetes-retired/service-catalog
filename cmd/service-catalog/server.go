@@ -1,28 +1,29 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	// "runtime"
 
-	// commented out until I know what this does
-	// "k8s.io/kubernetes/pkg/util/logs"
+	"github.com/golang/glog"
+	// set up logging the k8s way
+	"k8s.io/kubernetes/pkg/util/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/cmd/server"
-	// commented out until I know what this does
+	// this is necessary at startup to register the apis.
+	// mhb doesn't like how disconnected this is from the rest of the setup of the apis.
 	// install all APIs
 	// _ "github.com/openshift/kube-aggregator/pkg/apis/apifederation/install"
 	// _ "k8s.io/kubernetes/pkg/api/install"
 )
 
 func main() {
-	// commented out until I know what this does
-	// logs.InitLogs()
-	// defer logs
+	logs.InitLogs()
+	// make sure we print all the logs while shutting down.
+	defer logs.FlushLogs()
 
 	cmd := server.NewCommandServer(os.Stdout)
 	if err := cmd.Execute(); err != nil {
-		fmt.Println(err)
+		glog.Errorln(err)
+		logs.FlushLogs()
 		os.Exit(1)
 	}
 }
