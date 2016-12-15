@@ -23,6 +23,7 @@ func main() {
 	cmd := server.NewCommandServer(os.Stdout)
 	if err := cmd.Execute(); err != nil {
 		glog.Errorln(err)
+		logs.FlushLogs()
 		os.Exit(1)
 	}
 }
