@@ -12,7 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include ./hack/Makefile.mk
+#include ./hack/Makefile.mk
+
+# This section is required to have the variables in the generated makefile
+# It is prefaced by a period to avoid being the first target.
+# Constants used throughout.
+.EXPORT_ALL_VARIABLES:
+OUT_DIR ?= _output
+BIN_DIR := $(OUT_DIR)/bin
+# BABYNETES - hard coded project path
+PRJ_SRC_PATH := github.com/kubernetes-incubator/service-catalog
+GENERATED_FILE_PREFIX := zz_generated.
+
+# Used by ALL_GO_DIRS in Makefile.generated_files
+# Metadata for driving the build lives here.
+META_DIR := .make
+
+# This controls the verbosity of the build.  Higher numbers mean more output.
+KUBE_VERBOSE ?= 1
 
 # Directories that the make will recurse into.
 DIRS := \
@@ -43,6 +60,8 @@ clean: clean.sub
 	rm -rf $(BINDIR)
 	rm -f .dockerInit
 	rm -f .scBuildImage
+	rm -rf $(META_DIR)
+	rm -rf $(OUT_DIR)
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
 # Use this target when you want to build everything using docker containers.
@@ -83,3 +102,7 @@ coverage:
 apiserver:
 	go install -v github.com/kubernetes-incubator/service-catalog/cmd/service-catalog
 	go build -v -o $(BINDIR)/apiserver cmd/service-catalog/server.go
+
+.PHONY: generated_files
+generated_files:
+	$(MAKE) -f Makefile.generated_files $@ CALLED_FROM_MAIN_MAKEFILE=1

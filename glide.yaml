@@ -4,8 +4,10 @@ import:
 - package: github.com/gorilla/handlers
 - package: github.com/gorilla/mux
 - package: github.com/satori/go.uuid
+- package: github.com/jteeuwen/go-bindata
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
+- package: k8s.io/gengo/args
 - package: k8s.io/kubernetes
   subpackages:
   - pkg/genericapiserver
