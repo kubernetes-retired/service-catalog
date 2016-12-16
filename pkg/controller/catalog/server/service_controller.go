@@ -17,7 +17,7 @@ limitations under the License.
 package server
 
 import (
-	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 // ServiceController defines the interface that either the HTTP server
@@ -27,15 +27,15 @@ type ServiceController interface {
 	// CreateServiceInstance takes in a (possibly incomplete)
 	// ServiceInstance and will either create or update an
 	// existing one.
-	CreateServiceInstance(*scmodel.ServiceInstance) (*scmodel.ServiceInstance, error)
+	CreateServiceInstance(*servicecatalog.Instance) (*servicecatalog.Instance, error)
 
 	// CreateServiceBinding takes in a (possibly incomplete)
 	// ServiceBinding and will either create or update an
 	// existing one.
-	CreateServiceBinding(*scmodel.ServiceBinding) (*scmodel.Credential, error)
+	CreateServiceBinding(*servicecatalog.Binding) (*servicecatalog.Binding, error)
 
 	// CreateServiceBroker takes in a (possibly incomplete)
 	// ServiceBroker and will either create or update an
 	// existing one.
-	CreateServiceBroker(*scmodel.ServiceBroker) (*scmodel.ServiceBroker, error)
+	CreateServiceBroker(*servicecatalog.Broker) (*servicecatalog.Broker, error)
 }

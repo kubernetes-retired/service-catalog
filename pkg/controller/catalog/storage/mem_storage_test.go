@@ -20,26 +20,27 @@ import (
 	"strings"
 	"testing"
 
-	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	kapi "k8s.io/kubernetes/pkg/api"
 )
 
 const (
-	brokerOneUUID = "126b8154-a24a-4e79-9185-3df2eb4d18a8"
-	brokerTwoUUID = "2b0c42ed-c43a-4724-b883-e5ba878a8bfd"
+	brokerName1 = "Test1"
 )
 
 func TestNoBrokers(t *testing.T) {
-	s := CreateMemStorage()
-	l, err := s.ListBrokers()
+	const bogusBrokerName = "NOT THERE"
+	bs := CreateMemStorage().Brokers()
+	l, err := bs.List()
 	if err != nil {
-		t.Fatalf("ListBrokers failed with: %#v", err)
+		t.Fatalf("List failed with: %s", err)
 	}
 	if len(l) != 0 {
 		t.Fatalf("Expected 0 brokers, got %d", len(l))
 	}
-	b, err := s.GetBroker("NOT THERE")
+	b, err := bs.Get(bogusBrokerName)
 	if err == nil {
-		t.Fatal("GetBroker did not fail")
+		t.Fatal("Get did not fail")
 	}
 	if b != nil {
 		t.Fatalf("Got back a broker: %#v", b)
@@ -47,251 +48,214 @@ func TestNoBrokers(t *testing.T) {
 }
 
 func TestAddBroker(t *testing.T) {
-	s := CreateMemStorage()
-	b := &model.ServiceBroker{GUID: "Test"}
-	cat := model.Catalog{
-		Services: []*model.Service{},
-	}
-	err := s.AddBroker(b, &cat)
+	bs := CreateMemStorage().Brokers()
+	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err := bs.Create(b)
 	if err != nil {
-		t.Fatalf("AddBroker failed with: %#v", err)
+		t.Fatalf("Create failed with: %s", err)
 	}
-	l, err := s.ListBrokers()
+	l, err := bs.List()
 	if len(l) != 1 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	b2, err := s.GetBroker("Test")
+	b2, err := bs.Get(brokerName1)
 	if err != nil {
-		t.Fatalf("GetBroker failed: %#v", err)
+		t.Fatalf("Get failed: %s", err)
 	}
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if strings.Compare(b2.Name, b.Name) != 0 {
-		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, b2.Name)
+	if b2 != b {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
 	}
 }
 
 func TestAddDuplicateBroker(t *testing.T) {
-	s := CreateMemStorage()
-	b := &model.ServiceBroker{GUID: "Test"}
-	cat := model.Catalog{
-		Services: []*model.Service{},
-	}
-	err := s.AddBroker(b, &cat)
+	bs := CreateMemStorage().Brokers()
+	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err := bs.Create(b)
 	if err != nil {
-		t.Fatalf("AddBroker failed with: %#v", err)
+		t.Fatalf("Create failed with: %s", err)
 	}
-	l, err := s.ListBrokers()
+	l, err := bs.List()
 	if len(l) != 1 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	b2, err := s.GetBroker("Test")
+	b2, err := bs.Get(brokerName1)
 	if err != nil {
-		t.Fatalf("GetBroker failed: %#v", err)
+		t.Fatalf("Get failed: %s", err)
 	}
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if strings.Compare(b2.Name, b.Name) != 0 {
-		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, b2.Name)
+	if b2 != b {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
 	}
-	err = s.AddBroker(b, &cat)
+	_, err = bs.Create(b)
 	if err == nil {
-		t.Fatal("AddBroker did not fail with duplicate")
+		t.Fatal("Create did not fail with duplicate")
 	}
 	if !strings.Contains(err.Error(), "already exists") {
-		t.Fatalf("Unexpected error, wanted 'already exists' but got %#v", err)
+		t.Fatalf("Unexpected error, wanted 'already exists' but got %s", err)
 	}
 }
 
 func TestUpdateBroker(t *testing.T) {
-	s := CreateMemStorage()
-	b1 := &model.ServiceBroker{GUID: "Test", Name: "Old"}
-	cat1 := model.Catalog{
-		Services: []*model.Service{
-			{
-				ID:   "s1",
-				Name: "same service",
-			},
-			{
-				ID:   "s2",
-				Name: "old service",
-			},
-		},
+	bs := CreateMemStorage().Brokers()
+	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err := bs.Create(b)
+	if err != nil {
+		t.Fatalf("Create failed with: %s", err)
 	}
-	s.AddBroker(b1, &cat1)
-
-	b2 := &model.ServiceBroker{GUID: "Test", Name: "New"}
-	cat2 := model.Catalog{
-		Services: []*model.Service{
-			{
-				ID:   "s1",
-				Name: "same service",
-			},
-			{
-				ID:   "s3",
-				Name: "new service",
-			},
-			{
-				ID:   "s4",
-				Name: "extra service",
-			},
-		},
-	}
-	s.UpdateBroker(b2, &cat2)
-
-	l, err := s.ListBrokers()
+	l, err := bs.List()
 	if len(l) != 1 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	b3, err := s.GetBroker("Test")
+	b2, err := bs.Get(brokerName1)
 	if err != nil {
-		t.Fatalf("GetBroker failed: %#v", err)
-	}
-	if b3 == nil {
-		t.Fatal("Did not get back a broker")
-	}
-	if strings.Compare(b3.Name, b2.Name) != 0 {
-		t.Fatalf("Names don't match, expected: '%s', got '%s'", b2.Name, b3.Name)
-	}
-	cat3, err := s.GetInventory()
-	if err != nil {
-		t.Fatalf("GetInventory failed: %#v", err)
-	}
-	if len(cat3.Services) != len(cat2.Services) {
-		t.Fatalf("Catalog sizes do not match, expected: '%+v', got '%+v'", len(cat2.Services), len(cat3.Services))
-	}
-	for i, s3 := range cat3.Services {
-		if strings.Compare(s3.Name, cat2.Services[i].Name) != 0 {
-			t.Fatalf("Catalogs entries do not match, expected: '%+v', got '%+v'", cat2, cat3)
-		}
-	}
-}
-
-func TestUpdateNonExistentBroker(t *testing.T) {
-	s := CreateMemStorage()
-	b := &model.ServiceBroker{GUID: "Test"}
-	cat := model.Catalog{
-		Services: []*model.Service{},
-	}
-
-	err := s.UpdateBroker(b, &cat)
-
-	if err == nil {
-		t.Fatal("UpdateBroker did not fail with duplicate")
-	}
-	if !strings.Contains(err.Error(), "does not exist") {
-		t.Fatalf("Unexpected error, wanted 'does not exist' but got %#v", err)
-	}
-}
-
-func TestDeleteBroker(t *testing.T) {
-	s := CreateMemStorage()
-	b := &model.ServiceBroker{GUID: brokerOneUUID}
-	cat := model.Catalog{
-		Services: []*model.Service{},
-	}
-	err := s.AddBroker(b, &cat)
-	if err != nil {
-		t.Fatalf("AddBroker failed with: %#v", err)
-	}
-	l, err := s.ListBrokers()
-	if len(l) != 1 {
-		t.Fatalf("Expected 1 broker, got %d", len(l))
-	}
-	b2, err := s.GetBroker(brokerOneUUID)
-	if err != nil {
-		t.Fatalf("GetBroker failed: %#v", err)
+		t.Fatalf("Get failed: %s", err)
 	}
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if strings.Compare(b2.Name, b.Name) != 0 {
-		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, b2.Name)
+	if b2 != b {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
 	}
-	err = s.DeleteBroker(brokerOneUUID)
+	b3 := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err = bs.Update(b3)
 	if err != nil {
-		t.Fatalf("Failed to delete broker: %s : %#v", brokerOneUUID, err)
+		t.Fatalf("Update failed with: %s", err)
 	}
-	l, err = s.ListBrokers()
+	l, err = bs.List()
+	if len(l) != 1 {
+		t.Fatalf("Expected 1 broker, got %d", len(l))
+	}
+	b4, err := bs.Get(brokerName1)
+	if err != nil {
+		t.Fatalf("Get failed: %s", err)
+	}
+	if b4 == nil {
+		t.Fatal("Did not get back a broker")
+	}
+	if b4 != b3 {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b3, b4)
+	}
+}
+
+func TestUpdateNonExistentBroker(t *testing.T) {
+	bs := CreateMemStorage().Brokers()
+	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err := bs.Update(b)
+	if err == nil {
+		t.Fatal("Update didn't fail for broker that does not exist")
+	}
+	if !strings.Contains(err.Error(), "no such broker") {
+		t.Fatalf("Unexpected error, wanted 'no such broker' but got %s", err)
+	}
+}
+
+func TestDeleteBroker(t *testing.T) {
+	bs := CreateMemStorage().Brokers()
+	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err := bs.Create(b)
+	if err != nil {
+		t.Fatalf("Create failed with: %s", err)
+	}
+	l, err := bs.List()
+	if len(l) != 1 {
+		t.Fatalf("Expected 1 broker, got %d", len(l))
+	}
+	b2, err := bs.Get(brokerName1)
+	if err != nil {
+		t.Fatalf("Get failed: %s", err)
+	}
+	if b2 == nil {
+		t.Fatal("Did not get back a broker")
+	}
+	if b2 != b {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
+	}
+	err = bs.Delete(brokerName1)
+	if err != nil {
+		t.Fatalf("Failed to delete broker: %s : %s", brokerName1, err)
+	}
+	l, err = bs.List()
 	if len(l) != 0 {
 		t.Fatalf("Expected 0 broker, got %d", len(l))
 	}
-	b2, err = s.GetBroker(brokerOneUUID)
+	b3, err := bs.Get(brokerName1)
 	if err == nil {
-		t.Fatal("GetBroker returned a broker when there should be none")
+		t.Fatal("Get returned a broker when there should be none")
+	}
+	if b3 != nil {
+		t.Fatalf("Got back a broker: %#v", b3)
 	}
 }
 
 func TestDeleteBrokerMultiple(t *testing.T) {
-	s := CreateMemStorage()
-	b := &model.ServiceBroker{GUID: brokerOneUUID}
-	b2 := &model.ServiceBroker{GUID: brokerTwoUUID}
-	cat := model.Catalog{
-		Services: []*model.Service{{Name: "first"}},
-	}
-	cat2 := model.Catalog{
-		Services: []*model.Service{{Name: "second"}},
-	}
-	err := s.AddBroker(b, &cat)
+	const brokerName2 = "Test2"
+	bs := CreateMemStorage().Brokers()
+	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
+	_, err := bs.Create(b)
 	if err != nil {
-		t.Fatalf("AddBroker failed with: %#v", err)
+		t.Fatalf("Create failed with: %s", err)
 	}
-	err = s.AddBroker(b2, &cat2)
-	if err != nil {
-		t.Fatalf("AddBroker failed with: %#v", err)
-	}
-	l, err := s.ListBrokers()
-	if len(l) != 2 {
-		t.Fatalf("Expected 1 broker, got %d", len(l))
-	}
-	bRet, err := s.GetBroker(brokerOneUUID)
-	if err != nil {
-		t.Fatalf("GetBroker failed: %#v", err)
-	}
-	if bRet == nil {
-		t.Fatal("Did not get back a broker")
-	}
-	if strings.Compare(bRet.Name, b.Name) != 0 {
-		t.Fatalf("Names don't match, expected: '%s', got '%s'", b.Name, bRet.Name)
-	}
-	catRet, err := s.GetInventory()
-	if err != nil {
-		t.Fatalf("Failed to get inventory: %#v", err)
-	}
-	if len(catRet.Services) != 2 {
-		t.Fatalf("Expected 2 services from GetInventory, got %d ", len(catRet.Services))
-	}
-
-	err = s.DeleteBroker(brokerOneUUID)
-	if err != nil {
-		t.Fatalf("Failed to delete broker: %s : %#v", brokerOneUUID, err)
-	}
-	l, err = s.ListBrokers()
+	l, err := bs.List()
 	if len(l) != 1 {
 		t.Fatalf("Expected 1 broker, got %d", len(l))
 	}
-	bRet, err = s.GetBroker(brokerOneUUID)
-	if err == nil {
-		t.Fatal("GetBroker returned a broker when there should be none")
-	}
-	bRet, err = s.GetBroker(brokerTwoUUID)
+	b2, err := bs.Get(brokerName1)
 	if err != nil {
-		t.Fatal("GetBroker failed for entry that should be there")
+		t.Fatalf("Get failed: %s", err)
 	}
-
-	if bRet == nil {
+	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if strings.Compare(bRet.Name, b2.Name) != 0 {
-		t.Fatalf("Names don't match, expected: '%s', got '%s'", b2.Name, bRet.Name)
+	if b2 != b {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
 	}
-	catRet, err = s.GetInventory()
+	b3 := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName2}}
+	_, err = bs.Create(b3)
 	if err != nil {
-		t.Fatalf("Failed to get inventory: %#v", err)
+		t.Fatalf("Create failed with: %s", err)
 	}
-	if len(catRet.Services) != 1 {
-		t.Fatalf("Expected 1 service from GetInventory, got %d ", len(catRet.Services))
+	l, err = bs.List()
+	if len(l) != 2 {
+		t.Fatalf("Expected 2 brokers, got %d", len(l))
+	}
+	b4, err := bs.Get(brokerName2)
+	if err != nil {
+		t.Fatalf("Get failed: %s", err)
+	}
+	if b4 == nil {
+		t.Fatal("Did not get back a broker")
+	}
+	if b4 != b3 {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b3, b4)
+	}
+	err = bs.Delete(brokerName1)
+	if err != nil {
+		t.Fatalf("Failed to delete broker: %s : %s", brokerName1, err)
+	}
+	l, err = bs.List()
+	if len(l) != 1 {
+		t.Fatalf("Expected 1 broker, got %d", len(l))
+	}
+	b5, err := bs.Get(brokerName1)
+	if err == nil {
+		t.Fatal("Get returned a broker when there should be none")
+	}
+	if b5 != nil {
+		t.Fatalf("Got back a broker: %#v", b5)
+	}
+	b6, err := bs.Get(brokerName2)
+	if err != nil {
+		t.Fatal("Get failed for entry that should be there")
+	}
+	if b6 == nil {
+		t.Fatal("Did not get back a broker")
+	}
+	if b6 != b3 {
+		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b3, b6)
 	}
 }

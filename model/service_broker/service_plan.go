@@ -16,7 +16,8 @@ limitations under the License.
 
 package model
 
-//
+// ServicePlan is the Open Service API compatible struct for service plans.
+// It comes with with JSON struct tags to match the API spec
 type ServicePlan struct {
 	Name        string      `json:"name"`
 	ID          string      `json:"id"`

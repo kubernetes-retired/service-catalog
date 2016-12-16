@@ -40,7 +40,7 @@ const (
 	ServiceInstance
 	ServiceBinding
 	ServiceBroker
-	ServiceType
+	ServiceClass
 	Deployment
 )
 
@@ -58,7 +58,7 @@ var resourceTypeNames = []string{
 
 // These resources _must_ exist in the cluster before proceeding. ManagedService is not
 // used yet.
-var resourceTypes = []resourceType{ServiceInstance, ServiceBinding, ServiceBroker, ServiceType}
+var resourceTypes = []resourceType{ServiceInstance, ServiceBinding, ServiceBroker, ServiceClass}
 
 const (
 	// GroupName is a name of a Kubernetes API extension implemented by the service catalog.
@@ -76,8 +76,8 @@ const (
 	// ServiceBindingKind is a name of a Service Binding resource, a Kubernetes third party resource.
 	ServiceBindingKind = "ServiceBinding"
 
-	// ServiceTypeKind is a name of a Service Type resource, a Kubernetes third party resource.
-	ServiceTypeKind = "ServiceClass"
+	// ServiceClassKind is a name of a Service Class resource, a Kubernetes third party resource.
+	ServiceClassKind = "ServiceClass"
 
 	// ServiceInstanceKind is a name of a Service Instance resource, a Kubernetes third party resource.
 	ServiceInstanceKind = "ServiceInstance"
@@ -130,9 +130,9 @@ var serviceBrokerResource = unversioned.APIResource{
 	Namespaced: true,
 }
 
-var serviceTypeResource = unversioned.APIResource{
+var serviceClassResource = unversioned.APIResource{
 	Name:       "serviceclasses",
-	Kind:       ServiceTypeKind,
+	Kind:       ServiceClassKind,
 	Namespaced: true,
 }
 
@@ -353,8 +353,8 @@ func getResourceClient(client *dynamic.Client, t resourceType, namespace string)
 		return client.Resource(&serviceBindingResource, namespace)
 	case ServiceBroker:
 		return client.Resource(&serviceBrokerResource, namespace)
-	case ServiceType:
-		return client.Resource(&serviceTypeResource, namespace)
+	case ServiceClass:
+		return client.Resource(&serviceClassResource, namespace)
 	}
 	return nil
 }

@@ -17,7 +17,7 @@ limitations under the License.
 package storage
 
 import (
-	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 // BindingDirection is an integer type used for expressing direction of the
@@ -35,88 +35,76 @@ const (
 
 // BrokerStorage defines the interface to manage brokers.
 type BrokerStorage interface {
-	// ListBrokers returns all brokers.
-	ListBrokers() ([]*model.ServiceBroker, error)
+	// List returns a list of all brokers
+	List() ([]*servicecatalog.Broker, error)
 
-	// GetBroker gets a broker by name. Returns error if broker does not exist.
-	GetBroker(name string) (*model.ServiceBroker, error)
+	// Get gets a broker by name. Returns error if broker does not exist.
+	Get(name string) (*servicecatalog.Broker, error)
 
-	// AddBroker adds a new broker with its associated catalog. Returns error if
+	// Create adds a new broker. Returns an error if a broker with the given name already exists
 	// a broker of this name already exists.
-	AddBroker(*model.ServiceBroker, *model.Catalog) error
+	Create(*servicecatalog.Broker) (*servicecatalog.Broker, error)
 
-	// UpdateBroker updates an existing broker with its associated catalog.
-	// Returns error if broker does not exist.
-	UpdateBroker(*model.ServiceBroker, *model.Catalog) error
+	// Update updates an existing broker. Returns error if the broker doesn't exist
+	Update(*servicecatalog.Broker) (*servicecatalog.Broker, error)
 
-	// DeleteBroker deletes an existing broker by name. Returns error if broker
-	// does not exist.
-	DeleteBroker(name string) error
+	// Delete deletes an existing broker by name. Returns error if broker does not exist.
+	Delete(name string) error
 }
 
-// ClassStorage defines the interface to manage service classes.
-type ClassStorage interface {
-	// GetInventory returns the aggregate catalog of service classes across all
-	// brokers.
-	GetInventory() (*model.Catalog, error)
+// ServiceClassStorage defines the interface to manage service classes.
+type ServiceClassStorage interface {
+	// List returns all service classes
+	List() ([]*servicecatalog.ServiceClass, error)
 
-	// GetServiceClass returns the definition of a service class by name. Returns
-	// error if service class does not exist.
-	GetServiceClass(name string) (*model.Service, error)
+	// Get returns a service class by name. Returns error if the class doesn't exist
+	Get(name string) (*servicecatalog.ServiceClass, error)
+
+	// Create adds a new service class. Returns error if a service class of this
+	// name already exists.
+	Create(*servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error)
 }
 
 // InstanceStorage defines the interface to manage service instances.
 type InstanceStorage interface {
-	// ListServiceInstances returns all service instances.
-	ListServiceInstances(namespace string) ([]*model.ServiceInstance, error)
+	// ListServiceInstances returns all service instances
+	List() ([]*servicecatalog.Instance, error)
 
-	// GetServiceInstance gets a service instance by name. Returns error if instance does
-	// not exist.
-	GetServiceInstance(namespace string, name string) (*model.ServiceInstance, error)
+	// Get fetches a service instance by name. Returns error if instance does not exist
+	Get(name string) (*servicecatalog.Instance, error)
 
-	// ServiceInstanceExists returns whether a service instance exists.
-	ServiceInstanceExists(namespace string, name string) bool
+	// Create adds a new service instance. Returns error if an instance of this name already exists.
+	Create(*servicecatalog.Instance) (*servicecatalog.Instance, error)
 
-	// AddServiceInstance adds a new service instance. Returns error if an instance of
-	// this name already exists.
-	AddServiceInstance(*model.ServiceInstance) error
+	// Update updates an existing service instance. Returns error if instance does not exist.
+	Update(*servicecatalog.Instance) (*servicecatalog.Instance, error)
 
-	// UpdateServiceInstance updates an existing service instance. Returns error if instance
-	// does not exist.
-	UpdateServiceInstance(*model.ServiceInstance) error
-
-	// DeleteServiceInstance deletes an existing service instance. Returns error if
-	// instance does not exist.
-	DeleteServiceInstance(name string) error
+	// Delete deletes an existing service instance. Returns error if instance does not exist.
+	Delete(name string) error
 }
 
 // BindingStorage defines the interface manage service bindings.
 type BindingStorage interface {
-	// ListServiceBindings returns all service bindings.
-	ListServiceBindings() ([]*model.ServiceBinding, error)
+	// List returns all bindings.
+	List() ([]*servicecatalog.Binding, error)
 
-	// GetServiceBinding gets a service binding by name. Returns error if binding
-	// does not exist.
-	GetServiceBinding(name string) (*model.ServiceBinding, error)
+	// Get gets a binding by name. Returns error if binding does not exist.
+	Get(name string) (*servicecatalog.Binding, error)
 
-	// AddServiceBinding adds a new service binding with its associated
-	// credentials. Returns error if a binding of this name already exists.
-	AddServiceBinding(*model.ServiceBinding, *model.Credential) error
+	// Create adds a new binding. Returns error if a binding of this name already exists.
+	Create(*servicecatalog.Binding) (*servicecatalog.Binding, error)
 
-	// UpdateServiceBinding updates an existing service binding. Returns error if
-	// binding does not exist.
-	UpdateServiceBinding(*model.ServiceBinding) error
+	// Update updates an existing binding. Returns error if binding does not exist.
+	Update(*servicecatalog.Binding) (*servicecatalog.Binding, error)
 
-	// DeleteServiceBinding deletes an existing service binding. Returns error if
-	// binding does not exist.
-	DeleteServiceBinding(name string) error
+	// Delete deletes an existing binding. Returns error if binding does not exist.
+	Delete(name string) error
 }
 
-// Storage defines the interface to manage service brokers, types, instances,
-// and bindings.
+// Storage defines the interface to manage service brokers, types, instances, and bindings.
 type Storage interface {
-	BrokerStorage
-	ClassStorage
-	InstanceStorage
-	BindingStorage
+	Brokers() BrokerStorage
+	ServiceClasses() ServiceClassStorage
+	Instances(string) InstanceStorage
+	Bindings(string) BindingStorage
 }

@@ -17,15 +17,16 @@ limitations under the License.
 package injector
 
 import (
-	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 // BindingInjector defines the interface for injecting binding credential
 // information for consumption.
 type BindingInjector interface {
 	// Inject injects binding credential information for consumption.
-	Inject(*model.ServiceBinding) error
+	Inject(*servicecatalog.Binding, *sbmodel.Credential) error
 
 	// Uninject removes the previously injected binding for consumption.
-	Uninject(*model.ServiceBinding) error
+	Uninject(*servicecatalog.Binding) error
 }
