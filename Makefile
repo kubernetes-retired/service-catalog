@@ -43,6 +43,7 @@ clean: clean.sub
 	rm -rf $(BINDIR)
 	rm -f .dockerInit
 	rm -f .scBuildImage
+	rm -f $(COVERAGE)
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
 # Use this target when you want to build everything using docker containers.
