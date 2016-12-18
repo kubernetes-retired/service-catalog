@@ -42,7 +42,7 @@ endif
 # Some will have dedicated targets to make it easier to type, for example
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
-build: .init \
+build: .init .generate_files \
        $(BINDIR)/controller $(BINDIR)/registry $(BINDIR)/k8s-broker \
        $(BINDIR)/service-catalog $(BINDIR)/user-broker \
        $(BINDIR)/apiserver
@@ -68,6 +68,28 @@ apiserver: $(BINDIR)/apiserver
 $(BINDIR)/apiserver: cmd/service-catalog $(shell find pkg/apis/servicecatalog -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
+# This section contains the code generation stuff
+#################################################
+.generate_exes: $(BINDIR)/defaulter-gen $(BINDIR)/deepcopy-gen
+	touch $@
+
+$(BINDIR)/defaulter-gen: cmd/libs/go2idl/defaulter-gen
+	$(DOCKER) go build -o $@ $(SC_PKG)/$^
+
+$(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
+	$(DOCKER) go build -o $@ $(SC_PKG)/$^
+
+.generate_files: .generate_exes
+	$(DOCKER) $(BINDIR)/defaulter-gen --v 1 --logtostderr \
+	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
+	  --extra-peer-dirs $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
+	  -O zz_generated.defaults
+	$(DOCKER) $(BINDIR)/deepcopy-gen --v 1 --logtostderr \
+	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
+	  --bounding-dirs github.com/kubernetes-incubator/service-catalog \
+	  -O zz_generated.deepcopy
+	  touch $@
+
 # Some prereq stuff
 ###################
 .init: .scBuildImage glide.yaml
@@ -81,7 +103,7 @@ $(BINDIR)/apiserver: cmd/service-catalog $(shell find pkg/apis/servicecatalog -t
 
 # Util targets
 ##############
-verify: .init
+verify: .init .generate_files
 	@echo Running gofmt:
 	@$(DOCKER) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || \
@@ -116,7 +138,7 @@ build-linux:
 
 clean:
 	rm -rf $(BINDIR)
-	rm -f .init .scBuildImage
+	rm -f .init .scBuildImage .generate_files .generate_exes
 	rm -f $(COVERAGE)
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
