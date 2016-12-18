@@ -1,86 +1,104 @@
-# Copyright 2016 The Kubernetes Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+all: build test verify
 
-include ./hack/Makefile.mk
+# Define some constants
+#######################
+ROOT          = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+BINDIR       ?= bin
+COVERAGE     ?= $(CURDIR)/coverage.html
+SC_PKG        = github.com/kubernetes-incubator/service-catalog
+TOP_SRC_DIRS  = cmd contrib pkg
+SRC_DIRS      = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
+                  -exec dirname {} \\; | sort | uniq")
+TEST_DIRS     = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
+                  -exec dirname {} \\; | sort | uniq")
+SRC_PKGS      = $(addprefix $(SC_PKG)/,$(SRC_DIRS))
+GO_VERSION    = 1.7.3
+GO_BUILD      = go build
+export GOPATH = $(shell cd ../../../..;pwd):$(PWD)/vendor
+DOCKER_CMD    = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
+                 -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
+                 scbuildimage
 
-# Directories that the make will recurse into.
-DIRS := \
-  contrib/registry \
-  contrib/broker/k8s \
-  contrib/broker/user_provided \
-  contrib/broker/server \
-  pkg \
-  pkg/apis/servicecatalog \
-  pkg/apis/servicecatalog/v1alpha1 \
-  pkg/controller/catalog \
-  cmd/service-catalog
+ifneq ($(origin DOCKER),undefined)
+  # If DOCKER is defined then make it the full docker cmd line we want to use
+  DOCKER=$(DOCKER_CMD)
+endif
 
-ALL := all build build-linux build-darwin clean docker push test lint coverage
-SUB := $(addsuffix .sub, $(ALL))
-.PHONY: $(ALL) $(SUB) format
+# This section builds the output binaries.
+# Some will have dedicated targets to make it easier to type, for example
+# "apiserver" instead of "bin/apiserver".
+#########################################################################
+build: init \
+       $(BINDIR)/controller $(BINDIR)/registry $(BINDIR)/k8s-broker \
+       $(BINDIR)/service-catalog $(BINDIR)/user-broker \
+       $(BINDIR)/apiserver
 
-# Recursive targets.
-build: build.sub
-build-linux: build-linux.sub
-build-darwin: build-darwin.sub
-docker: docker.sub
-lint: lint.sub
-push: push.sub
-test: test.sub
+controller: $(BINDIR)/controller
+$(BINDIR)/controller: pkg/controller/catalog
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
 
-clean: clean.sub
-	rm -rf $(BINDIR)
-	rm -f .dockerInit
-	rm -f .scBuildImage
-	rm -f $(COVERAGE)
-	docker rmi -f scbuildimage > /dev/null 2>&1 || true
+registry: $(BINDIR)/registry
+$(BINDIR)/registry: contrib/registry
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
 
-# Use this target when you want to build everything using docker containers.
-# Good for cases when you don't have the tools installed (like glide or go).
-docker-all: .scBuildImage
-	docker run --rm -ti \
-	  -v $(PWD):/go/src/github.com/kubernetes-incubator/service-catalog \
-	  scbuildimage \
-	  make .dockerInit all
+$(BINDIR)/k8s-broker: contrib/broker/k8s
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
 
-# .dockerInit tells us if our vendor stuff if out of date or not.
-# And if so we'll run init under our docker build.  For non-docker builds
-# it is assumed you'll run "make init" manually.
-.dockerInit: glide.yaml
-	make init
-	echo > .dockerInit
+$(BINDIR)/service-catalog: cmd/service-catalog
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
 
-# .scBuildImage is used to know when the docker image ("scbuildimage") is out
-# of date with the Dockerfile.
+$(BINDIR)/user-broker: contrib/broker/k8s
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+
+apiserver: $(BINDIR)/apiserver
+$(BINDIR)/apiserver: cmd/service-catalog
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+
+# Some prereq stuff
+###################
+init: .scBuildImage .init
+
+# .init is used to know when some Glide dependencies are out of date
+.init: glide.yaml
+	$(DOCKER) glide install --strip-vendor
+	echo > $@
+
+# .scBuildImage tells when the docker image ("scbuildimage") is out of date
 .scBuildImage: hack/Dockerfile
-	docker build -t scbuildimage - < hack/Dockerfile
-	echo > .scBuildImage
+	sed "s/GO_VERSION/$(GO_VERSION)/g" < hack/Dockerfile | \
+	  docker build -t scbuildimage -
+	echo > $@
 
-# Build the same target recursively in all directories.
-$(SUB): %.sub:
-	$(ECHO) for dir in $(DIRS); do $(MAKE) --no-print-directory -C "$${dir}" $* || exit $$? ; done
+# Util targets
+##############
 
-init:
-	$(ECHO) glide install --strip-vendor
+verify: init
+	@echo Running gofmt:
+	@$(DOCKER) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
+	@bash -c '[ "`cat .out`" == "" ] || \
+	  (echo -e "\n*** Please 'gofmt' the following:" ; cat .out ; echo ; false)'
+	@rm .out
+	@echo Running golint and go vet:
+	@for i in $(SRC_PKGS); do \
+	  ($(DOCKER) golint --set_exit_status $$i/... && \
+	   $(DOCKER) go vet $$i )|| exit $$? ; \
+	done || false
 
-format:
-	$(ECHO) gofmt -w -s $(addprefix ./,$(DIRS))
+format: init
+	$(DOCKER) gofmt -w -s $(TOP_SRC_DIRS)
 
-coverage:
-	$(ECHO) $(ROOT)/hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(DIRS))
+coverage: init
+	$(DOCKER) hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(TEST_DIRS))
 
-.PHONY: apiserver
-apiserver:
-	go install -v github.com/kubernetes-incubator/service-catalog/cmd/service-catalog
-	go build -v -o $(BINDIR)/apiserver cmd/service-catalog/server.go
+test:
+	@echo Running tests:
+	@for i in $(SRC_PKGS); do \
+	  $(DOCKER) go test $$i || exit $$? ; \
+	done
+
+clean:
+	rm -rf $(BINDIR)
+	rm -f .init .scBuildImage
+	rm -f $(COVERAGE)
+	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+	docker rmi -f scbuildimage > /dev/null 2>&1 || true

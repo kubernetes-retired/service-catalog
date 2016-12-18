@@ -20,6 +20,7 @@ import (
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 )
 
+// Controller defines the APIs that all controllers are expected to support
 type Controller interface {
 	Catalog() (*sbmodel.Catalog, error)
 
@@ -27,6 +28,6 @@ type Controller interface {
 	CreateServiceInstance(id string, req *sbmodel.ServiceInstanceRequest) (*sbmodel.CreateServiceInstanceResponse, error)
 	RemoveServiceInstance(id string) error
 
-	Bind(instanceId string, bindingId string, req *sbmodel.BindingRequest) (*sbmodel.CreateServiceBindingResponse, error)
-	UnBind(instanceId string, bindingId string) error
+	Bind(instanceID string, bindingID string, req *sbmodel.BindingRequest) (*sbmodel.CreateServiceBindingResponse, error)
+	UnBind(instanceID string, bindingID string) error
 }

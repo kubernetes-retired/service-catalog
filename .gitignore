@@ -12,4 +12,4 @@ coverage.html
 .DS_Store
 .glide
 .scBuildImage
-.dockerInit
+.init
