@@ -68,7 +68,7 @@ function wait_for_service_host() {
     local services_output="$(kubectl get services --namespace "${NAMESPACE}" | xargs echo -n)"
     local host="$(echo "${services_output}" | sed "s/.*${name} [0-9.]* \([0-9.]*\) \([0-9]*\).*/\1:\2/")"
 
-    retry -n 20 -s 10 -t 60 \
+    retry -n 10 -s 10 -t 60 \
         curl --silent --fail "http://${host}/${path}" > /dev/null \
       && return 0
 
@@ -107,13 +107,13 @@ kubectl get pods --namespace "${NAMESPACE}" --no-headers  | grep -v Running \
   && error_exit 'Pods failed to spin up successfully.'
 
 # Wait for services to respond
-echo 'Waiting on services to respond...'
+echo 'Waiting on services to get external IP...'
 
 wait_for_expected_output -x -e 'pending' -n 20 -s 10 -t 60 \
     kubectl get services --namespace "${NAMESPACE}" \
   || error_exit 'Services took an unexpected amount of time to spin up.'
 
-echo 'Waiting on services to get external IP...'
+echo 'Waiting on services to respond...'
 
 wait_for_service_host 'registry' 'services' \
   || error_exit 'Error when trying to communicate with registry.'
@@ -146,10 +146,10 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/binding.yaml" \
 
 sleep 10
 
-kubectl create -f "${ROOT}/contrib/examples/walkthrough/frontend.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/user-bookstore-client/bookstore.yaml" \
   || error_exit 'Cannot create frontend.'
 
-wait_for_expected_output -e 'booksfe' -n 20 -s 2 -t 60 \
+wait_for_expected_output -e 'user-bookstore-fe' -n 20 -s 2 -t 60 \
     kubectl get services \
   || error_exit 'Frontend service took unexpected amount of time to come up.'
 
