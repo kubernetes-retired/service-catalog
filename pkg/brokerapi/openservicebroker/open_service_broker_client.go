@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package openservicebroker
 
 import (
 	"bytes"
@@ -23,6 +23,8 @@ import (
 
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 )
 
 const (
@@ -38,9 +40,9 @@ type openServiceBrokerClient struct {
 	client *http.Client
 }
 
-// CreateOpenServiceBrokerClient creates an instance of BrokerClient for communicating
-// with brokers which implement the Open Service Broker API.
-func CreateOpenServiceBrokerClient(b *scmodel.ServiceBroker) BrokerClient {
+// NewClient creates an instance of BrokerClient for communicating with brokers
+// which implement the Open Service Broker API.
+func NewClient(b *scmodel.ServiceBroker) brokerapi.BrokerClient {
 	return &openServiceBrokerClient{
 		broker: b,
 		client: &http.Client{
@@ -66,7 +68,7 @@ func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
 	}
 
 	var catalog model.Catalog
-	if err = ResponseBodyToObject(resp, &catalog); err != nil {
+	if err = util.ResponseBodyToObject(resp, &catalog); err != nil {
 		log.Printf("Failed to unmarshal catalog: %#v", err)
 		return nil, err
 	}
@@ -97,7 +99,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *model.Se
 
 	// TODO: Align this with the actual response model.
 	si := model.ServiceInstance{}
-	if err := ResponseBodyToObject(resp, &si); err != nil {
+	if err := util.ResponseBodyToObject(resp, &si); err != nil {
 		return nil, err
 	}
 	return &si, nil
@@ -153,7 +155,7 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *mod
 	defer resp.Body.Close()
 
 	sbr := model.CreateServiceBindingResponse{}
-	err = ResponseBodyToObject(resp, &sbr)
+	err = util.ResponseBodyToObject(resp, &sbr)
 	if err != nil {
 		log.Printf("Failed to unmarshal: %#v", err)
 		return nil, err

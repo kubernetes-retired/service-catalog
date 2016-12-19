@@ -21,6 +21,7 @@ import (
 
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
@@ -64,7 +65,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 	if err != nil {
 		return err
 	}
-	client := util.CreateOpenServiceBrokerClient(broker)
+	client := openservicebroker.NewClient(broker)
 
 	// Make the request to instantiate.
 	createReq := &sbmodel.ServiceInstanceRequest{
@@ -130,7 +131,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
 	}
-	client := util.CreateOpenServiceBrokerClient(broker)
+	client := openservicebroker.NewClient(broker)
 
 	// Assign UUID to binding.
 	in.ID = uuid.NewV4().String()
@@ -165,7 +166,7 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 }
 
 func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.ServiceBroker, error) {
-	client := util.CreateOpenServiceBrokerClient(in)
+	client := openservicebroker.NewClient(in)
 	sbcat, err := client.GetCatalog()
 	if err != nil {
 		return nil, err

@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package openservicebroker
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 )
 
 func TestUpdateServiceInstance(t *testing.T) {
-	cli := CreateOpenServiceBrokerClient(&scmodel.ServiceBroker{})
+	cli := NewClient(&scmodel.ServiceBroker{})
 
 	_, err := cli.UpdateServiceInstance("foo", &model.ServiceInstanceRequest{})
 	if err == nil {
