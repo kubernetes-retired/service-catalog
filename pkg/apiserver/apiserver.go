@@ -2,9 +2,12 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-
+	//"k8s.io/kubernetes/pkg/api/rest"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	"k8s.io/kubernetes/pkg/version"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 )
 
 // ServiceCatalogAPIServer contains base GenericAPIServer along with
@@ -58,5 +61,22 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 		GenericAPIServer: genericServer,
 	}
 
+	glog.Infoln("make and install the apis")
+
+	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(servicecatalog.GroupName)
+	// giving it v1alpha1 version
+	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
+
+	// TODO make storage work
+	//v1alpha1storage := map[string]rest.Storage{}
+	//
+	//v1alpha1storage["servicecatalog"] = apiservice.NewREST(c.RESTOptionsGetter.NewFor(apiregistration.Resource("servicecatalog")))
+
+	//apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
+	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+		return nil, err
+	}
+
+	glog.Infoln("returning the server")
 	return s, nil
 }

@@ -8,11 +8,10 @@ import (
 	"k8s.io/kubernetes/pkg/util/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/cmd/server"
-	// this is necessary at startup to register the apis.
-	// mhb doesn't like how disconnected this is from the rest of the setup of the apis.
-	// install all APIs
-	// _ "github.com/openshift/kube-aggregator/pkg/apis/apifederation/install"
-	// _ "k8s.io/kubernetes/pkg/api/install"
+	// TODO: may be necessary
+	_ "k8s.io/kubernetes/pkg/api/install"
+	// install our API groups
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 )
 
 func main() {
