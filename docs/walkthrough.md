@@ -95,9 +95,7 @@ Confirm that service types are now available for instantiation:
 This will output available service types, for example:
 
     NAME               LABELS    DATA
-    binding-consumer   <none>    {"apiVersion":"...
     booksbe            <none>    {"apiVersion":"...
-    booksfe            <none>    {"apiVersion":"...
 
 We can now create instances of these service classes and connect them
 using bindings:
