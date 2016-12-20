@@ -18,9 +18,9 @@ package watch
 
 import (
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/golang/glog"
 	"k8s.io/client-go/1.5/dynamic"
 	// Need this for gcp auth
 	"k8s.io/client-go/1.5/kubernetes"
@@ -150,13 +150,13 @@ type Watcher struct {
 func NewWatcher(k8sClient *kubernetes.Clientset, dynClient *dynamic.Client) (*Watcher, error) {
 	err := initCluster(k8sClient)
 	if err != nil {
-		log.Printf("Failed to initialize cluster: %v\n", err)
+		glog.Errorf("Failed to initialize cluster: %v\n", err)
 		return nil, err
 	}
 
 	err = checkCluster(dynClient)
 	if err != nil {
-		log.Printf("Cluster does not seem to in correct working order: %v\n", err)
+		glog.Errorf("Cluster does not seem to in correct working order: %v\n", err)
 	}
 
 	return &Watcher{
@@ -167,28 +167,28 @@ func NewWatcher(k8sClient *kubernetes.Clientset, dynClient *dynamic.Client) (*Wa
 
 func initCluster(clientset *kubernetes.Clientset) error {
 	for k, v := range thirdPartyResourceTypes {
-		log.Printf("Checking for existence of %s\n", k)
+		glog.Infof("Checking for existence of %s\n", k)
 		_, err := clientset.Extensions().ThirdPartyResources().Get(k)
 		if err == nil {
-			log.Printf("Found existing TPR %s\n", k)
+			glog.Errorf("Found existing TPR %s\n", k)
 			continue
 		}
 
-		log.Printf("Creating Third Party Resource Type: %s\n", k)
+		glog.Infof("Creating Third Party Resource Type: %s\n", k)
 		_, err = clientset.Extensions().ThirdPartyResources().Create(&v)
 		if err != nil {
-			log.Printf("Failed to create Third Party Resource Type: %s : %v\n", k, err)
+			glog.Errorf("Failed to create Third Party Resource Type: %s : %v\n", k, err)
 			return err
 		}
-		log.Printf("Created TPR: %s\n", k)
+		glog.Infof("Created TPR: %s\n", k)
 		// There can be a delay, so poll until it's ready to go...
 		for i := 0; i < 30; i++ {
 			_, err = clientset.Extensions().ThirdPartyResources().Get(k)
 			if err == nil {
-				log.Printf("TPR is ready %s\n", k)
+				glog.Infof("TPR is ready %s\n", k)
 				break
 			}
-			log.Printf("TPR: %s is not ready yet... waiting...\n", k)
+			glog.Infof("TPR: %s is not ready yet... waiting...\n", k)
 			time.Sleep(1 * time.Second)
 		}
 	}
@@ -198,13 +198,13 @@ func initCluster(clientset *kubernetes.Clientset) error {
 		return err
 	}
 	for _, apis := range thirdparty.Items {
-		log.Printf("Thirdparty: %+v\n", apis)
+		glog.Infof("Thirdparty: %+v\n", apis)
 	}
 	return nil
 }
 
 func checkCluster(client *dynamic.Client) error {
-	log.Println("initCluster")
+	glog.Infoln("initCluster")
 
 	for _, rt := range resourceTypes {
 		c := getResourceClient(client, rt, "default")
@@ -212,20 +212,20 @@ func checkCluster(client *dynamic.Client) error {
 			return fmt.Errorf("Failed to get a client %d", rt)
 		}
 
-		log.Printf("Checking resource type %s for readiness for listing\n", rt.name())
+		glog.Infof("Checking resource type %s for readiness for listing\n", rt.name())
 		ok := false
 		for i := 0; i < 30; i++ {
 			_, err := c.List(&v1.ListOptions{})
 			if err == nil {
-				log.Printf("Successful list for %s, continuing\n", rt.name())
+				glog.Infof("Successful list for %s, continuing\n", rt.name())
 				ok = true
 				break
 			}
-			log.Printf("Failed to list for %s... waiting...\n", rt.name())
+			glog.Errorf("Failed to list for %s... waiting...\n", rt.name())
 			time.Sleep(1 * time.Second)
 		}
 		if !ok {
-			log.Printf("Can't list %s, bailing...\n", rt.name())
+			glog.Errorf("Can't list %s, bailing...\n", rt.name())
 			return fmt.Errorf("Third Party Resource Type %s is not ready", rt.name())
 		}
 	}
@@ -250,11 +250,11 @@ func (w *Watcher) Watch(t resourceType, ns string, wcb watchCallback) error {
 
 func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 	for {
-		log.Println("List all existing Deployments")
+		glog.Infoln("List all existing Deployments")
 		// First do List on the resource to bring things up to date.
 		l, err := di.List(api.ListOptions{})
 		for _, d := range l.Items {
-			log.Printf("Found Deployment name: %s\n", d.Name)
+			glog.Infof("Found Deployment name: %s\n", d.Name)
 			event := watch.Event{
 				Type:   watch.Added,
 				Object: &d,
@@ -264,28 +264,28 @@ func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 
 		w, err := di.Watch(api.ListOptions{})
 		if err != nil {
-			log.Printf("Failed to start a watch: %v\n", err)
+			glog.Errorf("Failed to start a watch: %v\n", err)
 			continue
 		}
 		c := w.ResultChan()
 
-		log.Println("Entering watch loop")
+		glog.Infoln("Entering watch loop")
 		done := false
 		for {
 			select {
 			case <-time.After(1 * time.Minute):
-				log.Println("*** select heartbeat ***")
+				glog.Infoln("*** select heartbeat ***")
 			case e := <-c:
-				log.Printf("Watch called with event Type: %s\n", e.Type)
+				glog.Infof("Watch called with event Type: %s\n", e.Type)
 				if e.Object == nil {
-					log.Println("Watch appears to have failed, restarting watch loop...")
+					glog.Infoln("Watch appears to have failed, restarting watch loop...")
 					done = true
 				} else {
 					wcb(e)
 				}
 			}
 			if done {
-				log.Println("Bailing from select for loop")
+				glog.Infoln("Bailing from select for loop")
 				break
 			}
 		}
@@ -299,7 +299,7 @@ func thirdPartyWatcher(rc dynamicResourceClient, wcb watchCallback) {
 		/*
 			l, err := rc.List(&v1.ListOptions{})
 			for _, o := range l.Items {
-				log.Printf("Found Third Party Resource name: %s\n", o.Name)
+				glog.Infof("Found Third Party Resource name: %s\n", o.Name)
 				event := watch.Event{
 					Type:   watch.Added,
 					Object: &o,
@@ -310,28 +310,28 @@ func thirdPartyWatcher(rc dynamicResourceClient, wcb watchCallback) {
 		*/
 		w, err := rc.Watch(&v1.ListOptions{})
 		if err != nil {
-			log.Printf("Failed to start a watch: %v\n", err)
+			glog.Errorf("Failed to start a watch: %v\n", err)
 			continue
 		}
 		c := w.ResultChan()
 
-		log.Println("Entering watch loop")
+		glog.Infoln("Entering watch loop")
 		done := false
 		for {
 			select {
 			case <-time.After(1 * time.Minute):
-				log.Println("*** select heartbeat ***")
+				glog.Infoln("*** select heartbeat ***")
 			case e := <-c:
-				log.Printf("Watch called with event Type: %s\n", e.Type)
+				glog.Infof("Watch called with event Type: %s\n", e.Type)
 				if e.Object == nil {
-					log.Println("Watch appears to have failed, restarting watch loop...")
+					glog.Infoln("Watch appears to have failed, restarting watch loop...")
 					done = true
 				} else {
 					wcb(e)
 				}
 			}
 			if done {
-				log.Println("Bailing from select for loop")
+				glog.Infoln("Bailing from select for loop")
 				break
 			}
 		}

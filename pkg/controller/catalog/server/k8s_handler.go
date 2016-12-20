@@ -18,8 +18,8 @@ package server
 
 import (
 	"errors"
-	"log"
 
+	"github.com/golang/glog"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
@@ -38,26 +38,26 @@ func createK8sHandler(c ServiceController, w *watch.Watcher) (*k8sHandler, error
 		watcher:    w,
 	}
 	if w != nil {
-		log.Println("Starting to watch for new Service Brokers")
+		glog.Infoln("Starting to watch for new Service Brokers")
 		err := w.Watch(watch.ServiceBroker, "default", ret.serviceBrokerCallback)
 		if err != nil {
-			log.Printf("Failed to start a watcher for Service Brokers: %v\n", err)
+			glog.Errorf("Failed to start a watcher for Service Brokers: %v\n", err)
 		}
 
-		log.Println("Starting to watch for new Service Instances")
+		glog.Infoln("Starting to watch for new Service Instances")
 		err = w.Watch(watch.ServiceInstance, "default", ret.serviceInstanceCallback)
 		if err != nil {
-			log.Printf("Failed to start a watcher for Service Instances: %v\n", err)
+			glog.Errorf("Failed to start a watcher for Service Instances: %v\n", err)
 		}
 
-		log.Println("Starting to watch for new Service Bindings")
+		glog.Infoln("Starting to watch for new Service Bindings")
 		err = w.Watch(watch.ServiceBinding, "default", ret.serviceBindingCallback)
 		if err != nil {
-			log.Printf("Failed to start a watcher for Service Bindings: %v\n", err)
+			glog.Errorf("Failed to start a watcher for Service Bindings: %v\n", err)
 			return nil, err
 		}
 	} else {
-		log.Println("No watcher (was nil), so not interfacing with kubernetes directly")
+		glog.Infoln("No watcher (was nil), so not interfacing with kubernetes directly")
 		return nil, errors.New("No watcher (was nil)")
 	}
 
@@ -68,20 +68,20 @@ func (s *k8sHandler) serviceInstanceCallback(e k8swatch.Event) error {
 	var si scmodel.ServiceInstance
 	err := util.TPRObjectToSCObject(e.Object, &si)
 	if err != nil {
-		log.Printf("Failed to decode the received object %#v", err)
+		glog.Errorf("Failed to decode the received object %#v", err)
 	}
 
 	if e.Type == "ADDED" || e.Type == "MODIFIED" {
 		if si.LastOperation != nil {
-			log.Printf("%s already created, skipping: %v\n", si.Name, si.LastOperation)
+			glog.Errorf("%s already created, skipping: %v\n", si.Name, si.LastOperation)
 			return nil
 		}
 		created, err := s.controller.CreateServiceInstance(&si)
 		if err != nil {
-			log.Printf("Failed to create service instance: %v\n", err)
+			glog.Errorf("Failed to create service instance: %v\n", err)
 			return err
 		}
-		log.Printf("Created Service Instance: %s\n", created.Name)
+		glog.Infof("Created Service Instance: %s\n", created.Name)
 	}
 	return nil
 }
@@ -90,20 +90,20 @@ func (s *k8sHandler) serviceBindingCallback(e k8swatch.Event) error {
 	var sb scmodel.ServiceBinding
 	err := util.TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
-		log.Printf("Failed to decode the received object %#v", err)
+		glog.Errorf("Failed to decode the received object %#v", err)
 	}
 
 	if e.Type == "ADDED" || e.Type == "MODIFIED" {
 		if sb.Credentials.Hostname != "" {
-			log.Printf("Bindings have already been created, skipping: %s\n", sb.Name)
+			glog.Infof("Bindings have already been created, skipping: %s\n", sb.Name)
 			return nil
 		}
 		created, err := s.controller.CreateServiceBinding(&sb)
 		if err != nil {
-			log.Printf("Failed to create service binding: %v\n", err)
+			glog.Errorf("Failed to create service binding: %v\n", err)
 			return err
 		}
-		log.Printf("Created Service Binding: %s\n%v\n", sb.Name, created)
+		glog.Infof("Created Service Binding: %s\n%v\n", sb.Name, created)
 	}
 	return nil
 }
@@ -112,17 +112,17 @@ func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
 	var sb scmodel.ServiceBroker
 	err := util.TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
-		log.Printf("Failed to decode the received object %#v", err)
+		glog.Errorf("Failed to decode the received object %#v", err)
 		return err
 	}
 
 	if e.Type == "ADDED" || e.Type == "MODIFIED" {
 		created, err := s.controller.CreateServiceBroker(&sb)
 		if err != nil {
-			log.Printf("Failed to create service broker: %v\n", err)
+			glog.Errorf("Failed to create service broker: %v\n", err)
 			return err
 		}
-		log.Printf("Created Service Broker: %s\n", created.Name)
+		glog.Infof("Created Service Broker: %s\n", created.Name)
 	} else {
 		return errors.New("Delete Service Broker not implemented yet")
 	}
