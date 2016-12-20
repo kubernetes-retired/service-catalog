@@ -10,9 +10,9 @@ import (
 type serviceInstanceStorage struct {
 }
 
-// NewServiceInstanceStorage creates a new rest.Storage responsible for accessing Instance
+// NewStorage creates a new rest.Storage responsible for accessing Instance
 // resources
-func NewServiceInstanceStorage() rest.Storage {
+func NewStorage() rest.Storage {
 	store := &genericregistry.Store{
 		NewFunc: func() runtime.Object {
 			return &Broker{}

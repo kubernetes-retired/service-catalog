@@ -8,9 +8,9 @@ import (
 type serviceBindingStorage struct {
 }
 
-// NewServiceBindingStorage creates a new rest.Storage responsible for accessing Binding
+// NewStorage creates a new rest.Storage responsible for accessing Binding
 // resources
-func NewServiceBindingStorage() rest.Storage {
+func NewStorage() rest.Storage {
 	return &registry.Store{
 	// TODO: implement
 	}

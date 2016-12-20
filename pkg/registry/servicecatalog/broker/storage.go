@@ -8,9 +8,9 @@ import (
 type serviceBrokerStorage struct {
 }
 
-// NewServiceBrokerStorage creates a new rest.Storage responsible for accessing Broker
+// NewStorage creates a new rest.Storage responsible for accessing Broker
 // resources
-func NewServiceBrokerStorage() rest.Storage {
+func NewStorage() rest.Storage {
 	return &registry.Store{
 	// TODO: implement
 	}
