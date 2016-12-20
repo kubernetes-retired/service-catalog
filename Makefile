@@ -14,7 +14,8 @@ TEST_DIRS     = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
 SRC_PKGS      = $(addprefix $(SC_PKG)/,$(SRC_DIRS))
 GO_VERSION    = 1.7.3
 GO_BUILD      = go build
-export GOPATH = $(shell cd ../../../..;pwd):$(PWD)/vendor
+BASE_PATH     = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
+export GOPATH = $(BASE_PATH):$(ROOT)/vendor
 DOCKER_CMD    = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
                  -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
                  scbuildimage
