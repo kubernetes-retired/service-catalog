@@ -79,7 +79,9 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 	// TODO: remove this?
 	//v1alpha1storage["servicecatalog"] = apiservice.NewREST(c.RESTOptionsGetter.NewFor(apiregistration.Resource("servicecatalog")))
 
-	apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1Alpha1Storage
+	apiGroupInfo.VersionedResourcesStorageMap = map[string]map[string]rest.Storage{
+		v1alpha1.SchemeGroupVersion.Version: v1Alpha1Storage,
+	}
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 		return nil, err
 	}
