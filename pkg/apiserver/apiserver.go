@@ -76,9 +76,6 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 		"Binding":  binding.NewStorage(),
 	}
 
-	// TODO: remove this?
-	//v1alpha1storage["servicecatalog"] = apiservice.NewREST(c.RESTOptionsGetter.NewFor(apiregistration.Resource("servicecatalog")))
-
 	apiGroupInfo.VersionedResourcesStorageMap = map[string]map[string]rest.Storage{
 		v1alpha1.SchemeGroupVersion.Version: v1Alpha1Storage,
 	}
