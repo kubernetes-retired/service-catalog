@@ -207,18 +207,18 @@ func getTypesFromPlan(p *sbmodel.ServicePlan) (*model.Types, error) {
 	if p.Metadata == nil {
 		return nil, err
 	}
-	if _, ok := p.Metadata.(map[string]interface{})[model.INSTANCE_TYPE]; !ok {
+	if _, ok := p.Metadata.(map[string]interface{})[model.InstanceType]; !ok {
 		return nil, err
 	}
-	if _, ok := p.Metadata.(map[string]interface{})[model.BINDING_TYPE]; !ok {
+	if _, ok := p.Metadata.(map[string]interface{})[model.BindingType]; !ok {
 		// No binding type... cool, just return the instance type
 		return &model.Types{
-			Instance: p.Metadata.(map[string]interface{})[model.INSTANCE_TYPE].(string),
+			Instance: p.Metadata.(map[string]interface{})[model.InstanceType].(string),
 		}, nil
 	}
 	return &model.Types{
-		Instance: p.Metadata.(map[string]interface{})[model.INSTANCE_TYPE].(string),
-		Binding:  p.Metadata.(map[string]interface{})[model.BINDING_TYPE].(string),
+		Instance: p.Metadata.(map[string]interface{})[model.InstanceType].(string),
+		Binding:  p.Metadata.(map[string]interface{})[model.BindingType].(string),
 	}, nil
 }
 

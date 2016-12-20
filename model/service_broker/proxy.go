@@ -23,11 +23,13 @@ package model
 //   ip: localhost
 //   port: 8080
 
+// Backend contains the network coordinates of a Proxy
 type Backend struct {
-	Ip   string `json:"ip"`
+	IP   string `json:"ip"`
 	Port string `json:"port"`
 }
 
+// Proxy - no idea what this is for - TODO(Dug)
 type Proxy struct {
 	Version string  `json:"version"`
 	Port    string  `json:"port"`

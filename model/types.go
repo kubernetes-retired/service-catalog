@@ -16,12 +16,14 @@ limitations under the License.
 
 package model
 
+// Types - no idea what this is for - TODO(Dug)
 type Types struct {
 	Instance string `json:"instance"`
 	Binding  string `json:"binding"`
 }
 
+// Defines the kinds of Types
 const (
-	INSTANCE_TYPE = "instanceType"
-	BINDING_TYPE  = "bindingType"
+	InstanceType = "instanceType"
+	BindingType  = "bindingType"
 )

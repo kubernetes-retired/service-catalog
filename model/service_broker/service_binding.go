@@ -16,6 +16,8 @@ limitations under the License.
 
 package model
 
+// ServiceBinding contains all of the info about a particular binding
+// (or link) between an app as a service instance.
 type ServiceBinding struct {
 	ID                string `json:"id"`
 	ServiceID         string `json:"service_id"`
@@ -25,6 +27,8 @@ type ServiceBinding struct {
 	ServiceInstanceID string `json:"service_instance_id"`
 }
 
+// BindingRequest is the request sent a service broker asking for a new
+// binding to be created.
 type BindingRequest struct {
 	AppGUID      string                 `json:"app_guid,omitempty"`
 	PlanID       string                 `json:"plan_id,omitempty"`
@@ -33,11 +37,14 @@ type BindingRequest struct {
 	Parameters   map[string]interface{} `json:"parameters,omitempty"`
 }
 
+// CreateServiceBindingResponse is the response msg from a BindingRequest.
 type CreateServiceBindingResponse struct {
 	// SyslogDrainURL string      `json:"syslog_drain_url, omitempty"`
 	Credentials Credential `json:"credentials"`
 }
 
+// Credential contains some of the popular (but not required) types of
+// crednetial data that might be included in a binding.
 type Credential struct {
 	Hostname string `json:"hostname"`
 	Port     string `json:"port"`

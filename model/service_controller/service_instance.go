@@ -20,17 +20,7 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
-type ServiceInstanceData struct {
-	Instance *ServiceInstance
-
-	// Bindings to pass to broker when instantiating the instance. If this is
-	// not set at instance creation time, no bindings will ever be passed.
-	//
-	// Map of service name being bound to to credentials.
-	Bindings map[string]*Credential
-}
-
-//
+// ServiceInstance defines a single instance of a service.
 type ServiceInstance struct {
 	Name         string `json:"name"`
 	ID           string `json:"id"`
@@ -44,8 +34,8 @@ type ServiceInstance struct {
 	// PlanID which are GUIDs. Up to you
 	ServiceID        string `json:"service_id"`
 	PlanID           string `json:"plan_id"`
-	OrganizationGuid string `json:"organization_guid"`
-	SpaceGuid        string `json:"space_guid"`
+	OrganizationGUID string `json:"organization_guid"`
+	SpaceGUID        string `json:"space_guid"`
 
 	LastOperation *LastOperation `json:"last_operation, omitempty"`
 
@@ -55,12 +45,16 @@ type ServiceInstance struct {
 	runtime.TypeMeta `json:",inline"`
 }
 
+// LastOperation defines the most recent operation performed by the
+// service broker, as requested by a client.
 type LastOperation struct {
 	State                    string `json:"state"`
 	Description              string `json:"description"`
 	AsyncPollIntervalSeconds int    `json:"async_poll_interval_seconds, omitempty"`
 }
 
+// CreateServiceInstanceRequest is the paylaod for the HTTP request to
+// create a new service instance.
 type CreateServiceInstanceRequest struct {
 	Name              string                 `json:"name"`
 	OrgID             string                 `json:"organization_guid"`
@@ -71,6 +65,8 @@ type CreateServiceInstanceRequest struct {
 	AcceptsIncomplete bool                   `json:"accepts_incomplete"`
 }
 
+// CreateServiceInstanceResponse is the payload of the HTTP response to
+// create a new service instance.
 type CreateServiceInstanceResponse struct {
 	DashboardURL  string         `json:"dashboard_url, omitempty"`
 	LastOperation *LastOperation `json:"last_operation, omitempty"`

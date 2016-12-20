@@ -16,6 +16,7 @@ limitations under the License.
 
 package model
 
+// Catalog contains all of the services that a service broker offers
 type Catalog struct {
 	Services []*Service `json:"services"`
 }

@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
+// ServiceBroker defines a service broker.
 type ServiceBroker struct {
 	GUID         string
 	Name         string
@@ -37,6 +38,8 @@ type ServiceBroker struct {
 	runtime.TypeMeta `json:",inline"`
 }
 
+// CreateServiceBrokerRequest defines the payload of a request to register
+// a new service broker with the platform.
 type CreateServiceBrokerRequest struct {
 	Name         string `json:"name"`
 	BrokerURL    string `json:"broker_url"`
@@ -45,11 +48,14 @@ type CreateServiceBrokerRequest struct {
 	SpaceGUID    string `json:"space_guid"` // CF-specific - FIXME
 }
 
+// CreateServiceBrokerResponse defines the payload of a response to register
+// a new service broker with the platform.
 type CreateServiceBrokerResponse struct {
 	Metadata ServiceBrokerMetadata `json:"metadata"`
 	Entity   ServiceBrokerEntity   `json:"entity"`
 }
 
+// ServiceBrokerMetadata holds the "metadata" portion of a service broker.
 type ServiceBrokerMetadata struct {
 	GUID      string `json:"guid"`
 	CreatedAt string `json:"created_at"`
@@ -57,6 +63,7 @@ type ServiceBrokerMetadata struct {
 	URL       string `json:"url"`
 }
 
+// ServiceBrokerEntity holds the "entity" portion of a service broker.
 type ServiceBrokerEntity struct {
 	Name         string `json:"name"`
 	BrokerURL    string `json:"broker_url"`
