@@ -24,9 +24,11 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	schemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	// SchemeBuilder needs to be exported as `SchemeBuilder` so
+	// the code-generation can find it.
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	// AddToScheme is exposed for API installation
-	AddToScheme = schemeBuilder.AddToScheme
+	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 func addKnownTypes(scheme *runtime.Scheme) error {
