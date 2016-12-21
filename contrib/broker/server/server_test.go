@@ -80,7 +80,7 @@ func TestCatalogReturnsCompliantJSON(t *testing.T) {
 		t.Errorf("Expected response content-type 'application/json', got '%s'", contentType)
 	}
 
-	catalog, err := readJson(rr)
+	catalog, err := readJSON(rr)
 	if err != nil {
 		t.Errorf("Failed to parse JSON response with error %v", err)
 	}
@@ -108,7 +108,7 @@ func TestCatalogReturnsCompliantJSON(t *testing.T) {
 	}
 }
 
-func readJson(rr *httptest.ResponseRecorder) (map[string]interface{}, error) {
+func readJSON(rr *httptest.ResponseRecorder) (map[string]interface{}, error) {
 	var result map[string]interface{}
 	err := json.Unmarshal(rr.Body.Bytes(), &result)
 	return result, err
@@ -121,8 +121,8 @@ type Controller struct {
 	getServiceInstance    func(id string) (string, error)
 	createServiceInstance func(id string, req *brokerModel.ServiceInstanceRequest) (*brokerModel.CreateServiceInstanceResponse, error)
 	removeServiceInstance func(id string) error
-	bind                  func(instanceId string, bindingId string, req *brokerModel.BindingRequest) (*brokerModel.CreateServiceBindingResponse, error)
-	unBind                func(instanceId string, bindingId string) error
+	bind                  func(instanceID string, bindingID string, req *brokerModel.BindingRequest) (*brokerModel.CreateServiceBindingResponse, error)
+	unBind                func(instanceID string, bindingID string) error
 }
 
 func (controller *Controller) Catalog() (*brokerModel.Catalog, error) {
@@ -157,18 +157,18 @@ func (controller *Controller) RemoveServiceInstance(id string) error {
 	return controller.removeServiceInstance(id)
 }
 
-func (controller *Controller) Bind(instanceId string, bindingId string, req *brokerModel.BindingRequest) (*brokerModel.CreateServiceBindingResponse, error) {
+func (controller *Controller) Bind(instanceID string, bindingID string, req *brokerModel.BindingRequest) (*brokerModel.CreateServiceBindingResponse, error) {
 	if controller.bind == nil {
 		controller.t.Error("Test failed to provide 'bind' handler")
 	}
 
-	return controller.bind(instanceId, bindingId, req)
+	return controller.bind(instanceID, bindingID, req)
 }
 
-func (controller *Controller) UnBind(instanceId string, bindingId string) error {
+func (controller *Controller) UnBind(instanceID string, bindingID string) error {
 	if controller.unBind == nil {
 		controller.t.Error("Test failed to provide 'unBind' handler")
 	}
 
-	return controller.unBind(instanceId, bindingId)
+	return controller.unBind(instanceID, bindingID)
 }

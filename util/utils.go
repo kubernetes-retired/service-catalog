@@ -29,6 +29,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// WriteResponse will serialize 'object' to the HTTP RespsonseWriter
+// using the 'code' as the HTTP status code
 func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
 	data, err := json.Marshal(object)
 	if err != nil {
@@ -41,6 +43,8 @@ func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
 	fmt.Fprintf(w, string(data))
 }
 
+// BodyToObject will convert the incoming HTTP request into the
+// passed in 'object'
 func BodyToObject(r *http.Request, object interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -55,6 +59,8 @@ func BodyToObject(r *http.Request, object interface{}) error {
 	return nil
 }
 
+// ResponseBodyToObject will reading the HTTP response into the
+// passed in 'object'
 func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -69,10 +75,14 @@ func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	return nil
 }
 
+// ExtractVarFromRequest will return the values of the passed in
+// MUX variable name (varName). The variables are the substitution
+// strings from the URL.
 func ExtractVarFromRequest(r *http.Request, varName string) string {
 	return mux.Vars(r)[varName]
 }
 
+// ExecCmd executes a command and returns the stdout + error, if any
 func ExecCmd(cmd string) (string, error) {
 	fmt.Println("command: " + cmd)
 
@@ -89,6 +99,8 @@ func ExecCmd(cmd string) (string, error) {
 	return string(out), nil
 }
 
+// Fetch will do an HTTP GET to the passed in URL, returning
+// HTTP Body of the response or any error
 func Fetch(u string) (string, error) {
 	fmt.Printf("Fetching: %s\n", u)
 	resp, err := http.Get(u)
@@ -103,6 +115,8 @@ func Fetch(u string) (string, error) {
 	return string(body), nil
 }
 
+// FetchObject will do an HTTP GET to the passed in URL, returning
+// the response parsed as a JSON object, or any error
 func FetchObject(u string, object interface{}) error {
 	r, err := http.Get(u)
 	if err != nil {

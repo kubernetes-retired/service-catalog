@@ -20,14 +20,13 @@ ROOT          = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BINDIR       ?= bin
 COVERAGE     ?= $(CURDIR)/coverage.html
 SC_PKG        = github.com/kubernetes-incubator/service-catalog
-TOP_SRC_DIRS  = cmd contrib pkg
+TOP_SRC_DIRS  = cmd contrib pkg util
 SRC_DIRS      = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                   -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                   -exec dirname {} \\; | sort | uniq")
-SRC_PKGS      = $(addprefix $(SC_PKG)/,$(SRC_DIRS))
 GO_VERSION    = 1.7.3
-GO_BUILD      = go build
+GO_BUILD      = go build -i -v
 BASE_PATH     = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH = $(BASE_PATH):$(ROOT)/vendor
 DOCKER_CMD    = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
@@ -43,73 +42,77 @@ endif
 # Some will have dedicated targets to make it easier to type, for example
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
-build: init \
+build: .init \
        $(BINDIR)/controller $(BINDIR)/registry $(BINDIR)/k8s-broker \
        $(BINDIR)/service-catalog $(BINDIR)/user-broker \
        $(BINDIR)/apiserver
 
 controller: $(BINDIR)/controller
-$(BINDIR)/controller: pkg/controller/catalog
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+$(BINDIR)/controller: pkg/controller/catalog $(shell find pkg/controller/catalog -type f)
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/pkg/controller/catalog
 
 registry: $(BINDIR)/registry
-$(BINDIR)/registry: contrib/registry
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+$(BINDIR)/registry: contrib/registry $(shell find contrib/registry -type f)
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/registry
 
-$(BINDIR)/k8s-broker: contrib/broker/k8s
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+$(BINDIR)/k8s-broker: contrib/broker/k8s $(shell find contrib/broker/k8s -type f)
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
-$(BINDIR)/service-catalog: cmd/service-catalog
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+$(BINDIR)/service-catalog: cmd/service-catalog $(shell find cmd/service-catalog -type f)
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
-$(BINDIR)/user-broker: contrib/broker/k8s
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+$(BINDIR)/user-broker: contrib/broker/k8s $(shell find contrib/broker/k8s -type f)
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
 apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: cmd/service-catalog
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/$^
+$(BINDIR)/apiserver: cmd/service-catalog $(shell find pkg/apis/servicecatalog -type f)
+	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # Some prereq stuff
 ###################
-init: .scBuildImage .init
-
-# .init is used to know when some Glide dependencies are out of date
-.init: glide.yaml
+.init: .scBuildImage glide.yaml
 	$(DOCKER) glide install --strip-vendor
-	echo > $@
+	touch $@
 
-# .scBuildImage tells when the docker image ("scbuildimage") is out of date
 .scBuildImage: hack/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < hack/Dockerfile | \
 	  docker build -t scbuildimage -
-	echo > $@
+	touch $@
 
 # Util targets
 ##############
-
-verify: init
+verify: .init
 	@echo Running gofmt:
 	@$(DOCKER) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || \
 	  (echo -e "\n*** Please 'gofmt' the following:" ; cat .out ; echo ; false)'
 	@rm .out
 	@echo Running golint and go vet:
-	@for i in $(SRC_PKGS); do \
-	  ($(DOCKER) golint --set_exit_status $$i/... && \
+	# Exclude the generated (zz) files for now
+	@for i in $(shell find $(TOP_SRC_DIRS) -name \*.go | grep -v zz); do \
+	  ($(DOCKER) golint --set_exit_status $$i && \
 	   $(DOCKER) go vet $$i )|| exit $$? ; \
 	done || false
 
-format: init
+format: .init
 	$(DOCKER) gofmt -w -s $(TOP_SRC_DIRS)
 
-coverage: init
+coverage: .init
 	$(DOCKER) hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(TEST_DIRS))
 
 test:
 	@echo Running tests:
-	@for i in $(SRC_PKGS); do \
+	@for i in $(addprefix $(SC_PKG)/,$(TEST_DIRS)); do \
 	  $(DOCKER) go test $$i || exit $$? ; \
 	done
+
+build-darwin:
+	SC_GOOS=darwin SC_GOARCH=amd64 BINDIR=bin/darwin_amd64 DOCKER=1 \
+	  $(MAKE) build
+
+build-linux:
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/darwin_amd64 DOCKER=1 \
+	  $(MAKE) build
 
 clean:
 	rm -rf $(BINDIR)

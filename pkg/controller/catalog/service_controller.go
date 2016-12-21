@@ -78,7 +78,7 @@ func main() {
 
 	s, err := server.CreateServer(w)
 	if err != nil {
-		panic(fmt.Sprintf("Error creating server [%s]...", err.Error))
+		panic(fmt.Sprintf("Error creating server [%s]...", err.Error()))
 	}
 
 	s.Start(options.Port)
