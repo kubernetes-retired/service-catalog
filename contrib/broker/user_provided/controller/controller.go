@@ -18,11 +18,10 @@ package controller
 
 import (
 	"encoding/json"
-	"log"
-
-	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
-
 	"errors"
+
+	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 )
 
@@ -65,13 +64,13 @@ func (c *userProvidedController) Catalog() (*sbmodel.Catalog, error) {
 func (c *userProvidedController) CreateServiceInstance(id string, req *sbmodel.ServiceInstanceRequest) (*sbmodel.CreateServiceInstanceResponse, error) {
 	credString, ok := req.Parameters["credentials"]
 	if !ok {
-		log.Printf("Didn't find creds\n %+v\n", req)
+		glog.Errorf("Didn't find creds\n %+v\n", req)
 		return nil, errors.New("Credentials not found")
 	}
 
 	jsonCred, err := json.Marshal(credString)
 	if err != nil {
-		log.Printf("Failed to marshal credentials: %v", err)
+		glog.Errorf("Failed to marshal credentials: %v", err)
 		return nil, err
 	}
 	var cred sbmodel.Credential
@@ -82,7 +81,7 @@ func (c *userProvidedController) CreateServiceInstance(id string, req *sbmodel.S
 		Credential: &cred,
 	}
 
-	log.Printf("Created User Provided Service Instance:\n%v\n", c.instanceMap[id])
+	glog.Infof("Created User Provided Service Instance:\n%v\n", c.instanceMap[id])
 	return &sbmodel.CreateServiceInstanceResponse{}, nil
 }
 

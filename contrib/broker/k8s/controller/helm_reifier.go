@@ -21,10 +21,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/golang/glog"
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	"github.com/kubernetes-incubator/service-catalog/util"
 
@@ -80,13 +80,13 @@ func (h *helmReifier) CreateServiceInstance(instanceID string, tmpl string, sir 
 	if len(sir.Parameters) > 0 {
 		y, err := yaml.Marshal(sir.Parameters)
 		if err != nil {
-			log.Printf("Failed to marshal %#v : %v", sir.Parameters, err)
+			glog.Errorf("Failed to marshal %#v : %v", sir.Parameters, err)
 			return nil, err
 		}
-		log.Printf("Marshalled into:\n%s\n", y)
+		glog.Infof("Marshalled into:\n%s\n", y)
 		f, err := ioutil.TempFile("", "values-")
 		if err != nil {
-			log.Printf("Failed to create TempFile for values file: %v", err)
+			glog.Errorf("Failed to create TempFile for values file: %v", err)
 			return nil, err
 		}
 		defer os.Remove(f.Name())
@@ -108,7 +108,7 @@ func (h *helmReifier) CreateServiceInstance(instanceID string, tmpl string, sir 
 		return nil, err
 	}
 	notes := ParseNotes(out)
-	log.Printf("NOTES SECTION: '%s'\n", notes)
+	glog.Infof("NOTES SECTION: '%s'\n", notes)
 
 	return &model.CreateServiceInstanceResponse{}, nil
 }
@@ -117,7 +117,7 @@ func (h *helmReifier) CreateServiceInstance(instanceID string, tmpl string, sir 
 func (h *helmReifier) RemoveServiceInstance(instanceID string) error {
 	cmd := fmt.Sprintf(deleteServiceFmt, h.cmd, shortenInstanceID(instanceID))
 	out, err := util.ExecCmd(cmd)
-	log.Printf("Helm Delete Result:\n%s\n", out)
+	glog.Infof("Helm Delete Result:\n%s\n", out)
 	return err
 }
 
@@ -126,7 +126,7 @@ func (h *helmReifier) CreateServiceBinding(instanceID string, sir *model.Binding
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("GOT BACK: %s", out)
+	glog.Infof("GOT BACK: %s", out)
 	notes := ParseNotes(out)
 
 	var c model.Credential
@@ -137,7 +137,7 @@ func (h *helmReifier) CreateServiceBinding(instanceID string, sir *model.Binding
 
 func (h *helmReifier) RemoveServiceBinding(instanceID string) error {
 	// TODO: Implement
-	log.Printf("Removing Service Binding: %s\n", instanceID)
+	glog.Infof("Removing Service Binding: %s\n", instanceID)
 	return nil
 }
 

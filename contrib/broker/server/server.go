@@ -18,10 +18,10 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	"github.com/kubernetes-incubator/service-catalog/util"
@@ -55,7 +55,7 @@ func CreateHandler(c controller.Controller) http.Handler {
 // Start creates the HTTP handler based on an implementation of a
 // controller.Controller interface, and begins to listen on the specified port.
 func Start(serverPort int, c controller.Controller) {
-	log.Printf("Starting server on %d\n", serverPort)
+	glog.Infof("Starting server on %d\n", serverPort)
 	http.Handle("/", CreateHandler(c))
 	if err := http.ListenAndServe(":"+strconv.Itoa(serverPort), nil); err != nil {
 		panic(err)
@@ -63,7 +63,7 @@ func Start(serverPort int, c controller.Controller) {
 }
 
 func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get Service Broker Catalog...")
+	glog.Infof("Get Service Broker Catalog...")
 
 	if result, err := s.controller.Catalog(); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
@@ -74,7 +74,7 @@ func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) getServiceInstance(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["instance_id"]
-	log.Printf("GetServiceInstance ... %s\n", id)
+	glog.Infof("GetServiceInstance ... %s\n", id)
 
 	if result, err := s.controller.GetServiceInstance(id); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
@@ -85,11 +85,11 @@ func (s *server) getServiceInstance(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["instance_id"]
-	log.Printf("CreateServiceInstance %s...\n", id)
+	glog.Infof("CreateServiceInstance %s...\n", id)
 
 	var req sbmodel.ServiceInstanceRequest
 	if err := util.BodyToObject(r, &req); err != nil {
-		log.Printf("error unmarshalling: %v", err)
+		glog.Errorf("error unmarshalling: %v", err)
 		util.WriteResponse(w, http.StatusBadRequest, err)
 		return
 	}
@@ -110,7 +110,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["instance_id"]
-	log.Printf("RemoveServiceInstance %s...\n", id)
+	glog.Infof("RemoveServiceInstance %s...\n", id)
 
 	if err := s.controller.RemoveServiceInstance(id); err == nil {
 		util.WriteResponse(w, http.StatusOK, "{}")
@@ -123,12 +123,12 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 	bindingID := mux.Vars(r)["binding_id"]
 	instanceID := mux.Vars(r)["instance_id"]
 
-	log.Printf("Bind binding_id=%s, instance_id=%s\n", bindingID, instanceID)
+	glog.Infof("Bind binding_id=%s, instance_id=%s\n", bindingID, instanceID)
 
 	var req sbmodel.BindingRequest
 
 	if err := util.BodyToObject(r, &req); err != nil {
-		log.Printf("Failed to unmarshall request: %v", err)
+		glog.Errorf("Failed to unmarshall request: %v", err)
 		util.WriteResponse(w, http.StatusBadRequest, err)
 		return
 	}
@@ -153,7 +153,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 	instanceID := mux.Vars(r)["instance_id"]
 	bindingID := mux.Vars(r)["binding_id"]
-	log.Printf("UnBind: Service instance guid: %s:%s", bindingID, instanceID)
+	glog.Infof("UnBind: Service instance guid: %s:%s", bindingID, instanceID)
 
 	if err := s.controller.UnBind(instanceID, bindingID); err == nil {
 		w.WriteHeader(http.StatusOK)

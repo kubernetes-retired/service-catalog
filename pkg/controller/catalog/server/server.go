@@ -17,10 +17,10 @@ limitations under the License.
 package server
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
 
@@ -37,13 +37,13 @@ type Server struct {
 func CreateServer(w *watch.Watcher) (*Server, error) {
 	c, err := createController(storage.CreateTPRStorage(w))
 	if err != nil {
-		log.Printf("Couldn't create controller: %v\n", err)
+		glog.Errorf("Couldn't create controller: %v\n", err)
 		return nil, err
 	}
 
 	k8sHandler, err := createK8sHandler(c, w)
 	if err != nil {
-		log.Printf("Couldn't create the k8s native handler, watcher will not be installed: %v\n", err)
+		glog.Errorf("Couldn't create the k8s native handler, watcher will not be installed: %v\n", err)
 		return nil, err
 	}
 	return &Server{
@@ -59,9 +59,9 @@ func (s *Server) Start(serverPort int) {
 	router.HandleFunc("/healthz", healthZHandler).Methods("GET")
 
 	port := strconv.Itoa(serverPort)
-	log.Println("Server started on port " + port)
+	glog.Infoln("Server started on port " + port)
 	err := http.ListenAndServe(":"+port, nil)
-	log.Println(err.Error())
+	glog.Errorln(err)
 }
 
 func healthZHandler(w http.ResponseWriter, r *http.Request) {

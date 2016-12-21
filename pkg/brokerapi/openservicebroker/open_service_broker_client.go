@@ -20,10 +20,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/golang/glog"
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -65,14 +65,14 @@ func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
 	req.SetBasicAuth(c.broker.AuthUsername, c.broker.AuthPassword)
 	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Printf("Failed to fetch catalog from %s\n%v", url, resp)
-		log.Printf("err: %#v", err)
+		glog.Errorf("Failed to fetch catalog from %s\n%v", url, resp)
+		glog.Errorf("err: %#v", err)
 		return nil, err
 	}
 
 	var catalog model.Catalog
 	if err = util.ResponseBodyToObject(resp, &catalog); err != nil {
-		log.Printf("Failed to unmarshal catalog: %#v", err)
+		glog.Errorf("Failed to unmarshal catalog: %#v", err)
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *model.Se
 		return nil, err
 	}
 
-	log.Printf("Doing a request to: %s", url)
+	glog.Infof("Doing a request to: %s", url)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
 		return nil, err
@@ -119,14 +119,14 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string) error {
 	// TODO: Handle the auth
 	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
-		log.Printf("Failed to create new HTTP request: %v", err)
+		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
 
-	log.Printf("Doing a request to: %s", url)
+	glog.Infof("Doing a request to: %s", url)
 	resp, err := c.client.Do(deleteHTTPReq)
 	if err != nil {
-		log.Printf("Failed to DELETE: %#v", err)
+		glog.Errorf("Failed to DELETE: %#v", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -137,7 +137,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string) error {
 func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *model.BindingRequest) (*model.CreateServiceBindingResponse, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
-		log.Printf("Failed to marshal: %#v", err)
+		glog.Errorf("Failed to marshal: %#v", err)
 		return nil, err
 	}
 
@@ -149,10 +149,10 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *mod
 		return nil, err
 	}
 
-	log.Printf("Doing a request to: %s", url)
+	glog.Infof("Doing a request to: %s", url)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
-		log.Printf("Failed to PUT: %#v", err)
+		glog.Errorf("Failed to PUT: %#v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -160,7 +160,7 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *mod
 	sbr := model.CreateServiceBindingResponse{}
 	err = util.ResponseBodyToObject(resp, &sbr)
 	if err != nil {
-		log.Printf("Failed to unmarshal: %#v", err)
+		glog.Errorf("Failed to unmarshal: %#v", err)
 		return nil, err
 	}
 
@@ -173,14 +173,14 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
 	// TODO: Handle the auth
 	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
-		log.Printf("Failed to create new HTTP request: %v", err)
+		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
 
-	log.Printf("Doing a request to: %s", url)
+	glog.Infof("Doing a request to: %s", url)
 	resp, err := c.client.Do(deleteHTTPReq)
 	if err != nil {
-		log.Printf("Failed to DELETE: %#v", err)
+		glog.Errorf("Failed to DELETE: %#v", err)
 		return err
 	}
 	defer resp.Body.Close()

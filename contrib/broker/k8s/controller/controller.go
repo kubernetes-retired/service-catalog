@@ -20,15 +20,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/model"
-	"github.com/kubernetes-incubator/service-catalog/util"
-
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
+	"github.com/kubernetes-incubator/service-catalog/util"
 )
 
 type resourceType int
@@ -79,7 +78,7 @@ func (c *k8sController) Catalog() (*sbmodel.Catalog, error) {
 	var services []*sbmodel.Service
 	err := util.FetchObject(u, &services)
 	if err != nil {
-		log.Printf("Failed to fetch catalog from service registry: %v\n", err)
+		glog.Errorf("Failed to fetch catalog from service registry: %v\n", err)
 		return nil, err
 	}
 
@@ -89,13 +88,13 @@ func (c *k8sController) Catalog() (*sbmodel.Catalog, error) {
 		for j, sp := range s.Plans {
 			types, err := getTypesFromPlan(&sp)
 			if err != nil {
-				log.Printf("Failed to fetch schemas for types: %v\n", err)
+				glog.Errorf("Failed to fetch schemas for types: %v\n", err)
 				return nil, err
 			}
 
 			schemas, err := c.getSchemas(*types)
 			if err != nil {
-				log.Printf("Failed to fetch schemas for types: %v\n", err)
+				glog.Errorf("Failed to fetch schemas for types: %v\n", err)
 				return nil, err
 			}
 
@@ -109,20 +108,20 @@ func (c *k8sController) CreateServiceInstance(instanceID string, req *sbmodel.Se
 	// Fetch the type that should be used for this service/plan
 	t, err := c.getType(req.ServiceID, req.PlanID)
 	if err != nil {
-		log.Printf("Can't find a type for %s:%s : %v", req.ServiceID, req.PlanID, err)
+		glog.Errorf("Can't find a type for %s:%s : %v", req.ServiceID, req.PlanID, err)
 		return nil, err
 
 	}
 	// Create a temp file that we'll use to pull this chart into.
 	f, err := ioutil.TempFile("", "chart-")
 	if err != nil {
-		log.Printf("Failed to create TempFile for chart download: %v", err)
+		glog.Errorf("Failed to create TempFile for chart download: %v", err)
 		return nil, err
 	}
 	defer os.Remove(f.Name())
 	err = util.FetchChartToFile(t.Instance, f)
 	if err != nil {
-		log.Printf("Failed to fetch %s : %v", t.Instance, err)
+		glog.Errorf("Failed to fetch %s : %v", t.Instance, err)
 		return nil, err
 	}
 
@@ -130,11 +129,11 @@ func (c *k8sController) CreateServiceInstance(instanceID string, req *sbmodel.Se
 
 	ret, err := c.reifier.CreateServiceInstance(instanceName, f.Name(), req)
 	if err != nil {
-		log.Printf("Failed to create service instance %s : %v", t.Instance, err)
+		glog.Errorf("Failed to create service instance %s : %v", t.Instance, err)
 		return nil, err
 	}
 
-	log.Printf("Created service instance:\n%v\n", ret)
+	glog.Infof("Created service instance:\n%v\n", ret)
 	return ret, nil
 }
 
@@ -147,7 +146,7 @@ func (c *k8sController) RemoveServiceInstance(instanceID string) error {
 
 	err := c.reifier.RemoveServiceInstance(instanceName)
 	if err != nil {
-		log.Printf("Failed to remove %s : %v", instanceID, err)
+		glog.Errorf("Failed to remove %s : %v", instanceID, err)
 		return err
 	}
 
@@ -162,10 +161,10 @@ func (c *k8sController) Bind(instanceID string, bindingID string, req *sbmodel.B
 	// in the actual Service Instance.
 	siBinding, err := c.reifier.CreateServiceBinding(instanceName, req)
 	if err != nil {
-		log.Printf("Failed to create service binding %s : %v", instanceID, err)
+		glog.Errorf("Failed to create service binding %s : %v", instanceID, err)
 		return nil, err
 	}
-	log.Printf("Got binding as\n%s\n", siBinding)
+	glog.Infof("Got binding as\n%s\n", siBinding)
 
 	return siBinding, nil
 }
@@ -175,13 +174,13 @@ func (c *k8sController) UnBind(instanceID string, bindingID string) error {
 	bindingName := createResourceName(bindingID, serviceBinding)
 	err := c.reifier.RemoveServiceBinding(instanceName)
 	if err != nil {
-		log.Printf("Failed to remove binding %s : %v", instanceID, err)
+		glog.Errorf("Failed to remove binding %s : %v", instanceID, err)
 		return err
 	}
 
 	err = c.reifier.RemoveServiceInstance(bindingName)
 	if err != nil {
-		log.Printf("Cannot remove proxy %s for binding %s\n", bindingName, bindingID)
+		glog.Errorf("Cannot remove proxy %s for binding %s\n", bindingName, bindingID)
 	}
 
 	return nil

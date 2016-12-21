@@ -17,8 +17,7 @@ limitations under the License.
 package server
 
 import (
-	"log"
-
+	"github.com/golang/glog"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
@@ -83,7 +82,7 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
 	serviceID, planID, planName, err := storage.GetServicePlanInfo(c.storage, in.Service, in.Plan)
 	if err != nil {
-		log.Printf("Error fetching service ID: %v", err)
+		glog.Errorf("Error fetching service ID: %v", err)
 		return nil, err
 	}
 	in.ServiceID = serviceID
@@ -93,42 +92,42 @@ func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmode
 		in.ID = uuid.NewV4().String()
 	}
 
-	log.Printf("Instantiating service %s using service/plan %s : %s", in.Name, serviceID, planID)
+	glog.Infof("Instantiating service %s using service/plan %s : %s", in.Name, serviceID, planID)
 
 	err = c.createServiceInstance(in)
 	op := scmodel.LastOperation{}
 	if err != nil {
 		op.State = "FAILED"
 		op.Description = err.Error()
-		log.Printf("Failed to create service instance: %v", err)
+		glog.Errorf("Failed to create service instance: %v", err)
 	} else {
 		op.State = "CREATED"
 	}
 	in.LastOperation = &op
 
-	log.Printf("Updating Service %s with State\n%v", in.Name, in.LastOperation)
+	glog.Infof("Updating Service %s with State\n%v", in.Name, in.LastOperation)
 	return in, c.storage.UpdateServiceInstance(in)
 }
 
 func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
-	log.Printf("Creating Service Binding: %v", in)
+	glog.Infof("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
 	to, err := c.storage.GetServiceInstance(defaultNamespace, in.To)
 	if err != nil {
-		log.Printf("To service does not exist %s: %v", in.To, err)
+		glog.Errorf("To service does not exist %s: %v", in.To, err)
 		return nil, err
 	}
 
 	// Get broker associated with the service.
 	st, err := c.storage.GetServiceClass(to.Service)
 	if err != nil {
-		log.Printf("Failed to fetch service type %s : %v", to.Service, err)
+		glog.Errorf("Failed to fetch service type %s : %v", to.Service, err)
 		return nil, err
 	}
 	broker, err := c.storage.GetBroker(st.Broker)
 	if err != nil {
-		log.Printf("Error fetching broker for service: %s : %v", to.Service, err)
+		glog.Errorf("Error fetching broker for service: %s : %v", to.Service, err)
 		return nil, err
 	}
 	client := openservicebroker.NewClient(broker)
@@ -147,14 +146,14 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 	// Stash the credentials with the binding and update the binding.
 	creds, err := util.ConvertCredential(&sbr.Credentials)
 	if err != nil {
-		log.Printf("Failed to convert creds: %v\n", err)
+		glog.Errorf("Failed to convert creds: %v\n", err)
 		return nil, err
 	}
 	in.Credentials = *creds
 
 	err = c.storage.UpdateServiceBinding(in)
 	if err != nil {
-		log.Printf("Failed to update service binding %s : %v", in.Name, err)
+		glog.Errorf("Failed to update service binding %s : %v", in.Name, err)
 		return nil, err
 	}
 
@@ -176,7 +175,7 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 		return nil, err
 	}
 
-	log.Printf("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
+	glog.Infof("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
 	err = c.storage.AddBroker(in, catalog)
 	if err != nil {
 		return nil, err
