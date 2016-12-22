@@ -36,6 +36,9 @@ DOCKER_CMD    = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
 ifneq ($(origin DOCKER),undefined)
   # If DOCKER is defined then make it the full docker cmd line we want to use
   DOCKER=$(DOCKER_CMD)
+  # Setting scBuildImageTarget will force the Docker image to be built
+  # in the .init rule
+  scBuildImageTarget=.scBuildImage
 endif
 
 # This section builds the output binaries.
@@ -70,7 +73,7 @@ $(BINDIR)/apiserver: cmd/service-catalog $(shell find pkg/apis/servicecatalog -t
 
 # Some prereq stuff
 ###################
-.init: .scBuildImage glide.yaml
+.init: $(scBuildImageTarget) glide.yaml
 	$(DOCKER) glide install --strip-vendor
 	touch $@
 
