@@ -13,3 +13,5 @@ coverage.html
 .glide
 .scBuildImage
 .init
+.generate*
+**/zz*.go
