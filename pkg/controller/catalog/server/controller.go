@@ -142,6 +142,10 @@ func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.
 		Parameters: in.Parameters,
 	}
 	sbr, err := client.CreateServiceBinding(to.ID, in.ID, createReq)
+	if err != nil {
+		glog.Errorf("Failed to create service binding: %v\n", err)
+		return nil, err
+	}
 
 	// Stash the credentials with the binding and update the binding.
 	creds, err := util.ConvertCredential(&sbr.Credentials)
