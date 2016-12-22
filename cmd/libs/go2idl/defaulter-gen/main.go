@@ -57,7 +57,7 @@ func main() {
 	// Override defaults.
 	arguments.OutputFileBaseName = "zz_generated.defaults"
 	// BABYNETES - hard coded project path
-	arguments.GoHeaderFilePath = filepath.Join(args.DefaultSourceTree(), "github.com/kubernetes-incubator/service-catalog/hack/boilerplate/boilerplate.go.txt")
+	arguments.GoHeaderFilePath = filepath.Join(args.DefaultSourceTree(), "github.com/kubernetes-incubator/service-catalog/vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt")
 
 	// Custom args.
 	customArgs := &generators.CustomArgs{

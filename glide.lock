@@ -1,5 +1,5 @@
-hash: 4cbeec72a75adafa82f2bc6c7e3de9728b77f108946b18c087c3ff5a4bcb3d05
-updated: 2016-12-18T19:44:28.140418542Z
+hash: 8f38c9409c1f1310461c4082316fd99ab1a6738d00cee9217f36d7185c33d648
+updated: 2017-01-03T16:43:20.986074952Z
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -62,7 +62,7 @@ imports:
 - name: github.com/exponent-io/jsonpath
   version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
-  version: 04f313413ffd65ce25f2541bfd2b2ceec5c0908c
+  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -100,7 +100,7 @@ imports:
   - vanity
   - vanity/command
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -130,6 +130,8 @@ imports:
   version: a0ff2567cfb70903282db057e799fd826784d41d
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
+- name: github.com/kubernetes/repo-infra
+  version: fe0ddb2a8c18deeb18515b9412e459599e6d7f3a
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -209,7 +211,7 @@ imports:
 - name: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
-  version: 25f8b5b07aece3207895bf19f7ab517eb3b22a40
+  version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/ugorji/go
   version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
@@ -397,7 +399,9 @@ imports:
   version: 6a1c24d7f08e671c244023ca9367d2dfbfaf57fc
   subpackages:
   - args
+  - examples/deepcopy-gen/generators
   - examples/defaulter-gen/generators
+  - examples/set-gen/sets
   - generator
   - namer
   - parser

@@ -8,6 +8,8 @@ import:
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo/args
+- package: github.com/kubernetes/repo-infra
+  version: fe0ddb2a8c18deeb18515b9412e459599e6d7f3a
 - package: k8s.io/kubernetes
   version: 6b9a9442855d16e0ff0c02ab0c82b1c1665cccaf
   subpackages:
