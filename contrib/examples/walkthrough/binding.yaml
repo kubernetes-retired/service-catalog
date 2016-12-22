@@ -4,5 +4,4 @@ kind: ServiceBinding
 metadata:
   name: database
 name: database
-from: frontend
 to: backend
