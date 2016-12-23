@@ -78,6 +78,8 @@ func (s *k8sHandler) serviceInstanceCallback(e k8swatch.Event) error {
 			return err
 		}
 		glog.Infof("Created Service Instance: %s\n", created.Name)
+	} else {
+		glog.Warningf("Received unsupported service instance event type %s", e.Type)
 	}
 	return nil
 }
@@ -96,6 +98,8 @@ func (s *k8sHandler) serviceBindingCallback(e k8swatch.Event) error {
 			return err
 		}
 		glog.Infof("Created Service Binding: %s\n%v\n", sb.Name, created)
+	} else {
+		glog.Warningf("Received unsupported service binding event type %s", e.Type)
 	}
 	return nil
 }
@@ -116,7 +120,7 @@ func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
 		}
 		glog.Infof("Created Service Broker: %s\n", created.Name)
 	} else {
-		return errors.New("Delete Service Broker not implemented yet")
+		glog.Warningf("Received unsupported service broker event type %s", e.Type)
 	}
 	return nil
 }
