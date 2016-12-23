@@ -111,10 +111,15 @@ verify: .init .generate_files
 	@rm .out
 	@echo Running golint and go vet:
 	# Exclude the generated (zz) files for now
-	@for i in $(shell find $(TOP_SRC_DIRS) -name \*.go | grep -v zz); do \
-	  ($(DOCKER) golint --set_exit_status $$i && \
-	   $(DOCKER) go vet $$i )|| exit $$? ; \
-	done || false
+	@# The following command echo's the "for" loop to stdout so that it can
+	@# be piped to the "sh" cmd running in the container. This allows the
+	@# "for" to be executed in the container and not on the host. Which means
+	@# we have just one container for everything and not one container per
+	@# file.  The $(subst) removes the "-t" flag from the Docker cmd.
+	@echo for i in \`find $(TOP_SRC_DIRS) -name \*.go \| grep -v zz\`\; do \
+	  golint --set_exit_status \$$i \&\& \
+	  go vet \$$i \; \
+	done | $(subst -ti,-i,$(DOCKER)) sh
 
 format: .init
 	$(DOCKER) gofmt -w -s $(TOP_SRC_DIRS)
