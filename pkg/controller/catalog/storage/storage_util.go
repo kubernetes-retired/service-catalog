@@ -32,12 +32,12 @@ func (e servicePlanNotFound) Error() string {
 	return fmt.Sprintf("Can't find a service/plan: %s/%s", e.service, e.plan)
 }
 
-type serviceNotFound struct {
-	service string
+type serviceClassNotFound struct {
+	serviceClassName string
 }
 
-func (e serviceNotFound) Error() string {
-	return fmt.Sprintf("Can't find the service with id: %s", e.service)
+func (e serviceClassNotFound) Error() string {
+	return fmt.Sprintf("Can't find the service class with name: %s", e.serviceClassName)
 }
 
 // GetServicePlanInfo fetches the GUIDs for Service and Plan, also returns the
@@ -67,25 +67,25 @@ func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string
 	return "", "", "", servicePlanNotFound{service, plan}
 }
 
-// GetBrokerByServiceClass returns the broker which serves a particular service
-// class.
-func GetBrokerByServiceClass(
+// GetBrokerByServiceClassName returns the broker which serves a particular
+// service class.
+func GetBrokerByServiceClassName(
 	brokerStorage BrokerStorage,
 	svcClassStorage ServiceClassStorage,
-	id string,
+	svcClassName string,
 ) (*servicecatalog.Broker, error) {
 
-	log.Printf("Getting broker by service id %s\n", id)
+	log.Printf("Getting broker by service class name %s\n", svcClassName)
 
-	svcList, err := svcClassStorage.List()
+	svcClassList, err := svcClassStorage.List()
 	if err != nil {
 		return nil, err
 	}
-	for _, service := range svcList {
-		if service.CFGUID == id {
-			log.Printf("Found service type %s\n", service.Name)
-			return brokerStorage.Get(service.BrokerName)
+	for _, svcClass := range svcClassList {
+		if svcClass.Name == svcClassName {
+			log.Printf("Found service type %s\n", svcClass.Name)
+			return brokerStorage.Get(svcClass.BrokerName)
 		}
 	}
-	return nil, serviceNotFound{id}
+	return nil, serviceClassNotFound{svcClassName}
 }

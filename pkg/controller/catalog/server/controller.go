@@ -60,7 +60,7 @@ func (c *controller) updateServiceInstance(in *servicecatalog.Instance) error {
 }
 
 func (c *controller) createServiceInstance(in *servicecatalog.Instance) error {
-	broker, err := storage.GetBrokerByServiceClass(c.storage.Brokers(), c.storage.ServiceClasses(), in.Spec.CFServiceID)
+	broker, err := storage.GetBrokerByServiceClassName(c.storage.Brokers(), c.storage.ServiceClasses(), in.Spec.ServiceClassName)
 	if err != nil {
 		return err
 	}
