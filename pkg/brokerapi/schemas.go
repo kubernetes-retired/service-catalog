@@ -14,25 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openservicebroker
+package brokerapi
 
-import (
-	"testing"
+// Schemas represents a broker's schemas for both service instances and service
+// bindings
+type Schemas struct {
+	Instance Schema `json:"instance"`
+	Binding  Schema `json:"binding"`
+}
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-)
-
-func TestUpdateServiceInstance(t *testing.T) {
-	cli := NewClient(&servicecatalog.Broker{})
-
-	_, err := cli.UpdateServiceInstance("foo", &brokerapi.ServiceInstanceRequest{})
-	if err == nil {
-		t.Fatalf("Expected not implemented")
-	}
-	if err.Error() != "Not implemented" {
-		t.Errorf("Expected not implemented, got %v", err)
-	}
-
-	// TODO: test against fake/test broker.
+// Schema consists of the schema for inputs and the schema for outputs.
+// Schemas are in the form of JSON Schema v4 (http://json-schema.org/).
+type Schema struct {
+	Inputs  string `json:"inputs"`
+	Outputs string `json:"outputs"`
 }

@@ -27,7 +27,7 @@ import (
 )
 
 // ServiceCatalogAPIServer contains base GenericAPIServer along with
-// other configured runtime confiuration
+// other configured runtime configuration
 type ServiceCatalogAPIServer struct {
 	GenericAPIServer *genericapiserver.GenericAPIServer
 }

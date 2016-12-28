@@ -20,7 +20,7 @@ ROOT           = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BINDIR        ?= bin
 COVERAGE      ?= $(CURDIR)/coverage.html
 SC_PKG         = github.com/kubernetes-incubator/service-catalog
-TOP_SRC_DIRS   = cmd contrib pkg util
+TOP_SRC_DIRS   = cmd contrib pkg
 SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS      = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
@@ -54,36 +54,33 @@ endif
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
 build: .init .generate_files \
-       $(BINDIR)/controller $(BINDIR)/registry $(BINDIR)/k8s-broker \
-       $(BINDIR)/service-catalog $(BINDIR)/user-broker \
-       $(BINDIR)/apiserver
+       $(BINDIR)/controller $(BINDIR)/apiserver \
+       $(BINDIR)/registry $(BINDIR)/k8s-broker $(BINDIR)/user-broker
 
 controller: $(BINDIR)/controller
-$(BINDIR)/controller: .init pkg/controller/catalog \
-	  $(shell find pkg/controller/catalog -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/pkg/controller/catalog
+$(BINDIR)/controller: .init cmd/controller \
+	  $(shell find cmd/controller -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller
 
 registry: $(BINDIR)/registry
-$(BINDIR)/registry: .init contrib/registry \
-	  $(shell find contrib/registry -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/registry
+$(BINDIR)/registry: .init contrib/cmd/registry \
+	  $(shell find contrib/cmd/registry -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/registry
 
-$(BINDIR)/k8s-broker: .init contrib/broker/k8s \
-	  $(shell find contrib/broker/k8s -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
+k8s-broker: $(BINDIR)/k8s-broker
+$(BINDIR)/k8s-broker: .init contrib/cmd/k8s-broker \
+	  $(shell find contrib/cmd/k8s-broker -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/k8s-broker
 
-$(BINDIR)/service-catalog: .init cmd/service-catalog \
-	  $(shell find cmd/service-catalog -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
-
-$(BINDIR)/user-broker: .init contrib/broker/k8s \
-	  $(shell find contrib/broker/k8s -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
+user-broker: $(BINDIR)/user-broker
+$(BINDIR)/user-broker: .init contrib/cmd/user-broker \
+	  $(shell find contrib/cmd/user-broker -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
 apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: .init .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
+$(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/apiserver
 
 # This section contains the code generation stuff
 #################################################
@@ -114,8 +111,8 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
 
-.scBuildImage: hack/Dockerfile
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < hack/Dockerfile | \
+.scBuildImage: build/build-image/Dockerfile
+	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
 	  docker build -t scbuildimage \
 	    --build-arg UID=$(shell id -u) \
 	    --build-arg GID=$(shell id -g) \
@@ -171,25 +168,25 @@ clean:
 ############################################
 images: registry-image k8s-broker-image user-broker-image controller-image
 
-registry-image: contrib/registry/Dockerfile $(BINDIR)/registry
-	cp contrib/registry/Dockerfile $(BINDIR)
-	cp contrib/registry/data/charts/*.json $(BINDIR)
+registry-image: contrib/cmd/registry/Dockerfile $(BINDIR)/registry
+	cp contrib/cmd/registry/Dockerfile $(BINDIR)
+	cp contrib/pkg/registry/data/charts/*.json $(BINDIR)
 	docker build -t registry:$(VERSION) $(BINDIR)
 	rm -f $(BINDIR)/Dockerfile
 	rm -f $(BINDIR)/*.json
 
-k8s-broker-image: contrib/broker/k8s/Dockerfile $(BINDIR)/k8s-broker
-	cp contrib/broker/k8s/Dockerfile $(BINDIR)
+k8s-broker-image: contrib/cmd/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
+	cp contrib/cmd/k8s-broker/Dockerfile $(BINDIR)
 	docker build -t k8s-broker:$(VERSION) $(BINDIR)
 	rm -f $(BINDIR)/Dockerfile
 
-user-broker-image: contrib/broker/user_provided/Dockerfile $(BINDIR)/user-broker
-	cp contrib/broker/user_provided/Dockerfile $(BINDIR)
+user-broker-image: contrib/cmd/user-broker/Dockerfile $(BINDIR)/user-broker
+	cp contrib/cmd/user-broker/Dockerfile $(BINDIR)
 	docker build -t user-broker:$(VERSION) $(BINDIR)
 	rm -f $(BINDIR)/Dockerfile
 
-controller-image: pkg/controller/catalog/Dockerfile $(BINDIR)/controller
-	cp pkg/controller/catalog/Dockerfile $(BINDIR)
+controller-image: cmd/controller/Dockerfile $(BINDIR)/controller
+	cp cmd/controller/Dockerfile $(BINDIR)
 	docker build -t controller:$(VERSION) $(BINDIR)
 	rm -f $(BINDIR)/Dockerfile
 
