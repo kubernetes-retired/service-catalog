@@ -18,9 +18,14 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
+# This script is intended to be used via subtree in a top-level directory:
+# <repo>/
+#  repo-infra/
+#    verify/
 
-boilerDir="${KUBE_ROOT}/hack/boilerplate"
+REPO_ROOT=$(dirname "${BASH_SOURCE}")/../..
+
+boilerDir="${REPO_ROOT}/repo-infra/verify/boilerplate"
 boiler="${boilerDir}/boilerplate.py"
 
 files_need_boilerplate=($(${boiler} "$@"))

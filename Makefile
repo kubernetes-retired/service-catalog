@@ -118,6 +118,8 @@ verify: .init .generate_files
 	  ($(DOCKER) golint --set_exit_status $$i && \
 	   $(DOCKER) go vet $$i )|| exit $$? ; \
 	done || false
+	@echo Running repo-infra verify scripts
+	$(DOCKER) repo-infra/verify/verify-boilerplate.sh
 
 format: .init
 	$(DOCKER) gofmt -w -s $(TOP_SRC_DIRS)
