@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
+// ServiceBinding defines a binding/link between an app and a service instance.
 type ServiceBinding struct {
 	Name       string                 `json:"name"`
 	ID         string                 `json:"id"`
@@ -33,6 +34,8 @@ type ServiceBinding struct {
 	runtime.TypeMeta `json:",inline"`
 }
 
+// CreateServiceBindingRequest defines the payload of the HTTP request
+// to create a new binding.
 type CreateServiceBindingRequest struct {
 	Name       string                 `json:"name"`
 	From       string                 `json:"from"`
@@ -40,11 +43,15 @@ type CreateServiceBindingRequest struct {
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
 }
 
+// CreateServiceBindingResponse defines the payload of the HTTP response
+// to create a new binding.
 type CreateServiceBindingResponse struct {
 	Name        string     `json:"name"`
 	Credentials Credential `json:"credentials"`
 }
 
+// Credential defines some common fields that might make up the credentials
+// of a binding response.
 type Credential struct {
 	Hostname string `json:"hostname"`
 	Port     string `json:"port"`

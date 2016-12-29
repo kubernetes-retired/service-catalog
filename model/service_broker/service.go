@@ -16,6 +16,7 @@ limitations under the License.
 
 package model
 
+// Service defines a service offered by a service broker
 type Service struct {
 	Name           string   `json:"name"`
 	ID             string   `json:"id"`

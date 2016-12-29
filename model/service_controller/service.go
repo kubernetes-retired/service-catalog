@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
+// Service defines a single service offered by a service broker.
 type Service struct {
 	Name           string   `json:"name"`
 	ID             string   `json:"id"`

@@ -16,7 +16,8 @@ limitations under the License.
 
 package model
 
-//
+// ServicePlan defines a variant (eg. based on quality of service)
+// for a service that a client can choose from.
 type ServicePlan struct {
 	Name        string      `json:"name"`
 	ID          string      `json:"id"`
