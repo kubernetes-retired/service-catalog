@@ -23,6 +23,8 @@ import (
 	"github.com/golang/glog"
 	"k8s.io/client-go/1.5/dynamic"
 	// Need this for gcp auth
+	"github.com/kubernetes-incubator/service-catalog/model"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/client-go/1.5/kubernetes"
 	deployments "k8s.io/client-go/1.5/kubernetes/typed/extensions/v1beta1"
 	"k8s.io/client-go/1.5/pkg/api"
@@ -54,55 +56,39 @@ var resourceTypeNames = []string{
 	"ServiceBinding",
 	"ServiceBroker",
 	"ServiceClass",
-	"Deployment"}
+	"Deployment",
+}
 
 // These resources _must_ exist in the cluster before proceeding. ManagedService is not
 // used yet.
 var resourceTypes = []resourceType{ServiceInstance, ServiceBinding, ServiceBroker, ServiceType}
 
 const (
-	// GroupName is a name of a Kubernetes API extension implemented by the service catalog.
-	GroupName = "catalog.k8s.io"
-
-	// APIVersion is a version of the Kubernetes API extension implemented by the service catalog.
-	APIVersion = "v1alpha1"
 
 	// FullAPIVersion is a fully qualified name of the Kubernetes API extension implemented by the service catalog.
-	FullAPIVersion = GroupName + "/" + APIVersion
-
-	// ServiceBrokerKind is a name of a Service Broker resource, a Kubernetes third party resource.
-	ServiceBrokerKind = "ServiceBroker"
-
-	// ServiceBindingKind is a name of a Service Binding resource, a Kubernetes third party resource.
-	ServiceBindingKind = "ServiceBinding"
-
-	// ServiceTypeKind is a name of a Service Type resource, a Kubernetes third party resource.
-	ServiceTypeKind = "ServiceClass"
-
-	// ServiceInstanceKind is a name of a Service Instance resource, a Kubernetes third party resource.
-	ServiceInstanceKind = "ServiceInstance"
+	FullAPIVersion = v1alpha1.GroupNameString + "/" + v1alpha1.VersionString
 )
 
 var thirdPartyResourceTypes = map[string]v1beta1.ThirdPartyResource{
 	"service-broker.catalog.k8s.io": {
 		ObjectMeta:  v1.ObjectMeta{Name: "service-broker.catalog.k8s.io"},
 		Description: "A Service Broker representation. Adds a service broker and fetches its catalog",
-		Versions:    []v1beta1.APIVersion{{Name: "v1alpha1"}},
+		Versions:    []v1beta1.APIVersion{{Name: v1alpha1.VersionString}},
 	},
 	"service-class.catalog.k8s.io": {
 		ObjectMeta:  v1.ObjectMeta{Name: "service-class.catalog.k8s.io"},
 		Description: "A Service Type representation. Something that a customer can instantiate",
-		Versions:    []v1beta1.APIVersion{{Name: "v1alpha1"}},
+		Versions:    []v1beta1.APIVersion{{Name: v1alpha1.VersionString}},
 	},
 	"service-instance.catalog.k8s.io": {
 		ObjectMeta:  v1.ObjectMeta{Name: "service-instance.catalog.k8s.io"},
 		Description: "A Service Instance representation, creates a Service Instance",
-		Versions:    []v1beta1.APIVersion{{Name: "v1alpha1"}},
+		Versions:    []v1beta1.APIVersion{{Name: v1alpha1.VersionString}},
 	},
 	"service-binding.catalog.k8s.io": {
 		ObjectMeta:  v1.ObjectMeta{Name: "service-binding.catalog.k8s.io"},
 		Description: "A Service Binding representation, creates a Service Binding",
-		Versions:    []v1beta1.APIVersion{{Name: "v1alpha1"}},
+		Versions:    []v1beta1.APIVersion{{Name: v1alpha1.VersionString}},
 	},
 }
 
@@ -114,25 +100,25 @@ var managedServiceResource = unversioned.APIResource{
 
 var serviceInstanceResource = unversioned.APIResource{
 	Name:       "serviceinstances",
-	Kind:       ServiceInstanceKind,
+	Kind:       model.ServiceInstanceKind,
 	Namespaced: true,
 }
 
 var serviceBindingResource = unversioned.APIResource{
 	Name:       "servicebindings",
-	Kind:       ServiceBindingKind,
+	Kind:       model.ServiceBindingKind,
 	Namespaced: true,
 }
 
 var serviceBrokerResource = unversioned.APIResource{
 	Name:       "servicebrokers",
-	Kind:       ServiceBrokerKind,
+	Kind:       model.ServiceBrokerKind,
 	Namespaced: true,
 }
 
 var serviceTypeResource = unversioned.APIResource{
 	Name:       "serviceclasses",
-	Kind:       ServiceTypeKind,
+	Kind:       model.ServiceTypeKind,
 	Namespaced: true,
 }
 
