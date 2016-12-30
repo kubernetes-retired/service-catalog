@@ -112,7 +112,11 @@ $(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
 
 .scBuildImage: hack/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < hack/Dockerfile | \
-	  docker build -t scbuildimage -
+	  docker build -t scbuildimage \
+	    --build-arg UID=$(shell id -u) \
+	    --build-arg GID=$(shell id -g) \
+	    --build-arg USER=$(USER) \
+	    -
 	touch $@
 
 # Util targets

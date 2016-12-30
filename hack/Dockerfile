@@ -13,8 +13,23 @@
 # limitations under the License.
 
 FROM golang:GO_VERSION
-RUN go get -u github.com/golang/lint/golint
+# The following ARGs all default to 'root' but by using ARG we allow
+# people to override the user we run as via docker build's --build-arg option
+ARG UID=0
+ARG GID=0
+ARG USER=root
+
+# Install glide as root
 ENV GLIDE_VERSION=v0.12.3
 RUN curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz \
     | tar -vxz -C /usr/local/bin --strip=1
+
+# Create the user/group if not already there
+RUN groupadd -g $GID mygroup || true
+RUN useradd -u $UID -g $GID $USER || true
+
+# Now switch to, and run everything as, $USER
+USER $USER
+RUN go get -u github.com/golang/lint/golint
+RUN mkdir -p /go/src/github.com/kubernetes-incubator/service-catalog
 WORKDIR /go/src/github.com/kubernetes-incubator/service-catalog
