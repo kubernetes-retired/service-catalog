@@ -24,7 +24,7 @@ import (
 func TestGetServicePlanInfo(t *testing.T) {
 }
 
-func TestGetBrokerByServiceClass(t *testing.T) {
+func TestGetBrokerByServiceClassName(t *testing.T) {
 }
 
 func TestGetBindingsForService(t *testing.T) {

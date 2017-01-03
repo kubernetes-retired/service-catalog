@@ -19,7 +19,7 @@ package server
 import (
 	"github.com/golang/glog"
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
-	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/storage"
@@ -52,15 +52,15 @@ func createController(s storage.Storage) (*controller, error) {
 	}, nil
 }
 
-func (c *controller) updateServiceInstance(in *scmodel.ServiceInstance) error {
+func (c *controller) updateServiceInstance(in *servicecatalog.Instance) error {
 	// Currently there's no difference between create / update,
 	// but for prepping for future, split these into two different
 	// methods for now.
 	return c.createServiceInstance(in)
 }
 
-func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
-	broker, err := storage.GetBrokerByServiceClass(c.storage, in.ServiceID)
+func (c *controller) createServiceInstance(in *servicecatalog.Instance) error {
+	broker, err := storage.GetBrokerByServiceClassName(c.storage.Brokers(), c.storage.ServiceClasses(), in.Spec.ServiceClassName)
 	if err != nil {
 		return err
 	}
@@ -68,107 +68,133 @@ func (c *controller) createServiceInstance(in *scmodel.ServiceInstance) error {
 
 	// Make the request to instantiate.
 	createReq := &sbmodel.ServiceInstanceRequest{
-		ServiceID:  in.ServiceID,
-		PlanID:     in.PlanID,
-		Parameters: in.Parameters,
+		ServiceID:  in.Spec.CFServiceID,
+		PlanID:     in.Spec.CFPlanID,
+		Parameters: in.Spec.Parameters,
 	}
-	_, err = client.CreateServiceInstance(in.ID, createReq)
+	_, err = client.CreateServiceInstance(in.Spec.CFGUID, createReq)
 	return err
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // All the methods implementing ServiceController API go here for clarity sake.
 ///////////////////////////////////////////////////////////////////////////////
-func (c *controller) CreateServiceInstance(in *scmodel.ServiceInstance) (*scmodel.ServiceInstance, error) {
-	serviceID, planID, planName, err := storage.GetServicePlanInfo(c.storage, in.Service, in.Plan)
+func (c *controller) CreateServiceInstance(in *servicecatalog.Instance) (*servicecatalog.Instance, error) {
+	serviceID, planID, planName, err := storage.GetServicePlanInfo(
+		c.storage.ServiceClasses(),
+		in.Spec.ServiceClassName,
+		in.Spec.PlanName,
+	)
 	if err != nil {
 		glog.Errorf("Error fetching service ID: %v", err)
 		return nil, err
 	}
-	in.ServiceID = serviceID
-	in.PlanID = planID
-	in.Plan = planName
-	if in.ID == "" {
-		in.ID = uuid.NewV4().String()
+	in.Spec.CFServiceID = serviceID
+	in.Spec.CFPlanID = planID
+	in.Spec.PlanName = planName
+	if in.Spec.CFGUID == "" {
+		in.Spec.CFGUID = uuid.NewV4().String()
 	}
 
 	glog.Infof("Instantiating service %s using service/plan %s : %s", in.Name, serviceID, planID)
 
 	err = c.createServiceInstance(in)
-	op := scmodel.LastOperation{}
+	in.Status = servicecatalog.InstanceStatus{}
 	if err != nil {
-		op.State = "FAILED"
-		op.Description = err.Error()
+		in.Status.Conditions = []servicecatalog.InstanceCondition{
+			{
+				Type:   servicecatalog.InstanceConditionProvisionFailed,
+				Status: servicecatalog.ConditionTrue,
+				Reason: err.Error(),
+			},
+		}
 		glog.Errorf("Failed to create service instance: %v", err)
 	} else {
-		op.State = "CREATED"
+		in.Status.Conditions = []servicecatalog.InstanceCondition{
+			{
+				Type:   servicecatalog.InstanceConditionReady,
+				Status: servicecatalog.ConditionTrue,
+			},
+		}
 	}
-	in.LastOperation = &op
 
-	glog.Infof("Updating Service %s with State\n%v", in.Name, in.LastOperation)
-	return in, c.storage.UpdateServiceInstance(in)
+	glog.Infof("Updating Service %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
+	return c.storage.Instances(in.ObjectMeta.Namespace).Update(in)
 }
 
-func (c *controller) CreateServiceBinding(in *scmodel.ServiceBinding) (*scmodel.Credential, error) {
+func (c *controller) CreateServiceBinding(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	glog.Infof("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
-	to, err := c.storage.GetServiceInstance(defaultNamespace, in.To)
+	instance, err := c.storage.Instances(in.Spec.InstanceRef.Namespace).Get(in.Spec.InstanceRef.Name)
 	if err != nil {
-		glog.Errorf("To service does not exist %s: %v", in.To, err)
+		glog.Errorf("Service inatance does not exist %v: %v", in.Spec.InstanceRef, err)
 		return nil, err
 	}
 
-	// Get broker associated with the service.
-	st, err := c.storage.GetServiceClass(to.Service)
+	// Get the serviceclass for the instance.
+	sc, err := c.storage.ServiceClasses().Get(instance.Spec.ServiceClassName)
 	if err != nil {
-		glog.Errorf("Failed to fetch service type %s : %v", to.Service, err)
+		glog.Errorf("Failed to fetch service type %s : %v", instance.Spec.ServiceClassName, err)
 		return nil, err
 	}
-	broker, err := c.storage.GetBroker(st.Broker)
+
+	// Get the broker for the serviceclass.
+	broker, err := c.storage.Brokers().Get(sc.BrokerName)
 	if err != nil {
-		glog.Errorf("Error fetching broker for service: %s : %v", to.Service, err)
+		glog.Errorf("Error fetching broker for service: %s : %v", sc.BrokerName, err)
 		return nil, err
 	}
 	client := openservicebroker.NewClient(broker)
 
 	// Assign UUID to binding.
-	in.ID = uuid.NewV4().String()
+	in.Spec.CFGUID = uuid.NewV4().String()
 
 	// Make the request to bind.
 	createReq := &sbmodel.BindingRequest{
-		ServiceID:  to.ServiceID,
-		PlanID:     to.PlanID,
-		Parameters: in.Parameters,
+		ServiceID:  instance.Spec.CFServiceID,
+		PlanID:     instance.Spec.CFPlanID,
+		Parameters: in.Spec.Parameters,
 	}
-	sbr, err := client.CreateServiceBinding(to.ID, in.ID, createReq)
+	sbr, err := client.CreateServiceBinding(instance.Spec.CFGUID, in.Spec.CFGUID, createReq)
+
+	in.Status = servicecatalog.BindingStatus{}
 	if err != nil {
-		glog.Errorf("Failed to create service binding: %v\n", err)
-		return nil, err
+		in.Status.Conditions = []servicecatalog.BindingCondition{
+			{
+				Type:   servicecatalog.BindingConditionFailed,
+				Status: servicecatalog.ConditionTrue,
+				Reason: err.Error(),
+			},
+		}
+		glog.Errorf("Failed to create service instance: %v", err)
+	} else {
+		// Now try injection
+		err := c.injector.Inject(in, &sbr.Credentials)
+		if err != nil {
+			in.Status.Conditions = []servicecatalog.BindingCondition{
+				{
+					Type:   servicecatalog.BindingConditionFailed,
+					Status: servicecatalog.ConditionTrue,
+					Reason: err.Error(),
+				},
+			}
+			glog.Errorf("Failed to create service instance: %v", err)
+		} else {
+			in.Status.Conditions = []servicecatalog.BindingCondition{
+				{
+					Type:   servicecatalog.BindingConditionReady,
+					Status: servicecatalog.ConditionTrue,
+				},
+			}
+		}
 	}
 
-	// Stash the credentials with the binding and update the binding.
-	creds, err := util.ConvertCredential(&sbr.Credentials)
-	if err != nil {
-		glog.Errorf("Failed to convert creds: %v\n", err)
-		return nil, err
-	}
-	in.Credentials = *creds
-
-	err = c.storage.UpdateServiceBinding(in)
-	if err != nil {
-		glog.Errorf("Failed to update service binding %s : %v", in.Name, err)
-		return nil, err
-	}
-
-	if err := c.injector.Inject(in); err != nil {
-		return nil, err
-	}
-
-	return &in.Credentials, nil
+	glog.Infof("Updating Service Binding %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
+	return c.storage.Bindings(in.ObjectMeta.Namespace).Update(in)
 }
 
-func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.ServiceBroker, error) {
+func (c *controller) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalog.Broker, error) {
 	client := openservicebroker.NewClient(in)
 	sbcat, err := client.GetCatalog()
 	if err != nil {
@@ -180,9 +206,24 @@ func (c *controller) CreateServiceBroker(in *scmodel.ServiceBroker) (*scmodel.Se
 	}
 
 	glog.Infof("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
-	err = c.storage.AddBroker(in, catalog)
+	_, err = c.storage.Brokers().Create(in)
 	if err != nil {
 		return nil, err
 	}
-	return in, nil
+
+	for _, sc := range catalog {
+		if _, err := c.storage.ServiceClasses().Create(sc); err != nil {
+			return nil, err
+		}
+	}
+
+	in.Status.Conditions = []servicecatalog.BrokerCondition{
+		{
+			Type:   servicecatalog.BrokerConditionReady,
+			Status: servicecatalog.ConditionTrue,
+		},
+	}
+
+	glog.Infof("Updating Service Broker %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
+	return c.storage.Brokers().Update(in)
 }

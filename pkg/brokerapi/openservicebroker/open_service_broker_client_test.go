@@ -20,11 +20,11 @@ import (
 	"testing"
 
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
-	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 func TestUpdateServiceInstance(t *testing.T) {
-	cli := NewClient(&scmodel.ServiceBroker{})
+	cli := NewClient(&servicecatalog.Broker{})
 
 	_, err := cli.UpdateServiceInstance("foo", &model.ServiceInstanceRequest{})
 	if err == nil {

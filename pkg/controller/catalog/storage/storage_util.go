@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"log"
 
-	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 type servicePlanNotFound struct {
@@ -32,12 +32,12 @@ func (e servicePlanNotFound) Error() string {
 	return fmt.Sprintf("Can't find a service/plan: %s/%s", e.service, e.plan)
 }
 
-type serviceNotFound struct {
-	service string
+type serviceClassNotFound struct {
+	serviceClassName string
 }
 
-func (e serviceNotFound) Error() string {
-	return fmt.Sprintf("Can't find the service with id: %s", e.service)
+func (e serviceClassNotFound) Error() string {
+	return fmt.Sprintf("Can't find the service class with name: %s", e.serviceClassName)
 }
 
 // GetServicePlanInfo fetches the GUIDs for Service and Plan, also returns the
@@ -45,66 +45,47 @@ func (e serviceNotFound) Error() string {
 //
 // If Plan is not given and there's only one plan for a given service, we'll
 // choose that.
-func GetServicePlanInfo(storage Storage, service string, plan string) (string, string, string, error) {
-	s, err := storage.GetServiceClass(service)
+func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string) (string, string, string, error) {
+	s, err := storage.Get(service)
 	if err != nil {
 		return "", "", "", err
 	}
 	// No plan specified and only one plan, use it.
 	if plan == "" && len(s.Plans) == 1 {
-		log.Printf("Found Service Plan GUID as %s for %s : %s", s.Plans[0].ID, service, s.Plans[0].Name)
-		return s.ID, s.Plans[0].ID, s.Plans[0].Name, nil
+		planID := s.Plans[0].CFGUID
+		planName := s.Plans[0].Name
+		log.Printf("Found Service Plan GUID as %s for %s : %s", planID, service, planName)
+		return s.CFGUID, planID, planName, nil
 	}
 	for _, p := range s.Plans {
 		if p.Name == plan {
-			fmt.Printf("Found Service Plan GUID as %s for %s : %s", p.ID, service, plan)
-			return s.ID, p.ID, p.Name, nil
+			planID := p.CFGUID
+			log.Printf("Found Service Plan GUID as %s for %s : %s", planID, service, plan)
+			return s.CFGUID, planID, p.Name, nil
 		}
 	}
 	return "", "", "", servicePlanNotFound{service, plan}
 }
 
-// GetBrokerByServiceClass returns the broker which serves a particular service
-// class.
-func GetBrokerByServiceClass(storage Storage, id string) (*model.ServiceBroker, error) {
-	log.Printf("Getting broker by service id %s\n", id)
+// GetBrokerByServiceClassName returns the broker which serves a particular
+// service class.
+func GetBrokerByServiceClassName(
+	brokerStorage BrokerStorage,
+	svcClassStorage ServiceClassStorage,
+	svcClassName string,
+) (*servicecatalog.Broker, error) {
 
-	c, err := storage.GetInventory()
+	log.Printf("Getting broker by service class name %s\n", svcClassName)
+
+	svcClassList, err := svcClassStorage.List()
 	if err != nil {
 		return nil, err
 	}
-	for _, service := range c.Services {
-		if service.ID == id {
-			log.Printf("Found service type %s\n", service.Name)
-			return storage.GetBroker(service.Broker)
+	for _, svcClass := range svcClassList {
+		if svcClass.Name == svcClassName {
+			log.Printf("Found service type %s\n", svcClass.Name)
+			return brokerStorage.Get(svcClass.BrokerName)
 		}
 	}
-	return nil, serviceNotFound{id}
-}
-
-// GetBindingsForService returns all the specific kinds of bindings (to, from, both).
-func GetBindingsForService(storage Storage, serviceID string, t BindingDirection) ([]*model.ServiceBinding, error) {
-	var ret []*model.ServiceBinding
-	bindings, err := storage.ListServiceBindings()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, b := range bindings {
-		switch t {
-		case Both:
-			if b.From == serviceID || b.To == serviceID {
-				ret = append(ret, b)
-			}
-		case From:
-			if b.From == serviceID {
-				ret = append(ret, b)
-			}
-		case To:
-			if b.To == serviceID {
-				ret = append(ret, b)
-			}
-		}
-	}
-	return ret, nil
+	return nil, serviceClassNotFound{svcClassName}
 }

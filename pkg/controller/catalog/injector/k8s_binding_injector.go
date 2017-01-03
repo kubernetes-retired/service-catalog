@@ -19,7 +19,8 @@ package injector
 import (
 	"fmt"
 
-	model "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/client-go/1.5/pkg/api/v1"
 	"k8s.io/client-go/1.5/rest"
@@ -57,8 +58,8 @@ func CreateK8sBindingInjector() (BindingInjector, error) {
 	}, nil
 }
 
-func (b *k8sBindingInjector) Inject(binding *model.ServiceBinding) error {
-	is := makeInjectionSet(binding)
+func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *sbmodel.Credential) error {
+	is := makeInjectionSet(binding, cred)
 
 	if err := b.injectSecret(is.secret); err != nil {
 		return err
@@ -67,7 +68,7 @@ func (b *k8sBindingInjector) Inject(binding *model.ServiceBinding) error {
 	return nil
 }
 
-func (b *k8sBindingInjector) Uninject(binding *model.ServiceBinding) error {
+func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
 	return fmt.Errorf("Not implemented")
 }
 
@@ -77,24 +78,24 @@ func (b *k8sBindingInjector) injectSecret(s *v1.Secret) error {
 	return err
 }
 
-func makeInjectionSet(binding *model.ServiceBinding) *injectionSet {
-	secret := makeSecret(binding)
+func makeInjectionSet(binding *servicecatalog.Binding, cred *sbmodel.Credential) *injectionSet {
+	secret := makeSecret(binding, cred)
 
 	return &injectionSet{
 		secret: secret,
 	}
 }
 
-func makeSecret(binding *model.ServiceBinding) *v1.Secret {
+func makeSecret(binding *servicecatalog.Binding, cred *sbmodel.Credential) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name: binding.Name,
 		},
 		Data: map[string][]byte{
-			"hostname": []byte(binding.Credentials.Hostname),
-			"port":     []byte(binding.Credentials.Port),
-			"username": []byte(binding.Credentials.Username),
-			"password": []byte(binding.Credentials.Password),
+			"hostname": []byte(cred.Hostname),
+			"port":     []byte(cred.Port),
+			"username": []byte(cred.Username),
+			"password": []byte(cred.Password),
 		},
 	}
 }

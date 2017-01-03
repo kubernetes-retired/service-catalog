@@ -17,40 +17,37 @@ limitations under the License.
 package util
 
 import (
-	"encoding/json"
-
 	sbmodel "github.com/kubernetes-incubator/service-catalog/model/service_broker"
-	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-// ConvertCredential converts a Credential object from the broker model to the
-// controller model.
-func ConvertCredential(in *sbmodel.Credential) (*scmodel.Credential, error) {
-	j, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
+func convertServicePlans(plans []sbmodel.ServicePlan) []servicecatalog.ServicePlan {
+	ret := make([]servicecatalog.ServicePlan, len(plans))
+	for i, plan := range plans {
+		ret[i] = servicecatalog.ServicePlan{
+			Name:       plan.Name,
+			CFGUID:     plan.ID,
+			CFMetadata: plan.Metadata,
+			CFFree:     plan.Free,
+		}
 	}
-
-	out := &scmodel.Credential{}
-	if err := json.Unmarshal([]byte(j), out); err != nil {
-		return nil, err
-	}
-
-	return out, nil
+	return ret
 }
 
-// ConvertCatalog converts a Catalog object from the broker model to the
-// controller model.
-func ConvertCatalog(in *sbmodel.Catalog) (*scmodel.Catalog, error) {
-	j, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
+// ConvertCatalog converts a service broker catalog into an array of ServiceClasses
+func ConvertCatalog(in *sbmodel.Catalog) ([]*servicecatalog.ServiceClass, error) {
+	ret := make([]*servicecatalog.ServiceClass, len(in.Services))
+	for i, svc := range in.Services {
+		plans := convertServicePlans(svc.Plans)
+		ret[i] = &servicecatalog.ServiceClass{
+			Bindable:      svc.Bindable,
+			Plans:         plans,
+			PlanUpdatable: svc.PlanUpdateable,
+			CFGUID:        svc.ID,
+			CFTags:        svc.Tags,
+			CFRequires:    svc.Requires,
+			CFMetadata:    svc.Metadata,
+		}
 	}
-
-	out := &scmodel.Catalog{}
-	if err := json.Unmarshal([]byte(j), out); err != nil {
-		return nil, err
-	}
-
-	return out, nil
+	return ret, nil
 }

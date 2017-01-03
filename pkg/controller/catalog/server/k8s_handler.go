@@ -20,7 +20,7 @@ import (
 	"errors"
 
 	"github.com/golang/glog"
-	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/watch"
 
@@ -65,58 +65,54 @@ func createK8sHandler(c ServiceController, w *watch.Watcher) (*k8sHandler, error
 }
 
 func (s *k8sHandler) serviceInstanceCallback(e k8swatch.Event) error {
-	var si scmodel.ServiceInstance
+	var si servicecatalog.Instance
 	err := util.TPRObjectToSCObject(e.Object, &si)
 	if err != nil {
 		glog.Errorf("Failed to decode the received object %#v", err)
 	}
 
-	if e.Type == "ADDED" || e.Type == "MODIFIED" {
-		if si.LastOperation != nil {
-			glog.Errorf("%s already created, skipping: %v\n", si.Name, si.LastOperation)
-			return nil
-		}
+	if e.Type == k8swatch.Added {
 		created, err := s.controller.CreateServiceInstance(&si)
 		if err != nil {
 			glog.Errorf("Failed to create service instance: %v\n", err)
 			return err
 		}
 		glog.Infof("Created Service Instance: %s\n", created.Name)
+	} else {
+		glog.Warningf("Received unsupported service instance event type %s", e.Type)
 	}
 	return nil
 }
 
 func (s *k8sHandler) serviceBindingCallback(e k8swatch.Event) error {
-	var sb scmodel.ServiceBinding
+	var sb servicecatalog.Binding
 	err := util.TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
 		glog.Errorf("Failed to decode the received object %#v", err)
 	}
 
-	if e.Type == "ADDED" || e.Type == "MODIFIED" {
-		if sb.Credentials.Hostname != "" {
-			glog.Infof("Bindings have already been created, skipping: %s\n", sb.Name)
-			return nil
-		}
+	if e.Type == k8swatch.Added {
 		created, err := s.controller.CreateServiceBinding(&sb)
 		if err != nil {
 			glog.Errorf("Failed to create service binding: %v\n", err)
 			return err
 		}
 		glog.Infof("Created Service Binding: %s\n%v\n", sb.Name, created)
+	} else {
+		glog.Warningf("Received unsupported service binding event type %s", e.Type)
 	}
 	return nil
 }
 
 func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
-	var sb scmodel.ServiceBroker
+	var sb servicecatalog.Broker
 	err := util.TPRObjectToSCObject(e.Object, &sb)
 	if err != nil {
 		glog.Errorf("Failed to decode the received object %#v", err)
 		return err
 	}
 
-	if e.Type == "ADDED" || e.Type == "MODIFIED" {
+	if e.Type == k8swatch.Added {
 		created, err := s.controller.CreateServiceBroker(&sb)
 		if err != nil {
 			glog.Errorf("Failed to create service broker: %v\n", err)
@@ -124,7 +120,7 @@ func (s *k8sHandler) serviceBrokerCallback(e k8swatch.Event) error {
 		}
 		glog.Infof("Created Service Broker: %s\n", created.Name)
 	} else {
-		return errors.New("Delete Service Broker not implemented yet")
+		glog.Warningf("Received unsupported service broker event type %s", e.Type)
 	}
 	return nil
 }

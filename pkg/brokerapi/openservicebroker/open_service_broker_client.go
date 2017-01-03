@@ -25,7 +25,7 @@ import (
 
 	"github.com/golang/glog"
 	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
-	scmodel "github.com/kubernetes-incubator/service-catalog/model/service_controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
 )
@@ -39,13 +39,13 @@ const (
 )
 
 type openServiceBrokerClient struct {
-	broker *scmodel.ServiceBroker
+	broker *servicecatalog.Broker
 	client *http.Client
 }
 
 // NewClient creates an instance of BrokerClient for communicating with brokers
 // which implement the Open Service Broker API.
-func NewClient(b *scmodel.ServiceBroker) brokerapi.BrokerClient {
+func NewClient(b *servicecatalog.Broker) brokerapi.BrokerClient {
 	return &openServiceBrokerClient{
 		broker: b,
 		client: &http.Client{
@@ -55,14 +55,14 @@ func NewClient(b *scmodel.ServiceBroker) brokerapi.BrokerClient {
 }
 
 func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
-	url := fmt.Sprintf(catalogFormatString, c.broker.BrokerURL)
+	url := fmt.Sprintf(catalogFormatString, c.broker.Spec.URL)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.SetBasicAuth(c.broker.AuthUsername, c.broker.AuthPassword)
+	req.SetBasicAuth(c.broker.Spec.AuthUsername, c.broker.Spec.AuthPassword)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		glog.Errorf("Failed to fetch catalog from %s\n%v", url, resp)
@@ -85,7 +85,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *model.Se
 		return nil, err
 	}
 
-	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.BrokerURL, ID)
+	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.Spec.URL, ID)
 
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
@@ -114,7 +114,7 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *model.Se
 }
 
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string) error {
-	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.BrokerURL, ID)
+	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.Spec.URL, ID)
 
 	// TODO: Handle the auth
 	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
@@ -141,7 +141,7 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *mod
 		return nil, err
 	}
 
-	url := fmt.Sprintf(bindingFormatString, c.broker.BrokerURL, sID, bID)
+	url := fmt.Sprintf(bindingFormatString, c.broker.Spec.URL, sID, bID)
 
 	// TODO: Handle the auth
 	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
@@ -168,7 +168,7 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *mod
 }
 
 func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
-	url := fmt.Sprintf(bindingFormatString, c.broker.BrokerURL, sID, bID)
+	url := fmt.Sprintf(bindingFormatString, c.broker.Spec.URL, sID, bID)
 
 	// TODO: Handle the auth
 	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
