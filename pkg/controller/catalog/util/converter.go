@@ -25,10 +25,10 @@ func convertServicePlans(plans []sbmodel.ServicePlan) []servicecatalog.ServicePl
 	ret := make([]servicecatalog.ServicePlan, len(plans))
 	for i, plan := range plans {
 		ret[i] = servicecatalog.ServicePlan{
-			Name:       plan.Name,
-			CFGUID:     plan.ID,
-			CFMetadata: plan.Metadata,
-			CFFree:     plan.Free,
+			Name:        plan.Name,
+			OSBGUID:     plan.ID,
+			OSBMetadata: plan.Metadata,
+			OSBFree:     plan.Free,
 		}
 	}
 	return ret
@@ -43,10 +43,10 @@ func ConvertCatalog(in *sbmodel.Catalog) ([]*servicecatalog.ServiceClass, error)
 			Bindable:      svc.Bindable,
 			Plans:         plans,
 			PlanUpdatable: svc.PlanUpdateable,
-			CFGUID:        svc.ID,
-			CFTags:        svc.Tags,
-			CFRequires:    svc.Requires,
-			CFMetadata:    svc.Metadata,
+			OSBGUID:       svc.ID,
+			OSBTags:       svc.Tags,
+			OSBRequires:   svc.Requires,
+			OSBMetadata:   svc.Metadata,
 		}
 	}
 	return ret, nil

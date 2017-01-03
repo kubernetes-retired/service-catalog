@@ -50,9 +50,9 @@ type BrokerSpec struct {
 	AuthUsername string
 	AuthPassword string
 
-	// CF-specific; move to annotation
-	// CFGUID is the identity of this object for use with the CF SB API.
-	CFGUID string
+	// OSB-specific
+	// OSBGUID is the identity of this object for use with the OSB API.
+	OSBGUID string
 }
 
 // BrokerStatus represents the current status of a Broker.
@@ -106,19 +106,19 @@ type ServiceClass struct {
 	Plans         []ServicePlan
 	PlanUpdatable bool // Do we support this?
 
-	// CF-specific; move to annotation
-	// CFGUID is the identity of this object for use with the CF SB API.
+	// OSB-specific
+	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	CFGUID string
+	OSBGUID string
 
-	// CF-specific; move to annotations
-	CFTags                    []string
-	CFRequires                []string
-	CFMaxDBPerNode            string
-	CFMetadata                interface{}
-	CFDashboardOAuth2ClientID string
-	CFDashboardSecret         string
-	CFDashboardRedirectURI    string
+	// OSB-specific
+	OSBTags                    []string
+	OSBRequires                []string
+	OSBMaxDBPerNode            string
+	OSBMetadata                interface{}
+	OSBDashboardOAuth2ClientID string
+	OSBDashboardSecret         string
+	OSBDashboardRedirectURI    string
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -126,14 +126,14 @@ type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string
 
-	// CF-specific; move to annotation
-	// CFGUID is the identity of this object for use with the CF SB API.
+	// OSB-specific
+	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	CFGUID string
+	OSBGUID string
 
-	// CF-specific; move to annotations
-	CFMetadata interface{}
-	CFFree     bool
+	// OSB-specific
+	OSBMetadata interface{}
+	OSBFree     bool
 }
 
 // Instance represents a provisioned instance of a ServiceClass.
@@ -155,20 +155,20 @@ type InstanceSpec struct {
 
 	Parameters map[string]interface{}
 
-	// CF-specific; move to annotation
-	// CFGUID is the identity of this object for use with the CF SB API.
+	// OSB-specific
+	// OSBGUID is the identity of this object for use with the OSB SB API.
 	// Immutable.
-	CFGUID string
+	OSBGUID string
 
-	// CF-specific; move to annotations
-	CFCredentials   string
-	CFDashboardURL  string
-	CFInternalID    string
-	CFServiceID     string
-	CFPlanID        string
-	CFType          string
-	CFSpaceGUID     string
-	CFLastOperation string
+	// OSB-specific
+	OSBCredentials   string
+	OSBDashboardURL  string
+	OSBInternalID    string
+	OSBServiceID     string
+	OSBPlanID        string
+	OSBType          string
+	OSBSpaceGUID     string
+	OSBLastOperation string
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -232,10 +232,10 @@ type BindingSpec struct {
 	ConfigMapRef              string
 	ServiceInjectionPolicyRef string
 
-	// CF-specific; move to annotation
-	// CFGUID is the identity of this object for use with the CF SB API.
+	// OSB-specific
+	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	CFGUID string
+	OSBGUID string
 
 	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }

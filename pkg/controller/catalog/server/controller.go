@@ -68,11 +68,11 @@ func (c *controller) createServiceInstance(in *servicecatalog.Instance) error {
 
 	// Make the request to instantiate.
 	createReq := &sbmodel.ServiceInstanceRequest{
-		ServiceID:  in.Spec.CFServiceID,
-		PlanID:     in.Spec.CFPlanID,
+		ServiceID:  in.Spec.OSBServiceID,
+		PlanID:     in.Spec.OSBPlanID,
 		Parameters: in.Spec.Parameters,
 	}
-	_, err = client.CreateServiceInstance(in.Spec.CFGUID, createReq)
+	_, err = client.CreateServiceInstance(in.Spec.OSBGUID, createReq)
 	return err
 }
 
@@ -89,11 +89,11 @@ func (c *controller) CreateServiceInstance(in *servicecatalog.Instance) (*servic
 		glog.Errorf("Error fetching service ID: %v", err)
 		return nil, err
 	}
-	in.Spec.CFServiceID = serviceID
-	in.Spec.CFPlanID = planID
+	in.Spec.OSBServiceID = serviceID
+	in.Spec.OSBPlanID = planID
 	in.Spec.PlanName = planName
-	if in.Spec.CFGUID == "" {
-		in.Spec.CFGUID = uuid.NewV4().String()
+	if in.Spec.OSBGUID == "" {
+		in.Spec.OSBGUID = uuid.NewV4().String()
 	}
 
 	glog.Infof("Instantiating service %s using service/plan %s : %s", in.Name, serviceID, planID)
@@ -148,15 +148,15 @@ func (c *controller) CreateServiceBinding(in *servicecatalog.Binding) (*servicec
 	client := openservicebroker.NewClient(broker)
 
 	// Assign UUID to binding.
-	in.Spec.CFGUID = uuid.NewV4().String()
+	in.Spec.OSBGUID = uuid.NewV4().String()
 
 	// Make the request to bind.
 	createReq := &sbmodel.BindingRequest{
-		ServiceID:  instance.Spec.CFServiceID,
-		PlanID:     instance.Spec.CFPlanID,
+		ServiceID:  instance.Spec.OSBServiceID,
+		PlanID:     instance.Spec.OSBPlanID,
 		Parameters: in.Spec.Parameters,
 	}
-	sbr, err := client.CreateServiceBinding(instance.Spec.CFGUID, in.Spec.CFGUID, createReq)
+	sbr, err := client.CreateServiceBinding(instance.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
 
 	in.Status = servicecatalog.BindingStatus{}
 	if err != nil {
