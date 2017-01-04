@@ -27,7 +27,7 @@ project.
 
 Interested in contributing?  Check out the [documentation](./CONTRIBUTING.md).
 
-Also see our [developer's guide](./DEVGUIDE.md) for information on how to
+Also see our [developer's guide](./docs/DEVGUIDE.md) for information on how to
 build and test the code.
 
 ### Kubernetes Incubator

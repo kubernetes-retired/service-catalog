@@ -1,10 +1,15 @@
-# An End-to-End Walkthrough
+# Developer's Guide to Service-Catalog
 
-## Prerequisites and Setup
+## Prerequisites
 
-You will need to meet the following prerequisites:
-
+At a minimum you will need:
 * [Docker](https://www.docker.com) installed locally
+* GNU Make
+* [git](https://git-scm.com)
+
+These will allow you to build and test using Docker.
+
+If you want to build without Docker, then you will also need:
 * [Go](https://golang.org) set up locally (with proper `$GOPATH`
   and (optionally) `$GOPATH/bin` in your local `PATH`)
 * [Glide](https://github.com/masterminds/glide) v0.12.3 or higher installed
@@ -14,44 +19,97 @@ You will need to meet the following prerequisites:
 * [Helm](https://helm.sh) installed in your Kubernetes cluster,
   and the `helm` binary in your `PATH`
 * Cluster credentials in ./kubeconfig file
-* GNU Make
-* [git](https://git-scm.com)
-* Must be pre-authenticated to any Docker registry to which you intend to push
-  images
 
-## Getting Sources
+Additionally, if you intend to push Docker images to a registry:
+* Must be pre-authenticated to the Docker registry you intend to use
 
-With these prerequisites, clone the [Git repository
-](https://github.com/kubernetes-incubator/service-catalog.git).
+## Cloning the Repo
 
-    cd $GOPATH
-    git clone https://github.com/kubernetes-incubator/service-catalog.git \
-        src/github.com/kubernetes-incubator/service-catalog
+The Service Catalog github repository can be found
+[here](https://github.com/kubernetes-incubator/service-catalog.git).
 
-# Running in Kubernetes Cluster
+To clone the repository:
+    # If you have Go installed and want to build w/o Docker, first:
+    mkdir -p $GOPATH/src/github.com/kubernetes-incubator
+    cd $GOPATH/src/github.com/kubernetes-incubator
+
+    # Now let's clone it:
+    git clone https://github.com/kubernetes-incubator/service-catalog.git
 
 ## Building
 
-Build the source. In order to build and push Docker images to Google
-Container Registry you are going to need Google Cloud Project ID:
+First `cd` to the root of the cloned repository tree.
+To build the service-catalog you have two options:
+* `make build`
+* `DOCKER=1 make build`
 
-    cd "${GOPATH}/src/github.com/kubernetes-incubator/service-catalog"
+Both will build all of the executables, into the `bin` directory. However,
+the second option will do the build within a Docker container - meaning you
+do not need to have all of the necessary tooling installed on your host
+(such as a golang compiler or glide). Whichever option you choose, the
+results should be the same.
+
+Note, this will do the basic build of the service catalog. There are more
+more [advanced build steps](#advanced_build_steps) below as well.
+
+To deploy to Kubernetes, see the
+[Deploying to Kubernetes](#deploying_to_kubernetes) section.
+
+### Notes Concerning the Build Process/Makefile
+
+* The Makefile assumes you're running `make` from the root of the repo.
+* There are some source files that are generated during the build process.
+  These will be prefixed with `zz`.
+* When building with Docker, a Docker Image called "scbuildimage" will be used.
+* While many people have utilities, such as editor hooks, that auto-format
+  their go source files with `gofmt`, there is a Makefile target called
+  `format` which can be used to do this task for you.
+* The `build-darwin` and `build-linux` Makefile targets can be used to
+  build those respective platform specific executables. The output binaries
+  are placed in the `bin/darwin_amd64` or `bin/linux_amd64` directories.
+  By default, `make build` will build the current system's os/arch's
+  binaries.
+
+## Testing
+
+Currently, we only have unit testcases within this repo:
+* `make test`
+* `DOCKER=1 make test`
+
+These will execute any `*_test.go` files within the source tree.
+
+To see how well these tests cover the source code, you can use:
+* `make coverage`
+* `DOCKER=1 make coverage`
+
+These will execute the tests and perform an analysis of how well they
+cover all code paths. The results are put into a file called:
+`coverage.html` at the root of the repo.
+
+## Advanced Build Steps
+
+You can build the service catalog executables into Docker images and push
+them to a Docker Registry so they can be accessed by your Kubernetes clusters:
+
     export VERSION=$(git rev-parse --short --verify HEAD)
     # Registry URL is the portion up to, but excluding the image name and its
     # preceding slash, e.g., "gcr.io/my-repo", "my-docker-id"
     export REGISTRY=<registry URL>
 
-    make init build docker push
+    make images push
 
 This will build Docker images for the service controller, Kubernetes service
-broker, and service classes registry. The images are also pushed to Google
-Container Registry (gcr.io) so they can be accessed by your Kubernetes cluster:
+broker, and service classes registry. The images are also pushed to the
+registry specified by the `REGISTRY` environment variable, so they
+can be accessed by your Kubernetes cluster.
 
-    docker images
-
-The images are tagged with the current Git commit SHA.
+The images are tagged with the current Git commit SHA: `docker images`.
 
 ## Deploying to Kubernetes
+
+**NOTE**: The following instructions assume everything is run on the host.
+The instructions for doing the following via Docker is still a
+work-in-progress.
 
 **NOTE**: Do not forget to specify a Kubernetes namespace where the system will
 be deployed. Here, we will use `catalog`.
@@ -67,7 +125,7 @@ After the deployment, observe the deployments and services:
 
     kubectl get deployments,services --namespace catalog
 
-## Walkthrough
+### Walkthrough
 
 Now that the system has been deployed to our Kubernetes cluster, multiple
 new Kubernetes resources were registered. Service brokers, classes, instances,
@@ -159,7 +217,7 @@ And interact with the Bookstore API:
     # Get the book:
     curl -H 'x-api-key: 123' "http://${IP}:8080/shelves/3/books/3"
 
-## Consume a user-provided service
+### Consume a user-provided service
 
 **NOTE**: This demo requires that you have cleaned up the resources created in
 the previous demo, specifically the binding and frontend.
@@ -184,3 +242,4 @@ service.
 
     kubectl create -f contrib/examples/walkthrough/frontend.yaml
     kubectl create -f contrib/examples/walkthrough/binding.yaml
+
