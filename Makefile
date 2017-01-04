@@ -16,23 +16,31 @@ all: build test verify
 
 # Define some constants
 #######################
-ROOT          = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-BINDIR       ?= bin
-VERSION  ?= $(shell git describe --tags --always --abbrev=7 --dirty)
-COVERAGE     ?= $(CURDIR)/coverage.html
-SC_PKG        = github.com/kubernetes-incubator/service-catalog
-TOP_SRC_DIRS  = cmd contrib pkg util
-SRC_DIRS      = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
-                  -exec dirname {} \\; | sort | uniq")
-TEST_DIRS     = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
-                  -exec dirname {} \\; | sort | uniq")
-GO_VERSION    = 1.7.3
-GO_BUILD      = go build -i -v -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
-BASE_PATH     = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
-export GOPATH = $(BASE_PATH):$(ROOT)/vendor
-DOCKER_CMD    = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
-                 -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
-                 scbuildimage
+ROOT           = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+BINDIR        ?= bin
+COVERAGE      ?= $(CURDIR)/coverage.html
+SC_PKG         = github.com/kubernetes-incubator/service-catalog
+TOP_SRC_DIRS   = cmd contrib pkg util
+SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
+                   -exec dirname {} \\; | sort | uniq")
+TEST_DIRS      = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
+                   -exec dirname {} \\; | sort | uniq")
+VERSION       ?= $(shell git describe --tags --always --abbrev=7 --dirty)
+ifeq ($(shell uname -s),Darwin)
+STAT           = stat -f '%c %N'
+else
+STAT           = stat -c '%Y %n'
+endif
+NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
+                   | sort -r | head -n 1 | sed "s/.* //")
+TYPES_FILES    = $(shell find pkg/apis -name types.go)
+GO_VERSION     = 1.7.3
+GO_BUILD       = go build -i -v -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
+BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
+export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
+DOCKER_CMD     = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
+                  -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
+                  scbuildimage
 
 ifneq ($(origin DOCKER),undefined)
   # If DOCKER is defined then make it the full docker cmd line we want to use
@@ -68,8 +76,9 @@ $(BINDIR)/service-catalog: cmd/service-catalog $(shell find cmd/service-catalog 
 $(BINDIR)/user-broker: contrib/broker/k8s $(shell find contrib/broker/k8s -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
+# We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
 apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: cmd/service-catalog $(shell find pkg/apis/servicecatalog -type f)
+$(BINDIR)/apiserver: .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # This section contains the code generation stuff
@@ -83,7 +92,8 @@ $(BINDIR)/defaulter-gen: cmd/libs/go2idl/defaulter-gen
 $(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
 	$(DOCKER) go build -o $@ $(SC_PKG)/$^
 
-.generate_files: .generate_exes
+# Regenerate all files if the gen exes changed or any "types.go" files changed
+.generate_files: .init .generate_exes $(TYPES_FILES)
 	$(DOCKER) $(BINDIR)/defaulter-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --extra-peer-dirs $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
@@ -102,7 +112,11 @@ $(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
 
 .scBuildImage: hack/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < hack/Dockerfile | \
-	  docker build -t scbuildimage -
+	  docker build -t scbuildimage \
+	    --build-arg UID=$(shell id -u) \
+	    --build-arg GID=$(shell id -g) \
+	    --build-arg USER=$(USER) \
+	    -
 	touch $@
 
 # Util targets
