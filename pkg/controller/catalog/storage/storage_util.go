@@ -52,16 +52,16 @@ func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string
 	}
 	// No plan specified and only one plan, use it.
 	if plan == "" && len(s.Plans) == 1 {
-		planID := s.Plans[0].CFGUID
+		planID := s.Plans[0].OSBGUID
 		planName := s.Plans[0].Name
 		log.Printf("Found Service Plan GUID as %s for %s : %s", planID, service, planName)
-		return s.CFGUID, planID, planName, nil
+		return s.OSBGUID, planID, planName, nil
 	}
 	for _, p := range s.Plans {
 		if p.Name == plan {
-			planID := p.CFGUID
+			planID := p.OSBGUID
 			log.Printf("Found Service Plan GUID as %s for %s : %s", planID, service, plan)
-			return s.CFGUID, planID, p.Name, nil
+			return s.OSBGUID, planID, p.Name, nil
 		}
 	}
 	return "", "", "", servicePlanNotFound{service, plan}
