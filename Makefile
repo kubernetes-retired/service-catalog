@@ -135,9 +135,9 @@ verify: .init .generate_files
 	@# we have just one container for everything and not one container per
 	@# file.  The $(subst) removes the "-t" flag from the Docker cmd.
 	@echo for i in \`find $(TOP_SRC_DIRS) -name \*.go \| grep -v zz\`\; do \
-	  golint --set_exit_status \$$i \&\& \
+	  golint --set_exit_status \$$i \; \
 	  go vet \$$i \; \
-	done | $(subst -ti,-i,$(DOCKER)) sh
+	done | $(subst -ti,-i,$(DOCKER)) sh -e
 	@echo Running repo-infra verify scripts
 	$(DOCKER) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v zz_generated > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
