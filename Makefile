@@ -124,6 +124,10 @@ verify: .init .generate_files
 	  golint --set_exit_status \$$i \&\& \
 	  go vet \$$i \; \
 	done | $(subst -ti,-i,$(DOCKER)) sh
+	@echo Running repo-infra verify scripts
+	$(DOCKER) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v zz_generated > .out 2>&1 || true
+	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
+	@rm .out
 
 format: .init
 	$(DOCKER) gofmt -w -s $(TOP_SRC_DIRS)
