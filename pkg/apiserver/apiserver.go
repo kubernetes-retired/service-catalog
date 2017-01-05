@@ -18,45 +18,62 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	//"k8s.io/kubernetes/pkg/api/rest"
 	"k8s.io/kubernetes/pkg/genericapiserver"
+	"k8s.io/kubernetes/pkg/registry"
+	"k8s.io/kubernetes/pkg/registry/generic"
+	"k8s.io/kubernetes/pkg/runtime/schema"
 	"k8s.io/kubernetes/pkg/version"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	servicecatalogrest "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/rest"
 )
 
-// ServiceCatalogAPIServer contains base GenericAPIServer along with
-// other configured runtime configuration
+// ServiceCatalogAPIServer contains the base GenericAPIServer along with other
+// configured runtime configuration
 type ServiceCatalogAPIServer struct {
 	GenericAPIServer *genericapiserver.GenericAPIServer
 }
 
-// Config contains our base generic Config along with config specific
-// to the service catalog.
+// Config contains a generic API server Config along with config specific to
+// the service catalog API server.
 type Config struct {
 	GenericConfig *genericapiserver.Config
+
+	// BABYNETES: cargo culted from master.go
+
+	APIResourceConfigSource genericapiserver.APIResourceConfigSource
+	DeleteCollectionWorkers int
+	StorageFactory          genericapiserver.StorageFactory
 }
 
-// CompletedConfig is an internal type to take advantage of
-// typechecking in the type system. mhb does not like it.
+// CompletedConfig is an internal type to take advantage of typechecking in
+// the type system. mhb does not like it.
 type CompletedConfig struct {
 	*Config
 }
 
-// Complete fills in any fields not set that are required to have
-// valid data and can be derived from other fields.
+// Complete fills in any fields not set that are required to have valid data
+// and can be derived from other fields.
 func (c *Config) Complete() CompletedConfig {
 	c.GenericConfig.Complete()
 
 	version := version.Get()
-	// Setting this var enables the version resource. We should
-	// populate the fields of the object from above if we wish to
-	// have our own output. Or establish our own version object
-	// somewhere else.
+	// Setting this var enables the version resource. We should populate the
+	// fields of the object from above if we wish to have our own output. Or
+	// establish our own version object somewhere else.
 	c.GenericConfig.Version = &version
 
 	return CompletedConfig{c}
+}
+
+// RESTStorageProvider is a local interface describing a REST storage factory.
+// It can report the name of the API group and create a new storage interface
+// for it.
+type RESTStorageProvider interface {
+	// GroupName returns the API group name
+	GroupName() string
+	// NewRESTStorage returns a new
+	NewRESTStorage(apiResourceConfigSource genericapiserver.APIResourceConfigSource, restOptionsGetter registry.RESTOptionsGetter) (genericapiserver.APIGroupInfo, bool)
 }
 
 // New creates the server to run.
@@ -71,28 +88,80 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 		return nil, err
 	}
 
-	glog.Infoln("Creating the server to run")
+	glog.V(4).Infoln("Creating API server")
 
 	s := &ServiceCatalogAPIServer{
 		GenericAPIServer: genericServer,
 	}
 
-	glog.Infoln("make and install the apis")
-
-	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(servicecatalog.GroupName)
-	// giving it v1alpha1 version
-	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
-
-	// TODO make storage work
-	//v1alpha1storage := map[string]rest.Storage{}
+	// Not every API group compiled in is necessarily enabled by the operator
+	// at runtime.
 	//
-	//v1alpha1storage["servicecatalog"] = apiservice.NewREST(c.RESTOptionsGetter.NewFor(apiregistration.Resource("servicecatalog")))
+	// Install the API resource config source, which describes versions of
+	// which API groups are enabled.
+	c.APIResourceConfigSource = DefaultAPIResourceConfigSource()
 
-	//apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
-	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
-		return nil, err
+	restStorageProviders := []RESTStorageProvider{
+		servicecatalogrest.StorageProvider{},
 	}
 
-	glog.Infoln("returning the server")
+	restOptionsFactory := restOptionsFactory{
+		deleteCollectionWorkers: c.DeleteCollectionWorkers,
+		enableGarbageCollection: c.GenericConfig.EnableGarbageCollection,
+		storageFactory:          c.StorageFactory,
+	}
+
+	glog.V(4).Infoln("Installing API groups")
+	for _, provider := range restStorageProviders {
+		groupInfo, enabled := provider.NewRESTStorage(c.Config.APIResourceConfigSource, restOptionsFactory.NewFor)
+		if !enabled {
+			glog.Warningf("Skipping API group %v because it is not enabled", provider.GroupName())
+		}
+
+		glog.V(4).Infof("Installing API group %v", provider.GroupName())
+		if err := s.GenericAPIServer.InstallAPIGroup(&groupInfo); err != nil {
+			glog.Fatalf("Error installing API group %v: %v", provider.GroupName(), err)
+		}
+	}
+
+	glog.Infoln("Finished installing API groups")
+
 	return s, nil
+}
+
+// BABYNETES: had to be lifted from pkg/master/master.go
+
+// restOptionsFactory is an object that provides a factory method for getting
+// the REST options for a particular GroupResource.
+type restOptionsFactory struct {
+	deleteCollectionWorkers int
+	enableGarbageCollection bool
+	storageFactory          genericapiserver.StorageFactory
+	storageDecorator        generic.StorageDecorator
+}
+
+// NewFor returns the RESTOptions for a particular GroupResource.
+func (f restOptionsFactory) NewFor(resource schema.GroupResource) generic.RESTOptions {
+	storageConfig, err := f.storageFactory.NewConfig(resource)
+	if err != nil {
+		glog.Fatalf("Unable to find storage destination for %v, due to %v", resource, err.Error())
+	}
+
+	return generic.RESTOptions{
+		StorageConfig:           storageConfig,
+		Decorator:               f.storageDecorator,
+		DeleteCollectionWorkers: f.deleteCollectionWorkers,
+		EnableGarbageCollection: f.enableGarbageCollection,
+		ResourcePrefix:          f.storageFactory.ResourcePrefix(resource),
+	}
+}
+
+// DefaultAPIResourceConfigSource returns a default API Resource config source
+func DefaultAPIResourceConfigSource() *genericapiserver.ResourceConfig {
+	ret := genericapiserver.NewResourceConfig()
+	ret.EnableVersions(
+		servicecatalogv1alpha1.SchemeGroupVersion,
+	)
+
+	return ret
 }
