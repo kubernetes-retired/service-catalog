@@ -56,6 +56,13 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&metav1.GetOptions{},
 
 		&Broker{},
+		&BrokerList{},
+		&ServiceClass{},
+		&ServiceClassList{},
+		&Instance{},
+		&InstanceList{},
+		&Binding{},
+		&BindingList{},
 	)
 	return nil
 }
