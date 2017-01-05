@@ -18,7 +18,10 @@ Compile `cmd/service-catalog/server.go` with `go build -o apiserver -v`
 
 Start with:
 ```
-$ ./apiserver --etcd-servers localhost
+# run etcd locally on the default port
+$ etcd 
+# switch to another shell and run
+$ ./apiserver --etcd-servers localhost:2379
 ```
 An etcd server is not hooked into yet, and is not required to be running.
 

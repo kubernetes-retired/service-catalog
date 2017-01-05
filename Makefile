@@ -78,6 +78,7 @@ $(BINDIR)/user-broker: contrib/broker/k8s $(shell find contrib/broker/k8s -type 
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
 apiserver: $(BINDIR)/apiserver
+#.PHONY: $(BINDIR)/apiserver
 $(BINDIR)/apiserver: .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 

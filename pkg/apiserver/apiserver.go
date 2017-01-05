@@ -18,12 +18,14 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	//"k8s.io/kubernetes/pkg/api/rest"
+	"k8s.io/kubernetes/pkg/api/rest"
 	"k8s.io/kubernetes/pkg/genericapiserver"
+	"k8s.io/kubernetes/pkg/registry/generic"
 	"k8s.io/kubernetes/pkg/version"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/etcd"
 )
 
 // ServiceCatalogAPIServer contains base GenericAPIServer along with
@@ -60,7 +62,7 @@ func (c *Config) Complete() CompletedConfig {
 }
 
 // New creates the server to run.
-func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
+func (c CompletedConfig) New(optsGetter generic.RESTOptionsGetter) (*ServiceCatalogAPIServer, error) {
 	// we need to call new on a "completed" config, which we
 	// should already have, as this is a 'CompletedConfig' and the
 	// only way to get here from there is by Complete()'ing. Thus
@@ -77,19 +79,22 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 		GenericAPIServer: genericServer,
 	}
 
-	glog.Infoln("make and install the apis")
+	glog.Infoln("make the apis")
+	// our dispatch map? does the string used as key have to match
+	// anything anywhere else? Could it be `banana` and still
+	// work?
+	v1alpha1storage := map[string]rest.Storage{}
+	v1alpha1storage["servicecatalog"] = etcd.NewREST(optsGetter)
 
+	// default because I don't see any other way
 	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(servicecatalog.GroupName)
 	// giving it v1alpha1 version
 	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
-
-	// TODO make storage work
-	//v1alpha1storage := map[string]rest.Storage{}
-	//
-	//v1alpha1storage["servicecatalog"] = apiservice.NewREST(c.RESTOptionsGetter.NewFor(apiregistration.Resource("servicecatalog")))
-
-	//apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
+	// put our dispatch map into the v1alpha1 global map
+	apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
+	glog.Infoln("install the apigroup")
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+		glog.Errorln(err)
 		return nil, err
 	}
 

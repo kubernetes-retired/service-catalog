@@ -23,6 +23,14 @@ import (
 
 // +nonNamespaced=true
 
+// BrokerList is a list of brokers, COME ON.
+type BrokerList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []Broker
+}
+
 // Broker represents an entity that provides ServiceClasses for use in the
 // service catalog.
 type Broker struct {
