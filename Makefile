@@ -60,20 +60,24 @@ build: .init .generate_files \
        $(BINDIR)/apiserver
 
 controller: $(BINDIR)/controller
-$(BINDIR)/controller: pkg/controller/catalog $(shell find pkg/controller/catalog -type f)
+$(BINDIR)/controller: pkg/controller/catalog \
+	  $(shell find pkg/controller/catalog -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/pkg/controller/catalog
 
 registry: $(BINDIR)/registry
 $(BINDIR)/registry: contrib/registry $(shell find contrib/registry -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/registry
 
-$(BINDIR)/k8s-broker: contrib/broker/k8s $(shell find contrib/broker/k8s -type f)
+$(BINDIR)/k8s-broker: contrib/broker/k8s \
+	  $(shell find contrib/broker/k8s -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
-$(BINDIR)/service-catalog: cmd/service-catalog $(shell find cmd/service-catalog -type f)
+$(BINDIR)/service-catalog: cmd/service-catalog \
+	  $(shell find cmd/service-catalog -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
-$(BINDIR)/user-broker: contrib/broker/k8s $(shell find contrib/broker/k8s -type f)
+$(BINDIR)/user-broker: contrib/broker/k8s \
+	  $(shell find contrib/broker/k8s -type f)
 	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
@@ -174,7 +178,7 @@ clean:
 ############################################
 images: registry-image k8s-broker-image user-broker-image controller-image
 
-registry-image: contrib/registry/Dockerfile
+registry-image: .scBuildImage contrib/registry/Dockerfile
 	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
 	  $(MAKE) bin/linux_amd64/registry
 	cp contrib/registry/Dockerfile $(BINDIR)/linux_amd64/
@@ -182,21 +186,21 @@ registry-image: contrib/registry/Dockerfile
 	docker build -t registry:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/*.json
 
-k8s-broker-image: contrib/broker/k8s/Dockerfile
+k8s-broker-image: .scBuildImage contrib/broker/k8s/Dockerfile
 	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
 	  $(MAKE) bin/linux_amd64/k8s-broker
 	cp contrib/broker/k8s/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t k8s-broker:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/Dockerfile
 
-user-broker-image: contrib/broker/user_provided/Dockerfile
+user-broker-image: .scBuildImage contrib/broker/user_provided/Dockerfile
 	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
 	  $(MAKE) bin/linux_amd64/user-broker
 	cp contrib/broker/user_provided/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t user-broker:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/Dockerfile
 
-controller-image: pkg/controller/catalog/Dockerfile
+controller-image: .scBuildImage pkg/controller/catalog/Dockerfile
 	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
 	  $(MAKE) bin/linux_amd64/controller
 	cp pkg/controller/catalog/Dockerfile $(BINDIR)/linux_amd64/
