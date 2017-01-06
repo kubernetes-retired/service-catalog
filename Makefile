@@ -38,13 +38,13 @@ GO_VERSION     = 1.7.3
 GO_BUILD       = go build -i -v -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
-DOCKER_CMD     = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
-                  -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
-                  scbuildimage
 
 ifneq ($(origin DOCKER),undefined)
-  # If DOCKER is defined then make it the full docker cmd line we want to use
-  DOCKER=$(DOCKER_CMD)
+  # If DOCKER is defined then define the full docker cmd line we want to use
+  DOCKER_FLAG  = DOCKER=1
+  DOCKER_CMD   = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
+                 -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
+                 scbuildimage
   # Setting scBuildImageTarget will force the Docker image to be built
   # in the .init rule
   scBuildImageTarget=.scBuildImage
@@ -60,49 +60,50 @@ build: .init .generate_files \
        $(BINDIR)/apiserver
 
 controller: $(BINDIR)/controller
-$(BINDIR)/controller: pkg/controller/catalog \
+$(BINDIR)/controller: .init pkg/controller/catalog \
 	  $(shell find pkg/controller/catalog -type f)
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/pkg/controller/catalog
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/pkg/controller/catalog
 
 registry: $(BINDIR)/registry
-$(BINDIR)/registry: contrib/registry $(shell find contrib/registry -type f)
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/registry
+$(BINDIR)/registry: .init contrib/registry \
+	  $(shell find contrib/registry -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/registry
 
-$(BINDIR)/k8s-broker: contrib/broker/k8s \
+$(BINDIR)/k8s-broker: .init contrib/broker/k8s \
 	  $(shell find contrib/broker/k8s -type f)
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
-$(BINDIR)/service-catalog: cmd/service-catalog \
+$(BINDIR)/service-catalog: .init cmd/service-catalog \
 	  $(shell find cmd/service-catalog -type f)
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
-$(BINDIR)/user-broker: contrib/broker/k8s \
+$(BINDIR)/user-broker: .init contrib/broker/k8s \
 	  $(shell find contrib/broker/k8s -type f)
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/broker/k8s
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
 apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
-	$(DOCKER) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
+$(BINDIR)/apiserver: .init .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # This section contains the code generation stuff
 #################################################
 .generate_exes: $(BINDIR)/defaulter-gen $(BINDIR)/deepcopy-gen
 	touch $@
 
-$(BINDIR)/defaulter-gen: cmd/libs/go2idl/defaulter-gen
-	$(DOCKER) go build -o $@ $(SC_PKG)/$^
+$(BINDIR)/defaulter-gen: .init cmd/libs/go2idl/defaulter-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/cmd/libs/go2idl/defaulter-gen
 
-$(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
-	$(DOCKER) go build -o $@ $(SC_PKG)/$^
+$(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/cmd/libs/go2idl/deepcopy-gen
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
-	$(DOCKER) $(BINDIR)/defaulter-gen --v 1 --logtostderr \
+	$(DOCKER_CMD) $(BINDIR)/defaulter-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --extra-peer-dirs $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  -O zz_generated.defaults
-	$(DOCKER) $(BINDIR)/deepcopy-gen --v 1 --logtostderr \
+	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --bounding-dirs github.com/kubernetes-incubator/service-catalog \
 	  -O zz_generated.deepcopy
@@ -111,7 +112,7 @@ $(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
 # Some prereq stuff
 ###################
 .init: $(scBuildImageTarget) glide.yaml
-	$(DOCKER) glide install --strip-vendor
+	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
 
 .scBuildImage: hack/Dockerfile
@@ -127,7 +128,7 @@ $(BINDIR)/deepcopy-gen: cmd/libs/go2idl/deepcopy-gen
 ##############
 verify: .init .generate_files
 	@echo Running gofmt:
-	@$(DOCKER) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
+	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || \
 	  (echo -e "\n*** Please 'gofmt' the following:" ; cat .out ; echo ; false)'
 	@rm .out
@@ -141,22 +142,23 @@ verify: .init .generate_files
 	@echo for i in \`find $(TOP_SRC_DIRS) -name \*.go \| grep -v zz\`\; do \
 	  golint --set_exit_status \$$i \; \
 	  go vet \$$i \; \
-	done | $(subst -ti,-i,$(DOCKER)) sh -e
+	done | $(subst -ti,-i,$(DOCKER_CMD)) sh -e
 	@echo Running repo-infra verify scripts
-	$(DOCKER) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v zz_generated > .out 2>&1 || true
+	$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v zz_generated > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
 	@rm .out
 
 format: .init
-	$(DOCKER) gofmt -w -s $(TOP_SRC_DIRS)
+	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
 
 coverage: .init
-	$(DOCKER) hack/coverage.sh --html "$(COVERAGE)" $(addprefix ./,$(TEST_DIRS))
+	$(DOCKER_CMD) hack/coverage.sh --html "$(COVERAGE)" \
+	  $(addprefix ./,$(TEST_DIRS))
 
-test:
+test: .init
 	@echo Running tests:
 	@for i in $(addprefix $(SC_PKG)/,$(TEST_DIRS)); do \
-	  $(DOCKER) go test $$i || exit $$? ; \
+	  $(DOCKER_CMD) go test $$i || exit $$? ; \
 	done
 
 build-darwin:
@@ -178,30 +180,30 @@ clean:
 ############################################
 images: registry-image k8s-broker-image user-broker-image controller-image
 
-registry-image: .scBuildImage contrib/registry/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
+registry-image: contrib/registry/Dockerfile
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
 	  $(MAKE) bin/linux_amd64/registry
 	cp contrib/registry/Dockerfile $(BINDIR)/linux_amd64/
 	cp contrib/registry/data/charts/*.json $(BINDIR)/linux_amd64/
 	docker build -t registry:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/*.json
 
-k8s-broker-image: .scBuildImage contrib/broker/k8s/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
+k8s-broker-image: contrib/broker/k8s/Dockerfile
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
 	  $(MAKE) bin/linux_amd64/k8s-broker
 	cp contrib/broker/k8s/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t k8s-broker:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/Dockerfile
 
-user-broker-image: .scBuildImage contrib/broker/user_provided/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
+user-broker-image: contrib/broker/user_provided/Dockerfile
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
 	  $(MAKE) bin/linux_amd64/user-broker
 	cp contrib/broker/user_provided/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t user-broker:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/Dockerfile
 
-controller-image: .scBuildImage pkg/controller/catalog/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
+controller-image: pkg/controller/catalog/Dockerfile
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
 	  $(MAKE) bin/linux_amd64/controller
 	cp pkg/controller/catalog/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t controller:$(VERSION) $(BINDIR)/linux_amd64
