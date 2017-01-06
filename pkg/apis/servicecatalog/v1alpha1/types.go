@@ -34,6 +34,14 @@ type Broker struct {
 	Status BrokerStatus
 }
 
+// BrokerList is a list of Brokers.
+type BrokerList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []Broker
+}
+
 const (
 	// DescriptionKey is the key of an annotation that holds the brief
 	// description of an API resource
@@ -93,6 +101,14 @@ const (
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
+// ServiceClassList is a list of ServiceClasses
+type ServiceClassList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServiceClass
+}
+
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
 	metav1.TypeMeta
@@ -134,6 +150,14 @@ type ServicePlan struct {
 	// OSB-specific
 	OSBMetadata interface{}
 	OSBFree     bool
+}
+
+// InstanceList is a list of instances
+type InstanceList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []Instance
 }
 
 // Instance represents a provisioned instance of a ServiceClass.
@@ -204,6 +228,14 @@ const (
 	// deprovision failed state
 	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
+
+// BindingList is a list of Bindings
+type BindingList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []Binding
+}
 
 // Binding represents a "used by" relationship between an application and an
 // Instance.
