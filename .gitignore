@@ -14,4 +14,3 @@ coverage.html
 .scBuildImage
 .init
 .generate*
-**/zz*.go
