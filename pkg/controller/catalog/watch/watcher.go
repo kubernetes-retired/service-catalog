@@ -250,9 +250,13 @@ func (w *Watcher) Watch(t resourceType, ns string, wcb watchCallback) error {
 
 func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 	for {
-		glog.Infoln("List all existing Deployments")
 		// First do List on the resource to bring things up to date.
+		glog.Infoln("List all existing Deployments")
 		l, err := di.List(api.ListOptions{})
+		if err != nil {
+			glog.Infof("Error getting list of resources: %v\n", err)
+			continue
+		}
 		for _, d := range l.Items {
 			glog.Infof("Found Deployment name: %s\n", d.Name)
 			event := watch.Event{
@@ -262,7 +266,13 @@ func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 			wcb(event)
 		}
 
-		w, err := di.Watch(api.ListOptions{})
+		// Start watching from where the List() left off.
+		// Note that if l.ResourceVersion is too old, meaning its no
+		// longer in the "watch window" then we'll get an error and
+		// be forced to re-List everything again, and try again.
+		w, err := di.Watch(api.ListOptions{
+			ResourceVersion: l.ResourceVersion,
+		})
 		if err != nil {
 			glog.Errorf("Failed to start a watch: %v\n", err)
 			continue
@@ -271,26 +281,21 @@ func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
 
 		glog.Infoln("Entering watch loop")
 		done := false
-		for {
+		for !done {
 			select {
 			case <-time.After(1 * time.Minute):
 				glog.Infoln("*** select heartbeat ***")
 			case e := <-c:
 				glog.Infof("Watch called with event Type: %s\n", e.Type)
 				if e.Object == nil {
-					glog.Infoln("Watch appears to have failed, restarting watch loop...")
+					glog.Infoln("Watch loop stopped(no obj), restarting")
 					done = true
 				} else {
 					wcb(e)
 				}
 			}
-			if done {
-				glog.Infoln("Bailing from select for loop")
-				break
-			}
 		}
 	}
-
 }
 
 func thirdPartyWatcher(rc dynamicResourceClient, wcb watchCallback) {
