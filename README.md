@@ -42,6 +42,9 @@ The project was established 2016-Sept-12.  The incubator team for the project is
 For more information about sig-service-catalog such as meeting times and agenda,
 check out the [community site](https://github.com/kubernetes/community/tree/master/sig-service-catalog).
 
+There is a YouTube channel for our recorded meetings
+[here](https://www.youtube.com/playlist?list=PL69nYSiGNLP2k9ZXx9E1MvRSotFDoHUWs&jct=kNbyYC551SM9HbO2eMTEIvDj1wxQfA).
+
 ### Code of Conduct
 
 Participation in the Kubernetes community is governed by the
