@@ -57,6 +57,7 @@ func (s *Server) Start(serverPort int) {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 	router.HandleFunc("/healthz", healthZHandler).Methods("GET")
+	http.Handle("/", router)
 
 	port := strconv.Itoa(serverPort)
 	glog.Infoln("Server started on port " + port)
