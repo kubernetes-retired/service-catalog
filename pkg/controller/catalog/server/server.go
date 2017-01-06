@@ -60,7 +60,7 @@ func (s *Server) Start(serverPort int) {
 
 	port := strconv.Itoa(serverPort)
 	glog.Infoln("Server started on port " + port)
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":"+port, router)
 	glog.Errorln(err)
 }
 
