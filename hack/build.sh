@@ -64,7 +64,7 @@ if [[ "$(uname -s)" == "Linux" ]]; then
 
   [[ -n "${NO_DOCKER_COMPILE:-}" ]] && MAKE_VARS+=(NO_DOCKER_COMPILE=1)
 
-  make "${MAKE_VARS[@]}" build-linux \
+  make "${MAKE_VARS[@]}" build \
     || error_exit 'build linux failed.'
 
   make "${MAKE_VARS[@]}" docker \
