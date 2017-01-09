@@ -14,25 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openservicebroker
+package controller
 
 import (
-	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
-func TestUpdateServiceInstance(t *testing.T) {
-	cli := NewClient(&servicecatalog.Broker{})
+// Controller defines the APIs that all controllers are expected to support
+type Controller interface {
+	Catalog() (*brokerapi.Catalog, error)
 
-	_, err := cli.UpdateServiceInstance("foo", &brokerapi.ServiceInstanceRequest{})
-	if err == nil {
-		t.Fatalf("Expected not implemented")
-	}
-	if err.Error() != "Not implemented" {
-		t.Errorf("Expected not implemented, got %v", err)
-	}
+	GetServiceInstance(id string) (string, error)
+	CreateServiceInstance(id string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
+	RemoveServiceInstance(id string) error
 
-	// TODO: test against fake/test broker.
+	Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error)
+	UnBind(instanceID string, bindingID string) error
 }

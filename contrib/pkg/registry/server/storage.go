@@ -14,25 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openservicebroker
+package server
 
 import (
-	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
-func TestUpdateServiceInstance(t *testing.T) {
-	cli := NewClient(&servicecatalog.Broker{})
-
-	_, err := cli.UpdateServiceInstance("foo", &brokerapi.ServiceInstanceRequest{})
-	if err == nil {
-		t.Fatalf("Expected not implemented")
-	}
-	if err.Error() != "Not implemented" {
-		t.Errorf("Expected not implemented, got %v", err)
-	}
-
-	// TODO: test against fake/test broker.
+// Storage is an interface which provides a storage of Service definitions.
+type Storage interface {
+	ListServices() ([]*brokerapi.Service, error)
+	GetService(string) (*brokerapi.Service, error)
+	CreateService(*brokerapi.Service) error
+	DeleteService(string) error
 }

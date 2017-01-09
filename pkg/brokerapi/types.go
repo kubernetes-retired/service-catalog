@@ -14,25 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openservicebroker
+package brokerapi
 
-import (
-	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-)
-
-func TestUpdateServiceInstance(t *testing.T) {
-	cli := NewClient(&servicecatalog.Broker{})
-
-	_, err := cli.UpdateServiceInstance("foo", &brokerapi.ServiceInstanceRequest{})
-	if err == nil {
-		t.Fatalf("Expected not implemented")
-	}
-	if err.Error() != "Not implemented" {
-		t.Errorf("Expected not implemented, got %v", err)
-	}
-
-	// TODO: test against fake/test broker.
+// Types represents the types offered by a given service plan-- instances
+// and/or bindings
+type Types struct {
+	Instance string `json:"instance"`
+	Binding  string `json:"binding"`
 }
+
+const (
+	// InstanceType is a string constant representation of the instance type
+	InstanceType = "instanceType"
+	// BindingType is a string constant representation of the binding type
+	BindingType = "bindingType"
+)

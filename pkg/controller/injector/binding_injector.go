@@ -14,25 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package openservicebroker
+package injector
 
 import (
-	"testing"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
-func TestUpdateServiceInstance(t *testing.T) {
-	cli := NewClient(&servicecatalog.Broker{})
+// BindingInjector defines the interface for injecting binding credential
+// information for consumption.
+type BindingInjector interface {
+	// Inject injects binding credential information for consumption.
+	Inject(*servicecatalog.Binding, *brokerapi.Credential) error
 
-	_, err := cli.UpdateServiceInstance("foo", &brokerapi.ServiceInstanceRequest{})
-	if err == nil {
-		t.Fatalf("Expected not implemented")
-	}
-	if err.Error() != "Not implemented" {
-		t.Errorf("Expected not implemented, got %v", err)
-	}
-
-	// TODO: test against fake/test broker.
+	// Uninject removes the previously injected binding for consumption.
+	Uninject(*servicecatalog.Binding) error
 }

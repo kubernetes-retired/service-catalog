@@ -16,10 +16,6 @@ limitations under the License.
 
 package brokerapi
 
-import (
-	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
-)
-
 // BrokerClient defines the interface for interacting with a broker for catalog
 // retrieval, service instance management, and service binding management.
 type BrokerClient interface {
@@ -30,7 +26,7 @@ type BrokerClient interface {
 
 // CatalogClient defines the interface for catalog interaction with a broker.
 type CatalogClient interface {
-	GetCatalog() (*model.Catalog, error)
+	GetCatalog() (*Catalog, error)
 }
 
 // InstanceClient defines the interface for managing service instances with a
@@ -40,11 +36,11 @@ type InstanceClient interface {
 
 	// CreateServiceInstance creates a service instance in the respective broker.
 	// This method handles all asynchronous request handling.
-	CreateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error)
+	CreateServiceInstance(ID string, req *ServiceInstanceRequest) (*ServiceInstance, error)
 
 	// UpdateServiceInstance updates an existing service instance in the respective
 	// broker. This method handles all asynchronous request handling.
-	UpdateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error)
+	UpdateServiceInstance(ID string, req *ServiceInstanceRequest) (*ServiceInstance, error)
 
 	// DeleteServiceInstance deletes an existing service instance in the respective
 	// broker. This method handles all asynchronous request handling.
@@ -56,7 +52,7 @@ type InstanceClient interface {
 type BindingClient interface {
 	// CreateServiceBinding creates a service binding in the respective broker.
 	// This method handles all asynchronous request handling.
-	CreateServiceBinding(sID, bID string, req *model.BindingRequest) (*model.CreateServiceBindingResponse, error)
+	CreateServiceBinding(sID, bID string, req *BindingRequest) (*CreateServiceBindingResponse, error)
 
 	// DeleteServiceBinding deletes an existing service binding in the respective
 	// broker. This method handles all asynchronous request handling.

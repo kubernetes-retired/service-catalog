@@ -24,10 +24,9 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	model "github.com/kubernetes-incubator/service-catalog/model/service_broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/catalog/util"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
 )
 
 const (
@@ -54,7 +53,7 @@ func NewClient(b *servicecatalog.Broker) brokerapi.BrokerClient {
 	}
 }
 
-func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
+func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 	url := fmt.Sprintf(catalogFormatString, c.broker.Spec.URL)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -70,7 +69,7 @@ func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
 		return nil, err
 	}
 
-	var catalog model.Catalog
+	var catalog brokerapi.Catalog
 	if err = util.ResponseBodyToObject(resp, &catalog); err != nil {
 		glog.Errorf("Failed to unmarshal catalog: %#v", err)
 		return nil, err
@@ -79,7 +78,7 @@ func (c *openServiceBrokerClient) GetCatalog() (*model.Catalog, error) {
 	return &catalog, nil
 }
 
-func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
+func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.ServiceInstance, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -101,14 +100,14 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *model.Se
 	defer resp.Body.Close()
 
 	// TODO: Align this with the actual response model.
-	si := model.ServiceInstance{}
+	si := brokerapi.ServiceInstance{}
 	if err := util.ResponseBodyToObject(resp, &si); err != nil {
 		return nil, err
 	}
 	return &si, nil
 }
 
-func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *model.ServiceInstanceRequest) (*model.ServiceInstance, error) {
+func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.ServiceInstance, error) {
 	// TODO: https://github.com/kubernetes-incubator/service-catalog/issues/114
 	return nil, fmt.Errorf("Not implemented")
 }
@@ -134,7 +133,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string) error {
 	return nil
 }
 
-func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *model.BindingRequest) (*model.CreateServiceBindingResponse, error) {
+func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
 		glog.Errorf("Failed to marshal: %#v", err)
@@ -157,7 +156,7 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *mod
 	}
 	defer resp.Body.Close()
 
-	sbr := model.CreateServiceBindingResponse{}
+	sbr := brokerapi.CreateServiceBindingResponse{}
 	err = util.ResponseBodyToObject(resp, &sbr)
 	if err != nil {
 		glog.Errorf("Failed to unmarshal: %#v", err)
