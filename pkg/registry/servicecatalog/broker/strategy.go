@@ -27,7 +27,7 @@ import (
 )
 
 type brokerCreateStrategy struct {
-	runtime.ObjectTyper // ObjectKinds method for CreateStrategy
+	runtime.ObjectTyper // inherit ObjectKinds method
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
@@ -54,7 +54,7 @@ func (brokerCreateStrategy) Validate(ctx kapi.Context, obj runtime.Object) field
 }
 
 type brokerDeleteStrategy struct {
-	runtime.ObjectTyper // ObjectKinds method for DeleteStrategy
+	runtime.ObjectTyper // inherit ObjectKinds method
 }
 
 // Strategy implements the call backs for the generic store
@@ -64,7 +64,7 @@ var deleteStrategy = brokerDeleteStrategy{
 }
 
 type brokerUpdateStrategy struct {
-	runtime.ObjectTyper // ObjectKinds method for DeleteStrategy
+	runtime.ObjectTyper // inherit ObjectKinds method
 }
 
 // Strategy implements the call backs for the generic store
