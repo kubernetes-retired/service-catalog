@@ -62,3 +62,38 @@ var deleteStrategy = brokerDeleteStrategy{
 	// this has an interesting NOTE on it. Not sure if it applies to us.
 	kapi.Scheme,
 }
+
+type brokerUpdateStrategy struct {
+	runtime.ObjectTyper // ObjectKinds method for DeleteStrategy
+}
+
+// Strategy implements the call backs for the generic store
+var updateStrategy = brokerUpdateStrategy{
+	// this has an interesting NOTE on it. Not sure if it applies to us.
+	kapi.Scheme,
+}
+
+func (brokerUpdateStrategy) AllowCreateOnUpdate() bool {
+	return false
+}
+
+func (brokerUpdateStrategy) AllowUnconditionalUpdate() bool {
+	return false
+}
+
+func (brokerUpdateStrategy) Canonicalize(obj runtime.Object) {}
+
+// Are brokers namespace scoped?
+func (brokerUpdateStrategy) NamespaceScoped() bool {
+	return false
+}
+
+func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+	newBroker := new.(*servicecatalog.Broker)
+	oldBroker := old.(*servicecatalog.Broker)
+	newBroker.Status = oldBroker.Status
+}
+
+func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+	return validateBrokerUpdate(new.(*servicecatalog.Broker), old.(*servicecatalog.Broker))
+}

@@ -34,3 +34,8 @@ import (
 func validateBroker(apiServer *discoveryapi.Broker) field.ErrorList {
 	return nil
 }
+
+// validateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
+func validateBrokerUpdate(new *discoveryapi.Broker, old *discoveryapi.Broker) field.ErrorList {
+	return nil
+}
