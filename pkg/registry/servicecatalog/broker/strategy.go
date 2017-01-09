@@ -26,29 +26,39 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-type brokerStrategy struct {
+type brokerCreateStrategy struct {
 	runtime.ObjectTyper // ObjectKinds method for CreateStrategy
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
 // Strategy implements the call backs for the generic store
-var createStrategy = brokerStrategy{
+var createStrategy = brokerCreateStrategy{
 	// this has an interesting NOTE on it. Not sure if it applies to us.
 	kapi.Scheme,
 	kapi.SimpleNameGenerator,
 }
 
-func (brokerStrategy) Canonicalize(obj runtime.Object) {}
+func (brokerCreateStrategy) Canonicalize(obj runtime.Object) {}
 
 // Are brokers namespace scoped?
-func (brokerStrategy) NamespaceScoped() bool {
+func (brokerCreateStrategy) NamespaceScoped() bool {
 	return false
 }
 
-func (brokerStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
+func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	_ = obj.(*servicecatalog.Broker)
 }
 
-func (brokerStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
+func (brokerCreateStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
 	return validateBroker(obj.(*servicecatalog.Broker))
+}
+
+type brokerDeleteStrategy struct {
+	runtime.ObjectTyper // ObjectKinds method for DeleteStrategy
+}
+
+// Strategy implements the call backs for the generic store
+var deleteStrategy = brokerDeleteStrategy{
+	// this has an interesting NOTE on it. Not sure if it applies to us.
+	kapi.Scheme,
 }

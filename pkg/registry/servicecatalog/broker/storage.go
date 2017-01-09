@@ -89,6 +89,7 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		QualifiedResource: api.Resource("brokers"),
 
 		CreateStrategy: createStrategy,
+		DeleteStrategy: deleteStrategy,
 	}
 
 	return &store
