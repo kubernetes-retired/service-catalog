@@ -39,16 +39,9 @@ GO_BUILD       = go build -i -v -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
-ifneq ($(origin DOCKER),undefined)
-  # If DOCKER is defined then define the full docker cmd line we want to use
-  DOCKER_FLAG  = DOCKER=1
-  DOCKER_CMD   = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
-                 -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
-                 scbuildimage
-  # Setting scBuildImageTarget will force the Docker image to be built
-  # in the .init rule
-  scBuildImageTarget=.scBuildImage
-endif
+DOCKER_CMD = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
+             -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
+             scbuildimage
 
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
@@ -111,7 +104,7 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 
 # Some prereq stuff
 ###################
-.init: $(scBuildImageTarget) glide.yaml
+.init: .scBuildImage glide.yaml
 	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
 
@@ -162,12 +155,10 @@ test: .init
 	done
 
 build-darwin:
-	SC_GOOS=darwin SC_GOARCH=amd64 BINDIR=bin/darwin_amd64 DOCKER=1 \
-	  $(MAKE) build
+	SC_GOOS=darwin SC_GOARCH=amd64 BINDIR=bin/darwin_amd64 $(MAKE) build
 
 build-linux:
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
-	  $(MAKE) build
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(MAKE) build
 
 clean:
 	rm -rf $(BINDIR)
@@ -181,7 +172,7 @@ clean:
 images: registry-image k8s-broker-image user-broker-image controller-image
 
 registry-image: contrib/registry/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 \
 	  $(MAKE) bin/linux_amd64/registry
 	cp contrib/registry/Dockerfile $(BINDIR)/linux_amd64/
 	cp contrib/registry/data/charts/*.json $(BINDIR)/linux_amd64/
@@ -189,21 +180,21 @@ registry-image: contrib/registry/Dockerfile
 	rm -f $(BINDIR)/linux_amd64/*.json
 
 k8s-broker-image: contrib/broker/k8s/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 \
 	  $(MAKE) bin/linux_amd64/k8s-broker
 	cp contrib/broker/k8s/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t k8s-broker:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/Dockerfile
 
 user-broker-image: contrib/broker/user_provided/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 \
 	  $(MAKE) bin/linux_amd64/user-broker
 	cp contrib/broker/user_provided/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t user-broker:$(VERSION) $(BINDIR)/linux_amd64
 	rm -f $(BINDIR)/linux_amd64/Dockerfile
 
 controller-image: pkg/controller/catalog/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
+	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 \
 	  $(MAKE) bin/linux_amd64/controller
 	cp pkg/controller/catalog/Dockerfile $(BINDIR)/linux_amd64/
 	docker build -t controller:$(VERSION) $(BINDIR)/linux_amd64
@@ -220,7 +211,7 @@ registry-push: registry-image
 
 k8s-broker-push: k8s-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION) 
+	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION)
 	docker push $(REGISTRY)/k8s-broker:$(VERSION)
 
 user-broker-push: user-broker-image
@@ -230,5 +221,5 @@ user-broker-push: user-broker-image
 
 controller-push: controller-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION) 
+	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION)
 	docker push $(REGISTRY)/controller:$(VERSION)
