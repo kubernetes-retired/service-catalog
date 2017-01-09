@@ -35,16 +35,15 @@ NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION     = 1.7.3
-GO_BUILD       = go build -i -v -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
+GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i -v \
+                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
 ifneq ($(origin DOCKER),undefined)
   # If DOCKER is defined then define the full docker cmd line we want to use
   DOCKER_FLAG  = DOCKER=1
-  DOCKER_CMD   = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
-                 -e GOOS=$$SC_GOOS -e GOARCH=$$SC_GOARCH \
-                 scbuildimage
+  DOCKER_CMD   = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) scbuildimage
   # Setting scBuildImageTarget will force the Docker image to be built
   # in the .init rule
   scBuildImageTarget=.scBuildImage
@@ -161,14 +160,6 @@ test: .init
 	  $(DOCKER_CMD) go test $$i || exit $$? ; \
 	done
 
-build-darwin:
-	SC_GOOS=darwin SC_GOARCH=amd64 BINDIR=bin/darwin_amd64 DOCKER=1 \
-	  $(MAKE) build
-
-build-linux:
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 DOCKER=1 \
-	  $(MAKE) build
-
 clean:
 	rm -rf $(BINDIR)
 	rm -f .init .scBuildImage .generate_files .generate_exes
@@ -180,34 +171,27 @@ clean:
 ############################################
 images: registry-image k8s-broker-image user-broker-image controller-image
 
-registry-image: contrib/registry/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
-	  $(MAKE) bin/linux_amd64/registry
-	cp contrib/registry/Dockerfile $(BINDIR)/linux_amd64/
-	cp contrib/registry/data/charts/*.json $(BINDIR)/linux_amd64/
-	docker build -t registry:$(VERSION) $(BINDIR)/linux_amd64
-	rm -f $(BINDIR)/linux_amd64/*.json
+registry-image: contrib/registry/Dockerfile $(BINDIR)/registry
+	cp contrib/registry/Dockerfile $(BINDIR)
+	cp contrib/registry/data/charts/*.json $(BINDIR)
+	docker build -t registry:$(VERSION) $(BINDIR)
+	rm -f $(BINDIR)/Dockerfile
+	rm -f $(BINDIR)/*.json
 
-k8s-broker-image: contrib/broker/k8s/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
-	  $(MAKE) bin/linux_amd64/k8s-broker
-	cp contrib/broker/k8s/Dockerfile $(BINDIR)/linux_amd64/
-	docker build -t k8s-broker:$(VERSION) $(BINDIR)/linux_amd64
-	rm -f $(BINDIR)/linux_amd64/Dockerfile
+k8s-broker-image: contrib/broker/k8s/Dockerfile $(BINDIR)/k8s-broker
+	cp contrib/broker/k8s/Dockerfile $(BINDIR)
+	docker build -t k8s-broker:$(VERSION) $(BINDIR)
+	rm -f $(BINDIR)/Dockerfile
 
-user-broker-image: contrib/broker/user_provided/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
-	  $(MAKE) bin/linux_amd64/user-broker
-	cp contrib/broker/user_provided/Dockerfile $(BINDIR)/linux_amd64/
-	docker build -t user-broker:$(VERSION) $(BINDIR)/linux_amd64
-	rm -f $(BINDIR)/linux_amd64/Dockerfile
+user-broker-image: contrib/broker/user_provided/Dockerfile $(BINDIR)/user-broker
+	cp contrib/broker/user_provided/Dockerfile $(BINDIR)
+	docker build -t user-broker:$(VERSION) $(BINDIR)
+	rm -f $(BINDIR)/Dockerfile
 
-controller-image: pkg/controller/catalog/Dockerfile
-	SC_GOOS=linux SC_GOARCH=amd64 BINDIR=bin/linux_amd64 $(DOCKER_FLAG) \
-	  $(MAKE) bin/linux_amd64/controller
-	cp pkg/controller/catalog/Dockerfile $(BINDIR)/linux_amd64/
-	docker build -t controller:$(VERSION) $(BINDIR)/linux_amd64
-	rm -f $(BINDIR)/linux_amd64/Dockerfile
+controller-image: pkg/controller/catalog/Dockerfile $(BINDIR)/controller
+	cp pkg/controller/catalog/Dockerfile $(BINDIR)
+	docker build -t controller:$(VERSION) $(BINDIR)
+	rm -f $(BINDIR)/Dockerfile
 
 # Push our Docker Images to a registry
 ######################################
@@ -220,7 +204,7 @@ registry-push: registry-image
 
 k8s-broker-push: k8s-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION) 
+	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION)
 	docker push $(REGISTRY)/k8s-broker:$(VERSION)
 
 user-broker-push: user-broker-image
@@ -230,5 +214,5 @@ user-broker-push: user-broker-image
 
 controller-push: controller-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION) 
+	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION)
 	docker push $(REGISTRY)/controller:$(VERSION)

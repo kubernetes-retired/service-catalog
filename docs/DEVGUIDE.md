@@ -23,6 +23,10 @@ If you want to build without Docker, then you will also need:
 Additionally, if you intend to push Docker images to a registry:
 * Must be pre-authenticated to the Docker registry you intend to use
 
+**Note:** It is not generally useful to run service catalog components outside
+a Kubernetes cluster. As such, our build processes only support compilation of
+linux/amd64 binaries suitable for execution within a Docker container.
+
 ## Cloning the Repo
 
 The Service Catalog github repository can be found
@@ -64,11 +68,7 @@ To deploy to Kubernetes, see the
 * While many people have utilities, such as editor hooks, that auto-format
   their go source files with `gofmt`, there is a Makefile target called
   `format` which can be used to do this task for you.
-* The `build-darwin` and `build-linux` Makefile targets can be used to
-  build those respective platform specific executables. The output binaries
-  are placed in the `bin/darwin_amd64` or `bin/linux_amd64` directories.
-  By default, `make build` will build the current system's os/arch's
-  binaries.
+* `make build` will build binaries for linux/amd64 only.
 
 ## Testing
 
@@ -242,4 +242,3 @@ service.
 
     kubectl create -f contrib/examples/walkthrough/frontend.yaml
     kubectl create -f contrib/examples/walkthrough/binding.yaml
-
