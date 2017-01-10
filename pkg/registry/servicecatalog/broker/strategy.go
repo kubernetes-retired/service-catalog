@@ -26,6 +26,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
+/* Begin Create Definition */
+
 type brokerCreateStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
@@ -53,6 +55,10 @@ func (brokerCreateStrategy) Validate(ctx kapi.Context, obj runtime.Object) field
 	return validateBroker(obj.(*servicecatalog.Broker))
 }
 
+/* End Create Definition */
+
+/* Begin Delete Definition */
+
 type brokerDeleteStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 }
@@ -66,6 +72,11 @@ var deleteStrategy = brokerDeleteStrategy{
 type brokerUpdateStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 }
+
+// There is no implementation code for Delete.
+/* End Delete Definition */
+
+/* Begin Update Definition */
 
 // Strategy implements the call backs for the generic store
 var updateStrategy = brokerUpdateStrategy{
@@ -97,3 +108,5 @@ func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	return validateBrokerUpdate(new.(*servicecatalog.Broker), old.(*servicecatalog.Broker))
 }
+
+/* End Update Definition */
