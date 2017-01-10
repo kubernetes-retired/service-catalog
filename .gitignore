@@ -18,3 +18,4 @@ coverage.html
 .envrc
 build/*/tmp/*
 contrib/build/*/tmp/*
+.helm
