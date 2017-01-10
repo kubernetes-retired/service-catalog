@@ -113,11 +113,7 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage \
-	    --build-arg UID=$(shell id -u) \
-	    --build-arg GID=$(shell id -g) \
-	    --build-arg USER=$(USER) \
-	    -
+	  docker build -t scbuildimage -
 	touch $@
 
 # Util targets
@@ -168,27 +164,30 @@ clean:
 ############################################
 images: registry-image k8s-broker-image user-broker-image controller-image
 
-registry-image: contrib/cmd/registry/Dockerfile $(BINDIR)/registry
-	cp contrib/cmd/registry/Dockerfile $(BINDIR)
-	cp contrib/pkg/registry/data/charts/*.json $(BINDIR)
-	docker build -t registry:$(VERSION) $(BINDIR)
-	rm -f $(BINDIR)/Dockerfile
-	rm -f $(BINDIR)/*.json
+registry-image: contrib/build/registry/Dockerfile $(BINDIR)/registry
+	mkdir -p contrib/build/registry/tmp
+	cp $(BINDIR)/registry contrib/build/registry/tmp
+	cp contrib/pkg/registry/data/charts/*.json contrib/build/registry/tmp
+	docker build -t registry:$(VERSION) contrib/build/registry
+	rm -rf contrib/build/registry/tmp
 
-k8s-broker-image: contrib/cmd/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
-	cp contrib/cmd/k8s-broker/Dockerfile $(BINDIR)
-	docker build -t k8s-broker:$(VERSION) $(BINDIR)
-	rm -f $(BINDIR)/Dockerfile
+k8s-broker-image: contrib/build/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
+	mkdir -p contrib/build/k8s-broker/tmp
+	cp $(BINDIR)/k8s-broker contrib/build/k8s-broker/tmp
+	docker build -t k8s-broker:$(VERSION) contrib/build/k8s-broker
+	rm -rf contrib/build/k8s-broker/tmp
 
-user-broker-image: contrib/cmd/user-broker/Dockerfile $(BINDIR)/user-broker
-	cp contrib/cmd/user-broker/Dockerfile $(BINDIR)
-	docker build -t user-broker:$(VERSION) $(BINDIR)
-	rm -f $(BINDIR)/Dockerfile
+user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
+	mkdir -p contrib/build/user-broker/tmp
+	cp $(BINDIR)/user-broker contrib/build/user-broker/tmp
+	docker build -t user-broker:$(VERSION) contrib/build/user-broker
+	rm -rf contrib/build/user-broker/tmp
 
-controller-image: cmd/controller/Dockerfile $(BINDIR)/controller
-	cp cmd/controller/Dockerfile $(BINDIR)
-	docker build -t controller:$(VERSION) $(BINDIR)
-	rm -f $(BINDIR)/Dockerfile
+controller-image: build/controller/Dockerfile $(BINDIR)/controller
+	mkdir -p build/controller/tmp
+	cp $(BINDIR)/controller build/controller/tmp
+	docker build -t controller:$(VERSION) build/controller
+	rm -rf build/controller/tmp
 
 # Push our Docker Images to a registry
 ######################################

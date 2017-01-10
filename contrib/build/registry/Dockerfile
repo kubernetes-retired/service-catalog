@@ -14,6 +14,6 @@
 
 FROM debian
 
-ADD controller /opt/services/
+ADD tmp/registry tmp/definitions.json /opt/services/
 
-ENTRYPOINT ["/opt/services/controller", "--kubeconfig", ""]
+ENTRYPOINT ["/opt/services/registry", "--definitions", "/opt/services/definitions.json"]

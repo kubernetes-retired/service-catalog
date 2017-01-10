@@ -16,3 +16,5 @@ coverage.html
 .generate*
 **/zz*.go
 .envrc
+build/*/tmp/*
+contrib/build/*/tmp/*
