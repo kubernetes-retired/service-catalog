@@ -7,21 +7,26 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+// Client implements a fake broker API client, useful for unit testing. None of the methods on
+// the client are concurrency-safe
 type Client struct {
 	CatalogClient
 	InstanceClient
 	BindingClient
 }
 
+// CatalogClient implements a fake CF catalog API client
 type CatalogClient struct {
 	RetCatalog *brokerapi.Catalog
 	RetErr     error
 }
 
+// GetCatalog just returns c.RetCatalog and c.RetErr
 func (c *CatalogClient) GetCatalog() (*brokerapi.Catalog, error) {
 	return c.RetCatalog, c.RetErr
 }
 
+// InstanceClient implements a fake CF instance API client
 type InstanceClient struct {
 	Instances map[string]*brokerapi.ServiceInstance
 	CreateErr error
@@ -29,6 +34,9 @@ type InstanceClient struct {
 	DeleteErr error
 }
 
+// CreateServiceInstance returns i.CreateErr if non-nil. If it is nil, checks if id already exists
+// in i.Instances and returns ErrInstanceAlreadyExists if so. If not, converts req to a
+// ServiceInstance, adds it to i.Instances and returns it
 func (i *InstanceClient) CreateServiceInstance(
 	id string,
 	req *brokerapi.ServiceInstanceRequest,
@@ -42,9 +50,12 @@ func (i *InstanceClient) CreateServiceInstance(
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return inst, nil
+	return i.Instances[id], nil
 }
 
+// UpdateServiceInstance returns i.UpdateErr if it was non-nil. Otherwise, returns
+// ErrInstanceNotFound if id already exists in i.Instances. If it didn't exist, converts req into
+// a ServiceInstance, adds it to i.Instances and returns it
 func (i *InstanceClient) UpdateServiceInstance(
 	id string,
 	req *brokerapi.ServiceInstanceRequest,
@@ -58,9 +69,12 @@ func (i *InstanceClient) UpdateServiceInstance(
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return inst, nil
+	return i.Instances[id], nil
 }
 
+// DeleteServiceInstance returns i.DeleteErr if it was non-nil. Otherwise returns
+// ErrInstanceNotFound if id didn't already exist in i.Instances. If it it did already exist,
+// removes i.Instances[id] from the map and returns nil
 func (i *InstanceClient) DeleteServiceInstance(id string) error {
 
 	if i.DeleteErr != nil {
@@ -92,6 +106,7 @@ func convertInstanceRequest(req *brokerapi.ServiceInstanceRequest) *brokerapi.Se
 	}
 }
 
+// BindingClient implements a fake CF binding API client
 type BindingClient struct {
 	Bindings    map[string]struct{}
 	CreateCreds brokerapi.Credential
@@ -99,6 +114,10 @@ type BindingClient struct {
 	DeleteErr   error
 }
 
+// CreateServiceBinding returns b.CreateErr if it was non-nil. Otherwise, returns
+// ErrBindingAlreadyExists if the IDs already existed in b.Bindings. If they didn't already exist,
+// adds the IDs to b.Bindings and returns a new CreateServiceBindingResponse with b.CreateCreds in
+// it
 func (b *BindingClient) CreateServiceBinding(
 	sID,
 	bID string,
@@ -116,10 +135,18 @@ func (b *BindingClient) CreateServiceBinding(
 	return &brokerapi.CreateServiceBindingResponse{Credentials: b.CreateCreds}, nil
 }
 
+// DeleteServiceBinding returns b.DeleteErr if it was non-nil. Otherwise, if the binding associated
+// with the given IDs didn't exist, returns ErrBindingNotFound. If it did exist, removes it and
+// returns nil
 func (b *BindingClient) DeleteServiceBinding(sID, bID string) error {
 	if b.DeleteErr != nil {
 		return b.DeleteErr
 	}
+	if !b.exists(sID, bID) {
+		return ErrBindingNotFound
+	}
+
+	delete(b.Bindings, bindingsMapKey(sID, bID))
 	return nil
 }
 
