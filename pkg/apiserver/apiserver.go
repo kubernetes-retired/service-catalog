@@ -18,12 +18,15 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	//"k8s.io/kubernetes/pkg/api/rest"
+	"k8s.io/kubernetes/pkg/api/rest"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	"k8s.io/kubernetes/pkg/version"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 )
 
 // ServiceCatalogAPIServer contains base GenericAPIServer along with
@@ -83,12 +86,15 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 	// giving it v1alpha1 version
 	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
 
-	// TODO make storage work
-	//v1alpha1storage := map[string]rest.Storage{}
-	//
-	//v1alpha1storage["servicecatalog"] = apiservice.NewREST(c.RESTOptionsGetter.NewFor(apiregistration.Resource("servicecatalog")))
+	v1Alpha1Storage := map[string]rest.Storage{
+		"Broker":   broker.NewStorage(),
+		"Instance": instance.NewStorage(),
+		"Binding":  binding.NewStorage(),
+	}
 
-	//apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
+	apiGroupInfo.VersionedResourcesStorageMap = map[string]map[string]rest.Storage{
+		v1alpha1.SchemeGroupVersion.Version: v1Alpha1Storage,
+	}
 	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 		return nil, err
 	}
