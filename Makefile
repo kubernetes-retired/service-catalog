@@ -158,11 +158,17 @@ coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init
+test: test-unit test-e2e
+
+test-unit: .init
 	@echo Running tests:
 	@for i in $(addprefix $(SC_PKG)/,$(TEST_DIRS)); do \
 	  $(DOCKER_CMD) go test $$i || exit $$? ; \
 	done
+
+test-e2e: .init images
+	@echo Running e2e tests:
+	contrib/bin/walkthru
 
 clean:
 	rm -rf $(BINDIR)
