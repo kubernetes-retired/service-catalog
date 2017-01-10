@@ -107,9 +107,12 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 
 # Some prereq stuff
 ###################
-.init: $(scBuildImageTarget) glide.yaml
+.init: $(scBuildImageTarget) glide.yaml src vendor/src
 	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
+
+src vendor/src:
+	mkdir -p $@
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
