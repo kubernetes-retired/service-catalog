@@ -14,6 +14,6 @@
 
 FROM debian
 
-ADD user-broker /opt/services/user-broker
+ADD tmp/user-broker /opt/services/user-broker
 
 ENTRYPOINT ["/opt/services/user-broker"]
