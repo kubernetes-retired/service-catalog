@@ -2,5 +2,8 @@ language: generic
 sudo: required
 services:
 - docker
+cache:
+  directories:
+  - .glide
 script:
 - make build test verify images
