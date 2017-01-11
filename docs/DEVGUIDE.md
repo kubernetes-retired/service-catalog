@@ -1,5 +1,24 @@
 # Developer's Guide to Service-Catalog
 
+## Overview
+
+This repository is organized as similarly to Kubernetes itself as the developers
+have found possible (or practical). Below is a summary of the repository's
+layout:
+
+    .
+    ├── .glide         # Glide cache (untracked)
+    ├── bin            # Destination for binaries compiled for linux/amd64 (untracked)
+    ├── build          # Contains build-related scripts and subdirectories containing Dockerfiles
+    ├── cmd            # Contains "main" Go packages for each service catalog component binary
+    ├── contrib        # Contains all non-essential source
+    ├── deploy
+    │   └── catalog    # Helm chart for deploying service catalog
+    ├── docs           # Documentation
+    ├── hack           # Contains scripts useful for development
+    ├── pkg            # Contains all non-"main" Go packages
+    └── vendor         # Glide-managed dependencies (untracked)
+
 ## Prerequisites
 
 At a minimum you will need:
