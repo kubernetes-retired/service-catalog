@@ -56,11 +56,15 @@ type Handler interface {
 }
 
 type handler struct {
-	storage  storage.Storage
-	injector injector.BindingInjector
+	storage       storage.Storage
+	injector      injector.BindingInjector
+	newClientFunc func(*servicecatalog.Broker) brokerapi.BrokerClient
 }
 
-func createHandler(s storage.Storage) (*handler, error) {
+func createHandler(
+	s storage.Storage,
+	newClientFn func(*servicecatalog.Broker) brokerapi.BrokerClient,
+) (*handler, error) {
 	bi, err := injector.CreateK8sBindingInjector()
 	if err != nil {
 		return nil, err
@@ -84,7 +88,7 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 	if err != nil {
 		return err
 	}
-	client := openservicebroker.NewClient(broker)
+	client := h.newClientFunc(broker)
 
 	// Make the request to instantiate.
 	createReq := &brokerapi.ServiceInstanceRequest{
@@ -148,7 +152,7 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 	// Get instance information for service being bound to.
 	instance, err := h.storage.Instances(in.Spec.InstanceRef.Namespace).Get(in.Spec.InstanceRef.Name)
 	if err != nil {
-		glog.Errorf("Service inatance does not exist %v: %v", in.Spec.InstanceRef, err)
+		glog.Errorf("Service instance does not exist %v: %v", in.Spec.InstanceRef, err)
 		return nil, err
 	}
 
@@ -165,7 +169,7 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 		glog.Errorf("Error fetching broker for service: %s : %v", sc.BrokerName, err)
 		return nil, err
 	}
-	client := openservicebroker.NewClient(broker)
+	client := h.newClientFunc(broker)
 
 	// Assign UUID to binding.
 	in.Spec.OSBGUID = uuid.NewV4().String()
@@ -215,7 +219,7 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 }
 
 func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalog.Broker, error) {
-	client := openservicebroker.NewClient(in)
+	client := h.newClientFunc(in)
 	sbcat, err := client.GetCatalog()
 	if err != nil {
 		return nil, err
