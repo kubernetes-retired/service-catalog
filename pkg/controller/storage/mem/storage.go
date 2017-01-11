@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package storage
+package mem
 
 type memStorage struct {
 	brokers        *memStorageBroker
@@ -23,8 +23,8 @@ type memStorage struct {
 	bindings       map[string]*memStorageBinding
 }
 
-// CreateMemStorage creates an instance of Storage interface, backed by memory.
-func CreateMemStorage() Storage {
+// CreateStorage creates an instance of Storage interface, backed by memory.
+func CreateStorage() Storage {
 	return &memStorage{
 		brokers:        newMemStorageBroker(),
 		serviceClasses: newMemStorageServiceClass(),
