@@ -1,16 +1,6 @@
+language: generic
 sudo: required
 services:
-  - docker
-language: go
-go:
-  - 1.7.3
-go_import_path: github.com/kubernetes-incubator/service-catalog
-install:
-  - wget "https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz"
-  - mkdir -p $HOME/bin
-  - tar -vxz -C $HOME/bin --strip=1 -f glide-v0.12.3-linux-amd64.tar.gz
-  - export PATH="$HOME/bin:$PATH"
-  - go get -u github.com/golang/lint/golint
+- docker
 script:
-  - make build test verify images
-  - DOCKER=1 make clean build test verify images
+- make build test verify images

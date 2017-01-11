@@ -40,13 +40,12 @@ GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i -v \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
-ifneq ($(origin DOCKER),undefined)
-  # If DOCKER is defined then define the full docker cmd line we want to use
-  DOCKER_FLAG  = DOCKER=1
-  DOCKER_CMD   = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) scbuildimage
-  # Setting scBuildImageTarget will force the Docker image to be built
-  # in the .init rule
-  scBuildImageTarget=.scBuildImage
+ifeq ("$(NO_DOCKER)", "1")
+	DOCKER_CMD =
+	scBuildImageTarget =
+else
+	DOCKER_CMD = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) scbuildimage
+	scBuildImageTarget = .scBuildImage
 endif
 
 # This section builds the output binaries.
