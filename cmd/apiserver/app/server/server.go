@@ -17,24 +17,24 @@ limitations under the License.
 package server
 
 import (
+	"fmt"
 	"io"
 
+	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 
-	"github.com/golang/glog"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
-
-	//"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api"
 	//"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 )
 
 // ServiceCatalogServerOptions contains the aggregation of configuration structs for
 // the service-catalog server. The theory here is that any future user
 // of this server will be able to use this options object as a sub
-// options of it's own.
+// options of its own.
 type ServiceCatalogServerOptions struct {
 	// the runtime configuration of our server
 	GenericServerRunOptions *genericserveroptions.ServerRunOptions
@@ -52,10 +52,10 @@ const (
 	// I made this up to match some existing paths. I am not sure if there
 	// are any restrictions on the format or structure beyond text
 	// separated by slashes.
-	etcdPathPrefix = "/k8s.io/incubator/service-catalog"
+	etcdPathPrefix = "/k8s.io/service-catalog"
 
 	// GroupName I made this up. Maybe we'll need it.
-	GroupName = "service-catalog.incubator.k8s.io"
+	GroupName = "service-catalog.k8s.io"
 )
 
 // NewCommandServer creates a new cobra command to run our server.
@@ -69,17 +69,10 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 	}
 
-	// when our etcd resources are created, put them in a location
-	// specific to us
+	// Store resources in etcd under our special prefix
 	options.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
 
-	// I have no idea what this line does but I keep seeing it. Do
-	// we have our own `GroupName`? Is it like the pathPrefix for
-	// etcd?
-	//
-	// options.EtcdOptions.StorageConfig.Codec = api.Codecs.LegacyCodec(registered.EnabledVersionsForGroup(api.GroupName)...)
-
-	// this is the one thing that this program does. It runs the apiserver.
+	// Create the command that runs the API server
 	cmd := &cobra.Command{
 		Short: "run a service-catalog server",
 		Run: func(c *cobra.Command, args []string) {
@@ -88,7 +81,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	}
 
 	// We pass flags object to sub option structs to have them configure
-	// themselves. Each options adds it's own command line flags
+	// themselves. Each options adds its own command line flags
 	// in addition to the flags that are defined above.
 	flags := cmd.Flags()
 	// TODO consider an AddFlags() method on our options
@@ -105,16 +98,18 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	return cmd
 }
 
-// runServer is a method on the options for composition. allows embedding in a higher level options as we do the etcd and serving options.
+// runServer is a method on the options for composition. allows embedding in a
+// higher level options as we do the etcd and serving options.
 func (serverOptions ServiceCatalogServerOptions) runServer() error {
-	glog.Infoln("set up the server")
+	glog.V(4).Infoln("Preparing to run API server")
 	// options
 	// runtime options
 	if err := serverOptions.GenericServerRunOptions.DefaultExternalAddress(serverOptions.SecureServingOptions, nil); err != nil {
 		return err
 	}
+
 	// server configuration options
-	glog.Infoln("set up serving options")
+	glog.V(4).Infoln("Setting up secure serving options")
 	if err := serverOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(serverOptions.GenericServerRunOptions.AdvertiseAddress.String()); err != nil {
 		glog.Errorf("Error creating self-signed certificates: %v", err)
 		return err
@@ -122,12 +117,12 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 
 	// etcd options
 	if errs := serverOptions.EtcdOptions.Validate(); len(errs) > 0 {
-		glog.Errorln("set up etcd options, do you have `--etcd-servers localhost` set?")
+		glog.Errorln("Error validating etcd options, do you have `--etcd-servers localhost` set?")
 		return errs[0]
 	}
 
 	// config
-	glog.Infoln("set up config object")
+	glog.V(4).Infoln("Configuring generic API server")
 	genericconfig := genericapiserver.NewConfig().ApplyOptions(serverOptions.GenericServerRunOptions)
 	// these are all mutators of each specific suboption in serverOptions object.
 	// this repeated pattern seems like we could refactor
@@ -136,6 +131,7 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 		return err
 	}
 
+	glog.V(4).Info("Setting up authn (disabled)")
 	// need to figure out what's throwing the `missing clientCA file` err
 	/*
 		if _, err := genericconfig.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
@@ -143,6 +139,8 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 			return err
 		}
 	*/
+
+	glog.V(4).Infoln("Setting up authz (disabled)")
 	// having this enabled causes the server to crash for any call
 	/*
 		if _, err := genericconfig.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
@@ -151,42 +149,57 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 		}
 	*/
 
-	// configure our own apiserver using the preconfigured genericApiServer
-	config := apiserver.Config{
-		GenericConfig: genericconfig,
+	glog.V(4).Infoln("Creating storage factory")
+	// The API server stores objects using a particular API version for each
+	// group, regardless of API version of the object when it was created.
+	//
+	// storageGroupsToEncodingVersion holds a map of API group to version that
+	// the API server uses to store that group.
+	storageGroupsToEncodingVersion, err := serverOptions.GenericServerRunOptions.StorageGroupsToEncodingVersion()
+	if err != nil {
+		return fmt.Errorf("error generating storage version map: %s", err)
 	}
 
-	// finish config
+	// Build the default storage factory.
+	//
+	// The default storage factory returns the storage interface for a
+	// particular GroupResource (an (api-group, resource) tuple).
+	storageFactory, err := genericapiserver.BuildDefaultStorageFactory(
+		serverOptions.EtcdOptions.StorageConfig,
+		serverOptions.GenericServerRunOptions.DefaultStorageMediaType,
+		api.Codecs,
+		genericapiserver.NewDefaultResourceEncodingConfig(),
+		storageGroupsToEncodingVersion,
+		nil, /* group storage version overrides */
+		apiserver.DefaultAPIResourceConfigSource(),
+		serverOptions.GenericServerRunOptions.RuntimeConfig)
+	if err != nil {
+		glog.Errorf("error creating storage factory: %v", err)
+		return err
+	}
+
+	// Set the finalized generic and storage configs
+	config := apiserver.Config{
+		GenericConfig:  genericconfig,
+		StorageFactory: storageFactory,
+	}
+
+	// Fill in defaults not already set in the config
 	completedconfig := config.Complete()
 
 	// make the server
-	glog.Infoln("make the server")
+	glog.V(4).Infoln("Completing API server configuration")
 	server, err := completedconfig.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("error completing API server configuration: %v", err)
 	}
 
 	// I don't like this. We're reaching in too far to call things.
 	preparedserver := server.GenericAPIServer.PrepareRun() // post api installation setup? We should have set up the api already?
 
 	stop := make(chan struct{})
-	glog.Infoln("run the server")
+	glog.Infoln("Running the API server")
 	preparedserver.Run(stop)
+
 	return nil
 }
-
-/*
-type restOptionsFactory struct {
-	storageConfig *storagebackend.Config
-}
-*/
-/*
-func (f restOptionsFactory) NewFor(resource schema.GroupResource) generic.RESTOptions {
-	return generic.RESTOptions{
-		StorageConfig:           f.storageConfig,
-		Decorator:               registry.StorageWithCacher,
-		DeleteCollectionWorkers: 1,
-		EnableGarbageCollection: false,
-		ResourcePrefix:          f.storageConfig.Prefix + "/" + resource.Group + "/" + resource.Resource,
-	}
-}*/
