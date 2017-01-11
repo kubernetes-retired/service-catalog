@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package storage
+package mem
+
+import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
+)
 
 type memStorage struct {
 	brokers        *memStorageBroker
@@ -23,8 +27,8 @@ type memStorage struct {
 	bindings       map[string]*memStorageBinding
 }
 
-// CreateMemStorage creates an instance of Storage interface, backed by memory.
-func CreateMemStorage() Storage {
+// NewStorage creates an instance of Storage interface, backed by memory.
+func NewStorage() storage.Storage {
 	return &memStorage{
 		brokers:        newMemStorageBroker(),
 		serviceClasses: newMemStorageServiceClass(),
@@ -33,15 +37,15 @@ func CreateMemStorage() Storage {
 	}
 }
 
-func (m *memStorage) Brokers() BrokerStorage {
+func (m *memStorage) Brokers() storage.BrokerStorage {
 	return m.brokers
 }
 
-func (m *memStorage) ServiceClasses() ServiceClassStorage {
+func (m *memStorage) ServiceClasses() storage.ServiceClassStorage {
 	return m.serviceClasses
 }
 
-func (m *memStorage) Instances(ns string) InstanceStorage {
+func (m *memStorage) Instances(ns string) storage.InstanceStorage {
 	ret, ok := m.instances[ns]
 	if !ok {
 		ret = newMemStorageInstance()
@@ -50,7 +54,7 @@ func (m *memStorage) Instances(ns string) InstanceStorage {
 	return ret
 }
 
-func (m *memStorage) Bindings(ns string) BindingStorage {
+func (m *memStorage) Bindings(ns string) storage.BindingStorage {
 	ret, ok := m.bindings[ns]
 	if !ok {
 		ret = newMemStorageBinding()

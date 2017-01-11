@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package storage
+package tpr
 
 import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
 	// Need this for gcp auth
 	_ "k8s.io/client-go/1.5/kubernetes"
@@ -26,26 +27,26 @@ type tprStorage struct {
 	watcher *watch.Watcher
 }
 
-// CreateTPRStorage creates an instance of Storage backed by Kubernetes
+// NewStorage creates an instance of Storage backed by Kubernetes
 // third-party resources.
-func CreateTPRStorage(w *watch.Watcher) Storage {
+func NewStorage(w *watch.Watcher) storage.Storage {
 	return &tprStorage{
 		watcher: w,
 	}
 }
 
-func (t *tprStorage) Brokers() BrokerStorage {
+func (t *tprStorage) Brokers() storage.BrokerStorage {
 	return newTPRStorageBroker(t.watcher)
 }
 
-func (t *tprStorage) ServiceClasses() ServiceClassStorage {
+func (t *tprStorage) ServiceClasses() storage.ServiceClassStorage {
 	return newTPRStorageServiceClass(t.watcher)
 }
 
-func (t *tprStorage) Instances(ns string) InstanceStorage {
+func (t *tprStorage) Instances(ns string) storage.InstanceStorage {
 	return newTPRStorageInstance(t.watcher, ns)
 }
 
-func (t *tprStorage) Bindings(ns string) BindingStorage {
+func (t *tprStorage) Bindings(ns string) storage.BindingStorage {
 	return newTPRStorageBinding(t.watcher, ns)
 }
