@@ -34,20 +34,10 @@ endif
 NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION     = 1.7.3
 GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i -v \
                    -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
-
-ifneq ($(origin DOCKER),undefined)
-  # If DOCKER is defined then define the full docker cmd line we want to use
-  DOCKER_FLAG  = DOCKER=1
-  DOCKER_CMD   = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) scbuildimage
-  # Setting scBuildImageTarget will force the Docker image to be built
-  # in the .init rule
-  scBuildImageTarget=.scBuildImage
-endif
 
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
@@ -111,11 +101,6 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
 
-.scBuildImage: build/build-image/Dockerfile
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage -
-	touch $@
-
 # Util targets
 ##############
 verify: .init .generate_files
@@ -158,7 +143,6 @@ clean:
 	rm -f .init .scBuildImage .generate_files .generate_exes
 	rm -f $(COVERAGE)
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
-	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
 # Building Docker Images for our executables
 ############################################
