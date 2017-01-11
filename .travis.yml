@@ -13,4 +13,5 @@ install:
   - go get -u github.com/golang/lint/golint
 script:
   - make build test verify images
-  - DOCKER=1 make clean build test verify images
+  - DOCKER=1 make clean build test verify
+  - make images

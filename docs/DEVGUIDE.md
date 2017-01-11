@@ -45,7 +45,7 @@ To clone the repository:
 First `cd` to the root of the cloned repository tree.
 To build the service-catalog you have two options:
 * `make build`
-* `DOCKER=1 make build`
+* `build/run.sh make build`
 
 Both will build all of the executables, into the `bin` directory. However,
 the second option will do the build within a Docker container - meaning you
@@ -74,13 +74,13 @@ To deploy to Kubernetes, see the
 
 Currently, we only have unit testcases within this repo:
 * `make test`
-* `DOCKER=1 make test`
+* `build/run.sh make test`
 
 These will execute any `*_test.go` files within the source tree.
 
 To see how well these tests cover the source code, you can use:
 * `make coverage`
-* `DOCKER=1 make coverage`
+* `build/run.sh make coverage`
 
 These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
