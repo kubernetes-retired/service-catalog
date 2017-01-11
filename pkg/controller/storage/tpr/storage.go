@@ -27,9 +27,9 @@ type tprStorage struct {
 	watcher *watch.Watcher
 }
 
-// CreateStorage creates an instance of Storage backed by Kubernetes
+// NewStorage creates an instance of Storage backed by Kubernetes
 // third-party resources.
-func CreateStorage(w *watch.Watcher) storage.Storage {
+func NewStorage(w *watch.Watcher) storage.Storage {
 	return &tprStorage{
 		watcher: w,
 	}

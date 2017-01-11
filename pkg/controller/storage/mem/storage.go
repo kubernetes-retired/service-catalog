@@ -27,8 +27,8 @@ type memStorage struct {
 	bindings       map[string]*memStorageBinding
 }
 
-// CreateStorage creates an instance of Storage interface, backed by memory.
-func CreateStorage() storage.Storage {
+// NewStorage creates an instance of Storage interface, backed by memory.
+func NewStorage() storage.Storage {
 	return &memStorage{
 		brokers:        newMemStorageBroker(),
 		serviceClasses: newMemStorageServiceClass(),
