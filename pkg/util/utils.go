@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +30,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// WriteResponse will serialize 'object' to the HTTP RespsonseWriter
+// SendRequest will serialize 'object' and send it using the given method to
+// the given URL, through the provided client
+func SendRequest(c *http.Client, method string, url string, object interface{}) (*http.Response, error) {
+	data, err := json.Marshal(object)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal request: %s", err.Error())
+	}
+
+	req, err := http.NewRequest(method, url, bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to send request: %s", err.Error())
+	}
+
+	return resp, nil
+}
+
+// WriteResponse will serialize 'object' to the HTTP ResponseWriter
 // using the 'code' as the HTTP status code
 func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
 	data, err := json.Marshal(object)
