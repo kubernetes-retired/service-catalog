@@ -33,6 +33,7 @@ The Service Catalog github repository can be found
 [here](https://github.com/kubernetes-incubator/service-catalog.git).
 
 To clone the repository:
+
     # If you have Go installed and want to build w/o Docker, first:
     mkdir -p $GOPATH/src/github.com/kubernetes-incubator
     cd $GOPATH/src/github.com/kubernetes-incubator
