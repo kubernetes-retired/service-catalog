@@ -16,6 +16,10 @@ limitations under the License.
 
 package mem
 
+import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
+)
+
 type memStorage struct {
 	brokers        *memStorageBroker
 	serviceClasses *memStorageServiceClass
@@ -24,7 +28,7 @@ type memStorage struct {
 }
 
 // CreateStorage creates an instance of Storage interface, backed by memory.
-func CreateStorage() Storage {
+func CreateStorage() storage.Storage {
 	return &memStorage{
 		brokers:        newMemStorageBroker(),
 		serviceClasses: newMemStorageServiceClass(),
@@ -33,15 +37,15 @@ func CreateStorage() Storage {
 	}
 }
 
-func (m *memStorage) Brokers() BrokerStorage {
+func (m *memStorage) Brokers() storage.BrokerStorage {
 	return m.brokers
 }
 
-func (m *memStorage) ServiceClasses() ServiceClassStorage {
+func (m *memStorage) ServiceClasses() storage.ServiceClassStorage {
 	return m.serviceClasses
 }
 
-func (m *memStorage) Instances(ns string) InstanceStorage {
+func (m *memStorage) Instances(ns string) storage.InstanceStorage {
 	ret, ok := m.instances[ns]
 	if !ok {
 		ret = newMemStorageInstance()
@@ -50,7 +54,7 @@ func (m *memStorage) Instances(ns string) InstanceStorage {
 	return ret
 }
 
-func (m *memStorage) Bindings(ns string) BindingStorage {
+func (m *memStorage) Bindings(ns string) storage.BindingStorage {
 	ret, ok := m.bindings[ns]
 	if !ok {
 		ret = newMemStorageBinding()
