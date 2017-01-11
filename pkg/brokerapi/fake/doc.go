@@ -14,6 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package fake contains fake implementations of each of the CF broker API clients. They are
+// Package fake contains fake implementations of each of the CF broker APIs. They are
 // all basic, in-memory implementations and are intended to be used in unit tests only
 package fake
