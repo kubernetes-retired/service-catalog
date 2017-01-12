@@ -17,6 +17,7 @@ limitations under the License.
 package mem
 
 import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
 )
 
@@ -32,6 +33,24 @@ func NewStorage() storage.Storage {
 	return &memStorage{
 		brokers:        newMemStorageBroker(),
 		serviceClasses: newMemStorageServiceClass(),
+		instances:      make(map[string]*memStorageInstance),
+		bindings:       make(map[string]*memStorageBinding),
+	}
+}
+
+// NewPopulatedStorage is the equivalent of NewStorage, except pre-populataes the returned
+// in-memory storage instance with brokers and service classes
+func NewPopulatedStorage(
+	brokers map[string]*servicecatalog.Broker,
+	serviceClasses map[string]*servicecatalog.ServiceClass,
+) storage.Storage {
+	brokerStorage := newMemStorageBroker()
+	brokerStorage.brokers = brokers
+	serviceClassStorage := newMemStorageServiceClass()
+	serviceClassStorage.classes = serviceClasses
+	return &memStorage{
+		brokers:        brokerStorage,
+		serviceClasses: serviceClassStorage,
 		instances:      make(map[string]*memStorageInstance),
 		bindings:       make(map[string]*memStorageBinding),
 	}
