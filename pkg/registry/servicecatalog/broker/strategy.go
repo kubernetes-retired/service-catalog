@@ -44,7 +44,7 @@ var createStrategy = brokerCreateStrategy{
 	NameGenerator: kapi.SimpleNameGenerator,
 }
 
-// Canonicalize is called after validate, what happens if it creates
+// Canonicalize is called after validate. What happens if it creates
 // an object to persist that does not pass validate? (I think the
 // answer is "don't do that"). Frequently is an empty method or a type
 // check. May mutate the object.
@@ -57,13 +57,12 @@ func (brokerCreateStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate recieves
 func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
-	// coerce to our specific object type. (Should we typecheck?)
+	// coerce to our specific object type. (Should we type check?)
 	broker := obj.(*sc.Broker)
 	// Is there anything to pull out of the context `ctx`?
 
-	// *Must* we initialize all the subobjects here? Is there
-	// anywhere else appropriate this could be done?
-	// Set to "creating?"
+	// Creating a brand new object, thus it must have no status.
+	// Set to "creating" ?
 	broker.Status = sc.BrokerStatus{}
 	broker.Status.Conditions = []sc.BrokerCondition{}
 }
