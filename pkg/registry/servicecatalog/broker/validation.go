@@ -20,25 +20,52 @@ package broker
 
 import (
 	// commented out until we use the base validation utilities
+
 	apivalidation "k8s.io/kubernetes/pkg/api/validation"
 	// "k8s.io/kubernetes/pkg/api/validation/path"
 	// utilvalidation "k8s.io/kubernetes/pkg/util/validation"
 	"k8s.io/kubernetes/pkg/util/validation/field"
 
-	discoveryapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 // assuming a nil non-error is ok. not okay, should be empty struct `field.ErrorList{}`
 
 // validateBroker makes sure a broker object is okay?
-func validateBroker(broker *discoveryapi.Broker) field.ErrorList {
+func validateBroker(broker *sc.Broker) field.ErrorList {
 	allErrs := apivalidation.ValidateObjectMeta(&broker.ObjectMeta, false, /*namespace*/
 		apivalidation.ValidateReplicationControllerName, // our custom name validator?
 		field.NewPath("metadata"))
+	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("spec"))...)
+	return allErrs
+}
+
+func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	/* This is what is in the broker spec.
+
+	URL string
+	AuthUsername string
+	AuthPassword string
+	OSBGUID string
+	*/
+
+	if "" == spec.URL {
+		allErrs = append(allErrs,
+			field.Required(fldPath.Child("url"),
+				"brokers must have a remote url to contact"))
+	}
+	if "" == spec.AuthUsername {
+	}
+	if "" == spec.AuthPassword {
+	}
+	if "" == spec.OSBGUID {
+	}
 	return allErrs
 }
 
 // validateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
-func validateBrokerUpdate(new *discoveryapi.Broker, old *discoveryapi.Broker) field.ErrorList {
+func validateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
 	return field.ErrorList{}
 }
