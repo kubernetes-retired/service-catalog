@@ -18,7 +18,8 @@ FROM golang:GO_VERSION
 RUN printf "[trusted]\nusers = *\n" > /root/.hgrc
 
 # Install glide as root
-ENV GLIDE_VERSION=v0.12.3
+ENV GLIDE_VERSION=v0.12.3 \
+    GLIDE_HOME=/go/src/github.com/kubernetes-incubator/service-catalog/.glide
 RUN curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz \
     | tar -vxz -C /usr/local/bin --strip=1
 
