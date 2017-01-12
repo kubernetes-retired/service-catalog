@@ -16,7 +16,7 @@
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load bash utilities.'; exit 1; }
+. "${ROOT}/build/utilities.sh" || { echo 'Cannot load bash utilities.'; exit 1; }
 
 GO_VERSION='1.7.3'
 HELM_VERSION='v2.0.0'

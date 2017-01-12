@@ -143,7 +143,7 @@ format: .init
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
 
 coverage: .init
-	$(DOCKER_CMD) hack/coverage.sh --html "$(COVERAGE)" \
+	$(DOCKER_CMD) build/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
 test: .init

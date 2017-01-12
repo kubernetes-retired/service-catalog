@@ -55,28 +55,28 @@ node {
 
     try {
       // Initialize build, for example, updating installed software.
-      sh """${env.ROOT}/hack/jenkins/init_build.sh"""
+      sh """${env.ROOT}/build/jenkins/init_build.sh"""
 
       // These are done in parallel since creating the cluster takes a while,
       // and the build doesn't depend on it.
       parallel(
         'Cluster': {
           withCredentials([file(credentialsId: "${test_account}", variable: 'TEST_SERVICE_ACCOUNT')]) {
-            sh """${env.ROOT}/hack/init_cluster.sh ${clustername} \
+            sh """${env.ROOT}/build/init_cluster.sh ${clustername} \
                   --project ${test_project} \
                   --zone ${test_zone} \
                   --credentials ${env.TEST_SERVICE_ACCOUNT}"""
           }
         },
         'Build': {
-          sh """${env.ROOT}/hack/build.sh --no-docker-compile \
+          sh """${env.ROOT}/build/build.sh --no-docker-compile \
                 --project ${test_project} \
                 --coverage '${env.WORKSPACE}/coverage.html'"""
         }
       )
 
       // Run end-2-end tests on the deployed cluster.
-      sh """${env.ROOT}/hack/test_deploy.sh \
+      sh """${env.ROOT}/build/test_deploy.sh \
             --project ${test_project} \
             --namespace ${namespace}
       """
@@ -84,7 +84,7 @@ node {
       currentBuild.result = 'FAILURE'
     } finally {
       try {
-        sh """${env.ROOT}/hack/cleanup_cluster.sh ${clustername} \
+        sh """${env.ROOT}/build/cleanup_cluster.sh ${clustername} \
               --project ${test_project} \
               --zone ${test_zone}"""
       } catch (Exception e) {
