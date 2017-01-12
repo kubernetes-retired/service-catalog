@@ -15,7 +15,6 @@ layout:
     ├── deploy
     │   └── catalog    # Helm chart for deploying service catalog
     ├── docs           # Documentation
-    ├── hack           # Contains scripts useful for development
     ├── pkg            # Contains all non-"main" Go packages
     └── vendor         # Glide-managed dependencies (untracked)
 
