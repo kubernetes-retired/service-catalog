@@ -60,7 +60,6 @@ func CreateK8sBindingInjector() (BindingInjector, error) {
 
 func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
 	is := makeInjectionSet(binding, cred)
-
 	if err := b.injectSecret(is.secret); err != nil {
 		return err
 	}
@@ -70,9 +69,9 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 
 func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
 	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
-	cmc := b.client.Core().Secrets("default")
+	secretsCl := b.client.Core().Secrets("default")
 	gracePeriodSec := int64(0)
-	return cmc.Delete(binding.Name, &api.DeleteOptions{
+	return secretsCl.Delete(binding.Name, &api.DeleteOptions{
 		TypeMeta:           unversioned.TypeMeta{Kind: "DeleteOptions"},
 		GracePeriodSeconds: &gracePeriodSec,
 	})
@@ -80,14 +79,13 @@ func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
 
 func (b *k8sBindingInjector) injectSecret(s *v1.Secret) error {
 	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
-	cmc := b.client.Core().Secrets("default")
-	_, err := cmc.Create(s)
+	secretsCl := b.client.Core().Secrets("default")
+	_, err := secretsCl.Create(s)
 	return err
 }
 
 func makeInjectionSet(binding *servicecatalog.Binding, cred *brokerapi.Credential) *injectionSet {
 	secret := makeSecret(binding, cred)
-
 	return &injectionSet{
 		secret: secret,
 	}
