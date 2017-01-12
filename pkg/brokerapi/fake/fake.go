@@ -68,6 +68,13 @@ type InstanceClient struct {
 	DeleteErr error
 }
 
+// NewInstanceClient creates a new empty instance client ready for use
+func NewInstanceClient() *InstanceClient {
+	return &InstanceClient{
+		Instances: make(map[string]*brokerapi.ServiceInstance),
+	}
+}
+
 // CreateServiceInstance returns i.CreateErr if non-nil. If it is nil, checks if id already exists
 // in i.Instances and returns ErrInstanceAlreadyExists if so. If not, converts req to a
 // ServiceInstance, adds it to i.Instances and returns it
@@ -146,6 +153,11 @@ type BindingClient struct {
 	CreateCreds brokerapi.Credential
 	CreateErr   error
 	DeleteErr   error
+}
+
+// NewBindingClient creates a new empty binding client, ready for use
+func NewBindingClient() *BindingClient {
+	return &BindingClient{Bindings: make(map[string]struct{})}
 }
 
 // CreateServiceBinding returns b.CreateErr if it was non-nil. Otherwise, returns
