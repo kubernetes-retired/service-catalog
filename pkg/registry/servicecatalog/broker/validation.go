@@ -20,7 +20,7 @@ package broker
 
 import (
 	// commented out until we use the base validation utilities
-	// "k8s.io/kubernetes/pkg/api/validation"
+	apivalidation "k8s.io/kubernetes/pkg/api/validation"
 	// "k8s.io/kubernetes/pkg/api/validation/path"
 	// utilvalidation "k8s.io/kubernetes/pkg/util/validation"
 	"k8s.io/kubernetes/pkg/util/validation/field"
@@ -28,14 +28,17 @@ import (
 	discoveryapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-// assuming a nil non-error is ok
+// assuming a nil non-error is ok. not okay, should be empty struct `field.ErrorList{}`
 
 // validateBroker makes sure a broker object is okay?
-func validateBroker(apiServer *discoveryapi.Broker) field.ErrorList {
-	return nil
+func validateBroker(broker *discoveryapi.Broker) field.ErrorList {
+	allErrs := apivalidation.ValidateObjectMeta(&broker.ObjectMeta, false, /*namespace*/
+		apivalidation.ValidateReplicationControllerName, // our custom name validator?
+		field.NewPath("metadata"))
+	return allErrs
 }
 
 // validateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
 func validateBrokerUpdate(new *discoveryapi.Broker, old *discoveryapi.Broker) field.ErrorList {
-	return nil
+	return field.ErrorList{}
 }
