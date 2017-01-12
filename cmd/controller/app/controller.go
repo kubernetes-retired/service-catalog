@@ -30,6 +30,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller/app/options"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
 	"k8s.io/client-go/1.5/dynamic"
 	"k8s.io/client-go/1.5/kubernetes"
@@ -66,8 +67,13 @@ func Run(s *options.ControllerServer) error {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create a watcher: %v\n", err))
 	}
+	inj, err := injector.CreateK8sBindingInjector()
+	if err != nil {
+		glog.Errorf("Failed to create injector\n:%v\n", err)
+		return err
+	}
 
-	c, err := controller.New(w, openservicebroker.NewClient)
+	c, err := controller.New(w, inj, openservicebroker.NewClient)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating server [%s]...", err.Error()))
 	}

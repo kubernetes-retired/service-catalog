@@ -60,16 +60,12 @@ type handler struct {
 	newClientFunc func(*servicecatalog.Broker) brokerapi.BrokerClient
 }
 
-func createHandler(s storage.Storage, newClientFn brokerapi.CreateFunc) (*handler, error) {
-	bi, err := injector.CreateK8sBindingInjector()
-	if err != nil {
-		return nil, err
-	}
-
+func createHandler(s storage.Storage, injector injector.BindingInjector, newClientFn brokerapi.CreateFunc) *handler {
 	return &handler{
-		storage:  s,
-		injector: bi,
-	}, nil
+		storage:       s,
+		injector:      injector,
+		newClientFunc: newClientFn,
+	}
 }
 
 func (h *handler) updateServiceInstance(in *servicecatalog.Instance) error {
