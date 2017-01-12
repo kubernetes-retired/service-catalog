@@ -17,11 +17,11 @@ limitations under the License.
 package injector
 
 import (
-	"fmt"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/client-go/1.5/kubernetes"
+	"k8s.io/client-go/1.5/pkg/api"
+	"k8s.io/client-go/1.5/pkg/api/unversioned"
 	"k8s.io/client-go/1.5/pkg/api/v1"
 	"k8s.io/client-go/1.5/rest"
 )
@@ -69,10 +69,17 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 }
 
 func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
-	return fmt.Errorf("Not implemented")
+	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
+	cmc := b.client.Core().Secrets("default")
+	gracePeriodSec := int64(0)
+	return cmc.Delete(binding.Name, &api.DeleteOptions{
+		TypeMeta:           unversioned.TypeMeta{Kind: "DeleteOptions"},
+		GracePeriodSeconds: &gracePeriodSec,
+	})
 }
 
 func (b *k8sBindingInjector) injectSecret(s *v1.Secret) error {
+	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
 	cmc := b.client.Core().Secrets("default")
 	_, err := cmc.Create(s)
 	return err
