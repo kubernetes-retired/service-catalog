@@ -20,7 +20,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
@@ -61,10 +60,7 @@ type handler struct {
 	newClientFunc func(*servicecatalog.Broker) brokerapi.BrokerClient
 }
 
-func createHandler(
-	s storage.Storage,
-	newClientFn func(*servicecatalog.Broker) brokerapi.BrokerClient,
-) (*handler, error) {
+func createHandler(s storage.Storage, newClientFn brokerapi.CreateFunc) (*handler, error) {
 	bi, err := injector.CreateK8sBindingInjector()
 	if err != nil {
 		return nil, err

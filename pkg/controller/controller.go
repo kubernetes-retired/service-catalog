@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage/tpr"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
@@ -33,8 +34,8 @@ type Controller struct {
 }
 
 // New creates an instance of the service catalog Controller.
-func New(w *watch.Watcher) (*Controller, error) {
-	h, err := createHandler(tpr.NewStorage(w))
+func New(w *watch.Watcher, brokerClCreator brokerapi.CreateFunc) (*Controller, error) {
+	h, err := createHandler(tpr.NewStorage(w), brokerClCreator)
 	if err != nil {
 		glog.Errorf("Couldn't create controller: %v\n", err)
 		return nil, err

@@ -28,6 +28,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller/app/options"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
 	"k8s.io/client-go/1.5/dynamic"
@@ -66,7 +67,7 @@ func Run(s *options.ControllerServer) error {
 		panic(fmt.Sprintf("Failed to create a watcher: %v\n", err))
 	}
 
-	c, err := controller.New(w)
+	c, err := controller.New(w, openservicebroker.NewClient)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating server [%s]...", err.Error()))
 	}
