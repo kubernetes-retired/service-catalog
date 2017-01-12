@@ -71,17 +71,15 @@ func Run(s *options.ControllerServer) error {
 		panic(fmt.Sprintf("Error creating server [%s]...", err.Error()))
 	}
 
-	go func() {
-		mux := http.NewServeMux()
-		healthz.InstallHandler(mux)
-		server := &http.Server{
-			Addr:    net.JoinHostPort(s.Address, strconv.Itoa(int(s.Port))),
-			Handler: mux,
-		}
-		glog.Fatal(server.ListenAndServe())
-	}()
-
 	c.Run()
 
-	panic("unreachable")
+	mux := http.NewServeMux()
+	healthz.InstallHandler(mux)
+	server := &http.Server{
+		Addr:    net.JoinHostPort(s.Address, strconv.Itoa(int(s.Port))),
+		Handler: mux,
+	}
+	glog.Fatal(server.ListenAndServe())
+
+	return nil
 }
