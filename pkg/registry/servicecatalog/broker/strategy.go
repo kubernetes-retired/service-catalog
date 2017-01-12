@@ -23,7 +23,7 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/validation/field"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 /* Begin Create Definition */
@@ -44,7 +44,10 @@ var createStrategy = brokerCreateStrategy{
 	NameGenerator: kapi.SimpleNameGenerator,
 }
 
-// Canonicalize is called after validate, what happens if it creates an object to persist that does not pass validate? (I think the answer is "don't do that")
+// Canonicalize is called after validate, what happens if it creates
+// an object to persist that does not pass validate? (I think the
+// answer is "don't do that"). Frequently is an empty method or a type
+// check. May mutate the object.
 func (brokerCreateStrategy) Canonicalize(obj runtime.Object) {}
 
 // Are brokers namespace scoped?
@@ -52,12 +55,21 @@ func (brokerCreateStrategy) NamespaceScoped() bool {
 	return false
 }
 
+// PrepareForCreate recieves
 func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
-	_ = obj.(*servicecatalog.Broker)
+	// coerce to our specific object type. (Should we typecheck?)
+	broker := obj.(*sc.Broker)
+	// Is there anything to pull out of the context `ctx`?
+
+	// *Must* we initialize all the subobjects here? Is there
+	// anywhere else appropriate this could be done?
+	// Set to "creating?"
+	broker.Status = sc.BrokerStatus{}
+	broker.Status.Conditions = []sc.BrokerCondition{}
 }
 
 func (brokerCreateStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
-	return validateBroker(obj.(*servicecatalog.Broker))
+	return validateBroker(obj.(*sc.Broker))
 }
 
 /* End Create Definition */
@@ -106,13 +118,13 @@ func (brokerUpdateStrategy) NamespaceScoped() bool {
 }
 
 func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
-	newBroker := new.(*servicecatalog.Broker)
-	oldBroker := old.(*servicecatalog.Broker)
+	newBroker := new.(*sc.Broker)
+	oldBroker := old.(*sc.Broker)
 	newBroker.Status = oldBroker.Status
 }
 
 func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
-	return validateBrokerUpdate(new.(*servicecatalog.Broker), old.(*servicecatalog.Broker))
+	return validateBrokerUpdate(new.(*sc.Broker), old.(*sc.Broker))
 }
 
 /* End Update Definition */

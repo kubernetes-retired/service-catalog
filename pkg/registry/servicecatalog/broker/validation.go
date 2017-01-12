@@ -33,10 +33,14 @@ import (
 
 // validateBroker makes sure a broker object is okay?
 func validateBroker(broker *sc.Broker) field.ErrorList {
-	allErrs := apivalidation.ValidateObjectMeta(&broker.ObjectMeta, false, /*namespace*/
+	allErrs := field.ErrorList{}
+	// validate the name?
+	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&broker.ObjectMeta, false, /*namespace*/
 		apivalidation.ValidateReplicationControllerName, // our custom name validator?
-		field.NewPath("metadata"))
-	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("spec"))...)
+		field.NewPath("metadata"))...)
+	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("Spec"))...)
+	// Do we need to validate the status array?
+	// allErrs = append(allErrs, validateBrokerStatus(&broker.Spec, field.NewPath("Status"))...)
 	return allErrs
 }
 
@@ -53,19 +57,37 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 
 	if "" == spec.URL {
 		allErrs = append(allErrs,
-			field.Required(fldPath.Child("url"),
+			field.Required(fldPath.Child("URL"),
 				"brokers must have a remote url to contact"))
 	}
-	if "" == spec.AuthUsername {
-	}
-	if "" == spec.AuthPassword {
+	// xor user and pass, must have both or none, not either
+	hasUser := "" != spec.AuthUsername
+	hasPassword := "" != spec.AuthPassword
+	if (hasUser || hasPassword) && !(hasUser && hasPassword) {
+		if hasPassword {
+			allErrs = append(allErrs,
+				field.Required(fldPath.Child("AuthUsername"),
+					"must have username in addition to password"))
+		} else if hasUser {
+			allErrs = append(allErrs,
+				field.Required(fldPath.Child("AuthPassword"),
+					"must have password in addition to username"))
+		}
 	}
 	if "" == spec.OSBGUID {
+		// not required
 	}
 	return allErrs
 }
 
 // validateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
 func validateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
-	return field.ErrorList{}
+	allErrs := field.ErrorList{}
+	// should each individual broker validate successfully before validating changes?
+	allErrs = append(allErrs, validateBroker(new)...)
+	allErrs = append(allErrs, validateBroker(old)...)
+	// allErrs = append(allErrs, validateObjectMetaUpdate(new, old)...)
+	// allErrs = append(allErrs, validateBrokerSpecUpdate(new, old)...)
+	// allErrs = append(allErrs, validateBrokerStatusUpdate(new, old)...)
+	return allErrs
 }
