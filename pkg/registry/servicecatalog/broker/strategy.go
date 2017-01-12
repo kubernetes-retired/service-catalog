@@ -33,13 +33,18 @@ type brokerCreateStrategy struct {
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
-// Strategy implements the call backs for the generic store
+// implements RESTCreateStrategy interface
 var createStrategy = brokerCreateStrategy{
+	// embeds to pull in existing code behavior from upstream
+
 	// this has an interesting NOTE on it. Not sure if it applies to us.
-	kapi.Scheme,
-	kapi.SimpleNameGenerator,
+	ObjectTyper: kapi.Scheme,
+	// use the generator from upstream k8s, or implement method
+	// `GenerateName(base string) string`
+	NameGenerator: kapi.SimpleNameGenerator,
 }
 
+// Canonicalize is called after validate, what happens if it creates an object to persist that does not pass validate? (I think the answer is "don't do that")
 func (brokerCreateStrategy) Canonicalize(obj runtime.Object) {}
 
 // Are brokers namespace scoped?
@@ -58,15 +63,15 @@ func (brokerCreateStrategy) Validate(ctx kapi.Context, obj runtime.Object) field
 /* End Create Definition */
 
 /* Begin Delete Definition */
-
+// implements RESTDeleteStrategy interface
 type brokerDeleteStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 }
 
-// Strategy implements the call backs for the generic store
+// Strategy implements
 var deleteStrategy = brokerDeleteStrategy{
 	// this has an interesting NOTE on it. Not sure if it applies to us.
-	kapi.Scheme,
+	ObjectTyper: kapi.Scheme,
 }
 
 type brokerUpdateStrategy struct {
@@ -78,10 +83,10 @@ type brokerUpdateStrategy struct {
 
 /* Begin Update Definition */
 
-// Strategy implements the call backs for the generic store
+// implements RESTUpdateStrategy interface
 var updateStrategy = brokerUpdateStrategy{
 	// this has an interesting NOTE on it. Not sure if it applies to us.
-	kapi.Scheme,
+	ObjectTyper: kapi.Scheme,
 }
 
 func (brokerUpdateStrategy) AllowCreateOnUpdate() bool {
@@ -94,7 +99,8 @@ func (brokerUpdateStrategy) AllowUnconditionalUpdate() bool {
 
 func (brokerUpdateStrategy) Canonicalize(obj runtime.Object) {}
 
-// Are brokers namespace scoped?
+// Are brokers namespace scoped? Is the namespace concerned about an
+// external namespace or some storage namespace?
 func (brokerUpdateStrategy) NamespaceScoped() bool {
 	return false
 }
