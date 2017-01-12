@@ -27,18 +27,18 @@ import (
 // Client implements a fake broker API client, useful for unit testing. None of the methods on
 // the client are concurrency-safe
 type Client struct {
-	CatalogClient
-	InstanceClient
-	BindingClient
+	*CatalogClient
+	*InstanceClient
+	*BindingClient
 }
 
 // NewClientFunc returns a function suitable for creating a new BrokerClient from a given
 // Broker object. The returned function is suitable for passing as a callback to code that
 // needs to create clients on-demand
 func NewClientFunc(
-	catCl CatalogClient,
-	instCl InstanceClient,
-	bindCl BindingClient,
+	catCl *CatalogClient,
+	instCl *InstanceClient,
+	bindCl *BindingClient,
 ) func(*servicecatalog.Broker) brokerapi.BrokerClient {
 	return func(*servicecatalog.Broker) brokerapi.BrokerClient {
 		return &Client{
