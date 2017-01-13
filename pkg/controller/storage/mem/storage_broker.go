@@ -36,37 +36,60 @@ func newMemStorageBroker() *memStorageBroker {
 }
 
 func (m *memStorageBroker) List() ([]*servicecatalog.Broker, error) {
-	ret := make([]*servicecatalog.Broker, len(m.brokers))
+	copy := make([]*servicecatalog.Broker, len(m.brokers))
 	i := 0
-	for _, val := range m.brokers {
-		ret[i] = val
+	for _, br := range m.brokers {
+		copy[i] = &servicecatalog.Broker{}
+		if err := deepCopy(copy[i], br); err != nil {
+			return nil, err
+		}
 		i++
 	}
-	return ret, nil
+	return copy, nil
 }
 
 func (m *memStorageBroker) Get(name string) (*servicecatalog.Broker, error) {
-	ret, ok := m.brokers[name]
+	br, ok := m.brokers[name]
 	if !ok {
 		return nil, errNoSuchBroker
 	}
-	return ret, nil
+	copy := &servicecatalog.Broker{}
+	if err := deepCopy(copy, br); err != nil {
+		return nil, err
+	}
+	return copy, nil
 }
 
 func (m *memStorageBroker) Create(br *servicecatalog.Broker) (*servicecatalog.Broker, error) {
 	if _, err := m.Get(br.Name); err == nil {
 		return nil, errBrokerAlreadyExists
 	}
-	m.brokers[br.Name] = br
-	return br, nil
+	copy1 := &servicecatalog.Broker{}
+	if err := deepCopy(copy1, br); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.Broker{}
+	if err := deepCopy(copy2, br); err != nil {
+		return nil, err
+	}
+	m.brokers[br.Name] = copy1
+	return copy2, nil
 }
 
 func (m *memStorageBroker) Update(br *servicecatalog.Broker) (*servicecatalog.Broker, error) {
 	if _, err := m.Get(br.Name); err != nil {
 		return nil, errNoSuchBroker
 	}
-	m.brokers[br.Name] = br
-	return br, nil
+	copy1 := &servicecatalog.Broker{}
+	if err := deepCopy(copy1, br); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.Broker{}
+	if err := deepCopy(copy2, br); err != nil {
+		return nil, err
+	}
+	m.brokers[br.Name] = copy1
+	return copy2, nil
 }
 
 func (m *memStorageBroker) Delete(name string) error {
