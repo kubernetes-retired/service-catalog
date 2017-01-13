@@ -17,6 +17,7 @@ limitations under the License.
 package server
 
 import (
+	"flag"
 	"fmt"
 	"io"
 
@@ -89,6 +90,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	//
 	// repeated pattern seems like it should be refactored if all
 	// options were of an interface type that specified AddFlags.
+	flags.AddGoFlagSet(flag.CommandLine)
 	options.GenericServerRunOptions.AddUniversalFlags(flags)
 	options.SecureServingOptions.AddFlags(flags)
 	options.EtcdOptions.AddFlags(flags)
