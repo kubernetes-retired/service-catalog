@@ -23,6 +23,7 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/validation/field"
 
+	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
@@ -55,10 +56,14 @@ func (brokerCreateStrategy) NamespaceScoped() bool {
 	return false
 }
 
-// PrepareForCreate recieves
+// PrepareForCreate receives a the incoming Broker and clears it's
+// Status. Status is not a user settable field.
 func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	// coerce to our specific object type. (Should we type check?)
-	broker := obj.(*sc.Broker)
+	broker, ok := obj.(*sc.Broker)
+	if !ok {
+		glog.Warning("recieved a non-broker object to create")
+	}
 	// Is there anything to pull out of the context `ctx`?
 
 	// Creating a brand new object, thus it must have no status.
@@ -117,13 +122,29 @@ func (brokerUpdateStrategy) NamespaceScoped() bool {
 }
 
 func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
-	newBroker := new.(*sc.Broker)
+	newBroker, ok := new.(*sc.Broker)
+	if !ok {
+		glog.Warning("recieved a non-broker object to update to")
+	}
 	oldBroker := old.(*sc.Broker)
+	if !ok {
+		glog.Warning("recieved a non-broker object to update from")
+	}
+
 	newBroker.Status = oldBroker.Status
 }
 
 func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
-	return validateBrokerUpdate(new.(*sc.Broker), old.(*sc.Broker))
+	newBroker, ok := new.(*sc.Broker)
+	if !ok {
+		glog.Warning("recieved a non-broker object to validate to")
+	}
+	oldBroker := old.(*sc.Broker)
+	if !ok {
+		glog.Warning("recieved a non-broker object to validate from")
+	}
+
+	return validateBrokerUpdate(newBroker, oldBroker)
 }
 
 /* End Update Definition */
