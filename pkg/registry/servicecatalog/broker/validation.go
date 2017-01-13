@@ -66,11 +66,13 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 	if (hasUser || hasPassword) && !(hasUser && hasPassword) {
 		if hasPassword {
 			allErrs = append(allErrs,
-				field.Required(fldPath.Child("AuthUsername"),
+				field.Required(
+					fldPath.Child("AuthUsername"),
 					"must have username in addition to password"))
 		} else if hasUser {
 			allErrs = append(allErrs,
-				field.Required(fldPath.Child("AuthPassword"),
+				field.Required(
+					fldPath.Child("AuthPassword"),
 					"must have password in addition to username"))
 		}
 	}

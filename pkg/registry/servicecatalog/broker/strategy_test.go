@@ -26,20 +26,20 @@ import (
 // boolean flags.
 func TestBrokerStrategyTrivial(t *testing.T) {
 	if createStrategy.NamespaceScoped() {
-		t.Errorf("broker create must be namespace scoped")
+		t.Errorf("broker create must not be namespace scoped")
 	}
 	if updateStrategy.NamespaceScoped() {
-		t.Errorf("broker update must be namespace scoped")
+		t.Errorf("broker update must not be namespace scoped")
 	}
 	if updateStrategy.AllowCreateOnUpdate() {
-		t.Errorf("Job should not allow create on update")
+		t.Errorf("broker should not allow create on update")
 	}
 	if updateStrategy.AllowUnconditionalUpdate() {
-		t.Errorf("Job should not allow create on update")
+		t.Errorf("broker should not allow unconditional update")
 	}
 }
 
-// TestBrokerCanonicalize tes
+// TestBrokerCreate
 func TestBroker(t *testing.T) {
 	// Create a broker or brokers
 	broker := &sc.Broker{
@@ -55,10 +55,12 @@ func TestBroker(t *testing.T) {
 	}
 
 	// Canonicalize the broker
-	createStrategy.Canonicalize(broker)
+	createStrategy.PrepareForCreate(nil, broker)
 
-	// Check that canonicalize did the appropriate stuff to the broker.
-
-	// Imagine a table driven series of subtests that make sure
-	// each individual aspect of canonicalization works.
+	if broker.Status.Conditions == nil {
+		t.Fatalf("Fresh broker should have empty status")
+	}
+	if len(broker.Status.Conditions) != 0 {
+		t.Fatalf("Fresh broker should have empty status")
+	}
 }
