@@ -48,7 +48,6 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 	allErrs := field.ErrorList{}
 
 	/* This is what is in the broker spec.
-
 	URL string
 	AuthUsername string
 	AuthPassword string
@@ -76,9 +75,7 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 					"must have password in addition to username"))
 		}
 	}
-	if "" == spec.OSBGUID {
-		// not required
-	}
+	// spec.OSBGUID has no properties to validate
 	return allErrs
 }
 

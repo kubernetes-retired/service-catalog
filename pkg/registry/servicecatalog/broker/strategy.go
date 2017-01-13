@@ -51,7 +51,7 @@ var createStrategy = brokerCreateStrategy{
 // check. May mutate the object.
 func (brokerCreateStrategy) Canonicalize(obj runtime.Object) {}
 
-// Are brokers namespace scoped?
+// NamespaceScoped returns false as brokers are not scoped to a namespace.
 func (brokerCreateStrategy) NamespaceScoped() bool {
 	return false
 }
@@ -66,9 +66,11 @@ func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Objec
 	}
 	// Is there anything to pull out of the context `ctx`?
 
-	// Creating a brand new object, thus it must have no status.
-	// Set to "creating" ?
+	// Creating a brand new object, thus it must have no
+	// status. We can't fail here if they passed a status in, so
+	// we just wipe it clean.
 	broker.Status = sc.BrokerStatus{}
+	// Fill in the first entry set to "creating"?
 	broker.Status.Conditions = []sc.BrokerCondition{}
 }
 
