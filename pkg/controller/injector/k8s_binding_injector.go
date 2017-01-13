@@ -26,12 +26,6 @@ import (
 	"k8s.io/client-go/1.5/rest"
 )
 
-// The set of kubernetes objects which are injected into a cluster for a
-// binding
-type injectionSet struct {
-	secret *v1.Secret
-}
-
 type k8sBindingInjector struct {
 	client *kubernetes.Clientset
 }
@@ -59,40 +53,7 @@ func CreateK8sBindingInjector() (BindingInjector, error) {
 }
 
 func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
-	is := makeInjectionSet(binding, cred)
-	if err := b.injectSecret(is.secret); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
-	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
-	secretsCl := b.client.Core().Secrets("default")
-	gracePeriodSec := int64(0)
-	return secretsCl.Delete(binding.Name, &api.DeleteOptions{
-		TypeMeta:           unversioned.TypeMeta{Kind: "DeleteOptions"},
-		GracePeriodSeconds: &gracePeriodSec,
-	})
-}
-
-func (b *k8sBindingInjector) injectSecret(s *v1.Secret) error {
-	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
-	secretsCl := b.client.Core().Secrets("default")
-	_, err := secretsCl.Create(s)
-	return err
-}
-
-func makeInjectionSet(binding *servicecatalog.Binding, cred *brokerapi.Credential) *injectionSet {
-	secret := makeSecret(binding, cred)
-	return &injectionSet{
-		secret: secret,
-	}
-}
-
-func makeSecret(binding *servicecatalog.Binding, cred *brokerapi.Credential) *v1.Secret {
-	return &v1.Secret{
+	secret := &v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name: binding.Name,
 		},
@@ -103,4 +64,18 @@ func makeSecret(binding *servicecatalog.Binding, cred *brokerapi.Credential) *v1
 			"password": []byte(cred.Password),
 		},
 	}
+	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
+	secretsCl := b.client.Core().Secrets("default")
+	_, err := secretsCl.Create(secret)
+	return err
+}
+
+func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
+	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
+	secretsCl := b.client.Core().Secrets("default")
+	gracePeriodSec := int64(0)
+	return secretsCl.Delete(binding.Name, &api.DeleteOptions{
+		TypeMeta:           unversioned.TypeMeta{Kind: "DeleteOptions"},
+		GracePeriodSeconds: &gracePeriodSec,
+	})
 }
