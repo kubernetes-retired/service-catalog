@@ -37,37 +37,60 @@ func newMemStorageInstance() *memStorageInstance {
 }
 
 func (m *memStorageInstance) List() ([]*servicecatalog.Instance, error) {
-	ret := make([]*servicecatalog.Instance, len(m.instances))
+	copy := make([]*servicecatalog.Instance, len(m.instances))
 	i := 0
-	for _, val := range m.instances {
-		ret[i] = val
+	for _, inst := range m.instances {
+		copy[i] = &servicecatalog.Instance{}
+		if err := deepCopy(copy[i], inst); err != nil {
+			return nil, err
+		}
 		i++
 	}
-	return ret, nil
+	return copy, nil
 }
 
 func (m *memStorageInstance) Get(name string) (*servicecatalog.Instance, error) {
-	ret, ok := m.instances[name]
+	inst, ok := m.instances[name]
 	if !ok {
 		return nil, errNoSuchInstance
 	}
-	return ret, nil
+	copy := &servicecatalog.Instance{}
+	if err := deepCopy(copy, inst); err != nil {
+		return nil, err
+	}
+	return copy, nil
 }
 
 func (m *memStorageInstance) Create(inst *servicecatalog.Instance) (*servicecatalog.Instance, error) {
 	if _, err := m.Get(inst.Name); err == nil {
 		return nil, errInstanceAlreadyExists
 	}
-	m.instances[inst.Name] = inst
-	return inst, nil
+	copy1 := &servicecatalog.Instance{}
+	if err := deepCopy(copy1, inst); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.Instance{}
+	if err := deepCopy(copy2, inst); err != nil {
+		return nil, err
+	}
+	m.instances[inst.Name] = copy1
+	return copy2, nil
 }
 
 func (m *memStorageInstance) Update(inst *servicecatalog.Instance) (*servicecatalog.Instance, error) {
 	if _, err := m.Get(inst.Name); err != nil {
 		return nil, errNoSuchInstance
 	}
-	m.instances[inst.Name] = inst
-	return inst, nil
+	copy1 := &servicecatalog.Instance{}
+	if err := deepCopy(copy1, inst); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.Instance{}
+	if err := deepCopy(copy2, inst); err != nil {
+		return nil, err
+	}
+	m.instances[inst.Name] = copy1
+	return copy2, nil
 }
 
 func (m *memStorageInstance) Delete(name string) error {

@@ -17,6 +17,7 @@ limitations under the License.
 package mem
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -65,8 +66,11 @@ func TestAddBroker(t *testing.T) {
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b2 != b {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
+	if b2 == b {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b2, b) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 }
 
@@ -88,8 +92,11 @@ func TestAddDuplicateBroker(t *testing.T) {
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b2 != b {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
+	if b2 == b {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b2, b) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 	_, err = bs.Create(b)
 	if err == nil {
@@ -118,8 +125,11 @@ func TestUpdateBroker(t *testing.T) {
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b2 != b {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
+	if b2 == b {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b2, b) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 	b3 := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err = bs.Update(b3)
@@ -137,8 +147,11 @@ func TestUpdateBroker(t *testing.T) {
 	if b4 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b4 != b3 {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b3, b4)
+	if b4 == b3 {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b4, b3) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 }
 
@@ -172,8 +185,11 @@ func TestDeleteBroker(t *testing.T) {
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b2 != b {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
+	if b2 == b {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b2, b) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 	err = bs.Delete(brokerName1)
 	if err != nil {
@@ -211,8 +227,11 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 	if b2 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b2 != b {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b, b2)
+	if b2 == b {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b2, b) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 	b3 := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName2}}
 	_, err = bs.Create(b3)
@@ -230,8 +249,11 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 	if b4 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b4 != b3 {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b3, b4)
+	if b4 == b3 {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b4, b3) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 	err = bs.Delete(brokerName1)
 	if err != nil {
@@ -255,7 +277,10 @@ func TestDeleteBrokerMultiple(t *testing.T) {
 	if b6 == nil {
 		t.Fatal("Did not get back a broker")
 	}
-	if b6 != b3 {
-		t.Fatalf("Addresses don't match, expected: '%p', got '%p'", b3, b6)
+	if b6 == b3 {
+		t.Fatal("Broker addresses match; expected them not to")
+	}
+	if !reflect.DeepEqual(b6, b3) {
+		t.Fatal("Brokers are not deeply equal; expected them to be")
 	}
 }

@@ -38,35 +38,62 @@ func newMemStorageBinding() *memStorageBinding {
 }
 
 func (m *memStorageBinding) List() ([]*servicecatalog.Binding, error) {
-	ret := make([]*servicecatalog.Binding, len(m.bindings))
+	copy := make([]*servicecatalog.Binding, len(m.bindings))
 	i := 0
-	for _, val := range m.bindings {
-		ret[i] = val
+	for _, bin := range m.bindings {
+		copy[i] = &servicecatalog.Binding{}
+		if err := deepCopy(copy[i], bin); err != nil {
+			return nil, err
+		}
 		i++
 	}
-	return ret, nil
+	return copy, nil
 }
+
 func (m *memStorageBinding) Get(name string) (*servicecatalog.Binding, error) {
-	ret, ok := m.bindings[name]
+	binding, ok := m.bindings[name]
 	if !ok {
-		return nil, errNoSuchBinding
+		return nil, errNoSuchInstance
 	}
-	return ret, nil
+	copy := &servicecatalog.Binding{}
+	if err := deepCopy(copy, binding); err != nil {
+		return nil, err
+	}
+	return copy, nil
 }
+
 func (m *memStorageBinding) Create(bin *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	if _, err := m.Get(bin.Name); err == nil {
 		return nil, errBindingAlreadyExists
 	}
-	m.bindings[bin.Name] = bin
-	return bin, nil
+	copy1 := &servicecatalog.Binding{}
+	if err := deepCopy(copy1, bin); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.Binding{}
+	if err := deepCopy(copy2, bin); err != nil {
+		return nil, err
+	}
+	m.bindings[bin.Name] = copy1
+	return copy2, nil
 }
+
 func (m *memStorageBinding) Update(bin *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	if _, err := m.Get(bin.Name); err != nil {
 		return nil, errNoSuchBinding
 	}
-	m.bindings[bin.Name] = bin
-	return bin, nil
+	copy1 := &servicecatalog.Binding{}
+	if err := deepCopy(copy1, bin); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.Binding{}
+	if err := deepCopy(copy2, bin); err != nil {
+		return nil, err
+	}
+	m.bindings[bin.Name] = copy1
+	return copy2, nil
 }
+
 func (m *memStorageBinding) Delete(name string) error {
 	if _, err := m.Get(name); err != nil {
 		return errNoSuchBinding

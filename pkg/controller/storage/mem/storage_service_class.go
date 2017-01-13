@@ -37,13 +37,16 @@ func newMemStorageServiceClass() *memStorageServiceClass {
 }
 
 func (m *memStorageServiceClass) List() ([]*servicecatalog.ServiceClass, error) {
-	ret := make([]*servicecatalog.ServiceClass, len(m.classes))
+	copy := make([]*servicecatalog.ServiceClass, len(m.classes))
 	i := 0
-	for _, val := range m.classes {
-		ret[i] = val
+	for _, sc := range m.classes {
+		copy[i] = &servicecatalog.ServiceClass{}
+		if err := deepCopy(copy[i], sc); err != nil {
+			return nil, err
+		}
 		i++
 	}
-	return ret, nil
+	return copy, nil
 }
 
 func (m *memStorageServiceClass) Get(name string) (*servicecatalog.ServiceClass, error) {
@@ -51,13 +54,25 @@ func (m *memStorageServiceClass) Get(name string) (*servicecatalog.ServiceClass,
 	if !ok {
 		return nil, errNoSuchServiceClass
 	}
-	return cl, nil
+	copy := &servicecatalog.ServiceClass{}
+	if err := deepCopy(copy, cl); err != nil {
+		return nil, err
+	}
+	return copy, nil
 }
 
 func (m *memStorageServiceClass) Create(sc *servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error) {
 	if _, err := m.Get(sc.Name); err == nil {
 		return nil, errInstanceAlreadyExists
 	}
-	m.classes[sc.Name] = sc
-	return sc, nil
+	copy1 := &servicecatalog.ServiceClass{}
+	if err := deepCopy(copy1, sc); err != nil {
+		return nil, err
+	}
+	copy2 := &servicecatalog.ServiceClass{}
+	if err := deepCopy(copy2, sc); err != nil {
+		return nil, err
+	}
+	m.classes[sc.Name] = copy1
+	return copy2, nil
 }
