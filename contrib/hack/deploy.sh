@@ -17,7 +17,7 @@ set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-. "${ROOT}/hack/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
+. "${ROOT}/contrib/hack/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
 
 while [[ $# -gt 0 ]]; do
   case "${1}" in
