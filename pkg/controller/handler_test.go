@@ -26,6 +26,8 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 )
 
+// TestCreateServiceInstanceHelper is a test for handler's createServiceInstance method. Note
+// that it _only_ tests the lowercase (unexported) method, not the uppercase (exported) one.
 func TestCreateServiceInstanceHelper(t *testing.T) {
 	const (
 		namespace    = "testNS"
