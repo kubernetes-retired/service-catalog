@@ -18,6 +18,7 @@ all: build test verify
 #######################
 ROOT           = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BINDIR        ?= bin
+BUILD_DIR     ?= build
 COVERAGE      ?= $(CURDIR)/coverage.html
 SC_PKG         = github.com/kubernetes-incubator/service-catalog
 TOP_SRC_DIRS   = cmd contrib pkg
@@ -112,6 +113,7 @@ $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	  --extra-peer-dirs k8s.io/kubernetes/pkg/api,k8s.io/kubernetes/pkg/api/v1,k8s.io/kubernetes/pkg/apis/meta/v1,k8s.io/kubernetes/pkg/conversion,k8s.io/kubernetes/pkg/runtime \
 	  -O zz_generated.conversion
 	  # the previous three directories will be changed from kubernetes to apimachinery in the future
+	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	  touch $@
 
 # Some prereq stuff
