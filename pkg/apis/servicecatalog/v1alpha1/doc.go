@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/kubernetes-incubator/pkg/apis/servicecatalog
+// +k8s:conversion-gen=github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog
 // +groupName=authentication.k8s.io
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
