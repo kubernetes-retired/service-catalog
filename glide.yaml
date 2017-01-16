@@ -10,7 +10,7 @@ import:
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo/args
 - package: github.com/kubernetes/repo-infra
-  version: fe0ddb2a8c18deeb18515b9412e459599e6d7f3a
+  version: 4c4ae2e2e6994e887da16f3c31f495e10062b810
 - package: k8s.io/kubernetes
   version: 6b9a9442855d16e0ff0c02ab0c82b1c1665cccaf
   subpackages:
