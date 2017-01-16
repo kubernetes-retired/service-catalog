@@ -55,7 +55,8 @@ func CreateK8sBindingInjector() (BindingInjector, error) {
 func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
 	secret := &v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
-			Name: binding.Name,
+			Name:      binding.Name,
+			Namespace: binding.Namespace,
 		},
 		Data: map[string][]byte{
 			"hostname": []byte(cred.Hostname),
@@ -64,15 +65,13 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 			"password": []byte(cred.Password),
 		},
 	}
-	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
-	secretsCl := b.client.Core().Secrets("default")
+	secretsCl := b.client.Core().Secrets(binding.Namespace)
 	_, err := secretsCl.Create(secret)
 	return err
 }
 
 func (b *k8sBindingInjector) Uninject(binding *servicecatalog.Binding) error {
-	// TODO: don't hardcode this namespace. https://github.com/kubernetes-incubator/service-catalog/issues/162
-	secretsCl := b.client.Core().Secrets("default")
+	secretsCl := b.client.Core().Secrets(binding.Namespace)
 	gracePeriodSec := int64(0)
 	return secretsCl.Delete(binding.Name, &api.DeleteOptions{
 		TypeMeta:           unversioned.TypeMeta{Kind: "DeleteOptions"},
