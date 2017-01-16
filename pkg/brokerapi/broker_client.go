@@ -18,6 +18,15 @@ package brokerapi
 
 // BrokerClient defines the interface for interacting with a broker for catalog
 // retrieval, service instance management, and service binding management.
+//
+// The broker client defines functions for the catalog, instance and binding APIs for the
+// open service broker API (https://www.openservicebrokerapi.org/, based on the cloud foundry
+// service broker API: https://docs.cloudfoundry.org/services/api.html).
+//
+// Each function accepts and returns parameters that are unique to this package. For example,
+// the catalog API function, GetCatalog, returns a *brokerapi.Catalog data type. Most callers
+// will need to translate this data type into a kubernetes-native type such as
+// a series of (./pkg/apis/servicecatalog).ServiceClass data types in that specific case.
 type BrokerClient interface {
 	CatalogClient
 	InstanceClient
