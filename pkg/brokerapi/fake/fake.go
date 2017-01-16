@@ -24,8 +24,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// Client implements a fake broker API client, useful for unit testing. None of the methods on
-// the client are concurrency-safe
+// Client implements a fake (./pkg/brokerapi).BrokerClient. The implementation is 100% in-memory
+// and is useful for unit testing. None of the methods in this client are concurrency-safe.
+//
+// See the (./pkg/controller).TestCreateServiceInstanceHelper unit test for example usage of this
+// client
 type Client struct {
 	*CatalogClient
 	*InstanceClient
