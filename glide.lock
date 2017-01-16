@@ -39,17 +39,10 @@ imports:
 - name: github.com/coreos/go-systemd
   version: 4484981625c1a6a2ecb40a390fcb6a9bcfee76e3
   subpackages:
-  - activation
   - daemon
-  - dbus
-  - journal
-  - unit
-  - util
 - name: github.com/coreos/pkg
   version: fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8
   subpackages:
-  - capnslog
-  - dlopen
   - health
   - httputil
   - timeutil
@@ -88,31 +81,8 @@ imports:
 - name: github.com/gogo/protobuf
   version: e18d7aa8f8c624c915db340349aad4c49b10d173
   subpackages:
-  - gogoproto
-  - plugin/compare
-  - plugin/defaultcheck
-  - plugin/description
-  - plugin/embedcheck
-  - plugin/enumstringer
-  - plugin/equal
-  - plugin/face
-  - plugin/gostring
-  - plugin/marshalto
-  - plugin/oneofcheck
-  - plugin/populate
-  - plugin/size
-  - plugin/stringer
-  - plugin/testgen
-  - plugin/union
-  - plugin/unmarshal
   - proto
-  - protoc-gen-gogo/descriptor
-  - protoc-gen-gogo/generator
-  - protoc-gen-gogo/grpc
-  - protoc-gen-gogo/plugin
   - sortkeys
-  - vanity
-  - vanity/command
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
@@ -122,12 +92,11 @@ imports:
 - name: github.com/golang/protobuf
   version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
-  - jsonpb
   - proto
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/gorilla/context
-  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/handlers
   version: 3a5767ca75ece5f7f1440b1d16975247f8d8b221
 - name: github.com/gorilla/mux
@@ -191,39 +160,11 @@ imports:
   version: e00690e87603abe613e9f02c816c7c4bef82e063
   subpackages:
   - openstack
-  - openstack/blockstorage/v1/volumes
-  - openstack/common/extensions
-  - openstack/compute/v2/extensions/bootfromvolume
-  - openstack/compute/v2/extensions/diskconfig
-  - openstack/compute/v2/extensions/volumeattach
-  - openstack/compute/v2/flavors
-  - openstack/compute/v2/images
-  - openstack/compute/v2/servers
   - openstack/identity/v2/tenants
   - openstack/identity/v2/tokens
-  - openstack/identity/v3/extensions/trust
   - openstack/identity/v3/tokens
-  - openstack/networking/v2/extensions
-  - openstack/networking/v2/extensions/layer3/floatingips
-  - openstack/networking/v2/extensions/layer3/routers
-  - openstack/networking/v2/extensions/lbaas/members
-  - openstack/networking/v2/extensions/lbaas/monitors
-  - openstack/networking/v2/extensions/lbaas/pools
-  - openstack/networking/v2/extensions/lbaas/vips
-  - openstack/networking/v2/extensions/lbaas_v2/listeners
-  - openstack/networking/v2/extensions/lbaas_v2/loadbalancers
-  - openstack/networking/v2/extensions/lbaas_v2/monitors
-  - openstack/networking/v2/extensions/lbaas_v2/pools
-  - openstack/networking/v2/extensions/security/groups
-  - openstack/networking/v2/extensions/security/rules
-  - openstack/networking/v2/ports
   - openstack/utils
   - pagination
-  - rackspace
-  - rackspace/blockstorage/v1/volumes
-  - rackspace/compute/v2/servers
-  - rackspace/compute/v2/volumeattach
-  - rackspace/identity/v2/tokens
   - testhelper
   - testhelper/client
 - name: github.com/satori/go.uuid
@@ -236,15 +177,10 @@ imports:
   version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
   - codec
-  - codec/codecgen
 - name: golang.org/x/crypto
   version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
-  - bcrypt
-  - blowfish
   - curve25519
-  - pkcs12
-  - pkcs12/internal/rc2
   - ssh
   - ssh/terminal
 - name: golang.org/x/net
@@ -257,10 +193,7 @@ imports:
   - http2
   - http2/hpack
   - idna
-  - internal/timeseries
   - lex/httplex
-  - proxy
-  - trace
   - websocket
 - name: golang.org/x/oauth2
   version: 3c3a985cb79f52a3190fbc056984415ca6763d01
@@ -314,7 +247,7 @@ imports:
 - name: gopkg.in/natefinch/lumberjack.v2
   version: 20b71e5b60d756d3d2f80def009790325acc2b23
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
 - name: k8s.io/client-go
   version: 843f7c4f28b1f647f664f883697107d5c02c5acc
   subpackages:
@@ -427,7 +360,7 @@ imports:
   - 1.5/tools/metrics
   - 1.5/transport
 - name: k8s.io/gengo
-  version: 6a1c24d7f08e671c244023ca9367d2dfbfaf57fc
+  version: 7ca94dd123f0f4965aac2e59ef249d8eaef14bcc
   subpackages:
   - args
   - examples/deepcopy-gen/generators
