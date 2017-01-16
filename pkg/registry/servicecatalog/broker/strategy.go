@@ -49,11 +49,13 @@ var (
 	_ rest.RESTDeleteStrategy = brokerRESTStrategies
 )
 
-// Canonicalize is called after validate. What happens if it creates
-// an object to persist that does not pass validate? (I think the
-// answer is "don't do that"). Frequently is an empty method or a type
-// check. May mutate the object.
-func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {}
+// Canonicalize does not transform a broker.
+func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {
+	broker, ok := obj.(*sc.Broker)
+	if !ok {
+		glog.Warning("received a non-broker object to create")
+	}
+}
 
 // NamespaceScoped returns false as brokers are not scoped to a namespace.
 func (brokerRESTStrategy) NamespaceScoped() bool {
@@ -63,7 +65,6 @@ func (brokerRESTStrategy) NamespaceScoped() bool {
 // PrepareForCreate receives a the incoming Broker and clears it's
 // Status. Status is not a user settable field.
 func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
-	// coerce to our specific object type. (Should we type check?)
 	broker, ok := obj.(*sc.Broker)
 	if !ok {
 		glog.Warning("received a non-broker object to create")
