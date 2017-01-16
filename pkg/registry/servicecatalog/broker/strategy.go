@@ -20,6 +20,7 @@ package broker
 
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/rest"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/validation/field"
 
@@ -27,38 +28,41 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-/* Begin Create Definition */
-
-type brokerCreateStrategy struct {
+// implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy
+type brokerRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
-// implements RESTCreateStrategy interface
-var createStrategy = brokerCreateStrategy{
-	// embeds to pull in existing code behavior from upstream
+var (
+	brokerRESTStrategies = brokerRESTStrategy{
+		// embeds to pull in existing code behavior from upstream
 
-	// this has an interesting NOTE on it. Not sure if it applies to us.
-	ObjectTyper: kapi.Scheme,
-	// use the generator from upstream k8s, or implement method
-	// `GenerateName(base string) string`
-	NameGenerator: kapi.SimpleNameGenerator,
-}
+		// this has an interesting NOTE on it. Not sure if it applies to us.
+		ObjectTyper: kapi.Scheme,
+		// use the generator from upstream k8s, or implement method
+		// `GenerateName(base string) string`
+		NameGenerator: kapi.SimpleNameGenerator,
+	}
+	_ rest.RESTCreateStrategy = brokerRESTStrategies
+	_ rest.RESTUpdateStrategy = brokerRESTStrategies
+	_ rest.RESTDeleteStrategy = brokerRESTStrategies
+)
 
 // Canonicalize is called after validate. What happens if it creates
 // an object to persist that does not pass validate? (I think the
 // answer is "don't do that"). Frequently is an empty method or a type
 // check. May mutate the object.
-func (brokerCreateStrategy) Canonicalize(obj runtime.Object) {}
+func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {}
 
 // NamespaceScoped returns false as brokers are not scoped to a namespace.
-func (brokerCreateStrategy) NamespaceScoped() bool {
+func (brokerRESTStrategy) NamespaceScoped() bool {
 	return false
 }
 
 // PrepareForCreate receives a the incoming Broker and clears it's
 // Status. Status is not a user settable field.
-func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
+func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	// coerce to our specific object type. (Should we type check?)
 	broker, ok := obj.(*sc.Broker)
 	if !ok {
@@ -74,56 +78,19 @@ func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Objec
 	broker.Status.Conditions = []sc.BrokerCondition{}
 }
 
-func (brokerCreateStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
+func (brokerRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
 	return validateBroker(obj.(*sc.Broker))
 }
 
-/* End Create Definition */
-
-/* Begin Delete Definition */
-// implements RESTDeleteStrategy interface
-type brokerDeleteStrategy struct {
-	runtime.ObjectTyper // inherit ObjectKinds method
-}
-
-// Strategy implements
-var deleteStrategy = brokerDeleteStrategy{
-	// this has an interesting NOTE on it. Not sure if it applies to us.
-	ObjectTyper: kapi.Scheme,
-}
-
-type brokerUpdateStrategy struct {
-	runtime.ObjectTyper // inherit ObjectKinds method
-}
-
-// There is no implementation code for Delete.
-/* End Delete Definition */
-
-/* Begin Update Definition */
-
-// implements RESTUpdateStrategy interface
-var updateStrategy = brokerUpdateStrategy{
-	// this has an interesting NOTE on it. Not sure if it applies to us.
-	ObjectTyper: kapi.Scheme,
-}
-
-func (brokerUpdateStrategy) AllowCreateOnUpdate() bool {
+func (brokerRESTStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (brokerUpdateStrategy) AllowUnconditionalUpdate() bool {
+func (brokerRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (brokerUpdateStrategy) Canonicalize(obj runtime.Object) {}
-
-// Are brokers namespace scoped? Is the namespace concerned about an
-// external namespace or some storage namespace?
-func (brokerUpdateStrategy) NamespaceScoped() bool {
-	return false
-}
-
-func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
 		glog.Warning("received a non-broker object to update to")
@@ -136,7 +103,7 @@ func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 	newBroker.Status = oldBroker.Status
 }
 
-func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
 		glog.Warning("received a non-broker object to validate to")
@@ -148,5 +115,3 @@ func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Ob
 
 	return validateBrokerUpdate(newBroker, oldBroker)
 }
-
-/* End Update Definition */
