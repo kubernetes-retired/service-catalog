@@ -62,7 +62,7 @@ func (brokerCreateStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Objec
 	// coerce to our specific object type. (Should we type check?)
 	broker, ok := obj.(*sc.Broker)
 	if !ok {
-		glog.Warning("recieved a non-broker object to create")
+		glog.Warning("received a non-broker object to create")
 	}
 	// Is there anything to pull out of the context `ctx`?
 
@@ -126,11 +126,11 @@ func (brokerUpdateStrategy) NamespaceScoped() bool {
 func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
-		glog.Warning("recieved a non-broker object to update to")
+		glog.Warning("received a non-broker object to update to")
 	}
 	oldBroker := old.(*sc.Broker)
 	if !ok {
-		glog.Warning("recieved a non-broker object to update from")
+		glog.Warning("received a non-broker object to update from")
 	}
 
 	newBroker.Status = oldBroker.Status
@@ -139,11 +139,11 @@ func (brokerUpdateStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 func (brokerUpdateStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
-		glog.Warning("recieved a non-broker object to validate to")
+		glog.Warning("received a non-broker object to validate to")
 	}
 	oldBroker := old.(*sc.Broker)
 	if !ok {
-		glog.Warning("recieved a non-broker object to validate from")
+		glog.Warning("received a non-broker object to validate from")
 	}
 
 	return validateBrokerUpdate(newBroker, oldBroker)
