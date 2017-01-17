@@ -31,7 +31,7 @@ import (
 
 // assuming a nil non-error is ok. not okay, should be empty struct `field.ErrorList{}`
 
-// validateBroker makes sure a broker object is okay?
+// ValidateBroker makes sure a broker object is okay?
 func ValidateBroker(broker *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// validate the name?
@@ -79,7 +79,7 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 	return allErrs
 }
 
-// validateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
+// ValidateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
 func ValidateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// should each individual broker validate successfully before validating changes?
