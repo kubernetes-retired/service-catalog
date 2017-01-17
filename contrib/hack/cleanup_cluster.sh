@@ -17,8 +17,8 @@ set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-. "${ROOT}/hack/cluster_utilities.sh" || { echo 'Cannot load cluster utilities'; exit 1; }
-. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/contrib/hack/cluster_utilities.sh" || { echo 'Cannot load cluster utilities'; exit 1; }
+. "${ROOT}/contrib/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 while [[ $# -ne 0 ]]; do
   case "$1" in
