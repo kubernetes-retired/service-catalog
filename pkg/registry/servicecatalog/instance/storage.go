@@ -87,6 +87,10 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		PredicateFunc: Match,
 		// QualifiedResource should always be plural
 		QualifiedResource: api.Resource("instances"),
+
+		CreateStrategy: instanceRESTStrategies,
+		UpdateStrategy: instanceRESTStrategies,
+		DeleteStrategy: instanceRESTStrategies,
 	}
 
 	return &store
