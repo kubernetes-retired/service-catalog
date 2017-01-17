@@ -25,16 +25,16 @@ import (
 // TestBrokerStrategyTrivial is the testing of the trivial hardcoded
 // boolean flags.
 func TestBrokerStrategyTrivial(t *testing.T) {
-	if createStrategy.NamespaceScoped() {
+	if brokerRESTStrategies.NamespaceScoped() {
 		t.Errorf("broker create must not be namespace scoped")
 	}
-	if updateStrategy.NamespaceScoped() {
+	if brokerRESTStrategies.NamespaceScoped() {
 		t.Errorf("broker update must not be namespace scoped")
 	}
-	if updateStrategy.AllowCreateOnUpdate() {
+	if brokerRESTStrategies.AllowCreateOnUpdate() {
 		t.Errorf("broker should not allow create on update")
 	}
-	if updateStrategy.AllowUnconditionalUpdate() {
+	if brokerRESTStrategies.AllowUnconditionalUpdate() {
 		t.Errorf("broker should not allow unconditional update")
 	}
 }
@@ -55,7 +55,7 @@ func TestBroker(t *testing.T) {
 	}
 
 	// Canonicalize the broker
-	createStrategy.PrepareForCreate(nil, broker)
+	brokerRESTStrategies.PrepareForCreate(nil, broker)
 
 	if broker.Status.Conditions == nil {
 		t.Fatalf("Fresh broker should have empty status")
