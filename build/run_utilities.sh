@@ -15,7 +15,7 @@
 
 
 ROOT="${ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/build/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 BINDIR=${ROOT}/bin
 GOPATH=${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}

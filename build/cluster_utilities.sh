@@ -17,7 +17,7 @@ set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/build/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 # Cleanup services in Kubernetes to prevent network resource leaking
 function wipe_cluster() {

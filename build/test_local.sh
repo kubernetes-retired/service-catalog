@@ -18,7 +18,7 @@ set -ux
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GOPATH="${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}"
 
-. "${ROOT}/hack/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
+. "${ROOT}/build/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
 
 #trap shutdown_processes EXIT
 run_main \
@@ -125,4 +125,3 @@ curl -X DELETE http://${IP}:8080/shelves/3 \
   || error_exit 'Cannot delete shelf.
 
 echo "TODO: ADD MORE TESTS!"
-
