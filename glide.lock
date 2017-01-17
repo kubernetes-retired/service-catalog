@@ -1,5 +1,5 @@
-hash: 581f6d29e7a71d27db75723559d6de346a4c1cd05510b21f033c17c0aade7dcf
-updated: 2017-01-05T15:33:02.806215558-05:00
+hash: 845625f0d2ef07d8a82fd10574baa6bddf74a6b6e0cde3daa7c8fb7a4e1db79e
+updated: 2017-01-16T18:23:39.862551533-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -151,7 +151,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/kubernetes/repo-infra
-  version: fe0ddb2a8c18deeb18515b9412e459599e6d7f3a
+  version: 4c4ae2e2e6994e887da16f3c31f495e10062b810
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -606,6 +606,7 @@ imports:
   - pkg/util/config
   - pkg/util/diff
   - pkg/util/errors
+  - pkg/util/flag
   - pkg/util/flowcontrol
   - pkg/util/flushwriter
   - pkg/util/framer
@@ -634,6 +635,7 @@ imports:
   - pkg/util/wsstream
   - pkg/util/yaml
   - pkg/version
+  - pkg/version/verflag
   - pkg/watch
   - pkg/watch/versioned
   - plugin/pkg/auth/authenticator/password/keystone
