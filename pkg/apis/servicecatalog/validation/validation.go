@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package broker
+package validation
 
 // this contains stubs of nothing until it is understood how it works
 
@@ -32,7 +32,7 @@ import (
 // assuming a nil non-error is ok. not okay, should be empty struct `field.ErrorList{}`
 
 // validateBroker makes sure a broker object is okay?
-func validateBroker(broker *sc.Broker) field.ErrorList {
+func ValidateBroker(broker *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// validate the name?
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&broker.ObjectMeta, false, /*namespace*/
@@ -80,11 +80,11 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 }
 
 // validateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
-func validateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
+func ValidateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// should each individual broker validate successfully before validating changes?
-	allErrs = append(allErrs, validateBroker(new)...)
-	allErrs = append(allErrs, validateBroker(old)...)
+	allErrs = append(allErrs, ValidateBroker(new)...)
+	allErrs = append(allErrs, ValidateBroker(old)...)
 	// allErrs = append(allErrs, validateObjectMetaUpdate(new, old)...)
 	// allErrs = append(allErrs, validateBrokerSpecUpdate(new, old)...)
 	// allErrs = append(allErrs, validateBrokerStatusUpdate(new, old)...)

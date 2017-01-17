@@ -26,6 +26,7 @@ import (
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
 // implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy
@@ -51,7 +52,7 @@ var (
 
 // Canonicalize does not transform a broker.
 func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {
-	broker, ok := obj.(*sc.Broker)
+	_, ok := obj.(*sc.Broker)
 	if !ok {
 		glog.Warning("received a non-broker object to create")
 	}
@@ -80,7 +81,7 @@ func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object)
 }
 
 func (brokerRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
-	return validateBroker(obj.(*sc.Broker))
+	return scv.ValidateBroker(obj.(*sc.Broker))
 }
 
 func (brokerRESTStrategy) AllowCreateOnUpdate() bool {
@@ -114,5 +115,5 @@ func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obje
 		glog.Warning("received a non-broker object to validate from")
 	}
 
-	return validateBrokerUpdate(newBroker, oldBroker)
+	return scv.ValidateBrokerUpdate(newBroker, oldBroker)
 }
