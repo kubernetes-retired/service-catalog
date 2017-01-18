@@ -19,16 +19,37 @@ package fake
 import (
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	uuid "github.com/satori/go.uuid"
 )
 
-// Client implements a fake broker API client, useful for unit testing. None of the methods on
-// the client are concurrency-safe
+// Client implements a fake (./pkg/brokerapi).BrokerClient. The implementation is 100% in-memory
+// and is useful for unit testing. None of the methods in this client are concurrency-safe.
+//
+// See the (./pkg/controller).TestCreateServiceInstanceHelper unit test for example usage of this
+// client
 type Client struct {
-	CatalogClient
-	InstanceClient
-	BindingClient
+	*CatalogClient
+	*InstanceClient
+	*BindingClient
+}
+
+// NewClientFunc returns a function suitable for creating a new BrokerClient from a given
+// Broker object. The returned function is suitable for passing as a callback to code that
+// needs to create clients on-demand
+func NewClientFunc(
+	catCl *CatalogClient,
+	instCl *InstanceClient,
+	bindCl *BindingClient,
+) func(*servicecatalog.Broker) brokerapi.BrokerClient {
+	return func(*servicecatalog.Broker) brokerapi.BrokerClient {
+		return &Client{
+			CatalogClient:  catCl,
+			InstanceClient: instCl,
+			BindingClient:  bindCl,
+		}
+	}
 }
 
 // CatalogClient implements a fake CF catalog API client
@@ -48,6 +69,13 @@ type InstanceClient struct {
 	CreateErr error
 	UpdateErr error
 	DeleteErr error
+}
+
+// NewInstanceClient creates a new empty instance client ready for use
+func NewInstanceClient() *InstanceClient {
+	return &InstanceClient{
+		Instances: make(map[string]*brokerapi.ServiceInstance),
+	}
 }
 
 // CreateServiceInstance returns i.CreateErr if non-nil. If it is nil, checks if id already exists
@@ -128,6 +156,11 @@ type BindingClient struct {
 	CreateCreds brokerapi.Credential
 	CreateErr   error
 	DeleteErr   error
+}
+
+// NewBindingClient creates a new empty binding client, ready for use
+func NewBindingClient() *BindingClient {
+	return &BindingClient{Bindings: make(map[string]struct{})}
 }
 
 // CreateServiceBinding returns b.CreateErr if it was non-nil. Otherwise, returns
