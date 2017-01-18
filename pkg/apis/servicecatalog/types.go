@@ -257,11 +257,12 @@ type BindingSpec struct {
 
 	Parameters map[string]interface{}
 
-	// References to objects to create
-	SecretRef                 string
-	ServiceRef                string
-	ConfigMapRef              string
-	ServiceInjectionPolicyRef string
+	// Names of subordinate objects to create
+	SecretName    string
+	ServiceName   string
+	ConfigMapName string
+	// Placeholder for future SIP support
+	// ServiceInjectionPolicyName string
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
