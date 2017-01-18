@@ -19,7 +19,11 @@ package servicecatalog
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/pkg/runtime"
 )
+
+// TODO: all metadata and parametersfields need to be refactored to real
+// types; skipping for now to get very large generation PR in.
 
 // +nonNamespaced=true
 
@@ -130,7 +134,7 @@ type ServiceClass struct {
 	OSBTags                    []string
 	OSBRequires                []string
 	OSBMaxDBPerNode            string
-	OSBMetadata                interface{}
+	OSBMetadata                runtime.Object
 	OSBDashboardOAuth2ClientID string
 	OSBDashboardSecret         string
 	OSBDashboardRedirectURI    string
@@ -147,7 +151,7 @@ type ServicePlan struct {
 	OSBGUID string
 
 	// OSB-specific
-	OSBMetadata interface{}
+	OSBMetadata runtime.Object
 	OSBFree     bool
 }
 
@@ -176,7 +180,7 @@ type InstanceSpec struct {
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
 
-	Parameters map[string]interface{}
+	Parameters map[string]runtime.Object
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
@@ -255,7 +259,7 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector
 
-	Parameters map[string]interface{}
+	Parameters map[string]runtime.Object
 
 	// Names of subordinate objects to create
 	SecretName    string

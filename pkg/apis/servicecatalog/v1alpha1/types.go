@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/v1"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/pkg/runtime"
 )
 
 // +nonNamespaced=true
@@ -26,20 +27,20 @@ import (
 // Broker represents an entity that provides ServiceClasses for use in the
 // service catalog.
 type Broker struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
-	kapi.ObjectMeta
+	v1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BrokerSpec
-	Status BrokerStatus
+	Spec   BrokerSpec   `json:"spec"`
+	Status BrokerStatus `json:"status"`
 }
 
 // BrokerList is a list of Brokers.
 type BrokerList struct {
-	metav1.TypeMeta
-	metav1.ListMeta
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []Broker
+	Items []Broker `json:"items"`
 }
 
 const (
@@ -51,29 +52,29 @@ const (
 // BrokerSpec represents a description of a Broker.
 type BrokerSpec struct {
 	// The URL to communicate with the Broker via..
-	URL string
+	URL string `json:"url"`
 
 	// Auth credentials should live in an api.Secret that
 	// is documented to have "username" and "password" keys
-	AuthUsername string
-	AuthPassword string
+	AuthUsername string `json:"authUsername"`
+	AuthPassword string `json:"authPassword"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
-	OSBGUID string
+	OSBGUID string `json:"osbGuid"`
 }
 
 // BrokerStatus represents the current status of a Broker.
 type BrokerStatus struct {
-	Conditions []BrokerCondition
+	Conditions []BrokerCondition `json:"conditions"`
 }
 
 // BrokerCondition represents an aspect of a Broker's status.
 type BrokerCondition struct {
-	Type    BrokerConditionType
-	Status  ConditionStatus
-	Reason  string
-	Message string
+	Type    BrokerConditionType `json:"type"`
+	Status  ConditionStatus     `json:"status"`
+	Reason  string              `json:"reason"`
+	Message string              `json:"message"`
 }
 
 // BrokerConditionType represents a broker condition value
@@ -103,109 +104,109 @@ const (
 
 // ServiceClassList is a list of ServiceClasses
 type ServiceClassList struct {
-	metav1.TypeMeta
-	metav1.ListMeta
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []ServiceClass
+	Items []ServiceClass `json:"items"`
 }
 
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
-	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.TypeMeta `json:",inline"`
+	v1.ObjectMeta   `json:"metadata,omitempty"`
 
 	// BrokerName is the reference to the Broker that provides this service.
 	// Immutable.
-	BrokerName string
+	BrokerName string `json:"brokerName"`
 
-	Bindable      bool
-	Plans         []ServicePlan
-	PlanUpdatable bool // Do we support this?
+	Bindable      bool          `json:"bindable"`
+	Plans         []ServicePlan `json:"plans"`
+	PlanUpdatable bool          `json:"planUpdatable"` // Do we support this?
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBTags                    []string
-	OSBRequires                []string
-	OSBMaxDBPerNode            string
-	OSBMetadata                interface{}
-	OSBDashboardOAuth2ClientID string
-	OSBDashboardSecret         string
-	OSBDashboardRedirectURI    string
+	OSBTags                    []string             `json:"osbTags"`
+	OSBRequires                []string             `json:"osbRequires"`
+	OSBMaxDBPerNode            string               `json:"osbMaxDBPerNode"`
+	OSBMetadata                runtime.RawExtension `json:"osbMetadata"`
+	OSBDashboardOAuth2ClientID string               `json:"osbDashboardOAuth2ClientID"`
+	OSBDashboardSecret         string               `json:"osbDashboardSecret"`
+	OSBDashboardRedirectURI    string               `json:"osbDashboardRedirectURI"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
 type ServicePlan struct {
 	// CLI-friendly name of this plan
-	Name string
+	Name string `json:"name"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBMetadata interface{}
-	OSBFree     bool
+	OSBMetadata runtime.RawExtension `json:"osbMetadata"`
+	OSBFree     bool                 `json:"osbFree"`
 }
 
 // InstanceList is a list of instances
 type InstanceList struct {
-	metav1.TypeMeta
-	metav1.ListMeta
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []Instance
+	Items []Instance `json:"items"`
 }
 
 // Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
-	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.TypeMeta `json:",inline"`
+	v1.ObjectMeta   `json:"metadata,omitempty"`
 
-	Spec   InstanceSpec
-	Status InstanceStatus
+	Spec   InstanceSpec   `json:"spec"`
+	Status InstanceStatus `json:"status"`
 }
 
 // InstanceSpec represents a description of an Instance.
 type InstanceSpec struct {
 	// ServiceClassName is the reference to the ServiceClass this is an
 	// instance of.  Immutable.
-	ServiceClassName string
+	ServiceClassName string `json:"serviceClassName"`
 	// ServicePlanName is the reference to the ServicePlan for this instance.
-	PlanName string
+	PlanName string `json:"planName"`
 
-	Parameters map[string]interface{}
+	Parameters map[string]runtime.RawExtension `json:"parameters"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB SB API.
 	// Immutable.
-	OSBGUID string
+	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBCredentials   string
-	OSBDashboardURL  string
-	OSBInternalID    string
-	OSBServiceID     string
-	OSBPlanID        string
-	OSBType          string
-	OSBSpaceGUID     string
-	OSBLastOperation string
+	OSBCredentials   string `json:"osbCredentials"`
+	OSBDashboardURL  string `json:"osbDashboardURL"`
+	OSBInternalID    string `json:"osbInternalID"`
+	OSBServiceID     string `json:"osbServiceID"`
+	OSBPlanID        string `json:"osbPlanID"`
+	OSBType          string `json:"osbType"`
+	OSBSpaceGUID     string `json:"osbSpaceGUID"`
+	OSBLastOperation string `json:"osbLastOperation"`
 }
 
 // InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
-	Conditions []InstanceCondition
+	Conditions []InstanceCondition `json:"conditions"`
 }
 
 // InstanceCondition represents an aspect of an Instance's status.
 type InstanceCondition struct {
-	Type    InstanceConditionType
-	Status  ConditionStatus
-	Reason  string
-	Message string
+	Type    InstanceConditionType `json:"type"`
+	Status  ConditionStatus       `json:"status"`
+	Reason  string                `json:"reason"`
+	Message string                `json:"message"`
 }
 
 // InstanceConditionType represents a instance condition value
@@ -231,59 +232,59 @@ const (
 
 // BindingList is a list of Bindings
 type BindingList struct {
-	metav1.TypeMeta
-	metav1.ListMeta
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []Binding
+	Items []Binding `json:"items"`
 }
 
 // Binding represents a "used by" relationship between an application and an
 // Instance.
 type Binding struct {
-	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.TypeMeta `json:",inline"`
+	v1.ObjectMeta   `json:"metadata,omitempty"`
 
-	Spec   BindingSpec
-	Status BindingStatus
+	Spec   BindingSpec   `json:"spec"`
+	Status BindingStatus `json:"status"`
 }
 
 // BindingSpec represents a description of a Binding.
 type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	// Immutable.
-	InstanceRef kapi.ObjectReference
+	InstanceRef v1.ObjectReference `json:"instanceRef"`
 	// AppLabelSelector selects the pods in the Binding's namespace that
 	// should be injected with the results of the binding.  Immutable.
-	AppLabelSelector metav1.LabelSelector
+	AppLabelSelector metav1.LabelSelector `json:"appLabelSelector"`
 
-	Parameters map[string]interface{}
+	Parameters map[string]runtime.RawExtension `json:"parameters"`
 
 	// Names of subordinate objects to create
-	SecretName    string
-	ServiceName   string
-	ConfigMapName string
+	SecretName    string `json:"secretName"`
+	ServiceName   string `json:"serviceName"`
+	ConfigMapName string `json:"configMapName"`
 	// Placeholder for future SIP support
-	// ServiceInjectionPolicyName string
+	// ServiceInjectionPolicyName string `json:"serviceInjectionPolicyName"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	OSBGUID string `json:"osbGuid"`
 
 	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }
 
 // BindingStatus represents the current status of a Binding.
 type BindingStatus struct {
-	Conditions []BindingCondition
+	Conditions []BindingCondition `json:"conditions"`
 }
 
 // BindingCondition represents an aspect of a Binding's status.
 type BindingCondition struct {
-	Type    BindingConditionType
-	Status  ConditionStatus
-	Reason  string
-	Message string
+	Type    BindingConditionType `json:"type"`
+	Status  ConditionStatus      `json:"status"`
+	Reason  string               `json:"reason"`
+	Message string               `json:"message"`
 }
 
 // BindingConditionType represents a binding condition value

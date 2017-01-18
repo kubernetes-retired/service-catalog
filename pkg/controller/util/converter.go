@@ -21,14 +21,16 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
+// TODO: uncomment metadata fields once those fields are corrected and made round-trippable.
+
 func convertServicePlans(plans []brokerapi.ServicePlan) []servicecatalog.ServicePlan {
 	ret := make([]servicecatalog.ServicePlan, len(plans))
 	for i, plan := range plans {
 		ret[i] = servicecatalog.ServicePlan{
-			Name:        plan.Name,
-			OSBGUID:     plan.ID,
-			OSBMetadata: plan.Metadata,
-			OSBFree:     plan.Free,
+			Name:    plan.Name,
+			OSBGUID: plan.ID,
+			// OSBMetadata: plan.Metadata,
+			OSBFree: plan.Free,
 		}
 	}
 	return ret
@@ -46,7 +48,7 @@ func ConvertCatalog(in *brokerapi.Catalog) ([]*servicecatalog.ServiceClass, erro
 			OSBGUID:       svc.ID,
 			OSBTags:       svc.Tags,
 			OSBRequires:   svc.Requires,
-			OSBMetadata:   svc.Metadata,
+			// OSBMetadata:   svc.Metadata,
 		}
 	}
 	return ret, nil

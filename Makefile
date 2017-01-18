@@ -18,6 +18,7 @@ all: build test verify
 #######################
 ROOT           = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BINDIR        ?= bin
+BUILD_DIR     ?= build
 COVERAGE      ?= $(CURDIR)/coverage.html
 SC_PKG         = github.com/kubernetes-incubator/service-catalog
 TOP_SRC_DIRS   = cmd contrib pkg
@@ -83,7 +84,9 @@ $(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 
 # This section contains the code generation stuff
 #################################################
-.generate_exes: $(BINDIR)/defaulter-gen $(BINDIR)/deepcopy-gen
+.generate_exes: $(BINDIR)/defaulter-gen \
+                $(BINDIR)/deepcopy-gen \
+                $(BINDIR)/conversion-gen
 	touch $@
 
 $(BINDIR)/defaulter-gen: .init cmd/libs/go2idl/defaulter-gen
@@ -91,6 +94,9 @@ $(BINDIR)/defaulter-gen: .init cmd/libs/go2idl/defaulter-gen
 
 $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/cmd/libs/go2idl/deepcopy-gen
+
+$(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
@@ -102,6 +108,12 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --bounding-dirs github.com/kubernetes-incubator/service-catalog \
 	  -O zz_generated.deepcopy
+	$(DOCKER_CMD) $(BINDIR)/conversion-gen --v 1 --logtostderr \
+	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
+	  --extra-peer-dirs k8s.io/kubernetes/pkg/api,k8s.io/kubernetes/pkg/api/v1,k8s.io/kubernetes/pkg/apis/meta/v1,k8s.io/kubernetes/pkg/conversion,k8s.io/kubernetes/pkg/runtime \
+	  -O zz_generated.conversion
+	  # the previous three directories will be changed from kubernetes to apimachinery in the future
+	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	  touch $@
 
 # Some prereq stuff
@@ -130,12 +142,12 @@ verify: .init .generate_files
 	@# "for" to be executed in the container and not on the host. Which means
 	@# we have just one container for everything and not one container per
 	@# file.  The $(subst) removes the "-t" flag from the Docker cmd.
-	@echo for i in \`find $(TOP_SRC_DIRS) -name \*.go \| grep -v zz\`\; do \
+	@echo for i in \`find $(TOP_SRC_DIRS) -name \*.go \| grep -v generated\`\; do \
 	  golint --set_exit_status \$$i \; \
 	  go vet \$$i \; \
 	done | $(subst -ti,-i,$(DOCKER_CMD)) sh -e
 	@echo Running repo-infra verify scripts
-	$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v zz_generated > .out 2>&1 || true
+	$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
 	@rm .out
 

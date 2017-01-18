@@ -14,7 +14,6 @@ coverage.html
 .scBuildImage
 .init
 .generate*
-**/zz*.go
 .envrc
 build/*/tmp/*
 contrib/build/*/tmp/*
