@@ -62,21 +62,21 @@ node {
       parallel(
         'Cluster': {
           withCredentials([file(credentialsId: "${test_account}", variable: 'TEST_SERVICE_ACCOUNT')]) {
-            sh """${env.ROOT}/contrib/hack/init_cluster.sh ${clustername} \
+            sh """${env.ROOT}/contrib/jenkins/init_cluster.sh ${clustername} \
                   --project ${test_project} \
                   --zone ${test_zone} \
                   --credentials ${env.TEST_SERVICE_ACCOUNT}"""
           }
         },
         'Build': {
-          sh """${env.ROOT}/contrib/hack/build.sh --no-docker-compile \
+          sh """${env.ROOT}/contrib/jenkins/build.sh --no-docker-compile \
                 --project ${test_project} \
                 --coverage '${env.WORKSPACE}/coverage.html'"""
         }
       )
 
       // Run end-2-end tests on the deployed cluster.
-      sh """${env.ROOT}/contrib/hack/test_deploy.sh \
+      sh """${env.ROOT}/contrib/jenkins/test_deploy.sh \
             --project ${test_project} \
             --namespace ${namespace}
       """
@@ -84,7 +84,7 @@ node {
       currentBuild.result = 'FAILURE'
     } finally {
       try {
-        sh """${env.ROOT}/contrib/hack/cleanup_cluster.sh ${clustername} \
+        sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh ${clustername} \
               --project ${test_project} \
               --zone ${test_zone}"""
       } catch (Exception e) {

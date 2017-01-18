@@ -16,7 +16,7 @@
 
 set -u
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. ${ROOT}/contrib/hack/run_utilities.sh
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+. ${ROOT}/contrib/jenkins/run_utilities.sh
 
 run_main "$@"
