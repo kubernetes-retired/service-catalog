@@ -37,6 +37,7 @@ generated_files=($(
         -o -wholename './target' \
         -o -wholename '*/third_party/*' \
         -o -wholename '*/vendor/*' \
+        -o -wholename '*/.glide/*' \
         -o -wholename '*/codecgen-*-1234.generated.go' \
       \) -prune \
     \) -name '*.generated.go' | LC_ALL=C sort -r))
