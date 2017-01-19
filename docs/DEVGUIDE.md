@@ -63,10 +63,10 @@ necessary tooling installed on your host (such as a golang compiler or glide).
 Building outside the container is possible, but not officially supported.
 
 Note, this will do the basic build of the service catalog. There are more
-more [advanced build steps](#advanced_build_steps) below as well.
+more [advanced build steps](#advanced-build-steps) below as well.
 
 To deploy to Kubernetes, see the
-[Deploying to Kubernetes](#deploying_to_kubernetes) section.
+[Deploying to Kubernetes](#deploying-to-kubernetes) section.
 
 ### Notes Concerning the Build Process/Makefile
 
