@@ -146,7 +146,7 @@ list:
     kubectl get servicebrokers,serviceclasses,serviceinstances,servicebindings
 
 **NOTE**: If there are any resources left over from an earlier walkthrough, you
-can delete them using `script/cleanup.sh`.
+can delete them using `contrib/hack/cleanup.sh`.
 
 Now we are ready to use service catalog. First, register service broker with the
 catalog:
