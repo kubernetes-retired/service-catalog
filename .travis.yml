@@ -6,4 +6,4 @@ cache:
   directories:
   - .glide
 script:
-- make build test verify images
+- make build test-unit verify images

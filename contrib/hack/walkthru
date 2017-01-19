@@ -27,39 +27,42 @@ function cleanKube() {
 	done
 }
 
+# apt-get install socat
+# DNS_SERVER_IP=172.17.0.3 KUBE_ENABLE_CLUSTER_DNS=true hack/local-up-cluster.sh
+
 export ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export PATH=${ROOT}/contrib/bin:$PATH
+export PATH=${ROOT}/contrib/hack:$PATH
 export VERSION=$(git describe --tags --always --abbrev=7 --dirty)
 export HELM_VERSION=v2.1.3
-export HELM_HOST=localhost:44134
+export HELM_HOST=172.17.0.3:44134
 cd ${ROOT}
 
 # Make our dockerized version of some exes
 makeKubectl
 makeHelm
 
-# Start Kube if not already running
-if ! curl http://localhost:8080/api ; then
-	startKube
-fi
-
-# Clean our old stuff
-cleanKube
+# # Start Kube if not already running
+# if ! curl http://localhost:8080/api ; then
+# 	startKube
+# fi
+# 
+# # Clean our old stuff
+# cleanKube
 
 # Install/prep helm
-docker rm -f tiller > /dev/null 2>&1 || true    # delete old one if there
-docker run --name tiller -d --net host \
-	gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
-helm init --client-only
+# docker rm -f tiller > /dev/null 2>&1 || true    # delete old one if there
+# docker run --name tiller -d --net host \
+	# gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
+helm init # --client-only
 
 # Wait until helm to be ready
-while ! helm version ; do
-	sleep 1
-	docker logs tiller
-done
+#while ! helm version ; do
+	#sleep 1
+	# docker logs tiller
+#done
 
 # Sometimes tiller isn't really ready
-sleep 1
+#sleep 1
 
 helm install \
 	--set "registry=${REGISTRY},version=${VERSION}" \
@@ -67,8 +70,20 @@ helm install \
 	deploy/catalog
 
 kubectl get deployments,services --namespace catalog
+sleep 5
+kubectl get deployments,services --namespace catalog
 
-exit
+kubectl create -f contrib/examples/walkthrough/broker.yaml
+sleep 5
+
+kubectl get serviceclasses
+
+kubectl create -f contrib/examples/walkthrough/backend.yaml
+kubectl create -f contrib/examples/walkthrough/binding.yaml
+
+kubectl get servicebrokers,serviceclasses,serviceinstances
+
+exit 0
 
 # Clean up our stuff and stop kube
 docker rm -f tiller
