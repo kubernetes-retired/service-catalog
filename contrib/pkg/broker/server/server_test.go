@@ -119,7 +119,7 @@ type Controller struct {
 
 	catalog               func() (*brokerapi.Catalog, error)
 	getServiceInstance    func(id string) (string, error)
-	createServiceInstance func(id string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
+	createServiceInstance func(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
 	removeServiceInstance func(id string) error
 	bind                  func(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error)
 	unBind                func(instanceID string, bindingID string) error
@@ -141,7 +141,7 @@ func (controller *Controller) GetServiceInstance(id string) (string, error) {
 	return controller.getServiceInstance(id)
 }
 
-func (controller *Controller) CreateServiceInstance(id string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (controller *Controller) CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	if controller.createServiceInstance == nil {
 		controller.t.Error("Test failed to provide 'createServiceInstance' handler")
 	}

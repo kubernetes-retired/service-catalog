@@ -103,7 +103,7 @@ func (c *k8sController) Catalog() (*brokerapi.Catalog, error) {
 	return &brokerapi.Catalog{Services: services}, nil
 }
 
-func (c *k8sController) CreateServiceInstance(instanceID string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (c *k8sController) CreateServiceInstance(instanceID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	// Fetch the type that should be used for this service/plan
 	t, err := c.getType(req.ServiceID, req.PlanID)
 	if err != nil {

@@ -80,11 +80,11 @@ func NewInstanceClient() *InstanceClient {
 
 // CreateServiceInstance returns i.CreateErr if non-nil. If it is nil, checks if id already exists
 // in i.Instances and returns ErrInstanceAlreadyExists if so. If not, converts req to a
-// ServiceInstance, adds it to i.Instances and returns it
+// ServiceInstance and adds it to i.Instances
 func (i *InstanceClient) CreateServiceInstance(
 	id string,
-	req *brokerapi.ServiceInstanceRequest,
-) (*brokerapi.ServiceInstance, error) {
+	req *brokerapi.CreateServiceInstanceRequest,
+) (*brokerapi.CreateServiceInstanceResponse, error) {
 
 	if i.CreateErr != nil {
 		return nil, i.CreateErr
@@ -94,7 +94,7 @@ func (i *InstanceClient) CreateServiceInstance(
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return i.Instances[id], nil
+	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
 // UpdateServiceInstance returns i.UpdateErr if it was non-nil. Otherwise, returns
@@ -102,7 +102,7 @@ func (i *InstanceClient) CreateServiceInstance(
 // a ServiceInstance, adds it to i.Instances and returns it
 func (i *InstanceClient) UpdateServiceInstance(
 	id string,
-	req *brokerapi.ServiceInstanceRequest,
+	req *brokerapi.CreateServiceInstanceRequest,
 ) (*brokerapi.ServiceInstance, error) {
 
 	if i.UpdateErr != nil {
@@ -119,7 +119,7 @@ func (i *InstanceClient) UpdateServiceInstance(
 // DeleteServiceInstance returns i.DeleteErr if it was non-nil. Otherwise returns
 // ErrInstanceNotFound if id didn't already exist in i.Instances. If it it did already exist,
 // removes i.Instances[id] from the map and returns nil
-func (i *InstanceClient) DeleteServiceInstance(id string) error {
+func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteServiceInstanceRequest) error {
 
 	if i.DeleteErr != nil {
 		return i.DeleteErr
@@ -136,7 +136,7 @@ func (i *InstanceClient) exists(id string) bool {
 	return ok
 }
 
-func convertInstanceRequest(req *brokerapi.ServiceInstanceRequest) *brokerapi.ServiceInstance {
+func convertInstanceRequest(req *brokerapi.CreateServiceInstanceRequest) *brokerapi.ServiceInstance {
 	return &brokerapi.ServiceInstance{
 		ID:               uuid.NewV4().String(),
 		DashboardURL:     "https://github.com/kubernetes-incubator/service-catalog",

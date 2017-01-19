@@ -26,22 +26,14 @@ type ServiceInstance struct {
 	OrganizationGUID string `json:"organization_guid"`
 	SpaceGUID        string `json:"space_guid"`
 
-	LastOperation *LastOperation `json:"last_operation, omitempty"`
+	LastOperation *LastOperationResponse `json:"last_operation, omitempty"`
 
 	Parameters map[string]interface{} `json:"parameters, omitempty"`
 }
 
-// LastOperation represents the state of a discrete action that the broker is
-// completing asynchronously
-type LastOperation struct {
-	State                    string `json:"state"`
-	Description              string `json:"description"`
-	AsyncPollIntervalSeconds int    `json:"async_poll_interval_seconds, omitempty"`
-}
-
-// ServiceInstanceRequest represents a request to a broker to provision an
+// CreateServiceInstanceRequest represents a request to a broker to provision an
 // instance of a service
-type ServiceInstanceRequest struct {
+type CreateServiceInstanceRequest struct {
 	OrgID             string                 `json:"organization_guid,omitempty"`
 	PlanID            string                 `json:"plan_id,omitempty"`
 	ServiceID         string                 `json:"service_id,omitempty"`
@@ -53,6 +45,42 @@ type ServiceInstanceRequest struct {
 // CreateServiceInstanceResponse represents the response from a broker after a
 // request to provision an instance of a service
 type CreateServiceInstanceResponse struct {
-	DashboardURL  string         `json:"dashboard_url, omitempty"`
-	LastOperation *LastOperation `json:"last_operation, omitempty"`
+	DashboardURL string `json:"dashboard_url, omitempty"`
+	Operation    string `json:"operation, omitempty"`
 }
+
+// DeleteServiceInstanceRequest represents a request to a broker to deprovision an
+// instance of a service
+type DeleteServiceInstanceRequest struct {
+	ServiceID         string `json:"service_id"`
+	PlanID            string `json:"plan_id"`
+	AcceptsIncomplete bool   `json:"accepts_incomplete,omitempty"`
+}
+
+// DeleteServiceInstanceResponse represents the response from a broker after a request
+// to deprovision an instance of a service
+type DeleteServiceInstanceResponse struct {
+	Operation string `json:"operation,omitempty"`
+}
+
+// LastOperationRequest represents a request to a broker to give the state of the action
+// it is completing asynchronously
+type LastOperationRequest struct {
+	ServiceID string `json:"service_id,omitempty"`
+	PlanID    string `json:"plan_id,omitempty"`
+	Operation string `json:"operation,omitempty"`
+}
+
+// LastOperationResponse represents the broker response with the state of a discrete action
+// that the broker is completing asynchronously
+type LastOperationResponse struct {
+	State       string `json:"state"`
+	Description string `json:"description,omitempty"`
+}
+
+// Defines the possible states of an asynchronous request to a broker
+const (
+	StateInProgress = "in progress"
+	StateSucceeded  = "succeeded"
+	StateFailed     = "failed"
+)

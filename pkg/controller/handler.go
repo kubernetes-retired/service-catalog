@@ -84,7 +84,7 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 
 	// TODO: uncomment parameters line once parameters types are refactored.
 	// Make the request to instantiate.
-	createReq := &brokerapi.ServiceInstanceRequest{
+	createReq := &brokerapi.CreateServiceInstanceRequest{
 		ServiceID: in.Spec.OSBServiceID,
 		PlanID:    in.Spec.OSBPlanID,
 		// Parameters: in.Spec.Parameters,

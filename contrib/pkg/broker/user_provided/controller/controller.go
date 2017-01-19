@@ -61,7 +61,7 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 	}, nil
 }
 
-func (c *userProvidedController) CreateServiceInstance(id string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (c *userProvidedController) CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	credString, ok := req.Parameters["credentials"]
 	if !ok {
 		glog.Errorf("Didn't find creds\n %+v\n", req)

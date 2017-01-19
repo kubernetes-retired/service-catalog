@@ -30,7 +30,7 @@ type Reifier interface {
 	RemoveServiceInstance(instanceID string) error
 
 	// CreateServiceInstance creates a new Service Instance
-	CreateServiceInstance(instanceID string, template string, sir *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
+	CreateServiceInstance(instanceID string, template string, sir *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
 
 	// CreateBinding creates a new Service Binding for a given instanceId
 	CreateServiceBinding(instanceID string, sir *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error)

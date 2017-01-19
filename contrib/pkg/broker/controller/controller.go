@@ -25,7 +25,7 @@ type Controller interface {
 	Catalog() (*brokerapi.Catalog, error)
 
 	GetServiceInstance(id string) (string, error)
-	CreateServiceInstance(id string, req *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
+	CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
 	RemoveServiceInstance(id string) error
 
 	Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error)

@@ -75,7 +75,7 @@ func shortenInstanceID(instanceID string) string {
 }
 
 // CreateServiceInstance creates a new Service Instance
-func (h *helmReifier) CreateServiceInstance(instanceID string, tmpl string, sir *brokerapi.ServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (h *helmReifier) CreateServiceInstance(instanceID string, tmpl string, sir *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	values := ""
 	if len(sir.Parameters) > 0 {
 		y, err := yaml.Marshal(sir.Parameters)
