@@ -26,7 +26,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
 const (
