@@ -30,7 +30,7 @@ import (
 )
 
 type k8sBindingInjector struct {
-	client *kubernetes.Clientset
+	client kubernetes.Interface
 }
 
 // CreateK8sBindingInjector creates an instance of a BindingInjector which
