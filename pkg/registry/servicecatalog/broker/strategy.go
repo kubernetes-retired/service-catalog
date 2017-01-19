@@ -35,6 +35,11 @@ type brokerRESTStrategy struct {
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
+// implements interface RESTUpdateStrategy
+type brokerStatusRESTStrategy struct {
+	brokerRESTStrategy
+}
+
 var (
 	brokerRESTStrategies = brokerRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
@@ -48,6 +53,11 @@ var (
 	_ rest.RESTCreateStrategy = brokerRESTStrategies
 	_ rest.RESTUpdateStrategy = brokerRESTStrategies
 	_ rest.RESTDeleteStrategy = brokerRESTStrategies
+
+	brokerStatusUpdateStrategy = brokerStatusRESTStrategy{
+		brokerRESTStrategies,
+	}
+	_ rest.RESTUpdateStrategy = brokerStatusUpdateStrategy
 )
 
 // Canonicalize does not transform a broker.
@@ -116,4 +126,30 @@ func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obje
 	}
 
 	return scv.ValidateBrokerUpdate(newBroker, oldBroker)
+}
+
+func (brokerStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+	newBroker, ok := new.(*sc.Broker)
+	if !ok {
+		glog.Fatal("received a non-broker object to update to")
+	}
+	oldBroker, ok := old.(*sc.Broker)
+	if !ok {
+		glog.Fatal("received a non-broker object to update from")
+	}
+	// status changes are not allowed to update spec
+	newBroker.Spec = oldBroker.Spec
+}
+
+func (brokerStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+	newBroker, ok := new.(*sc.Broker)
+	if !ok {
+		glog.Fatal("received a non-broker object to validate to")
+	}
+	oldBroker, ok := old.(*sc.Broker)
+	if !ok {
+		glog.Fatal("received a non-broker object to validate from")
+	}
+
+	return scv.ValidateBrokerStatusUpdate(newBroker, oldBroker)
 }

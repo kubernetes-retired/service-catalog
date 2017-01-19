@@ -90,3 +90,10 @@ func ValidateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
 	// allErrs = append(allErrs, validateBrokerStatusUpdate(new, old)...)
 	return allErrs
 }
+
+// ValidateBrokerStatusUpdate checks that when changing from an older broker to a newer broker is okay.
+func ValidateBrokerStatusUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateBrokerUpdate(new, old)...)
+	return allErrs
+}
