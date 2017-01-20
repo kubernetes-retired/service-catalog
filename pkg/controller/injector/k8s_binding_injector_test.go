@@ -25,8 +25,8 @@ import (
 )
 
 func TestInjectOne(t *testing.T) {
-	binding, _ := getBindings()
-	cred, _ := getCreds()
+	binding := createBindings()[0]
+	cred := createCreds()[0]
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, binding, cred)
 
@@ -39,75 +39,97 @@ func TestInjectOne(t *testing.T) {
 }
 
 func TestInjectTwo(t *testing.T) {
-	binding0, binding1 := getBindings()
-	cred0, cred1 := getCreds()
+	bindings := createBindings()
+	creds := createCreds()
 
 	injector := fakeK8sBindingInjector()
-	inject(t, injector, binding0, cred0)
-	inject(t, injector, binding1, cred1)
+	inject(t, injector, bindings[0], creds[0])
+	inject(t, injector, bindings[1], creds[1])
 
-	secretsCl := injector.client.Core().Secrets(binding0.Namespace)
-	secret, err := secretsCl.Get(binding0.Name)
+	secretsCl := injector.client.Core().Secrets(bindings[0].Namespace)
+	secret, err := secretsCl.Get(bindings[0].Name)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, cred0)
+	testCredentialsInjected(t, secret.Data, creds[0])
 
-	secretsCl = injector.client.Core().Secrets(binding1.Namespace)
-	secret, err = secretsCl.Get(binding1.Name)
+	secretsCl = injector.client.Core().Secrets(bindings[1].Namespace)
+	secret, err = secretsCl.Get(bindings[1].Name)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, cred1)
+	testCredentialsInjected(t, secret.Data, creds[1])
 }
 
 func TestUninjectOne(t *testing.T) {
-	binding, _ := getBindings()
-	cred, _ := getCreds()
+	binding := createBindings()[0]
+	cred := createCreds()[0]
 
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, binding, cred)
 	injector.Uninject(binding)
 
-	secretsCl := injector.client.Core().Secrets(binding.Namespace)
-	secret, err := secretsCl.Get(binding.Name)
-	if err == nil {
-		testCredentialsUninjected(t, secret.Data)
-	}
+	testCredentialsUninjected(t, injector, binding)
 }
 
 func TestUninjectTwo(t *testing.T) {
-	binding0, binding1 := getBindings()
-	cred0, cred1 := getCreds()
+	bindings := createBindings()
+	creds := createCreds()
 
 	injector := fakeK8sBindingInjector()
-	inject(t, injector, binding0, cred0)
-	inject(t, injector, binding1, cred1)
+	inject(t, injector, bindings[0], creds[0])
+	inject(t, injector, bindings[1], creds[1])
 
-	injector.Uninject(binding0)
+	injector.Uninject(bindings[0])
 
-	// test that binding0 is gone
-	secretsCl := injector.client.Core().Secrets(binding0.Namespace)
-	secret, err := secretsCl.Get(binding0.Name)
-	if err == nil {
-		testCredentialsUninjected(t, secret.Data)
-	}
+	// test that bindings[0] is gone
+	testCredentialsUninjected(t, injector, bindings[0])
 
-	//test that binding1 is still there
-	secretsCl = injector.client.Core().Secrets(binding1.Namespace)
-	secret, err = secretsCl.Get(binding1.Name)
+	//test that bindings[1] is still there
+	secretsCl := injector.client.Core().Secrets(bindings[1].Namespace)
+	secret, err := secretsCl.Get(bindings[1].Name)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, cred1)
+	testCredentialsInjected(t, secret.Data, creds[1])
 
-	// test that binding1 is gone after uninject
-	injector.Uninject(binding1)
+	// test that bindings[1] is gone after uninject
+	injector.Uninject(bindings[1])
 
-	secretsCl = injector.client.Core().Secrets(binding1.Namespace)
-	secret, err = secretsCl.Get(binding1.Name)
-	if err == nil {
-		testCredentialsUninjected(t, secret.Data)
+	testCredentialsUninjected(t, injector, bindings[1])
+}
+
+func createBindings() []*servicecatalog.Binding {
+	return []*servicecatalog.Binding{
+		{
+			ObjectMeta: kapi.ObjectMeta{
+				Name:      "name0",
+				Namespace: "namespace0",
+			},
+		},
+		&servicecatalog.Binding{
+			ObjectMeta: kapi.ObjectMeta{
+				Name:      "name1",
+				Namespace: "namespace1",
+			},
+		},
+	}
+}
+
+func createCreds() []*brokerapi.Credential {
+	return []*brokerapi.Credential{
+		{
+			Hostname: "host0",
+			Port:     "123",
+			Username: "user0",
+			Password: "password!@#!@#!0)",
+		},
+		{
+			Hostname: "host1",
+			Port:     "456",
+			Username: "user1",
+			Password: "password*(&*1)",
+		},
 	}
 }
 
@@ -115,38 +137,6 @@ func fakeK8sBindingInjector() *k8sBindingInjector {
 	return &k8sBindingInjector{
 		client: fake.NewSimpleClientset(),
 	}
-}
-
-func getBindings() (*servicecatalog.Binding, *servicecatalog.Binding) {
-	binding0 := &servicecatalog.Binding{
-		ObjectMeta: kapi.ObjectMeta{
-			Name:      "name0",
-			Namespace: "namespace0",
-		},
-	}
-	binding1 := &servicecatalog.Binding{
-		ObjectMeta: kapi.ObjectMeta{
-			Name:      "name1",
-			Namespace: "namespace1",
-		},
-	}
-	return binding0, binding1
-}
-
-func getCreds() (*brokerapi.Credential, *brokerapi.Credential) {
-	cred0 := &brokerapi.Credential{
-		Hostname: "host0",
-		Port:     "123",
-		Username: "user0",
-		Password: "password!@#!@#!0)",
-	}
-	cred1 := &brokerapi.Credential{
-		Hostname: "host1",
-		Port:     "456",
-		Username: "user1",
-		Password: "password*(&*1)",
-	}
-	return cred0, cred1
 }
 
 func inject(t *testing.T, injector BindingInjector,
@@ -169,23 +159,18 @@ func testCredentialsInjected(t *testing.T, data map[string][]byte, cred *brokera
 		}
 	}
 
+	// TODO change so that it's not hard coded to Credential struct fields
 	testField("hostname", cred.Hostname)
 	testField("port", cred.Port)
 	testField("username", cred.Username)
 	testField("password", cred.Password)
 }
 
-// test that fields from credential is no longer there
-func testCredentialsUninjected(t *testing.T, data map[string][]byte) {
-	testField := func(key string) {
-		_, ok := data[key]
-		if ok {
-			t.Errorf("%s found in map when it's expected to not be there", key)
-		}
+// test that credential is no longer there
+func testCredentialsUninjected(t *testing.T, injector *k8sBindingInjector, binding *servicecatalog.Binding) {
+	secretsCl := injector.client.Core().Secrets(binding.Namespace)
+	_, err := secretsCl.Get(binding.Name)
+	if err == nil {
+		t.Fatal("Credentials still present after Uninject")
 	}
-
-	testField("hostname")
-	testField("port")
-	testField("username")
-	testField("password")
 }
