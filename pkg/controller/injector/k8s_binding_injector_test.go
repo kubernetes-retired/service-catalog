@@ -25,8 +25,8 @@ import (
 )
 
 func TestInjectOne(t *testing.T) {
-	binding,_ := getBindings()
-	cred,_ := getCreds()
+	binding, _ := getBindings()
+	cred, _ := getCreds()
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, binding, cred)
 
@@ -62,8 +62,8 @@ func TestInjectTwo(t *testing.T) {
 }
 
 func TestUninjectOne(t *testing.T) {
-	binding,_ := getBindings()
-	cred,_ := getCreds()
+	binding, _ := getBindings()
+	cred, _ := getCreds()
 
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, binding, cred)
