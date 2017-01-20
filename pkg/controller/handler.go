@@ -22,8 +22,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
-
 	"github.com/satori/go.uuid"
 )
 
@@ -218,7 +216,7 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	if err != nil {
 		return nil, err
 	}
-	catalog, err := util.ConvertCatalog(sbcat)
+	catalog, err := convertCatalog(sbcat)
 	if err != nil {
 		return nil, err
 	}
@@ -244,4 +242,35 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 
 	glog.Infof("Updating Service Broker %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
 	return h.storage.Brokers().Update(in)
+}
+
+// convertCatalog converts a service broker catalog into an array of ServiceClasses
+func convertCatalog(in *brokerapi.Catalog) ([]*servicecatalog.ServiceClass, error) {
+	ret := make([]*servicecatalog.ServiceClass, len(in.Services))
+	for i, svc := range in.Services {
+		plans := convertServicePlans(svc.Plans)
+		ret[i] = &servicecatalog.ServiceClass{
+			Bindable:      svc.Bindable,
+			Plans:         plans,
+			PlanUpdatable: svc.PlanUpdateable,
+			OSBGUID:       svc.ID,
+			OSBTags:       svc.Tags,
+			OSBRequires:   svc.Requires,
+			// OSBMetadata:   svc.Metadata,
+		}
+	}
+	return ret, nil
+}
+
+func convertServicePlans(plans []brokerapi.ServicePlan) []servicecatalog.ServicePlan {
+	ret := make([]servicecatalog.ServicePlan, len(plans))
+	for i, plan := range plans {
+		ret[i] = servicecatalog.ServicePlan{
+			Name:    plan.Name,
+			OSBGUID: plan.ID,
+			// OSBMetadata: plan.Metadata,
+			OSBFree: plan.Free,
+		}
+	}
+	return ret
 }
