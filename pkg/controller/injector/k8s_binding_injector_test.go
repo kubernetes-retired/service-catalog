@@ -28,7 +28,7 @@ func TestInjectOne(t *testing.T) {
 	binding,_ := getBindings()
 	cred,_ := getCreds()
 	injector := fakeK8sBindingInjector()
-	injectAndTest(t, injector, binding, cred)
+	inject(t, injector, binding, cred)
 
 	secretsCl := injector.client.Core().Secrets(binding.Namespace)
 	secret, err := secretsCl.Get(binding.Name)
@@ -43,8 +43,8 @@ func TestInjectTwo(t *testing.T) {
 	cred0, cred1 := getCreds()
 
 	injector := fakeK8sBindingInjector()
-	injectAndTest(t, injector, binding0, cred0)
-	injectAndTest(t, injector, binding1, cred1)
+	inject(t, injector, binding0, cred0)
+	inject(t, injector, binding1, cred1)
 
 	secretsCl := injector.client.Core().Secrets(binding0.Namespace)
 	secret, err := secretsCl.Get(binding0.Name)
@@ -66,7 +66,7 @@ func TestUninjectOne(t *testing.T) {
 	cred,_ := getCreds()
 
 	injector := fakeK8sBindingInjector()
-	injectAndTest(t, injector, binding, cred)
+	inject(t, injector, binding, cred)
 	injector.Uninject(binding)
 
 	secretsCl := injector.client.Core().Secrets(binding.Namespace)
@@ -81,8 +81,8 @@ func TestUninjectTwo(t *testing.T) {
 	cred0, cred1 := getCreds()
 
 	injector := fakeK8sBindingInjector()
-	injectAndTest(t, injector, binding0, cred0)
-	injectAndTest(t, injector, binding1, cred1)
+	inject(t, injector, binding0, cred0)
+	inject(t, injector, binding1, cred1)
 
 	injector.Uninject(binding0)
 
@@ -102,10 +102,10 @@ func TestUninjectTwo(t *testing.T) {
 	testCredentialsInjected(t, secret.Data, cred1)
 
 	// test that binding1 is gone after uninject
-	// injector.Uninject(binding0)
+	injector.Uninject(binding1)
 
-	secretsCl = injector.client.Core().Secrets(binding0.Namespace)
-	secret, err = secretsCl.Get(binding0.Name)
+	secretsCl = injector.client.Core().Secrets(binding1.Namespace)
+	secret, err = secretsCl.Get(binding1.Name)
 	if err == nil {
 		testCredentialsUninjected(t, secret.Data)
 	}
@@ -149,7 +149,7 @@ func getCreds() (*brokerapi.Credential, *brokerapi.Credential) {
 	return cred0, cred1
 }
 
-func injectAndTest(t *testing.T, injector BindingInjector,
+func inject(t *testing.T, injector BindingInjector,
 	binding *servicecatalog.Binding, cred *brokerapi.Credential) {
 
 	err := injector.Inject(binding, cred)
