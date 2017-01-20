@@ -25,8 +25,8 @@ import (
 )
 
 func TestInjectOne(t *testing.T) {
-	binding := createBindings()[0]
-	cred := createCreds()[0]
+	binding := createBindings(1)[0]
+	cred := createCreds(1)[0]
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, binding, cred)
 
@@ -39,8 +39,8 @@ func TestInjectOne(t *testing.T) {
 }
 
 func TestInjectTwo(t *testing.T) {
-	bindings := createBindings()
-	creds := createCreds()
+	bindings := createBindings(2)
+	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, bindings[0], creds[0])
@@ -62,8 +62,8 @@ func TestInjectTwo(t *testing.T) {
 }
 
 func TestUninjectOne(t *testing.T) {
-	binding := createBindings()[0]
-	cred := createCreds()[0]
+	binding := createBindings(1)[0]
+	cred := createCreds(1)[0]
 
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, binding, cred)
@@ -73,8 +73,8 @@ func TestUninjectOne(t *testing.T) {
 }
 
 func TestUninjectTwo(t *testing.T) {
-	bindings := createBindings()
-	creds := createCreds()
+	bindings := createBindings(2)
+	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
 	inject(t, injector, bindings[0], creds[0])
@@ -99,38 +99,30 @@ func TestUninjectTwo(t *testing.T) {
 	testCredentialsUninjected(t, injector, bindings[1])
 }
 
-func createBindings() []*servicecatalog.Binding {
-	return []*servicecatalog.Binding{
-		{
+func createBindings(length int) []*servicecatalog.Binding {
+	ret := make([]*servicecatalog.Binding, length, length)
+	for i := range ret {
+		ret[i] = &servicecatalog.Binding{
 			ObjectMeta: kapi.ObjectMeta{
-				Name:      "name0",
-				Namespace: "namespace0",
+				Name:      "name" + string(i),
+				Namespace: "namespace" + string(i),
 			},
-		},
-		&servicecatalog.Binding{
-			ObjectMeta: kapi.ObjectMeta{
-				Name:      "name1",
-				Namespace: "namespace1",
-			},
-		},
+		}
 	}
+	return ret
 }
 
-func createCreds() []*brokerapi.Credential {
-	return []*brokerapi.Credential{
-		{
-			Hostname: "host0",
-			Port:     "123",
-			Username: "user0",
-			Password: "password!@#!@#!0)",
-		},
-		{
-			Hostname: "host1",
-			Port:     "456",
-			Username: "user1",
-			Password: "password*(&*1)",
-		},
+func createCreds(length int) []*brokerapi.Credential {
+	ret := make([]*brokerapi.Credential, length, length)
+	for i := range ret {
+		ret[i] = &brokerapi.Credential{
+			Hostname: "host" + string(i),
+			Port:     "123" + string(i),
+			Username: "user" + string(i),
+			Password: "password!@#!@#!0)" + string(i),
+		}
 	}
+	return ret
 }
 
 func fakeK8sBindingInjector() *k8sBindingInjector {
