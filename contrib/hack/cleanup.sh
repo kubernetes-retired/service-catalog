@@ -14,7 +14,8 @@
 # limitations under the License.
 
 
-set -u
+set -o nounset
+set -o errexit
 
 KUBECTL=kubectl
 TYPES='servicebrokers serviceclasses serviceinstances servicebindings'

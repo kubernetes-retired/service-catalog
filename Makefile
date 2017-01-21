@@ -167,6 +167,8 @@ verify: .init .generate_files
 	@#
 	@echo Running href checker:
 	@build/verify-links.sh
+	@echo Running errexit checker:
+	@build/verify-errexit.sh
 
 format: .init
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
