@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/k8s/controller"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
@@ -55,12 +56,12 @@ func main() {
 	}
 
 	if len(options.HelmBinary) == 0 {
-		panic("Need helm_binary specified")
+		glog.Fatal("--helm_binary must be specified")
 	}
 	r := controller.NewHelmReifier(options.HelmBinary, options.TillerHost)
 	c, err := controller.CreateController(options.RegistryHost, options.RegistryPort, r)
 	if err != nil {
-		panic(fmt.Sprintf("Error creating controller [%s]...", err.Error()))
+		glog.Fatalf("Error creating controller: %s", err.Error())
 	}
 
 	server.Start(options.Port, c)
