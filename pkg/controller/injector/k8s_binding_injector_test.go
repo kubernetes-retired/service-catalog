@@ -17,6 +17,8 @@ limitations under the License.
 package injector
 
 import (
+	"errors"
+	"fmt"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/client-go/1.5/kubernetes/fake"
@@ -28,14 +30,18 @@ func TestInjectOne(t *testing.T) {
 	binding := createBindings(1)[0]
 	cred := createCreds(1)[0]
 	injector := fakeK8sBindingInjector()
-	inject(t, injector, binding, cred)
+	if err := inject(t, injector, binding, cred); err != nil {
+		t.Fatal(err)
+	}
 
 	secretsCl := injector.client.Core().Secrets(binding.Namespace)
 	secret, err := secretsCl.Get(binding.Name)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, cred)
+	if err := testCredentialsInjected(t, secret.Data, cred); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestInjectTwo(t *testing.T) {
@@ -43,22 +49,30 @@ func TestInjectTwo(t *testing.T) {
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	inject(t, injector, bindings[0], creds[0])
-	inject(t, injector, bindings[1], creds[1])
+	if err := inject(t, injector, bindings[0], creds[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := inject(t, injector, bindings[1], creds[1]); err != nil {
+		t.Fatal(err)
+	}
 
 	secretsCl := injector.client.Core().Secrets(bindings[0].Namespace)
 	secret, err := secretsCl.Get(bindings[0].Name)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, creds[0])
+	if err := testCredentialsInjected(t, secret.Data, creds[0]); err != nil {
+		t.Error(err)
+	}
 
 	secretsCl = injector.client.Core().Secrets(bindings[1].Namespace)
 	secret, err = secretsCl.Get(bindings[1].Name)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, creds[1])
+	if err := testCredentialsInjected(t, secret.Data, creds[1]); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestUninjectOne(t *testing.T) {
@@ -66,10 +80,14 @@ func TestUninjectOne(t *testing.T) {
 	cred := createCreds(1)[0]
 
 	injector := fakeK8sBindingInjector()
-	inject(t, injector, binding, cred)
+	if err := inject(t, injector, binding, cred); err != nil {
+		t.Fatal(err)
+	}
 	injector.Uninject(binding)
 
-	testCredentialsUninjected(t, injector, binding)
+	if err := testCredentialsUninjected(t, injector, binding); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestUninjectTwo(t *testing.T) {
@@ -77,13 +95,19 @@ func TestUninjectTwo(t *testing.T) {
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	inject(t, injector, bindings[0], creds[0])
-	inject(t, injector, bindings[1], creds[1])
+	if err := inject(t, injector, bindings[0], creds[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := inject(t, injector, bindings[1], creds[1]); err != nil {
+		t.Fatal(err)
+	}
 
 	injector.Uninject(bindings[0])
 
 	// test that bindings[0] is gone
-	testCredentialsUninjected(t, injector, bindings[0])
+	if err := testCredentialsUninjected(t, injector, bindings[0]); err != nil {
+		t.Fatal(err)
+	}
 
 	//test that bindings[1] is still there
 	secretsCl := injector.client.Core().Secrets(bindings[1].Namespace)
@@ -91,12 +115,16 @@ func TestUninjectTwo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	testCredentialsInjected(t, secret.Data, creds[1])
+	if err := testCredentialsInjected(t, secret.Data, creds[1]); err != nil {
+		t.Error(err)
+	}
 
 	// test that bindings[1] is gone after uninject
 	injector.Uninject(bindings[1])
 
-	testCredentialsUninjected(t, injector, bindings[1])
+	if err := testCredentialsUninjected(t, injector, bindings[1]); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func createBindings(length int) []*servicecatalog.Binding {
@@ -132,37 +160,50 @@ func fakeK8sBindingInjector() *k8sBindingInjector {
 }
 
 func inject(t *testing.T, injector BindingInjector,
-	binding *servicecatalog.Binding, cred *brokerapi.Credential) {
+	binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
 
 	err := injector.Inject(binding, cred)
 	if err != nil {
-		t.Fatalf("Error when injecting credentials: %s", err)
+		return fmt.Errorf("Error when injecting credentials: %s", err)
 	}
+	return nil
 }
 
 // tests all fields of credentials are there and also the same value
-func testCredentialsInjected(t *testing.T, data map[string][]byte, cred *brokerapi.Credential) {
-	testField := func(key string, expectedValue string) {
+func testCredentialsInjected(t *testing.T, data map[string][]byte, cred *brokerapi.Credential) error {
+	testField := func(key string, expectedValue string) error {
 		val, ok := data[key]
 		if !ok {
-			t.Errorf("%s not in secret after injecting", key)
+			return fmt.Errorf("%s not in secret after injecting", key)
 		} else if string(val) != expectedValue {
-			t.Errorf("%s does not match. Expected: %s; Actual: %s", key, expectedValue, val)
+			return fmt.Errorf("%s does not match. Expected: %s; Actual: %s",
+				key, expectedValue, val)
 		}
+		return nil
 	}
 
 	// TODO change so that it's not hard coded to Credential struct fields
-	testField("hostname", cred.Hostname)
-	testField("port", cred.Port)
-	testField("username", cred.Username)
-	testField("password", cred.Password)
+	if err := testField("hostname", cred.Hostname); err != nil {
+		return err
+	}
+	if err := testField("port", cred.Port); err != nil {
+		return err
+	}
+	if err := testField("username", cred.Username); err != nil {
+		return err
+	}
+	if err := testField("password", cred.Password); err != nil {
+		return err
+	}
+	return nil
 }
 
 // test that credential is no longer there
-func testCredentialsUninjected(t *testing.T, injector *k8sBindingInjector, binding *servicecatalog.Binding) {
+func testCredentialsUninjected(t *testing.T, injector *k8sBindingInjector, binding *servicecatalog.Binding) error {
 	secretsCl := injector.client.Core().Secrets(binding.Namespace)
 	_, err := secretsCl.Get(binding.Name)
 	if err == nil {
-		t.Fatal("Credentials still present after Uninject")
+		return errors.New("Credentials still present after Uninject")
 	}
+	return nil
 }
