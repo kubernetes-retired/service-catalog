@@ -14,6 +14,10 @@
 
 all: build test verify
 
+# Some env vars that devs might find useful:
+#  GOFLAGS      : extra "go build" flags to use - e.g. -v   (for verbose)
+#  NO_DOCKER=1  : execute each step natively, not in a Docker container
+
 # Define some constants
 #######################
 ROOT           = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -36,7 +40,7 @@ NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION     = 1.7.3
-GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i -v \
+GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i $(GOFLAGS) \
                    -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
