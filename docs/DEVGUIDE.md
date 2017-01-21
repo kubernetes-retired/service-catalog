@@ -104,7 +104,16 @@ The `test` Makefile target will run both the unit and integration tests, e.g.:
 
     make test
 
-To see how well the unit tests cover the source code, you can use:
+If you want to run just a subset of the unit testcases then you can
+specify the source directories of the tests:
+
+    TEST_DIRS="path1 path2" make test
+
+or you can specify a regexp expression for the test name:
+
+    UNIT_TESTS=TestBar* make test
+
+To see how well these tests cover the source code, you can use:
 
     make coverage
 

@@ -17,6 +17,8 @@ all: build test verify
 # Some env vars that devs might find useful:
 #  GOFLAGS      : extra "go build" flags to use - e.g. -v   (for verbose)
 #  NO_DOCKER=1  : execute each step natively, not in a Docker container
+#  TEST_DIRS=   : only run the unit tests from the specified dirs
+#  UNIT_TESTS=  : only run the unit tests matching the specified regexp
 
 # Define some constants
 #######################
@@ -28,7 +30,7 @@ SC_PKG         = github.com/kubernetes-incubator/service-catalog
 TOP_SRC_DIRS   = cmd contrib pkg
 SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
-TEST_DIRS      = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
+TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 VERSION       ?= $(shell git describe --tags --always --abbrev=7 --dirty)
 ifeq ($(shell uname -s),Darwin)
@@ -45,7 +47,11 @@ GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i $(GOFLAGS) \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
-ifeq ("$(NO_DOCKER)", "1")
+ifdef UNIT_TESTS
+	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
+endif
+
+ifdef NO_DOCKER
 	DOCKER_CMD =
 	scBuildImageTarget =
 else
@@ -168,9 +174,8 @@ test: .init test-unit test-integration
 
 test-unit: .init
 	@echo Running tests:
-	@for i in $(addprefix $(SC_PKG)/,$(TEST_DIRS)); do \
-	  $(DOCKER_CMD) go test $$i || exit $$? ; \
-	done
+	$(DOCKER_CMD) go test $(UNIT_TEST_FLAGS) \
+	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
 test-integration: .init
 	contrib/hack/setup-kubectl.sh
