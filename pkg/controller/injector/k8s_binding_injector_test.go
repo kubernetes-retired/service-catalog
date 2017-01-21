@@ -30,7 +30,7 @@ func TestInjectOne(t *testing.T) {
 	binding := createBindings(1)[0]
 	cred := createCreds(1)[0]
 	injector := fakeK8sBindingInjector()
-	if err := inject(t, injector, binding, cred); err != nil {
+	if err := inject(injector, binding, cred); err != nil {
 		t.Fatal(err)
 	}
 
@@ -39,7 +39,7 @@ func TestInjectOne(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	if err := testCredentialsInjected(t, secret.Data, cred); err != nil {
+	if err := testCredentialsInjected(secret.Data, cred); err != nil {
 		t.Error(err)
 	}
 }
@@ -49,10 +49,10 @@ func TestInjectTwo(t *testing.T) {
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(t, injector, bindings[0], creds[0]); err != nil {
+	if err := inject(injector, bindings[0], creds[0]); err != nil {
 		t.Fatal(err)
 	}
-	if err := inject(t, injector, bindings[1], creds[1]); err != nil {
+	if err := inject(injector, bindings[1], creds[1]); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +61,7 @@ func TestInjectTwo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	if err := testCredentialsInjected(t, secret.Data, creds[0]); err != nil {
+	if err := testCredentialsInjected(secret.Data, creds[0]); err != nil {
 		t.Error(err)
 	}
 
@@ -70,7 +70,7 @@ func TestInjectTwo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	if err := testCredentialsInjected(t, secret.Data, creds[1]); err != nil {
+	if err := testCredentialsInjected(secret.Data, creds[1]); err != nil {
 		t.Error(err)
 	}
 }
@@ -80,12 +80,12 @@ func TestUninjectOne(t *testing.T) {
 	cred := createCreds(1)[0]
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(t, injector, binding, cred); err != nil {
+	if err := inject(injector, binding, cred); err != nil {
 		t.Fatal(err)
 	}
 	injector.Uninject(binding)
 
-	if err := testCredentialsUninjected(t, injector, binding); err != nil {
+	if err := testCredentialsUninjected(injector, binding); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -95,17 +95,17 @@ func TestUninjectTwo(t *testing.T) {
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(t, injector, bindings[0], creds[0]); err != nil {
+	if err := inject(injector, bindings[0], creds[0]); err != nil {
 		t.Fatal(err)
 	}
-	if err := inject(t, injector, bindings[1], creds[1]); err != nil {
+	if err := inject(injector, bindings[1], creds[1]); err != nil {
 		t.Fatal(err)
 	}
 
 	injector.Uninject(bindings[0])
 
 	// test that bindings[0] is gone
-	if err := testCredentialsUninjected(t, injector, bindings[0]); err != nil {
+	if err := testCredentialsUninjected(injector, bindings[0]); err != nil {
 		t.Fatal(err)
 	}
 
@@ -115,14 +115,14 @@ func TestUninjectTwo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
-	if err := testCredentialsInjected(t, secret.Data, creds[1]); err != nil {
+	if err := testCredentialsInjected(secret.Data, creds[1]); err != nil {
 		t.Error(err)
 	}
 
 	// test that bindings[1] is gone after uninject
 	injector.Uninject(bindings[1])
 
-	if err := testCredentialsUninjected(t, injector, bindings[1]); err != nil {
+	if err := testCredentialsUninjected(injector, bindings[1]); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -159,7 +159,7 @@ func fakeK8sBindingInjector() *k8sBindingInjector {
 	}
 }
 
-func inject(t *testing.T, injector BindingInjector,
+func inject(injector BindingInjector,
 	binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
 
 	err := injector.Inject(binding, cred)
@@ -170,7 +170,7 @@ func inject(t *testing.T, injector BindingInjector,
 }
 
 // tests all fields of credentials are there and also the same value
-func testCredentialsInjected(t *testing.T, data map[string][]byte, cred *brokerapi.Credential) error {
+func testCredentialsInjected(data map[string][]byte, cred *brokerapi.Credential) error {
 	testField := func(key string, expectedValue string) error {
 		val, ok := data[key]
 		if !ok {
@@ -199,7 +199,7 @@ func testCredentialsInjected(t *testing.T, data map[string][]byte, cred *brokera
 }
 
 // test that credential is no longer there
-func testCredentialsUninjected(t *testing.T, injector *k8sBindingInjector, binding *servicecatalog.Binding) error {
+func testCredentialsUninjected(injector *k8sBindingInjector, binding *servicecatalog.Binding) error {
 	secretsCl := injector.client.Core().Secrets(binding.Namespace)
 	_, err := secretsCl.Get(binding.Name)
 	if err == nil {
