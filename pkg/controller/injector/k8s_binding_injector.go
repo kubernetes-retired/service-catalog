@@ -17,6 +17,9 @@ limitations under the License.
 package injector
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/client-go/1.5/kubernetes"
@@ -58,12 +61,17 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 			Name:      binding.Name,
 			Namespace: binding.Spec.InstanceRef.Namespace,
 		},
-		Data: map[string][]byte{
-			"hostname": []byte(cred.Hostname),
-			"port":     []byte(cred.Port),
-			"username": []byte(cred.Username),
-			"password": []byte(cred.Password),
-		},
+	}
+
+	// For each item in the cred just serialize its value into JSON and
+	// save it in the secret
+	for k, v := range *cred {
+		data, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("Unable to marshal credential value %q: %s",
+				k, err)
+		}
+		secret.Data[k] = data
 	}
 	secretsCl := b.client.Core().Secrets(binding.Spec.InstanceRef.Namespace)
 	_, err := secretsCl.Create(secret)
