@@ -173,7 +173,8 @@ clean:
 
 # Building Docker Images for our executables
 ############################################
-images: registry-image k8s-broker-image user-broker-image controller-image
+images: registry-image k8s-broker-image user-broker-image controller-image \
+    apiserver-image
 
 registry-image: contrib/build/registry/Dockerfile $(BINDIR)/registry
 	mkdir -p contrib/build/registry/tmp
@@ -199,6 +200,12 @@ controller-image: build/controller/Dockerfile $(BINDIR)/controller
 	cp $(BINDIR)/controller build/controller/tmp
 	docker build -t controller:$(VERSION) build/controller
 	rm -rf build/controller/tmp
+
+apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
+	mkdir -p build/apiserver/tmp
+	cp $(BINDIR)/apiserver build/apiserver/tmp
+	docker build -t apiserver:$(VERSION) build/apiserver
+	rm -rf build/apiserver/tmp
 
 # Push our Docker Images to a registry
 ######################################
