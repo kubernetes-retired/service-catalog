@@ -73,6 +73,21 @@ func TestInjectTwo(t *testing.T) {
 	}
 }
 
+func TestInjectOverride(t *testing.T) {
+	binding := createBindings(1)[0]
+	creds := createCreds(2)
+
+	injector := fakeK8sBindingInjector()
+	if err := inject(injector, binding, creds[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	// note that we expect a failure here
+	if err := inject(injector, binding, creds[0]); err == nil {
+		t.Fatal("Injecting over the same binding succeeded even though it shouldn't")
+	}
+}
+
 func TestUninjectOne(t *testing.T) {
 	binding := createBindings(1)[0]
 	cred := createCreds(1)[0]
