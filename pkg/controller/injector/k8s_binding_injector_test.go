@@ -22,6 +22,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/client-go/1.5/kubernetes/fake"
+	v1 "k8s.io/client-go/1.5/pkg/api/v1"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"testing"
 )
@@ -34,8 +35,7 @@ func TestInjectOne(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secretsCl := injector.client.Core().Secrets(binding.Namespace)
-	secret, err := secretsCl.Get(binding.Name)
+	secret, err := getSecret(injector, binding)
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
@@ -56,8 +56,7 @@ func TestInjectTwo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secretsCl := injector.client.Core().Secrets(bindings[0].Namespace)
-	secret, err := secretsCl.Get(bindings[0].Name)
+	secret, err := getSecret(injector, bindings[0])
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
@@ -65,8 +64,7 @@ func TestInjectTwo(t *testing.T) {
 		t.Error(err)
 	}
 
-	secretsCl = injector.client.Core().Secrets(bindings[1].Namespace)
-	secret, err = secretsCl.Get(bindings[1].Name)
+	secret, err = getSecret(injector, bindings[1])
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
@@ -110,8 +108,7 @@ func TestUninjectTwo(t *testing.T) {
 	}
 
 	//test that bindings[1] is still there
-	secretsCl := injector.client.Core().Secrets(bindings[1].Namespace)
-	secret, err := secretsCl.Get(bindings[1].Name)
+	secret, err := getSecret(injector, bindings[1])
 	if err != nil {
 		t.Fatalf("Error when getting secret: %s", err)
 	}
@@ -159,6 +156,11 @@ func fakeK8sBindingInjector() *k8sBindingInjector {
 	}
 }
 
+func getSecret(injector *k8sBindingInjector, binding *servicecatalog.Binding) (*v1.Secret, error) {
+	secretsCl := injector.client.Core().Secrets(binding.Namespace)
+	return secretsCl.Get(binding.Name)
+}
+
 func inject(injector BindingInjector,
 	binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
 
@@ -200,8 +202,7 @@ func testCredentialsInjected(data map[string][]byte, cred *brokerapi.Credential)
 
 // test that credential is no longer there
 func testCredentialsUninjected(injector *k8sBindingInjector, binding *servicecatalog.Binding) error {
-	secretsCl := injector.client.Core().Secrets(binding.Namespace)
-	_, err := secretsCl.Get(binding.Name)
+	_, err := getSecret(injector, binding)
 	if err == nil {
 		return errors.New("Credentials still present after Uninject")
 	}
