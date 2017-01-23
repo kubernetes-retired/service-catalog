@@ -88,6 +88,14 @@ func TestInjectOverride(t *testing.T) {
 	}
 }
 
+func TestUninjectEmpty(t *testing.T) {
+	binding := createBindings(1)[0]
+	injector := fakeK8sBindingInjector()
+	if err := injector.Uninject(binding); err == nil {
+		t.Fatal("Uninject empty expected error but none returned!")
+	}
+}
+
 func TestUninjectOne(t *testing.T) {
 	binding := createBindings(1)[0]
 	cred := createCreds(1)[0]
@@ -100,6 +108,22 @@ func TestUninjectOne(t *testing.T) {
 
 	if err := testCredentialsUninjected(injector, binding); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestUninjectSame(t *testing.T) {
+	binding := createBindings(1)[0]
+	cred := createCreds(1)[0]
+
+	injector := fakeK8sBindingInjector()
+	if err := inject(injector, binding, cred); err != nil {
+		t.Fatal(err)
+	}
+	if err := injector.Uninject(binding); err != nil {
+		t.Fatal("Unexpected err when uninjecting:", err)
+	}
+	if err := injector.Uninject(binding); err == nil {
+		t.Fatal("Expected err when uninjecting twice but none found!")
 	}
 }
 
