@@ -1,5 +1,15 @@
 # Developer's Guide to Service-Catalog
 
+Table of Contents
+- [Overview](#overview)
+- [Working on Issues](#working-on-issues)
+- [Prerequisites](#prerequisites)
+- [Cloning the Repo](#cloning-the-repo)
+- [Building](#building)
+- [Testing](#testing)
+- [Advanced Build Steps](#advanced-build-steps)
+- [Deploying to Kubernetes](#deploying-to-kubernetes)
+
 ## Overview
 
 This repository is organized as similarly to Kubernetes itself as the developers
@@ -18,6 +28,26 @@ layout:
     ├── docs           # Documentation
     ├── pkg            # Contains all non-"main" Go packages
     └── vendor         # Glide-managed dependencies (untracked)
+
+## Working on Issues
+
+Github does not allow non-maintainers to assign, or be assigned to, issues.
+As such non-maintainers can indicate their desire to work on (own) a particular
+issue by adding a comment to it of the form:
+
+	#dibs
+
+However, it is a good idea to discuss the issue, and your intent to work on it,
+with the other members via the slack channel to make sure there isn't some
+other work alread going on with respect to that issue.
+
+When you create a pull request (PR) that completely addresses an open issue
+please include a line in the initial comment that looks like:
+
+	Closes: #1234
+
+where `1234` is the issue number. This allows Github to automatically
+close the issue when the PR is merged.
 
 ## Prerequisites
 
