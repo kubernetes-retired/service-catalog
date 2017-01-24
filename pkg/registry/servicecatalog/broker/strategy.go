@@ -97,7 +97,7 @@ func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Ob
 	if !ok {
 		glog.Warning("received a non-broker object to update to")
 	}
-	oldBroker := old.(*sc.Broker)
+	oldBroker, ok := old.(*sc.Broker)
 	if !ok {
 		glog.Warning("received a non-broker object to update from")
 	}
@@ -110,7 +110,7 @@ func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obje
 	if !ok {
 		glog.Warning("received a non-broker object to validate to")
 	}
-	oldBroker := old.(*sc.Broker)
+	oldBroker, ok := old.(*sc.Broker)
 	if !ok {
 		glog.Warning("received a non-broker object to validate from")
 	}

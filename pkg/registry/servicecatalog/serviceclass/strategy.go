@@ -88,7 +88,7 @@ func (serviceclassRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runt
 	if !ok {
 		glog.Warning("received a non-serviceclass object to update to")
 	}
-	oldServiceclass := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ServiceClass)
 	if !ok {
 		glog.Warning("received a non-serviceclass object to update from")
 	}
@@ -101,7 +101,7 @@ func (serviceclassRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtim
 	if !ok {
 		glog.Warning("received a non-serviceclass object to validate to")
 	}
-	oldServiceclass := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ServiceClass)
 	if !ok {
 		glog.Warning("received a non-serviceclass object to validate from")
 	}

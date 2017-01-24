@@ -95,7 +95,7 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 	if !ok {
 		glog.Warning("received a non-instance object to update to")
 	}
-	oldInstance := old.(*sc.Instance)
+	oldInstance, ok := old.(*sc.Instance)
 	if !ok {
 		glog.Warning("received a non-instance object to update from")
 	}
@@ -108,7 +108,7 @@ func (instanceRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Ob
 	if !ok {
 		glog.Warning("received a non-instance object to validate to")
 	}
-	oldInstance := old.(*sc.Instance)
+	oldInstance, ok := old.(*sc.Instance)
 	if !ok {
 		glog.Warning("received a non-instance object to validate from")
 	}

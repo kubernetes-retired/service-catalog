@@ -96,7 +96,7 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.O
 	if !ok {
 		glog.Warning("received a non-binding object to update to")
 	}
-	oldBinding := old.(*sc.Binding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
 		glog.Warning("received a non-binding object to update from")
 	}
@@ -109,7 +109,7 @@ func (bindingRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obj
 	if !ok {
 		glog.Warning("received a non-binding object to validate to")
 	}
-	oldBinding := old.(*sc.Binding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
 		glog.Warning("received a non-binding object to validate from")
 	}
