@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apiclient
+package util
 
 import (
 	"fmt"
 	"log"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 )
 
 type servicePlanNotFound struct {
@@ -45,7 +46,7 @@ func (e serviceClassNotFound) Error() string {
 //
 // If Plan is not given and there's only one plan for a given service, we'll
 // choose that.
-func GetServicePlanInfo(svcClassClient ServiceClassClient, service string, plan string) (string, string, string, error) {
+func GetServicePlanInfo(svcClassClient apiclient.ServiceClassClient, service string, plan string) (string, string, string, error) {
 	s, err := svcClassClient.Get(service)
 	if err != nil {
 		return "", "", "", err
@@ -70,8 +71,8 @@ func GetServicePlanInfo(svcClassClient ServiceClassClient, service string, plan 
 // GetBrokerByServiceClassName returns the broker which serves a particular
 // service class.
 func GetBrokerByServiceClassName(
-	brokerClient BrokerClient,
-	svcClassClient ServiceClassClient,
+	brokerClient apiclient.BrokerClient,
+	svcClassClient apiclient.ServiceClassClient,
 	svcClassName string,
 ) (*servicecatalog.Broker, error) {
 
