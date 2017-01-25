@@ -157,13 +157,18 @@ func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	}
 
 	// TODO: unbind && add conditions
+	if err := h.unbind(sb); err != nil {
+		// TODO: add failure condition
+		return err
+	}
+	// TODO: add success condition
 
 	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
-	// TODO: delete
 	if err := h.storage.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
+		// TODO: add deletion error condition
 		return err
 	}
 	return nil
