@@ -148,27 +148,27 @@ func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	// uninject
 	if err := h.injector.Uninject(sb); err != nil {
 		// if 0 conditions, uninject and drop condition for uninject
-		// TODO: add failure condition
+		// TODO: add failure condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 		return err
 	}
-	// TODO: add success condition
+	// TODO: add success condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
-	// TODO: unbind && add conditions
+	// TODO: unbind && add conditions (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 	if err := h.unbind(sb); err != nil {
-		// TODO: add failure condition
+		// TODO: add failure condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 		return err
 	}
-	// TODO: add success condition
+	// TODO: add success condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 
 	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
 	if err := h.storage.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
-		// TODO: add deletion error condition
+		// TODO: add deletion error condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 		return err
 	}
 	return nil
