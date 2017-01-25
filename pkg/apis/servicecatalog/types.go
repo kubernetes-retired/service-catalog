@@ -19,11 +19,7 @@ package servicecatalog
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/runtime"
 )
-
-// TODO: all metadata and parametersfields need to be refactored to real
-// types; skipping for now to get very large generation PR in.
 
 // +nonNamespaced=true
 
@@ -60,10 +56,6 @@ type BrokerSpec struct {
 	// is documented to have "username" and "password" keys
 	AuthUsername string
 	AuthPassword string
-
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
-	OSBGUID string
 }
 
 // BrokerStatus represents the current status of a Broker.
@@ -125,19 +117,46 @@ type ServiceClass struct {
 	Plans         []ServicePlan
 	PlanUpdatable bool // Do we support this?
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
-	// Immutable.
-	OSBGUID string
+	// UserFacingInfo contains supplemental information that should be shown
+	// to users in various user interface contexts.
+	UserFacingInfo ServiceClassUserFacingInfo
 
-	// OSB-specific
-	OSBTags                    []string
-	OSBRequires                []string
-	OSBMaxDBPerNode            string
-	OSBMetadata                runtime.Object
-	OSBDashboardOAuth2ClientID string
-	OSBDashboardSecret         string
-	OSBDashboardRedirectURI    string
+	// DashboardClientInfo contains information necessary to enable dashboard
+	// SSO for this service class.
+	DashboardClientInfo DashboardClientInfo
+
+	// OpenServiceBrokerServiceClassFields contains fields specific to the OSB
+	// API.
+	OpenServiceBrokerServiceClassFields
+}
+
+// ServiceClassUserFacingInfo contains information that should be displayed to
+// users in various user interface contexts.
+type ServiceClassUserFacingInfo struct {
+	Tags                []string
+	Description         string
+	DisplayName         string
+	ImageURL            string
+	LongDescription     string
+	ProviderDisplayName string
+	DocumentationURL    string
+	SupportURL          string
+}
+
+// DashboardClientInfo holds the information necessary to enable dashboard SSO
+// for a ServiceClass.
+type DashboardClientInfo struct {
+	ID        string
+	SecretRef kapi.ObjectReference
+}
+
+// OpenServiceBrokerServiceClassFields contains fields specific to the OSB API.
+type OpenServiceBrokerServiceClassFields struct {
+	// GUID is the identity of this object for use with the OSB API.
+	// Immutable.
+	GUID         string
+	Requires     []string
+	MaxDBPerNode string
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -145,14 +164,44 @@ type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// UserFacingInfo contains supplemental information that should be shown
+	// to users in various user interface contexts.
+	UserFacingInfo ServicePlanUserFacingInfo
+
+	// OpenServiceBrokerServicePlanFields contains fields specific to the OSB
+	// API.
+	OpenServiceBrokerServicePlanFields
+}
+
+// ServicePlanUserFacingInfo contains information that should be displayed to
+// users in various user interface contexts.
+type ServicePlanUserFacingInfo struct {
+	// Free indicates whether this plan is free of charge.
+	Free bool
+	// Description is the user-facing description of this plan.
+	Description string
+	// DisplayName is the user-facing long-form name to display for this plan.
+	DisplayName string
+	// Features of this plan, to be displayed in a bulleted list.
+	Bullets []string
+	// Costs associated with this plan.
+	Costs []ServicePlanCost
+}
+
+// ServicePlanCost contains information about the costs associated with a
+// ServicePlan.
+type ServicePlanCost struct {
+	Amount string
+	Unit   string
+}
+
+// TODO: determine correct way of handling currency in a k8s API.
+
+// OpenServiceBrokerServicePlanFields contains fields specific to the OSB API.
+type OpenServiceBrokerServicePlanFields struct {
+	// GUID is the identity of this object for use with the OSB API.
 	// Immutable.
 	OSBGUID string
-
-	// OSB-specific
-	OSBMetadata runtime.Object
-	OSBFree     bool
 }
 
 // InstanceList is a list of instances.
@@ -179,23 +228,21 @@ type InstanceSpec struct {
 	ServiceClassName string
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
+	// Parameters is a set of parameters to pass to the backing API.
+	Parameters map[string]string
+	// OpenServiceBrokerFields contains fields specific to the OSB API.
+	OpenServiceBrokerInstanceFields
+}
 
-	Parameters map[string]runtime.Object
-
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+type OpenServiceBrokerInstanceFields struct {
+	// GUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
-
-	// OSB-specific
-	OSBCredentials   string
-	OSBDashboardURL  string
-	OSBInternalID    string
-	OSBServiceID     string
-	OSBPlanID        string
-	OSBType          string
-	OSBSpaceGUID     string
-	OSBLastOperation string
+	GUID             string
+	DashboardURL     string
+	InternalID       string
+	SpaceGUID        string
+	OrganizationGUID string
+	LastOperation    string
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -259,21 +306,24 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector
 
-	Parameters map[string]runtime.Object
+	Parameters map[string]string
 
 	// Names of subordinate objects to create
 	SecretName    string
 	ServiceName   string
 	ConfigMapName string
-	// Placeholder for future SIP support
-	// ServiceInjectionPolicyName string
+	// OpenServiceBrokerBindingFields contains fields specific to the OSB API.
+	OpenServiceBrokerBindingFields
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// Placeholders for future SIP support
+	// ServiceInjectionPolicyName string `json:"serviceInjectionPolicyName"`
+	// ServiceInjectionPolicySpec
+}
+
+type OpenServiceBrokerBindingFields struct {
+	// GUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
-
-	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
+	GUID string
 }
 
 // BindingStatus represents the current status of a Binding.

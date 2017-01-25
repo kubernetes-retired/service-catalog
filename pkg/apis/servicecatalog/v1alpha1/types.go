@@ -19,7 +19,6 @@ package v1alpha1
 import (
 	"k8s.io/kubernetes/pkg/api/v1"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/runtime"
 )
 
 // +nonNamespaced=true
@@ -58,10 +57,6 @@ type BrokerSpec struct {
 	// is documented to have "username" and "password" keys
 	AuthUsername string `json:"authUsername"`
 	AuthPassword string `json:"authPassword"`
-
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
-	OSBGUID string `json:"osbGuid"`
 }
 
 // BrokerStatus represents the current status of a Broker.
@@ -123,19 +118,46 @@ type ServiceClass struct {
 	Plans         []ServicePlan `json:"plans"`
 	PlanUpdatable bool          `json:"planUpdatable"` // Do we support this?
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
-	// Immutable.
-	OSBGUID string `json:"osbGuid"`
+	// UserFacingInfo contains supplemental information that should be shown
+	// to users in various user interface contexts.
+	UserFacingInfo ServiceClassUserFacingInfo `json:"userFacingInfo"`
 
-	// OSB-specific
-	OSBTags                    []string             `json:"osbTags"`
-	OSBRequires                []string             `json:"osbRequires"`
-	OSBMaxDBPerNode            string               `json:"osbMaxDBPerNode"`
-	OSBMetadata                runtime.RawExtension `json:"osbMetadata"`
-	OSBDashboardOAuth2ClientID string               `json:"osbDashboardOAuth2ClientID"`
-	OSBDashboardSecret         string               `json:"osbDashboardSecret"`
-	OSBDashboardRedirectURI    string               `json:"osbDashboardRedirectURI"`
+	// DashboardClientInfo contains information necessary to enable dashboard
+	// SSO for this service class.
+	DashboardClientInfo DashboardClientInfo `json:"dashboardClientInfo,omitempty"`
+
+	// OpenServiceBrokerServiceClassFields contains fields specific to the OSB
+	// API.
+	OpenServiceBrokerServiceClassFields `json:",inline"`
+}
+
+// ServiceClassUserFacingInfo contains information that should be displayed to
+// users in various user interface contexts.
+type ServiceClassUserFacingInfo struct {
+	Tags                []string `json:"tags,omitempty"`
+	Description         string   `json:"description,omitempty"`
+	DisplayName         string   `json:"displayName,omitempty"`
+	ImageURL            string   `json:"imageURL,omitempty"`
+	LongDescription     string   `json:"longDescription,omitempty"`
+	ProviderDisplayName string   `json:"providerDisplayName,omitempty"`
+	DocumentationURL    string   `json:"documentationUrl,omitempty"`
+	SupportURL          string   `json:"supportUrl,omitempty"`
+}
+
+// DashboardClientInfo holds the information necessary to enable dashboard SSO
+// for a ServiceClass.
+type DashboardClientInfo struct {
+	ID        string             `json:"id"`
+	SecretRef v1.ObjectReference `json:"secretRef"`
+}
+
+// OpenServiceBrokerServiceClassFields contains fields specific to the OSB API.
+type OpenServiceBrokerServiceClassFields struct {
+	// GUID is the identity of this object for use with the OSB API.
+	// Immutable.
+	GUID         string   `json:"guid"`
+	Requires     []string `json:"requires,omitempty"`
+	MaxDBPerNode string   `json:"maxDBPerNode,omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -143,14 +165,44 @@ type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string `json:"name"`
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
-	// Immutable.
-	OSBGUID string `json:"osbGuid"`
+	// UserFacingInfo contains supplemental information that should be shown
+	// to users in various user interface contexts.
+	UserFacingInfo ServicePlanUserFacingInfo `json:"userFacingInfo,omitempty"`
 
-	// OSB-specific
-	OSBMetadata runtime.RawExtension `json:"osbMetadata"`
-	OSBFree     bool                 `json:"osbFree"`
+	// OpenServiceBrokerServicePlanFields contains fields specific to the OSB
+	// API.
+	OpenServiceBrokerServicePlanFields `json:",inline"`
+}
+
+// ServicePlanUserFacingInfo contains information that should be displayed to
+// users in various user interface contexts.
+type ServicePlanUserFacingInfo struct {
+	// Free indicates whether this plan is free of charge.
+	Free bool `json:"free"`
+	// Description is the user-facing description of this plan.
+	Description string `json:"description,omitempty"`
+	// DisplayName is the user-facing long-form name to display for this plan.
+	DisplayName string `json:"displayName,omitempty"`
+	// Features of this plan, to be displayed in a bulleted list.
+	Bullets []string `json:"bullets,omitempty"`
+	// Costs associated with this plan.
+	Costs []ServicePlanCost `json:"costs,omitempty"`
+}
+
+// ServicePlanCost contains information about the costs associated with a
+// ServicePlan.
+type ServicePlanCost struct {
+	Amount string `json:"amount"`
+	Unit   string `json:"unit"`
+}
+
+// TODO: determine correct way of handling currency in a k8s API.
+
+// OpenServiceBrokerServicePlanFields contains fields specific to the OSB API.
+type OpenServiceBrokerServicePlanFields struct {
+	// GUID is the identity of this object for use with the OSB API.
+	// Immutable.
+	OSBGUID string `json:"guid"`
 }
 
 // InstanceList is a list of instances
@@ -173,27 +225,25 @@ type Instance struct {
 // InstanceSpec represents a description of an Instance.
 type InstanceSpec struct {
 	// ServiceClassName is the reference to the ServiceClass this is an
-	// instance of.  Immutable.
+	// instance of. Immutable.
 	ServiceClassName string `json:"serviceClassName"`
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string `json:"planName"`
+	// Parameters is a set of parameters to pass to the backing API.
+	Parameters map[string]string `json:"parameters"`
+	// OpenServiceBrokerFields contains fields specific to the OSB API.
+	OpenServiceBrokerInstanceFields `json:",inline"`
+}
 
-	Parameters map[string]runtime.RawExtension `json:"parameters"`
-
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB SB API.
+type OpenServiceBrokerInstanceFields struct {
+	// GUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string `json:"osbGuid"`
-
-	// OSB-specific
-	OSBCredentials   string `json:"osbCredentials"`
-	OSBDashboardURL  string `json:"osbDashboardURL"`
-	OSBInternalID    string `json:"osbInternalID"`
-	OSBServiceID     string `json:"osbServiceID"`
-	OSBPlanID        string `json:"osbPlanID"`
-	OSBType          string `json:"osbType"`
-	OSBSpaceGUID     string `json:"osbSpaceGUID"`
-	OSBLastOperation string `json:"osbLastOperation"`
+	GUID             string `json:"guid"`
+	DashboardURL     string `json:"dashboardURL,omitempty"`
+	InternalID       string `json:"internalID,omitempty"`
+	SpaceGUID        string `json:"spaceGUID,omitempty"`
+	OrganizationGUID string `json:"organizationGUID,omitempty"`
+	LastOperation    string `json:"lastOperation,omitempty"`
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -257,21 +307,25 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector `json:"appLabelSelector"`
 
-	Parameters map[string]runtime.RawExtension `json:"parameters"`
+	Parameters map[string]string `json:"parameters,omitempty"`
 
 	// Names of subordinate objects to create
 	SecretName    string `json:"secretName"`
 	ServiceName   string `json:"serviceName"`
 	ConfigMapName string `json:"configMapName"`
-	// Placeholder for future SIP support
+
+	// OpenServiceBrokerBindingFields contains fields specific to the OSB API.
+	OpenServiceBrokerBindingFields `json:",inline"`
+
+	// Placeholders for future SIP support
 	// ServiceInjectionPolicyName string `json:"serviceInjectionPolicyName"`
+	// ServiceInjectionPolicySpec
+}
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+type OpenServiceBrokerBindingFields struct {
+	// GUID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string `json:"osbGuid"`
-
-	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
+	GUID string `json:"guid"`
 }
 
 // BindingStatus represents the current status of a Binding.
