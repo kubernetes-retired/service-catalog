@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/satori/go.uuid"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 )
 
 const (
@@ -66,21 +67,22 @@ func createHandler(client apiclient.APIClient, injector injector.BindingInjector
 	}
 }
 
-func (h *handler) unbind(b *servicecatalog.Binding) error {
-	client := h.newClientFunc(broker)
-
-	// Assign UUID to binding.
-	in.Spec.OSBGUID = uuid.NewV4().String()
-
-	// TODO: uncomment parameters line once parameters types are refactored.
-	// Make the request to bind.
-	createReq := &brokerapi.BindingRequest{
-		ServiceID: instance.Spec.OSBServiceID,
-		PlanID:    instance.Spec.OSBPlanID,
-		// Parameters: in.Spec.Parameters,
-	}
-	sbr, err := client.CreateServiceBinding(instance.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
-}
+// TODO: implement this
+// func (h *handler) unbind(b *servicecatalog.Binding) error {
+// 	client := h.newClientFunc(broker)
+//
+// 	// Assign UUID to binding.
+// 	in.Spec.OSBGUID = uuid.NewV4().String()
+//
+// 	// TODO: uncomment parameters line once parameters types are refactored.
+// 	// Make the request to bind.
+// 	createReq := &brokerapi.BindingRequest{
+// 		ServiceID: instance.Spec.OSBServiceID,
+// 		PlanID:    instance.Spec.OSBPlanID,
+// 		// Parameters: in.Spec.Parameters,
+// 	}
+// 	sbr, err := client.CreateServiceBinding(instance.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
+// }
 
 func (h *handler) updateServiceInstance(in *servicecatalog.Instance) error {
 	// Currently there's no difference between create / update,
@@ -154,6 +156,12 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 }
 
 func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
+	dts := metav1.Now()
+	sb.DeletionTimestamp = &dts
+	if err := h.storage.Bindings().Update(sb); err != nil {
+		return err
+	}
+
 	// uninject
 	if err := c.handler.injector.Uninject(&sb); err != nil {
 		// if 0 conditions, uninject and drop condition for uninject

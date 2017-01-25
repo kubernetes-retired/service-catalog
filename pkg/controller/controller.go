@@ -26,7 +26,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
 )
 
@@ -49,7 +48,7 @@ func (c *Controller) Run() {
 }
 
 type controller struct {
-	handler handler
+	handler Handler
 	watcher *watch.Watcher
 }
 
@@ -116,11 +115,6 @@ func (c *controller) serviceBindingCallback(e k8swatch.Event) error {
 		// if we've already processed the deletion event, ignore
 		if sb.DeletionTimestamp != nil {
 			return nil
-		}
-		// put binding back with delete timestamp
-		sb.DeletionTimestamp = metav1.Now()
-		if _, err := c.handler.storage.Bindings().Update(&sb); err != nil {
-			return err
 		}
 
 		if err := c.handler.DeleteServiceBinding(&sb); err != nil {
