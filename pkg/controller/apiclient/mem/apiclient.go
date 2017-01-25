@@ -22,6 +22,7 @@ import (
 )
 
 type apiClient struct {
+	namespaces     []string
 	brokers        *brokerClient
 	serviceClasses *serviceClassClient
 	instances      map[string]apiclient.InstanceClient
@@ -31,6 +32,7 @@ type apiClient struct {
 // NewAPIClient creates an instance of APIClient interface, backed by memory.
 func NewAPIClient() apiclient.APIClient {
 	return &apiClient{
+		namespaces:     nil,
 		brokers:        newBrokerClient(),
 		serviceClasses: newServiceClassClient(),
 		instances:      make(map[string]apiclient.InstanceClient),
@@ -42,6 +44,7 @@ func NewAPIClient() apiclient.APIClient {
 // pre-populataes the underlying in-memory storage with brokers and service
 // classes
 func NewPopulatedAPIClient(
+	namespaces []string,
 	brokers map[string]*servicecatalog.Broker,
 	serviceClasses map[string]*servicecatalog.ServiceClass,
 	instances map[string]apiclient.InstanceClient,
@@ -52,11 +55,16 @@ func NewPopulatedAPIClient(
 	serviceClassClient := newServiceClassClient()
 	serviceClassClient.classes = serviceClasses
 	return &apiClient{
+		namespaces:     namespaces,
 		brokers:        brokerClient,
 		serviceClasses: serviceClassClient,
 		instances:      instances,
 		bindings:       bindings,
 	}
+}
+
+func (c *apiClient) Namespaces() ([]string, error) {
+	return c.namespaces, nil
 }
 
 func (c *apiClient) Brokers() apiclient.BrokerClient {
