@@ -267,6 +267,23 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	return h.apiClient.Brokers().Update(in)
 }
 
+func (h *handler) unbind(b *servicecatalog.Binding) error {
+	inst, err := instanceForBinding(h.storage, b)
+	if err != nil {
+		return err
+	}
+	sc, err := serviceClassForInstance(h.storage, inst)
+	if err != nil {
+		return nil
+	}
+	broker, err := brokerForServiceClass(h.storage, sc)
+	if err != nil {
+		return err
+	}
+	client := h.newClientFunc(broker)
+	return client.DeleteServiceBinding(inst.Spec.OSBGUID, b.Spec.OSBGUID)
+}
+
 // convertCatalog converts a service broker catalog into an array of ServiceClasses
 func convertCatalog(in *brokerapi.Catalog) ([]*servicecatalog.ServiceClass, error) {
 	ret := make([]*servicecatalog.ServiceClass, len(in.Services))
