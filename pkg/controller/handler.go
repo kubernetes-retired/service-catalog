@@ -228,6 +228,7 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	}
 
 	for _, sc := range catalog {
+		sc.BrokerName = in.Name
 		if _, err := h.storage.ServiceClasses().Create(sc); err != nil {
 			return nil, err
 		}
@@ -258,6 +259,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*servicecatalog.ServiceClass, erro
 			OSBRequires:   svc.Requires,
 			// OSBMetadata:   svc.Metadata,
 		}
+		ret[i].SetName(svc.Name)
 	}
 	return ret, nil
 }

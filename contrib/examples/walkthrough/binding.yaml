@@ -5,3 +5,8 @@ metadata:
   name: database
 name: database
 to: backend
+spec:
+  instanceRef:
+    name: backend
+    namespace: default
+  serviceName: booksbe

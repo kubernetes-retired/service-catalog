@@ -33,7 +33,7 @@ type Broker struct {
 	metav1.TypeMeta
 	kapi.ObjectMeta
 
-	Spec   BrokerSpec
+	Spec   BrokerSpec `json:"spec"`
 	Status BrokerStatus
 }
 
@@ -168,7 +168,7 @@ type Instance struct {
 	metav1.TypeMeta
 	kapi.ObjectMeta
 
-	Spec   InstanceSpec
+	Spec   InstanceSpec `json:"spec"`
 	Status InstanceStatus
 }
 
@@ -176,9 +176,9 @@ type Instance struct {
 type InstanceSpec struct {
 	// ServiceClassName is the reference to the ServiceClass this is an
 	// instance of.  Immutable.
-	ServiceClassName string
+	ServiceClassName string `json:"serviceClassName"`
 	// ServicePlanName is the reference to the ServicePlan for this instance.
-	PlanName string
+	PlanName string `json:"planName"`
 
 	Parameters map[string]runtime.Object
 
@@ -246,7 +246,7 @@ type Binding struct {
 	metav1.TypeMeta
 	kapi.ObjectMeta
 
-	Spec   BindingSpec
+	Spec   BindingSpec `json:"spec"`
 	Status BindingStatus
 }
 
@@ -254,7 +254,7 @@ type Binding struct {
 type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	// Immutable.
-	InstanceRef kapi.ObjectReference
+	InstanceRef kapi.ObjectReference `json:"instanceRef"`
 	// AppLabelSelector selects the pods in the Binding's namespace that
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector
@@ -263,7 +263,7 @@ type BindingSpec struct {
 
 	// Names of subordinate objects to create
 	SecretName    string
-	ServiceName   string
+	ServiceName   string `json:"serviceName"`
 	ConfigMapName string
 	// Placeholder for future SIP support
 	// ServiceInjectionPolicyName string
