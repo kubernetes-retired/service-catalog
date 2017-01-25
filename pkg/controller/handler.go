@@ -259,6 +259,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*servicecatalog.ServiceClass, erro
 			OSBRequires:   svc.Requires,
 			// OSBMetadata:   svc.Metadata,
 		}
+		ret[i].SetName(svc.Name)
 	}
 	return ret, nil
 }
