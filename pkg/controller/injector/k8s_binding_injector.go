@@ -56,7 +56,7 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 	secret := &v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      binding.Name,
-			Namespace: binding.Namespace,
+			Namespace: binding.Spec.InstanceRef.Namespace,
 		},
 		Data: map[string][]byte{
 			"hostname": []byte(cred.Hostname),
@@ -65,7 +65,7 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 			"password": []byte(cred.Password),
 		},
 	}
-	secretsCl := b.client.Core().Secrets(binding.Namespace)
+	secretsCl := b.client.Core().Secrets(binding.Spec.InstanceRef.Namespace)
 	_, err := secretsCl.Create(secret)
 	return err
 }
