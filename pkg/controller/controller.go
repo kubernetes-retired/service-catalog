@@ -22,8 +22,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/tpr"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage/tpr"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
@@ -36,7 +36,7 @@ type Controller struct {
 
 // New creates an instance of the service catalog Controller.
 func New(w *watch.Watcher, inj injector.BindingInjector, brokerClCreator brokerapi.CreateFunc) (*Controller, error) {
-	h := createHandler(tpr.NewStorage(w), inj, brokerClCreator)
+	h := createHandler(tpr.NewAPIClient(w), inj, brokerClCreator)
 	return &Controller{
 		controller: createController(h, w),
 	}, nil

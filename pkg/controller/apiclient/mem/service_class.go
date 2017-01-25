@@ -26,20 +26,20 @@ var (
 	errNoSuchServiceClass = errors.New("no such service class")
 )
 
-type memStorageServiceClass struct {
+type serviceClassClient struct {
 	// This gets fetched when a SB is created (or possibly later when refetched).
 	// It's static for now to keep compatibility, seems like this could be more dynamic.
 	classes map[string]*servicecatalog.ServiceClass
 }
 
-func newMemStorageServiceClass() *memStorageServiceClass {
-	return &memStorageServiceClass{classes: make(map[string]*servicecatalog.ServiceClass)}
+func newServiceClassClient() *serviceClassClient {
+	return &serviceClassClient{classes: make(map[string]*servicecatalog.ServiceClass)}
 }
 
-func (m *memStorageServiceClass) List() ([]*servicecatalog.ServiceClass, error) {
-	copy := make([]*servicecatalog.ServiceClass, len(m.classes))
+func (c *serviceClassClient) List() ([]*servicecatalog.ServiceClass, error) {
+	copy := make([]*servicecatalog.ServiceClass, len(c.classes))
 	i := 0
-	for _, sc := range m.classes {
+	for _, sc := range c.classes {
 		copy[i] = &servicecatalog.ServiceClass{}
 		if err := deepCopy(copy[i], sc); err != nil {
 			return nil, err
@@ -49,8 +49,8 @@ func (m *memStorageServiceClass) List() ([]*servicecatalog.ServiceClass, error) 
 	return copy, nil
 }
 
-func (m *memStorageServiceClass) Get(name string) (*servicecatalog.ServiceClass, error) {
-	cl, ok := m.classes[name]
+func (c *serviceClassClient) Get(name string) (*servicecatalog.ServiceClass, error) {
+	cl, ok := c.classes[name]
 	if !ok {
 		return nil, errNoSuchServiceClass
 	}
@@ -61,8 +61,8 @@ func (m *memStorageServiceClass) Get(name string) (*servicecatalog.ServiceClass,
 	return copy, nil
 }
 
-func (m *memStorageServiceClass) Create(sc *servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error) {
-	if _, err := m.Get(sc.Name); err == nil {
+func (c *serviceClassClient) Create(sc *servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error) {
+	if _, err := c.Get(sc.Name); err == nil {
 		return nil, errInstanceAlreadyExists
 	}
 	copy1 := &servicecatalog.ServiceClass{}
@@ -73,6 +73,6 @@ func (m *memStorageServiceClass) Create(sc *servicecatalog.ServiceClass) (*servi
 	if err := deepCopy(copy2, sc); err != nil {
 		return nil, err
 	}
-	m.classes[sc.Name] = copy1
+	c.classes[sc.Name] = copy1
 	return copy2, nil
 }

@@ -27,18 +27,18 @@ var (
 	errNoSuchBroker        = errors.New("no such broker")
 )
 
-type memStorageBroker struct {
+type brokerClient struct {
 	brokers map[string]*servicecatalog.Broker
 }
 
-func newMemStorageBroker() *memStorageBroker {
-	return &memStorageBroker{brokers: make(map[string]*servicecatalog.Broker)}
+func newBrokerClient() *brokerClient {
+	return &brokerClient{brokers: make(map[string]*servicecatalog.Broker)}
 }
 
-func (m *memStorageBroker) List() ([]*servicecatalog.Broker, error) {
-	copy := make([]*servicecatalog.Broker, len(m.brokers))
+func (c *brokerClient) List() ([]*servicecatalog.Broker, error) {
+	copy := make([]*servicecatalog.Broker, len(c.brokers))
 	i := 0
-	for _, br := range m.brokers {
+	for _, br := range c.brokers {
 		copy[i] = &servicecatalog.Broker{}
 		if err := deepCopy(copy[i], br); err != nil {
 			return nil, err
@@ -48,8 +48,8 @@ func (m *memStorageBroker) List() ([]*servicecatalog.Broker, error) {
 	return copy, nil
 }
 
-func (m *memStorageBroker) Get(name string) (*servicecatalog.Broker, error) {
-	br, ok := m.brokers[name]
+func (c *brokerClient) Get(name string) (*servicecatalog.Broker, error) {
+	br, ok := c.brokers[name]
 	if !ok {
 		return nil, errNoSuchBroker
 	}
@@ -60,8 +60,8 @@ func (m *memStorageBroker) Get(name string) (*servicecatalog.Broker, error) {
 	return copy, nil
 }
 
-func (m *memStorageBroker) Create(br *servicecatalog.Broker) (*servicecatalog.Broker, error) {
-	if _, err := m.Get(br.Name); err == nil {
+func (c *brokerClient) Create(br *servicecatalog.Broker) (*servicecatalog.Broker, error) {
+	if _, err := c.Get(br.Name); err == nil {
 		return nil, errBrokerAlreadyExists
 	}
 	copy1 := &servicecatalog.Broker{}
@@ -72,12 +72,12 @@ func (m *memStorageBroker) Create(br *servicecatalog.Broker) (*servicecatalog.Br
 	if err := deepCopy(copy2, br); err != nil {
 		return nil, err
 	}
-	m.brokers[br.Name] = copy1
+	c.brokers[br.Name] = copy1
 	return copy2, nil
 }
 
-func (m *memStorageBroker) Update(br *servicecatalog.Broker) (*servicecatalog.Broker, error) {
-	if _, err := m.Get(br.Name); err != nil {
+func (c *brokerClient) Update(br *servicecatalog.Broker) (*servicecatalog.Broker, error) {
+	if _, err := c.Get(br.Name); err != nil {
 		return nil, errNoSuchBroker
 	}
 	copy1 := &servicecatalog.Broker{}
@@ -88,14 +88,14 @@ func (m *memStorageBroker) Update(br *servicecatalog.Broker) (*servicecatalog.Br
 	if err := deepCopy(copy2, br); err != nil {
 		return nil, err
 	}
-	m.brokers[br.Name] = copy1
+	c.brokers[br.Name] = copy1
 	return copy2, nil
 }
 
-func (m *memStorageBroker) Delete(name string) error {
-	if _, err := m.Get(name); err != nil {
+func (c *brokerClient) Delete(name string) error {
+	if _, err := c.Get(name); err != nil {
 		return errNoSuchBroker
 	}
-	delete(m.brokers, name)
+	delete(c.brokers, name)
 	return nil
 }

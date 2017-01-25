@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package storage
+package apiclient
 
 import (
 	"fmt"
@@ -45,8 +45,8 @@ func (e serviceClassNotFound) Error() string {
 //
 // If Plan is not given and there's only one plan for a given service, we'll
 // choose that.
-func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string) (string, string, string, error) {
-	s, err := storage.Get(service)
+func GetServicePlanInfo(svcClassClient ServiceClassClient, service string, plan string) (string, string, string, error) {
+	s, err := svcClassClient.Get(service)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -70,21 +70,21 @@ func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string
 // GetBrokerByServiceClassName returns the broker which serves a particular
 // service class.
 func GetBrokerByServiceClassName(
-	brokerStorage BrokerStorage,
-	svcClassStorage ServiceClassStorage,
+	brokerClient BrokerClient,
+	svcClassClient ServiceClassClient,
 	svcClassName string,
 ) (*servicecatalog.Broker, error) {
 
 	log.Printf("Getting broker by service class name %s\n", svcClassName)
 
-	svcClassList, err := svcClassStorage.List()
+	svcClassList, err := svcClassClient.List()
 	if err != nil {
 		return nil, err
 	}
 	for _, svcClass := range svcClassList {
 		if svcClass.Name == svcClassName {
 			log.Printf("Found service type %s\n", svcClass.Name)
-			return brokerStorage.Get(svcClass.BrokerName)
+			return brokerClient.Get(svcClass.BrokerName)
 		}
 	}
 	return nil, serviceClassNotFound{svcClassName}

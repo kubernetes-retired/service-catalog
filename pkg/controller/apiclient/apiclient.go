@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package storage
+package apiclient
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -33,8 +33,8 @@ const (
 	Both
 )
 
-// BrokerStorage defines the interface to manage brokers.
-type BrokerStorage interface {
+// BrokerClient defines the interface to manage brokers.
+type BrokerClient interface {
 	// List returns a list of all brokers
 	List() ([]*servicecatalog.Broker, error)
 
@@ -52,8 +52,8 @@ type BrokerStorage interface {
 	Delete(name string) error
 }
 
-// ServiceClassStorage defines the interface to manage service classes.
-type ServiceClassStorage interface {
+// ServiceClassClient defines the interface to manage service classes.
+type ServiceClassClient interface {
 	// List returns all service classes
 	List() ([]*servicecatalog.ServiceClass, error)
 
@@ -65,8 +65,8 @@ type ServiceClassStorage interface {
 	Create(*servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error)
 }
 
-// InstanceStorage defines the interface to manage service instances.
-type InstanceStorage interface {
+// InstanceClient defines the interface to manage service instances.
+type InstanceClient interface {
 	// ListServiceInstances returns all service instances
 	List() ([]*servicecatalog.Instance, error)
 
@@ -83,8 +83,8 @@ type InstanceStorage interface {
 	Delete(name string) error
 }
 
-// BindingStorage defines the interface manage service bindings.
-type BindingStorage interface {
+// BindingClient defines the interface manage service bindings.
+type BindingClient interface {
 	// List returns all bindings.
 	List() ([]*servicecatalog.Binding, error)
 
@@ -101,10 +101,10 @@ type BindingStorage interface {
 	Delete(name string) error
 }
 
-// Storage defines the interface to manage service brokers, types, instances, and bindings.
-type Storage interface {
-	Brokers() BrokerStorage
-	ServiceClasses() ServiceClassStorage
-	Instances(string) InstanceStorage
-	Bindings(string) BindingStorage
+// APIClient defines the interface to manage service brokers, types, instances, and bindings.
+type APIClient interface {
+	Brokers() BrokerClient
+	ServiceClasses() ServiceClassClient
+	Instances(string) InstanceClient
+	Bindings(string) BindingClient
 }

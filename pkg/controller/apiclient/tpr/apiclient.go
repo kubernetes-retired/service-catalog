@@ -17,36 +17,36 @@ limitations under the License.
 package tpr
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
 	// Need this for gcp auth
 	_ "k8s.io/client-go/1.5/kubernetes"
 )
 
-type tprStorage struct {
+type apiClient struct {
 	watcher *watch.Watcher
 }
 
-// NewStorage creates an instance of Storage backed by Kubernetes
+// NewAPIClient creates an instance of APIClient backed by Kubernetes
 // third-party resources.
-func NewStorage(w *watch.Watcher) storage.Storage {
-	return &tprStorage{
+func NewAPIClient(w *watch.Watcher) apiclient.APIClient {
+	return &apiClient{
 		watcher: w,
 	}
 }
 
-func (t *tprStorage) Brokers() storage.BrokerStorage {
-	return newTPRStorageBroker(t.watcher)
+func (c *apiClient) Brokers() apiclient.BrokerClient {
+	return newBrokerClient(c.watcher)
 }
 
-func (t *tprStorage) ServiceClasses() storage.ServiceClassStorage {
-	return newTPRStorageServiceClass(t.watcher)
+func (c *apiClient) ServiceClasses() apiclient.ServiceClassClient {
+	return newServiceClassClient(c.watcher)
 }
 
-func (t *tprStorage) Instances(ns string) storage.InstanceStorage {
-	return newTPRStorageInstance(t.watcher, ns)
+func (c *apiClient) Instances(ns string) apiclient.InstanceClient {
+	return newInstanceClient(c.watcher, ns)
 }
 
-func (t *tprStorage) Bindings(ns string) storage.BindingStorage {
-	return newTPRStorageBinding(t.watcher, ns)
+func (c *apiClient) Bindings(ns string) apiclient.BindingClient {
+	return newBindingClient(c.watcher, ns)
 }
