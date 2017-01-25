@@ -158,31 +158,32 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	dts := metav1.Now()
 	sb.DeletionTimestamp = &dts
-	if err := h.storage.Bindings().Update(sb); err != nil {
+	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
 	// uninject
-	if err := c.handler.injector.Uninject(&sb); err != nil {
+	if err := h.injector.Uninject(sb); err != nil {
 		// if 0 conditions, uninject and drop condition for uninject
 		// TODO: add failure condition
 		return err
 	}
 	// TODO: add success condition
-	if err := h.storage.Bindings().Update(sb); err != nil {
+	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
 	// TODO: unbind && add conditions
 
-	if err := h.storage.Bindings().Update(sb); err != nil {
+	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
 	// TODO: delete
-	if err := h.storage.Bindings().Delete(sb); err != nil {
+	if err := h.storage.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
 		return err
 	}
+	return nil
 }
 
 func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
