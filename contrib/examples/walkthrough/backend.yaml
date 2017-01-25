@@ -4,6 +4,7 @@ kind: ServiceInstance
 metadata:
   name: backend
 name: backend
-service: booksbe
-plan: default
+spec:
+  serviceClassName: booksbe
+  planName: default
 space_guid: default
