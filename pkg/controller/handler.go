@@ -22,6 +22,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage/util"
 	"github.com/satori/go.uuid"
 )
 
@@ -74,7 +75,7 @@ func (h *handler) updateServiceInstance(in *servicecatalog.Instance) error {
 }
 
 func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
-	broker, err := storage.GetBrokerByServiceClassName(h.storage.Brokers(), h.storage.ServiceClasses(), in.Spec.ServiceClassName)
+	broker, err := util.GetBrokerByServiceClassName(h.storage.Brokers(), h.storage.ServiceClasses(), in.Spec.ServiceClassName)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 // All the methods implementing the Handler interface go here for clarity sake.
 ///////////////////////////////////////////////////////////////////////////////
 func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*servicecatalog.Instance, error) {
-	serviceID, planID, planName, err := storage.GetServicePlanInfo(
+	serviceID, planID, planName, err := util.GetServicePlanInfo(
 		h.storage.ServiceClasses(),
 		in.Spec.ServiceClassName,
 		in.Spec.PlanName,

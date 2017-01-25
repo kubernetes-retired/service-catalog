@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package storage
+package util
 
 import (
 	"fmt"
 	"log"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
 )
 
 type servicePlanNotFound struct {
@@ -45,7 +46,7 @@ func (e serviceClassNotFound) Error() string {
 //
 // If Plan is not given and there's only one plan for a given service, we'll
 // choose that.
-func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string) (string, string, string, error) {
+func GetServicePlanInfo(storage storage.ServiceClassStorage, service string, plan string) (string, string, string, error) {
 	s, err := storage.Get(service)
 	if err != nil {
 		return "", "", "", err
@@ -70,8 +71,8 @@ func GetServicePlanInfo(storage ServiceClassStorage, service string, plan string
 // GetBrokerByServiceClassName returns the broker which serves a particular
 // service class.
 func GetBrokerByServiceClassName(
-	brokerStorage BrokerStorage,
-	svcClassStorage ServiceClassStorage,
+	brokerStorage storage.BrokerStorage,
+	svcClassStorage storage.ServiceClassStorage,
 	svcClassName string,
 ) (*servicecatalog.Broker, error) {
 
