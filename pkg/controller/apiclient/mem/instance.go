@@ -20,6 +20,7 @@ import (
 	"errors"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 )
 
 var (
@@ -34,6 +35,11 @@ type instanceClient struct {
 
 func newInstanceClient() *instanceClient {
 	return &instanceClient{instances: make(map[string]*servicecatalog.Instance)}
+}
+
+// NewPopulatedInstanceClient returns a pre-populated in-memory instance client implementation
+func NewPopulatedInstanceClient(inst map[string]*servicecatalog.Instance) apiclient.InstanceClient {
+	return &instanceClient{instances: inst}
 }
 
 func (c *instanceClient) List() ([]*servicecatalog.Instance, error) {

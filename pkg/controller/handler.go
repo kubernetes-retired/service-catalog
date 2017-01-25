@@ -140,26 +140,19 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	glog.Infof("Creating Service Binding: %v", in)
 
-	// Get instance information for service being bound to.
-	instance, err := h.apiClient.Instances(in.Spec.InstanceRef.Namespace).Get(in.Spec.InstanceRef.Name)
+	inst, err := instanceForBinding(h.apiClient, in)
 	if err != nil {
-		glog.Errorf("Service instance does not exist %v: %v", in.Spec.InstanceRef, err)
+		return nil, err
+	}
+	sc, err := serviceClassForInstance(h.apiClient, inst)
+	if err != nil {
+		return nil, err
+	}
+	broker, err := brokerForServiceClass(h.apiClient, sc)
+	if err != nil {
 		return nil, err
 	}
 
-	// Get the serviceclass for the instance.
-	sc, err := h.apiClient.ServiceClasses().Get(instance.Spec.ServiceClassName)
-	if err != nil {
-		glog.Errorf("Failed to fetch service type %s : %v", instance.Spec.ServiceClassName, err)
-		return nil, err
-	}
-
-	// Get the broker for the serviceclass.
-	broker, err := h.apiClient.Brokers().Get(sc.BrokerName)
-	if err != nil {
-		glog.Errorf("Error fetching broker for service: %s : %v", sc.BrokerName, err)
-		return nil, err
-	}
 	client := h.newClientFunc(broker)
 
 	// Assign UUID to binding.
@@ -168,11 +161,11 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 	// TODO: uncomment parameters line once parameters types are refactored.
 	// Make the request to bind.
 	createReq := &brokerapi.BindingRequest{
-		ServiceID: instance.Spec.OSBServiceID,
-		PlanID:    instance.Spec.OSBPlanID,
+		ServiceID: inst.Spec.OSBServiceID,
+		PlanID:    inst.Spec.OSBPlanID,
 		// Parameters: in.Spec.Parameters,
 	}
-	sbr, err := client.CreateServiceBinding(instance.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
+	sbr, err := client.CreateServiceBinding(inst.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
 
 	in.Status = servicecatalog.BindingStatus{}
 	if err != nil {

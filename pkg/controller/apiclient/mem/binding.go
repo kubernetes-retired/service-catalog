@@ -20,6 +20,7 @@ import (
 	"errors"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 )
 
 var (
@@ -35,6 +36,11 @@ type bindingClient struct {
 
 func newBindingClient() *bindingClient {
 	return &bindingClient{bindings: make(map[string]*servicecatalog.Binding)}
+}
+
+// NewPopulatedBindingClient returns a pre-populated in-memory binding client implementation
+func NewPopulatedBindingClient(bin map[string]*servicecatalog.Binding) apiclient.BindingClient {
+	return &bindingClient{bindings: bin}
 }
 
 func (c *bindingClient) List() ([]*servicecatalog.Binding, error) {
