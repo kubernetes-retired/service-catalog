@@ -309,4 +309,10 @@ const (
 	BindingConditionReady BindingConditionType = "Ready"
 	// BindingConditionFailed represents a binding condition is in failed state
 	BindingConditionFailed BindingConditionType = "Failed"
+	// BindingConditionUninject represents a binding condition that the binding credentials have been deleted
+	BindingConditionUninject BindingConditionType = "Uninject"
+	// BindingConditonUnbind represents a binding condition that the service catalog has performed the unbind operation on the backing CF broker
+	BindingConditonUnbind BindingConditionType = "Unbind"
+	// BindingConditionDeleted represents a binding condition that the service catalog has intentionally deleted the binding
+	BindingConditionDeleted BindingConditionType = "Delete"
 )

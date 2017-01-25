@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
 )
 
@@ -48,7 +49,7 @@ func (c *Controller) Run() {
 }
 
 type controller struct {
-	handler Handler
+	handler handler
 	watcher *watch.Watcher
 }
 
@@ -111,6 +112,44 @@ func (c *controller) serviceBindingCallback(e k8swatch.Event) error {
 			return err
 		}
 		glog.Infof("Created Service Binding: %s\n%v\n", sb.Name, created)
+	} else if e.Type == k8swatch.Deleted {
+		if checkBindingCondition(&sb, servicecatalog.BindingConditionDeleted, servicecatalog.ConditionTrue) {
+			// if the deletion "flag" was set, then we've already deleted, so exit
+			return nil
+		}
+		// put binding back with delete timestamp
+		sb.DeletionTimestamp = metav1.Now()
+		if _, err := c.handler.storage.Bindings().Update(&sb); err != nil {
+			return err
+		}
+	} else if e.Type == k8swatch.Modified {
+		if sb.DeletionTimestamp == nil {
+			// if there's no deletion timestamp, no other modifications needed
+			return nil
+		}
+		if checkBindingCondition(&sb, servicecatalog.BindingConditionDeleted, servicecatalog.ConditionTrue) {
+			// do nothing here, the binding was already "scheduled" for delete
+			return nil
+		}
+		if checkBindingCondition(&sb, servicecatalog.BindingConditionUnbind, servicecatalog.ConditionTrue) {
+			// if 1 unbind success condition (meaning 1 uninject and 1 unbind):
+			// - add a condition for deleted
+			// - update the binding
+			// - delete the binding
+			return nil
+		}
+		if checkBindingCondition(&sb, servicecatalog.BindingConditionUninject, servicecatalog.ConditionTrue) {
+			// if 1 uninject success conditon, unbind and add condition for unbind
+			return nil
+		}
+		if len(sb.Status.Conditions) == 0 {
+			if err := c.handler.injector.Uninject(&sb); err != nil {
+				// if 0 conditions, uninject and drop condition for uninject
+				// TODO: add failure condition
+				return err
+			}
+			// TODO: add success condition
+		}
 	} else {
 		glog.Warningf("Received unsupported service binding event type %s", e.Type)
 	}

@@ -66,6 +66,22 @@ func createHandler(client apiclient.APIClient, injector injector.BindingInjector
 	}
 }
 
+func (h *handler) unbind(b *servicecatalog.Binding) error {
+	client := h.newClientFunc(broker)
+
+	// Assign UUID to binding.
+	in.Spec.OSBGUID = uuid.NewV4().String()
+
+	// TODO: uncomment parameters line once parameters types are refactored.
+	// Make the request to bind.
+	createReq := &brokerapi.BindingRequest{
+		ServiceID: instance.Spec.OSBServiceID,
+		PlanID:    instance.Spec.OSBPlanID,
+		// Parameters: in.Spec.Parameters,
+	}
+	sbr, err := client.CreateServiceBinding(instance.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
+}
+
 func (h *handler) updateServiceInstance(in *servicecatalog.Instance) error {
 	// Currently there's no difference between create / update,
 	// but for prepping for future, split these into two different
