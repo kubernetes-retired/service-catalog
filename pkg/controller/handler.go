@@ -45,7 +45,7 @@ type Handler interface {
 	// ServiceBinding and will either create or update an
 	// existing one.
 	CreateServiceBinding(*servicecatalog.Binding) (*servicecatalog.Binding, error)
-
+	DeleteServiceBinding(*servicecatalog.Binding) error
 	// CreateServiceBroker takes in a (possibly incomplete)
 	// ServiceBroker and will either create or update an
 	// existing one.
@@ -151,6 +151,30 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 
 	glog.Infof("Updating Service %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
 	return h.apiClient.Instances(in.ObjectMeta.Namespace).Update(in)
+}
+
+func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
+	// uninject
+	if err := c.handler.injector.Uninject(&sb); err != nil {
+		// if 0 conditions, uninject and drop condition for uninject
+		// TODO: add failure condition
+		return err
+	}
+	// TODO: add success condition
+	if err := h.storage.Bindings().Update(sb); err != nil {
+		return err
+	}
+
+	// TODO: unbind && add conditions
+
+	if err := h.storage.Bindings().Update(sb); err != nil {
+		return err
+	}
+
+	// TODO: delete
+	if err := h.storage.Bindings().Delete(sb); err != nil {
+		return err
+	}
 }
 
 func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {

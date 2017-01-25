@@ -113,8 +113,8 @@ func (c *controller) serviceBindingCallback(e k8swatch.Event) error {
 		}
 		glog.Infof("Created Service Binding: %s\n%v\n", sb.Name, created)
 	} else if e.Type == k8swatch.Deleted {
-		if checkBindingCondition(&sb, servicecatalog.BindingConditionDeleted, servicecatalog.ConditionTrue) {
-			// if the deletion "flag" was set, then we've already deleted, so exit
+		// if we've already processed the deletion event, ignore
+		if sb.DeletionTimestamp != nil {
 			return nil
 		}
 		// put binding back with delete timestamp
@@ -122,34 +122,13 @@ func (c *controller) serviceBindingCallback(e k8swatch.Event) error {
 		if _, err := c.handler.storage.Bindings().Update(&sb); err != nil {
 			return err
 		}
-	} else if e.Type == k8swatch.Modified {
-		if sb.DeletionTimestamp == nil {
-			// if there's no deletion timestamp, no other modifications needed
-			return nil
+
+		if err := c.handler.DeleteServiceBinding(&sb); err != nil {
+			return err
 		}
-		if checkBindingCondition(&sb, servicecatalog.BindingConditionDeleted, servicecatalog.ConditionTrue) {
-			// do nothing here, the binding was already "scheduled" for delete
-			return nil
-		}
-		if checkBindingCondition(&sb, servicecatalog.BindingConditionUnbind, servicecatalog.ConditionTrue) {
-			// if 1 unbind success condition (meaning 1 uninject and 1 unbind):
-			// - add a condition for deleted
-			// - update the binding
-			// - delete the binding
-			return nil
-		}
-		if checkBindingCondition(&sb, servicecatalog.BindingConditionUninject, servicecatalog.ConditionTrue) {
-			// if 1 uninject success conditon, unbind and add condition for unbind
-			return nil
-		}
-		if len(sb.Status.Conditions) == 0 {
-			if err := c.handler.injector.Uninject(&sb); err != nil {
-				// if 0 conditions, uninject and drop condition for uninject
-				// TODO: add failure condition
-				return err
-			}
-			// TODO: add success condition
-		}
+	} else if e.Type == k8swatch.Modified && sb.DeletionTimestamp != nil {
+		// do nothing, the binding is in the process of deletion
+		glog.Info("binding was modified during deletion, ignoring")
 	} else {
 		glog.Warningf("Received unsupported service binding event type %s", e.Type)
 	}
