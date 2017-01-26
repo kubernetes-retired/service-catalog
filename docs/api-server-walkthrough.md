@@ -8,11 +8,20 @@ changes on a daily basis so thing may break w/o being updated as K8s
 changes.
 
 
-Invoking `make apiserver` in the root directory will result in `apiserver` binary in the root directory.
+Invoking `make apiserver` in the root directory will result in an
+`apiserver` binary in the `bin/` directory.
 
-OR
+When the API server starts up, it will generate a certificate will be
+generated in `/var/run/kubernetes/` so that directory must be
+creatable & writable by the running user.  Make sure you have that set
+up before you move on to starting the server.  The following command
+checks access.
 
-Compile `cmd/service-catalog/server.go` with `go build -o apiserver -v`
+```
+$ bash -c 'if [ -w /var/run/kubernetes/ ] ; then echo "OK" ; else echo "FAIL: /var/run/kubernetes/ not writeable" ;fi'
+```
+If it fails, create the directory with the user that will run the apiserver.
+
 
 Start with:
 
@@ -20,12 +29,8 @@ Start with:
 # run etcd locally on the default port
 $ etcd 
 # switch to another shell and run
-$ ./apiserver --etcd-servers localhost:2379
+$ ./bin/apiserver -v 10 --etcd-servers http://localhost:2379
 ```
-
-An etcd server is not hooked into yet, and is not required to be running.
-
-A certificate will be generated in `/var/run/kubernetes/` so that directory must be creatable & writable by the running user.
 
 In another term check for response from curl.
 ```
@@ -95,11 +100,22 @@ And some of ours:
 }
 ```
 
-kubectl seems happy enough:
+kubectl needs a basic kubeconfig setup. A kubeconfig consists of three
+sections that can be set with the following three commands:
+
+1. `kubectl config set-credentials service-catalog-creds --username=admin --password=admin`
+1. `kubectl config set-cluster service-catalog-cluster --server=https://localhost:6443 --certificate-authority=/var/run/kubernetes/apiserver.crt`
+1. `kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds`
+1. `kubectl config use-context service-catalog-ctx`
+
+kubectl seems happy enough. We know there are problems talking to api
+groups that are not installed. This error is innocuous, but does
+indicate that our apigroup is installed correctly.
+
 ```
 $ kubectl --certificate-authority=/var/run/kubernetes/apiserver.crt --server=https://localhost:6443 version
 Client Version: version.Info{Major:"1", Minor:"4", GitVersion:"v1.4.6+e569a27", GitCommit:"e569a27d02001e343cb68086bc06d47804f62af6", GitTreeState:"not a git tree", BuildDate:"2016-11-12T09:26:56Z", GoVersion:"go1.7.3", Compiler:"gc", Platform:"darwin/amd64"}
-Server Version: version.Info{Major:"", Minor:"", GitVersion:"v0.0.0-master+$Format:%h$", GitCommit:"$Format:%H$", GitTreeState:"not a git tree", BuildDate:"1970-01-01T00:00:00Z", GoVersion:"go1.7.3", Compiler:"gc", Platform:"darwin/amd64"}
+error: failed to negotiate an api version; server supports: map[servicecatalog.k8s.io/v1alpha1:{}], client supports: map[componentconfig/v1alpha1:{} batch/v1:{} batch/v2alpha1:{} apps/v1beta1:{} autoscaling/v1:{} rbac.authorization.k8s.io/v1alpha1:{} policy/v1beta1:{} extensions/v1beta1:{} rbac.authorization.k8s.io/v1beta1:{} storage.k8s.io/v1beta1:{} certificates.k8s.io/v1beta1:{} v1:{} authorization.k8s.io/v1beta1:{} federation/v1beta1:{} authentication.k8s.io/v1beta1:{}]
 ```
 no version resource exists so this is to be expected.
 
