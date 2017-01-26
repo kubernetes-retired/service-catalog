@@ -27,16 +27,16 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
-type tprStorageBinding struct {
+type bindingClient struct {
 	watcher *watch.Watcher
 	ns      string
 }
 
-func newTPRStorageBinding(watcher *watch.Watcher, ns string) *tprStorageBinding {
-	return &tprStorageBinding{watcher: watcher, ns: ns}
+func newBindingClient(watcher *watch.Watcher, ns string) *bindingClient {
+	return &bindingClient{watcher: watcher, ns: ns}
 }
 
-func (t *tprStorageBinding) Update(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
+func (c *bindingClient) Update(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	in.Kind = watch.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(in)
@@ -46,17 +46,17 @@ func (t *tprStorageBinding) Update(in *servicecatalog.Binding) (*servicecatalog.
 	}
 	tprObj.SetName(in.Name)
 	log.Printf("Updating Binding %s in k8s:\n%v\n", in.Name, tprObj)
-	_, err = t.watcher.GetResourceClient(watch.ServiceBinding, "default").Update(tprObj)
+	_, err = c.watcher.GetResourceClient(watch.ServiceBinding, "default").Update(tprObj)
 	// krancour: Ideally the binding we return is a translation of the updated 3pr
 	// as read back from k8s. It doesn't seem worth going through the trouble
-	// right now since 3pr storage will be removed soon. This will at least work
-	// well enough in the meantime.
+	// right now since 3pr storage will be removed eventually. This will at least
+	// work well enough in the meantime.
 	return in, err
 }
 
 // List returns all the bindings
-func (t *tprStorageBinding) List() ([]*servicecatalog.Binding, error) {
-	l, err := t.watcher.GetResourceClient(watch.ServiceBinding, t.ns).List(&v1.ListOptions{})
+func (c *bindingClient) List() ([]*servicecatalog.Binding, error) {
+	l, err := c.watcher.GetResourceClient(watch.ServiceBinding, c.ns).List(&v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -73,11 +73,11 @@ func (t *tprStorageBinding) List() ([]*servicecatalog.Binding, error) {
 	return ret, nil
 }
 
-func (*tprStorageBinding) Get(string) (*servicecatalog.Binding, error) {
+func (*bindingClient) Get(string) (*servicecatalog.Binding, error) {
 	return nil, errors.New("Not implemented yet")
 }
 
-func (t *tprStorageBinding) Create(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
+func (c *bindingClient) Create(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	in.Kind = watch.ServiceBindingKind
 	in.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(in)
@@ -87,14 +87,14 @@ func (t *tprStorageBinding) Create(in *servicecatalog.Binding) (*servicecatalog.
 	}
 	tprObj.SetName(in.Name)
 	log.Printf("Creating binding %s:\n%v\n", in.Name, tprObj)
-	_, err = t.watcher.GetResourceClient(watch.ServiceBinding, t.ns).Create(tprObj)
+	_, err = c.watcher.GetResourceClient(watch.ServiceBinding, c.ns).Create(tprObj)
 	// krancour: Ideally the binding we return is a translation of the updated 3pr
 	// as read back from k8s. It doesn't seem worth going through the trouble
-	// right now since 3pr storage will be removed soon. This will at least work
-	// well enough in the meantime.
+	// right now since 3pr storage will be removed eventually. This will at least
+	// work well enough in the meantime.
 	return in, err
 }
 
-func (*tprStorageBinding) Delete(string) error {
+func (*bindingClient) Delete(string) error {
 	return errors.New("Not implemented yet")
 }

@@ -26,16 +26,16 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
-type tprStorageServiceClass struct {
+type serviceClassClient struct {
 	watcher *watch.Watcher
 }
 
-func newTPRStorageServiceClass(watcher *watch.Watcher) *tprStorageServiceClass {
-	return &tprStorageServiceClass{watcher: watcher}
+func newServiceClassClient(watcher *watch.Watcher) *serviceClassClient {
+	return &serviceClassClient{watcher: watcher}
 }
 
-func (t *tprStorageServiceClass) Get(name string) (*servicecatalog.ServiceClass, error) {
-	si, err := t.watcher.GetResourceClient(watch.ServiceClass, "default").Get(name)
+func (c *serviceClassClient) Get(name string) (*servicecatalog.ServiceClass, error) {
+	si, err := c.watcher.GetResourceClient(watch.ServiceClass, "default").Get(name)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,8 @@ func (t *tprStorageServiceClass) Get(name string) (*servicecatalog.ServiceClass,
 	return &tmp, nil
 }
 
-func (t *tprStorageServiceClass) List() ([]*servicecatalog.ServiceClass, error) {
-	l, err := t.watcher.GetResourceClient(watch.ServiceClass, "default").List(&v1.ListOptions{})
+func (c *serviceClassClient) List() ([]*servicecatalog.ServiceClass, error) {
+	l, err := c.watcher.GetResourceClient(watch.ServiceClass, "default").List(&v1.ListOptions{})
 	if err != nil {
 		log.Printf("Failed to list service types: %v\n", err)
 		return nil, err
@@ -67,7 +67,7 @@ func (t *tprStorageServiceClass) List() ([]*servicecatalog.ServiceClass, error) 
 
 }
 
-func (t *tprStorageServiceClass) Create(sc *servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error) {
+func (c *serviceClassClient) Create(sc *servicecatalog.ServiceClass) (*servicecatalog.ServiceClass, error) {
 	sc.Kind = watch.ServiceClassKind
 	sc.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(sc)
@@ -77,13 +77,13 @@ func (t *tprStorageServiceClass) Create(sc *servicecatalog.ServiceClass) (*servi
 	}
 	tprObj.SetName(sc.Name)
 	log.Printf("Creating k8sobject:\n%v\n", tprObj)
-	_, err = t.watcher.GetResourceClient(watch.ServiceClass, "default").Create(tprObj)
+	_, err = c.watcher.GetResourceClient(watch.ServiceClass, "default").Create(tprObj)
 	if err != nil {
 		return nil, err
 	}
 	// krancour: Ideally the instance we return is a translation of the updated
 	// 3pr as read back from k8s. It doesn't seem worth going through the trouble
-	// right now since 3pr storage will be removed soon. This will at least work
-	// well enough in the meantime.
+	// right now since 3pr storage will be removed eventually. This will at least
+	// work well enough in the meantime.
 	return sc, nil
 }

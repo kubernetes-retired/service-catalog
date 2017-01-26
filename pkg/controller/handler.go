@@ -20,8 +20,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage"
 	"github.com/satori/go.uuid"
 )
 
@@ -53,14 +53,14 @@ type Handler interface {
 }
 
 type handler struct {
-	storage       storage.Storage
+	apiClient     apiclient.APIClient
 	injector      injector.BindingInjector
 	newClientFunc func(*servicecatalog.Broker) brokerapi.BrokerClient
 }
 
-func createHandler(s storage.Storage, injector injector.BindingInjector, newClientFn brokerapi.CreateFunc) *handler {
+func createHandler(client apiclient.APIClient, injector injector.BindingInjector, newClientFn brokerapi.CreateFunc) *handler {
 	return &handler{
-		storage:       s,
+		apiClient:     client,
 		injector:      injector,
 		newClientFunc: newClientFn,
 	}
@@ -74,7 +74,7 @@ func (h *handler) updateServiceInstance(in *servicecatalog.Instance) error {
 }
 
 func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
-	broker, err := storage.GetBrokerByServiceClassName(h.storage.Brokers(), h.storage.ServiceClasses(), in.Spec.ServiceClassName)
+	broker, err := apiclient.GetBrokerByServiceClassName(h.apiClient.Brokers(), h.apiClient.ServiceClasses(), in.Spec.ServiceClassName)
 	if err != nil {
 		return err
 	}
@@ -95,8 +95,8 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 // All the methods implementing the Handler interface go here for clarity sake.
 ///////////////////////////////////////////////////////////////////////////////
 func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*servicecatalog.Instance, error) {
-	serviceID, planID, planName, err := storage.GetServicePlanInfo(
-		h.storage.ServiceClasses(),
+	serviceID, planID, planName, err := apiclient.GetServicePlanInfo(
+		h.apiClient.ServiceClasses(),
 		in.Spec.ServiceClassName,
 		in.Spec.PlanName,
 	)
@@ -134,28 +134,28 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 	}
 
 	glog.Infof("Updating Service %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
-	return h.storage.Instances(in.ObjectMeta.Namespace).Update(in)
+	return h.apiClient.Instances(in.ObjectMeta.Namespace).Update(in)
 }
 
 func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
 	glog.Infof("Creating Service Binding: %v", in)
 
 	// Get instance information for service being bound to.
-	instance, err := h.storage.Instances(in.Spec.InstanceRef.Namespace).Get(in.Spec.InstanceRef.Name)
+	instance, err := h.apiClient.Instances(in.Spec.InstanceRef.Namespace).Get(in.Spec.InstanceRef.Name)
 	if err != nil {
 		glog.Errorf("Service instance does not exist %v: %v", in.Spec.InstanceRef, err)
 		return nil, err
 	}
 
 	// Get the serviceclass for the instance.
-	sc, err := h.storage.ServiceClasses().Get(instance.Spec.ServiceClassName)
+	sc, err := h.apiClient.ServiceClasses().Get(instance.Spec.ServiceClassName)
 	if err != nil {
 		glog.Errorf("Failed to fetch service type %s : %v", instance.Spec.ServiceClassName, err)
 		return nil, err
 	}
 
 	// Get the broker for the serviceclass.
-	broker, err := h.storage.Brokers().Get(sc.BrokerName)
+	broker, err := h.apiClient.Brokers().Get(sc.BrokerName)
 	if err != nil {
 		glog.Errorf("Error fetching broker for service: %s : %v", sc.BrokerName, err)
 		return nil, err
@@ -207,7 +207,7 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 	}
 
 	glog.Infof("Updating Service Binding %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
-	return h.storage.Bindings(in.ObjectMeta.Namespace).Update(in)
+	return h.apiClient.Bindings(in.ObjectMeta.Namespace).Update(in)
 }
 
 func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalog.Broker, error) {
@@ -222,14 +222,14 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	}
 
 	glog.Infof("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
-	_, err = h.storage.Brokers().Create(in)
+	_, err = h.apiClient.Brokers().Create(in)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, sc := range catalog {
 		sc.BrokerName = in.Name
-		if _, err := h.storage.ServiceClasses().Create(sc); err != nil {
+		if _, err := h.apiClient.ServiceClasses().Create(sc); err != nil {
 			return nil, err
 		}
 	}
@@ -242,7 +242,7 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	}
 
 	glog.Infof("Updating Service Broker %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
-	return h.storage.Brokers().Update(in)
+	return h.apiClient.Brokers().Update(in)
 }
 
 // convertCatalog converts a service broker catalog into an array of ServiceClasses

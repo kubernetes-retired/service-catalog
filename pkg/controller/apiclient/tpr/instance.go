@@ -27,17 +27,17 @@ import (
 	"k8s.io/client-go/1.5/pkg/runtime"
 )
 
-type tprStorageInstance struct {
+type instanceClient struct {
 	watcher *watch.Watcher
 	ns      string
 }
 
-func newTPRStorageInstance(watcher *watch.Watcher, ns string) *tprStorageInstance {
-	return &tprStorageInstance{watcher: watcher, ns: ns}
+func newInstanceClient(watcher *watch.Watcher, ns string) *instanceClient {
+	return &instanceClient{watcher: watcher, ns: ns}
 }
 
-func (t *tprStorageInstance) List() ([]*servicecatalog.Instance, error) {
-	l, err := t.watcher.GetResourceClient(watch.ServiceInstance, t.ns).List(&v1.ListOptions{})
+func (c *instanceClient) List() ([]*servicecatalog.Instance, error) {
+	l, err := c.watcher.GetResourceClient(watch.ServiceInstance, c.ns).List(&v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +54,8 @@ func (t *tprStorageInstance) List() ([]*servicecatalog.Instance, error) {
 	return ret, nil
 }
 
-func (t *tprStorageInstance) Get(name string) (*servicecatalog.Instance, error) {
-	si, err := t.watcher.GetResourceClient(watch.ServiceInstance, t.ns).Get(name)
+func (c *instanceClient) Get(name string) (*servicecatalog.Instance, error) {
+	si, err := c.watcher.GetResourceClient(watch.ServiceInstance, c.ns).Get(name)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (t *tprStorageInstance) Get(name string) (*servicecatalog.Instance, error) 
 	return &tmp, nil
 }
 
-func (t *tprStorageInstance) Create(si *servicecatalog.Instance) (*servicecatalog.Instance, error) {
+func (c *instanceClient) Create(si *servicecatalog.Instance) (*servicecatalog.Instance, error) {
 	si.Kind = watch.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(si)
@@ -77,18 +77,18 @@ func (t *tprStorageInstance) Create(si *servicecatalog.Instance) (*servicecatalo
 	}
 	tprObj.SetName(si.Name)
 	log.Printf("Creating k8sobject:\n%v\n", tprObj)
-	_, err = t.watcher.GetResourceClient(watch.ServiceInstance, t.ns).Create(tprObj)
+	_, err = c.watcher.GetResourceClient(watch.ServiceInstance, c.ns).Create(tprObj)
 	if err != nil {
 		return nil, err
 	}
 	// krancour: Ideally the instance we return is a translation of the updated
 	// 3pr as read back from k8s. It doesn't seem worth going through the trouble
-	// right now since 3pr storage will be removed soon. This will at least work
-	// well enough in the meantime.
+	// right now since 3pr storage will be removed eventually. This will at least
+	// work well enough in the meantime.
 	return si, nil
 }
 
-func (t *tprStorageInstance) Update(si *servicecatalog.Instance) (*servicecatalog.Instance, error) {
+func (c *instanceClient) Update(si *servicecatalog.Instance) (*servicecatalog.Instance, error) {
 	si.Kind = watch.ServiceInstanceKind
 	si.APIVersion = watch.FullAPIVersion
 	tprObj, err := util.SCObjectToTPRObject(si)
@@ -97,7 +97,7 @@ func (t *tprStorageInstance) Update(si *servicecatalog.Instance) (*servicecatalo
 		return nil, err
 	}
 	tprObj.SetName(si.Name)
-	_, err = t.watcher.GetResourceClient(watch.ServiceInstance, "default").Update(tprObj)
+	_, err = c.watcher.GetResourceClient(watch.ServiceInstance, "default").Update(tprObj)
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +108,6 @@ func (t *tprStorageInstance) Update(si *servicecatalog.Instance) (*servicecatalo
 	return si, nil
 }
 
-func (*tprStorageInstance) Delete(string) error {
+func (*instanceClient) Delete(string) error {
 	return errors.New("Not implemented yet")
 }

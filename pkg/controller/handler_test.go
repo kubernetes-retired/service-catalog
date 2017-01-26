@@ -21,8 +21,8 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/mem"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/storage/mem"
 	"k8s.io/kubernetes/pkg/api"
 )
 
@@ -34,8 +34,8 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 		brokerName   = "testBroker"
 		svcClassName = "testSvcClass"
 	)
-	// set up the mock (in-memory) storage implementation
-	storage := mem.NewPopulatedStorage(
+	// set up the mock (in-memory) APIClient implementation
+	apiClient := mem.NewPopulatedAPIClient(
 		map[string]*servicecatalog.Broker{
 			brokerName: {
 				ObjectMeta: api.ObjectMeta{
@@ -68,7 +68,7 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 
 	// set up the handler with the mocks that we've previously created.
 	// we're exercising the handler and ensuring that it interacted with our mocks properly
-	hdl := createHandler(storage, inj, brokerClFunc)
+	hdl := createHandler(apiClient, inj, brokerClFunc)
 
 	// set up the instance that we're creating
 	inst := &servicecatalog.Instance{
@@ -90,14 +90,14 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 		t.Fatalf("expected 0 injected credentials, got %d", len(inj.Injected))
 	}
 
-	// check to ensure that the pre-populated broker was not deleted from storage,
-	// and none were added
-	brokersList, err := storage.Brokers().List()
+	// check to ensure that the pre-populated broker was not deleted and none were
+	// added
+	brokersList, err := apiClient.Brokers().List()
 	if err != nil {
 		t.Fatalf("error getting stored brokers list (%s)", err)
 	}
 	if len(brokersList) != 1 {
-		t.Fatalf("expected a single broker in storage, got %d", len(brokersList))
+		t.Fatalf("expected a single broker from the apiClient, got %d", len(brokersList))
 	}
 	broker := brokersList[0]
 	if broker.Namespace != namespace {
@@ -107,14 +107,14 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 		t.Fatalf("expected broker to have name '%s', got '%s'", brokerName, broker.Name)
 	}
 
-	// check to ensure that the pre-populated service class was not deleted from storage,
-	// and none were added
-	svcClassList, err := storage.ServiceClasses().List()
+	// check to ensure that the pre-populated service class was not deleted and
+	// none were added
+	svcClassList, err := apiClient.ServiceClasses().List()
 	if err != nil {
 		t.Fatalf("error getting service classes list (%s)", err)
 	}
 	if len(svcClassList) != 1 {
-		t.Fatalf("expected a single service class in storage, got %d", len(svcClassList))
+		t.Fatalf("expected a single service class from the apiClient, got %d", len(svcClassList))
 	}
 	svcClass := svcClassList[0]
 	if svcClass.Namespace != namespace {
@@ -124,23 +124,24 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 		t.Fatalf("expected service class to have name '%s', got '%s'", svcClassName, svcClass.Name)
 	}
 
-	// check to ensure that no instances were created in storage and none were added. Note that the
-	// createServiceInstance function (lowercase) only calls the CF service broker client. It
-	// should not mutate storage (the uppercase function does that however)
-	instList, err := storage.Instances(namespace).List()
+	// check to ensure that no instances were created and none were added. Note
+	// that the createServiceInstance function (lowercase) only calls the OSB
+	// service broker client. It should not mutate the underlying storage (the
+	// uppercase function does that however)
+	instList, err := apiClient.Instances(namespace).List()
 	if err != nil {
 		t.Fatalf("error getting instances list (%s)", err)
 	}
 	if len(instList) != 0 {
-		t.Fatalf("expected no instances in storage, got %d", len(instList))
+		t.Fatalf("expected no instances from the apiClient, got %d", len(instList))
 	}
 
-	// check to ensure that no bindings were created in storage
-	bindingsList, err := storage.Bindings(namespace).List()
+	// check to ensure that no bindings were created
+	bindingsList, err := apiClient.Bindings(namespace).List()
 	if err != nil {
 		t.Fatalf("error getting bindings list (%s)", err)
 	}
 	if len(bindingsList) != 0 {
-		t.Fatalf("expected no bindings in storage, got %d", len(bindingsList))
+		t.Fatalf("expected no bindings from the apiClient, got %d", len(bindingsList))
 	}
 }

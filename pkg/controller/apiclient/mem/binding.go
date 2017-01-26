@@ -27,20 +27,20 @@ var (
 	errNoSuchBinding        = errors.New("no such binding")
 )
 
-type memStorageBinding struct {
+type bindingClient struct {
 	// maps binding ID to binding
 	// TODO: support looking up all bindings for a service instance.
 	bindings map[string]*servicecatalog.Binding
 }
 
-func newMemStorageBinding() *memStorageBinding {
-	return &memStorageBinding{bindings: make(map[string]*servicecatalog.Binding)}
+func newBindingClient() *bindingClient {
+	return &bindingClient{bindings: make(map[string]*servicecatalog.Binding)}
 }
 
-func (m *memStorageBinding) List() ([]*servicecatalog.Binding, error) {
-	copy := make([]*servicecatalog.Binding, len(m.bindings))
+func (c *bindingClient) List() ([]*servicecatalog.Binding, error) {
+	copy := make([]*servicecatalog.Binding, len(c.bindings))
 	i := 0
-	for _, bin := range m.bindings {
+	for _, bin := range c.bindings {
 		copy[i] = &servicecatalog.Binding{}
 		if err := deepCopy(copy[i], bin); err != nil {
 			return nil, err
@@ -50,8 +50,8 @@ func (m *memStorageBinding) List() ([]*servicecatalog.Binding, error) {
 	return copy, nil
 }
 
-func (m *memStorageBinding) Get(name string) (*servicecatalog.Binding, error) {
-	binding, ok := m.bindings[name]
+func (c *bindingClient) Get(name string) (*servicecatalog.Binding, error) {
+	binding, ok := c.bindings[name]
 	if !ok {
 		return nil, errNoSuchInstance
 	}
@@ -62,8 +62,8 @@ func (m *memStorageBinding) Get(name string) (*servicecatalog.Binding, error) {
 	return copy, nil
 }
 
-func (m *memStorageBinding) Create(bin *servicecatalog.Binding) (*servicecatalog.Binding, error) {
-	if _, err := m.Get(bin.Name); err == nil {
+func (c *bindingClient) Create(bin *servicecatalog.Binding) (*servicecatalog.Binding, error) {
+	if _, err := c.Get(bin.Name); err == nil {
 		return nil, errBindingAlreadyExists
 	}
 	copy1 := &servicecatalog.Binding{}
@@ -74,12 +74,12 @@ func (m *memStorageBinding) Create(bin *servicecatalog.Binding) (*servicecatalog
 	if err := deepCopy(copy2, bin); err != nil {
 		return nil, err
 	}
-	m.bindings[bin.Name] = copy1
+	c.bindings[bin.Name] = copy1
 	return copy2, nil
 }
 
-func (m *memStorageBinding) Update(bin *servicecatalog.Binding) (*servicecatalog.Binding, error) {
-	if _, err := m.Get(bin.Name); err != nil {
+func (c *bindingClient) Update(bin *servicecatalog.Binding) (*servicecatalog.Binding, error) {
+	if _, err := c.Get(bin.Name); err != nil {
 		return nil, errNoSuchBinding
 	}
 	copy1 := &servicecatalog.Binding{}
@@ -90,14 +90,14 @@ func (m *memStorageBinding) Update(bin *servicecatalog.Binding) (*servicecatalog
 	if err := deepCopy(copy2, bin); err != nil {
 		return nil, err
 	}
-	m.bindings[bin.Name] = copy1
+	c.bindings[bin.Name] = copy1
 	return copy2, nil
 }
 
-func (m *memStorageBinding) Delete(name string) error {
-	if _, err := m.Get(name); err != nil {
+func (c *bindingClient) Delete(name string) error {
+	if _, err := c.Get(name); err != nil {
 		return errNoSuchBinding
 	}
-	delete(m.bindings, name)
+	delete(c.bindings, name)
 	return nil
 }

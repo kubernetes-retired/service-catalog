@@ -27,19 +27,19 @@ var (
 	errNoSuchInstance        = errors.New("no such instance")
 )
 
-type memStorageInstance struct {
+type instanceClient struct {
 	// maps instance ID to instance
 	instances map[string]*servicecatalog.Instance
 }
 
-func newMemStorageInstance() *memStorageInstance {
-	return &memStorageInstance{instances: make(map[string]*servicecatalog.Instance)}
+func newInstanceClient() *instanceClient {
+	return &instanceClient{instances: make(map[string]*servicecatalog.Instance)}
 }
 
-func (m *memStorageInstance) List() ([]*servicecatalog.Instance, error) {
-	copy := make([]*servicecatalog.Instance, len(m.instances))
+func (c *instanceClient) List() ([]*servicecatalog.Instance, error) {
+	copy := make([]*servicecatalog.Instance, len(c.instances))
 	i := 0
-	for _, inst := range m.instances {
+	for _, inst := range c.instances {
 		copy[i] = &servicecatalog.Instance{}
 		if err := deepCopy(copy[i], inst); err != nil {
 			return nil, err
@@ -49,8 +49,8 @@ func (m *memStorageInstance) List() ([]*servicecatalog.Instance, error) {
 	return copy, nil
 }
 
-func (m *memStorageInstance) Get(name string) (*servicecatalog.Instance, error) {
-	inst, ok := m.instances[name]
+func (c *instanceClient) Get(name string) (*servicecatalog.Instance, error) {
+	inst, ok := c.instances[name]
 	if !ok {
 		return nil, errNoSuchInstance
 	}
@@ -61,8 +61,8 @@ func (m *memStorageInstance) Get(name string) (*servicecatalog.Instance, error) 
 	return copy, nil
 }
 
-func (m *memStorageInstance) Create(inst *servicecatalog.Instance) (*servicecatalog.Instance, error) {
-	if _, err := m.Get(inst.Name); err == nil {
+func (c *instanceClient) Create(inst *servicecatalog.Instance) (*servicecatalog.Instance, error) {
+	if _, err := c.Get(inst.Name); err == nil {
 		return nil, errInstanceAlreadyExists
 	}
 	copy1 := &servicecatalog.Instance{}
@@ -73,12 +73,12 @@ func (m *memStorageInstance) Create(inst *servicecatalog.Instance) (*servicecata
 	if err := deepCopy(copy2, inst); err != nil {
 		return nil, err
 	}
-	m.instances[inst.Name] = copy1
+	c.instances[inst.Name] = copy1
 	return copy2, nil
 }
 
-func (m *memStorageInstance) Update(inst *servicecatalog.Instance) (*servicecatalog.Instance, error) {
-	if _, err := m.Get(inst.Name); err != nil {
+func (c *instanceClient) Update(inst *servicecatalog.Instance) (*servicecatalog.Instance, error) {
+	if _, err := c.Get(inst.Name); err != nil {
 		return nil, errNoSuchInstance
 	}
 	copy1 := &servicecatalog.Instance{}
@@ -89,14 +89,14 @@ func (m *memStorageInstance) Update(inst *servicecatalog.Instance) (*servicecata
 	if err := deepCopy(copy2, inst); err != nil {
 		return nil, err
 	}
-	m.instances[inst.Name] = copy1
+	c.instances[inst.Name] = copy1
 	return copy2, nil
 }
 
-func (m *memStorageInstance) Delete(name string) error {
-	if _, err := m.Get(name); err != nil {
+func (c *instanceClient) Delete(name string) error {
+	if _, err := c.Get(name); err != nil {
 		return errNoSuchInstance
 	}
-	delete(m.instances, name)
+	delete(c.instances, name)
 	return nil
 }

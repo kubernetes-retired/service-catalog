@@ -31,7 +31,7 @@ const (
 
 func TestNoBrokers(t *testing.T) {
 	const bogusBrokerName = "NOT THERE"
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	l, err := bs.List()
 	if err != nil {
 		t.Fatalf("List failed with: %s", err)
@@ -49,7 +49,7 @@ func TestNoBrokers(t *testing.T) {
 }
 
 func TestAddBroker(t *testing.T) {
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err := bs.Create(b)
 	if err != nil {
@@ -75,7 +75,7 @@ func TestAddBroker(t *testing.T) {
 }
 
 func TestAddDuplicateBroker(t *testing.T) {
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err := bs.Create(b)
 	if err != nil {
@@ -108,7 +108,7 @@ func TestAddDuplicateBroker(t *testing.T) {
 }
 
 func TestUpdateBroker(t *testing.T) {
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err := bs.Create(b)
 	if err != nil {
@@ -156,7 +156,7 @@ func TestUpdateBroker(t *testing.T) {
 }
 
 func TestUpdateNonExistentBroker(t *testing.T) {
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err := bs.Update(b)
 	if err == nil {
@@ -168,7 +168,7 @@ func TestUpdateNonExistentBroker(t *testing.T) {
 }
 
 func TestDeleteBroker(t *testing.T) {
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err := bs.Create(b)
 	if err != nil {
@@ -210,7 +210,7 @@ func TestDeleteBroker(t *testing.T) {
 
 func TestDeleteBrokerMultiple(t *testing.T) {
 	const brokerName2 = "Test2"
-	bs := NewStorage().Brokers()
+	bs := NewAPIClient().Brokers()
 	b := &servicecatalog.Broker{ObjectMeta: kapi.ObjectMeta{Name: brokerName1}}
 	_, err := bs.Create(b)
 	if err != nil {
