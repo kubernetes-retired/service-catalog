@@ -45,7 +45,9 @@ ifeq ("$(NO_DOCKER)", "1")
 	DOCKER_CMD =
 	scBuildImageTarget =
 else
-	DOCKER_CMD = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) scbuildimage
+	# Mount .pkg as pkg so that we save our cached "go build" output files
+	DOCKER_CMD = docker run --rm -ti -v $(PWD):/go/src/$(SC_PKG) \
+	  -v $(PWD)/.pkg:/go/pkg scbuildimage
 	scBuildImageTarget = .scBuildImage
 endif
 
