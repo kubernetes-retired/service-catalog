@@ -61,6 +61,18 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 func NewStorage(opts generic.RESTOptions) rest.Storage {
 	prefix := "/" + opts.ResourcePrefix
 
+	newListFunc := func() runtime.Object { return &servicecatalog.ServiceClassList{} }
+	storageInterface, dFunc := opts.Decorator(
+		opts.StorageConfig,
+		1000,
+		&servicecatalog.ServiceClass{},
+		prefix,
+		serviceclassRESTStrategies,
+		newListFunc,
+		nil,
+		storage.NoTriggerPublisher,
+	)
+
 	store := registry.Store{
 		NewFunc: func() runtime.Object {
 			return &servicecatalog.ServiceClass{}
@@ -91,6 +103,8 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		CreateStrategy: serviceclassRESTStrategies,
 		UpdateStrategy: serviceclassRESTStrategies,
 		DeleteStrategy: serviceclassRESTStrategies,
+		Storage:        storageInterface,
+		DestroyFunc:    dFunc,
 	}
 
 	return &store

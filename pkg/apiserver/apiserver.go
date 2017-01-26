@@ -109,6 +109,7 @@ func (c CompletedConfig) New() (*ServiceCatalogAPIServer, error) {
 		deleteCollectionWorkers: c.DeleteCollectionWorkers,
 		enableGarbageCollection: c.GenericConfig.EnableGarbageCollection,
 		storageFactory:          c.StorageFactory,
+		storageDecorator:        generic.UndecoratedStorage,
 	}
 
 	glog.V(4).Infoln("Installing API groups")
