@@ -129,6 +129,45 @@ no foo resource exists either.
 $ kubectl --certificate-authority=/var/run/kubernetes/apiserver.crt --server=https://localhost:6443 api-versions
 ```
 blank response. apiserver has no public apis. no errors either.
+
+
+
+```
+# kubectl --certificate-authority=/var/run/kubernetes/apiserver.crt --server=https://localhost:6443 create -f instance.yaml
+instance "test-instance" created
+```
+query
+```
+kubectl --certificate-authority=/var/run/kubernetes/apiserver.crt --server=https://localhost:6443 get instance test-instance -o yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  creationTimestamp: 2017-01-25T21:57:48Z
+  name: test-instance
+  resourceVersion: "9"
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces//instances/test-instance
+  uid: 4f88bd75-e349-11e6-8096-fa163e9a471d
+spec:
+  osbCredentials: ""
+  osbDashboardURL: ""
+  osbGuid: ""
+  osbInternalID: ""
+  osbLastOperation: ""
+  osbPlanID: ""
+  osbServiceID: ""
+  osbSpaceGUID: ""
+  osbType: ""
+  parameters: null
+  planName: ""
+  serviceClassName: dugs awesome service instance
+status:
+  conditions: []
+```
+
+cleanup
+```
+ kubectl --certificate-authority=/var/run/kubernetes/apiserver.crt --server=https://localhost:6443 delete instance test-instance
+instance "test-instance" deleted
 ```
 
 

@@ -61,14 +61,24 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 func NewStorage(opts generic.RESTOptions) rest.Storage {
 	prefix := "/" + opts.ResourcePrefix
 
+	newListFunc := func() runtime.Object { return &servicecatalog.InstanceList{} }
+	storageInterface, dFunc := opts.Decorator(
+		opts.StorageConfig,
+		1000,
+		&servicecatalog.Instance{},
+		prefix,
+		instanceRESTStrategies,
+		newListFunc,
+		nil,
+		storage.NoTriggerPublisher,
+	)
+
 	store := registry.Store{
 		NewFunc: func() runtime.Object {
 			return &servicecatalog.Instance{}
 		},
 		// NewListFunc returns an object capable of storing results of an etcd list.
-		NewListFunc: func() runtime.Object {
-			return &servicecatalog.InstanceList{}
-		},
+		NewListFunc: newListFunc,
 		// Produces a path that etcd understands, to the root of the resource
 		// by combining the namespace in the context with the given prefix
 		KeyRootFunc: func(ctx api.Context) string {
@@ -91,6 +101,9 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		CreateStrategy: instanceRESTStrategies,
 		UpdateStrategy: instanceRESTStrategies,
 		DeleteStrategy: instanceRESTStrategies,
+
+		Storage:     storageInterface,
+		DestroyFunc: dFunc,
 	}
 
 	return &store
