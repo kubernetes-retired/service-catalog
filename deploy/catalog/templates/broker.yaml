@@ -11,8 +11,8 @@ spec:
     spec:
       containers:
       - name: k8s-broker
-        image: {{ .Values.registry }}/k8s-broker:{{ if .Values.k8sBrokerVersion }}{{ .Values.k8sBrokerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
-        imagePullPolicy: Always
+        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}k8s-broker:{{ if .Values.k8sBrokerVersion }}{{ .Values.k8sBrokerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        imagePullPolicy: IfNotPresent
         args:
         - --registry_host
         - registry
