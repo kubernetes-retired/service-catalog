@@ -53,7 +53,7 @@ var (
 func (instanceRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.Instance)
 	if !ok {
-		glog.Warning("received a non-instance object to create")
+		glog.Fatal("received a non-instance object to create")
 	}
 }
 
@@ -67,7 +67,7 @@ func (instanceRESTStrategy) NamespaceScoped() bool {
 func (instanceRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	instance, ok := obj.(*sc.Instance)
 	if !ok {
-		glog.Warning("received a non-instance object to create")
+		glog.Fatal("received a non-instance object to create")
 	}
 
 	// Creating a brand new object, thus it must have no
@@ -93,11 +93,11 @@ func (instanceRESTStrategy) AllowUnconditionalUpdate() bool {
 func (instanceRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
 	newInstance, ok := new.(*sc.Instance)
 	if !ok {
-		glog.Warning("received a non-instance object to update to")
+		glog.Fatal("received a non-instance object to update to")
 	}
 	oldInstance, ok := old.(*sc.Instance)
 	if !ok {
-		glog.Warning("received a non-instance object to update from")
+		glog.Fatal("received a non-instance object to update from")
 	}
 	newInstance.Spec = oldInstance.Spec
 	newInstance.Status = oldInstance.Status
@@ -106,11 +106,11 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 func (instanceRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	newInstance, ok := new.(*sc.Instance)
 	if !ok {
-		glog.Warning("received a non-instance object to validate to")
+		glog.Fatal("received a non-instance object to validate to")
 	}
 	oldInstance, ok := old.(*sc.Instance)
 	if !ok {
-		glog.Warning("received a non-instance object to validate from")
+		glog.Fatal("received a non-instance object to validate from")
 	}
 
 	return scv.ValidateInstanceUpdate(newInstance, oldInstance)

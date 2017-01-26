@@ -54,7 +54,7 @@ var (
 func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.Broker)
 	if !ok {
-		glog.Warning("received a non-broker object to create")
+		glog.Fatal("received a non-broker object to create")
 	}
 }
 
@@ -68,7 +68,7 @@ func (brokerRESTStrategy) NamespaceScoped() bool {
 func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.Broker)
 	if !ok {
-		glog.Warning("received a non-broker object to create")
+		glog.Fatal("received a non-broker object to create")
 	}
 	// Is there anything to pull out of the context `ctx`?
 
@@ -95,11 +95,11 @@ func (brokerRESTStrategy) AllowUnconditionalUpdate() bool {
 func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
-		glog.Warning("received a non-broker object to update to")
+		glog.Fatal("received a non-broker object to update to")
 	}
 	oldBroker, ok := old.(*sc.Broker)
 	if !ok {
-		glog.Warning("received a non-broker object to update from")
+		glog.Fatal("received a non-broker object to update from")
 	}
 	newBroker.Spec = oldBroker.Spec
 	newBroker.Status = oldBroker.Status
@@ -108,11 +108,11 @@ func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Ob
 func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
-		glog.Warning("received a non-broker object to validate to")
+		glog.Fatal("received a non-broker object to validate to")
 	}
 	oldBroker, ok := old.(*sc.Broker)
 	if !ok {
-		glog.Warning("received a non-broker object to validate from")
+		glog.Fatal("received a non-broker object to validate from")
 	}
 
 	return scv.ValidateBrokerUpdate(newBroker, oldBroker)
