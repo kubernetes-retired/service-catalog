@@ -12,6 +12,9 @@ the service-catalog project is to provide a way for Kubernetes users to consume
 services from brokers and easily configure their applications to use those
 services.
 
+For more details about the design and features of this project see the
+[design](docs/design.md) doc.
+
 ---
 
 We are currently scoping our **v1** milestone [here](./docs/v1).
