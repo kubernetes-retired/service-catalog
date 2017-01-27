@@ -53,7 +53,7 @@ var (
 func (serviceclassRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceClass)
 	if !ok {
-		glog.Warning("received a non-serviceclass object to create")
+		glog.Fatal("received a non-serviceclass object to create")
 	}
 }
 
@@ -66,7 +66,7 @@ func (serviceclassRESTStrategy) NamespaceScoped() bool {
 func (serviceclassRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceClass)
 	if !ok {
-		glog.Warning("received a non-serviceclass object to create")
+		glog.Fatal("received a non-serviceclass object to create")
 	}
 	// service class is a data record and has no status to track
 }
@@ -86,11 +86,11 @@ func (serviceclassRESTStrategy) AllowUnconditionalUpdate() bool {
 func (serviceclassRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
-		glog.Warning("received a non-serviceclass object to update to")
+		glog.Fatal("received a non-serviceclass object to update to")
 	}
-	oldServiceclass := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ServiceClass)
 	if !ok {
-		glog.Warning("received a non-serviceclass object to update from")
+		glog.Fatal("received a non-serviceclass object to update from")
 	}
 	// copy all fields individually?
 	newServiceclass.BrokerName = oldServiceclass.BrokerName
@@ -99,11 +99,11 @@ func (serviceclassRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runt
 func (serviceclassRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
-		glog.Warning("received a non-serviceclass object to validate to")
+		glog.Fatal("received a non-serviceclass object to validate to")
 	}
-	oldServiceclass := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ServiceClass)
 	if !ok {
-		glog.Warning("received a non-serviceclass object to validate from")
+		glog.Fatal("received a non-serviceclass object to validate from")
 	}
 
 	return scv.ValidateServiceclassUpdate(newServiceclass, oldServiceclass)

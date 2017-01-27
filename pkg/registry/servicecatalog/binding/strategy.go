@@ -53,7 +53,7 @@ var (
 func (bindingRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.Binding)
 	if !ok {
-		glog.Warning("received a non-binding object to create")
+		glog.Fatal("received a non-binding object to create")
 	}
 }
 
@@ -67,7 +67,7 @@ func (bindingRESTStrategy) NamespaceScoped() bool {
 func (bindingRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
 	binding, ok := obj.(*sc.Binding)
 	if !ok {
-		glog.Warning("received a non-binding object to create")
+		glog.Fatal("received a non-binding object to create")
 	}
 	// Is there anything to pull out of the context `ctx`?
 
@@ -94,11 +94,11 @@ func (bindingRESTStrategy) AllowUnconditionalUpdate() bool {
 func (bindingRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
 	newBinding, ok := new.(*sc.Binding)
 	if !ok {
-		glog.Warning("received a non-binding object to update to")
+		glog.Fatal("received a non-binding object to update to")
 	}
-	oldBinding := old.(*sc.Binding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
-		glog.Warning("received a non-binding object to update from")
+		glog.Fatal("received a non-binding object to update from")
 	}
 	newBinding.Spec = oldBinding.Spec
 	newBinding.Status = oldBinding.Status
@@ -107,11 +107,11 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.O
 func (bindingRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
 	newBinding, ok := new.(*sc.Binding)
 	if !ok {
-		glog.Warning("received a non-binding object to validate to")
+		glog.Fatal("received a non-binding object to validate to")
 	}
-	oldBinding := old.(*sc.Binding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
-		glog.Warning("received a non-binding object to validate from")
+		glog.Fatal("received a non-binding object to validate from")
 	}
 
 	return scv.ValidateBindingUpdate(newBinding, oldBinding)
