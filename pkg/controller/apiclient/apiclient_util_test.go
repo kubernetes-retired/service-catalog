@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package apiclient_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
+	. "github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/mem"
 	kapi "k8s.io/kubernetes/pkg/api"
 )
@@ -162,33 +162,32 @@ func createServicePlans(n int, startCount int) []servicecatalog.ServicePlan {
 	for i := range ret {
 		ret[i] = servicecatalog.ServicePlan{
 			Name:    "planName" + string(i+startCount),
-			OSBGUID: "planGuid" + string(i+startCount),
+			OSBGUID: "planGUID" + string(i+startCount),
 		}
 	}
 	return ret
 }
 
-func testGetServicePlanInfo(apiclient apiclient.APIClient,
+func testGetServicePlanInfo(apiclient APIClient,
 	svcCls *servicecatalog.ServiceClass, plan *servicecatalog.ServicePlan,
 	queryPlanName string) error {
 
-	if svcGuid, planGuid, planName, err := GetServicePlanInfo(apiclient.ServiceClasses(),
-		svcCls.Name, queryPlanName); err != nil {
-
+	svcGUID, planGUID, planName, err := GetServicePlanInfo(apiclient.ServiceClasses(),
+		svcCls.Name, queryPlanName)
+	if err != nil {
 		return fmt.Errorf("Err from GetServicePlanInfo: %v", err)
-	} else {
-		if svcCls.OSBGUID != svcGuid {
-			return fmt.Errorf("Service GUIDs don't match. Expected %s, got %s",
-				svcCls.OSBGUID, svcGuid)
-		}
-		if plan.OSBGUID != planGuid {
-			return fmt.Errorf("Plan GUIDs don't match. Expected %s, got %s",
-				plan.OSBGUID, planGuid)
-		}
-		if plan.Name != planName {
-			return fmt.Errorf("Plan names don't match. Expected %s, got %s",
-				plan.Name, planName)
-		}
+	}
+	if svcCls.OSBGUID != svcGUID {
+		return fmt.Errorf("Service GUIDs don't match. Expected %s, got %s",
+			svcCls.OSBGUID, svcGUID)
+	}
+	if plan.OSBGUID != planGUID {
+		return fmt.Errorf("Plan GUIDs don't match. Expected %s, got %s",
+			plan.OSBGUID, planGUID)
+	}
+	if plan.Name != planName {
+		return fmt.Errorf("Plan names don't match. Expected %s, got %s",
+			plan.Name, planName)
 	}
 	return nil
 }
