@@ -12,6 +12,7 @@ layout:
     ├── build          # Contains build-related scripts and subdirectories containing Dockerfiles
     ├── cmd            # Contains "main" Go packages for each service catalog component binary
     ├── contrib        # Contains all non-essential source
+    │   └── hack       # Non-build related scripts
     ├── deploy
     │   └── catalog    # Helm chart for deploying service catalog
     ├── docs           # Documentation
@@ -83,13 +84,27 @@ To deploy to Kubernetes, see the
 
 ## Testing
 
-Currently, we only have unit testcases within this repo:
+There are two types of tests: unit and integration. The unit testcases
+can be run via the `test-unit` Makefile target, e.g.:
+
+    make test-unit
+
+These will execute any `*_test.go` files within the source tree.
+The integration tests can be run via the `test-integration` Makefile target,
+e.g.:
+
+    make test-integration
+
+The integration tests require the Kubernetes client (`kubectl`) so there is a
+script called `contrib/hack/kubectl` that will run it from within a
+Docker container. This avoids the need for you to download, or install it,
+youself. You may find it useful to add `contrib/hack` to your `PATH`.
+
+The `test` Makefile target will run both the unit and integration tests, e.g.:
 
     make test
 
-These will execute any `*_test.go` files within the source tree.
-
-To see how well these tests cover the source code, you can use:
+To see how well the unit tests cover the source code, you can use:
 
     make coverage
 
