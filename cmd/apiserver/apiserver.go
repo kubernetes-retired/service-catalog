@@ -27,8 +27,6 @@ import (
 	"k8s.io/kubernetes/pkg/util/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
-	// TODO: may be necessary
-	_ "k8s.io/kubernetes/pkg/api/install"
 	// install our API groups
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 )
