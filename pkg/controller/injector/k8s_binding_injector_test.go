@@ -28,10 +28,10 @@ import (
 )
 
 func TestInjectOne(t *testing.T) {
-	binding := createBindings(1)[0]
+	binding := createFakeBindings(1)[0]
 	cred := createCreds(1)[0]
 	injector := fakeK8sBindingInjector()
-	if err := inject(injector, binding, cred); err != nil {
+	if err := injector.Inject(binding, cred); err != nil {
 		t.Fatal(err)
 	}
 
@@ -45,14 +45,14 @@ func TestInjectOne(t *testing.T) {
 }
 
 func TestInjectTwo(t *testing.T) {
-	bindings := createBindings(2)
+	bindings := createFakeBindings(2)
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(injector, bindings[0], creds[0]); err != nil {
+	if err := injector.Inject(bindings[0], creds[0]); err != nil {
 		t.Fatal(err)
 	}
-	if err := inject(injector, bindings[1], creds[1]); err != nil {
+	if err := injector.Inject(bindings[1], creds[1]); err != nil {
 		t.Fatal(err)
 	}
 
@@ -74,22 +74,22 @@ func TestInjectTwo(t *testing.T) {
 }
 
 func TestInjectOverride(t *testing.T) {
-	binding := createBindings(1)[0]
+	binding := createFakeBindings(1)[0]
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(injector, binding, creds[0]); err != nil {
+	if err := injector.Inject(binding, creds[0]); err != nil {
 		t.Fatal(err)
 	}
 
 	// note that we expect a failure here
-	if err := inject(injector, binding, creds[0]); err == nil {
+	if err := injector.Inject(binding, creds[0]); err == nil {
 		t.Fatal("Injecting over the same binding succeeded even though it shouldn't")
 	}
 }
 
 func TestUninjectEmpty(t *testing.T) {
-	binding := createBindings(1)[0]
+	binding := createFakeBindings(1)[0]
 	injector := fakeK8sBindingInjector()
 	if err := injector.Uninject(binding); err == nil {
 		t.Fatal("Uninject empty expected error but none returned!")
@@ -97,11 +97,11 @@ func TestUninjectEmpty(t *testing.T) {
 }
 
 func TestUninjectOne(t *testing.T) {
-	binding := createBindings(1)[0]
+	binding := createFakeBindings(1)[0]
 	cred := createCreds(1)[0]
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(injector, binding, cred); err != nil {
+	if err := injector.Inject(binding, cred); err != nil {
 		t.Fatal(err)
 	}
 	injector.Uninject(binding)
@@ -112,11 +112,11 @@ func TestUninjectOne(t *testing.T) {
 }
 
 func TestUninjectSame(t *testing.T) {
-	binding := createBindings(1)[0]
+	binding := createFakeBindings(1)[0]
 	cred := createCreds(1)[0]
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(injector, binding, cred); err != nil {
+	if err := injector.Inject(binding, cred); err != nil {
 		t.Fatal(err)
 	}
 	if err := injector.Uninject(binding); err != nil {
@@ -128,14 +128,14 @@ func TestUninjectSame(t *testing.T) {
 }
 
 func TestUninjectTwo(t *testing.T) {
-	bindings := createBindings(2)
+	bindings := createFakeBindings(2)
 	creds := createCreds(2)
 
 	injector := fakeK8sBindingInjector()
-	if err := inject(injector, bindings[0], creds[0]); err != nil {
+	if err := injector.Inject(bindings[0], creds[0]); err != nil {
 		t.Fatal(err)
 	}
-	if err := inject(injector, bindings[1], creds[1]); err != nil {
+	if err := injector.Inject(bindings[1], creds[1]); err != nil {
 		t.Fatal(err)
 	}
 
@@ -163,7 +163,7 @@ func TestUninjectTwo(t *testing.T) {
 	}
 }
 
-func createBindings(length int) []*servicecatalog.Binding {
+func createFakeBindings(length int) []*servicecatalog.Binding {
 	ret := make([]*servicecatalog.Binding, length, length)
 	for i := range ret {
 		ret[i] = &servicecatalog.Binding{
@@ -198,16 +198,6 @@ func fakeK8sBindingInjector() *k8sBindingInjector {
 func getSecret(injector *k8sBindingInjector, binding *servicecatalog.Binding) (*v1.Secret, error) {
 	secretsCl := injector.client.Core().Secrets(binding.Namespace)
 	return secretsCl.Get(binding.Name)
-}
-
-func inject(injector BindingInjector,
-	binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
-
-	err := injector.Inject(binding, cred)
-	if err != nil {
-		return fmt.Errorf("Error when injecting credentials: %s", err)
-	}
-	return nil
 }
 
 // tests all fields of credentials are there and also the same value
