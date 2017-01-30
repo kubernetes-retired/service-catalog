@@ -35,11 +35,7 @@ func TestInjectOne(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secret, err := getSecret(injector, binding)
-	if err != nil {
-		t.Fatalf("Error when getting secret: %s", err)
-	}
-	if err := testCredentialsInjected(secret.Data, cred); err != nil {
+	if err := testCredentialsInjected(injector, binding, cred); err != nil {
 		t.Error(err)
 	}
 }
@@ -56,19 +52,11 @@ func TestInjectTwo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	secret, err := getSecret(injector, bindings[0])
-	if err != nil {
-		t.Fatalf("Error when getting secret: %s", err)
-	}
-	if err := testCredentialsInjected(secret.Data, creds[0]); err != nil {
+	if err := testCredentialsInjected(injector, bindings[0], creds[0]); err != nil {
 		t.Error(err)
 	}
 
-	secret, err = getSecret(injector, bindings[1])
-	if err != nil {
-		t.Fatalf("Error when getting secret: %s", err)
-	}
-	if err := testCredentialsInjected(secret.Data, creds[1]); err != nil {
+	if err := testCredentialsInjected(injector, bindings[1], creds[1]); err != nil {
 		t.Error(err)
 	}
 }
@@ -151,11 +139,7 @@ func TestUninjectTwo(t *testing.T) {
 	}
 
 	//test that bindings[1] is still there
-	secret, err := getSecret(injector, bindings[1])
-	if err != nil {
-		t.Fatalf("Error when getting secret: %s", err)
-	}
-	if err := testCredentialsInjected(secret.Data, creds[1]); err != nil {
+	if err := testCredentialsInjected(injector, bindings[1], creds[1]); err != nil {
 		t.Error(err)
 	}
 
@@ -207,7 +191,12 @@ func getSecret(injector *k8sBindingInjector, binding *servicecatalog.Binding) (*
 }
 
 // tests all fields of credentials are there and also the same value
-func testCredentialsInjected(data map[string][]byte, cred *brokerapi.Credential) error {
+func testCredentialsInjected(injector *k8sBindingInjector, binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
+	secret, err := getSecret(injector, binding)
+	if err != nil {
+		return err
+	}
+	data := secret.Data
 	testField := func(key string, expectedValue string) error {
 		val, ok := data[key]
 		if !ok {
@@ -220,16 +209,16 @@ func testCredentialsInjected(data map[string][]byte, cred *brokerapi.Credential)
 	}
 
 	// TODO change so that it's not hard coded to Credential struct fields
-	if err := testField("hostname", cred.Hostname); err != nil {
+	if err = testField("hostname", cred.Hostname); err != nil {
 		return err
 	}
-	if err := testField("port", cred.Port); err != nil {
+	if err = testField("port", cred.Port); err != nil {
 		return err
 	}
-	if err := testField("username", cred.Username); err != nil {
+	if err = testField("username", cred.Username); err != nil {
 		return err
 	}
-	if err := testField("password", cred.Password); err != nil {
+	if err = testField("password", cred.Password); err != nil {
 		return err
 	}
 	return nil
