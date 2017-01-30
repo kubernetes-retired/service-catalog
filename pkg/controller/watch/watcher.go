@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/1.5/dynamic"
 	// Need this for gcp auth
 	"k8s.io/client-go/1.5/kubernetes"
-	deployments "k8s.io/client-go/1.5/kubernetes/typed/extensions/v1beta1"
 	"k8s.io/client-go/1.5/pkg/api"
 	"k8s.io/client-go/1.5/pkg/api/unversioned"
 	"k8s.io/client-go/1.5/pkg/api/v1"
@@ -40,7 +39,6 @@ const (
 	ServiceBinding
 	ServiceBroker
 	ServiceClass
-	Deployment
 )
 
 func (rt *resourceType) name() string {
@@ -52,7 +50,7 @@ var resourceTypeNames = []string{
 	"ServiceBinding",
 	"ServiceBroker",
 	"ServiceClass",
-	"Deployment"}
+}
 
 // These resources _must_ exist in the cluster before proceeding.
 var resourceTypes = []resourceType{ServiceInstance, ServiceBinding, ServiceBroker, ServiceClass}
@@ -133,7 +131,6 @@ type watchCallback func(watch.Event) error
 // performs custom operations.
 type Watcher struct {
 	dynClient *dynamic.Client
-	k8sClient *kubernetes.Clientset
 }
 
 // NewWatcher creates a new Watcher. kubeconfig specifies the kubeconfig file to
@@ -152,7 +149,6 @@ func NewWatcher(k8sClient *kubernetes.Clientset, dynClient *dynamic.Client) (*Wa
 
 	return &Watcher{
 		dynClient: dynClient,
-		k8sClient: k8sClient,
 	}, nil
 }
 
@@ -224,69 +220,9 @@ func checkCluster(client *dynamic.Client) error {
 }
 
 // Watch starts a watch for ResourceType t and on events will call the wcb.
-func (w *Watcher) Watch(t resourceType, ns string, wcb watchCallback) error {
-	// TODO: Need to research why these two have different
-	// interfaces. Basically a dynamic client has a different
-	// client than the client for talking to normal k8s
-	// resources. It's wonky.
-	if t == Deployment {
-		rc := w.k8sClient.Extensions().Deployments(ns)
-		go deploymentWatcher(rc, wcb)
-	} else {
-		rc := w.GetResourceClient(t, ns)
-		go thirdPartyWatcher(newRealDynamicResourceClient(rc), wcb)
-	}
-	return nil
-}
-
-func deploymentWatcher(di deployments.DeploymentInterface, wcb watchCallback) {
-	for {
-		// First do List on the resource to bring things up to date.
-		glog.Infoln("List all existing Deployments")
-		l, err := di.List(api.ListOptions{})
-		if err != nil {
-			glog.Infof("Error getting list of resources: %v\n", err)
-			continue
-		}
-		for _, d := range l.Items {
-			glog.Infof("Found Deployment name: %s\n", d.Name)
-			event := watch.Event{
-				Type:   watch.Added,
-				Object: &d,
-			}
-			wcb(event)
-		}
-
-		// Start watching from where the List() left off.
-		// Note that if l.ResourceVersion is too old, meaning its no
-		// longer in the "watch window" then we'll get an error and
-		// be forced to re-List everything again, and try again.
-		w, err := di.Watch(api.ListOptions{
-			ResourceVersion: l.ResourceVersion,
-		})
-		if err != nil {
-			glog.Errorf("Failed to start a watch: %v\n", err)
-			continue
-		}
-		c := w.ResultChan()
-
-		glog.Infoln("Entering watch loop")
-		done := false
-		for !done {
-			select {
-			case <-time.After(1 * time.Minute):
-				glog.Infoln("*** select heartbeat ***")
-			case e := <-c:
-				glog.Infof("Watch called with event Type: %s\n", e.Type)
-				if e.Object == nil {
-					glog.Infoln("Watch loop stopped(no obj), restarting")
-					done = true
-				} else {
-					wcb(e)
-				}
-			}
-		}
-	}
+func (w *Watcher) Watch(t resourceType, ns string, wcb watchCallback) {
+	rc := w.GetResourceClient(t, ns)
+	go thirdPartyWatcher(newRealDynamicResourceClient(rc), wcb)
 }
 
 func thirdPartyWatcher(rc dynamicResourceClient, wcb watchCallback) {

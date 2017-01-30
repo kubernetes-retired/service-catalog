@@ -66,25 +66,13 @@ func (c *controller) Run() error {
 	}
 
 	glog.Infoln("Starting to watch for new Service Brokers")
-	err := c.watcher.Watch(watch.ServiceBroker, "default", c.serviceBrokerCallback)
-	if err != nil {
-		glog.Errorf("Failed to start a watcher for Service Brokers: %v\n", err)
-		return err
-	}
+	c.watcher.Watch(watch.ServiceBroker, "default", c.serviceBrokerCallback)
 
 	glog.Infoln("Starting to watch for new Service Instances")
-	err = c.watcher.Watch(watch.ServiceInstance, "default", c.serviceInstanceCallback)
-	if err != nil {
-		glog.Errorf("Failed to start a watcher for Service Instances: %v\n", err)
-		return err
-	}
+	c.watcher.Watch(watch.ServiceInstance, "default", c.serviceInstanceCallback)
 
 	glog.Infoln("Starting to watch for new Service Bindings")
-	err = c.watcher.Watch(watch.ServiceBinding, "default", c.serviceBindingCallback)
-	if err != nil {
-		glog.Errorf("Failed to start a watcher for Service Bindings: %v\n", err)
-		return err
-	}
+	c.watcher.Watch(watch.ServiceBinding, "default", c.serviceBindingCallback)
 
 	return nil
 }
