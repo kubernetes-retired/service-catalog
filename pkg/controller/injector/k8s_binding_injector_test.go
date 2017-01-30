@@ -104,7 +104,9 @@ func TestUninjectOne(t *testing.T) {
 	if err := injector.Inject(binding, cred); err != nil {
 		t.Fatal(err)
 	}
-	injector.Uninject(binding)
+	if err := injector.Uninject(binding); err != nil {
+		t.Fatal("Unexpected error when uninjecting")
+	}
 
 	if err := testCredentialsUninjected(injector, binding); err != nil {
 		t.Fatal(err)
@@ -139,7 +141,9 @@ func TestUninjectTwo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	injector.Uninject(bindings[0])
+	if err := injector.Uninject(bindings[0]); err != nil {
+		t.Fatal("Unexpected err when uninjecting")
+	}
 
 	// test that bindings[0] is gone
 	if err := testCredentialsUninjected(injector, bindings[0]); err != nil {
@@ -156,7 +160,9 @@ func TestUninjectTwo(t *testing.T) {
 	}
 
 	// test that bindings[1] is gone after uninject
-	injector.Uninject(bindings[1])
+	if err := injector.Uninject(bindings[1]); err != nil {
+		t.Fatal("Unexpected err when uninjecting")
+	}
 
 	if err := testCredentialsUninjected(injector, bindings[1]); err != nil {
 		t.Fatal(err)
