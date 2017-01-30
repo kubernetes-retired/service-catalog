@@ -36,8 +36,7 @@ type resourceType int
 
 // These define the Third Party Resources that we can handle or operate on.
 const (
-	ManagedService = iota
-	ServiceInstance
+	ServiceInstance = iota
 	ServiceBinding
 	ServiceBroker
 	ServiceClass
@@ -49,15 +48,13 @@ func (rt *resourceType) name() string {
 }
 
 var resourceTypeNames = []string{
-	"ManagedService",
 	"ServiceInstance",
 	"ServiceBinding",
 	"ServiceBroker",
 	"ServiceClass",
 	"Deployment"}
 
-// These resources _must_ exist in the cluster before proceeding. ManagedService is not
-// used yet.
+// These resources _must_ exist in the cluster before proceeding.
 var resourceTypes = []resourceType{ServiceInstance, ServiceBinding, ServiceBroker, ServiceClass}
 
 const (
@@ -104,12 +101,6 @@ var thirdPartyResourceTypes = map[string]v1beta1.ThirdPartyResource{
 		Description: "A Service Binding representation, creates a Service Binding",
 		Versions:    []v1beta1.APIVersion{{Name: "v1alpha1"}},
 	},
-}
-
-var managedServiceResource = unversioned.APIResource{
-	Name:       "managedservices",
-	Kind:       "ManagedService",
-	Namespaced: true,
 }
 
 var serviceInstanceResource = unversioned.APIResource{
@@ -350,8 +341,6 @@ func (w *Watcher) GetResourceClient(t resourceType, namespace string) *dynamic.R
 
 func getResourceClient(client *dynamic.Client, t resourceType, namespace string) *dynamic.ResourceClient {
 	switch t {
-	case ManagedService:
-		return client.Resource(&managedServiceResource, namespace)
 	case ServiceInstance:
 		return client.Resource(&serviceInstanceResource, namespace)
 	case ServiceBinding:

@@ -5,7 +5,6 @@ creates these resources under it:
 
 * ServiceBroker
 * ServiceClass
-* ManagedService
 * ServiceInstance
 * ServiceBinding
 
@@ -41,4 +40,3 @@ This is SUPER early work, so the list is long
 
 * watch times out
 * error handling is minimal at best
-
