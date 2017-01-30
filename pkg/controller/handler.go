@@ -222,11 +222,6 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	}
 
 	glog.Infof("Adding a broker %s catalog:\n%v\n", in.Name, catalog)
-	_, err = h.apiClient.Brokers().Create(in)
-	if err != nil {
-		return nil, err
-	}
-
 	for _, sc := range catalog {
 		sc.BrokerName = in.Name
 		if _, err := h.apiClient.ServiceClasses().Create(sc); err != nil {
