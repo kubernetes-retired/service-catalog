@@ -44,9 +44,4 @@ type CreateServiceBindingResponse struct {
 
 // Credential represents connection details, username, and password that are
 // provisioned when a consumer binds to a service instance
-type Credential struct {
-	Hostname string `json:"hostname"`
-	Port     string `json:"port"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
+type Credential map[string]interface{}
