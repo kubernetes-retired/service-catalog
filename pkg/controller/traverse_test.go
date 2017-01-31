@@ -94,7 +94,7 @@ func makeTraverableAPIClient() apiclient.APIClient {
 	)
 }
 
-func TestAllTehThings(t *testing.T) {
+func TestAll(t *testing.T) {
 	storage := makeTraverableAPIClient()
 	inst, err := instanceForBinding(storage, &binding)
 	if err != nil {
