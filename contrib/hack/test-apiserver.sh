@@ -30,8 +30,8 @@ kubectl create -f contrib/examples/apiserver/binding.yaml
 
 kubectl get broker test-broker -o yaml
 kubectl get serviceclass test-serviceclass -o yaml
-kubectl get instance test-instance -o yaml
-kubectl get binding test-binding -o yaml
+kubectl get instance test-instance --namespace test-ns -o yaml
+kubectl get binding test-binding --namespace test-ns -o yaml
 
 kubectl delete -f contrib/examples/apiserver/broker.yaml
 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
