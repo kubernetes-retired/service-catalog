@@ -48,7 +48,7 @@ var (
 	}
 )
 
-func makeTraverableAPIClient() apiclient.APIClient {
+func makeTraversableAPIClient() apiclient.APIClient {
 	instances := map[string]apiclient.InstanceClient{
 		namespace: mem.NewPopulatedInstanceClient(
 			map[string]*servicecatalog.Instance{
@@ -95,7 +95,7 @@ func makeTraverableAPIClient() apiclient.APIClient {
 }
 
 func TestAll(t *testing.T) {
-	storage := makeTraverableAPIClient()
+	storage := makeTraversableAPIClient()
 	inst, err := instanceForBinding(storage, &binding)
 	if err != nil {
 		t.Fatalf("error getting instance for binding (%s)", err)
