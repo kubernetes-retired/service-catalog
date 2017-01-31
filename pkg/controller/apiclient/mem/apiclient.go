@@ -24,8 +24,8 @@ import (
 type apiClient struct {
 	brokers        *brokerClient
 	serviceClasses *serviceClassClient
-	instances      map[string]*instanceClient
-	bindings       map[string]*bindingClient
+	instances      map[string]apiclient.InstanceClient
+	bindings       map[string]apiclient.BindingClient
 }
 
 // NewAPIClient creates an instance of APIClient interface, backed by memory.
@@ -33,8 +33,8 @@ func NewAPIClient() apiclient.APIClient {
 	return &apiClient{
 		brokers:        newBrokerClient(),
 		serviceClasses: newServiceClassClient(),
-		instances:      make(map[string]*instanceClient),
-		bindings:       make(map[string]*bindingClient),
+		instances:      make(map[string]apiclient.InstanceClient),
+		bindings:       make(map[string]apiclient.BindingClient),
 	}
 }
 
@@ -44,6 +44,8 @@ func NewAPIClient() apiclient.APIClient {
 func NewPopulatedAPIClient(
 	brokers map[string]*servicecatalog.Broker,
 	serviceClasses map[string]*servicecatalog.ServiceClass,
+	instances map[string]apiclient.InstanceClient,
+	bindings map[string]apiclient.BindingClient,
 ) apiclient.APIClient {
 	brokerClient := newBrokerClient()
 	brokerClient.brokers = brokers
@@ -52,8 +54,8 @@ func NewPopulatedAPIClient(
 	return &apiClient{
 		brokers:        brokerClient,
 		serviceClasses: serviceClassClient,
-		instances:      make(map[string]*instanceClient),
-		bindings:       make(map[string]*bindingClient),
+		instances:      instances,
+		bindings:       bindings,
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/mem"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"k8s.io/kubernetes/pkg/api"
@@ -53,6 +54,8 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 				BrokerName: brokerName,
 			},
 		},
+		make(map[string]apiclient.InstanceClient),
+		make(map[string]apiclient.BindingClient),
 	)
 	// set up the mock injector
 	// (we aren't exercising any functionality of this mock, so leaving it empty)
