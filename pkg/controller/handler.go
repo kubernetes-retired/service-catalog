@@ -141,7 +141,7 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	dts := metav1.Now()
 	sb.DeletionTimestamp = &dts
-	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
+	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
@@ -152,7 +152,7 @@ func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 		return err
 	}
 	// TODO: add success condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
-	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
+	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
@@ -163,11 +163,11 @@ func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	}
 	// TODO: add success condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 
-	if _, err := h.storage.Bindings(sb.Namespace).Update(sb); err != nil {
+	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
 		return err
 	}
 
-	if err := h.storage.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
+	if err := h.apiClient.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
 		// TODO: add deletion error condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 		return err
 	}
@@ -273,15 +273,15 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 }
 
 func (h *handler) unbind(b *servicecatalog.Binding) error {
-	inst, err := instanceForBinding(h.storage, b)
+	inst, err := instanceForBinding(h.apiClient, b)
 	if err != nil {
 		return err
 	}
-	sc, err := serviceClassForInstance(h.storage, inst)
+	sc, err := serviceClassForInstance(h.apiClient, inst)
 	if err != nil {
 		return nil
 	}
-	broker, err := brokerForServiceClass(h.storage, sc)
+	broker, err := brokerForServiceClass(h.apiClient, sc)
 	if err != nil {
 		return err
 	}
