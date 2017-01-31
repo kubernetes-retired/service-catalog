@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	v1 "k8s.io/client-go/1.5/pkg/api/v1"
 	kapi "k8s.io/kubernetes/pkg/api"
+	"strconv"
 	"testing"
 )
 
@@ -158,8 +159,8 @@ func createFakeBindings(length int) []*servicecatalog.Binding {
 	for i := range ret {
 		ret[i] = &servicecatalog.Binding{
 			ObjectMeta: kapi.ObjectMeta{
-				Name:      "name" + string(i),
-				Namespace: "namespace" + string(i),
+				Name:      "name" + strconv.Itoa(i),
+				Namespace: "namespace" + strconv.Itoa(i),
 			},
 		}
 	}
@@ -170,10 +171,10 @@ func createCreds(length int) []*brokerapi.Credential {
 	ret := make([]*brokerapi.Credential, length, length)
 	for i := range ret {
 		ret[i] = &brokerapi.Credential{
-			Hostname: "host" + string(i),
-			Port:     "123" + string(i),
-			Username: "user" + string(i),
-			Password: "password!@#!@#!0)" + string(i),
+			Hostname: "host" + strconv.Itoa(i),
+			Port:     "123" + strconv.Itoa(i),
+			Username: "user" + strconv.Itoa(i),
+			Password: "password!@#!@#!0)" + strconv.Itoa(i),
 		}
 	}
 	return ret
