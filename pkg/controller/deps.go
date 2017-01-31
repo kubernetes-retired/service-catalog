@@ -50,11 +50,15 @@ func brokerHasInstances(cl apiclient.APIClient, broker *servicecatalog.Broker) (
 		return false, err
 	}
 	for _, cls := range svcClassList {
+		// if this service class isn't for the given broker, then skip
+		if cls.BrokerName != broker.Name {
+			continue
+		}
 		hasInst, err := serviceClassHasInstances(cl, cls)
 		if err != nil {
 			return false, err
 		}
-		if cls.BrokerName == broker.Name && hasInst {
+		if hasInst {
 			return true, nil
 		}
 	}
