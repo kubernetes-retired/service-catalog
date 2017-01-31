@@ -79,16 +79,15 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		},
 		// NewListFunc returns an object capable of storing results of an etcd list.
 		NewListFunc: newListFunc,
-
-		// Produces a path that etcd understands, to the root of the resource
-		// by combining the namespace in the context with the given prefix
+		// KeyRootFunc places this resource at the prefix for this resource;
+		// not namespaced.
 		KeyRootFunc: func(ctx api.Context) string {
-			return registry.NamespaceKeyRootFunc(ctx, prefix)
+			return prefix
 		},
-		// Produces a path that etcd understands, to the resource by combining
-		// the namespace in the context with the given prefix
+		// Produces a path that etcd understands by combining the object's
+		// name with the prefix.
 		KeyFunc: func(ctx api.Context, name string) (string, error) {
-			return registry.NamespaceKeyFunc(ctx, prefix, name)
+			return registry.NoNamespaceKeyFunc(ctx, prefix, name)
 		},
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
