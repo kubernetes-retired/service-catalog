@@ -61,6 +61,7 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 			Name:      binding.Name,
 			Namespace: binding.Spec.InstanceRef.Namespace,
 		},
+		Data: make(map[string][]byte),
 	}
 
 	// For each item in the cred just serialize its value into JSON and
