@@ -163,7 +163,9 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 	client := h.newClientFunc(broker)
 
 	// Assign UUID to binding.
-	in.Spec.OSBGUID = uuid.NewV4().String()
+	if in.Spec.OSBGUID == "" {
+		in.Spec.OSBGUID = uuid.NewV4().String()
+	}
 
 	// TODO: uncomment parameters line once parameters types are refactored.
 	// Make the request to bind.
