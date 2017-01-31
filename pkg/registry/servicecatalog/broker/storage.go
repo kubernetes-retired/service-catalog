@@ -58,7 +58,7 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 
 // NewStorage creates a new rest.Storage responsible for accessing Instance
 // resources
-func NewStorage(opts generic.RESTOptions) rest.Storage {
+func NewStorage(opts generic.RESTOptions) (brokers, brokersStatus rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix
 
 	newListFunc := func() runtime.Object { return &servicecatalog.BrokerList{} }
@@ -107,5 +107,8 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		DestroyFunc: dFunc,
 	}
 
-	return &store
+	statusStore := store
+	statusStore.UpdateStrategy = brokerStatusUpdateStrategy
+
+	return &store, &statusStore
 }
