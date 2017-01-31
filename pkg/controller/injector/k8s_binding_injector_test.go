@@ -17,6 +17,7 @@ limitations under the License.
 package injector
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -157,10 +158,16 @@ func TestUninjectTwo(t *testing.T) {
 func createFakeBindings(length int) []*servicecatalog.Binding {
 	ret := make([]*servicecatalog.Binding, length, length)
 	for i := range ret {
+		namespace := "namespace" + strconv.Itoa(i)
 		ret[i] = &servicecatalog.Binding{
 			ObjectMeta: kapi.ObjectMeta{
 				Name:      "name" + strconv.Itoa(i),
-				Namespace: "namespace" + strconv.Itoa(i),
+				Namespace: namespace,
+			},
+			Spec: servicecatalog.BindingSpec{
+				InstanceRef: kapi.ObjectReference{
+					Namespace: namespace,
+				},
 			},
 		}
 	}
@@ -171,10 +178,10 @@ func createCreds(length int) []*brokerapi.Credential {
 	ret := make([]*brokerapi.Credential, length, length)
 	for i := range ret {
 		ret[i] = &brokerapi.Credential{
-			Hostname: "host" + strconv.Itoa(i),
-			Port:     "123" + strconv.Itoa(i),
-			Username: "user" + strconv.Itoa(i),
-			Password: "password!@#!@#!0)" + strconv.Itoa(i),
+			"Hostname": "host" + strconv.Itoa(i),
+			"Port":     "123" + strconv.Itoa(i),
+			"Username": "user" + strconv.Itoa(i),
+			"Password": "password!@#!@#!0)" + strconv.Itoa(i),
 		}
 	}
 	return ret
@@ -197,30 +204,17 @@ func testCredentialsInjected(injector *k8sBindingInjector, binding *servicecatal
 	if err != nil {
 		return err
 	}
-	data := secret.Data
-	testField := func(key string, expectedValue string) error {
-		val, ok := data[key]
+	var val interface{}
+	for k, v := range *cred {
+		_, ok := secret.Data[k]
 		if !ok {
-			return fmt.Errorf("%s not in secret after injecting", key)
-		} else if string(val) != expectedValue {
-			return fmt.Errorf("%s does not match. Expected: %s; Actual: %s",
-				key, expectedValue, val)
+			return fmt.Errorf("%s not in secret after injecting", k)
+		} else if err = json.Unmarshal(secret.Data[k], &val); err != nil {
+			return fmt.Errorf("Error when unmarshaling credentials: %v", err)
+		} else if val != v {
+			return fmt.Errorf("%s does not match. Expected: %v; Actual: %v",
+				k, v, val)
 		}
-		return nil
-	}
-
-	// TODO change so that it's not hard coded to Credential struct fields
-	if err = testField("hostname", cred.Hostname); err != nil {
-		return err
-	}
-	if err = testField("port", cred.Port); err != nil {
-		return err
-	}
-	if err = testField("username", cred.Username); err != nil {
-		return err
-	}
-	if err = testField("password", cred.Password); err != nil {
-		return err
 	}
 	return nil
 }
