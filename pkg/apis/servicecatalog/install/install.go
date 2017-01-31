@@ -19,6 +19,7 @@ package install
 
 import (
 	"k8s.io/kubernetes/pkg/apimachinery/announced"
+	"k8s.io/kubernetes/pkg/util/sets"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -30,8 +31,7 @@ func init() {
 			GroupName:              servicecatalog.GroupName,
 			VersionPreferenceOrder: []string{v1alpha1.SchemeGroupVersion.Version},
 			ImportPrefix:           "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog",
-			// TODO: what does this do?
-			RootScopedKinds: nil, // nil is allowed
+			RootScopedKinds:        sets.NewString("Broker", "ServiceClass"),
 			// TODO: Do we have 'internal objects'? What is an 'internal object'?
 			// mhb: ? broker/catalog/service/instance are our 'internal objects' ?
 			AddInternalObjectsToScheme: servicecatalog.AddToScheme, // nil if there are no 'internal objects'
