@@ -24,6 +24,27 @@ limitations under the License.
 // TEST_ZONE:      GCP Zone in which to create test GKE cluster
 // TEST_ACCOUNT:   GCP service account credentials (JSON file) to use for testing.
 
+def updatePullRequest(flow, success = false) {
+  def state, message
+  switch (flow) {
+    case 'run':
+      state = 'PENDING'
+      message = "Running presubmits at ${env.BUILD_URL} ..."
+      break
+    case 'verify':
+      state = success ? 'SUCCESS' : 'FAILURE'
+      message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+          "Details at ${env.BUILD_URL}."
+      break
+    default:
+      error('flow can only be run or verify')
+  }
+  setGitHubPullRequestStatus(
+      context: env.JOB_NAME,
+      message: message,
+      state: state)
+}
+
 // Verify required parameters
 if (! params.TEST_PROJECT) {
   error 'Missing required parameter TEST_PROJECT'
@@ -40,6 +61,12 @@ def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
 
 node {
+  echo "Service Catalog end-to-end test"
+
+  sh "sudo rm -rf ${env.WORKSPACE}/*"
+
+  updatePullRequest('run')
+
   // Checkout the source code.
   checkout scm
 
@@ -54,9 +81,6 @@ node {
         -base64 100 | tr -dc a-z0-9 | cut -c -25''']).trim()
 
     try {
-      // Initialize build, for example, updating installed software.
-      sh """${env.ROOT}/contrib/jenkins/init_build.sh"""
-
       // These are done in parallel since creating the cluster takes a while,
       // and the build doesn't depend on it.
       parallel(
@@ -69,9 +93,8 @@ node {
           }
         },
         'Build': {
-          sh """${env.ROOT}/contrib/jenkins/build.sh --no-docker-compile \
-                --project ${test_project} \
-                --coverage '${env.WORKSPACE}/coverage.html'"""
+          sh """${env.ROOT}/contrib/jenkins/build.sh \
+                --project ${test_project}"""
         }
       )
 
@@ -84,18 +107,18 @@ node {
       currentBuild.result = 'FAILURE'
     } finally {
       try {
-        sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh ${clustername} \
-              --project ${test_project} \
-              --zone ${test_zone}"""
+        sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
       } catch (Exception e) {
         currentBuild.result = 'FAILURE'
       }
     }
 
     if (currentBuild.result == 'FAILURE') {
+      updatePullRequest('verify', false)
       error 'Build failed.'
     }
   }
 
+  updatePullRequest('verify', true)
   archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true, onlyIfSuccessful: true
 }
