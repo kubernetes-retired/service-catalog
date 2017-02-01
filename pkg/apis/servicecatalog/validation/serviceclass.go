@@ -23,17 +23,25 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
+// ValidateServiceClassName is the validation function for ServiceClass names.
+var ValidateServiceClassName = apivalidation.NameIsDNSSubdomain
+
 // ValidateServiceclass makes sure a serviceclass object is okay.
 func ValidateServiceclass(serviceclass *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&serviceclass.ObjectMeta, false, /*namespace*/
-		apivalidation.ValidateReplicationControllerName, // our custom name validator?
-		field.NewPath("metadata"))...)
+
+	allErrs = append(allErrs,
+		apivalidation.ValidateObjectMeta(
+			&serviceclass.ObjectMeta,
+			false, /* namespace required */
+			ValidateServiceClassName,
+			field.NewPath("metadata"))...)
 
 	return allErrs
 }
 
-// ValidateServiceclassUpdate checks that when changing from an older serviceclass to a newer serviceclass is okay.
+// ValidateServiceclassUpdate checks that when changing from an older
+// serviceclass to a newer serviceclass is okay.
 func ValidateServiceclassUpdate(new *sc.ServiceClass, old *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// should each individual serviceclass validate successfully before validating changes?
