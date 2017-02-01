@@ -139,6 +139,7 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 }
 
 func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
+	// this logic to set and update the timestamp is TPR specific. to be moved to the API server
 	dts := metav1.Now()
 	sb.DeletionTimestamp = &dts
 	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
