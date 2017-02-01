@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import "time"
+import time
 
 print("hello world")
 
