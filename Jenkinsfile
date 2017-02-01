@@ -37,6 +37,6 @@ node {
 
   dir([path: env.ROOT]) {
     // Run build.
-    echo 'Hello from Service Catalog'
+    echo 'Hello from Service Catalog2'
   }
 }
