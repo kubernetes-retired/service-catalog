@@ -38,6 +38,7 @@ node {
   dir([path: env.ROOT]) {
     // Run build.
     echo 'Hello from Service Cat'
-    sh 'make build'
+    sh 'which make'
+    sh """${env.ROOT}/contrib/jenkins/init_build.sh"""
   }
 }
