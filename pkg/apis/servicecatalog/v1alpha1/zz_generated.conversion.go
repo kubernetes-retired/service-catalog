@@ -563,28 +563,22 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	}
 	out.BrokerName = in.BrokerName
 	out.Bindable = in.Bindable
-	if in.Plans != nil {
-		in, out := &in.Plans, &out.Plans
-		*out = make([]servicecatalog.ServicePlan, len(*in))
-		for i := range *in {
-			if err := Convert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Plans = nil
-	}
+	out.Plans = *(*[]servicecatalog.ServicePlan)(unsafe.Pointer(&in.Plans))
 	out.PlanUpdatable = in.PlanUpdatable
 	out.OSBGUID = in.OSBGUID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
 	out.OSBMaxDBPerNode = in.OSBMaxDBPerNode
-	if err := runtime.Convert_runtime_RawExtension_To_runtime_Object(&in.OSBMetadata, &out.OSBMetadata, s); err != nil {
-		return err
-	}
 	out.OSBDashboardOAuth2ClientID = in.OSBDashboardOAuth2ClientID
 	out.OSBDashboardSecret = in.OSBDashboardSecret
 	out.OSBDashboardRedirectURI = in.OSBDashboardRedirectURI
+	out.Description = in.Description
+	out.DisplayName = in.DisplayName
+	out.ImageURL = in.ImageURL
+	out.LongDescription = in.LongDescription
+	out.ProviderDisplayName = in.ProviderDisplayName
+	out.DocumentationURL = in.DocumentationURL
+	out.SupportURL = in.SupportURL
 	return nil
 }
 
@@ -599,28 +593,22 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	}
 	out.BrokerName = in.BrokerName
 	out.Bindable = in.Bindable
-	if in.Plans != nil {
-		in, out := &in.Plans, &out.Plans
-		*out = make([]ServicePlan, len(*in))
-		for i := range *in {
-			if err := Convert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Plans = nil
-	}
+	out.Plans = *(*[]ServicePlan)(unsafe.Pointer(&in.Plans))
 	out.PlanUpdatable = in.PlanUpdatable
 	out.OSBGUID = in.OSBGUID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
 	out.OSBMaxDBPerNode = in.OSBMaxDBPerNode
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&in.OSBMetadata, &out.OSBMetadata, s); err != nil {
-		return err
-	}
 	out.OSBDashboardOAuth2ClientID = in.OSBDashboardOAuth2ClientID
 	out.OSBDashboardSecret = in.OSBDashboardSecret
 	out.OSBDashboardRedirectURI = in.OSBDashboardRedirectURI
+	out.Description = in.Description
+	out.DisplayName = in.DisplayName
+	out.ImageURL = in.ImageURL
+	out.LongDescription = in.LongDescription
+	out.ProviderDisplayName = in.ProviderDisplayName
+	out.DocumentationURL = in.DocumentationURL
+	out.SupportURL = in.SupportURL
 	return nil
 }
 
@@ -630,17 +618,7 @@ func Convert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servicecat
 
 func autoConvert_v1alpha1_ServiceClassList_To_servicecatalog_ServiceClassList(in *ServiceClassList, out *servicecatalog.ServiceClassList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]servicecatalog.ServiceClass, len(*in))
-		for i := range *in {
-			if err := Convert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]servicecatalog.ServiceClass)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -650,17 +628,7 @@ func Convert_v1alpha1_ServiceClassList_To_servicecatalog_ServiceClassList(in *Se
 
 func autoConvert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *servicecatalog.ServiceClassList, out *ServiceClassList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]ServiceClass, len(*in))
-		for i := range *in {
-			if err := Convert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]ServiceClass)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -671,10 +639,10 @@ func Convert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *se
 func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan, out *servicecatalog.ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
 	out.OSBGUID = in.OSBGUID
-	if err := runtime.Convert_runtime_RawExtension_To_runtime_Object(&in.OSBMetadata, &out.OSBMetadata, s); err != nil {
-		return err
-	}
 	out.OSBFree = in.OSBFree
+	out.Description = in.Description
+	out.Bullets = *(*[]string)(unsafe.Pointer(&in.Bullets))
+	out.DisplayName = in.DisplayName
 	return nil
 }
 
@@ -685,10 +653,10 @@ func Convert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan,
 func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicecatalog.ServicePlan, out *ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
 	out.OSBGUID = in.OSBGUID
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&in.OSBMetadata, &out.OSBMetadata, s); err != nil {
-		return err
-	}
 	out.OSBFree = in.OSBFree
+	out.Description = in.Description
+	out.Bullets = *(*[]string)(unsafe.Pointer(&in.Bullets))
+	out.DisplayName = in.DisplayName
 	return nil
 }
 

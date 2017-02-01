@@ -348,11 +348,6 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 		} else {
 			out.OSBRequires = nil
 		}
-		if newVal, err := c.DeepCopy(&in.OSBMetadata); err != nil {
-			return err
-		} else {
-			out.OSBMetadata = *newVal.(*runtime.RawExtension)
-		}
 		return nil
 	}
 }
@@ -382,10 +377,12 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 		in := in.(*ServicePlan)
 		out := out.(*ServicePlan)
 		*out = *in
-		if newVal, err := c.DeepCopy(&in.OSBMetadata); err != nil {
-			return err
+		if in.Bullets != nil {
+			in, out := &in.Bullets, &out.Bullets
+			*out = make([]string, len(*in))
+			copy(*out, *in)
 		} else {
-			out.OSBMetadata = *newVal.(*runtime.RawExtension)
+			out.Bullets = nil
 		}
 		return nil
 	}
