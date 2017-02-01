@@ -24,6 +24,27 @@ limitations under the License.
 // TEST_ZONE:      GCP Zone in which to create test GKE cluster
 // TEST_ACCOUNT:   GCP service account credentials (JSON file) to use for testing.
 
+def updatePullRequest(flow, success = false) {
+  def state, message
+  switch (flow) {
+    case 'run':
+      state = 'PENDING'
+      message = "Running presubmits at ${env.BUILD_URL} ..."
+      break
+    case 'verify':
+      state = success ? 'SUCCESS' : 'FAILURE'
+      message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+          "Details at ${env.BUILD_URL}."
+      break
+    default:
+      error('flow can only be run or verify')
+  }
+  setGitHubPullRequestStatus(
+      context: env.JOB_NAME,
+      message: message,
+      state: state)
+}
+
 // Verify required parameters
 if (! params.TEST_PROJECT) {
   error 'Missing required parameter TEST_PROJECT'
@@ -40,6 +61,8 @@ def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
 
 node {
+  echo 'Testinga'
+
   // Checkout the source code.
   checkout scm
 
@@ -76,10 +99,12 @@ node {
       )
 
       // Run end-2-end tests on the deployed cluster.
+      /*
       sh """${env.ROOT}/contrib/jenkins/test_deploy.sh \
             --project ${test_project} \
             --namespace ${namespace}
       """
+      */
     } catch (Exception e) {
       currentBuild.result = 'FAILURE'
     } finally {
@@ -93,9 +118,11 @@ node {
     }
 
     if (currentBuild.result == 'FAILURE') {
+      updatePullRequest('verify', false)
       error 'Build failed.'
     }
   }
 
+  updatePullRequest('verify', true)
   archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true, onlyIfSuccessful: true
 }

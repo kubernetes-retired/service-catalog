@@ -15,6 +15,7 @@
 
 set -o nounset
 set -o errexit
+set -x
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -78,7 +79,7 @@ function wait_for_service_host() {
 }
 
 GCR="${GCR:-gcr.io/${PROJECT}/catalog}"
-VERSION="${VERSION:-$(git rev-parse --verify HEAD)}" \
+VERSION="${VERSION:-"$(git describe --tags --always --abbrev=7 --dirty)"}" \
   || error_exit 'Cannot determine Git commit SHA'
 
 # Deploy to Kubernetes cluster
@@ -159,7 +160,7 @@ wait_for_expected_output -x -e 'pending' -n 20 -s 10 -t 60 \
     kubectl get services \
   || error_exit 'Frontend service took unexpected amount of time to get external IP.'
 
-IP="$(kubectl get services | xargs echo -n | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')"
+IP="$(kubectl get services | xargs echo -n | sed 's/.*user-bookstore-fe [0-9.]* \([0-9.]*\).*/\1/')"
 
 echo 'Waiting for frontend service to unblock...'
 wait_for_expected_output -x -e 'blocked' -n 20 -s 30 -t 60 \
