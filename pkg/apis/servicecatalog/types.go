@@ -134,10 +134,18 @@ type ServiceClass struct {
 	OSBTags                    []string
 	OSBRequires                []string
 	OSBMaxDBPerNode            string
-	OSBMetadata                runtime.Object
 	OSBDashboardOAuth2ClientID string
 	OSBDashboardSecret         string
 	OSBDashboardRedirectURI    string
+
+	// Metadata fields
+	Description         string
+	DisplayName         string
+	ImageURL            string
+	LongDescription     string
+	ProviderDisplayName string
+	DocumentationURL    string
+	SupportURL          string
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -151,8 +159,12 @@ type ServicePlan struct {
 	OSBGUID string
 
 	// OSB-specific
-	OSBMetadata runtime.Object
 	OSBFree     bool
+	Description string
+	Bullets     []string
+	DisplayName string
+
+	// TODO: add costs
 }
 
 // InstanceList is a list of instances.

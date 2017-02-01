@@ -348,14 +348,6 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 		} else {
 			out.OSBRequires = nil
 		}
-		// in.OSBMetadata is kind 'Interface'
-		if in.OSBMetadata != nil {
-			if newVal, err := c.DeepCopy(&in.OSBMetadata); err != nil {
-				return err
-			} else {
-				out.OSBMetadata = *newVal.(*runtime.Object)
-			}
-		}
 		return nil
 	}
 }
@@ -385,13 +377,12 @@ func DeepCopy_servicecatalog_ServicePlan(in interface{}, out interface{}, c *con
 		in := in.(*ServicePlan)
 		out := out.(*ServicePlan)
 		*out = *in
-		// in.OSBMetadata is kind 'Interface'
-		if in.OSBMetadata != nil {
-			if newVal, err := c.DeepCopy(&in.OSBMetadata); err != nil {
-				return err
-			} else {
-				out.OSBMetadata = *newVal.(*runtime.Object)
-			}
+		if in.Bullets != nil {
+			in, out := &in.Bullets, &out.Bullets
+			*out = make([]string, len(*in))
+			copy(*out, *in)
+		} else {
+			out.Bullets = nil
 		}
 		return nil
 	}
