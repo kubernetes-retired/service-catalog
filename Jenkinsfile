@@ -38,7 +38,6 @@ node {
   dir([path: env.ROOT]) {
     // Run build.
     echo 'Helloy from Service Cat'
-    sh './loop.py'
     // sh 'which docker'
     // sh """${env.ROOT}/contrib/jenkins/init_build.sh"""
   }
