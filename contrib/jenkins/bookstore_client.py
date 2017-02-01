@@ -23,7 +23,7 @@ Steps:
    To use https protocol, HOST should start with https://
    Otherwise http protocol will be used.
 2) Run:
-   ./bookstore_client.py --host=$HOST --api_key=$KEY
+   ./bookstore_client.py --host=$HOST
 """
 
 import argparse
@@ -96,12 +96,10 @@ class BookstoreClient(object):
         if a != b:
             sys.exit('Equality assertion failed: %s, %s' % (str(a), str(b)))
 
-    def _call_http(self, path, api_key=None, data=None, method=None):
+    def _call_http(self, path, data=None, method=None):
         """Makes a http call and returns its response."""
         url = path
         headers = {'Content-Type': 'application/json'}
-        if api_key:
-            headers['x-api-key'] = api_key
         body = json.dumps(data) if data else None
         if not method:
             method = 'POST' if data else 'GET'
@@ -115,25 +113,9 @@ class BookstoreClient(object):
             print 'Status: %s, body=%s' % (response.status_code, response.text)
         return response
 
-    def _send_request(self, path, api_key=None,
+    def _send_request(self, path,
                       data=None, method=None):
-        if api_key:
-            print 'Negative test: remove api_key.'
-            r = self._call_http(path, None, data, method)
-            self.assertEqual(r.status_code, 401)
-            self.assertEqual(
-                r.json()['message'],
-                ('Method doesn\'t allow unregistered callers (callers without '
-                 'established identity). Please use API Key or other form of '
-                 'API consumer identity to call this API.'))
-            print 'Completed unregistered test.'
-            print 'Negative test: pass blocked api_key.'
-            r = self._call_http(path, 'aaaa', data, method)
-            self.assertEqual(r.status_code, 403)
-            self.assertEqual(
-                r.json()['message'], 'Client application blocked.')
-            print 'Completed blocked api_key test.'
-        return self._call_http(path, api_key, data, method)
+        return self._call_http(path, data, method)
 
     def clear(self):
         print 'Clear existing shelves.'
@@ -145,9 +127,8 @@ class BookstoreClient(object):
 
     def create_shelf(self, shelf):
         print 'Create shelf: %s' % str(shelf)
-        # create shelves: api_key.
         response = self._send_request(
-            '/shelves', api_key=FLAGS.api_key, data=shelf)
+            '/shelves', data=shelf)
         self.assertEqual(response.status_code, 200)
         # shelf name generated in server, not the same as required.
         json_ret = response.json()
@@ -156,30 +137,26 @@ class BookstoreClient(object):
 
     def verify_shelf(self, shelf):
         print 'Verify shelf: shelves/%d' % shelf['id']
-        # Get shelf: api_key.
-        r = self._send_request('/shelves/%d' % shelf['id'], api_key=FLAGS.api_key)
+        r = self._send_request('/shelves/%d' % shelf['id'])
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), shelf)
 
     def delete_shelf(self, shelf):
         shelf_name = 'shelves/%d' % shelf['id']
         print 'Remove shelf: %s' % shelf_name
-        # delete shelf: api_key
         r = self._send_request(
-            '/' + shelf_name, api_key=FLAGS.api_key, method='DELETE')
+            '/' + shelf_name, method='DELETE')
         self.assertEqual(r.status_code, 204)
 
     def verify_list_shelves(self, shelves):
-        # list shelves: no api_key
         response = self._send_request('/shelves')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get('shelves', []), shelves)
 
     def create_book(self, shelf, book):
         print 'Create book in shelf: %s, book: %s' % (shelf['id'], str(book))
-        # Create book: api_key
         response = self._send_request(
-            '/shelves/%d/books' % shelf['id'], api_key=FLAGS.api_key, data=book)
+            '/shelves/%d/books' % shelf['id'], data=book)
         self.assertEqual(response.status_code, 200)
         # book name is generated in server, not the same as required.
         json_ret = response.json()
@@ -189,25 +166,21 @@ class BookstoreClient(object):
 
     def verify_book(self, book):
         print 'Remove book: /shelves/%d/books/%d' % (book['shelf'], book['id'])
-        # Get book: api_key
         r = self._send_request(
-            '/shelves/%d/books/%d' % (book['shelf'], book['id']),
-            api_key=FLAGS.api_key)
+            '/shelves/%d/books/%d' % (book['shelf'], book['id']))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), book)
 
     def delete_book(self, book):
         book_name = 'shelves/%d/books/%d' % (book['shelf'], book['id'])
         print 'Remove book: /%s' % book_name
-        # Delete book: api_key
         r = self._send_request(
-            '/' + book_name, api_key=FLAGS.api_key, method='DELETE')
+            '/' + book_name, method='DELETE')
         self.assertEqual(r.status_code, 204)
 
     def verify_list_books(self, shelf, books):
-        # List book: api_key
         response = self._send_request(
-            '/shelves/%d/books' % shelf['id'], api_key=FLAGS.api_key)
+            '/shelves/%d/books' % shelf['id'])
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get('books', []), books)
 
@@ -254,7 +227,6 @@ if __name__ == '__main__':
     parser.add_argument('--count', help='Number of times to run client logic '
                                         'loop. If no count provided, it will '
                                         'run indefinitely.')
-    parser.add_argument('--api_key', help='An API key to use for requests.')
     parser.add_argument('--verify', dest='verify', action='store_true',
                         help='Verify API responses.')
     parser.add_argument('--no-verify', dest='verify', action='store_false',

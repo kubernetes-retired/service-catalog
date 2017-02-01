@@ -37,13 +37,13 @@ function wipe_cluster() {
     fi
   done
 
-  kubectl delete serviceinstances,serviceclasses,servicebindings,servicebrokers --all #TODO: Eventually this should work.
+  kubectl delete serviceinstances,serviceclasses,servicebindings,servicebrokers,secrets --all #TODO: Eventually this should work.
 
   # Temporarily, delete all by name.
-  kubectl delete serviceinstances backend frontend
-  kubectl delete serviceclasses booksbe user-provided-service
-  kubectl delete servicebindings database
-  kubectl delete servicebrokers k8s ups
+  # kubectl delete serviceinstances backend frontend
+  # kubectl delete serviceclasses booksbe user-provided-service
+  # kubectl delete servicebindings database
+  # kubectl delete servicebrokers k8s ups
 
   return 0
 }
