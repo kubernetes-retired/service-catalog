@@ -147,6 +147,7 @@ verify: .init .generate_files
 	@bash -c '[ "`cat .out`" == "" ] || \
 	  (echo -e "\n*** Please 'gofmt' the following:" ; cat .out ; echo ; false)'
 	@rm .out
+	@#
 	@echo Running golint and go vet:
 	# Exclude the generated (zz) files for now
 	@# The following command echo's the "for" loop to stdout so that it can
@@ -158,10 +159,14 @@ verify: .init .generate_files
 	  golint --set_exit_status \$$i \; \
 	  go vet \$$i \; \
 	done | $(subst -ti,-i,$(DOCKER_CMD)) sh -e
+	@#
 	@echo Running repo-infra verify scripts
-	$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
+	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
 	@rm .out
+	@#
+	@echo Running href checker:
+	@build/verify-links.sh
 
 format: .init
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
