@@ -129,13 +129,21 @@ type ServiceClass struct {
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBTags                    []string             `json:"osbTags"`
-	OSBRequires                []string             `json:"osbRequires"`
-	OSBMaxDBPerNode            string               `json:"osbMaxDBPerNode"`
-	OSBMetadata                runtime.RawExtension `json:"osbMetadata"`
-	OSBDashboardOAuth2ClientID string               `json:"osbDashboardOAuth2ClientID"`
-	OSBDashboardSecret         string               `json:"osbDashboardSecret"`
-	OSBDashboardRedirectURI    string               `json:"osbDashboardRedirectURI"`
+	OSBTags                    []string `json:"osbTags"`
+	OSBRequires                []string `json:"osbRequires"`
+	OSBMaxDBPerNode            string   `json:"osbMaxDBPerNode"`
+	OSBDashboardOAuth2ClientID string   `json:"osbDashboardOAuth2ClientID"`
+	OSBDashboardSecret         string   `json:"osbDashboardSecret"`
+	OSBDashboardRedirectURI    string   `json:"osbDashboardRedirectURI"`
+
+	// Metadata fields
+	Description         string `json:"description,omitempty"`
+	DisplayName         string `json:"displayName,omitempty"`
+	ImageURL            string `json:"imageUrl,omitempty"`
+	LongDescription     string `json:"longDescription,omitempty"`
+	ProviderDisplayName string `json:"providerDisplayName,omitempty"`
+	DocumentationURL    string `json:"documentationUrl,omitempty"`
+	SupportURL          string `json:"supportUrl,omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -149,8 +157,10 @@ type ServicePlan struct {
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBMetadata runtime.RawExtension `json:"osbMetadata"`
-	OSBFree     bool                 `json:"osbFree"`
+	OSBFree     bool     `json:"osbFree"`
+	Description string   `json:"description,omitempty"`
+	Bullets     []string `json:"bullets,omitempty"`
+	DisplayName string   `json:"displayName,omitempty"`
 }
 
 // InstanceList is a list of instances
