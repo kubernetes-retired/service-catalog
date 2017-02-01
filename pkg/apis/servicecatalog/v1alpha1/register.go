@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/kubernetes/pkg/api"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/runtime/schema"
 	versionedwatch "k8s.io/kubernetes/pkg/watch/versioned"
@@ -43,19 +41,13 @@ func Resource(resource string) schema.GroupResource {
 var (
 	// SchemeBuilder needs to be exported as `SchemeBuilder` so
 	// the code-generation can find it.
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
 	// AddToScheme is exposed for API installation
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		// TODO are all of these needed? What do they do?
-		&api.ListOptions{},
-		&api.DeleteOptions{},
-		&metav1.ExportOptions{},
-		&metav1.GetOptions{},
-
 		&Broker{},
 		&BrokerList{},
 		&ServiceClass{},
