@@ -18,3 +18,5 @@ coverage.html
 build/*/tmp/*
 contrib/build/*/tmp/*
 .pkg
+.kube
+.var

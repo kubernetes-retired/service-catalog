@@ -164,11 +164,17 @@ coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init
+test: .init test-unit test-integration
+
+test-unit: .init
 	@echo Running tests:
 	@for i in $(addprefix $(SC_PKG)/,$(TEST_DIRS)); do \
 	  $(DOCKER_CMD) go test $$i || exit $$? ; \
 	done
+
+test-integration: .init
+	contrib/hack/setup-kubectl.sh
+	contrib/hack/test-apiserver.sh
 
 clean:
 	rm -rf $(BINDIR)

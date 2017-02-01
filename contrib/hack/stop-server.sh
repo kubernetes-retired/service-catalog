@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -o errexit
+set -o nounset
+set -o pipefail
 
-set -u
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+export PATH=${ROOT}/contrib/hack:${PATH}
 
-KUBECTL=kubectl
-TYPES='servicebrokers serviceclasses serviceinstances servicebindings'
-
-for i in $TYPES; do
-  for j in `$KUBECTL get --no-headers $i | cut -d ' ' -f 1`; do
-    echo "Deleting Type $i : $j"
-    $KUBECTL delete $i $j
-  done
-done
+# Clean up old containers if still around
+docker rm -f etcd apiserver || true
