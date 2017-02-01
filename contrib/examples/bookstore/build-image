@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o errexit
+
 VERSION=${VERSION:-}
 
 while [[ $# -gt 0 ]]; do

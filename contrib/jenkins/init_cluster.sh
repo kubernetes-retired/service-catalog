@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-set -u
+set -o nounset
+set -o errexit
 
 while [[ $# -ne 0 ]]; do
   case "$1" in
