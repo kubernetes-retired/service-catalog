@@ -39,7 +39,7 @@ func TestGetServicePlanInfoEmpty(t *testing.T) {
 // test service classes with single plan
 func TestGetServicePlanInfoOne(t *testing.T) {
 	apiclient := mem.NewAPIClient()
-	svcClss := createServiceClasses(2, 1)
+	svcClss := createServiceClassesWithServicePlans(2, 1)
 	apiclient.ServiceClasses().Create(&svcClss[0])
 
 	// test that getting with empty plan name works
@@ -72,7 +72,7 @@ func TestGetServicePlanInfoOne(t *testing.T) {
 // test service classes with multiple plans
 func TestGetServicePlanInfoMany(t *testing.T) {
 	apiclient := mem.NewAPIClient()
-	svcClss := createServiceClasses(3, 3)
+	svcClss := createServiceClassesWithServicePlans(3, 3)
 
 	for i := range svcClss {
 		apiclient.ServiceClasses().Create(&svcClss[i])
@@ -112,7 +112,7 @@ func TestGetBrokerByServiceClassName(t *testing.T) {
 		apiclient.Brokers().Create(&brokers[i])
 	}
 
-	svcClss := createServiceClasses(2, 0)
+	svcClss := createServiceClassesWithServicePlans(2, 0)
 	for _, svcCls := range svcClss {
 		svcCls.BrokerName = brokers[0].Name
 		apiclient.ServiceClasses().Create(&svcCls)
@@ -142,7 +142,7 @@ func TestGetBrokerByServiceClassNameEmpty(t *testing.T) {
 	}
 }
 
-func createServiceClasses(svcClsCount int, planCount int) []servicecatalog.ServiceClass {
+func createServiceClassesWithServicePlans(svcClsCount int, planCount int) []servicecatalog.ServiceClass {
 
 	ret := make([]servicecatalog.ServiceClass, svcClsCount)
 	for i := range ret {
