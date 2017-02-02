@@ -138,6 +138,10 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 	return h.apiClient.Instances(in.ObjectMeta.Namespace).Update(in)
 }
 
+// DeleteServiceBinding executes all the actions needed before a binding resource can be
+// safely deleted. These actions include but are not necessarily limited to deleting the
+// kubernetes resources associated with the binding and calling the unbind REST operation
+// on the backing OSB API
 func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	// this logic to set and update the timestamp is TPR specific. to be moved to the API server
 	dts := metav1.Now()
