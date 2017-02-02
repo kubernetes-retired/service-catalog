@@ -169,7 +169,12 @@ func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
 	}
 
 	// This is where the binding is _actually_ deleted after all necessary actions have been taken
-	// TODO: remove the deletion timestamp before actually deleting
+	sb.DeletionTimestamp = nil
+	if err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
+		// TODO: add deletion error condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+		return err
+	}
+
 	if err := h.apiClient.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
 		// TODO: add deletion error condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
 		return err
