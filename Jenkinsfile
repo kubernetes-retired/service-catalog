@@ -27,6 +27,28 @@ limitations under the License.
 def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
 
+// Updates Pull Request
+def updatePullRequest(flow, success = false) {
+  def state, message
+  switch (flow) {
+    case 'run':
+      state = 'PENDING'
+      message = "Running presubmits at ${env.BUILD_URL} ..."
+      break
+    case 'verify':
+      state = success ? 'SUCCESS' : 'FAILURE'
+      message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+          "Details at ${env.BUILD_URL}."
+      break
+    default:
+      error('flow can only be run or verify')
+  }
+  setGitHubPullRequestStatus(
+      context: env.JOB_NAME,
+      message: message,
+      state: state)
+}
+
 node {
   // Checkout the source code.
   checkout scm
@@ -37,7 +59,8 @@ node {
 
   dir([path: env.ROOT]) {
     // Run build.
-    echo 'Helloy from Service Cat'
+    echo 'Please work...'
+    updatePullRequest('run')
     // sh 'which docker'
     // sh """${env.ROOT}/contrib/jenkins/init_build.sh"""
   }
