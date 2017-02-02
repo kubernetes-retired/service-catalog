@@ -273,6 +273,9 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 	return h.apiClient.Brokers().Update(in)
 }
 
+// unbind walks the reference graph from b to its ancestral broker resource and uses the broker's
+// credentials to do the requisite DELETE call (on the OSB API that to which the broker resource
+// points) to do the unbind call on the OSB API server
 func (h *handler) unbind(b *servicecatalog.Binding) error {
 	inst, err := instanceForBinding(h.apiClient, b)
 	if err != nil {
