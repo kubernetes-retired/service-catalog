@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/satori/go.uuid"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 )
 
 const (
@@ -45,7 +46,7 @@ type Handler interface {
 	// ServiceBinding and will either create or update an
 	// existing one.
 	CreateServiceBinding(*servicecatalog.Binding) (*servicecatalog.Binding, error)
-
+	DeleteServiceBinding(*servicecatalog.Binding) error
 	// CreateServiceBroker takes in a (possibly incomplete)
 	// ServiceBroker and will either create or update an
 	// existing one.
@@ -135,6 +136,48 @@ func (h *handler) CreateServiceInstance(in *servicecatalog.Instance) (*serviceca
 
 	glog.Infof("Updating Service %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
 	return h.apiClient.Instances(in.ObjectMeta.Namespace).Update(in)
+}
+
+// DeleteServiceBinding executes all the actions needed before a binding resource can be
+// safely deleted. These actions include but are not necessarily limited to deleting the
+// kubernetes resources associated with the binding and calling the unbind REST operation
+// on the backing OSB API
+func (h *handler) DeleteServiceBinding(sb *servicecatalog.Binding) error {
+	// this logic to set and update the timestamp is TPR specific. to be moved to the API server
+	dts := metav1.Now()
+	sb.DeletionTimestamp = &dts
+	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
+		return err
+	}
+
+	// uninject
+	if err := h.injector.Uninject(sb); err != nil {
+		// if 0 conditions, uninject and drop condition for uninject
+		// TODO: add failure condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+		return err
+	}
+	// TODO: add success condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
+		return err
+	}
+
+	// TODO: unbind && add conditions (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+	if err := h.unbind(sb); err != nil {
+		// TODO: add failure condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+		return err
+	}
+	// TODO: add success condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+
+	if _, err := h.apiClient.Bindings(sb.Namespace).Update(sb); err != nil {
+		return err
+	}
+
+	// This is where the binding is _actually_ deleted after all necessary actions have been taken
+	if err := h.apiClient.Bindings(sb.Namespace).Delete(sb.Name); err != nil {
+		// TODO: add deletion error condition (https://github.com/kubernetes-incubator/service-catalog/issues/305)
+		return err
+	}
+	return nil
 }
 
 func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecatalog.Binding, error) {
@@ -233,6 +276,26 @@ func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalo
 
 	glog.Infof("Updating Service Broker %s with State\n%v", in.Name, in.Status.Conditions[0].Type)
 	return h.apiClient.Brokers().Update(in)
+}
+
+// unbind walks the reference graph from b to its ancestral broker resource and uses the broker's
+// credentials to do the requisite DELETE call (on the OSB API that to which the broker resource
+// points) to do the unbind call on the OSB API server
+func (h *handler) unbind(b *servicecatalog.Binding) error {
+	inst, err := instanceForBinding(h.apiClient, b)
+	if err != nil {
+		return err
+	}
+	sc, err := serviceClassForInstance(h.apiClient, inst)
+	if err != nil {
+		return nil
+	}
+	broker, err := brokerForServiceClass(h.apiClient, sc)
+	if err != nil {
+		return err
+	}
+	client := h.newClientFunc(broker)
+	return client.DeleteServiceBinding(inst.Spec.OSBGUID, b.Spec.OSBGUID)
 }
 
 // convertCatalog converts a service broker catalog into an array of ServiceClasses

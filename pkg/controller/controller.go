@@ -104,14 +104,27 @@ func (c *controller) serviceBindingCallback(e k8swatch.Event) error {
 		glog.Errorf("Failed to decode the received object %#v", err)
 	}
 
-	if e.Type == k8swatch.Added {
+	switch {
+	case e.Type == k8swatch.Added:
 		created, err := c.handler.CreateServiceBinding(&sb)
 		if err != nil {
 			glog.Errorf("Failed to create service binding: %v\n", err)
 			return err
 		}
 		glog.Infof("Created Service Binding: %s\n%v\n", sb.Name, created)
-	} else {
+	case e.Type == k8swatch.Deleted:
+		// if we've already processed the deletion event, ignore
+		if sb.DeletionTimestamp != nil {
+			return nil
+		}
+
+		if err := c.handler.DeleteServiceBinding(&sb); err != nil {
+			return err
+		}
+	case e.Type == k8swatch.Modified && sb.DeletionTimestamp != nil:
+		// do nothing, the binding is in the process of deletion
+		glog.Info("binding was modified during deletion, ignoring")
+	default:
 		glog.Warningf("Received unsupported service binding event type %s", e.Type)
 	}
 	return nil
