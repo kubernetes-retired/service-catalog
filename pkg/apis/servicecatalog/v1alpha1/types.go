@@ -22,6 +22,7 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
+// +genclient=true
 // +nonNamespaced=true
 
 // Broker represents an entity that provides ServiceClasses for use in the
@@ -110,6 +111,8 @@ type ServiceClassList struct {
 	Items []ServiceClass `json:"items"`
 }
 
+// +genclient=true
+
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
 	metav1.TypeMeta `json:",inline"`
@@ -170,6 +173,8 @@ type InstanceList struct {
 
 	Items []Instance `json:"items"`
 }
+
+// +genclient=true
 
 // Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
@@ -247,6 +252,8 @@ type BindingList struct {
 
 	Items []Binding `json:"items"`
 }
+
+// +genclient=true
 
 // Binding represents a "used by" relationship between an application and an
 // Instance.
