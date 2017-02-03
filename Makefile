@@ -98,7 +98,8 @@ $(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 #################################################
 .generate_exes: $(BINDIR)/defaulter-gen \
                 $(BINDIR)/deepcopy-gen \
-                $(BINDIR)/conversion-gen
+                $(BINDIR)/conversion-gen \
+                $(BINDIR)/client-gen
 	touch $@
 
 $(BINDIR)/defaulter-gen: .init cmd/libs/go2idl/defaulter-gen
@@ -109,6 +110,9 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 
 $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
+
+$(BINDIR)/client-gen: 
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/client-gen
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
@@ -124,6 +128,10 @@ $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --extra-peer-dirs k8s.io/kubernetes/pkg/api,k8s.io/kubernetes/pkg/api/v1,k8s.io/kubernetes/pkg/apis/meta/v1,k8s.io/kubernetes/pkg/conversion,k8s.io/kubernetes/pkg/runtime \
 	  -O zz_generated.conversion
+	$(DOCKER_CMD) $(BINDIR)/client-gen --input-base github.com/kubernetes-incubator/service-catalog/pkg/apis/ \
+		--input servicecatalog/v1alpha1 \
+		--clientset-path github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/ \
+		--go-header-file vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt
 	  # the previous three directories will be changed from kubernetes to apimachinery in the future
 	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	touch $@
