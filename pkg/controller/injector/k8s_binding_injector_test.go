@@ -20,13 +20,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	v1 "k8s.io/client-go/1.5/pkg/api/v1"
 	kapi "k8s.io/kubernetes/pkg/api"
-	"strconv"
-	"testing"
 )
 
 func TestInjectOne(t *testing.T) {
