@@ -48,23 +48,17 @@ func TestGetServicePlanInfoOne(t *testing.T) {
 	}
 
 	// test that getting with correct plan name works
-	if err := testGetServicePlanInfo(apiclient, &svcClss[0], &svcClss[0].Plans[0],
-		svcClss[0].Plans[0].Name); err != nil {
-
+	if err := testGetServicePlanInfo(apiclient, &svcClss[0], &svcClss[0].Plans[0], svcClss[0].Plans[0].Name); err != nil {
 		t.Error(err)
 	}
 
 	// test that using wrong plan name is wrong
-	if err := testGetServicePlanInfo(apiclient, &svcClss[0], &svcClss[0].Plans[0],
-		"wrong_name"); err == nil {
-
+	if err := testGetServicePlanInfo(apiclient, &svcClss[0], &svcClss[0].Plans[0], "wrong_name"); err == nil {
 		t.Error("Expected err when using wrong plan name")
 	}
 
 	// test that using wrong service name is wrong
-	if err := testGetServicePlanInfo(apiclient, &svcClss[1], &svcClss[0].Plans[0],
-		svcClss[0].Plans[0].Name); err == nil {
-
+	if err := testGetServicePlanInfo(apiclient, &svcClss[1], &svcClss[0].Plans[0], svcClss[0].Plans[0].Name); err == nil {
 		t.Error("Expected err when using wrong service name")
 	}
 }
@@ -92,7 +86,6 @@ func TestGetServicePlanInfoMany(t *testing.T) {
 
 			//test that getting correct plan name works
 			if err := testGetServicePlanInfo(apiclient, &svcCls, &plan, plan.Name); err != nil {
-
 				t.Error("Unexpected err when trying to get service plan with multiple plans:", err)
 			}
 		}
@@ -119,16 +112,12 @@ func TestGetBrokerByServiceClassName(t *testing.T) {
 	}
 
 	for _, svcCls := range svcClss {
-		if _, err := GetBrokerByServiceClassName(apiclient.Brokers(), apiclient.ServiceClasses(),
-			svcCls.Name); err != nil {
-
+		if _, err := GetBrokerByServiceClassName(apiclient.Brokers(), apiclient.ServiceClasses(), svcCls.Name); err != nil {
 			t.Error("Unexpected err on GetBrokerByServiceClassName")
 		}
 	}
 
-	if _, err := GetBrokerByServiceClassName(apiclient.Brokers(), apiclient.ServiceClasses(),
-		"name_not_there"); err == nil {
-
+	if _, err := GetBrokerByServiceClassName(apiclient.Brokers(), apiclient.ServiceClasses(), "name_not_there"); err == nil {
 		t.Error("No err from GetBrokerByServiceClassName on service class with wrong broker name")
 	}
 }
@@ -136,8 +125,7 @@ func TestGetBrokerByServiceClassName(t *testing.T) {
 func TestGetBrokerByServiceClassNameEmpty(t *testing.T) {
 	apiclient := mem.NewAPIClient()
 
-	if _, err := GetBrokerByServiceClassName(apiclient.Brokers(), apiclient.ServiceClasses(),
-		"some_name"); err == nil {
+	if _, err := GetBrokerByServiceClassName(apiclient.Brokers(), apiclient.ServiceClasses(), "some_name"); err == nil {
 		t.Error("No err from GetBrokerByServiceClassName with empty apiclient")
 	}
 }
@@ -169,11 +157,11 @@ func createServicePlans(n int, startCount int) []servicecatalog.ServicePlan {
 }
 
 func testGetServicePlanInfo(apiclient apiclient.APIClient,
-	svcCls *servicecatalog.ServiceClass, plan *servicecatalog.ServicePlan,
+	svcCls *servicecatalog.ServiceClass,
+	plan *servicecatalog.ServicePlan,
 	queryPlanName string) error {
 
-	svcGUID, planGUID, planName, err := GetServicePlanInfo(apiclient.ServiceClasses(),
-		svcCls.Name, queryPlanName)
+	svcGUID, planGUID, planName, err := GetServicePlanInfo(apiclient.ServiceClasses(), svcCls.Name, queryPlanName)
 	if err != nil {
 		return fmt.Errorf("Err from GetServicePlanInfo: %v", err)
 	}
