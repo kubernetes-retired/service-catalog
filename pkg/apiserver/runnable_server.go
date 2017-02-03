@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog
-// +k8s:openapi-gen=true
-// +k8s:defaulter-gen=TypeMeta
+package apiserver
 
-// +groupName=servicecatalog.k8s.io
-
-// Package v1alpha1 contains generated v1alpha1 types for the service catalog API server
-// and controller
-package v1alpha1
+// RunnableServer is an interface to represent a server that is completely ready to start
+type RunnableServer interface {
+	// Run starts the server, and blocks until the given channel is closed, after which point
+	// it returns and the server has stopped
+	Run(<-chan struct{})
+}

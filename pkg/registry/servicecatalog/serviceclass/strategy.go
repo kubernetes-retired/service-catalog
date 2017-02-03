@@ -29,7 +29,13 @@ import (
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
-// implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy
+// NewScopeStrategy returns a new NamespaceScopedStrategy for service classes
+func NewScopeStrategy() rest.NamespaceScopedStrategy {
+	return serviceclassRESTStrategies
+}
+
+// implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
+// NamespaceScopedStrategy
 type serviceclassRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	kapi.NameGenerator  // GenerateName method for CreateStrategy

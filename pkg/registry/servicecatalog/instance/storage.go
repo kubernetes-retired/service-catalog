@@ -17,19 +17,63 @@ limitations under the License.
 package instance
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/rest"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/registry/generic"
 	"k8s.io/kubernetes/pkg/registry/generic/registry"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/storage"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
+
+var (
+	errNotAnInstance = errors.New("not an instance")
+)
+
+// NewSingular returns a new shell of a service instance, according to the given namespace and
+// name
+func NewSingular(ns, name string) runtime.Object {
+	return &servicecatalog.Instance{
+		TypeMeta: metav1.TypeMeta{
+			Kind: tpr.ServiceInstanceKind.String(),
+		},
+		ObjectMeta: api.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+	}
+}
+
+// EmptyObject returns an empty instance
+func EmptyObject() runtime.Object {
+	return &servicecatalog.Instance{}
+}
+
+// NewList returns a new shell of an instance list
+func NewList() runtime.Object {
+	return &servicecatalog.InstanceList{
+		TypeMeta: metav1.TypeMeta{
+			Kind: tpr.ServiceInstanceListKind.String(),
+		},
+	}
+}
+
+// CheckObject returns a non-nil error if obj is not an instance object
+func CheckObject(obj runtime.Object) error {
+	_, ok := obj.(*servicecatalog.Instance)
+	if !ok {
+		return errNotAnInstance
+	}
+	return nil
+}
 
 // Match determines whether an Instance matches a field and label
 // selector.
@@ -41,8 +85,8 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 	}
 }
 
-// ToSelectableFields returns a field set that represents the object for matching purposes.
-func ToSelectableFields(instance *servicecatalog.Instance) fields.Set {
+// toSelectableFields returns a field set that represents the object for matching purposes.
+func toSelectableFields(instance *servicecatalog.Instance) fields.Set {
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&instance.ObjectMeta, true)
 	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
 }
@@ -53,45 +97,32 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	if !ok {
 		return nil, nil, fmt.Errorf("given object is not an Instance")
 	}
-	return labels.Set(instance.ObjectMeta.Labels), ToSelectableFields(instance), nil
+	return labels.Set(instance.ObjectMeta.Labels), toSelectableFields(instance), nil
 }
 
-// NewStorage creates a new rest.Storage for each of Instances and
-// Status of Instances
-func NewStorage(opts generic.RESTOptions) (rest.Storage, rest.Storage) {
-	prefix := "/" + opts.ResourcePrefix
+// NewStorage creates a new rest.Storage responsible for accessing Instance
+// resources
+func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
+	prefix := "/" + opts.ResourcePrefix()
 
-	newListFunc := func() runtime.Object { return &servicecatalog.InstanceList{} }
-	storageInterface, dFunc := opts.Decorator(
-		opts.StorageConfig,
+	storageInterface, dFunc := opts.GetStorage(
 		1000,
 		&servicecatalog.Instance{},
 		prefix,
 		instanceRESTStrategies,
-		newListFunc,
+		NewList,
 		nil,
 		storage.NoTriggerPublisher,
 	)
 
 	store := registry.Store{
-		NewFunc: func() runtime.Object {
-			return &servicecatalog.Instance{}
-		},
-		// NewListFunc returns an object capable of storing results of an etcd list.
-		NewListFunc: newListFunc,
-		// Produces a path that etcd understands, to the root of the resource
-		// by combining the namespace in the context with the given prefix
-		KeyRootFunc: func(ctx api.Context) string {
-			return registry.NamespaceKeyRootFunc(ctx, prefix)
-		},
-		// Produces a path that etcd understands, to the resource by combining
-		// the namespace in the context with the given prefix
-		KeyFunc: func(ctx api.Context, name string) (string, error) {
-			return registry.NamespaceKeyFunc(ctx, prefix, name)
-		},
+		NewFunc:     EmptyObject,
+		NewListFunc: NewList,
+		KeyRootFunc: opts.KeyRootFunc(),
+		KeyFunc:     opts.KeyFunc(),
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
-			return obj.(*servicecatalog.Instance).Name, nil
+			return tpr.GetAccessor().Name(obj)
 		},
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,

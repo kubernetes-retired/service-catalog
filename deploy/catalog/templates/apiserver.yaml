@@ -11,21 +11,25 @@ spec:
     spec:
       containers:
       - name: apiserver
-        image: {{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: "{{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{.Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}"
         imagePullPolicy: Always
         args:
-        - --etcd-servers
-        - http://localhost:2379
+        - --storage-type
+        - {{ default "etcd" .Values.storageType }}
         - -v
-        - "10"
+        - {{ default "\"10\"" .Values.verbosity }}
+        {{ if eq .Values.storageType "etcd" }}- --etcd-servers {{ end }}
+        {{ if eq .Values.storageType "etcd" }}- http://localhost:2379 {{ end }}
         ports:
         - containerPort: 6443
         volumeMounts:
         - name: apiserver-ssl
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
+      {{ if eq .Values.storageType "etcd" -}}
       - name: etcd
         image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+      {{- end }}
       volumes:
       - name: apiserver-ssl
         secret:
