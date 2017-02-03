@@ -103,6 +103,7 @@ type BindingClient interface {
 
 // APIClient defines the interface to manage service brokers, types, instances, and bindings.
 type APIClient interface {
+	Namespaces() ([]string, error)
 	Brokers() BrokerClient
 	ServiceClasses() ServiceClassClient
 	Instances(string) InstanceClient

@@ -130,6 +130,7 @@ type watchCallback func(watch.Event) error
 // Watcher watches for Kubernetes events, such as creation of resources, and
 // performs custom operations.
 type Watcher struct {
+	k8sClient kubernetes.Interface
 	dynClient *dynamic.Client
 }
 
@@ -149,6 +150,7 @@ func NewWatcher(k8sClient *kubernetes.Clientset, dynClient *dynamic.Client) (*Wa
 
 	return &Watcher{
 		dynClient: dynClient,
+		k8sClient: k8sClient,
 	}, nil
 }
 
@@ -217,6 +219,19 @@ func checkCluster(client *dynamic.Client) error {
 		}
 	}
 	return nil
+}
+
+// Namespaces returns all the namespaces in the k8s cluster
+func (w *Watcher) Namespaces() ([]string, error) {
+	lst, err := w.k8sClient.Core().Namespaces().List(api.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]string, len(lst.Items))
+	for i, item := range lst.Items {
+		ret[i] = item.Name
+	}
+	return ret, nil
 }
 
 // Watch starts a watch for ResourceType t and on events will call the wcb.

@@ -72,6 +72,7 @@ func makeTraversableAPIClient() apiclient.APIClient {
 		),
 	}
 	return mem.NewPopulatedAPIClient(
+		[]string{namespace},
 		map[string]*servicecatalog.Broker{
 			brokerName: {
 				ObjectMeta: api.ObjectMeta{

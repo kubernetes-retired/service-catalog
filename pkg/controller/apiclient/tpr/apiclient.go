@@ -39,6 +39,10 @@ func (c *apiClient) Brokers() apiclient.BrokerClient {
 	return newBrokerClient(c.watcher)
 }
 
+func (c *apiClient) Namespaces() ([]string, error) {
+	return c.watcher.Namespaces()
+}
+
 func (c *apiClient) ServiceClasses() apiclient.ServiceClassClient {
 	return newServiceClassClient(c.watcher)
 }
