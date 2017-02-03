@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apiclient_test
+package util
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	. "github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/mem"
 	kapi "k8s.io/kubernetes/pkg/api"
 )
@@ -168,7 +168,7 @@ func createServicePlans(n int, startCount int) []servicecatalog.ServicePlan {
 	return ret
 }
 
-func testGetServicePlanInfo(apiclient APIClient,
+func testGetServicePlanInfo(apiclient apiclient.APIClient,
 	svcCls *servicecatalog.ServiceClass, plan *servicecatalog.ServicePlan,
 	queryPlanName string) error {
 
