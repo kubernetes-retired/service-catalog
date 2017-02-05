@@ -116,23 +116,28 @@ $(BINDIR)/client-gen:
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
+	# Generate defaults
 	$(DOCKER_CMD) $(BINDIR)/defaulter-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --extra-peer-dirs $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  -O zz_generated.defaults
+	# Generate deep copies
 	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --bounding-dirs github.com/kubernetes-incubator/service-catalog \
 	  -O zz_generated.deepcopy
+	# Generate conversions
 	$(DOCKER_CMD) $(BINDIR)/conversion-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  --extra-peer-dirs k8s.io/kubernetes/pkg/api,k8s.io/kubernetes/pkg/api/v1,k8s.io/kubernetes/pkg/apis/meta/v1,k8s.io/kubernetes/pkg/conversion,k8s.io/kubernetes/pkg/runtime \
 	  -O zz_generated.conversion
+	# the previous three directories will be changed from kubernetes to apimachinery in the future
+	# Generate the versioned clientset (pkg/client/clientset_generated/clientset)
 	$(DOCKER_CMD) $(BINDIR)/client-gen --input-base github.com/kubernetes-incubator/service-catalog/pkg/apis/ \
 		--input servicecatalog/v1alpha1 \
 		--clientset-path github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/ \
+		--clientset-name clientset \
 		--go-header-file vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt
-	  # the previous three directories will be changed from kubernetes to apimachinery in the future
 	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	touch $@
 
