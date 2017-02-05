@@ -30,3 +30,33 @@ type ControllerConfiguration struct {
 	// information.
 	KubeconfigPath string
 }
+
+// ControllerManagerConfiguration encapsulates configuration for the
+// controller manager.
+type ControllerManagerConfiguration struct {
+	// Address is the IP address to serve on (set to 0.0.0.0 for all interfaces).
+	Address string
+	// Port is the port that the controller's http service runs on.
+	Port int32
+
+	// ContentType is the content type for requests sent to API servers.
+	ContentType string
+
+	// kubeAPIQPS is the QPS to use while talking with kubernetes apiserver.
+	KubeAPIQPS float32
+	// kubeAPIBurst is the burst to use while talking with kubernetes apiserver.
+	KubeAPIBurst int32
+
+	// K8sAPIServerURL is the URL for the k8s API server.
+	K8sAPIServerURL string
+	// K8sKubeconfigPath is the path to the kubeconfig file with authorization
+	// information.
+	K8sKubeconfigPath string
+
+	// ServiceCatalogAPIServerURL is the URL for the service-catalog API
+	// server.
+	ServiceCatalogAPIServerURL string
+	// ServiceCatalogKubeconfigPath is the path to the kubeconfig file with
+	// information about the service catalog API server.
+	ServiceCatalogKubeconfigPath string
+}

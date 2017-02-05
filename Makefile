@@ -72,7 +72,7 @@ endif
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
 build: .init .generate_files \
-       $(BINDIR)/controller $(BINDIR)/apiserver \
+       $(BINDIR)/controller-manager $(BINDIR)/controller $(BINDIR)/apiserver \
        $(BINDIR)/registry $(BINDIR)/k8s-broker $(BINDIR)/user-broker
 
 controller: $(BINDIR)/controller
@@ -99,6 +99,10 @@ $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 apiserver: $(BINDIR)/apiserver
 $(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/apiserver
+
+controller-manager: $(BINDIR)/controller-manager
+$(BINDIR)/controller-manager: .init .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
 
 # This section contains the code generation stuff
 #################################################
@@ -300,6 +304,13 @@ apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
 	docker build -t apiserver:$(VERSION) build/apiserver
 	docker tag apiserver:$(VERSION) apiserver:latest
 	rm -rf build/apiserver/tmp
+
+controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controller-manager
+	mkdir -p build/controller-manager/tmp
+	cp $(BINDIR)/controller-manager build/controller-manager/tmp
+	docker build -t controller-manager:$(VERSION) build/controller-manager
+	docker tag controller-manager:$(VERSION) controller-manager:latest
+	rm -rf build/controller-manager/tmp
 
 # Push our Docker Images to a registry
 ######################################

@@ -1,0 +1,48 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: controller-manager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: controller-manager
+    spec:
+      containers:
+      - name: controller-manager
+        image: {{ if .Values.registry }}{{ cat .Values.registry "/"}}{{ end }}controller-manager:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
+        args: 
+        - -v
+        - "5"
+        - --service-catalog-api-server-url
+        - "http://$(APISERVER_SERVICE_HOST):$(APISERVER_SERVICE_PORT)"
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: service-catalog-ssl
+          mountPath: /etc/service-catalog-ssl
+          readOnly: true
+      volumes:
+      - name: service-catalog-ssl
+        secret:
+          secretName: apiserver-ssl
+          items:
+          - key: apiserver.crt
+            path: apiserver.crt
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: controller-manager
+spec:
+{{ if .Values.debug }}
+  type: LoadBalancer
+{{ end }}
+  selector:
+    app: controller-manager
+  ports:
+  - protocol: TCP
+    port: 6443
+    targetPort: 6443
