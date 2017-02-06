@@ -157,9 +157,12 @@ verify: .init .generate_files
 	@rm .out
 	@#
 	@echo Running golint and go vet:
-	# Exclude the generated (zz) files for now
+	@# Exclude the generated (zz) files for now, as well as defaults.go (it
+	@# observes conventions from upstream that will not pass lint checks).
 	@$(DOCKER_CMD) sh -c \
-	  'for i in $$(find $(TOP_SRC_DIRS) -name *.go | grep -v generated); \
+	  'for i in $$(find $(TOP_SRC_DIRS) -name *.go \
+	    | grep -v generated \
+	    | grep -v v1alpha1/defaults.go); \
 	  do \
 	    golint --set_exit_status $$i; \
 	    go vet $$i; \
