@@ -23,6 +23,11 @@ $ bash -c 'if [ -w /var/run/kubernetes/ ] ; then echo "OK" ; else echo "FAIL: /v
 If it fails, create the directory with the user that will run the apiserver.
 
 
+*If you are running on Linux and have SELinux enabled, you will have to add the "svirt_sandbox_file_t" type to files in your directory for this step to work  as expected.*
+```
+$ sudo chcon -R -t svirt_sandbox_file_t ./
+```
+
 Start with:
 
 ```
