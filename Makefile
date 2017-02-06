@@ -171,9 +171,9 @@ verify: .init .generate_files
 	@rm .out
 	@#
 	@echo Running href checker:
-	@build/verify-links.sh
+	@$(DOCKER_CMD) build/verify-links.sh
 	@echo Running errexit checker:
-	@build/verify-errexit.sh
+	@$(DOCKER_CMD) build/verify-errexit.sh
 
 format: .init
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
