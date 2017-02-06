@@ -25,6 +25,7 @@ import (
 // TODO: all metadata and parametersfields need to be refactored to real
 // types; skipping for now to get very large generation PR in.
 
+// +genclient=true
 // +nonNamespaced=true
 
 // Broker represents an entity that provides ServiceClasses for use in the
@@ -112,6 +113,8 @@ type ServiceClassList struct {
 	Items []ServiceClass
 }
 
+// +genclient=true
+
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
 	metav1.TypeMeta
@@ -174,6 +177,8 @@ type InstanceList struct {
 
 	Items []Instance
 }
+
+// +genclient=true
 
 // Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
@@ -251,6 +256,8 @@ type BindingList struct {
 
 	Items []Binding
 }
+
+// +genclient=true
 
 // Binding represents a "used by" relationship between an application and an
 // Instance.
