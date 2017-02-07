@@ -17,8 +17,6 @@ limitations under the License.
 package servicecatalog
 
 import (
-	"k8s.io/kubernetes/pkg/api"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/runtime/schema"
 )
@@ -49,12 +47,6 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		// TODO are all of these needed? What do they do?
-		&api.ListOptions{},
-		&api.DeleteOptions{},
-		&metav1.ExportOptions{},
-		&metav1.GetOptions{},
-
 		&Broker{},
 		&BrokerList{},
 		&ServiceClass{},
