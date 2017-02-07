@@ -100,7 +100,8 @@ $(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
                 $(BINDIR)/deepcopy-gen \
                 $(BINDIR)/conversion-gen \
                 $(BINDIR)/client-gen \
-                $(BINDIR)/lister-gen
+                $(BINDIR)/lister-gen \
+                $(BINDIR)/informer-gen
 	touch $@
 
 $(BINDIR)/defaulter-gen: .init cmd/libs/go2idl/defaulter-gen
@@ -117,6 +118,9 @@ $(BINDIR)/client-gen:
 
 $(BINDIR)/lister-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/lister-gen
+
+$(BINDIR)/informer-gen:
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/informer-gen
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
@@ -155,6 +159,13 @@ $(BINDIR)/lister-gen:
 		--input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
 		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers" \
 		--go-header-file vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt
+	# generate informer
+	$(DOCKER_CMD) $(BINDIR)/informer-gen \
+		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
+		--listers-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers" \
+		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
 	# generate codec
 	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	touch $@
