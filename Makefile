@@ -136,6 +136,13 @@ $(BINDIR)/lister-gen:
 	  --extra-peer-dirs k8s.io/kubernetes/pkg/api,k8s.io/kubernetes/pkg/api/v1,k8s.io/kubernetes/pkg/apis/meta/v1,k8s.io/kubernetes/pkg/conversion,k8s.io/kubernetes/pkg/runtime \
 	  -O zz_generated.conversion
 	# the previous three directories will be changed from kubernetes to apimachinery in the future
+	# Generate the internal clientset (pkg/client/clientset_generated/internalclientset)
+	$(DOCKER_CMD) $(BINDIR)/client-gen \
+		--input-base "github.com/kubernetes-incubator/service-catalog/pkg/apis/" \
+		--input servicecatalog/ \
+		--clientset-path "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/" \
+		--clientset-name internalclientset \
+		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt"
 	# Generate the versioned clientset (pkg/client/clientset_generated/clientset)
 	$(DOCKER_CMD) $(BINDIR)/client-gen --input-base github.com/kubernetes-incubator/service-catalog/pkg/apis/ \
 		--input servicecatalog/v1alpha1 \
