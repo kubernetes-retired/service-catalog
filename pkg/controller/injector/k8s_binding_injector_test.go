@@ -17,11 +17,214 @@ limitations under the License.
 package injector
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strconv"
 	"testing"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"k8s.io/client-go/1.5/kubernetes/fake"
+	v1 "k8s.io/client-go/1.5/pkg/api/v1"
+	kapi "k8s.io/kubernetes/pkg/api"
 )
 
-func TestInject(t *testing.T) {
+func TestInjectOne(t *testing.T) {
+	binding := createFakeBindings(1)[0]
+	cred := createCreds(1)[0]
+	injector := fakeK8sBindingInjector()
+	if err := injector.Inject(binding, cred); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := testCredentialsInjected(injector, binding, cred); err != nil {
+		t.Error(err)
+	}
 }
 
-func TestUninject(t *testing.T) {
+func TestInjectTwo(t *testing.T) {
+	bindings := createFakeBindings(2)
+	creds := createCreds(2)
+
+	injector := fakeK8sBindingInjector()
+	if err := injector.Inject(bindings[0], creds[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := injector.Inject(bindings[1], creds[1]); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := testCredentialsInjected(injector, bindings[0], creds[0]); err != nil {
+		t.Error(err)
+	}
+
+	if err := testCredentialsInjected(injector, bindings[1], creds[1]); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestInjectOverride(t *testing.T) {
+	binding := createFakeBindings(1)[0]
+	creds := createCreds(2)
+
+	injector := fakeK8sBindingInjector()
+	if err := injector.Inject(binding, creds[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	// note that we expect a failure here
+	if err := injector.Inject(binding, creds[0]); err == nil {
+		t.Fatal("Injecting over the same binding succeeded even though it shouldn't")
+	}
+}
+
+func TestUninjectEmpty(t *testing.T) {
+	binding := createFakeBindings(1)[0]
+	injector := fakeK8sBindingInjector()
+	if err := injector.Uninject(binding); err == nil {
+		t.Fatal("Uninject empty expected error but none returned!")
+	}
+}
+
+func TestUninjectOne(t *testing.T) {
+	binding := createFakeBindings(1)[0]
+	cred := createCreds(1)[0]
+
+	injector := fakeK8sBindingInjector()
+	if err := injector.Inject(binding, cred); err != nil {
+		t.Fatal(err)
+	}
+	if err := injector.Uninject(binding); err != nil {
+		t.Fatal("Unexpected error when uninjecting")
+	}
+
+	if err := testCredentialsUninjected(injector, binding); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUninjectSame(t *testing.T) {
+	binding := createFakeBindings(1)[0]
+	cred := createCreds(1)[0]
+
+	injector := fakeK8sBindingInjector()
+	if err := injector.Inject(binding, cred); err != nil {
+		t.Fatal(err)
+	}
+	if err := injector.Uninject(binding); err != nil {
+		t.Fatal("Unexpected err when uninjecting:", err)
+	}
+	if err := injector.Uninject(binding); err == nil {
+		t.Fatal("Expected err when uninjecting twice but none found!")
+	}
+}
+
+func TestUninjectTwo(t *testing.T) {
+	bindings := createFakeBindings(2)
+	creds := createCreds(2)
+
+	injector := fakeK8sBindingInjector()
+	if err := injector.Inject(bindings[0], creds[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := injector.Inject(bindings[1], creds[1]); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := injector.Uninject(bindings[0]); err != nil {
+		t.Fatal("Unexpected err when uninjecting")
+	}
+
+	// test that bindings[0] is gone
+	if err := testCredentialsUninjected(injector, bindings[0]); err != nil {
+		t.Fatal(err)
+	}
+
+	//test that bindings[1] is still there
+	if err := testCredentialsInjected(injector, bindings[1], creds[1]); err != nil {
+		t.Error(err)
+	}
+
+	// test that bindings[1] is gone after uninject
+	if err := injector.Uninject(bindings[1]); err != nil {
+		t.Fatal("Unexpected err when uninjecting")
+	}
+
+	if err := testCredentialsUninjected(injector, bindings[1]); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func createFakeBindings(length int) []*servicecatalog.Binding {
+	ret := make([]*servicecatalog.Binding, length, length)
+	for i := range ret {
+		namespace := "namespace" + strconv.Itoa(i)
+		ret[i] = &servicecatalog.Binding{
+			ObjectMeta: kapi.ObjectMeta{
+				Name:      "name" + strconv.Itoa(i),
+				Namespace: namespace,
+			},
+			Spec: servicecatalog.BindingSpec{
+				InstanceRef: kapi.ObjectReference{
+					Namespace: namespace,
+				},
+			},
+		}
+	}
+	return ret
+}
+
+func createCreds(length int) []*brokerapi.Credential {
+	ret := make([]*brokerapi.Credential, length, length)
+	for i := range ret {
+		ret[i] = &brokerapi.Credential{
+			"Hostname": "host" + strconv.Itoa(i),
+			"Port":     "123" + strconv.Itoa(i),
+			"Username": "user" + strconv.Itoa(i),
+			"Password": "password!@#!@#!0)" + strconv.Itoa(i),
+		}
+	}
+	return ret
+}
+
+func fakeK8sBindingInjector() *k8sBindingInjector {
+	return &k8sBindingInjector{
+		client: fake.NewSimpleClientset(),
+	}
+}
+
+func getSecret(injector *k8sBindingInjector, binding *servicecatalog.Binding) (*v1.Secret, error) {
+	secretsCl := injector.client.Core().Secrets(binding.Namespace)
+	return secretsCl.Get(binding.Name)
+}
+
+// tests all fields of credentials are there and also the same value
+func testCredentialsInjected(injector *k8sBindingInjector, binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
+	secret, err := getSecret(injector, binding)
+	if err != nil {
+		return err
+	}
+	var val interface{}
+	for k, v := range *cred {
+		_, ok := secret.Data[k]
+		if !ok {
+			return fmt.Errorf("%s not in secret after injecting", k)
+		} else if err = json.Unmarshal(secret.Data[k], &val); err != nil {
+			return fmt.Errorf("Error when unmarshaling credentials: %v", err)
+		} else if val != v {
+			return fmt.Errorf("%s does not match. Expected: %v; Actual: %v",
+				k, v, val)
+		}
+	}
+	return nil
+}
+
+// test that credential is no longer there
+func testCredentialsUninjected(injector *k8sBindingInjector, binding *servicecatalog.Binding) error {
+	_, err := getSecret(injector, binding)
+	if err == nil {
+		return errors.New("Credentials still present after Uninject")
+	}
+	return nil
 }
