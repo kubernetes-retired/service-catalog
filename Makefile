@@ -119,13 +119,13 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
-$(BINDIR)/client-gen:
+$(BINDIR)/client-gen: .init
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/client-gen
 
-$(BINDIR)/lister-gen:
+$(BINDIR)/lister-gen: .init
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/lister-gen
 
-$(BINDIR)/informer-gen:
+$(BINDIR)/informer-gen: .init
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/informer-gen
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
