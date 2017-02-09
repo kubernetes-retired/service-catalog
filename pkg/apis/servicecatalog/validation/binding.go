@@ -51,3 +51,10 @@ func ValidateBindingUpdate(new *sc.Binding, old *sc.Binding) field.ErrorList {
 	// allErrs = append(allErrs, validateBindingStatusUpdate(new, old)...)
 	return allErrs
 }
+
+// ValidateBindingStatusUpdate checks that when changing from an older binding to a newer binding is okay.
+func ValidateBindingStatusUpdate(new *sc.Binding, old *sc.Binding) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateBindingUpdate(new, old)...)
+	return allErrs
+}

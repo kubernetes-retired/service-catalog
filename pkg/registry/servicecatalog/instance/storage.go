@@ -56,9 +56,9 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	return labels.Set(instance.ObjectMeta.Labels), ToSelectableFields(instance), nil
 }
 
-// NewStorage creates a new rest.Storage responsible for accessing Instance
-// resources
-func NewStorage(opts generic.RESTOptions) rest.Storage {
+// NewStorage creates a new rest.Storage for each of Instances and
+// Status of Instances
+func NewStorage(opts generic.RESTOptions) (rest.Storage, rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix
 
 	newListFunc := func() runtime.Object { return &servicecatalog.InstanceList{} }
@@ -106,5 +106,8 @@ func NewStorage(opts generic.RESTOptions) rest.Storage {
 		DestroyFunc: dFunc,
 	}
 
-	return &store
+	statusStore := store
+	statusStore.UpdateStrategy = instanceStatusUpdateStrategy
+
+	return &store, &statusStore
 }

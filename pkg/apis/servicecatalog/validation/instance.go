@@ -51,3 +51,10 @@ func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList 
 	// allErrs = append(allErrs, validateInstanceStatusUpdate(new, old)...)
 	return allErrs
 }
+
+// ValidateInstanceStatusUpdate checks that when changing from an older instance to a newer instance is okay.
+func ValidateInstanceStatusUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateInstanceUpdate(new, old)...)
+	return allErrs
+}
