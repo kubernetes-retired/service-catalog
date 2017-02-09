@@ -81,7 +81,7 @@ func New(c restclient.Interface) *ServicecatalogClient {
 
 func setConfigDefaults(config *restclient.Config) error {
 	// if servicecatalog group is not registered, return an error
-	g, err := registered.Group("")
+	g, err := registered.Group("servicecatalog")
 	if err != nil {
 		return err
 	}
