@@ -35,6 +35,11 @@ type instanceRESTStrategy struct {
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
+// implements interface RESTUpdateStrategy
+type instanceStatusRESTStrategy struct {
+	instanceRESTStrategy
+}
+
 var (
 	instanceRESTStrategies = instanceRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
@@ -47,6 +52,11 @@ var (
 	_ rest.RESTCreateStrategy = instanceRESTStrategies
 	_ rest.RESTUpdateStrategy = instanceRESTStrategies
 	_ rest.RESTDeleteStrategy = instanceRESTStrategies
+
+	instanceStatusUpdateStrategy = instanceStatusRESTStrategy{
+		instanceRESTStrategies,
+	}
+	_ rest.RESTUpdateStrategy = instanceStatusUpdateStrategy
 )
 
 // Canonicalize does not transform a instance.
@@ -114,4 +124,30 @@ func (instanceRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Ob
 	}
 
 	return scv.ValidateInstanceUpdate(newInstance, oldInstance)
+}
+
+func (instanceStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+	newInstance, ok := new.(*sc.Instance)
+	if !ok {
+		glog.Fatal("received a non-instance object to update to")
+	}
+	oldInstance, ok := old.(*sc.Instance)
+	if !ok {
+		glog.Fatal("received a non-instance object to update from")
+	}
+	// status changes are not allowed to update spec
+	newInstance.Spec = oldInstance.Spec
+}
+
+func (instanceStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+	newInstance, ok := new.(*sc.Instance)
+	if !ok {
+		glog.Fatal("received a non-instance object to validate to")
+	}
+	oldInstance, ok := old.(*sc.Instance)
+	if !ok {
+		glog.Fatal("received a non-instance object to validate from")
+	}
+
+	return scv.ValidateInstanceStatusUpdate(newInstance, oldInstance)
 }

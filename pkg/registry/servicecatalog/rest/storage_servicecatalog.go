@@ -47,12 +47,16 @@ func (p StorageProvider) NewRESTStorage(apiResourceConfigSource genericapiserver
 
 func (p StorageProvider) v1alpha1Storage(apiResourceConfigSource genericapiserver.APIResourceConfigSource, restOptionsGetter registry.RESTOptionsGetter) map[string]rest.Storage {
 	brokers, brokersStatus := broker.NewStorage(restOptionsGetter(servicecatalog.Resource("brokers")))
+	instances, instancesStatus := instance.NewStorage(restOptionsGetter(servicecatalog.Resource("instances")))
+	bindings, bindingsStatus := binding.NewStorage(restOptionsGetter(servicecatalog.Resource("bindings")))
 	return map[string]rest.Storage{
-		"brokers":        brokers,
-		"brokers/status": brokersStatus,
-		"serviceclasses": serviceclass.NewStorage(restOptionsGetter(servicecatalog.Resource("serviceclasses"))),
-		"instances":      instance.NewStorage(restOptionsGetter(servicecatalog.Resource("instances"))),
-		"bindings":       binding.NewStorage(restOptionsGetter(servicecatalog.Resource("bindings"))),
+		"brokers":          brokers,
+		"brokers/status":   brokersStatus,
+		"serviceclasses":   serviceclass.NewStorage(restOptionsGetter(servicecatalog.Resource("serviceclasses"))),
+		"instances":        instances,
+		"instances/status": instancesStatus,
+		"bindings":         bindings,
+		"bindings/status":  bindingsStatus,
 	}
 }
 

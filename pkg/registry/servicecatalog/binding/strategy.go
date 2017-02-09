@@ -35,6 +35,11 @@ type bindingRESTStrategy struct {
 	kapi.NameGenerator  // GenerateName method for CreateStrategy
 }
 
+// implements interface RESTUpdateStrategy
+type bindingStatusRESTStrategy struct {
+	bindingRESTStrategy
+}
+
 var (
 	bindingRESTStrategies = bindingRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
@@ -47,6 +52,11 @@ var (
 	_ rest.RESTCreateStrategy = bindingRESTStrategies
 	_ rest.RESTUpdateStrategy = bindingRESTStrategies
 	_ rest.RESTDeleteStrategy = bindingRESTStrategies
+
+	bindingStatusUpdateStrategy = bindingStatusRESTStrategy{
+		bindingRESTStrategies,
+	}
+	_ rest.RESTUpdateStrategy = bindingStatusUpdateStrategy
 )
 
 // Canonicalize does not transform a binding.
@@ -115,4 +125,30 @@ func (bindingRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obj
 	}
 
 	return scv.ValidateBindingUpdate(newBinding, oldBinding)
+}
+
+func (bindingStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+	newBinding, ok := new.(*sc.Binding)
+	if !ok {
+		glog.Fatal("received a non-binding object to update to")
+	}
+	oldBinding, ok := old.(*sc.Binding)
+	if !ok {
+		glog.Fatal("received a non-binding object to update from")
+	}
+	// status changes are not allowed to update spec
+	newBinding.Spec = oldBinding.Spec
+}
+
+func (bindingStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+	newBinding, ok := new.(*sc.Binding)
+	if !ok {
+		glog.Fatal("received a non-binding object to validate to")
+	}
+	oldBinding, ok := old.(*sc.Binding)
+	if !ok {
+		glog.Fatal("received a non-binding object to validate from")
+	}
+
+	return scv.ValidateBindingStatusUpdate(newBinding, oldBinding)
 }
