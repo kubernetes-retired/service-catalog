@@ -107,8 +107,8 @@ $(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 $(BINDIR)/defaulter-gen: .init cmd/libs/go2idl/defaulter-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/cmd/libs/go2idl/defaulter-gen
 
-$(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/cmd/libs/go2idl/deepcopy-gen
+$(BINDIR)/deepcopy-gen: .init
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/deepcopy-gen
 
 $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
@@ -130,10 +130,13 @@ $(BINDIR)/informer-gen:
 	  --extra-peer-dirs $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
 	  -O zz_generated.defaults
 	# Generate deep copies
-	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen --v 1 --logtostderr \
-	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
-	  --bounding-dirs github.com/kubernetes-incubator/service-catalog \
-	  -O zz_generated.deepcopy
+	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen \
+		--v 1 --logtostderr \
+		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
+		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
+		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
+		--bounding-dirs "github.com/kubernetes-incubator/service-catalog" \
+		--output-file-base zz_generated.deepcopy
 	# Generate conversions
 	$(DOCKER_CMD) $(BINDIR)/conversion-gen --v 1 --logtostderr \
 	  -i $(SC_PKG)/pkg/apis/servicecatalog,$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1 \
