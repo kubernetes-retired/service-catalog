@@ -8,6 +8,7 @@ spec:
   containers:
   - name: apiserver
     image: apiserver
+    imagePullPolicy: IfNotPresent
     args: 
     - --etcd-servers
     - http://localhost:2379
