@@ -113,7 +113,7 @@ $(BINDIR)/deepcopy-gen: .init cmd/libs/go2idl/deepcopy-gen
 $(BINDIR)/conversion-gen: cmd/libs/go2idl/conversion-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
-$(BINDIR)/client-gen: 
+$(BINDIR)/client-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/client-gen
 
 $(BINDIR)/lister-gen:
@@ -296,3 +296,8 @@ controller-push: controller-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION)
 	docker push $(REGISTRY)/controller:$(VERSION)
+
+apiserver-push: apiserver-image
+	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
+	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:$(VERSION)
+	docker push $(REGISTRY)/apiserver:$(VERSION)
