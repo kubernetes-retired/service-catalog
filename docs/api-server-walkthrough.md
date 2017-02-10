@@ -23,13 +23,23 @@ $ bash -c 'if [ -w /var/run/kubernetes-service-catalog/ ] ; then echo "OK" ; els
 If it fails, create the directory with the user that will run the apiserver.
 
 
-Start with:
+To run it locally, start with:
 
 ```
 # run etcd locally on the default port
 $ etcd 
 # switch to another shell and run
 $ ./bin/apiserver -v 10 --etcd-servers http://localhost:2379
+```
+
+Alternatively, you can run the apiserver and etcd as a pod:
+```
+# run the apiserver & etcd as a pod
+$ kubectl create -f contrib/examples/apiserver/apiserver.yaml
+# enable port forwarding from localhost:6443 to the apiserver
+$ kubectl port-forward service-catalog-apiserver 6443:6443
+# get apiserver certificate from the pod
+$ kubectl cp service-catalog-apiserver:/var/run/kubernetes/apiserver.crt /var/run/kubernetes/apiserver.crt
 ```
 
 In another term check for response from curl.
