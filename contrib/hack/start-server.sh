@@ -31,7 +31,7 @@ docker run -ti --name etcd -d --net host quay.io/coreos/etcd > /dev/null
 echo Starting the API Server
 docker run -ti --name apiserver -d --net host \
 	-v ${ROOT}:/go/src/github.com/kubernetes-incubator/service-catalog \
-	-v ${ROOT}/.var/run/kubernetes:/var/run/kubernetes \
+	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
 	-v ${ROOT}/.kube:/root/.kube \
 	scbuildimage \
 	bin/apiserver -v 10 --etcd-servers http://localhost:2379 > /dev/null

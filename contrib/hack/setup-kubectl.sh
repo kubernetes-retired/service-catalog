@@ -32,7 +32,7 @@ docker run -ti --name etcd -d --net host quay.io/coreos/etcd > /dev/null
 # And now our API Server
 docker run -ti --name apiserver -d --net host \
 	-v ${ROOT}:/go/src/github.com/kubernetes-incubator/service-catalog \
-	-v ${ROOT}/.var/run/kubernetes:/var/run/kubernetes \
+	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
 	-v ${ROOT}/.kube:/root/.kube \
 	scbuildimage \
 	bin/apiserver -v 10 --etcd-servers http://localhost:2379 > /dev/null
@@ -44,6 +44,6 @@ done
 
 # Setup our credentials
 kubectl config set-credentials service-catalog-creds --username=admin --password=admin
-kubectl config set-cluster service-catalog-cluster --server=https://localhost:6443 --certificate-authority=/var/run/kubernetes/apiserver.crt
+kubectl config set-cluster service-catalog-cluster --server=https://localhost:6443 --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
 kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds
 kubectl config use-context service-catalog-ctx

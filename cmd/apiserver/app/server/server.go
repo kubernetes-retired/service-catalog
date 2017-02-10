@@ -50,6 +50,10 @@ type ServiceCatalogServerOptions struct {
 }
 
 const (
+	// Store generated SSL certificates in a place that won't collide with the
+	// k8s core API server.
+	certDirectory = "/var/run/kubernetes-service-catalog"
+
 	// I made this up to match some existing paths. I am not sure if there
 	// are any restrictions on the format or structure beyond text
 	// separated by slashes.
@@ -72,6 +76,9 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 
 	// Store resources in etcd under our special prefix
 	options.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
+
+	// Set generated SSL cert path correctly
+	options.SecureServingOptions.ServerCert.CertDirectory = certDirectory
 
 	// Create the command that runs the API server
 	cmd := &cobra.Command{
