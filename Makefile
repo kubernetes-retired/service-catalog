@@ -47,6 +47,12 @@ GO_BUILD       = env GOOS=linux GOARCH=amd64 go build -i $(GOFLAGS) \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
+# precheck to avoid kubernetes-incubator/service-catalog#361
+$(if $(realpath vendor/k8s.io/kubernetes/vendor), \
+	$(error the vendor directory exists in the kubernetes \
+		vendored source and must be flattened. \
+		run 'glide i -v'))
+
 ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
