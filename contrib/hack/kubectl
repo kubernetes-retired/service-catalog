@@ -20,14 +20,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # If our version of these dirs don't exist then create them.
 # This will allow us to not mess with the user's own version of these
 # files for other k8s related activities.
-mkdir -p ${ROOT}/.var/run/kubernetes ${ROOT}/.kube ${ROOT}/.run
+mkdir -p ${ROOT}/.var/run/kubernetes-service-catalog ${ROOT}/.kube ${ROOT}/.run
 
 # Run kubectl in a container - make sure we cd into the correct dir
 # based on the current working dir. Yes, this assumes that you're running
 # this script from within our git repo source tree
 docker run --rm -ti --net host \
 	-w /root/service-catalog${PWD#${ROOT}} \
-	-v ${ROOT}/.var/run/kubernetes:/var/run/kubernetes \
+	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
 	-v ${ROOT}/.kube:/.kube \
 	-v ${ROOT}:/root/service-catalog \
 	kubectl $*
