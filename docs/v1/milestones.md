@@ -28,6 +28,7 @@ High-level functional requirements:
 1.  `servicecatalog/v1alpha1` API complete and functional:
   1.  `Broker`, `ServiceClass`, `Instance`, `Binding`
   2.  Integrators should be able to program against this REST API
+  3.  Status subresources for `Broker`, `Instance`, and `Binding`
 2.  Golang client for API in (1) is auto-generated
 3.  Native-k8s-style CLI experience
   1.  Formatted list
@@ -40,6 +41,7 @@ High-level functional requirements:
   5.  Deprovision service instance
   6.  Remove broker
   7.  Update broker
+  8.  Delete broker
 5.  Bindings manifest as a Secret in the the k8s core; users will be expected
     to explicitly reference this secret in their Pod specs
 
