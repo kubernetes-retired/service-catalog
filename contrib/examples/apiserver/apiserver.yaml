@@ -18,8 +18,7 @@ spec:
     - name: https
       containerPort: 6443
   - name: etcd
-    image: gcr.io/google_containers/etcd:3.0.14
-    command: ["etcd"]
+    image: quay.io/coreos/etcd:v3.0.17
 ---
 apiVersion: v1
 kind: Service
