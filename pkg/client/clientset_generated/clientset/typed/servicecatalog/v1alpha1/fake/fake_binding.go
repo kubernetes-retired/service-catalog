@@ -32,7 +32,7 @@ type FakeBindings struct {
 	ns   string
 }
 
-var bindingsResource = schema.GroupVersionResource{Group: "servicecatalog", Version: "v1alpha1", Resource: "bindings"}
+var bindingsResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "bindings"}
 
 func (c *FakeBindings) Create(binding *v1alpha1.Binding) (result *v1alpha1.Binding, err error) {
 	obj, err := c.Fake.

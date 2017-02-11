@@ -32,7 +32,7 @@ type FakeInstances struct {
 	ns   string
 }
 
-var instancesResource = schema.GroupVersionResource{Group: "servicecatalog", Version: "v1alpha1", Resource: "instances"}
+var instancesResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "instances"}
 
 func (c *FakeInstances) Create(instance *v1alpha1.Instance) (result *v1alpha1.Instance, err error) {
 	obj, err := c.Fake.
