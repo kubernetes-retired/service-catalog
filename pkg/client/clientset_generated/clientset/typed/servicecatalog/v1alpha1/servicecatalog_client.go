@@ -83,13 +83,13 @@ func New(c restclient.Interface) *ServicecatalogV1alpha1Client {
 }
 
 func setConfigDefaults(config *restclient.Config) error {
-	gv, err := schema.ParseGroupVersion("servicecatalog/v1alpha1")
+	gv, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1alpha1")
 	if err != nil {
 		return err
 	}
-	// if servicecatalog/v1alpha1 is not enabled, return an error
+	// if servicecatalog.k8s.io/v1alpha1 is not enabled, return an error
 	if !registered.IsEnabledVersion(gv) {
-		return fmt.Errorf("servicecatalog/v1alpha1 is not enabled")
+		return fmt.Errorf("servicecatalog.k8s.io/v1alpha1 is not enabled")
 	}
 	config.APIPath = "/apis"
 	if config.UserAgent == "" {
