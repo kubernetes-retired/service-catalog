@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/kubernetes/pkg/api/v1"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/runtime/schema"
 	versionedwatch "k8s.io/kubernetes/pkg/watch/versioned"
@@ -48,6 +51,14 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
+		// so generated client list operation works
+		&v1.ListOptions{},
+		// for the client to support everything else, whatever
+		// that is
+		&v1.DeleteOptions{},
+		&metav1.ExportOptions{},
+		&metav1.GetOptions{},
+
 		&Broker{},
 		&BrokerList{},
 		&ServiceClass{},
