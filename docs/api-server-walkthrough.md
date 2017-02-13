@@ -39,7 +39,7 @@ $ kubectl create -f contrib/examples/apiserver/apiserver.yaml
 # enable port forwarding from localhost:6443 to the apiserver
 $ kubectl port-forward service-catalog-apiserver 6443:6443
 # get apiserver certificate from the pod
-$ kubectl cp service-catalog-apiserver:/var/run/kubernetes/apiserver.crt /var/run/kubernetes/apiserver.crt
+$ kubectl cp service-catalog-apiserver:/var/run/kubernetes-service-catalog/apiserver.crt /var/run/kubernetes-service-catalog/apiserver.crt
 ```
 
 In another term check for response from curl.
