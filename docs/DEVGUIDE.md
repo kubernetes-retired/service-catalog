@@ -227,9 +227,9 @@ using bindings:
     # Create binding called 'database'.
     kubectl create -f binding.yaml
 
-Creating the binding will create a `ConfigMap` for binding consumption. This
+Creating the binding will create a `Secret` for binding consumption. This
 can now be used by a native Kubernetes app. You can inspect the config map
-using `kubectl get configmap database`:
+using `kubectl get secret database`:
 
     NAME       DATA      AGE
     database   4         55s
