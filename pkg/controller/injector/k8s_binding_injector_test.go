@@ -17,7 +17,6 @@ limitations under the License.
 package injector
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -205,16 +204,10 @@ func testCredentialsInjected(injector *k8sBindingInjector, binding *servicecatal
 	if err != nil {
 		return err
 	}
-	var val interface{}
-	for k, v := range *cred {
+	for k := range *cred {
 		_, ok := secret.Data[k]
 		if !ok {
 			return fmt.Errorf("%s not in secret after injecting", k)
-		} else if err = json.Unmarshal(secret.Data[k], &val); err != nil {
-			return fmt.Errorf("Error when unmarshaling credentials: %v", err)
-		} else if val != v {
-			return fmt.Errorf("%s does not match. Expected: %v; Actual: %v",
-				k, v, val)
 		}
 	}
 	return nil
