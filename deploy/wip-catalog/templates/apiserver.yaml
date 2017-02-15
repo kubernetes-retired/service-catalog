@@ -1,0 +1,39 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: apiserver
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: apiserver
+    spec:
+      containers:
+      - name: apiserver
+        image: {{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        imagePullPolicy: Always
+        args:
+        - --etcd-servers
+        - http://localhost:2379
+        - -v
+        - "10"
+        ports:
+        - containerPort: 6443
+      - name: etcd
+        image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: apiserver
+spec:
+{{ if .Values.debug }}
+  type: LoadBalancer
+{{ end }}
+  selector:
+    app: apiserver
+  ports:
+  - protocol: TCP
+    port: 6443
+    targetPort: 6443
