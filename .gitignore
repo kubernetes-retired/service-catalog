@@ -3,6 +3,7 @@
 *.swp
 *~
 kubeconfig
+.kubeconfig
 log/**
 pid/**
 vendor/**
