@@ -13,8 +13,7 @@ spec:
       - name: apiserver
         image: {{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
-        command: ["sleep", "10000"]
-        args:
+        args: 
         - --etcd-servers
         - http://localhost:2379
         - -v
