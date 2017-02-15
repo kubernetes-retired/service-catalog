@@ -303,7 +303,8 @@ apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
 
 # Push our Docker Images to a registry
 ######################################
-push: registry-push k8s-broker-push user-broker-push controller-push
+push: registry-push k8s-broker-push user-broker-push controller-push \
+    apiserver-push
 
 registry-push: registry-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
