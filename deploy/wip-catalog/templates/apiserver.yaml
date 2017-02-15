@@ -20,10 +20,10 @@ spec:
         - "10"
         ports:
         - containerPort: 6443
-        # volumeMounts:
-        # - name: apiserver-ssl
-        #   mountPath: /var/run/kubernetes-service-catalog
-        #   readOnly: true
+        volumeMounts:
+        - name: apiserver-ssl
+          mountPath: /var/run/kubernetes-service-catalog
+          readOnly: true
       - name: etcd
         image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
       volumes:
