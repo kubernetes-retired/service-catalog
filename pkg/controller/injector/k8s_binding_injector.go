@@ -17,7 +17,6 @@ limitations under the License.
 package injector
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -64,15 +63,13 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 		Data: make(map[string][]byte),
 	}
 
-	// For each item in the cred just serialize its value into JSON and
-	// save it in the secret
 	for k, v := range *cred {
-		data, err := json.Marshal(v)
+		var err error
+		secret.Data[k], err = serialize(v)
 		if err != nil {
-			return fmt.Errorf("Unable to marshal credential value %q: %s",
-				k, err)
+			return fmt.Errorf("Unable to serialize credential value %q: %v; %s",
+				k, v, err)
 		}
-		secret.Data[k] = data
 	}
 	secretsCl := b.client.Core().Secrets(binding.Spec.InstanceRef.Namespace)
 	_, err := secretsCl.Create(secret)
