@@ -21,21 +21,15 @@ spec:
         ports:
         - containerPort: 6443
         volumeMounts:
-        - name: server-cert
-          mountPath: /var/run/kubernetes-service-catalog/apiserver.crt
-          readOnly: true
-        - name: server-key
-          mountPath: /var/run/kubernetes-service-catalog/apiserver.key
+        - name: apiserver-ssl
+          mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
       - name: etcd
         image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
       volumes:
-      - name: server-cert
+      - name: apiserver-ssl
         secret:
-          secretName: apiserver-cert
-      - name: server-key
-        secret:
-          secretName: apiserver-key
+          secretName: apiserver-ssl
 ---
 kind: Service
 apiVersion: v1
