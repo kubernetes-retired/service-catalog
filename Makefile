@@ -298,6 +298,7 @@ apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
 	mkdir -p build/apiserver/tmp
 	cp $(BINDIR)/apiserver build/apiserver/tmp
 	docker build -t apiserver:$(VERSION) build/apiserver
+	docker tag apiserver:$(VERSION) apiserver:latest
 	rm -rf build/apiserver/tmp
 
 # Push our Docker Images to a registry
@@ -328,3 +329,5 @@ apiserver-push: apiserver-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:$(VERSION)
 	docker push $(REGISTRY)/apiserver:$(VERSION)
+	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:latest
+	docker push $(REGISTRY)/apiserver:latest
