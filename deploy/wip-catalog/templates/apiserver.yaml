@@ -12,8 +12,8 @@ spec:
       containers:
       - name: apiserver
         image: {{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
-        imagePullPolicy: Always
-        args:
+        imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
+        args: 
         - --etcd-servers
         - http://localhost:2379
         - -v
