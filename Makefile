@@ -262,8 +262,12 @@ test-unit: .init build
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
 test-integration: .init build
+	# test kubectl
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
+	# golang integration tests
+	$(DOCKER_CMD) test/integration.sh
+
 
 clean:
 	rm -rf $(BINDIR)

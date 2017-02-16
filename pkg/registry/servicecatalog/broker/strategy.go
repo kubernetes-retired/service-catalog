@@ -111,7 +111,7 @@ func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Ob
 	if !ok {
 		glog.Fatal("received a non-broker object to update from")
 	}
-	newBroker.Spec = oldBroker.Spec
+
 	newBroker.Status = oldBroker.Status
 }
 

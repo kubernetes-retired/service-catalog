@@ -25,9 +25,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/kubernetes/pkg/api"
-	//"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
+	"k8s.io/kubernetes/pkg/util/wait"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 )
@@ -87,7 +87,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Short: "run a service-catalog server",
 		Run: func(c *cobra.Command, args []string) {
-			options.runServer()
+			options.RunServer(wait.NeverStop)
 		},
 	}
 
@@ -111,9 +111,9 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	return cmd
 }
 
-// runServer is a method on the options for composition. allows embedding in a
+// RunServer is a method on the options for composition. Allows embedding in a
 // higher level options as we do the etcd and serving options.
-func (serverOptions ServiceCatalogServerOptions) runServer() error {
+func (serverOptions ServiceCatalogServerOptions) RunServer(stopCh <-chan struct{}) error {
 	glog.V(4).Infoln("Preparing to run API server")
 	// options
 	// runtime options
@@ -212,9 +212,8 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 	// I don't like this. We're reaching in too far to call things.
 	preparedserver := server.GenericAPIServer.PrepareRun() // post api installation setup? We should have set up the api already?
 
-	stop := make(chan struct{})
 	glog.Infoln("Running the API server")
-	preparedserver.Run(stop)
+	preparedserver.Run(stopCh)
 
 	return nil
 }
