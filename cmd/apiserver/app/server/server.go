@@ -47,6 +47,8 @@ type ServiceCatalogServerOptions struct {
 	AuthenticationOptions *genericserveroptions.DelegatingAuthenticationOptions
 	// authz
 	AuthorizationOptions *genericserveroptions.DelegatingAuthorizationOptions
+	// InsecureOptions are options for serving insecurely.
+	InsecureServingOptions *genericserveroptions.ServingOptions
 }
 
 const (
@@ -72,6 +74,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 		EtcdOptions:             genericserveroptions.NewEtcdOptions(),
 		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
+		InsecureServingOptions:  genericserveroptions.NewInsecureServingOptions(),
 	}
 
 	// Store resources in etcd under our special prefix
@@ -103,6 +106,7 @@ func NewCommandServer(out io.Writer) *cobra.Command {
 	options.EtcdOptions.AddFlags(flags)
 	options.AuthenticationOptions.AddFlags(flags)
 	options.AuthorizationOptions.AddFlags(flags)
+	options.InsecureServingOptions.AddFlags(flags)
 
 	return cmd
 }
@@ -139,6 +143,8 @@ func (serverOptions ServiceCatalogServerOptions) runServer() error {
 		glog.Errorln(err)
 		return err
 	}
+
+	genericconfig.ApplyInsecureServingOptions(serverOptions.InsecureServingOptions)
 
 	glog.V(4).Info("Setting up authn (disabled)")
 	// need to figure out what's throwing the `missing clientCA file` err
