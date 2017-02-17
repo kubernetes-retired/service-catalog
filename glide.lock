@@ -370,6 +370,10 @@ imports:
   - namer
   - parser
   - types
+- name: k8s.io/apimachinery
+  version: 0f8a3af747f81547246d79ca00c20af330868fa6
+  subpackages:
+  - pkg/openapi
 - name: k8s.io/kubernetes
   version: 6b9a9442855d16e0ff0c02ab0c82b1c1665cccaf
   subpackages:
