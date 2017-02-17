@@ -254,14 +254,14 @@ coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init build test-unit test-integration
+test: .init test-unit test-integration
 
-test-unit: .init build
+test-unit: .init
 	@echo Running tests:
 	$(DOCKER_CMD) go test $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
-test-integration: .init build
+test-integration: .init
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
 
