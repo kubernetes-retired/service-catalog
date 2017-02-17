@@ -54,6 +54,14 @@ spec:
   selector:
     app: apiserver
   ports:
-  - protocol: TCP
+{{ if .Values.insecure }}
+  - name: insecure
+    protocol: TCP
+    nodePort: {{ default 30001 .Values.insecureServicePort }}
+    port: {{ default 8081 .Values.insecurePort }}
+    targetPort: {{ default 8081 .Values.insecurePort }}
+{{ end }}
+  - name: secure
+    protocol: TCP
     port: 6443
     targetPort: 6443
