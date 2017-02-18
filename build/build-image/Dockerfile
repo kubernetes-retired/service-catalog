@@ -23,6 +23,9 @@ ENV GLIDE_VERSION=v0.12.3 \
 RUN curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz \
     | tar -vxz -C /usr/local/bin --strip=1
 
+RUN curl -sSL https://github.com/coreos/etcd/releases/download/v3.1.0/etcd-v3.1.0-linux-amd64.tar.gz \
+    | tar -vxz -C /usr/local/bin --strip=1 etcd-v3.1.0-linux-amd64/etcd
+
 RUN go get -u github.com/golang/lint/golint
 
 RUN mkdir -p /go/src/github.com/kubernetes-incubator/service-catalog
