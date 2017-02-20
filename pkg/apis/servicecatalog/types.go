@@ -18,6 +18,7 @@ package servicecatalog
 
 import (
 	kapi "k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/v1"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/runtime"
 )
@@ -46,21 +47,14 @@ type BrokerList struct {
 	Items []Broker
 }
 
-const (
-	// DescriptionKey is the key of an annotation that holds the brief
-	// description of an API resource
-	DescriptionKey = "alpha.service-catalog.kubernetes.io/description"
-)
-
 // BrokerSpec represents a description of a Broker.
 type BrokerSpec struct {
 	// The URL to communicate with the Broker via..
 	URL string
 
-	// Auth credentials should live in an api.Secret that
-	// is documented to have "username" and "password" keys
-	AuthUsername string
-	AuthPassword string
+	// AuthSecret is a reference to a Secret containing auth information the
+	// catalog should use to authenticate to this Broker.
+	AuthSecret *v1.ObjectReference
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.

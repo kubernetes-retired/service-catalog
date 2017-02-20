@@ -55,10 +55,9 @@ type BrokerSpec struct {
 	// The URL to communicate with the Broker via..
 	URL string `json:"url"`
 
-	// Auth credentials should live in an api.Secret that
-	// is documented to have "username" and "password" keys
-	AuthUsername string `json:"authUsername"`
-	AuthPassword string `json:"authPassword"`
+	// AuthSecret is a reference to a Secret containing auth information the
+	// catalog should use to authenticate to this Broker.
+	AuthSecret *v1.ObjectReference `json:"authSecret,omitempty"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.

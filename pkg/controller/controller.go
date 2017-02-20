@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/watch"
+	"k8s.io/client-go/1.5/kubernetes"
 	k8swatch "k8s.io/client-go/1.5/pkg/watch"
 )
 
@@ -35,8 +36,8 @@ type Controller struct {
 }
 
 // New creates an instance of the service catalog Controller.
-func New(w *watch.Watcher, inj injector.BindingInjector, brokerClCreator brokerapi.CreateFunc) (*Controller, error) {
-	h := createHandler(tpr.NewAPIClient(w), inj, brokerClCreator)
+func New(k8sClient *kubernetes.Clientset, w *watch.Watcher, inj injector.BindingInjector, brokerClCreator brokerapi.CreateFunc) (*Controller, error) {
+	h := createHandler(k8sClient, tpr.NewAPIClient(w), inj, brokerClCreator)
 	return &Controller{
 		controller: createController(h, w),
 	}, nil

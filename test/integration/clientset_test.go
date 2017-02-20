@@ -77,10 +77,8 @@ func TestBrokerClient(t *testing.T) {
 	broker := &v1alpha1.Broker{
 		ObjectMeta: v1.ObjectMeta{Name: "test-broker"},
 		Spec: v1alpha1.BrokerSpec{
-			URL:          "https://example.com",
-			AuthUsername: "auth username field value",
-			AuthPassword: "auth password field value",
-			OSBGUID:      "OSBGUID field",
+			URL:     "https://example.com",
+			OSBGUID: "OSBGUID field",
 		},
 	}
 
@@ -115,19 +113,24 @@ func TestBrokerClient(t *testing.T) {
 		t.Fatalf("didn't get the same broker twice", brokerServer, brokerListed)
 	}
 
-	brokerServer.Spec.AuthUsername = "dug"
-	brokerServer.Spec.AuthPassword = "paul"
+	authSecret := &v1.ObjectReference{
+		Namespace: "test-namespace",
+		Name:      "test-name",
+	}
+
+	brokerServer.Spec.AuthSecret = authSecret
+
 	brokerUpdated, err := brokerClient.Update(brokerServer)
 	if nil != err ||
-		"dug" != brokerUpdated.Spec.AuthUsername ||
-		"paul" != brokerUpdated.Spec.AuthPassword {
+		"test-namespace" != brokerUpdated.Spec.AuthSecret.Namespace ||
+		"test-name" != brokerUpdated.Spec.AuthSecret.Name {
 		t.Fatal("broker wasn't updated", brokerServer, brokerUpdated)
 	}
 
 	brokerServer, err = brokerClient.Get("test-broker")
 	if nil != err ||
-		"dug" != brokerServer.Spec.AuthUsername ||
-		"paul" != brokerServer.Spec.AuthPassword {
+		"test-namespace" != brokerServer.Spec.AuthSecret.Namespace ||
+		"test-name" != brokerServer.Spec.AuthSecret.Name {
 		t.Fatal("broker wasn't updated", brokerServer)
 	}
 
