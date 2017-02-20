@@ -161,6 +161,9 @@ func DeepCopy_v1alpha1_Broker(in interface{}, out interface{}, c *conversion.Clo
 		} else {
 			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
+		if err := DeepCopy_v1alpha1_BrokerSpec(&in.Spec, &out.Spec, c); err != nil {
+			return err
+		}
 		if err := DeepCopy_v1alpha1_BrokerStatus(&in.Status, &out.Status, c); err != nil {
 			return err
 		}
@@ -202,6 +205,13 @@ func DeepCopy_v1alpha1_BrokerSpec(in interface{}, out interface{}, c *conversion
 		in := in.(*BrokerSpec)
 		out := out.(*BrokerSpec)
 		*out = *in
+		if in.AuthSecret != nil {
+			in, out := &in.AuthSecret, &out.AuthSecret
+			*out = new(v1.ObjectReference)
+			**out = **in
+		} else {
+			out.AuthSecret = nil
+		}
 		return nil
 	}
 }

@@ -22,6 +22,7 @@ package servicecatalog
 
 import (
 	api "k8s.io/kubernetes/pkg/api"
+	api_v1 "k8s.io/kubernetes/pkg/api/v1"
 	v1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	conversion "k8s.io/kubernetes/pkg/conversion"
 	runtime "k8s.io/kubernetes/pkg/runtime"
@@ -161,6 +162,9 @@ func DeepCopy_servicecatalog_Broker(in interface{}, out interface{}, c *conversi
 		} else {
 			out.ObjectMeta = *newVal.(*api.ObjectMeta)
 		}
+		if err := DeepCopy_servicecatalog_BrokerSpec(&in.Spec, &out.Spec, c); err != nil {
+			return err
+		}
 		if err := DeepCopy_servicecatalog_BrokerStatus(&in.Status, &out.Status, c); err != nil {
 			return err
 		}
@@ -202,6 +206,13 @@ func DeepCopy_servicecatalog_BrokerSpec(in interface{}, out interface{}, c *conv
 		in := in.(*BrokerSpec)
 		out := out.(*BrokerSpec)
 		*out = *in
+		if in.AuthSecret != nil {
+			in, out := &in.AuthSecret, &out.AuthSecret
+			*out = new(api_v1.ObjectReference)
+			**out = **in
+		} else {
+			out.AuthSecret = nil
+		}
 		return nil
 	}
 }

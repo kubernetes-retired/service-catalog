@@ -7219,17 +7219,10 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
-					"authUsername": {
+					"authSecret": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Auth credentials should live in an api.Secret that is documented to have \"username\" and \"password\" keys",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"authPassword": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "AuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this Broker.",
+							Ref:         spec.MustCreateRef("#/definitions/v1.ObjectReference"),
 						},
 					},
 					"osbGuid": {
@@ -7240,10 +7233,11 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 						},
 					},
 				},
-				Required: []string{"url", "authUsername", "authPassword", "osbGuid"},
+				Required: []string{"url", "osbGuid"},
 			},
 		},
-		Dependencies: []string{},
+		Dependencies: []string{
+			"v1.ObjectReference"},
 	},
 	"v1alpha1.BrokerStatus": {
 		Schema: spec.Schema{
