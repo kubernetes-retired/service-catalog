@@ -19,8 +19,8 @@ package wip
 import (
 	"github.com/golang/glog"
 
+	"k8s.io/client-go/1.5/kubernetes"
 	"k8s.io/kubernetes/pkg/client/cache"
-	k8sclientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/util/runtime"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -30,7 +30,7 @@ import (
 // NewController returns a new Open Service Broker catalog
 // controller.
 func NewController(
-	kubeClient k8sclientset.Interface,
+	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.Interface,
 	brokerInformer cache.SharedInformer,
 	serviceClassInformer cache.SharedInformer,
@@ -81,7 +81,7 @@ type Controller interface {
 }
 
 type controller struct {
-	kubeClient           k8sclientset.Interface
+	kubeClient           kubernetes.Interface
 	serviceCatalogClient servicecatalogclientset.Interface
 	brokerInformer       cache.SharedInformer
 	serviceClassInformer cache.SharedInformer
