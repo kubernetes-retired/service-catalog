@@ -247,12 +247,16 @@ verify: .init .generate_files
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
+.PHONY: format coverage
+
 format: .init
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
 
 coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
+
+.PHONY: test test-unit test-integration
 
 test: .init build test-unit test-integration
 
@@ -268,6 +272,8 @@ test-integration: .init build
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
 
+test-e2e:
+	$(DOCKER_CMD) test/e2e.sh
 
 clean:
 	rm -rf $(BINDIR)

@@ -16,13 +16,14 @@ spec:
     - -v
     - "10"
     ports:
-    - name: https
-      containerPort: 6443
+    - containerPort: 6443
   # bring our own etcd until we can attach to core
   - name: etcd
     image: quay.io/coreos/etcd:v3.0.17
 ---
-# this exposes the apiserver
+# this exposes the apiserver on a specific port
+#
+# not sure why I have to repeat myself so many times
 apiVersion: v1
 kind: Service
 metadata:
@@ -30,8 +31,10 @@ metadata:
 spec:
   selector:
     app: apiserver
+  type: NodePort
   ports:
   - protocol: TCP
-    port: 6443
-    targetPort: https
+    port: 30000
+    nodePort: 30000
+    targetPort: 6443
 
