@@ -29,15 +29,19 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-// assuming a nil non-error is ok. not okay, should be empty struct `field.ErrorList{}`
+// ValidateBrokerName is the validation function for Broker names.
+var ValidateBrokerName = apivalidation.NameIsDNSSubdomain
 
-// ValidateBroker makes sure a broker object is okay?
+// ValidateBroker implements the validation rules for a BrokerResource.
 func ValidateBroker(broker *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
-	// validate the name?
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&broker.ObjectMeta, false, /*namespace*/
-		apivalidation.ValidateReplicationControllerName, // our custom name validator?
-		field.NewPath("metadata"))...)
+
+	allErrs = append(allErrs,
+		apivalidation.ValidateObjectMeta(&broker.ObjectMeta,
+			false, /* namespace required */
+			ValidateBrokerName,
+			field.NewPath("metadata"))...)
+
 	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("Spec"))...)
 	// Do we need to validate the status array?
 	// allErrs = append(allErrs, validateBrokerStatus(&broker.Spec, field.NewPath("Status"))...)

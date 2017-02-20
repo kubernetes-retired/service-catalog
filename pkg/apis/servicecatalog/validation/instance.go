@@ -23,12 +23,20 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
+// ValidateInstanceName is the validation function for Instance names.
+var ValidateInstanceName = apivalidation.NameIsDNSSubdomain
+
 // ValidateInstance checks the fields of a Instance.
 func ValidateInstance(instance *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&instance.ObjectMeta, false, /*namespace*/
-		apivalidation.ValidateReplicationControllerName, // our custom name validator?
-		field.NewPath("metadata"))...)
+
+	allErrs = append(allErrs,
+		apivalidation.ValidateObjectMeta(
+			&instance.ObjectMeta,
+			false, /* namespace required */
+			ValidateInstanceName,
+			field.NewPath("metadata"))...)
+
 	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"))...)
 	// validate the status array
 	// allErrs = append(allErrs, validateInstanceStatus(&instance.Spec, field.NewPath("Status"))...)
