@@ -26,7 +26,7 @@ import (
 // ServiceClassesGetter has a method to return a ServiceClassInterface.
 // A group's client should implement this interface.
 type ServiceClassesGetter interface {
-	ServiceClasses(namespace string) ServiceClassInterface
+	ServiceClasses() ServiceClassInterface
 }
 
 // ServiceClassInterface has methods to work with ServiceClass resources.
@@ -45,14 +45,12 @@ type ServiceClassInterface interface {
 // serviceClasses implements ServiceClassInterface
 type serviceClasses struct {
 	client restclient.Interface
-	ns     string
 }
 
 // newServiceClasses returns a ServiceClasses
-func newServiceClasses(c *ServicecatalogClient, namespace string) *serviceClasses {
+func newServiceClasses(c *ServicecatalogClient) *serviceClasses {
 	return &serviceClasses{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -60,7 +58,6 @@ func newServiceClasses(c *ServicecatalogClient, namespace string) *serviceClasse
 func (c *serviceClasses) Create(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	result = &servicecatalog.ServiceClass{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		Body(serviceClass).
 		Do().
@@ -72,7 +69,6 @@ func (c *serviceClasses) Create(serviceClass *servicecatalog.ServiceClass) (resu
 func (c *serviceClasses) Update(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	result = &servicecatalog.ServiceClass{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		Name(serviceClass.Name).
 		Body(serviceClass).
@@ -84,7 +80,6 @@ func (c *serviceClasses) Update(serviceClass *servicecatalog.ServiceClass) (resu
 // Delete takes name of the serviceClass and deletes it. Returns an error if one occurs.
 func (c *serviceClasses) Delete(name string, options *api.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		Name(name).
 		Body(options).
@@ -95,7 +90,6 @@ func (c *serviceClasses) Delete(name string, options *api.DeleteOptions) error {
 // DeleteCollection deletes a collection of objects.
 func (c *serviceClasses) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		VersionedParams(&listOptions, api.ParameterCodec).
 		Body(options).
@@ -107,7 +101,6 @@ func (c *serviceClasses) DeleteCollection(options *api.DeleteOptions, listOption
 func (c *serviceClasses) Get(name string) (result *servicecatalog.ServiceClass, err error) {
 	result = &servicecatalog.ServiceClass{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		Name(name).
 		Do().
@@ -119,7 +112,6 @@ func (c *serviceClasses) Get(name string) (result *servicecatalog.ServiceClass, 
 func (c *serviceClasses) List(opts api.ListOptions) (result *servicecatalog.ServiceClassList, err error) {
 	result = &servicecatalog.ServiceClassList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		VersionedParams(&opts, api.ParameterCodec).
 		Do().
@@ -131,7 +123,6 @@ func (c *serviceClasses) List(opts api.ListOptions) (result *servicecatalog.Serv
 func (c *serviceClasses) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return c.client.Get().
 		Prefix("watch").
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		VersionedParams(&opts, api.ParameterCodec).
 		Watch()
@@ -141,7 +132,6 @@ func (c *serviceClasses) Watch(opts api.ListOptions) (watch.Interface, error) {
 func (c *serviceClasses) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceClass, err error) {
 	result = &servicecatalog.ServiceClass{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("serviceclasses").
 		SubResource(subresources...).
 		Name(name).

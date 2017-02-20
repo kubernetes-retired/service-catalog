@@ -17,20 +17,10 @@ limitations under the License.
 package integration
 
 import (
-	"crypto/tls"
-	"fmt"
-	"net/http"
 	"reflect"
 	"testing"
-	"time"
-
-	"github.com/golang/glog"
-
-	// metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 
 	// TODO: fix this upstream
 	// we shouldn't have to install things to use our own generated client.
@@ -39,14 +29,10 @@ import (
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	// avoid error `no kind is registered for the type v1.ListOptions`
 	_ "k8s.io/kubernetes/pkg/api/install"
-
-	// to start our server locally
-	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	// our versioned types
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	// our versioned client
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
 // TestGroupVersion is trivial.
@@ -72,7 +58,7 @@ func TestNoName(t *testing.T) {
 	if br, e := scClient.Brokers().Create(&v1alpha1.Broker{}); nil == e {
 		t.Fatal("needs a name", br.Name)
 	}
-	if sc, e := scClient.ServiceClasses(ns).Create(&v1alpha1.ServiceClass{}); nil == e {
+	if sc, e := scClient.ServiceClasses().Create(&v1alpha1.ServiceClass{}); nil == e {
 		t.Fatal("needs a name", sc.Name)
 	}
 	if i, e := scClient.Instances(ns).Create(&v1alpha1.Instance{}); nil == e {
@@ -83,7 +69,7 @@ func TestNoName(t *testing.T) {
 	}
 }
 
-func TestBroker(t *testing.T) {
+func TestBrokerClient(t *testing.T) {
 	client, shutdownServer := getFreshApiserverAndClient(t)
 	defer shutdownServer()
 	brokerClient := client.Servicecatalog().Brokers()
@@ -156,68 +142,39 @@ func TestBroker(t *testing.T) {
 	}
 }
 
-func getFreshApiserverAndClient(t *testing.T) (servicecatalogclient.Interface, func()) {
-	securePort := 65535
-	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
-	stopCh := make(chan struct{})
-	serverFailed := make(chan struct{})
-	//defer close(stopCh)
-	shutdown := func() {
-		close(stopCh)
+func TestServiceClassClient(t *testing.T) {
+	client, shutdownServer := getFreshApiserverAndClient(t)
+	defer shutdownServer()
+	serviceClassClient := client.Servicecatalog().ServiceClasses()
+
+	serviceClass := &v1alpha1.ServiceClass{
+		ObjectMeta: v1.ObjectMeta{Name: "test-serviceclass"},
+		BrokerName: "test-broker",
+		Bindable:   true,
 	}
 
-	secureServingOptions := genericserveroptions.NewSecureServingOptions()
-	go func() {
-		options := &server.ServiceCatalogServerOptions{
-			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
-			SecureServingOptions:    secureServingOptions,
-			EtcdOptions:             genericserveroptions.NewEtcdOptions(),
-			AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
-			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
-		}
-		options.SecureServingOptions.ServingOptions.BindPort = securePort
-		options.EtcdOptions.StorageConfig.ServerList = []string{"http://localhost:2379"}
-		if err := options.RunServer(stopCh); err != nil {
-			close(serverFailed)
-			t.Fatalf("Error in bringing up the server: %v", err)
-		}
-	}()
-
-	if err := waitForApiserverUp(serverIP, serverFailed); err != nil {
-		t.Fatalf("%v", err)
+	// start from scratch
+	serviceClasses, err := serviceClassClient.List(v1.ListOptions{})
+	if len(serviceClasses.Items) > 0 {
+		t.Fatalf("serviceClasses should not exist on start, had %v serviceClasses", len(serviceClasses.Items))
 	}
 
-	config := &restclient.Config{}
-	config.Host = serverIP
-	config.Insecure = true
-	clientset, err := servicecatalogclient.NewForConfig(config)
+	serviceClassAtServer, err := serviceClassClient.Create(serviceClass)
 	if nil != err {
-		t.Fatal("can't make the client from the config", err)
+		t.Fatal("error creating the ServiceClass", serviceClass)
 	}
-	return clientset, shutdown
-}
+	if serviceClass.Name != serviceClassAtServer.Name {
+		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
+	}
 
-func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
-	minuteTimeout := time.After(time.Minute)
-	for {
-		select {
-		case <-stopCh:
-			return fmt.Errorf("apiserver failed")
-		case <-minuteTimeout:
-			return fmt.Errorf("waiting for apiserver timed out")
-		default:
-			glog.Infof("Waiting for : %#v", serverIP)
-			tr := &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
-			client := &http.Client{Transport: tr}
-			_, err := client.Get(serverIP)
-			if err == nil {
-				return nil
-			}
-		}
-		// no success or overall timeout or stop due to failure
-		// wait and go around again
-		<-time.After(100 * time.Millisecond)
+	serviceClasses, err = serviceClassClient.List(v1.ListOptions{})
+	if 1 != len(serviceClasses.Items) {
+		t.Fatalf("should have exactly one ServiceClass, had %v ServiceClasses", len(serviceClasses.Items))
+	}
+
+	serviceClassAtServer, err = serviceClassClient.Get(serviceClass.Name)
+	if serviceClassAtServer.Name != serviceClass.Name &&
+		serviceClass.ResourceVersion == serviceClassAtServer.ResourceVersion {
+		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
 	}
 }

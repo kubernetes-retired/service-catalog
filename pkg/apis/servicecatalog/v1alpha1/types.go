@@ -112,6 +112,7 @@ type ServiceClassList struct {
 }
 
 // +genclient=true
+// +nonNamespaced=true
 
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {

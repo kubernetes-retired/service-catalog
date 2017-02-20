@@ -28,15 +28,13 @@ import (
 // FakeServiceClasses implements ServiceClassInterface
 type FakeServiceClasses struct {
 	Fake *FakeServicecatalog
-	ns   string
 }
 
 var serviceclassesResource = schema.GroupVersionResource{Group: "", Version: "", Resource: "serviceclasses"}
 
 func (c *FakeServiceClasses) Create(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewCreateAction(serviceclassesResource, c.ns, serviceClass), &servicecatalog.ServiceClass{})
-
+		Invokes(core.NewRootCreateAction(serviceclassesResource, serviceClass), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}
@@ -45,8 +43,7 @@ func (c *FakeServiceClasses) Create(serviceClass *servicecatalog.ServiceClass) (
 
 func (c *FakeServiceClasses) Update(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateAction(serviceclassesResource, c.ns, serviceClass), &servicecatalog.ServiceClass{})
-
+		Invokes(core.NewRootUpdateAction(serviceclassesResource, serviceClass), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}
@@ -55,13 +52,12 @@ func (c *FakeServiceClasses) Update(serviceClass *servicecatalog.ServiceClass) (
 
 func (c *FakeServiceClasses) Delete(name string, options *api.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewDeleteAction(serviceclassesResource, c.ns, name), &servicecatalog.ServiceClass{})
-
+		Invokes(core.NewRootDeleteAction(serviceclassesResource, name), &servicecatalog.ServiceClass{})
 	return err
 }
 
 func (c *FakeServiceClasses) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
-	action := core.NewDeleteCollectionAction(serviceclassesResource, c.ns, listOptions)
+	action := core.NewRootDeleteCollectionAction(serviceclassesResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &servicecatalog.ServiceClassList{})
 	return err
@@ -69,8 +65,7 @@ func (c *FakeServiceClasses) DeleteCollection(options *api.DeleteOptions, listOp
 
 func (c *FakeServiceClasses) Get(name string) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewGetAction(serviceclassesResource, c.ns, name), &servicecatalog.ServiceClass{})
-
+		Invokes(core.NewRootGetAction(serviceclassesResource, name), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}
@@ -79,8 +74,7 @@ func (c *FakeServiceClasses) Get(name string) (result *servicecatalog.ServiceCla
 
 func (c *FakeServiceClasses) List(opts api.ListOptions) (result *servicecatalog.ServiceClassList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewListAction(serviceclassesResource, c.ns, opts), &servicecatalog.ServiceClassList{})
-
+		Invokes(core.NewRootListAction(serviceclassesResource, opts), &servicecatalog.ServiceClassList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -101,15 +95,13 @@ func (c *FakeServiceClasses) List(opts api.ListOptions) (result *servicecatalog.
 // Watch returns a watch.Interface that watches the requested serviceClasses.
 func (c *FakeServiceClasses) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewWatchAction(serviceclassesResource, c.ns, opts))
-
+		InvokesWatch(core.NewRootWatchAction(serviceclassesResource, opts))
 }
 
 // Patch applies the patch and returns the patched serviceClass.
 func (c *FakeServiceClasses) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewPatchSubresourceAction(serviceclassesResource, c.ns, name, data, subresources...), &servicecatalog.ServiceClass{})
-
+		Invokes(core.NewRootPatchSubresourceAction(serviceclassesResource, name, data, subresources...), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}

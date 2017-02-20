@@ -45,10 +45,10 @@ func newServiceClassInformer(client clientset.Interface, resyncPeriod time.Durat
 	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.ServicecatalogV1alpha1().ServiceClasses(v1.NamespaceAll).List(options)
+				return client.ServicecatalogV1alpha1().ServiceClasses().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.ServicecatalogV1alpha1().ServiceClasses(v1.NamespaceAll).Watch(options)
+				return client.ServicecatalogV1alpha1().ServiceClasses().Watch(options)
 			},
 		},
 		&servicecatalog_v1alpha1.ServiceClass{},
