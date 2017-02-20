@@ -110,7 +110,7 @@ func TestBrokerClient(t *testing.T) {
 	// check that the broker is the same both ways
 	brokerListed := &brokers.Items[0]
 	if !reflect.DeepEqual(brokerServer, brokerListed) {
-		t.Fatalf("didn't get the same broker twice", brokerServer, brokerListed)
+		t.Fatal("didn't get the same broker twice", brokerServer, brokerListed)
 	}
 
 	authSecret := &v1.ObjectReference{
