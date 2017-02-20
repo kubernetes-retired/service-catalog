@@ -50,8 +50,8 @@ func (c *ServicecatalogV1alpha1Client) Instances(namespace string) InstanceInter
 	return newInstances(c, namespace)
 }
 
-func (c *ServicecatalogV1alpha1Client) ServiceClasses(namespace string) ServiceClassInterface {
-	return newServiceClasses(c, namespace)
+func (c *ServicecatalogV1alpha1Client) ServiceClasses() ServiceClassInterface {
+	return newServiceClasses(c)
 }
 
 // NewForConfig creates a new ServicecatalogV1alpha1Client for the given config.

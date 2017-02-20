@@ -50,14 +50,14 @@ func newServiceClassInformer(client internalclientset.Interface, resyncPeriod ti
 				if err := api.Scheme.Convert(&options, &internalOptions, nil); err != nil {
 					return nil, err
 				}
-				return client.Servicecatalog().ServiceClasses(api.NamespaceAll).List(internalOptions)
+				return client.Servicecatalog().ServiceClasses().List(internalOptions)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				var internalOptions api.ListOptions
 				if err := api.Scheme.Convert(&options, &internalOptions, nil); err != nil {
 					return nil, err
 				}
-				return client.Servicecatalog().ServiceClasses(api.NamespaceAll).Watch(internalOptions)
+				return client.Servicecatalog().ServiceClasses().Watch(internalOptions)
 			},
 		},
 		&servicecatalog.ServiceClass{},

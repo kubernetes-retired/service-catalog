@@ -22,6 +22,7 @@ import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/kubernetes/pkg/api/errors"
+	v1 "k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/labels"
 )
@@ -30,8 +31,8 @@ import (
 type ServiceClassLister interface {
 	// List lists all ServiceClasses in the indexer.
 	List(selector labels.Selector) (ret []*v1alpha1.ServiceClass, err error)
-	// ServiceClasses returns an object that can list and get ServiceClasses.
-	ServiceClasses(namespace string) ServiceClassNamespaceLister
+	// Get retrieves the ServiceClass from the index for a given name.
+	Get(name string) (*v1alpha1.ServiceClass, error)
 	ServiceClassListerExpansion
 }
 
@@ -53,38 +54,10 @@ func (s *serviceClassLister) List(selector labels.Selector) (ret []*v1alpha1.Ser
 	return ret, err
 }
 
-// ServiceClasses returns an object that can list and get ServiceClasses.
-func (s *serviceClassLister) ServiceClasses(namespace string) ServiceClassNamespaceLister {
-	return serviceClassNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// ServiceClassNamespaceLister helps list and get ServiceClasses.
-type ServiceClassNamespaceLister interface {
-	// List lists all ServiceClasses in the indexer for a given namespace.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceClass, err error)
-	// Get retrieves the ServiceClass from the indexer for a given namespace and name.
-	Get(name string) (*v1alpha1.ServiceClass, error)
-	ServiceClassNamespaceListerExpansion
-}
-
-// serviceClassNamespaceLister implements the ServiceClassNamespaceLister
-// interface.
-type serviceClassNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ServiceClasses in the indexer for a given namespace.
-func (s serviceClassNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceClass, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceClass))
-	})
-	return ret, err
-}
-
-// Get retrieves the ServiceClass from the indexer for a given namespace and name.
-func (s serviceClassNamespaceLister) Get(name string) (*v1alpha1.ServiceClass, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the ServiceClass from the index for a given name.
+func (s *serviceClassLister) Get(name string) (*v1alpha1.ServiceClass, error) {
+	key := &v1alpha1.ServiceClass{ObjectMeta: v1.ObjectMeta{Name: name}}
+	obj, exists, err := s.indexer.Get(key)
 	if err != nil {
 		return nil, err
 	}

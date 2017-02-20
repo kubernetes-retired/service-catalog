@@ -47,8 +47,8 @@ func (c *ServicecatalogClient) Instances(namespace string) InstanceInterface {
 	return newInstances(c, namespace)
 }
 
-func (c *ServicecatalogClient) ServiceClasses(namespace string) ServiceClassInterface {
-	return newServiceClasses(c, namespace)
+func (c *ServicecatalogClient) ServiceClasses() ServiceClassInterface {
+	return newServiceClasses(c)
 }
 
 // NewForConfig creates a new ServicecatalogClient for the given config.
