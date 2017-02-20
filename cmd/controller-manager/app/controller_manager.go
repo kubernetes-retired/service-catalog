@@ -24,14 +24,15 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/kubernetes/pkg/api/v1"
-	k8sclientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	v1core "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5/typed/core/v1"
-	"k8s.io/kubernetes/pkg/client/record"
-	"k8s.io/kubernetes/pkg/client/restclient"
+	"k8s.io/client-go/1.5/kubernetes"
+	v1core "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
+	"k8s.io/client-go/1.5/pkg/api/unversioned"
+	"k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/rest"
+	"k8s.io/client-go/1.5/tools/record"
+
 	"k8s.io/kubernetes/pkg/client/typed/discovery"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	k8scontroller "k8s.io/kubernetes/pkg/controller"
 	"k8s.io/kubernetes/pkg/healthz"
 	"k8s.io/kubernetes/pkg/runtime/schema"
 	"k8s.io/kubernetes/pkg/util/configz"
@@ -80,11 +81,11 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// Build the K8s kubeconfig / client / clientBuilder
 	glog.V(4).Info("Building k8s kubeconfig")
 
-	k8sKubeconfig, err := restclient.InClusterConfig()
+	k8sKubeconfig, err := rest.InClusterConfig()
 	if err != nil {
 		glog.Fatal("Failed to get kube client config (%s)", err)
 	}
-	k8sKubeconfig.GroupVersion = &schema.GroupVersion{}
+	k8sKubeconfig.GroupVersion = &unversioned.GroupVersion{}
 
 	// k8sKubeconfig, err := clientcmd.BuildConfigFromFlags(
 	// 	controllerManagerOptions.K8sAPIServerURL,
@@ -97,8 +98,8 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// Override kubeconfig qps/burst settings from flags
 	k8sKubeconfig.QPS = controllerManagerOptions.KubeAPIQPS
 	k8sKubeconfig.Burst = int(controllerManagerOptions.KubeAPIBurst)
-	k8sKubeClient, err := k8sclientset.NewForConfig(
-		restclient.AddUserAgent(k8sKubeconfig, controllerManagerAgentName),
+	k8sKubeClient, err := kubernetes.NewForConfig(
+		rest.AddUserAgent(k8sKubeconfig, controllerManagerAgentName),
 	)
 	if err != nil {
 		glog.Fatalf("Invalid k8s API configuration: %v", err)
@@ -139,12 +140,6 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 
 	// 'run' is the logic to run the controllers for the controller manager
 	run := func(stop <-chan struct{}) {
-		rootClientBuilder := k8scontroller.SimpleControllerClientBuilder{
-			ClientConfig: k8sKubeconfig,
-		}
-		var k8sClientBuilder k8scontroller.ControllerClientBuilder
-		k8sClientBuilder = rootClientBuilder
-
 		serviceCatalogClientBuilder := controller.SimpleClientBuilder{
 			ClientConfig: serviceCatalogKubeconfig,
 		}
@@ -161,7 +156,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// 	k8sClientBuilder = rootClientBuilder
 		// }
 
-		err := StartControllers(controllerManagerOptions, rootClientBuilder, k8sClientBuilder, serviceCatalogClientBuilder, recorder, stop)
+		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, stop)
 		glog.Fatalf("error running controllers: %v", err)
 		panic("unreachable")
 	}
@@ -250,7 +245,7 @@ func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.G
 // StartControllers starts all the controllers in the service-catalog
 // controller manager.
 func StartControllers(s *options.ControllerManagerServer,
-	rootClientBuilder, coreClientBuilder k8scontroller.ControllerClientBuilder,
+	coreKubeconfig *rest.Config,
 	serviceCatalogClientBuilder controller.ClientBuilder,
 	recorder record.EventRecorder,
 	stop <-chan struct{}) error {
@@ -263,6 +258,12 @@ func StartControllers(s *options.ControllerManagerServer,
 	}
 
 	resyncDuration, err := time.ParseDuration("1m")
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	coreKubeconfig = rest.AddUserAgent(coreKubeconfig, controllerManagerAgentName)
+	coreClient, err := kubernetes.NewForConfig(coreKubeconfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -281,7 +282,7 @@ func StartControllers(s *options.ControllerManagerServer,
 
 		glog.V(5).Info("Creating controller")
 		serviceCatalogController, err := wip.NewController(
-			coreClientBuilder.ClientOrDie(controllerManagerAgentName),
+			coreClient,
 			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName),
 			serviceCatalogSharedInformers.Brokers().Informer(),
 			serviceCatalogSharedInformers.ServiceClasses().Informer(),

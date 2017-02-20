@@ -39,7 +39,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 		ControllerManagerConfiguration: componentconfig.ControllerManagerConfiguration{
 			Address:                      "0.0.0.0",
 			Port:                         10000,
-			ContentType:                  "application/yaml",
+			ContentType:                  "application/json",
 			K8sKubeconfigPath:            "./kubeconfig",
 			ServiceCatalogKubeconfigPath: "./service-catalog-kubeconfig",
 		},
