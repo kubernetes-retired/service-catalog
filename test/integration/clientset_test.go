@@ -22,6 +22,8 @@ import (
 
 	"k8s.io/kubernetes/pkg/api/v1"
 
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+
 	// TODO: fix this upstream
 	// we shouldn't have to install things to use our own generated client.
 
@@ -179,5 +181,144 @@ func TestServiceClassClient(t *testing.T) {
 	if serviceClassAtServer.Name != serviceClass.Name &&
 		serviceClass.ResourceVersion == serviceClassAtServer.ResourceVersion {
 		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
+	}
+
+	err = serviceClassClient.Delete("test-serviceclass", &v1.DeleteOptions{})
+	if nil != err {
+		t.Fatal("serviceclass should be deleted", err)
+	}
+
+	serviceClassDeleted, err := serviceClassClient.Get("test-serviceclass")
+	if nil == err {
+		t.Fatal("serviceclass should be deleted", serviceClassDeleted)
+	}
+
+}
+
+func TestInstanceClient(t *testing.T) {
+	client, shutdownServer := getFreshApiserverAndClient(t)
+	defer shutdownServer()
+	instanceClient := client.Servicecatalog().Instances("test-namespace")
+
+	// Instance represents a provisioned instance of a ServiceClass.
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: "test-instance"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "service-class-name",
+			PlanName:         "plan-name",
+		},
+		Status: v1alpha1.InstanceStatus{
+			Conditions: []v1alpha1.InstanceCondition{
+				{
+					Type:    v1alpha1.InstanceConditionReady,
+					Status:  v1alpha1.ConditionTrue,
+					Reason:  "reason",
+					Message: "message",
+				},
+			},
+		},
+	}
+
+	instances, err := instanceClient.List(v1.ListOptions{})
+	if len(instances.Items) > 0 {
+		t.Fatalf("instances should not exist on start, had %v instances", len(instances.Items))
+	}
+
+	instanceServer, err := instanceClient.Create(instance)
+	if nil != err {
+		t.Fatal("error creating the instance", instance)
+	}
+	if instance.Name != instanceServer.Name {
+		t.Fatalf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
+	}
+
+	instances, err = instanceClient.List(v1.ListOptions{})
+	if 1 != len(instances.Items) {
+		t.Fatalf("should have exactly one instance, had %v instances", len(instances.Items))
+	}
+
+	instanceServer, err = instanceClient.Get(instance.Name)
+	if instanceServer.Name != instance.Name &&
+		instanceServer.ResourceVersion == instance.ResourceVersion {
+		t.Fatalf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
+	}
+
+	err = instanceClient.Delete("test-instance", &v1.DeleteOptions{})
+	if nil != err {
+		t.Fatal("instance should be deleted", err)
+	}
+
+	instanceDeleted, err := instanceClient.Get("test-instance")
+	if nil == err {
+		t.Fatal("instance should be deleted", instanceDeleted)
+	}
+}
+
+func TestBindingClient(t *testing.T) {
+	client, shutdownServer := getFreshApiserverAndClient(t)
+	defer shutdownServer()
+	bindingClient := client.Servicecatalog().Bindings("test-namespace")
+
+	// Binding represents a "used by" relationship between an application
+	// and an Instance.
+	binding := &v1alpha1.Binding{
+		ObjectMeta: v1.ObjectMeta{Name: "test-binding"},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.ObjectReference{
+				Name:      "bar",
+				Namespace: "test-namespace",
+			},
+			AppLabelSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{"foo": "bar"},
+			},
+			SecretName:    "secret-name",
+			ServiceName:   "service-name",
+			ConfigMapName: "configmap-name",
+			OSBGUID:       "UUID-string",
+		},
+		Status: v1alpha1.BindingStatus{
+			Conditions: []v1alpha1.BindingCondition{
+				{
+					Type:    v1alpha1.BindingConditionReady,
+					Status:  v1alpha1.ConditionTrue,
+					Reason:  "reason",
+					Message: "message",
+				},
+			},
+		},
+	}
+
+	bindings, err := bindingClient.List(v1.ListOptions{})
+	if len(bindings.Items) > 0 {
+		t.Fatalf("bindings should not exist on start, had %v bindings", len(bindings.Items))
+	}
+
+	bindingServer, err := bindingClient.Create(binding)
+	if nil != err {
+		t.Fatal("error creating the binding", binding)
+	}
+	if binding.Name != bindingServer.Name {
+		t.Fatalf("didn't get the same binding back from the server \n%+v\n%+v", binding, bindingServer)
+	}
+
+	bindings, err = bindingClient.List(v1.ListOptions{})
+	if 1 != len(bindings.Items) {
+		t.Fatalf("should have exactly one binding, had %v bindings", len(bindings.Items))
+	}
+
+	bindingServer, err = bindingClient.Get(binding.Name)
+	if bindingServer.Name != binding.Name &&
+		bindingServer.ResourceVersion == binding.ResourceVersion {
+		t.Fatalf("didn't get the same binding back from the server \n%+v\n%+v", binding, bindingServer)
+	}
+
+	err = bindingClient.Delete("test-binding", &v1.DeleteOptions{})
+	if nil != err {
+		t.Fatal("broker should be deleted", err)
+	}
+
+	bindingDeleted, err := bindingClient.Get("test-binding")
+	if nil == err {
+		t.Fatal("broker should be deleted", bindingDeleted)
 	}
 }
