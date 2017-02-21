@@ -298,6 +298,7 @@ user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	mkdir -p contrib/build/user-broker/tmp
 	cp $(BINDIR)/user-broker contrib/build/user-broker/tmp
 	docker build -t user-broker:$(VERSION) contrib/build/user-broker
+	docker tag user-broker:$(VERSION) user-broker:latest
 	rm -rf contrib/build/user-broker/tmp
 
 controller-image: build/controller/Dockerfile $(BINDIR)/controller
