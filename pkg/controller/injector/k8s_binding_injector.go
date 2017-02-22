@@ -65,7 +65,7 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 
 	for k, v := range *cred {
 		var err error
-		secret.Data[k], err = serialize(v)
+		secret.Data[k], err = Serialize(v)
 		if err != nil {
 			return fmt.Errorf("Unable to serialize credential value %q: %v; %s",
 				k, v, err)

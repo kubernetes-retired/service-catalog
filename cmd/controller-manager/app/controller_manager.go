@@ -40,6 +40,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/wip"
@@ -283,11 +284,12 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.V(5).Info("Creating controller")
 		serviceCatalogController, err := wip.NewController(
 			coreClient,
-			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName),
-			serviceCatalogSharedInformers.Brokers().Informer(),
-			serviceCatalogSharedInformers.ServiceClasses().Informer(),
-			serviceCatalogSharedInformers.Instances().Informer(),
-			serviceCatalogSharedInformers.Bindings().Informer(),
+			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
+			serviceCatalogSharedInformers.Brokers(),
+			serviceCatalogSharedInformers.ServiceClasses(),
+			serviceCatalogSharedInformers.Instances(),
+			serviceCatalogSharedInformers.Bindings(),
+			openservicebroker.NewClient,
 		)
 		if err != nil {
 			return err
