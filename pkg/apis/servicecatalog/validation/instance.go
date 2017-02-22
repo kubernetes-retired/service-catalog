@@ -26,7 +26,7 @@ import (
 // ValidateInstance checks the fields of a Instance.
 func ValidateInstance(instance *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&instance.ObjectMeta, false, /*namespace*/
+	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&instance.ObjectMeta, true, /*namespace*/
 		apivalidation.ValidateReplicationControllerName, // our custom name validator?
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"))...)

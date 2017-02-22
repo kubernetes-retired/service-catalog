@@ -26,7 +26,7 @@ import (
 // ValidateBinding checks the fields of a Binding.
 func ValidateBinding(binding *sc.Binding) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, false, /*namespace*/
+	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, true, /*namespace*/
 		apivalidation.ValidateReplicationControllerName, // our custom name validator?
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateBindingSpec(&binding.Spec, field.NewPath("Spec"))...)

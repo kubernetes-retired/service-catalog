@@ -69,7 +69,7 @@ func (instanceRESTStrategy) Canonicalize(obj runtime.Object) {
 
 // NamespaceScoped returns false as instances are not scoped to a namespace.
 func (instanceRESTStrategy) NamespaceScoped() bool {
-	return false
+	return true
 }
 
 // PrepareForCreate receives a the incoming Instance and clears it's
