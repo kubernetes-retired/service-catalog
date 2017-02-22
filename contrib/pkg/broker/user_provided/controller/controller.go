@@ -63,22 +63,27 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 
 func (c *userProvidedController) CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	credString, ok := req.Parameters["credentials"]
-	if !ok {
-		glog.Errorf("Didn't find creds\n %+v\n", req)
-		return nil, errors.New("Credentials not found")
-	}
+	if ok {
+		jsonCred, err := json.Marshal(credString)
+		if err != nil {
+			glog.Errorf("Failed to marshal credentials: %v", err)
+			return nil, err
+		}
+		var cred brokerapi.Credential
+		err = json.Unmarshal(jsonCred, &cred)
 
-	jsonCred, err := json.Marshal(credString)
-	if err != nil {
-		glog.Errorf("Failed to marshal credentials: %v", err)
-		return nil, err
-	}
-	var cred brokerapi.Credential
-	err = json.Unmarshal(jsonCred, &cred)
-
-	c.instanceMap[id] = &userProvidedServiceInstance{
-		Name:       id,
-		Credential: &cred,
+		c.instanceMap[id] = &userProvidedServiceInstance{
+			Name:       id,
+			Credential: &cred,
+		}
+	} else {
+		c.instanceMap[id] = &userProvidedServiceInstance{
+			Name: id,
+			Credential: &brokerapi.Credential{
+				"special-key-1": "special-value-1",
+				"special-key-2": "special-value-2",
+			},
+		}
 	}
 
 	glog.Infof("Created User Provided Service Instance:\n%v\n", c.instanceMap[id])
