@@ -69,7 +69,7 @@ func (bindingRESTStrategy) Canonicalize(obj runtime.Object) {
 
 // NamespaceScoped returns false as bindings are not scoped to a namespace.
 func (bindingRESTStrategy) NamespaceScoped() bool {
-	return false
+	return true
 }
 
 // PrepareForCreate receives a the incoming Binding and clears it's
