@@ -127,6 +127,46 @@ func TestBrokerClient(t *testing.T) {
 		t.Fatal("broker wasn't updated", brokerServer, brokerUpdated)
 	}
 
+	readyConditionTrue := v1alpha1.BrokerCondition{
+		Type:    v1alpha1.BrokerConditionReady,
+		Status:  v1alpha1.ConditionTrue,
+		Reason:  "ConditionReason",
+		Message: "ConditionMessage",
+	}
+	brokerUpdated.Status = v1alpha1.BrokerStatus{
+		Conditions: []v1alpha1.BrokerCondition{
+			readyConditionTrue,
+		},
+	}
+	brokerUpdated.Spec.URL = "http://shouldnotupdate.com"
+
+	brokerUpdated2, err := brokerClient.UpdateStatus(brokerUpdated)
+	if nil != err || len(brokerUpdated2.Status.Conditions) != 1 {
+		t.Fatal("broker status wasn't updated")
+	}
+	if e, a := readyConditionTrue, brokerUpdated2.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
+		t.Fatal("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+	}
+	if e, a := "https://example.com", brokerUpdated2.Spec.URL; e != a {
+		t.Fatalf("Should not be able to update spec from status subresource")
+	}
+
+	readyConditionFalse := v1alpha1.BrokerCondition{
+		Type:    v1alpha1.BrokerConditionReady,
+		Status:  v1alpha1.ConditionFalse,
+		Reason:  "ConditionReason",
+		Message: "ConditionMessage",
+	}
+	brokerUpdated2.Status.Conditions[0] = readyConditionFalse
+
+	brokerUpdated3, err := brokerClient.UpdateStatus(brokerUpdated2)
+	if nil != err || len(brokerUpdated3.Status.Conditions) != 1 {
+		t.Fatal("broker status wasn't updated")
+	}
+	if e, a := readyConditionFalse, brokerUpdated3.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
+		t.Fatal("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+	}
+
 	brokerServer, err = brokerClient.Get("test-broker")
 	if nil != err ||
 		"test-namespace" != brokerServer.Spec.AuthSecret.Namespace ||
