@@ -19,7 +19,6 @@ package fake
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	uuid "github.com/satori/go.uuid"
 )
@@ -42,8 +41,8 @@ func NewClientFunc(
 	catCl *CatalogClient,
 	instCl *InstanceClient,
 	bindCl *BindingClient,
-) func(*servicecatalog.Broker) brokerapi.BrokerClient {
-	return func(*servicecatalog.Broker) brokerapi.BrokerClient {
+) func(name, url, username, password string) brokerapi.BrokerClient {
+	return func(name, url, username, password string) brokerapi.BrokerClient {
 		return &Client{
 			CatalogClient:  catCl,
 			InstanceClient: instCl,

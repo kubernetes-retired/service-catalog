@@ -44,10 +44,8 @@ func TestBroker(t *testing.T) {
 	// Create a broker or brokers
 	broker := &sc.Broker{
 		Spec: sc.BrokerSpec{
-			URL:          "abcd",
-			AuthUsername: "user",
-			AuthPassword: "pass",
-			OSBGUID:      "guid",
+			URL:     "abcd",
+			OSBGUID: "guid",
 		},
 		Status: sc.BrokerStatus{
 			Conditions: nil,

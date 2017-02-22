@@ -22,6 +22,7 @@ package v1alpha1
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	v1 "k8s.io/kubernetes/pkg/api/v1"
 	conversion "k8s.io/kubernetes/pkg/conversion"
 	runtime "k8s.io/kubernetes/pkg/runtime"
 	unsafe "unsafe"
@@ -334,8 +335,7 @@ func Convert_servicecatalog_BrokerList_To_v1alpha1_BrokerList(in *servicecatalog
 
 func autoConvert_v1alpha1_BrokerSpec_To_servicecatalog_BrokerSpec(in *BrokerSpec, out *servicecatalog.BrokerSpec, s conversion.Scope) error {
 	out.URL = in.URL
-	out.AuthUsername = in.AuthUsername
-	out.AuthPassword = in.AuthPassword
+	out.AuthSecret = (*v1.ObjectReference)(unsafe.Pointer(in.AuthSecret))
 	out.OSBGUID = in.OSBGUID
 	return nil
 }
@@ -346,8 +346,7 @@ func Convert_v1alpha1_BrokerSpec_To_servicecatalog_BrokerSpec(in *BrokerSpec, ou
 
 func autoConvert_servicecatalog_BrokerSpec_To_v1alpha1_BrokerSpec(in *servicecatalog.BrokerSpec, out *BrokerSpec, s conversion.Scope) error {
 	out.URL = in.URL
-	out.AuthUsername = in.AuthUsername
-	out.AuthPassword = in.AuthPassword
+	out.AuthSecret = (*v1.ObjectReference)(unsafe.Pointer(in.AuthSecret))
 	out.OSBGUID = in.OSBGUID
 	return nil
 }

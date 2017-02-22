@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"fmt"
+
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -24,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 	"github.com/satori/go.uuid"
+	"k8s.io/client-go/1.5/kubernetes"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 )
 
@@ -55,13 +58,15 @@ type Handler interface {
 }
 
 type handler struct {
+	k8sClient     kubernetes.Interface
 	apiClient     apiclient.APIClient
 	injector      injector.BindingInjector
-	newClientFunc func(*servicecatalog.Broker) brokerapi.BrokerClient
+	newClientFunc func(name, url, username, password string) brokerapi.BrokerClient
 }
 
-func createHandler(client apiclient.APIClient, injector injector.BindingInjector, newClientFn brokerapi.CreateFunc) *handler {
+func createHandler(k8sClient kubernetes.Interface, client apiclient.APIClient, injector injector.BindingInjector, newClientFn brokerapi.CreateFunc) *handler {
 	return &handler{
+		k8sClient:     k8sClient,
 		apiClient:     client,
 		injector:      injector,
 		newClientFunc: newClientFn,
@@ -80,7 +85,13 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 	if err != nil {
 		return err
 	}
-	client := h.newClientFunc(broker)
+
+	authUsername, authPassword, err := GetAuthCredentialsFromBroker(h.k8sClient, broker)
+	if err != nil {
+		return err
+	}
+
+	client := h.newClientFunc(broker.Name, broker.Spec.URL, authUsername, authPassword)
 
 	// TODO: uncomment parameters line once parameters types are refactored.
 	// Make the request to instantiate.
@@ -91,6 +102,33 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 	}
 	_, err = client.CreateServiceInstance(in.Spec.OSBGUID, createReq)
 	return err
+}
+
+// GetAuthCredentialsFromBroker returns the auth credentials, if any,
+// contained in the secret referenced in the Broker's AuthSecret field, or
+// returns an error. If the AuthSecret field is nil, empty values are
+// returned.
+func GetAuthCredentialsFromBroker(client kubernetes.Interface, broker *servicecatalog.Broker) (username, password string, err error) {
+	if broker.Spec.AuthSecret == nil {
+		return "", "", nil
+	}
+
+	authSecret, err := client.Core().Secrets(broker.Spec.AuthSecret.Namespace).Get(broker.Spec.AuthSecret.Name)
+	if err != nil {
+		return "", "", err
+	}
+
+	usernameBytes, ok := authSecret.Data["username"]
+	if !ok {
+		return "", "", fmt.Errorf("auth secret didn't contain username")
+	}
+
+	passwordBytes, ok := authSecret.Data["password"]
+	if !ok {
+		return "", "", fmt.Errorf("auth secret didn't contain password")
+	}
+
+	return string(usernameBytes), string(passwordBytes), nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,7 +235,12 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 		return nil, err
 	}
 
-	client := h.newClientFunc(broker)
+	authUsername, authPassword, err := GetAuthCredentialsFromBroker(h.k8sClient, broker)
+	if err != nil {
+		return nil, err
+	}
+
+	client := h.newClientFunc(broker.Name, broker.Spec.URL, authUsername, authPassword)
 
 	// Assign UUID to binding.
 	if in.Spec.OSBGUID == "" {
@@ -250,7 +293,12 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 }
 
 func (h *handler) CreateServiceBroker(in *servicecatalog.Broker) (*servicecatalog.Broker, error) {
-	client := h.newClientFunc(in)
+	authUsername, authPassword, err := GetAuthCredentialsFromBroker(h.k8sClient, in)
+	if err != nil {
+		return nil, err
+	}
+
+	client := h.newClientFunc(in.Name, in.Spec.URL, authUsername, authPassword)
 	sbcat, err := client.GetCatalog()
 	if err != nil {
 		return nil, err
@@ -295,7 +343,13 @@ func (h *handler) unbind(b *servicecatalog.Binding) error {
 	if err != nil {
 		return err
 	}
-	client := h.newClientFunc(broker)
+	authSecret, err := h.k8sClient.Core().Secrets(broker.Spec.AuthSecret.Namespace).Get(broker.Spec.AuthSecret.Name)
+	if err != nil {
+		return err
+	}
+
+	// TODO: username / password
+	client := h.newClientFunc(broker.Name, broker.Spec.URL, string(authSecret.Data["username"]), string(authSecret.Data["password"]))
 	return client.DeleteServiceBinding(inst.Spec.OSBGUID, b.Spec.OSBGUID)
 }
 

@@ -47,34 +47,12 @@ func ValidateBroker(broker *sc.Broker) field.ErrorList {
 func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	/* This is what is in the broker spec.
-	URL string
-	AuthUsername string
-	AuthPassword string
-	OSBGUID string
-	*/
-
 	if "" == spec.URL {
 		allErrs = append(allErrs,
 			field.Required(fldPath.Child("URL"),
 				"brokers must have a remote url to contact"))
 	}
-	// xor user and pass, must have both or none, not either
-	hasUser := "" != spec.AuthUsername
-	hasPassword := "" != spec.AuthPassword
-	if (hasUser || hasPassword) && !(hasUser && hasPassword) {
-		if hasPassword {
-			allErrs = append(allErrs,
-				field.Required(
-					fldPath.Child("AuthUsername"),
-					"must have username in addition to password"))
-		} else if hasUser {
-			allErrs = append(allErrs,
-				field.Required(
-					fldPath.Child("AuthPassword"),
-					"must have password in addition to username"))
-		}
-	}
+
 	// spec.OSBGUID has no properties to validate
 	return allErrs
 }

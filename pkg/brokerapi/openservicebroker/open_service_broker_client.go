@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
@@ -76,15 +75,21 @@ func (e errStatusCode) Error() string {
 }
 
 type openServiceBrokerClient struct {
-	broker *servicecatalog.Broker
-	client *http.Client
+	name     string
+	url      string
+	username string
+	password string
+	client   *http.Client
 }
 
 // NewClient creates an instance of BrokerClient for communicating with brokers
 // which implement the Open Service Broker API.
-func NewClient(b *servicecatalog.Broker) brokerapi.BrokerClient {
+func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 	return &openServiceBrokerClient{
-		broker: b,
+		name:     name,
+		url:      url,
+		username: username,
+		password: password,
 		client: &http.Client{
 			Timeout: httpTimeoutSeconds * time.Second,
 		},
@@ -92,24 +97,23 @@ func NewClient(b *servicecatalog.Broker) brokerapi.BrokerClient {
 }
 
 func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
-	url := fmt.Sprintf(catalogFormatString, c.broker.Spec.URL)
+	catalogUrl := fmt.Sprintf(catalogFormatString, c.url)
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", catalogUrl, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.SetBasicAuth(c.broker.Spec.AuthUsername, c.broker.Spec.AuthPassword)
+	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
-		glog.Errorf("Failed to fetch catalog from %s\n%v", url, resp)
-		glog.Errorf("err: %#v", err)
+		glog.Errorf("Failed to fetch catalog %q from %s: response: %v error: %#v", c.name, catalogUrl, resp, err)
 		return nil, err
 	}
 
 	var catalog brokerapi.Catalog
 	if err = util.ResponseBodyToObject(resp, &catalog); err != nil {
-		glog.Errorf("Failed to unmarshal catalog: %#v", err)
+		glog.Errorf("Failed to unmarshal catalog from broker %q: %#v", c.name, err)
 		return nil, err
 	}
 
@@ -117,16 +121,18 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 }
 
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
-	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.Spec.URL, ID)
+	serviceInstanceUrl := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 	// TODO: Handle the auth
-	resp, err := util.SendRequest(c.client, http.MethodPut, url, req)
+	resp, err := util.SendRequest(c.client, http.MethodPut, serviceInstanceUrl, req)
 	if err != nil {
+		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceUrl, resp, err)
 		return nil, errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
 
 	createServiceInstanceResponse := brokerapi.CreateServiceInstanceResponse{}
 	if err := util.ResponseBodyToObject(resp, &createServiceInstanceResponse); err != nil {
+		glog.Errorf("Error unmarshalling create service instance response from broker %q: %#v", c.name, err)
 		return nil, errResponse{message: err.Error()}
 	}
 
@@ -157,16 +163,18 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerap
 }
 
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) error {
-	url := fmt.Sprintf(serviceInstanceFormatString, c.broker.Spec.URL, ID)
+	serviceInstanceUrl := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 	// TODO: Handle the auth
-	resp, err := util.SendRequest(c.client, http.MethodDelete, url, req)
+	resp, err := util.SendRequest(c.client, http.MethodDelete, serviceInstanceUrl, req)
 	if err != nil {
+		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceUrl, resp, err)
 		return errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
 
 	deleteServiceInstanceResponse := brokerapi.DeleteServiceInstanceResponse{}
 	if err := util.ResponseBodyToObject(resp, &deleteServiceInstanceResponse); err != nil {
+		glog.Errorf("Error unmarshalling delete service instance response from broker %q: %#v", c.name, err)
 		return errResponse{message: err.Error()}
 	}
 
@@ -174,7 +182,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	case http.StatusOK:
 		return nil
 	case http.StatusAccepted:
-		glog.V(3).Infof("Asynchronous response received. Polling broker.")
+		glog.V(3).Infof("Asynchronous response received. Polling broker %q", c.name)
 		if err := c.pollBroker(ID, deleteServiceInstanceResponse.Operation); err != nil {
 			return err
 		}
@@ -196,15 +204,15 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 		return nil, err
 	}
 
-	url := fmt.Sprintf(bindingFormatString, c.broker.Spec.URL, sID, bID)
+	serviceBindingUrl := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
 
 	// TODO: Handle the auth
-	createHTTPReq, err := http.NewRequest("PUT", url, bytes.NewReader(jsonBytes))
+	createHTTPReq, err := http.NewRequest("PUT", serviceBindingUrl, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return nil, err
 	}
 
-	glog.Infof("Doing a request to: %s", url)
+	glog.Infof("Doing a request to: %s", serviceBindingUrl)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to PUT: %#v", err)
@@ -223,16 +231,16 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 }
 
 func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
-	url := fmt.Sprintf(bindingFormatString, c.broker.Spec.URL, sID, bID)
+	serviceBindingUrl := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
 
 	// TODO: Handle the auth
-	deleteHTTPReq, err := http.NewRequest("DELETE", url, nil)
+	deleteHTTPReq, err := http.NewRequest("DELETE", serviceBindingUrl, nil)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
 
-	glog.Infof("Doing a request to: %s", url)
+	glog.Infof("Doing a request to: %s", serviceBindingUrl)
 	resp, err := c.client.Do(deleteHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to DELETE: %#v", err)
@@ -249,10 +257,10 @@ func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error 
 		pollReq.Operation = operation
 	}
 
-	url := fmt.Sprintf(pollingFormatString, c.broker.Spec.URL, ID)
+	pollingUrl := fmt.Sprintf(pollingFormatString, c.url, ID)
 	for i := 0; i < pollingAmountLimit; i++ {
-		glog.V(3).Infof("Polling attempt #%v: %s", i+1, url)
-		pollResp, err := util.SendRequest(c.client, http.MethodGet, url, pollReq)
+		glog.V(3).Infof("Polling broker %v at %s attempt %v", c.name, pollingUrl, i+1)
+		pollResp, err := util.SendRequest(c.client, http.MethodGet, pollingUrl, pollReq)
 		if err != nil {
 			return err
 		}

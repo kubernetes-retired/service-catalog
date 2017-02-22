@@ -20,10 +20,11 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	brokerapifake "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/apiclient/mem"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
+	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api"
 )
 
@@ -65,14 +66,14 @@ func TestCreateServiceInstanceHelper(t *testing.T) {
 	// set up the mock broker client (which is composed of catalog, instance and binding APIs).
 	// we want these all to be "empty" to start because we'll be checking later that they were
 	// properly called
-	catalogCl := &fake.CatalogClient{}
-	instanceCl := fake.NewInstanceClient()
-	bindingCl := fake.NewBindingClient()
-	brokerClFunc := fake.NewClientFunc(catalogCl, instanceCl, bindingCl)
+	catalogCl := &brokerapifake.CatalogClient{}
+	instanceCl := brokerapifake.NewInstanceClient()
+	bindingCl := brokerapifake.NewBindingClient()
+	brokerClFunc := brokerapifake.NewClientFunc(catalogCl, instanceCl, bindingCl)
 
 	// set up the handler with the mocks that we've previously created.
 	// we're exercising the handler and ensuring that it interacted with our mocks properly
-	hdl := createHandler(apiClient, inj, brokerClFunc)
+	hdl := createHandler(fake.NewSimpleClientset(), apiClient, inj, brokerClFunc)
 
 	// set up the instance that we're creating
 	inst := &servicecatalog.Instance{

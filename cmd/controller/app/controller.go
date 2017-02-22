@@ -73,7 +73,7 @@ func Run(s *options.ControllerServer) error {
 		return err
 	}
 
-	c, err := controller.New(w, inj, openservicebroker.NewClient)
+	c, err := controller.New(k8sClient, w, inj, openservicebroker.NewClient)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating server [%s]...", err.Error()))
 	}

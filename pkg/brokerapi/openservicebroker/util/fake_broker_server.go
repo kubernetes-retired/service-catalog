@@ -25,7 +25,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
-// FakeBrokerServer is a fake service broker server meant for testing that allows for customizing the response behavior
+// FakeBrokerServer is a fake service broker server meant for testing that
+// allows for customizing the response behavior.  It does not support auth.
 type FakeBrokerServer struct {
 	responseStatus     int
 	pollsRemaining     int
@@ -34,7 +35,8 @@ type FakeBrokerServer struct {
 	server             *httptest.Server
 }
 
-// Start starts the fake broker server listening on a random port, passing back the server's URL
+// Start starts the fake broker server listening on a random port, passing
+// back the server's URL.
 func (f *FakeBrokerServer) Start() string {
 	router := mux.NewRouter()
 	router.HandleFunc("/v2/catalog", f.catalogHandler).Methods("GET")
@@ -48,17 +50,19 @@ func (f *FakeBrokerServer) Start() string {
 	return f.server.URL
 }
 
-// Stop shuts down the server
+// Stop shuts down the server.
 func (f *FakeBrokerServer) Stop() {
 	f.server.Close()
 }
 
-// SetResponseStatus sets the default response status of the broker to the given HTTP status code
+// SetResponseStatus sets the default response status of the broker to the
+// given HTTP status code.
 func (f *FakeBrokerServer) SetResponseStatus(status int) {
 	f.responseStatus = status
 }
 
-// SetAsynchronous sets the number of polls before finished, final state, and operation for asynchronous operations
+// SetAsynchronous sets the number of polls before finished, final state, and
+// operation for asynchronous operations.
 func (f *FakeBrokerServer) SetAsynchronous(numPolls int, shouldSucceed bool, operation string) {
 	f.pollsRemaining = numPolls
 	f.shouldSucceedAsync = shouldSucceed
