@@ -137,7 +137,7 @@ $(BINDIR)/lister-gen: .init
 $(BINDIR)/informer-gen: .init
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/informer-gen
 
-$(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
+$(BINDIR)/openapi-gen: cmd/libs/go2idl/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed

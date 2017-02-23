@@ -177,6 +177,7 @@ type InstanceList struct {
 // +genclient=true
 
 // Instance represents a provisioned instance of a ServiceClass.
+// +k8s:openapi-gen=x-kubernetes-display-all:true
 type Instance struct {
 	metav1.TypeMeta `json:",inline"`
 	v1.ObjectMeta   `json:"metadata,omitempty"`
@@ -257,6 +258,7 @@ type BindingList struct {
 
 // Binding represents a "used by" relationship between an application and an
 // Instance.
+// +k8s:openapi-gen=x-kubernetes-display-all:true
 type Binding struct {
 	metav1.TypeMeta `json:",inline"`
 	v1.ObjectMeta   `json:"metadata,omitempty"`

@@ -11,6 +11,10 @@ import:
 - package: k8s.io/gengo/args
 - package: github.com/kubernetes/repo-infra
   version: 4c4ae2e2e6994e887da16f3c31f495e10062b810
+- package: k8s.io/apimachinery
+  version: 0f8a3af747f81547246d79ca00c20af330868fa6
+  subpackages:
+  - pkg/openapi
 - package: k8s.io/kubernetes
   version: 6b9a9442855d16e0ff0c02ab0c82b1c1665cccaf
   subpackages:
