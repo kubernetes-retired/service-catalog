@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"testing"
 	"time"
@@ -36,8 +37,12 @@ import (
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func getFreshApiserverAndClient(t *testing.T) (servicecatalogclient.Interface, func()) {
-	securePort := 65535
+	securePort := rand.Intn(35534) + 3000
 	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
@@ -50,17 +55,22 @@ func getFreshApiserverAndClient(t *testing.T) (servicecatalogclient.Interface, f
 
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
 	go func() {
+
 		options := &server.ServiceCatalogServerOptions{
+			StorageTypeString:       "etcd",
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 			SecureServingOptions:    secureServingOptions,
-			EtcdOptions:             genericserveroptions.NewEtcdOptions(),
-			AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
-			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
+			EtcdOptions: &server.EtcdOptions{
+				EtcdOptions: genericserveroptions.NewEtcdOptions(),
+			},
+			TPROptions:            server.NewTPROptions(),
+			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
+			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 		}
 		options.SecureServingOptions.ServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
 		options.EtcdOptions.StorageConfig.ServerList = []string{"http://localhost:2379"}
-		if err := options.RunServer(stopCh); err != nil {
+		if err := server.RunServer(options); err != nil {
 			close(serverFailed)
 			t.Fatalf("Error in bringing up the server: %v", err)
 		}

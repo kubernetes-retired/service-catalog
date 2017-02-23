@@ -11,33 +11,41 @@ spec:
     spec:
       containers:
       - name: apiserver
-        image: {{ if .Values.registry }}{{ .Values.registry}}/{{ end }}apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
         args:
-        {{ if .Values.insecure }}
+        - --global-namespace
+        - {{ default "servicecatalog" .Values.globalNamespace }}
+        - --storage-type
+        - {{ default "etcd" .Values.storageType }}
+        {{ if .Values.insecure -}}
         - --secure-port
         - "0"
         - --insecure-bind-address
         - "0.0.0.0"
         - --insecure-port
         - {{ default 8081 .Values.insecurePort | quote }}
-        {{ end }}
+        {{- end }}
+        {{ if eq .Values.storageType "etcd" -}}
         - --etcd-servers
         - http://localhost:2379
+        {{- end }}
         - -v
-        - "10"
+        - {{ default 10 .Values.verbosity | quote }}
         ports:
         - containerPort: 6443
-        {{ if .Values.insecure }}
+        {{ if .Values.insecure -}}
         - containerPort: {{ default 8081 .Values.insecurePort }}
           hostPort: {{ default 8081 .Values.insecurePort }}
-        {{ end }}
+        {{- end }}
         volumeMounts:
         - name: apiserver-ssl
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
+      {{ if eq .Values.storageType "etcd" -}}
       - name: etcd
         image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+      {{- end }}
       volumes:
       - name: apiserver-ssl
         secret:
@@ -54,13 +62,13 @@ spec:
   selector:
     app: apiserver
   ports:
-{{ if .Values.insecure }}
+  {{ if .Values.insecure -}}
   - name: insecure
     protocol: TCP
     nodePort: {{ default 30001 .Values.insecureServicePort }}
-    port: {{ default 8081 .Values.insecurePort }}
+    port: 80
     targetPort: {{ default 8081 .Values.insecurePort }}
-{{ end }}
+  {{- end }}
   - name: secure
     protocol: TCP
     port: 6443

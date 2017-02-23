@@ -17,19 +17,63 @@ limitations under the License.
 package broker
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/rest"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/registry/generic"
 	"k8s.io/kubernetes/pkg/registry/generic/registry"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/storage"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
+
+var (
+	errNotABroker = errors.New("not a broker")
+)
+
+// NewSingular returns a new shell of a service broker, according to the given namespace and
+// name
+func NewSingular(ns, name string) runtime.Object {
+	return &servicecatalog.Broker{
+		TypeMeta: metav1.TypeMeta{
+			Kind: tpr.ServiceBrokerKind.TPRName(),
+		},
+		ObjectMeta: api.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+	}
+}
+
+// EmptyObject returns an empty broker
+func EmptyObject() runtime.Object {
+	return &servicecatalog.Broker{}
+}
+
+// NewList returns a new shell of a broker list
+func NewList() runtime.Object {
+	return &servicecatalog.BrokerList{
+		TypeMeta: metav1.TypeMeta{
+			Kind: tpr.ServiceBrokerKind.TPRName(),
+		},
+	}
+}
+
+// CheckObject returns a non-nil error if obj is not a broker object
+func CheckObject(obj runtime.Object) error {
+	_, ok := obj.(*servicecatalog.Broker)
+	if !ok {
+		return errNotABroker
+	}
+	return nil
+}
 
 // Match determines whether an Instance matches a field and label
 // selector.
@@ -41,8 +85,8 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 	}
 }
 
-// ToSelectableFields returns a field set that represents the object for matching purposes.
-func ToSelectableFields(broker *servicecatalog.Broker) fields.Set {
+// toSelectableFields returns a field set that represents the object for matching purposes.
+func toSelectableFields(broker *servicecatalog.Broker) fields.Set {
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&broker.ObjectMeta, true)
 	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
 }
@@ -53,45 +97,32 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	if !ok {
 		return nil, nil, fmt.Errorf("given object is not a Broker")
 	}
-	return labels.Set(broker.ObjectMeta.Labels), ToSelectableFields(broker), nil
+	return labels.Set(broker.ObjectMeta.Labels), toSelectableFields(broker), nil
 }
 
 // NewStorage creates a new rest.Storage responsible for accessing Instance
 // resources
-func NewStorage(opts generic.RESTOptions) (brokers, brokersStatus rest.Storage) {
-	prefix := "/" + opts.ResourcePrefix
+func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
+	prefix := "/" + opts.ResourcePrefix()
 
-	newListFunc := func() runtime.Object { return &servicecatalog.BrokerList{} }
-	storageInterface, dFunc := opts.Decorator(
-		opts.StorageConfig,
+	storageInterface, dFunc := opts.GetStorage(
 		1000,
 		&servicecatalog.Broker{},
 		prefix,
 		brokerRESTStrategies,
-		newListFunc,
+		NewList,
 		nil,
 		storage.NoTriggerPublisher,
 	)
 
 	store := registry.Store{
-		NewFunc: func() runtime.Object {
-			return &servicecatalog.Broker{}
-		},
-		// NewListFunc returns an object capable of storing results of an etcd list.
-		NewListFunc: newListFunc,
-		// KeyRootFunc places this resource at the prefix for this resource;
-		// not namespaced.
-		KeyRootFunc: func(ctx api.Context) string {
-			return prefix
-		},
-		// Produces a path that etcd understands by combining the object's
-		// name with the prefix.
-		KeyFunc: func(ctx api.Context, name string) (string, error) {
-			return registry.NoNamespaceKeyFunc(ctx, prefix, name)
-		},
+		NewFunc:     EmptyObject,
+		NewListFunc: NewList,
+		KeyRootFunc: opts.KeyRootFunc(),
+		KeyFunc:     opts.KeyFunc(false),
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
-			return obj.(*servicecatalog.Broker).Name, nil
+			return tpr.GetAccessor().Name(obj)
 		},
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,

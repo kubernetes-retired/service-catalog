@@ -119,24 +119,33 @@ func TestBrokerClient(t *testing.T) {
 
 	// start from scratch
 	brokers, err := brokerClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing brokers (%s)", err)
+	}
 	if len(brokers.Items) > 0 {
 		t.Fatalf("brokers should not exist on start, had %v brokers", len(brokers.Items))
 	}
 
 	brokerServer, err := brokerClient.Create(broker)
 	if nil != err {
-		t.Fatal("error creating the broker", broker)
+		t.Fatalf("error creating the broker '%s' (%s)", broker, err)
 	}
 	if broker.Name != brokerServer.Name {
 		t.Fatalf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
 	}
 
 	brokers, err = brokerClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing brokers (%s)", err)
+	}
 	if 1 != len(brokers.Items) {
 		t.Fatalf("should have exactly one broker, had %v brokers", len(brokers.Items))
 	}
 
 	brokerServer, err = brokerClient.Get(broker.Name)
+	if err != nil {
+		t.Fatalf("error getting broker %s (%s)", broker.Name, err)
+	}
 	if broker.Name != brokerServer.Name &&
 		broker.ResourceVersion == brokerServer.ResourceVersion {
 		t.Fatalf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
@@ -233,6 +242,9 @@ func TestServiceClassClient(t *testing.T) {
 
 	// start from scratch
 	serviceClasses, err := serviceClassClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing service classes (%s)", err)
+	}
 	if len(serviceClasses.Items) > 0 {
 		t.Fatalf("serviceClasses should not exist on start, had %v serviceClasses", len(serviceClasses.Items))
 	}
@@ -246,11 +258,17 @@ func TestServiceClassClient(t *testing.T) {
 	}
 
 	serviceClasses, err = serviceClassClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing service classes (%s)", err)
+	}
 	if 1 != len(serviceClasses.Items) {
 		t.Fatalf("should have exactly one ServiceClass, had %v ServiceClasses", len(serviceClasses.Items))
 	}
 
 	serviceClassAtServer, err = serviceClassClient.Get(serviceClass.Name)
+	if err != nil {
+		t.Fatalf("error listing service classes (%s)", err)
+	}
 	if serviceClassAtServer.Name != serviceClass.Name &&
 		serviceClass.ResourceVersion == serviceClassAtServer.ResourceVersion {
 		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
@@ -294,6 +312,9 @@ func TestInstanceClient(t *testing.T) {
 	}
 
 	instances, err := instanceClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing instances (%s)", err)
+	}
 	if len(instances.Items) > 0 {
 		t.Fatalf("instances should not exist on start, had %v instances", len(instances.Items))
 	}
@@ -307,11 +328,17 @@ func TestInstanceClient(t *testing.T) {
 	}
 
 	instances, err = instanceClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing instances (%s)", err)
+	}
 	if 1 != len(instances.Items) {
 		t.Fatalf("should have exactly one instance, had %v instances", len(instances.Items))
 	}
 
 	instanceServer, err = instanceClient.Get(instance.Name)
+	if err != nil {
+		t.Fatalf("error getting instance (%s)", err)
+	}
 	if instanceServer.Name != instance.Name &&
 		instanceServer.ResourceVersion == instance.ResourceVersion {
 		t.Fatalf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
@@ -382,6 +409,9 @@ func TestBindingClient(t *testing.T) {
 	}
 
 	bindings, err := bindingClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing bindings (%s)", err)
+	}
 	if len(bindings.Items) > 0 {
 		t.Fatalf("bindings should not exist on start, had %v bindings", len(bindings.Items))
 	}
@@ -395,11 +425,17 @@ func TestBindingClient(t *testing.T) {
 	}
 
 	bindings, err = bindingClient.List(v1.ListOptions{})
+	if err != nil {
+		t.Fatalf("error listing bindings (%s)", err)
+	}
 	if 1 != len(bindings.Items) {
 		t.Fatalf("should have exactly one binding, had %v bindings", len(bindings.Items))
 	}
 
 	bindingServer, err = bindingClient.Get(binding.Name)
+	if err != nil {
+		t.Fatalf("error getting binding (%s)", err)
+	}
 	if bindingServer.Name != binding.Name &&
 		bindingServer.ResourceVersion == binding.ResourceVersion {
 		t.Fatalf("didn't get the same binding back from the server \n%+v\n%+v", binding, bindingServer)

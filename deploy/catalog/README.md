@@ -22,12 +22,13 @@ Supported template parameters (values):
 
   - `registry`  (required): Container registry with Service Catalog images.
   - `version`   (optional): Version of Service Catalog (container images) to deploy.
+  - `namespace` (optional): A Kubernetes namespace to use for Service Catalog deployment.
+  - `storageType` (optional): The type of storage for the API server to use.
+  - `verbosity` (optional): The verbosity of logs.
+  - `debug` (optional): create a load balancer for the api server service
 
-Example:
+Example `helm install` command:
 
-```
-$ export VERSION=$(git describe --tags --always --abbrev=7 --dirty)
-$ helm install \
-    --namespace catalog \
-    --set registry=${REGISTRY},version=${VERSION} .
+```console
+helm install --namespace ${NAMESPACE} --set registry=${REGISTRY},version=${VERSION},storageType=${STORAGE_TYPE},debug=${DEBUG} .
 ```
