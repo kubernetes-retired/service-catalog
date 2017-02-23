@@ -22,13 +22,6 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
-func JSONBytesToObj(in []byte, out runtime.Object) error {
-	if err := json.Unmarshal(in, out); err != nil {
-		return err
-	}
-	return nil
-}
-
 // FromUnstructured converts o, a Kubernetes Third Party Resource type, into a
 // *runtime.Unstructured and writes it to object. Returns a non-nil error is there were any issues
 // with the conversion
@@ -38,18 +31,6 @@ func FromUnstructured(in *runtime.Unstructured, out runtime.Object) error {
 		return err
 	}
 
-	if err := json.Unmarshal(b, out); err != nil {
-		return err
-	}
-	return nil
-}
-
-// FromUnstructuredList converts a list of *runtime.Unstructured into a runtime.Object
-func FromUnstructuredList(in *runtime.UnstructuredList, out runtime.Object) error {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return err
-	}
 	if err := json.Unmarshal(b, out); err != nil {
 		return err
 	}
