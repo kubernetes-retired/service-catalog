@@ -116,18 +116,10 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 		} else {
 			out.AppLabelSelector = *newVal.(*meta_v1.LabelSelector)
 		}
-		if in.Parameters != nil {
-			in, out := &in.Parameters, &out.Parameters
-			*out = make(map[string]runtime.RawExtension)
-			for key, val := range *in {
-				if newVal, err := c.DeepCopy(&val); err != nil {
-					return err
-				} else {
-					(*out)[key] = *newVal.(*runtime.RawExtension)
-				}
-			}
+		if newVal, err := c.DeepCopy(&in.Parameters); err != nil {
+			return err
 		} else {
-			out.Parameters = nil
+			out.Parameters = *newVal.(*runtime.RawExtension)
 		}
 		return nil
 	}
@@ -288,18 +280,10 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 		in := in.(*InstanceSpec)
 		out := out.(*InstanceSpec)
 		*out = *in
-		if in.Parameters != nil {
-			in, out := &in.Parameters, &out.Parameters
-			*out = make(map[string]runtime.RawExtension)
-			for key, val := range *in {
-				if newVal, err := c.DeepCopy(&val); err != nil {
-					return err
-				} else {
-					(*out)[key] = *newVal.(*runtime.RawExtension)
-				}
-			}
+		if newVal, err := c.DeepCopy(&in.Parameters); err != nil {
+			return err
 		} else {
-			out.Parameters = nil
+			out.Parameters = *newVal.(*runtime.RawExtension)
 		}
 		return nil
 	}
