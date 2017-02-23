@@ -144,7 +144,7 @@ func (t *storageInterface) Delete(
 		name,
 	)
 	if err := req.Do().Error(); err != nil {
-		glog.Errorf("error deleting", err)
+		glog.Errorf("error deleting (%s)", err)
 		return err
 	}
 
@@ -195,7 +195,7 @@ func watchFilterer(t *storageInterface, ns string) func(watch.Event) (watch.Even
 			return in, false
 		}
 		if err := FromUnstructured(unstruc, out); err != nil {
-			glog.Errorf("%s object wasn't a %s (%s)", t.singularKind, err)
+			glog.Errorf("object wasn't a %s (%s)", t.singularKind, err)
 			return in, false
 		}
 		return watch.Event{
