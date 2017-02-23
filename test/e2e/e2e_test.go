@@ -2,14 +2,14 @@ package e2e_test
 
 import (
 	"flag"
+	"fmt"
 	"testing"
-
-	"k8s.io/client-go/1.5/kubernetes"
 
 	kv1 "k8s.io/client-go/1.5/pkg/api/v1"
 
+	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	clientcmdapi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
+	"k8s.io/kubernetes/test/e2e/framework"
 
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/restclient"
@@ -32,6 +32,11 @@ var po *clientcmd.PathOptions
 
 func init() {
 	po = clientcmd.NewDefaultPathOptions()
+	//flag.StringVar(&TestContext.KubeConfig, clientcmd.RecommendedConfigPathFlag, os.Getenv(clientcmd.RecommendedConfigPathEnvVar), "Path to kubeconfig containing embedded authinfo.")
+	//flag.StringVar(&TestContext.KubeContext, clientcmd.FlagContext, "", "kubeconfig context to use/override. If unset, will use value from 'current-context'")
+
+	framework.RegisterClusterFlags()
+
 	flag.StringVar(&po.LoadingRules.ExplicitPath, po.ExplicitFileFlag, po.LoadingRules.ExplicitPath, "what do you think this is?")
 }
 
@@ -43,30 +48,30 @@ func init() {
 //
 // It will call the apiserver to
 func TestBrokerInstall(t *testing.T) {
-	_ = clientcmd.NewDefaultClientConfig(*clientcmdapi.NewConfig(), &clientcmd.ConfigOverrides{})
-
-	config2, err := po.GetStartingConfig()
-	//kubeconfigPath, err := filepath.Abs(po.kubeconfigPath)
-	//kclient := util.NewFactory(kconfig)
-	//kgv := kclient.Core().RESTClient().APIVersion()
-	//t.Log(kgv)
+	// framework config
+	c, err := framework.LoadConfig()
 	if nil != err {
 		t.Fatalf("Failed to create a kube config, could not figure out the path\n:%v\n", err)
 	}
-	// k8s client
-	kconfig, err := clientcmd.BuildConfigFromFlags("", po.LoadingRules.ExplicitPath)
-	if err != nil {
-		t.Fatalf("Failed to create a kube config\n:%v\n", err)
+	t.Logf(">>> kubeConfig: %s\n", framework.TestContext.KubeConfig)
+	t.Logf(">>> kubeConfig: %s\n", framework.TestContext.KubeConfig)
+	if TestContext.KubeConfig == "" {
+		return nil, fmt.Errorf("KubeConfig must be specified to load client config")
 	}
-	//kconfig := &rest.Config{}
-	//kconfig.Host = "https://localhost:6443"
-	//kconfig.Insecure = true
-	kclient, err := kubernetes.NewForConfig(kconfig)
+	kclient, err := clientset.NewForConfig(config)
 	if nil != err {
-		t.Fatal("can't make the client from the config", err)
+		t.Fatalf("Failed to load config and make client\n:%v\n", err)
 	}
 	kgv = kclient.Core().GetRESTClient().APIVersion()
 	t.Log(kgv)
+
+	// k8s client
+	// kclient, err := kubernetes.NewForConfig(kconfig)
+	// if nil != err {
+	// 	t.Fatal("can't make the client from the config", err)
+	// }
+	// kgv = kclient.Core().GetRESTClient().APIVersion()
+	// t.Log(kgv)
 
 	pod := &kv1.Pod{}
 	pod, err = kclient.Core().Pods("default").Create(pod)
