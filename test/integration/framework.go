@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"testing"
 	"time"
@@ -36,8 +37,12 @@ import (
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func getFreshApiserverAndClient(t *testing.T) (servicecatalogclient.Interface, func()) {
-	securePort := 65535
+	securePort := rand.Intn(35534) + 3000
 	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
