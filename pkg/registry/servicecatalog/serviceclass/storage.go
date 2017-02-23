@@ -120,7 +120,7 @@ func NewStorage(opts server.Options) rest.Storage {
 		// NewListFunc returns an object capable of storing results of an etcd list.
 		NewListFunc: NewList,
 		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(),
+		KeyFunc:     opts.KeyFunc(false),
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return tpr.GetAccessor().Name(obj)

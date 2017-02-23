@@ -124,7 +124,7 @@ func (o Options) KeyRootFunc() func(api.Context) string {
 // KeyFunc returns the appropriate key function for the storage type in o.
 // This function should produce a path that etcd or TPR storage understands, to the resource
 // by combining the namespace in the context with the given prefix
-func (o Options) KeyFunc() func(api.Context, string) (string, error) {
+func (o Options) KeyFunc(namespaced bool) func(api.Context, string) (string, error) {
 	prefix := o.ResourcePrefix()
 	sType, err := o.StorageType()
 	if err != nil {
@@ -132,7 +132,10 @@ func (o Options) KeyFunc() func(api.Context, string) (string, error) {
 	}
 	if sType == StorageTypeEtcd {
 		return func(ctx api.Context, name string) (string, error) {
-			return registry.NamespaceKeyFunc(ctx, prefix, name)
+			if namespaced {
+				return registry.NamespaceKeyFunc(ctx, prefix, name)
+			}
+			return registry.NoNamespaceKeyFunc(ctx, prefix, name)
 		}
 	}
 	return o.TPROptions.Keyer.Key

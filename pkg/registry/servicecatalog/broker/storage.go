@@ -119,7 +119,7 @@ func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 		NewFunc:     EmptyObject,
 		NewListFunc: NewList,
 		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(),
+		KeyFunc:     opts.KeyFunc(false),
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return tpr.GetAccessor().Name(obj)
