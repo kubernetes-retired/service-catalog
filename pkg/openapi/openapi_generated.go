@@ -7046,16 +7046,10 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Ref:         spec.MustCreateRef("#/definitions/v1.LabelSelector"),
 						},
 					},
-					"parameters": {
+					"Parameters": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: spec.MustCreateRef("#/definitions/runtime.RawExtension"),
-									},
-								},
-							},
+							Description: "Parameters is a YAML representation of the properties to be passed to the underlying broker.",
+							Ref:         spec.MustCreateRef("#/definitions/runtime.RawExtension"),
 						},
 					},
 					"secretName": {
@@ -7085,7 +7079,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 						},
 					},
 				},
-				Required: []string{"instanceRef", "appLabelSelector", "parameters", "secretName", "serviceName", "configMapName", "osbGuid"},
+				Required: []string{"instanceRef", "appLabelSelector", "Parameters", "secretName", "serviceName", "configMapName", "osbGuid"},
 			},
 		},
 		Dependencies: []string{
@@ -7373,16 +7367,10 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
-					"parameters": {
+					"Parameters": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: spec.MustCreateRef("#/definitions/runtime.RawExtension"),
-									},
-								},
-							},
+							Description: "Parameters is a YAML representation of the properties to be passed to the underlying broker.",
+							Ref:         spec.MustCreateRef("#/definitions/runtime.RawExtension"),
 						},
 					},
 					"osbGuid": {
@@ -7442,7 +7430,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 						},
 					},
 				},
-				Required: []string{"serviceClassName", "planName", "parameters", "osbGuid", "osbCredentials", "osbDashboardURL", "osbInternalID", "osbServiceID", "osbPlanID", "osbType", "osbSpaceGUID", "osbLastOperation"},
+				Required: []string{"serviceClassName", "planName", "Parameters", "osbGuid", "osbCredentials", "osbDashboardURL", "osbInternalID", "osbServiceID", "osbPlanID", "osbType", "osbSpaceGUID", "osbLastOperation"},
 			},
 		},
 		Dependencies: []string{

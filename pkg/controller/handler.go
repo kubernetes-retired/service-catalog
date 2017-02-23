@@ -18,7 +18,7 @@ package controller
 
 import (
 	"fmt"
-
+	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -93,12 +93,19 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 
 	client := h.newClientFunc(broker.Name, broker.Spec.URL, authUsername, authPassword)
 
-	// TODO: uncomment parameters line once parameters types are refactored.
-	// Make the request to instantiate.
+	parameters := make(map[string]interface{})
+	if len(in.Spec.Parameters.Raw) > 0 {
+		err = yaml.Unmarshal([]byte(in.Spec.Parameters.Raw), &parameters)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", in.Spec.Parameters, err)
+			return err
+		}
+	}
+
 	createReq := &brokerapi.CreateServiceInstanceRequest{
-		ServiceID: in.Spec.OSBServiceID,
-		PlanID:    in.Spec.OSBPlanID,
-		// Parameters: in.Spec.Parameters,
+		ServiceID:  in.Spec.OSBServiceID,
+		PlanID:     in.Spec.OSBPlanID,
+		Parameters: parameters,
 	}
 	_, err = client.CreateServiceInstance(in.Spec.OSBGUID, createReq)
 	return err
@@ -247,12 +254,19 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 		in.Spec.OSBGUID = uuid.NewV4().String()
 	}
 
-	// TODO: uncomment parameters line once parameters types are refactored.
-	// Make the request to bind.
+	parameters := make(map[string]interface{})
+	if len(in.Spec.Parameters.Raw) > 0 {
+		err = yaml.Unmarshal([]byte(in.Spec.Parameters.Raw), &parameters)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", in.Spec.Parameters, err)
+			return nil, err
+		}
+	}
+
 	createReq := &brokerapi.BindingRequest{
-		ServiceID: inst.Spec.OSBServiceID,
-		PlanID:    inst.Spec.OSBPlanID,
-		// Parameters: in.Spec.Parameters,
+		ServiceID:  inst.Spec.OSBServiceID,
+		PlanID:     inst.Spec.OSBPlanID,
+		Parameters: parameters,
 	}
 	sbr, err := client.CreateServiceBinding(inst.Spec.OSBGUID, in.Spec.OSBGUID, createReq)
 

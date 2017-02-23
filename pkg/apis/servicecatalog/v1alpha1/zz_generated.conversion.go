@@ -137,17 +137,7 @@ func Convert_servicecatalog_BindingCondition_To_v1alpha1_BindingCondition(in *se
 
 func autoConvert_v1alpha1_BindingList_To_servicecatalog_BindingList(in *BindingList, out *servicecatalog.BindingList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]servicecatalog.Binding, len(*in))
-		for i := range *in {
-			if err := Convert_v1alpha1_Binding_To_servicecatalog_Binding(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]servicecatalog.Binding)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -157,17 +147,7 @@ func Convert_v1alpha1_BindingList_To_servicecatalog_BindingList(in *BindingList,
 
 func autoConvert_servicecatalog_BindingList_To_v1alpha1_BindingList(in *servicecatalog.BindingList, out *BindingList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]Binding, len(*in))
-		for i := range *in {
-			if err := Convert_servicecatalog_Binding_To_v1alpha1_Binding(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]Binding)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -181,19 +161,7 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 		return err
 	}
 	out.AppLabelSelector = in.AppLabelSelector
-	if in.Parameters != nil {
-		in, out := &in.Parameters, &out.Parameters
-		*out = make(map[string]runtime.Object, len(*in))
-		for key, val := range *in {
-			newVal := new(runtime.Object)
-			if err := runtime.Convert_runtime_RawExtension_To_runtime_Object(&val, newVal, s); err != nil {
-				return err
-			}
-			(*out)[key] = *newVal
-		}
-	} else {
-		out.Parameters = nil
-	}
+	out.Parameters = in.Parameters
 	out.SecretName = in.SecretName
 	out.ServiceName = in.ServiceName
 	out.ConfigMapName = in.ConfigMapName
@@ -211,19 +179,7 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 		return err
 	}
 	out.AppLabelSelector = in.AppLabelSelector
-	if in.Parameters != nil {
-		in, out := &in.Parameters, &out.Parameters
-		*out = make(map[string]runtime.RawExtension, len(*in))
-		for key, val := range *in {
-			newVal := new(runtime.RawExtension)
-			if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&val, newVal, s); err != nil {
-				return err
-			}
-			(*out)[key] = *newVal
-		}
-	} else {
-		out.Parameters = nil
-	}
+	out.Parameters = in.Parameters
 	out.SecretName = in.SecretName
 	out.ServiceName = in.ServiceName
 	out.ConfigMapName = in.ConfigMapName
@@ -435,17 +391,7 @@ func Convert_servicecatalog_InstanceCondition_To_v1alpha1_InstanceCondition(in *
 
 func autoConvert_v1alpha1_InstanceList_To_servicecatalog_InstanceList(in *InstanceList, out *servicecatalog.InstanceList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]servicecatalog.Instance, len(*in))
-		for i := range *in {
-			if err := Convert_v1alpha1_Instance_To_servicecatalog_Instance(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]servicecatalog.Instance)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -455,17 +401,7 @@ func Convert_v1alpha1_InstanceList_To_servicecatalog_InstanceList(in *InstanceLi
 
 func autoConvert_servicecatalog_InstanceList_To_v1alpha1_InstanceList(in *servicecatalog.InstanceList, out *InstanceList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]Instance, len(*in))
-		for i := range *in {
-			if err := Convert_servicecatalog_Instance_To_v1alpha1_Instance(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]Instance)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -476,19 +412,7 @@ func Convert_servicecatalog_InstanceList_To_v1alpha1_InstanceList(in *servicecat
 func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *InstanceSpec, out *servicecatalog.InstanceSpec, s conversion.Scope) error {
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
-	if in.Parameters != nil {
-		in, out := &in.Parameters, &out.Parameters
-		*out = make(map[string]runtime.Object, len(*in))
-		for key, val := range *in {
-			newVal := new(runtime.Object)
-			if err := runtime.Convert_runtime_RawExtension_To_runtime_Object(&val, newVal, s); err != nil {
-				return err
-			}
-			(*out)[key] = *newVal
-		}
-	} else {
-		out.Parameters = nil
-	}
+	out.Parameters = in.Parameters
 	out.OSBGUID = in.OSBGUID
 	out.OSBCredentials = in.OSBCredentials
 	out.OSBDashboardURL = in.OSBDashboardURL
@@ -508,19 +432,7 @@ func Convert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *InstanceSp
 func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servicecatalog.InstanceSpec, out *InstanceSpec, s conversion.Scope) error {
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
-	if in.Parameters != nil {
-		in, out := &in.Parameters, &out.Parameters
-		*out = make(map[string]runtime.RawExtension, len(*in))
-		for key, val := range *in {
-			newVal := new(runtime.RawExtension)
-			if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&val, newVal, s); err != nil {
-				return err
-			}
-			(*out)[key] = *newVal
-		}
-	} else {
-		out.Parameters = nil
-	}
+	out.Parameters = in.Parameters
 	out.OSBGUID = in.OSBGUID
 	out.OSBCredentials = in.OSBCredentials
 	out.OSBDashboardURL = in.OSBDashboardURL

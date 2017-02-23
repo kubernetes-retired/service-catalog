@@ -192,7 +192,9 @@ type InstanceSpec struct {
 	// ServicePlanName is the reference to the ServicePlan for this instance.
 	PlanName string
 
-	Parameters map[string]runtime.Object
+	// Parameters is a YAML representation of the properties to be
+	// passed to the underlying broker.
+	Parameters runtime.RawExtension
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
@@ -273,7 +275,9 @@ type BindingSpec struct {
 	// should be injected with the results of the binding.  Immutable.
 	AppLabelSelector metav1.LabelSelector
 
-	Parameters map[string]runtime.Object
+	// Parameters is a YAML representation of the properties to be
+	// passed to the underlying broker.
+	Parameters runtime.RawExtension
 
 	// Names of subordinate objects to create
 	SecretName    string
