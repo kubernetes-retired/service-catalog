@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	kv1 "k8s.io/client-go/1.5/pkg/api/v1"
-
-	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/test/e2e/framework"
 
@@ -15,6 +12,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/restclient"
 
 	// avoid error `servicecatalog/v1alpha1 is not enabled`
+	k8sclient "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	// avoid error `no kind is registered for the type v1.ListOptions`
@@ -48,21 +46,33 @@ func init() {
 //
 // It will call the apiserver to
 func TestBrokerInstall(t *testing.T) {
-	// framework config
-	c, err := framework.LoadConfig()
+	var err error
+
+	_ = clientcmd.NewDefaultClientConfig(*clientcmdapi.NewConfig(), &clientcmd.ConfigOverrides{})
+	t.Log(po)
+	_, err = po.GetStartingConfig()
+	t.Log(po)
+	t.Log(po.LoadingRules.ExplicitPath)
+	//kubeconfigPath, err := filepath.Abs(po.kubeconfigPath)
+	//kclient := util.NewFactory(kconfig)
+	//kgv := kclient.Core().RESTClient().APIVersion()
+	//t.Log(kgv)
 	if nil != err {
-		t.Fatalf("Failed to create a kube config, could not figure out the path\n:%v\n", err)
+		t.Fatalf("Failed to read a kube config, could not figure out the path\n:%v\n", err)
 	}
 	t.Logf(">>> kubeConfig: %s\n", framework.TestContext.KubeConfig)
 	t.Logf(">>> kubeConfig: %s\n", framework.TestContext.KubeConfig)
 	if TestContext.KubeConfig == "" {
 		return nil, fmt.Errorf("KubeConfig must be specified to load client config")
 	}
-	kclient, err := clientset.NewForConfig(config)
+	//kconfig := &rest.Config{}
+	//kconfig.Host = "https://localhost:6443"
+	//kconfig.Insecure = true
+	kclient, err := k8sclient.NewForConfig(kconfig)
 	if nil != err {
 		t.Fatalf("Failed to load config and make client\n:%v\n", err)
 	}
-	kgv = kclient.Core().GetRESTClient().APIVersion()
+	kgv := kclient.Core().RESTClient().APIVersion()
 	t.Log(kgv)
 
 	// k8s client
@@ -73,7 +83,7 @@ func TestBrokerInstall(t *testing.T) {
 	// kgv = kclient.Core().GetRESTClient().APIVersion()
 	// t.Log(kgv)
 
-	pod := &kv1.Pod{}
+	pod := &v1.Pod{}
 	pod, err = kclient.Core().Pods("default").Create(pod)
 	if nil != err {
 		t.Fatal("error creating pod\n", err)
