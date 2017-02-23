@@ -24,20 +24,30 @@ limitations under the License.
 // TEST_ZONE:      GCP Zone in which to create test GKE cluster
 // TEST_ACCOUNT:   GCP service account credentials (JSON file) to use for testing.
 
-// Verify required parameters
-if (! params.TEST_PROJECT) {
-  error 'Missing required parameter TEST_PROJECT'
-}
-
-if (! params.TEST_ACCOUNT) {
-  error 'Missing required parameter TEST_ACCOUNT'
-}
-
-def test_project = params.TEST_PROJECT
-def test_account = params.TEST_ACCOUNT
-def test_zone    = params.TEST_ZONE ?: 'us-west1-b'
 def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
+
+// Updates Pull Request
+def updatePullRequest(flow, success = false) {
+  def state, message
+  switch (flow) {
+    case 'run':
+      state = 'PENDING'
+      message = "Running presubmits at ${env.BUILD_URL} ..."
+      break
+    case 'verify':
+      state = success ? 'SUCCESS' : 'FAILURE'
+      message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+          "Details at ${env.BUILD_URL}."
+      break
+    default:
+      error('flow can only be run or verify')
+  }
+  setGitHubPullRequestStatus(
+      context: env.JOB_NAME,
+      message: message,
+      state: state)
+}
 
 node {
   // Checkout the source code.
@@ -49,53 +59,9 @@ node {
 
   dir([path: env.ROOT]) {
     // Run build.
-
-    def clustername = "jenkins-" + sh([returnStdout: true, script: '''openssl rand \
-        -base64 100 | tr -dc a-z0-9 | cut -c -25''']).trim()
-
-    try {
-      // Initialize build, for example, updating installed software.
-      sh """${env.ROOT}/contrib/jenkins/init_build.sh"""
-
-      // These are done in parallel since creating the cluster takes a while,
-      // and the build doesn't depend on it.
-      parallel(
-        'Cluster': {
-          withCredentials([file(credentialsId: "${test_account}", variable: 'TEST_SERVICE_ACCOUNT')]) {
-            sh """${env.ROOT}/contrib/jenkins/init_cluster.sh ${clustername} \
-                  --project ${test_project} \
-                  --zone ${test_zone} \
-                  --credentials ${env.TEST_SERVICE_ACCOUNT}"""
-          }
-        },
-        'Build': {
-          sh """${env.ROOT}/contrib/jenkins/build.sh --no-docker-compile \
-                --project ${test_project} \
-                --coverage '${env.WORKSPACE}/coverage.html'"""
-        }
-      )
-
-      // Run end-2-end tests on the deployed cluster.
-      sh """${env.ROOT}/contrib/jenkins/test_deploy.sh \
-            --project ${test_project} \
-            --namespace ${namespace}
-      """
-    } catch (Exception e) {
-      currentBuild.result = 'FAILURE'
-    } finally {
-      try {
-        sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh ${clustername} \
-              --project ${test_project} \
-              --zone ${test_zone}"""
-      } catch (Exception e) {
-        currentBuild.result = 'FAILURE'
-      }
-    }
-
-    if (currentBuild.result == 'FAILURE') {
-      error 'Build failed.'
-    }
+    echo 'Please work...'
+    updatePullRequest('run')
+    // sh 'which docker'
+    // sh """${env.ROOT}/contrib/jenkins/init_build.sh"""
   }
-
-  archiveArtifacts artifacts: 'coverage.html', allowEmptyArchive: true, onlyIfSuccessful: true
 }
