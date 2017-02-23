@@ -269,12 +269,25 @@ test-integration: .init build
 	$(DOCKER_CMD) test/integration.sh
 
 
-clean:
+clean: clean-bin clean-deps clean-build-image clean-generated clean-coverage
+
+clean-bin:
 	rm -rf $(BINDIR)
-	rm -f .init .scBuildImage .generate_files .generate_exes
-	rm -f $(COVERAGE)
-	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+	rm -f .generate_exes
+
+clean-deps:
+	rm -f .init
+
+clean-build-image:
+	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
+
+clean-generated:
+	rm -f .generate_files
+	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+
+clean-coverage:
+	rm -f $(COVERAGE)
 
 # Building Docker Images for our executables
 ############################################
