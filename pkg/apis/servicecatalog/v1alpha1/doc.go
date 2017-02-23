@@ -20,7 +20,4 @@ limitations under the License.
 // +k8s:defaulter-gen=TypeMeta
 
 // +groupName=servicecatalog.k8s.io
-
-// Package v1alpha1 contains generated v1alpha1 types for the service catalog API server
-// and controller
 package v1alpha1

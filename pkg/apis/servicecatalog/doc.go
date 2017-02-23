@@ -18,6 +18,4 @@ limitations under the License.
 // +k8s:deepcopy-gen=package,register
 
 // +groupName=
-
-// Package servicecatalog contains API types for the service catalog controller and server
 package servicecatalog
