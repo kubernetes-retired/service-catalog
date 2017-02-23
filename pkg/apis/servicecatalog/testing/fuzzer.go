@@ -17,6 +17,7 @@ limitations under the License.
 package testing
 
 import (
+	"encoding/json"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -32,6 +33,25 @@ import (
 	"k8s.io/kubernetes/pkg/runtime/schema"
 	"k8s.io/kubernetes/pkg/types"
 )
+
+type parameter struct {
+	Value string            `json:"value"`
+	Map   map[string]string `json:"map"`
+}
+
+func createParameter(c fuzz.Continue) (*runtime.RawExtension, error) {
+	p := parameter{Value: c.RandString()}
+	p.Map = make(map[string]string)
+	for i := 0; i < c.Rand.Intn(10); i++ {
+		p.Map[c.RandString()] = c.RandString()
+	}
+
+	b, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	return &runtime.RawExtension{Raw: b}, nil
+}
 
 // FuzzerFor can randomly populate api objects that are destined for version.
 func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz.Fuzzer {
@@ -138,10 +158,22 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		func(is *servicecatalog.InstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.OSBGUID = uuid.NewV4().String()
+			parameters, err := createParameter(c)
+			if err != nil {
+				t.Errorf("Failed to create parameter object: %v", err)
+				return
+			}
+			is.Parameters = *parameters
 		},
 		func(bs *servicecatalog.BindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			bs.OSBGUID = uuid.NewV4().String()
+			parameters, err := createParameter(c)
+			if err != nil {
+				t.Errorf("Failed to create parameter object: %v", err)
+				return
+			}
+			bs.Parameters = *parameters
 		},
 	)
 	return f
