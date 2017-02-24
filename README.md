@@ -38,6 +38,9 @@ services like message brokers that exists _somewhere_ in a simple way:
     application configuration primitives in Kubernetes: Services, Secrets, and
     ConfigMaps.
 
+For more details about the design and features of this project see the
+[design](docs/design.md) doc.
+
 ---
 
 We are currently scoping our **v1** milestone [here](./docs/v1).
