@@ -19,6 +19,7 @@ package wip
 import (
 	"fmt"
 
+	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 
 	"k8s.io/client-go/1.5/kubernetes"
@@ -382,11 +383,26 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	// TODO: parameters
+	parameters := make(map[string]interface{})
+	if len(instance.Spec.Parameters.Raw) > 0 {
+		err = yaml.Unmarshal([]byte(instance.Spec.Parameters.Raw), &parameters)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				"ErrorWithParameters",
+				"Error unmarshaling instance parameters",
+			)
+			return
+		}
+	}
 
 	request := &brokerapi.CreateServiceInstanceRequest{
-		ServiceID: serviceClass.OSBGUID,
-		PlanID:    servicePlan.OSBGUID,
+		ServiceID:  serviceClass.OSBGUID,
+		PlanID:     servicePlan.OSBGUID,
+		Parameters: parameters,
 	}
 
 	// TODO: handle async provisioning
@@ -552,11 +568,26 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	// TODO: parameters
+	parameters := make(map[string]interface{})
+	if len(binding.Spec.Parameters.Raw) > 0 {
+		err = yaml.Unmarshal([]byte(binding.Spec.Parameters.Raw), &parameters)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				"ErrorWithParameters",
+				"Error unmarshaling binding parameters",
+			)
+			return
+		}
+	}
 
 	request := &brokerapi.BindingRequest{
-		ServiceID: serviceClass.OSBGUID,
-		PlanID:    servicePlan.OSBGUID,
+		ServiceID:  serviceClass.OSBGUID,
+		PlanID:     servicePlan.OSBGUID,
+		Parameters: parameters,
 	}
 
 	response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
