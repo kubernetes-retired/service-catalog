@@ -139,10 +139,10 @@ func (c *controller) brokerDelete(obj interface{}) {
 }
 
 const (
-	ErrorFetchingCatalogReason  string = "ErrorFetchingCatalog"
-	ErrorFetchingCatalogMessage string = "Error fetching catalog"
-	ErrorSyncingCatalogReason   string = "ErrorSyncingCatalog"
-	ErrorSyncingCatalogMessage  string = "Error syncing catalog from Broker"
+	errorFetchingCatalogReason  string = "ErrorFetchingCatalog"
+	errorFetchingCatalogMessage string = "Error fetching catalog"
+	errorSyncingCatalogReason   string = "ErrorSyncingCatalog"
+	errorSyncingCatalogMessage  string = "Error syncing catalog from Broker"
 )
 
 // reconcileBroker is the control-loop that reconciles a Broker.
@@ -152,7 +152,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
 		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorFetchingCatalogReason, ErrorFetchingCatalogMessage)
+		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage)
 		return
 	}
 
@@ -161,35 +161,32 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	brokerCatalog, err := brokerClient.GetCatalog()
 	if err != nil {
 		glog.Errorf("Error getting broker catalog for broker %v: %v", broker.Name, err)
-		err := c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorFetchingCatalogReason, ErrorFetchingCatalogMessage)
+		err := c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage)
 		if err != nil {
 			glog.Errorf("Error updating ready condition for Broker %v: %v", broker.Name, err)
 		}
 
 		return
-	} else {
-		glog.V(5).Infof("Successfully fetched %v catalog entries for Broker %v", len(brokerCatalog.Services), broker.Name)
 	}
+	glog.V(5).Infof("Successfully fetched %v catalog entries for Broker %v", len(brokerCatalog.Services), broker.Name)
 
 	glog.V(4).Infof("Converting catalog response for Broker %v into service-catalog API", broker.Name)
 	catalog, err := convertCatalog(brokerCatalog)
 	if err != nil {
 		glog.Errorf("Error converting catalog payload for broker %v to service-catalog API: %v", broker.Name, err)
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorSyncingCatalogReason, ErrorSyncingCatalogMessage)
+		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage)
 		return
-	} else {
-		glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
 	}
+	glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
 
 	for _, serviceClass := range catalog {
 		glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 		if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
 			glog.Errorf("Error reconciling serviceClass %v (broker %v): %v", serviceClass.Name, broker.Name, err)
-			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, ErrorSyncingCatalogReason, ErrorSyncingCatalogMessage)
+			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage)
 			return
-		} else {
-			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 		}
+		glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 	}
 
 	c.updateBrokerReadyCondition(broker, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker")
@@ -402,9 +399,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			"ProvisionCallFailed",
 			"Provision call failed")
 		return
-	} else {
-		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
 	}
+	glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
 
 	// TODO: process response
 

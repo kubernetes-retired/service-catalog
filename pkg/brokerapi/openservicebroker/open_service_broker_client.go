@@ -97,9 +97,9 @@ func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 }
 
 func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
-	catalogUrl := fmt.Sprintf(catalogFormatString, c.url)
+	catalogURL := fmt.Sprintf(catalogFormatString, c.url)
 
-	req, err := http.NewRequest("GET", catalogUrl, nil)
+	req, err := http.NewRequest("GET", catalogURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.client.Do(req)
 	if err != nil {
-		glog.Errorf("Failed to fetch catalog %q from %s: response: %v error: %#v", c.name, catalogUrl, resp, err)
+		glog.Errorf("Failed to fetch catalog %q from %s: response: %v error: %#v", c.name, catalogURL, resp, err)
 		return nil, err
 	}
 
@@ -121,11 +121,11 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 }
 
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
-	serviceInstanceUrl := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
+	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 	// TODO: Handle the auth
-	resp, err := util.SendRequest(c.client, http.MethodPut, serviceInstanceUrl, req)
+	resp, err := util.SendRequest(c.client, http.MethodPut, serviceInstanceURL, req)
 	if err != nil {
-		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceUrl, resp, err)
+		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		return nil, errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
@@ -163,11 +163,11 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerap
 }
 
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) error {
-	serviceInstanceUrl := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
+	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 	// TODO: Handle the auth
-	resp, err := util.SendRequest(c.client, http.MethodDelete, serviceInstanceUrl, req)
+	resp, err := util.SendRequest(c.client, http.MethodDelete, serviceInstanceURL, req)
 	if err != nil {
-		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceUrl, resp, err)
+		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		return errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
@@ -204,15 +204,15 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 		return nil, err
 	}
 
-	serviceBindingUrl := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
+	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
 
 	// TODO: Handle the auth
-	createHTTPReq, err := http.NewRequest("PUT", serviceBindingUrl, bytes.NewReader(jsonBytes))
+	createHTTPReq, err := http.NewRequest("PUT", serviceBindingURL, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return nil, err
 	}
 
-	glog.Infof("Doing a request to: %s", serviceBindingUrl)
+	glog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.client.Do(createHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to PUT: %#v", err)
@@ -231,16 +231,16 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 }
 
 func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
-	serviceBindingUrl := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
+	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
 
 	// TODO: Handle the auth
-	deleteHTTPReq, err := http.NewRequest("DELETE", serviceBindingUrl, nil)
+	deleteHTTPReq, err := http.NewRequest("DELETE", serviceBindingURL, nil)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
 
-	glog.Infof("Doing a request to: %s", serviceBindingUrl)
+	glog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.client.Do(deleteHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to DELETE: %#v", err)
@@ -257,10 +257,10 @@ func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error 
 		pollReq.Operation = operation
 	}
 
-	pollingUrl := fmt.Sprintf(pollingFormatString, c.url, ID)
+	pollingURL := fmt.Sprintf(pollingFormatString, c.url, ID)
 	for i := 0; i < pollingAmountLimit; i++ {
-		glog.V(3).Infof("Polling broker %v at %s attempt %v", c.name, pollingUrl, i+1)
-		pollResp, err := util.SendRequest(c.client, http.MethodGet, pollingUrl, pollReq)
+		glog.V(3).Infof("Polling broker %v at %s attempt %v", c.name, pollingURL, i+1)
+		pollResp, err := util.SendRequest(c.client, http.MethodGet, pollingURL, pollReq)
 		if err != nil {
 			return err
 		}

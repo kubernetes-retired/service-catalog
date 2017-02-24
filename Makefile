@@ -231,10 +231,11 @@ verify: .init .generate_files
 	@$(DOCKER_CMD) sh -c \
 	  'for i in $$(find $(TOP_SRC_DIRS) -name *.go \
 	    | grep -v generated \
+	    | grep -v ^pkg/client/ \
 	    | grep -v v1alpha1/defaults.go); \
 	  do \
-	    golint --set_exit_status $$i; \
-	    go vet $$i; \
+	   golint --set_exit_status $$i || exit 1; \
+	   go vet $$i || exit 1; \
 	  done'
 	@#
 	@echo Running repo-infra verify scripts
