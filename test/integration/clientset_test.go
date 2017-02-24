@@ -38,6 +38,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 
 	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/kubernetes/pkg/util/diff"
 )
 
 // Used for testing instance parameters
@@ -104,18 +105,23 @@ func TestNoName(t *testing.T) {
 	}
 }
 
+// TestBrokerClient exercises the Broker client.
 func TestBrokerClient(t *testing.T) {
-	client, shutdownServer := getFreshApiserverAndClient(t)
-	defer shutdownServer()
-	brokerClient := client.Servicecatalog().Brokers()
+	const name = "test-broker"
 
-	broker := &v1alpha1.Broker{
-		ObjectMeta: v1.ObjectMeta{Name: "test-broker"},
-		Spec: v1alpha1.BrokerSpec{
-			URL:     "https://example.com",
-			OSBGUID: "OSBGUID field",
-		},
-	}
+	var (
+		client, shutdownServer = getFreshApiserverAndClient(t)
+		brokerClient           = client.Servicecatalog().Brokers()
+
+		broker = &v1alpha1.Broker{
+			ObjectMeta: v1.ObjectMeta{Name: name},
+			Spec: v1alpha1.BrokerSpec{
+				URL:     "https://example.com",
+				OSBGUID: "OSBGUID field",
+			},
+		}
+	)
+	defer shutdownServer()
 
 	// start from scratch
 	brokers, err := brokerClient.List(v1.ListOptions{})
@@ -130,7 +136,7 @@ func TestBrokerClient(t *testing.T) {
 	if nil != err {
 		t.Fatalf("error creating the broker '%s' (%s)", broker, err)
 	}
-	if broker.Name != brokerServer.Name {
+	if name != brokerServer.Name {
 		t.Fatalf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
 	}
 
@@ -142,19 +148,19 @@ func TestBrokerClient(t *testing.T) {
 		t.Fatalf("should have exactly one broker, had %v brokers", len(brokers.Items))
 	}
 
-	brokerServer, err = brokerClient.Get(broker.Name)
+	brokerServer, err = brokerClient.Get(name)
 	if err != nil {
-		t.Fatalf("error getting broker %s (%s)", broker.Name, err)
+		t.Fatalf("error getting broker %s (%s)", name, err)
 	}
-	if broker.Name != brokerServer.Name &&
+	if name != brokerServer.Name &&
 		broker.ResourceVersion == brokerServer.ResourceVersion {
 		t.Fatalf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
 	}
 
-	// check that the broker is the same both ways
+	// check that the broker is the same from get and list
 	brokerListed := &brokers.Items[0]
 	if !reflect.DeepEqual(brokerServer, brokerListed) {
-		t.Fatal("didn't get the same broker twice", brokerServer, brokerListed)
+		t.Fatalf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(brokerServer, brokerListed))
 	}
 
 	authSecret := &v1.ObjectReference{
@@ -207,38 +213,43 @@ func TestBrokerClient(t *testing.T) {
 	if nil != err || len(brokerUpdated3.Status.Conditions) != 1 {
 		t.Fatal("broker status wasn't updated")
 	}
-	if e, a := readyConditionFalse, brokerUpdated3.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
-		t.Fatal("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
-	}
 
-	brokerServer, err = brokerClient.Get("test-broker")
+	brokerServer, err = brokerClient.Get(name)
 	if nil != err ||
 		"test-namespace" != brokerServer.Spec.AuthSecret.Namespace ||
 		"test-name" != brokerServer.Spec.AuthSecret.Name {
 		t.Fatal("broker wasn't updated", brokerServer)
 	}
+	if e, a := readyConditionFalse, brokerServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
+		t.Fatal("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+	}
 
-	err = brokerClient.Delete("test-broker", &v1.DeleteOptions{})
+	err = brokerClient.Delete(name, &v1.DeleteOptions{})
 	if nil != err {
 		t.Fatal("broker should be deleted", err)
 	}
 
-	brokerDeleted, err := brokerClient.Get("test-broker")
+	brokerDeleted, err := brokerClient.Get(name)
 	if nil == err {
 		t.Fatal("broker should be deleted", brokerDeleted)
 	}
 }
 
+// TestServiceClassClient exercises the ServiceClass client.
 func TestServiceClassClient(t *testing.T) {
-	client, shutdownServer := getFreshApiserverAndClient(t)
-	defer shutdownServer()
-	serviceClassClient := client.Servicecatalog().ServiceClasses()
+	const name = "test-serviceclass"
 
-	serviceClass := &v1alpha1.ServiceClass{
-		ObjectMeta: v1.ObjectMeta{Name: "test-serviceclass"},
-		BrokerName: "test-broker",
-		Bindable:   true,
-	}
+	var (
+		client, shutdownServer = getFreshApiserverAndClient(t)
+		serviceClassClient     = client.Servicecatalog().ServiceClasses()
+
+		serviceClass = &v1alpha1.ServiceClass{
+			ObjectMeta: v1.ObjectMeta{Name: name},
+			BrokerName: "test-broker",
+			Bindable:   true,
+		}
+	)
+	defer shutdownServer()
 
 	// start from scratch
 	serviceClasses, err := serviceClassClient.List(v1.ListOptions{})
@@ -253,7 +264,7 @@ func TestServiceClassClient(t *testing.T) {
 	if nil != err {
 		t.Fatal("error creating the ServiceClass", serviceClass)
 	}
-	if serviceClass.Name != serviceClassAtServer.Name {
+	if name != serviceClassAtServer.Name {
 		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
 	}
 
@@ -265,51 +276,68 @@ func TestServiceClassClient(t *testing.T) {
 		t.Fatalf("should have exactly one ServiceClass, had %v ServiceClasses", len(serviceClasses.Items))
 	}
 
-	serviceClassAtServer, err = serviceClassClient.Get(serviceClass.Name)
+	serviceClassAtServer, err = serviceClassClient.Get(name)
 	if err != nil {
 		t.Fatalf("error listing service classes (%s)", err)
 	}
-	if serviceClassAtServer.Name != serviceClass.Name &&
+	if serviceClassAtServer.Name != name &&
 		serviceClass.ResourceVersion == serviceClassAtServer.ResourceVersion {
 		t.Fatalf("didn't get the same ServiceClass back from the server \n%+v\n%+v", serviceClass, serviceClassAtServer)
 	}
 
-	err = serviceClassClient.Delete("test-serviceclass", &v1.DeleteOptions{})
+	// check that the broker is the same from get and list
+	serviceClassListed := &serviceClasses.Items[0]
+	if !reflect.DeepEqual(serviceClassAtServer, serviceClassListed) {
+		t.Fatalf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(serviceClassAtServer, serviceClassListed))
+	}
+
+	serviceClassAtServer.Bindable = false
+	_, err = serviceClassClient.Update(serviceClassAtServer)
+	if err != nil {
+		t.Fatalf("Error updating serviceClass: %v", err)
+	}
+	updated, err := serviceClassClient.Get(name)
+	if err != nil {
+		t.Fatalf("Error getting serviceClass: %v", err)
+	}
+	if updated.Bindable {
+		t.Fatal("Failed to update service class")
+	}
+
+	err = serviceClassClient.Delete(name, &v1.DeleteOptions{})
 	if nil != err {
 		t.Fatal("serviceclass should be deleted", err)
 	}
 
-	serviceClassDeleted, err := serviceClassClient.Get("test-serviceclass")
+	serviceClassDeleted, err := serviceClassClient.Get(name)
 	if nil == err {
 		t.Fatal("serviceclass should be deleted", serviceClassDeleted)
 	}
 
+	serviceClassDeleted, err = serviceClassClient.Get(name)
+	if nil == err {
+		t.Fatal("serviceclass should be deleted", serviceClassDeleted)
+	}
 }
 
+// TestInstanceClient exercises the Instance client.
 func TestInstanceClient(t *testing.T) {
-	client, shutdownServer := getFreshApiserverAndClient(t)
-	defer shutdownServer()
-	instanceClient := client.Servicecatalog().Instances("test-namespace")
+	const name = "test-instance"
 
-	// Instance represents a provisioned instance of a ServiceClass.
-	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: "test-instance"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: "service-class-name",
-			PlanName:         "plan-name",
-			Parameters:       runtime.RawExtension{Raw: []byte(instanceParameter)},
-		},
-		Status: v1alpha1.InstanceStatus{
-			Conditions: []v1alpha1.InstanceCondition{
-				{
-					Type:    v1alpha1.InstanceConditionReady,
-					Status:  v1alpha1.ConditionTrue,
-					Reason:  "reason",
-					Message: "message",
-				},
+	var (
+		client, shutdownServer = getFreshApiserverAndClient(t)
+		instanceClient         = client.Servicecatalog().Instances("test-namespace")
+
+		instance = &v1alpha1.Instance{
+			ObjectMeta: v1.ObjectMeta{Name: name},
+			Spec: v1alpha1.InstanceSpec{
+				ServiceClassName: "service-class-name",
+				PlanName:         "plan-name",
+				Parameters:       runtime.RawExtension{Raw: []byte(instanceParameter)},
 			},
-		},
-	}
+		}
+	)
+	defer shutdownServer()
 
 	instances, err := instanceClient.List(v1.ListOptions{})
 	if err != nil {
@@ -323,7 +351,7 @@ func TestInstanceClient(t *testing.T) {
 	if nil != err {
 		t.Fatal("error creating the instance", instance)
 	}
-	if instance.Name != instanceServer.Name {
+	if name != instanceServer.Name {
 		t.Fatalf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
 	}
 
@@ -335,13 +363,18 @@ func TestInstanceClient(t *testing.T) {
 		t.Fatalf("should have exactly one instance, had %v instances", len(instances.Items))
 	}
 
-	instanceServer, err = instanceClient.Get(instance.Name)
+	instanceServer, err = instanceClient.Get(name)
 	if err != nil {
 		t.Fatalf("error getting instance (%s)", err)
 	}
-	if instanceServer.Name != instance.Name &&
+	if instanceServer.Name != name &&
 		instanceServer.ResourceVersion == instance.ResourceVersion {
 		t.Fatalf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
+	}
+
+	instanceListed := &instances.Items[0]
+	if !reflect.DeepEqual(instanceListed, instanceServer) {
+		t.Fatalf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
 	}
 
 	parameters := ipStruct{}
@@ -362,51 +395,65 @@ func TestInstanceClient(t *testing.T) {
 		t.Fatal("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
 	}
 
-	err = instanceClient.Delete("test-instance", &v1.DeleteOptions{})
+	readyConditionTrue := v1alpha1.InstanceCondition{
+		Type:    v1alpha1.InstanceConditionReady,
+		Status:  v1alpha1.ConditionTrue,
+		Reason:  "ConditionReason",
+		Message: "ConditionMessage",
+	}
+	instanceServer.Status = v1alpha1.InstanceStatus{
+		Conditions: []v1alpha1.InstanceCondition{readyConditionTrue},
+	}
+	_, err = instanceClient.UpdateStatus(instanceServer)
+	if err != nil {
+		t.Fatalf("Error updating instance: %v", err)
+	}
+	instanceServer, err = instanceClient.Get(name)
+	if err != nil {
+		t.Fatalf("error getting instance (%s)", err)
+	}
+	if e, a := readyConditionTrue, instanceServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
+		t.Fatal("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+	}
+
+	err = instanceClient.Delete(name, &v1.DeleteOptions{})
 	if nil != err {
 		t.Fatal("instance should be deleted", err)
 	}
 
-	instanceDeleted, err := instanceClient.Get("test-instance")
+	instanceDeleted, err := instanceClient.Get(name)
 	if nil == err {
 		t.Fatal("instance should be deleted", instanceDeleted)
 	}
 }
 
+// TestBindingClient exercises the Binding client.
 func TestBindingClient(t *testing.T) {
-	client, shutdownServer := getFreshApiserverAndClient(t)
-	defer shutdownServer()
-	bindingClient := client.Servicecatalog().Bindings("test-namespace")
+	const name = "test-binding"
 
-	// Binding represents a "used by" relationship between an application
-	// and an Instance.
-	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Name: "test-binding"},
-		Spec: v1alpha1.BindingSpec{
-			InstanceRef: v1.ObjectReference{
-				Name:      "bar",
-				Namespace: "test-namespace",
-			},
-			AppLabelSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"foo": "bar"},
-			},
-			Parameters:    runtime.RawExtension{Raw: []byte(bindingParameter)},
-			SecretName:    "secret-name",
-			ServiceName:   "service-name",
-			ConfigMapName: "configmap-name",
-			OSBGUID:       "UUID-string",
-		},
-		Status: v1alpha1.BindingStatus{
-			Conditions: []v1alpha1.BindingCondition{
-				{
-					Type:    v1alpha1.BindingConditionReady,
-					Status:  v1alpha1.ConditionTrue,
-					Reason:  "reason",
-					Message: "message",
+	var (
+		client, shutdownServer = getFreshApiserverAndClient(t)
+		bindingClient          = client.Servicecatalog().Bindings("test-namespace")
+
+		binding = &v1alpha1.Binding{
+			ObjectMeta: v1.ObjectMeta{Name: "test-binding"},
+			Spec: v1alpha1.BindingSpec{
+				InstanceRef: v1.ObjectReference{
+					Name:      "bar",
+					Namespace: "test-namespace",
 				},
+				AppLabelSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{"foo": "bar"},
+				},
+				Parameters:    runtime.RawExtension{Raw: []byte(bindingParameter)},
+				SecretName:    "secret-name",
+				ServiceName:   "service-name",
+				ConfigMapName: "configmap-name",
+				OSBGUID:       "UUID-string",
 			},
-		},
-	}
+		}
+	)
+	defer shutdownServer()
 
 	bindings, err := bindingClient.List(v1.ListOptions{})
 	if err != nil {
@@ -420,7 +467,7 @@ func TestBindingClient(t *testing.T) {
 	if nil != err {
 		t.Fatal("error creating the binding", binding)
 	}
-	if binding.Name != bindingServer.Name {
+	if name != bindingServer.Name {
 		t.Fatalf("didn't get the same binding back from the server \n%+v\n%+v", binding, bindingServer)
 	}
 
@@ -432,13 +479,18 @@ func TestBindingClient(t *testing.T) {
 		t.Fatalf("should have exactly one binding, had %v bindings", len(bindings.Items))
 	}
 
-	bindingServer, err = bindingClient.Get(binding.Name)
+	bindingServer, err = bindingClient.Get(name)
 	if err != nil {
 		t.Fatalf("error getting binding (%s)", err)
 	}
-	if bindingServer.Name != binding.Name &&
+	if bindingServer.Name != name &&
 		bindingServer.ResourceVersion == binding.ResourceVersion {
 		t.Fatalf("didn't get the same binding back from the server \n%+v\n%+v", binding, bindingServer)
+	}
+
+	bindingListed := &bindings.Items[0]
+	if !reflect.DeepEqual(bindingListed, bindingServer) {
+		t.Fatalf("Didn't get the same binding from list and get: diff: %v", diff.ObjectReflectDiff(bindingListed, bindingServer))
 	}
 
 	parameters := bpStruct{}
@@ -469,13 +521,32 @@ func TestBindingClient(t *testing.T) {
 		t.Fatal("Didn't find second value in parameters.baz was %+v", parameters)
 	}
 
-	err = bindingClient.Delete("test-binding", &v1.DeleteOptions{})
-	if nil != err {
+	readyConditionTrue := v1alpha1.BindingCondition{
+		Type:    v1alpha1.BindingConditionReady,
+		Status:  v1alpha1.ConditionTrue,
+		Reason:  "ConditionReason",
+		Message: "ConditionMessage",
+	}
+	bindingServer.Status = v1alpha1.BindingStatus{
+		Conditions: []v1alpha1.BindingCondition{readyConditionTrue},
+	}
+	if _, err = bindingClient.UpdateStatus(bindingServer); err != nil {
+		t.Fatalf("Error updating binding: %v", err)
+	}
+	bindingServer, err = bindingClient.Get(name)
+	if err != nil {
+		t.Fatalf("error getting binding: %v", err)
+	}
+	if e, a := readyConditionTrue, bindingServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
+		t.Fatal("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+	}
+
+	if err = bindingClient.Delete(name, &v1.DeleteOptions{}); nil != err {
 		t.Fatal("broker should be deleted", err)
 	}
 
-	bindingDeleted, err := bindingClient.Get("test-binding")
+	bindingDeleted, err := bindingClient.Get(name)
 	if nil == err {
-		t.Fatal("broker should be deleted", bindingDeleted)
+		t.Fatal("binding should be deleted", bindingDeleted)
 	}
 }
