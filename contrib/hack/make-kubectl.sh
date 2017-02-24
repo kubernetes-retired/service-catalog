@@ -18,8 +18,9 @@ set -e
 # For now pull down a pre-built 'kubectl' image that has the latest
 # build. We need this version in order to pick-up some recent fixes.
 # Once we have an official image we can use then we can delete this section
-docker pull duglin/kubectl
-docker tag duglin/kubectl kubectl
+echo Downloading kubectl image...
+docker pull duglin/kubectl:latest
+docker tag duglin/kubectl:latest kubectl
 
 exit 0
 

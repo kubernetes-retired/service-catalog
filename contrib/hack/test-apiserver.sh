@@ -20,9 +20,25 @@ set -o pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export PATH=${ROOT}/contrib/hack:${PATH}
 
+trap cleanup EXIT
+
+function cleanup {
+    rc=$?
+	echo Cleaning up
+	stop-server.sh
+	exit $rc
+}
+
 start-server.sh
 
+PORT=$(docker port etcd-svc-cat 8081 | sed "s/.*://")
+D_HOST=${DOCKER_HOST:-localhost}
+D_HOST=${D_HOST#*//}   # remove leading proto://
+D_HOST=${D_HOST%:*}    # remove trailing port #
+kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
+
 # create a few resources
+set -x
 kubectl create -f contrib/examples/apiserver/broker.yaml
 kubectl create -f contrib/examples/apiserver/serviceclass.yaml
 kubectl create -f contrib/examples/apiserver/instance.yaml
@@ -37,5 +53,4 @@ kubectl delete -f contrib/examples/apiserver/broker.yaml
 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
 kubectl delete -f contrib/examples/apiserver/instance.yaml
 kubectl delete -f contrib/examples/apiserver/binding.yaml
-
-stop-server.sh
+set +x
