@@ -25,7 +25,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/spf13/cobra"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	"k8s.io/kubernetes/pkg/client/restclient"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
+	"k8s.io/kubernetes/pkg/runtime/schema"
 )
 
 const (
@@ -48,8 +50,7 @@ const (
 // NewCommandServer creates a new cobra command to run our server.
 func NewCommandServer(
 	out io.Writer,
-	clIface clientset.Interface,
-) *cobra.Command {
+) (*cobra.Command, error) {
 	// Create the command that runs the API server
 	cmd := &cobra.Command{
 		Short: "run a service-catalog server",
@@ -78,14 +79,26 @@ func NewCommandServer(
 	storageType, err := opts.StorageType()
 	if err != nil {
 		glog.Fatalf("invalid storage type '%s' (%s)", storageType, err)
-		return nil
+		return nil, err
 	}
 	if storageType == server.StorageTypeEtcd {
 		glog.Infof("using etcd for storage")
-		opts.EtcdOptions.cl = clIface
 		// Store resources in etcd under our special prefix
 		opts.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
 	} else {
+		cfg, err := restclient.InClusterConfig()
+		if err != nil {
+			glog.Errorf("Failed to get kube client config (%s)", err)
+			return nil, err
+		}
+		cfg.GroupVersion = &schema.GroupVersion{}
+
+		clIface, err := clientset.NewForConfig(cfg)
+		if err != nil {
+			glog.Errorf("Failed to create clientset Interface (%s)", err)
+			return nil, err
+		}
+
 		glog.Infof("using third party resources for storage")
 		opts.TPROptions.defaultGlobalNamespace = "servicecatalog"
 		opts.TPROptions.clIface = clIface
@@ -98,5 +111,5 @@ func NewCommandServer(
 		}
 	}
 
-	return cmd
+	return cmd, nil
 }
