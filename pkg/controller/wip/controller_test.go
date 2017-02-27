@@ -19,7 +19,6 @@ package wip
 import (
 	"testing"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
@@ -32,46 +31,24 @@ import (
 )
 
 func TestReconcileBroker(t *testing.T) {
-	// create a fake kube client
-	fakeKubeClient := &fake.Clientset{}
-	// create a fake sc client
-	fakeCatalogClient := &servicecatalogclientset.Clientset{}
+	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, stopCh := newTestController(t)
 
-	catalogCl := &fakebrokerapi.CatalogClient{
-		RetCatalog: &brokerapi.Catalog{
-			Services: []*brokerapi.Service{{
+	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
+		Services: []*brokerapi.Service{
+			{
 				Name:        "test-service",
 				ID:          "12345",
 				Description: "a test service",
-				Plans: []brokerapi.ServicePlan{{
-					Name:        "test-plan",
-					Free:        true,
-					ID:          "34567",
-					Description: "a test plan",
-				}},
-			}},
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "test-plan",
+						Free:        true,
+						ID:          "34567",
+						Description: "a test plan",
+					},
+				},
+			},
 		},
-	}
-	instanceCl := fakebrokerapi.NewInstanceClient()
-	bindingCl := fakebrokerapi.NewBindingClient()
-	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
-
-	// create informers
-	informerFactory := servicecataloginformers.NewSharedInformerFactory(nil, fakeCatalogClient, 0)
-	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
-
-	// create a test controller
-	testController, err := NewController(
-		fakeKubeClient,
-		fakeCatalogClient.ServicecatalogV1alpha1(),
-		serviceCatalogSharedInformers.Brokers(),
-		serviceCatalogSharedInformers.ServiceClasses(),
-		serviceCatalogSharedInformers.Instances(),
-		serviceCatalogSharedInformers.Bindings(),
-		brokerClFunc,
-	)
-	if err != nil {
-		glog.Fatal(err)
 	}
 
 	broker := &v1alpha1.Broker{
@@ -81,11 +58,8 @@ func TestReconcileBroker(t *testing.T) {
 			OSBGUID: "OSBGUID field",
 		},
 	}
-	stopCh := make(chan struct{})
-	informerFactory.Start(stopCh)
 
-	// inject a broker resource into broker informer
-	testController.(*controller).reconcileBroker(broker)
+	testController.reconcileBroker(broker)
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 2, len(actions); e != a {
@@ -121,7 +95,62 @@ func TestReconcileBroker(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	stopCh <- struct{}{}
+	close(stopCh)
+}
+
+// newTestController creates a new test controller injected with fake clients
+// and returns:
+//
+// - a fake kubernetes core api client
+// - a fake service catalog api client
+// - a fake broker catalog client
+// - a fake broker instance client
+// - a fake broker binding client
+// - a test controller
+// - a stop channel hooked to the informer factory that was created
+//
+// If there is an error, newTestController calls 'Fatal' on the injected
+// testing.T.
+func newTestController(t *testing.T) (
+	*fake.Clientset,
+	*servicecatalogclientset.Clientset,
+	*fakebrokerapi.CatalogClient,
+	*fakebrokerapi.InstanceClient,
+	*fakebrokerapi.BindingClient,
+	*controller,
+	chan struct{}) {
+	// create a fake kube client
+	fakeKubeClient := &fake.Clientset{}
+	// create a fake sc client
+	fakeCatalogClient := &servicecatalogclientset.Clientset{}
+
+	catalogCl := &fakebrokerapi.CatalogClient{}
+	instanceCl := fakebrokerapi.NewInstanceClient()
+	bindingCl := fakebrokerapi.NewBindingClient()
+	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
+
+	// create informers
+	informerFactory := servicecataloginformers.NewSharedInformerFactory(nil, fakeCatalogClient, 0)
+	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
+
+	// create a test controller
+	testController, err := NewController(
+		fakeKubeClient,
+		fakeCatalogClient.ServicecatalogV1alpha1(),
+		serviceCatalogSharedInformers.Brokers(),
+		serviceCatalogSharedInformers.ServiceClasses(),
+		serviceCatalogSharedInformers.Instances(),
+		serviceCatalogSharedInformers.Bindings(),
+		brokerClFunc,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stopCh := make(chan struct{})
+	informerFactory.Start(stopCh)
+
+	return fakeKubeClient, fakeCatalogClient, catalogCl, instanceCl, bindingCl, testController.(*controller), stopCh
 }
 
 // filterActions filters the list/watch actions on service catalog resources
