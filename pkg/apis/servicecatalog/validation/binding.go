@@ -23,13 +23,17 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
+// validateBindingName is the validation function for Binding names.
+var validateBindingName = apivalidation.NameIsDNSSubdomain
+
 // ValidateBinding checks the fields of a Binding.
 func ValidateBinding(binding *sc.Binding) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, true, /*namespace*/
-		apivalidation.ValidateReplicationControllerName, // our custom name validator?
+		validateBindingName,
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateBindingSpec(&binding.Spec, field.NewPath("Spec"))...)
+
 	// validate the status array
 	// allErrs = append(allErrs, validateBindingStatus(&binding.Spec, field.NewPath("Status"))...)
 	return allErrs
