@@ -289,7 +289,7 @@ clean-coverage:
 # Building Docker Images for our executables
 ############################################
 images: registry-image k8s-broker-image user-broker-image controller-image \
-    apiserver-image
+    controller-manager-image apiserver-image
 
 registry-image: contrib/build/registry/Dockerfile $(BINDIR)/registry
 	mkdir -p contrib/build/registry/tmp
@@ -334,7 +334,7 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 # Push our Docker Images to a registry
 ######################################
 push: registry-push k8s-broker-push user-broker-push controller-push \
-    apiserver-push
+    controller-manager-push apiserver-push
 
 registry-push: registry-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
@@ -355,6 +355,11 @@ controller-push: controller-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION)
 	docker push $(REGISTRY)/controller:$(VERSION)
+
+controller-manager-push: controller-manager-image
+	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
+	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:$(VERSION)
+	docker push $(REGISTRY)/controller-manager:$(VERSION)
 
 apiserver-push: apiserver-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
