@@ -167,34 +167,8 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
 		--output-file-base zz_generated.conversion
 	# the previous three directories will be changed from kubernetes to apimachinery in the future
-	# Generate the internal clientset (pkg/client/clientset_generated/internalclientset)
-	$(DOCKER_CMD) $(BINDIR)/client-gen \
-		--input-base "github.com/kubernetes-incubator/service-catalog/pkg/apis/" \
-		--input servicecatalog/ \
-		--clientset-path "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/" \
-		--clientset-name internalclientset \
-		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt"
-	# Generate the versioned clientset (pkg/client/clientset_generated/clientset)
-	$(DOCKER_CMD) $(BINDIR)/client-gen --input-base github.com/kubernetes-incubator/service-catalog/pkg/apis/ \
-		--input servicecatalog/v1alpha1 \
-		--clientset-path github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/ \
-		--clientset-name clientset \
-		--go-header-file vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt
-	# generate lister
-	$(DOCKER_CMD) $(BINDIR)/lister-gen \
-		--input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog" \
-		--input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
-		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers" \
-		--go-header-file vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt
-	# generate informer
-	$(DOCKER_CMD) $(BINDIR)/informer-gen \
-		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
-		--internal-clientset-package "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset" \
-		--versioned-clientset-package "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset" \
-		--listers-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers" \
-		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
+	# gennerate all pkg/client contents
+	$(DOCKER_CMD) $(BUILD_DIR)/update-client-gen.sh
 	# generate openapi
 	$(DOCKER_CMD) $(BINDIR)/openapi-gen \
 		--v 1 --logtostderr \
@@ -218,7 +192,8 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Util targets
 ##############
-verify: .init .generate_files
+.PHONY: verify verify-client-gen 
+verify: .init .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || \
@@ -246,6 +221,9 @@ verify: .init .generate_files
 	@$(DOCKER_CMD) build/verify-links.sh
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
+
+verify-client-gen: .init .generate_files
+	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
 
 format: .init
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
