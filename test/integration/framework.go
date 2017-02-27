@@ -41,7 +41,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func getFreshApiserverAndClient(t *testing.T) (servicecatalogclient.Interface, func()) {
+func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
 	securePort := rand.Intn(35534) + 3000
 	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
@@ -57,13 +57,13 @@ func getFreshApiserverAndClient(t *testing.T) (servicecatalogclient.Interface, f
 	go func() {
 
 		options := &server.ServiceCatalogServerOptions{
-			StorageTypeString:       "etcd",
+			StorageTypeString:       storageTypeStr,
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 			SecureServingOptions:    secureServingOptions,
 			EtcdOptions: &server.EtcdOptions{
 				EtcdOptions: genericserveroptions.NewEtcdOptions(),
 			},
-			TPROptions:            server.NewTPROptions(),
+			TPROptions:            &server.TPROptions{},
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 		}
