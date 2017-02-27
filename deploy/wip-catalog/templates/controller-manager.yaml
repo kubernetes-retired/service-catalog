@@ -11,9 +11,9 @@ spec:
     spec:
       containers:
       - name: controller-manager
-        image: {{ if .Values.registry }}{{ cat .Values.registry "/"}}{{ end }}controller-manager:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}controller-manager:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
-        args: 
+        args:
         - -v
         - "5"
         - --service-catalog-api-server-url
