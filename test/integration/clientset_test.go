@@ -139,7 +139,7 @@ func TestBrokerClient(t *testing.T) {
 			const name = "test-broker"
 
 			var (
-				client, shutdownServer = getFreshApiserverAndClient(t)
+				client, shutdownServer = getFreshApiserverAndClient(t, sType.String())
 				brokerClient           = client.Servicecatalog().Brokers()
 
 				broker = &v1alpha1.Broker{
@@ -278,7 +278,7 @@ func TestServiceClassClient(t *testing.T) {
 			const name = "test-serviceclass"
 
 			var (
-				client, shutdownServer = getFreshApiserverAndClient(t)
+				client, shutdownServer = getFreshApiserverAndClient(t, sType.String())
 				serviceClassClient     = client.Servicecatalog().ServiceClasses()
 
 				serviceClass = &v1alpha1.ServiceClass{
@@ -372,7 +372,7 @@ func TestInstanceClient(t *testing.T) {
 			const name = "test-instance"
 
 			var (
-				client, shutdownServer = getFreshApiserverAndClient(t)
+				client, shutdownServer = getFreshApiserverAndClient(t, sType.String())
 				instanceClient         = client.Servicecatalog().Instances("test-namespace")
 
 				instance = &v1alpha1.Instance{
@@ -488,7 +488,7 @@ func TestBindingClient(t *testing.T) {
 			const name = "test-binding"
 
 			var (
-				client, shutdownServer = getFreshApiserverAndClient(t)
+				client, shutdownServer = getFreshApiserverAndClient(t, sType.String())
 				bindingClient          = client.Servicecatalog().Bindings("test-namespace")
 
 				binding = &v1alpha1.Binding{
