@@ -397,11 +397,6 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 	if nil == err {
 		return fmt.Errorf("serviceclass should be deleted (%s)", serviceClassDeleted)
 	}
-
-	serviceClassDeleted, err = serviceClassClient.Get(name)
-	if nil == err {
-		return fmt.Errorf("serviceclass should be deleted (%s)", serviceClassDeleted)
-	}
 	return nil
 }
 
