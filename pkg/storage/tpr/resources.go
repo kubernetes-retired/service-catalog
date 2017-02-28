@@ -112,7 +112,7 @@ var serviceClassTPR = v1beta1.ThirdPartyResource{
 	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
 	// it here
 	ObjectMeta: v1.ObjectMeta{
-		Name: withGroupName("ServiceClass"),
+		Name: withGroupName(ServiceClassKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},
