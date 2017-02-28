@@ -41,7 +41,7 @@ ${BINDIR}/client-gen "$@" \
 ${BINDIR}/lister-gen "$@" \
 	      --input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog" \
 	      --input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
-	      --output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers" \
+	      --output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated" \
 	      --go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt"
 # generate informer
 ${BINDIR}/informer-gen "$@" \
@@ -50,5 +50,5 @@ ${BINDIR}/informer-gen "$@" \
 	      --input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
 	      --internal-clientset-package "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset" \
 	      --versioned-clientset-package "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset" \
-	      --listers-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers" \
-	      --output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
+	      --listers-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated" \
+	      --output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
