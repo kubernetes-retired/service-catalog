@@ -99,8 +99,10 @@ func (t *storageInterface) Create(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName(),
+		t.singularKind.URLName(),
 	).Body(data)
+
+	glog.Infof("POSTing to URL %s", req.URL().String())
 
 	var unknown runtime.Unknown
 	if err := req.Do().Into(&unknown); err != nil {
@@ -140,7 +142,7 @@ func (t *storageInterface) Delete(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName(),
+		t.singularKind.URLName(),
 		name,
 	)
 	if err := req.Do().Error(); err != nil {
@@ -175,7 +177,7 @@ func (t *storageInterface) Watch(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName(),
+		t.singularKind.URLName(),
 		name,
 	).Param("watch", "true")
 	watchIface, err := req.Watch()
@@ -261,7 +263,7 @@ func (t *storageInterface) Get(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName(),
+		t.singularKind.URLName(),
 		name,
 	)
 
@@ -314,7 +316,7 @@ func (t *storageInterface) List(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName(),
+		t.singularKind.URLName(),
 	)
 
 	var unknown runtime.Unknown
