@@ -57,6 +57,9 @@ func (k Kind) TPRName() string {
 //
 //	Kind("ServiceClass").URLName() == "serviceclasses"
 //	Kind("Broker").URLName() == "brokers"
+//
+// Note that this function is incomplete - it is only guaranteed to properly pluralize our 4
+// resource types ("Broker", "ServiceClass", "Instance", "Binding")
 func (k Kind) URLName() string {
 	str := k.String()
 	strLen := len(str)
