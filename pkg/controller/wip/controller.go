@@ -324,6 +324,10 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 // 	ErrorSyncingCatalogMessage  string = "Error syncing catalog from Broker"
 // )
 
+const (
+	errorWithParameters string = "ErrorWithParameters"
+)
+
 // reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
@@ -343,7 +347,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 
 	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
 	if servicePlan == nil {
-		glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
@@ -383,20 +387,17 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	parameters := make(map[string]interface{})
-	if len(instance.Spec.Parameters.Raw) > 0 {
-		err = yaml.Unmarshal([]byte(instance.Spec.Parameters.Raw), &parameters)
-		if err != nil {
-			glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
-			c.updateInstanceCondition(
-				instance,
-				v1alpha1.InstanceConditionReady,
-				v1alpha1.ConditionFalse,
-				"ErrorWithParameters",
-				"Error unmarshaling instance parameters",
-			)
-			return
-		}
+	parameters, err := unmarshalParameters(instance.Spec.Parameters.Raw)
+	if err != nil {
+		glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorWithParameters,
+			"Error unmarshaling instance parameters",
+		)
+		return
 	}
 
 	request := &brokerapi.CreateServiceInstanceRequest{
@@ -502,12 +503,12 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
-		glog.Errorf("Binding %v/%v references a non-existent Instance %v/%v", binding.Namespace, binding.Name, binding.Namespace, instance.Name)
+		glog.Errorf("Binding %v/%v references a non-existent Instance %v/%v", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServiceClass",
+			"ReferencesNonexistentInstance",
 			"The binding references an Instance that does not exist",
 		)
 		return
@@ -568,20 +569,17 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	parameters := make(map[string]interface{})
-	if len(binding.Spec.Parameters.Raw) > 0 {
-		err = yaml.Unmarshal([]byte(binding.Spec.Parameters.Raw), &parameters)
-		if err != nil {
-			glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
-			c.updateBindingCondition(
-				binding,
-				v1alpha1.BindingConditionReady,
-				v1alpha1.ConditionFalse,
-				"ErrorWithParameters",
-				"Error unmarshaling binding parameters",
-			)
-			return
-		}
+	parameters, err := unmarshalParameters(binding.Spec.Parameters.Raw)
+	if err != nil {
+		glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorWithParameters,
+			"Error unmarshaling binding parameters",
+		)
+		return
 	}
 
 	request := &brokerapi.BindingRequest{
@@ -748,4 +746,14 @@ func convertServicePlans(plans []brokerapi.ServicePlan) []v1alpha1.ServicePlan {
 		}
 	}
 	return ret
+}
+
+func unmarshalParameters(in []byte) (map[string]interface{}, error) {
+	parameters := make(map[string]interface{})
+	if len(in) > 0 {
+		if err := yaml.Unmarshal([]byte(in), &parameters); err != nil {
+			return parameters, err
+		}
+	}
+	return parameters, nil
 }
