@@ -19,6 +19,7 @@ package tpr
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -37,9 +38,39 @@ func (k Kind) String() string {
 	return string(k)
 }
 
-// TPRName returns the lowercase name, suitable for fetching resources of this kind
+// TPRName returns the lowercase name, suitable for creating third party resources of this kind
 func (k Kind) TPRName() string {
-	return strings.ToLower(k.String())
+	// this code taken from code under
+	// https://github.com/kubernetes/community/blob/master/contributors/design-proposals/extending-api.md#expectations-about-third-party-objects
+	var result string
+	for ix := range k.String() {
+		current := rune(k.String()[ix])
+		if unicode.IsUpper(current) && ix > 0 {
+			result = result + "-"
+		}
+		result = result + string(unicode.ToLower(current))
+	}
+	return result
+}
+
+// URLName returns the URL-worthy name this TPR kind. Examples:
+//
+//	Kind("ServiceClass").URLName() == "serviceclasses"
+//	Kind("Broker").URLName() == "brokers"
+//
+// Note that this function is incomplete - it is only guaranteed to properly pluralize our 4
+// resource types ("Broker", "ServiceClass", "Instance", "Binding")
+func (k Kind) URLName() string {
+	str := k.String()
+	strLen := len(str)
+	lastChar := str[strLen-1]
+	var ret string
+	if lastChar == 's' {
+		ret = str + "es"
+	} else {
+		ret = str + "s"
+	}
+	return strings.ToLower(ret)
 }
 
 const (
