@@ -58,10 +58,6 @@ type BrokerSpec struct {
 	// AuthSecret is a reference to a Secret containing auth information the
 	// catalog should use to authenticate to this Broker.
 	AuthSecret *v1.ObjectReference `json:"authSecret,omitempty"`
-
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
-	OSBGUID string `json:"osbGuid"`
 }
 
 // BrokerStatus represents the current status of a Broker.

@@ -35,7 +35,6 @@ import (
 )
 
 const (
-	brokerGUID       = "BROKERGUID"
 	serviceClassGUID = "SCGUID"
 	instanceGUID     = "IGUID"
 	bindingGUID      = "BGUID"
@@ -46,8 +45,7 @@ func getTestBroker() *v1alpha1.Broker {
 	return &v1alpha1.Broker{
 		ObjectMeta: v1.ObjectMeta{Name: "test-broker"},
 		Spec: v1alpha1.BrokerSpec{
-			URL:     "https://example.com",
-			OSBGUID: brokerGUID,
+			URL: "https://example.com",
 		},
 	}
 }
