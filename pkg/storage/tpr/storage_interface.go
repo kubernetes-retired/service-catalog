@@ -99,7 +99,7 @@ func (t *storageInterface) Create(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName()+"s",
+		t.singularKind.TPRName(),
 	).Body(data)
 
 	var unknown runtime.Unknown
@@ -140,7 +140,7 @@ func (t *storageInterface) Delete(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName()+"s",
+		t.singularKind.TPRName(),
 		name,
 	)
 	if err := req.Do().Error(); err != nil {
@@ -175,7 +175,7 @@ func (t *storageInterface) Watch(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName()+"s",
+		t.singularKind.TPRName(),
 		name,
 	).Param("watch", "true")
 	watchIface, err := req.Watch()
@@ -261,7 +261,7 @@ func (t *storageInterface) Get(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName()+"s",
+		t.singularKind.TPRName(),
 		name,
 	)
 
@@ -314,7 +314,7 @@ func (t *storageInterface) List(
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.TPRName()+"s",
+		t.singularKind.TPRName(),
 	)
 
 	var unknown runtime.Unknown

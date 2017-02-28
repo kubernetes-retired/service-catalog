@@ -18,7 +18,7 @@ package tpr
 
 import (
 	"fmt"
-	"strings"
+	"unicode"
 )
 
 const (
@@ -39,7 +39,17 @@ func (k Kind) String() string {
 
 // TPRName returns the lowercase name, suitable for fetching resources of this kind
 func (k Kind) TPRName() string {
-	return strings.ToLower(k.String())
+	// this code taken from code under
+	// https://github.com/kubernetes/community/blob/master/contributors/design-proposals/extending-api.md#expectations-about-third-party-objects
+	var result string
+	for ix := range k.String() {
+		current := rune(k.String()[ix])
+		if unicode.IsUpper(current) && ix > 0 {
+			result = result + "-"
+		}
+		result = result + string(unicode.ToLower(current))
+	}
+	return result
 }
 
 const (
