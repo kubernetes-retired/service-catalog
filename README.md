@@ -41,6 +41,12 @@ services like message brokers that exists _somewhere_ in a simple way:
 For more details about the design and features of this project see the
 [design](docs/design.md) doc.
 
+#### Video links
+
+- [Service Catalog Basic Concepts](https://goo.gl/6xINOa)
+- [Service Catalog Basic Demo](https://goo.gl/IJ6CV3)
+- [SIG Service Catalog Meeting Playlist](https://goo.gl/ZmLNX9)
+
 ---
 
 We are currently scoping our **v1** milestone [here](./docs/v1).
@@ -70,9 +76,6 @@ The project was established 2016-Sept-12.  The incubator team for the project is
 
 For more information about sig-service-catalog such as meeting times and agenda,
 check out the [community site](https://github.com/kubernetes/community/tree/master/sig-service-catalog).
-
-There is a YouTube channel for our recorded meetings
-[here](https://www.youtube.com/playlist?list=PL69nYSiGNLP2k9ZXx9E1MvRSotFDoHUWs&jct=kNbyYC551SM9HbO2eMTEIvDj1wxQfA).
 
 ### Code of Conduct
 
