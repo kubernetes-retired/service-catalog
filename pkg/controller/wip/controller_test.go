@@ -24,6 +24,7 @@ import (
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
+	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/servicecatalog/v1alpha1"
 
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
@@ -31,7 +32,7 @@ import (
 )
 
 func TestReconcileBroker(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, stopCh := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
 
 	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
@@ -98,6 +99,95 @@ func TestReconcileBroker(t *testing.T) {
 	close(stopCh)
 }
 
+func TestReconcileInstanceHappyLand(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, sharedInformers, stopCh := newTestController(t)
+
+	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
+		Services: []*brokerapi.Service{
+			{
+				Name:        "test-service",
+				ID:          "12345",
+				Description: "a test service",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "test-plan",
+						Free:        true,
+						ID:          "34567",
+						Description: "a test plan",
+					},
+				},
+			},
+		},
+	}
+
+	broker := &v1alpha1.Broker{
+		ObjectMeta: v1.ObjectMeta{Name: "test-broker"},
+		Spec: v1alpha1.BrokerSpec{
+			URL:     "https://example.com",
+			OSBGUID: "OSBGUID field",
+		},
+	}
+
+	serviceClass := &v1alpha1.ServiceClass{
+		ObjectMeta: v1.ObjectMeta{Name: "test-serviceclass"},
+		BrokerName: "test-broker",
+		Plans: []v1alpha1.ServicePlan{{
+			Name:    "default",
+			OSBFree: true,
+			OSBGUID: "9876543",
+		}},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(broker)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(serviceClass)
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: "test-instance", Namespace: "test-ns"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+		},
+	}
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	close(stopCh)
+}
+
 // newTestController creates a new test controller injected with fake clients
 // and returns:
 //
@@ -107,6 +197,7 @@ func TestReconcileBroker(t *testing.T) {
 // - a fake broker instance client
 // - a fake broker binding client
 // - a test controller
+// - the shared informers for the service catalog v1alpha1 api
 // - a stop channel hooked to the informer factory that was created
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
@@ -118,6 +209,7 @@ func newTestController(t *testing.T) (
 	*fakebrokerapi.InstanceClient,
 	*fakebrokerapi.BindingClient,
 	*controller,
+	v1alpha1informers.Interface,
 	chan struct{}) {
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
@@ -150,7 +242,7 @@ func newTestController(t *testing.T) (
 	stopCh := make(chan struct{})
 	informerFactory.Start(stopCh)
 
-	return fakeKubeClient, fakeCatalogClient, catalogCl, instanceCl, bindingCl, testController.(*controller), stopCh
+	return fakeKubeClient, fakeCatalogClient, catalogCl, instanceCl, bindingCl, testController.(*controller), serviceCatalogSharedInformers, stopCh
 }
 
 // filterActions filters the list/watch actions on service catalog resources
