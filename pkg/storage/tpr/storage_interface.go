@@ -17,6 +17,7 @@ limitations under the License.
 package tpr
 
 import (
+	"bytes"
 	"errors"
 
 	"github.com/golang/glog"
@@ -63,10 +64,11 @@ func NewStorageInterface(opts Options) (storage.Interface, factory.DestroyFunc) 
 // Versioned returns the versioned associated with this interface
 func (t *storageInterface) Versioner() storage.Versioner {
 	return &storageVersioner{
+		codec: t.codec,
 		singularKind: t.singularKind,
 		listKind:     t.listKind,
 		checkObject:  t.checkObject,
-
+		defaultNS: t.defaultNamespace,
 		cl: t.cl,
 	}
 }
@@ -364,14 +366,48 @@ func (t *storageInterface) List(
 func (t *storageInterface) GuaranteedUpdate(
 	ctx context.Context,
 	key string,
-	ptrToType runtime.Object,
+	out runtime.Object,
 	ignoreNotFound bool,
 	precondtions *storage.Preconditions,
 	tryUpdate storage.UpdateFunc,
 	suggestion ...runtime.Object,
 ) error {
-	// TODO: implement
-	return errNotImplemented
+	glog.Infof("in guaranteedupdate")
+	var origState *objState
+	if len(suggestion) == 1 && suggestion[0] != nil {
+		s, err := getStateFromObject(t, suggestion[0])
+		if err != nil {
+			glog.Errorf("getting state from suggested object (%s)", err)
+			return err
+		}
+		origState = s
+	} else {
+		if err := t.Get(ctx, key, "", out, false); err != nil {
+			glog.Errorf("getting initial object (%s)", err)
+			return err
+		}
+		s, err := getStateFromObject(t, out)
+		if err != nil {
+			glog.Errorf("getting state from fetched object (%s)", err)
+			return err
+		}
+		origState = s
+	}
+	for {
+		ret, _, err := updateState(t.Versioner(), origState, tryUpdate)
+		if err != nil {
+			glog.Errorf("updating the state (%s)", err)
+			return err
+		}
+		data, err := runtime.Encode(t.codec, ret)
+		if err != nil {
+			glog.Errorf("encoding return object (%s)", err)
+			return err
+		}
+		if bytes.Equal(data, origState.data) {
+			return decode(t.codec, t.Versioner(), origState.data, out)
+		}
+	}
 }
 
 func decode(
