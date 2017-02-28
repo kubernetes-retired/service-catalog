@@ -17,5 +17,7 @@ limitations under the License.
 // +k8s:defaulter-gen=TypeMeta
 // +k8s:deepcopy-gen=package,register
 
+// Package servicecatalog contains all of the sources needed to make
+// servicebrokers and their related service objects.
 // +groupName=
 package servicecatalog
