@@ -102,8 +102,6 @@ func (t *storageInterface) Create(
 		t.singularKind.URLName(),
 	).Body(data)
 
-	glog.Infof("POSTing to URL %s", req.URL().String())
-
 	var unknown runtime.Unknown
 	if err := req.Do().Into(&unknown); err != nil {
 		glog.Errorf("decoding response (%s)", err)
