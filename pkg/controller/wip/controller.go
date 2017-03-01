@@ -384,17 +384,20 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	parameters, err := unmarshalParameters(instance.Spec.Parameters.Raw)
-	if err != nil {
-		glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorWithParameters,
-			"Error unmarshaling instance parameters",
-		)
-		return
+	var parameters map[string]interface{}
+	if instance.Spec.Parameters != nil {
+		parameters, err = unmarshalParameters(instance.Spec.Parameters.Raw)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				"Error unmarshaling instance parameters",
+			)
+			return
+		}
 	}
 
 	request := &brokerapi.CreateServiceInstanceRequest{
@@ -565,17 +568,20 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
-	parameters, err := unmarshalParameters(binding.Spec.Parameters.Raw)
-	if err != nil {
-		glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
-		c.updateBindingCondition(
-			binding,
-			v1alpha1.BindingConditionReady,
-			v1alpha1.ConditionFalse,
-			errorWithParameters,
-			"Error unmarshaling binding parameters",
-		)
-		return
+	var parameters map[string]interface{}
+	if binding.Spec.Parameters != nil {
+		parameters, err = unmarshalParameters(binding.Spec.Parameters.Raw)
+		if err != nil {
+			glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				"Error unmarshaling binding parameters",
+			)
+			return
+		}
 	}
 
 	request := &brokerapi.BindingRequest{

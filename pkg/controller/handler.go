@@ -94,7 +94,7 @@ func (h *handler) createServiceInstance(in *servicecatalog.Instance) error {
 	client := h.newClientFunc(broker.Name, broker.Spec.URL, authUsername, authPassword)
 
 	parameters := make(map[string]interface{})
-	if len(in.Spec.Parameters.Raw) > 0 {
+	if in.Spec.Parameters != nil && len(in.Spec.Parameters.Raw) > 0 {
 		err = yaml.Unmarshal([]byte(in.Spec.Parameters.Raw), &parameters)
 		if err != nil {
 			glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", in.Spec.Parameters, err)
@@ -255,7 +255,7 @@ func (h *handler) CreateServiceBinding(in *servicecatalog.Binding) (*servicecata
 	}
 
 	parameters := make(map[string]interface{})
-	if len(in.Spec.Parameters.Raw) > 0 {
+	if in.Spec.Parameters != nil && len(in.Spec.Parameters.Raw) > 0 {
 		err = yaml.Unmarshal([]byte(in.Spec.Parameters.Raw), &parameters)
 		if err != nil {
 			glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", in.Spec.Parameters, err)
