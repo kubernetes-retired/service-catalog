@@ -18,21 +18,49 @@ package wip
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
-	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
 
-	"k8s.io/client-go/1.5/kubernetes/fake"
-
+	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/runtime"
+
+	clientgofake "k8s.io/client-go/1.5/kubernetes/fake"
+	clientgoruntime "k8s.io/client-go/1.5/pkg/runtime"
+	clientgotesting "k8s.io/client-go/1.5/testing"
 )
+
+// TLDR
+// For the time being, everything related to verifying actions on the k8s core
+// client should use the clientgo* packages. Everything related to verifying
+// expectations on the service catalog API fake should use the
+// k8s.io/kubernetes packages.
+//
+// NOTE:
+//
+// There are two different 'testing' packages imported here from kubernetes
+// projects:
+//
+// - k8s.io/kubernetes/client/testing/core
+// - k8s.io/client-go/1.5/testing
+//
+// These are the same package, but we have to import them from both locations
+// because our API is written using packages from kubernetes directly, while
+// for the kubernetes core API, we use client-go.
+//
+// We _have_ to do this for now because the version of kubernetes we vendor in
+// for the API server guts uses the kubernetes packages.  Once we rebase onto
+// the latest kubernetes repo, we'll be able to stop using the kubernetes/...
+// packages entirely and _just_ consume types from client-go.
+//
+// See issue: https://github.com/kubernetes-incubator/service-catalog/issues/413
 
 const (
 	serviceClassGUID = "SCGUID"
@@ -102,8 +130,7 @@ func TestReconcileBroker(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 2, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// first action should be a create action for a service class
@@ -136,6 +163,125 @@ func TestReconcileBroker(t *testing.T) {
 
 }
 
+func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	fakeBrokerCatalog.RetErr = fakebrokerapi.ErrInstanceNotFound
+	broker := getTestBroker()
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
+	}
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+}
+
+func TestReconcileBrokerWithAuthError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, _, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	broker := getTestBroker()
+	broker.Spec.AuthSecret = &v1.ObjectReference{
+		Namespace: "does_not_exist",
+		Name:      "auth-name",
+	}
+
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+		return true, nil, errors.New("no secret defined")
+	})
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
+	}
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	getAction := kubeActions[0].(clientgotesting.GetAction)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	if e, a := "secrets", getAction.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+}
+
+func TestReconcileBrokerWithReconcileError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, _, stopCh := newTestController(t)
+	defer close(stopCh)
+
+	broker := getTestBroker()
+	broker.Spec.AuthSecret = &v1.ObjectReference{
+		Namespace: "does_not_exist",
+		Name:      "auth-name",
+	}
+
+	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("error creating serviceclass")
+	})
+
+	testController.reconcileBroker(broker)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
+	}
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	getAction := kubeActions[0].(clientgotesting.GetAction)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+}
+
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, _, _, _, testController, _, stopCh := newTestController(t)
 	defer close(stopCh)
@@ -153,8 +299,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// There should only be one action that says it failed because no such class exists.
@@ -194,8 +339,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// There should only be one action that says it failed because no such class exists.
@@ -246,8 +390,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// verify no kube resources created
@@ -323,8 +466,7 @@ func TestReconcileInstance(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// verify no kube resources created
@@ -380,8 +522,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// There should only be one action that says it failed because no such instance exists.
@@ -431,8 +572,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// There should only be one action that says it failed because no such service class.
@@ -491,8 +631,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
 	// There should only be one action that says binding was created
@@ -538,7 +677,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
 func newTestController(t *testing.T) (
-	*fake.Clientset,
+	*clientgofake.Clientset,
 	*servicecatalogclientset.Clientset,
 	*fakebrokerapi.CatalogClient,
 	*fakebrokerapi.InstanceClient,
@@ -547,7 +686,7 @@ func newTestController(t *testing.T) (
 	v1alpha1informers.Interface,
 	chan struct{}) {
 	// create a fake kube client
-	fakeKubeClient := &fake.Clientset{}
+	fakeKubeClient := &clientgofake.Clientset{}
 	// create a fake sc client
 	fakeCatalogClient := &servicecatalogclientset.Clientset{}
 
