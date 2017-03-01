@@ -41,9 +41,9 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 
 func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	tprOpts := opts.TPROptions
-	glog.Infoln("installing TPR types to the cluster")
+	glog.Infoln("Installing TPR types to the cluster")
 	if err := tpr.InstallTypes(tprOpts.clIface); err != nil {
-		glog.V(4).Infof("installing TPR types failed, continuing anyway (%s)", err)
+		glog.V(4).Infof("Installing TPR types failed, continuing anyway (%s)", err)
 	}
 	glog.V(4).Infoln("Preparing to run API server")
 	genericConfig, err := setupBasicServer(opts)
@@ -117,7 +117,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	// Set the finalized generic and storage configs
-	config := apiserver.NewEtcdConfig(opts.EtcdOptions.cl, genericConfig, 0, storageFactory)
+	config := apiserver.NewEtcdConfig(genericConfig, 0 /* deleteCollectionWorkers */, storageFactory)
 
 	// Fill in defaults not already set in the config
 	completed := config.Complete()

@@ -47,7 +47,7 @@ func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
 	flags.StringVar(
 		&s.StorageTypeString,
 		"storage-type",
-		"service-catalog",
+		"etcd",
 		"The type of backing storage this API server should use",
 	)
 

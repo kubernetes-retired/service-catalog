@@ -19,7 +19,6 @@ package server
 import (
 	"github.com/spf13/pflag"
 	// "k8s.io/kubernetes/pkg/client/typed/dynamic"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 )
 
@@ -27,7 +26,6 @@ import (
 // communicates with an etcd. This struct is exported so that it can be used by integration
 // tests
 type EtcdOptions struct {
-	cl clientset.Interface
 	// storage with etcd
 	*genericserveroptions.EtcdOptions
 }

@@ -24,14 +24,11 @@ import (
 
 	"github.com/golang/glog"
 	// set up logging the k8s way
-	"k8s.io/kubernetes/pkg/runtime/schema"
 	"k8s.io/kubernetes/pkg/util/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	// install our API groups
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	"k8s.io/kubernetes/pkg/client/restclient"
 )
 
 func main() {
@@ -39,20 +36,13 @@ func main() {
 	// make sure we print all the logs while shutting down.
 	defer logs.FlushLogs()
 
-	cfg, err := restclient.InClusterConfig()
+	cmd, err := server.NewCommandServer(os.Stdout)
 	if err != nil {
-		glog.Errorf("Failed to get kube client config (%s)", err)
-		os.Exit(1)
-	}
-	cfg.GroupVersion = &schema.GroupVersion{}
-
-	clIface, err := clientset.NewForConfig(cfg)
-	if err != nil {
-		glog.Errorf("Failed to create clientset Interface (%s)", err)
+		glog.Errorf("Error creating server: %v", err)
+		logs.FlushLogs()
 		os.Exit(1)
 	}
 
-	cmd := server.NewCommandServer(os.Stdout, clIface)
 	if err := cmd.Execute(); err != nil {
 		glog.Errorf("server exited unexpectedly (%s)", err)
 		logs.FlushLogs()

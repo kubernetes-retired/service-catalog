@@ -38,13 +38,11 @@ type etcdConfig struct {
 
 // NewEtcdConfig returns a new server config to describe an etcd-backed API server
 func NewEtcdConfig(
-	cl clientset.Interface,
 	genCfg *genericapiserver.Config,
 	deleteCollWorkers int,
 	factory genericapiserver.StorageFactory,
 ) Config {
 	return &etcdConfig{
-		cl:                      cl,
 		genericConfig:           genCfg,
 		deleteCollectionWorkers: deleteCollWorkers,
 		storageFactory:          factory,
@@ -56,7 +54,6 @@ func NewEtcdConfig(
 func (c *etcdConfig) Complete() CompletedConfig {
 	completeGenericConfig(c.genericConfig)
 	return completedEtcdConfig{
-		cl:         c.cl,
 		etcdConfig: c,
 		// Not every API group compiled in is necessarily enabled by the operator
 		// at runtime.
@@ -68,9 +65,8 @@ func (c *etcdConfig) Complete() CompletedConfig {
 }
 
 // CompletedEtcdConfig is an internal type to take advantage of typechecking in
-// the type system. mhb does not like it.
+// the type system.
 type completedEtcdConfig struct {
-	cl clientset.Interface
 	*etcdConfig
 	apiResourceConfigSource genericapiserver.APIResourceConfigSource
 }
@@ -93,7 +89,7 @@ func (c completedEtcdConfig) NewServer() (*ServiceCatalogAPIServer, error) {
 
 	glog.V(4).Infoln("Installing API groups")
 	// default namespace doesn't matter for etcd
-	providers := restStorageProviders("", server.StorageTypeEtcd, c.cl)
+	providers := restStorageProviders("" /* default namespace */, server.StorageTypeEtcd, nil)
 	for _, provider := range providers {
 		groupInfo, err := provider.NewRESTStorage(c.apiResourceConfigSource, roFactory.NewFor)
 		if IsErrAPIGroupDisabled(err) {
