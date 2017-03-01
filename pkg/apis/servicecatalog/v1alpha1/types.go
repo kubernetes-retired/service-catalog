@@ -193,14 +193,8 @@ type InstanceSpec struct {
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBDashboardURL  *string `json:"osbDashboardURL"`
-	OSBLastOperation *string `json:"osbLastOperation"`
-	OSBCredentials   string  `json:"osbCredentials"`
-	OSBInternalID    string  `json:"osbInternalID"`
-	OSBServiceID     string  `json:"osbServiceID"`
-	OSBPlanID        string  `json:"osbPlanID"`
-	OSBType          string  `json:"osbType"`
-	OSBSpaceGUID     string  `json:"osbSpaceGUID"`
+	OSBDashboardURL  *string `json:"osbDashboardURL,omitempty"`
+	OSBLastOperation *string `json:"osbLastOperation,omitempty"`
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -262,27 +256,18 @@ type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	// Immutable.
 	InstanceRef v1.ObjectReference `json:"instanceRef"`
-	// AppLabelSelector selects the pods in the Binding's namespace that
-	// should be injected with the results of the binding.  Immutable.
-	AppLabelSelector metav1.LabelSelector `json:"appLabelSelector"`
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
 	// Names of subordinate objects to create
-	SecretName    string `json:"secretName"`
-	ServiceName   string `json:"serviceName"`
-	ConfigMapName string `json:"configMapName"`
-	// Placeholder for future SIP support
-	// ServiceInjectionPolicyName string `json:"serviceInjectionPolicyName"`
+	SecretName string `json:"secretName"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
 	OSBGUID string `json:"osbGuid"`
-
-	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }
 
 // BindingStatus represents the current status of a Binding.

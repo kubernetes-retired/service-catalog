@@ -26,8 +26,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"k8s.io/kubernetes/pkg/api/v1"
 
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-
 	// TODO: fix this upstream
 	// we shouldn't have to install things to use our own generated client.
 
@@ -589,14 +587,9 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 				Name:      "bar",
 				Namespace: "test-namespace",
 			},
-			AppLabelSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"foo": "bar"},
-			},
-			Parameters:    &runtime.RawExtension{Raw: []byte(bindingParameter)},
-			SecretName:    "secret-name",
-			ServiceName:   "service-name",
-			ConfigMapName: "configmap-name",
-			OSBGUID:       "UUID-string",
+			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
+			SecretName: "secret-name",
+			OSBGUID:    "UUID-string",
 		},
 	}
 

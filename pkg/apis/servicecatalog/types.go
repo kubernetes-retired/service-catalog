@@ -200,12 +200,6 @@ type InstanceSpec struct {
 	// OSB-specific
 	OSBDashboardURL  *string
 	OSBLastOperation *string
-	OSBCredentials   string
-	OSBInternalID    string
-	OSBServiceID     string
-	OSBPlanID        string
-	OSBType          string
-	OSBSpaceGUID     string
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -267,27 +261,18 @@ type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	// Immutable.
 	InstanceRef kapi.ObjectReference
-	// AppLabelSelector selects the pods in the Binding's namespace that
-	// should be injected with the results of the binding.  Immutable.
-	AppLabelSelector metav1.LabelSelector
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
 	Parameters *runtime.RawExtension
 
 	// Names of subordinate objects to create
-	SecretName    string
-	ServiceName   string
-	ConfigMapName string
-	// Placeholder for future SIP support
-	// ServiceInjectionPolicyName string
+	SecretName string
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
 	OSBGUID string
-
-	// TODO: allow the svc consumer to tell the SIP how to expose CM and secret (env or volume)
 }
 
 // BindingStatus represents the current status of a Binding.
