@@ -19,6 +19,7 @@ package injector
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -28,6 +29,123 @@ import (
 	v1 "k8s.io/client-go/1.5/pkg/api/v1"
 	kapi "k8s.io/kubernetes/pkg/api"
 )
+
+func TestCreateSerializedSecret(t *testing.T) {
+	cases := []struct {
+		name   string
+		cred   *brokerapi.Credential
+		secret *v1.Secret
+	}{
+		{
+			name: "string type",
+			cred: &brokerapi.Credential{
+				"Hostname": "host",
+				"Port":     "123",
+				"Username": "user",
+				"Password": "password!@#!@#!0)",
+			},
+			secret: &v1.Secret{
+				Data: map[string][]byte{
+					"Hostname": []byte("host"),
+					"Port":     []byte("123"),
+					"Username": []byte("user"),
+					"Password": []byte("password!@#!@#!0)"),
+				},
+			},
+		},
+		{
+			name: "float type",
+			cred: &brokerapi.Credential{
+				"Hostname": "host",
+				"Port":     "123",
+				"Username": "user",
+				"Password": 1.23,
+			},
+			secret: &v1.Secret{
+				Data: map[string][]byte{
+					"Hostname": []byte("host"),
+					"Port":     []byte("123"),
+					"Username": []byte("user"),
+					"Password": []byte("1.23"),
+				},
+			},
+		},
+		{
+			name: "int type",
+			cred: &brokerapi.Credential{
+				"Hostname": "host",
+				"Port":     123,
+				"Username": "user",
+				"Password": 1,
+			},
+			secret: &v1.Secret{
+				Data: map[string][]byte{
+					"Hostname": []byte("host"),
+					"Port":     []byte("123"),
+					"Username": []byte("user"),
+					"Password": []byte("1"),
+				},
+			},
+		},
+		{
+			name: "slice type",
+			cred: &brokerapi.Credential{
+				"Hostname": "host",
+				"Port":     "123",
+				"Username": "user",
+				"Password": []string{"one", "two"},
+			},
+			secret: &v1.Secret{
+				Data: map[string][]byte{
+					"Hostname": []byte("host"),
+					"Port":     []byte("123"),
+					"Username": []byte("user"),
+					"Password": []byte(`["one","two"]`),
+				},
+			},
+		},
+		{
+			name: "map type",
+			cred: &brokerapi.Credential{
+				"Hostname": "host",
+				"Port":     "123",
+				"Username": "user",
+				"Password": map[string]int{"one": 1, "two": 2},
+			},
+			secret: &v1.Secret{
+				Data: map[string][]byte{
+					"Hostname": []byte("host"),
+					"Port":     []byte("123"),
+					"Username": []byte("user"),
+					"Password": []byte(`{"one":1,"two":2}`),
+				},
+			},
+		},
+	}
+
+	namespace := "test-namespace"
+	binding := &servicecatalog.Binding{
+		ObjectMeta: kapi.ObjectMeta{
+			Name:      "binding-name",
+			Namespace: namespace,
+		},
+		Spec: servicecatalog.BindingSpec{
+			InstanceRef: kapi.ObjectReference{
+				Namespace: namespace,
+			},
+		},
+	}
+	for _, tc := range cases {
+		actualSecret, err := createSerializedSecret(binding, tc.cred)
+		if err != nil {
+			t.Errorf("%s: unexpected error making secret: %v", tc.name, err)
+		}
+		if e, a := tc.secret, actualSecret; !reflect.DeepEqual(e.Data, a.Data) {
+			t.Errorf("%s: expected and actual secret data do not match", tc.name)
+		}
+
+	}
+}
 
 func TestInjectOne(t *testing.T) {
 	binding := createFakeBindings(1)[0]

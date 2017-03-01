@@ -54,7 +54,7 @@ func CreateK8sBindingInjector() (BindingInjector, error) {
 	}, nil
 }
 
-func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
+func createSerializedSecret(binding *servicecatalog.Binding, cred *brokerapi.Credential) (*v1.Secret, error) {
 	secret := &v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      binding.Name,
@@ -67,12 +67,22 @@ func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *broke
 		var err error
 		secret.Data[k], err = Serialize(v)
 		if err != nil {
-			return fmt.Errorf("Unable to serialize credential value %q: %v; %s",
+			return nil, fmt.Errorf("Unable to serialize credential value %q: %v; %s",
 				k, v, err)
 		}
 	}
+
+	return secret, nil
+}
+
+func (b *k8sBindingInjector) Inject(binding *servicecatalog.Binding, cred *brokerapi.Credential) error {
+	secret, err := createSerializedSecret(binding, cred)
+	if err != nil {
+		return err
+	}
+
 	secretsCl := b.client.Core().Secrets(binding.Spec.InstanceRef.Namespace)
-	_, err := secretsCl.Create(secret)
+	_, err = secretsCl.Create(secret)
 	return err
 }
 
