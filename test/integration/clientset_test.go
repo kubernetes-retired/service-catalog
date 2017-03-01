@@ -427,7 +427,7 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
-			Parameters:       runtime.RawExtension{Raw: []byte(instanceParameter)},
+			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
 		},
 	}
 
@@ -561,7 +561,7 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 			AppLabelSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{"foo": "bar"},
 			},
-			Parameters:    runtime.RawExtension{Raw: []byte(bindingParameter)},
+			Parameters:    &runtime.RawExtension{Raw: []byte(bindingParameter)},
 			SecretName:    "secret-name",
 			ServiceName:   "service-name",
 			ConfigMapName: "configmap-name",

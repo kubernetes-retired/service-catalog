@@ -161,7 +161,7 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 		return err
 	}
 	out.AppLabelSelector = in.AppLabelSelector
-	out.Parameters = in.Parameters
+	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.ServiceName = in.ServiceName
 	out.ConfigMapName = in.ConfigMapName
@@ -179,7 +179,7 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 		return err
 	}
 	out.AppLabelSelector = in.AppLabelSelector
-	out.Parameters = in.Parameters
+	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.ServiceName = in.ServiceName
 	out.ConfigMapName = in.ConfigMapName
@@ -412,7 +412,7 @@ func Convert_servicecatalog_InstanceList_To_v1alpha1_InstanceList(in *servicecat
 func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *InstanceSpec, out *servicecatalog.InstanceSpec, s conversion.Scope) error {
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
-	out.Parameters = in.Parameters
+	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.OSBGUID = in.OSBGUID
 	out.OSBCredentials = in.OSBCredentials
 	out.OSBDashboardURL = in.OSBDashboardURL
@@ -432,7 +432,7 @@ func Convert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *InstanceSp
 func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servicecatalog.InstanceSpec, out *InstanceSpec, s conversion.Scope) error {
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
-	out.Parameters = in.Parameters
+	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.OSBGUID = in.OSBGUID
 	out.OSBCredentials = in.OSBCredentials
 	out.OSBDashboardURL = in.OSBDashboardURL

@@ -163,7 +163,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 				t.Errorf("Failed to create parameter object: %v", err)
 				return
 			}
-			is.Parameters = *parameters
+			is.Parameters = parameters
 		},
 		func(bs *servicecatalog.BindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
@@ -173,7 +173,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 				t.Errorf("Failed to create parameter object: %v", err)
 				return
 			}
-			bs.Parameters = *parameters
+			bs.Parameters = parameters
 		},
 	)
 	return f

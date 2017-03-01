@@ -28,8 +28,10 @@ import (
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/servicecatalog/v1alpha1"
 
 	"k8s.io/client-go/1.5/kubernetes/fake"
+
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
+	"k8s.io/kubernetes/pkg/runtime"
 )
 
 const (
@@ -240,7 +242,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
 	}
-	instance.Spec.Parameters.Raw = b
+	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
 	testController.reconcileInstance(instance)
 
 	actions := filterActions(fakeCatalogClient.Actions())
@@ -484,7 +487,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
 	}
-	binding.Spec.Parameters.Raw = b
+	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	testController.reconcileBinding(binding)
 

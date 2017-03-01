@@ -194,7 +194,7 @@ type InstanceSpec struct {
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
-	Parameters runtime.RawExtension
+	Parameters *runtime.RawExtension
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
@@ -277,7 +277,7 @@ type BindingSpec struct {
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
-	Parameters runtime.RawExtension
+	Parameters *runtime.RawExtension
 
 	// Names of subordinate objects to create
 	SecretName    string
