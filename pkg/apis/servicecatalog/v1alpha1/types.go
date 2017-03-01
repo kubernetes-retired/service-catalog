@@ -132,12 +132,12 @@ type ServiceClass struct {
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBTags                    []string `json:"osbTags"`
-	OSBRequires                []string `json:"osbRequires"`
-	OSBMaxDBPerNode            string   `json:"osbMaxDBPerNode"`
-	OSBDashboardOAuth2ClientID string   `json:"osbDashboardOAuth2ClientID"`
-	OSBDashboardSecret         string   `json:"osbDashboardSecret"`
-	OSBDashboardRedirectURI    string   `json:"osbDashboardRedirectURI"`
+	OSBTags                    []string `json:"osbTags,omitempty"`
+	OSBRequires                []string `json:"osbRequires,omitempty"`
+	OSBMaxDBPerNode            string   `json:"osbMaxDBPerNode,omitempty"`
+	OSBDashboardOAuth2ClientID string   `json:"osbDashboardOAuth2ClientID,omitempty"`
+	OSBDashboardSecret         string   `json:"osbDashboardSecret,omitempty"`
+	OSBDashboardRedirectURI    string   `json:"osbDashboardRedirectURI,omitempty"`
 
 	// Metadata fields
 	Description         string `json:"description,omitempty"`
