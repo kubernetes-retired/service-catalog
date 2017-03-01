@@ -7603,7 +7603,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 						},
 					},
 				},
-				Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid", "osbTags", "osbRequires", "osbMaxDBPerNode", "osbDashboardOAuth2ClientID", "osbDashboardSecret", "osbDashboardRedirectURI"},
+				Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid"},
 			},
 		},
 		Dependencies: []string{
