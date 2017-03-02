@@ -186,7 +186,7 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 
 	brokerServer, err := brokerClient.Create(broker)
 	if nil != err {
-		return fmt.Errorf("error creating the broker '%s' (%s)", broker, err)
+		return fmt.Errorf("error creating the broker '%v' (%v)", broker, err)
 	}
 	if name != brokerServer.Name {
 		return fmt.Errorf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
@@ -229,7 +229,7 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 	if nil != err ||
 		"test-namespace" != brokerUpdated.Spec.AuthSecret.Namespace ||
 		"test-name" != brokerUpdated.Spec.AuthSecret.Name {
-		return fmt.Errorf("broker wasn't updated", brokerServer, brokerUpdated)
+		return fmt.Errorf("broker wasn't updated, %v, %v", brokerServer, brokerUpdated)
 	}
 
 	readyConditionTrue := v1alpha1.BrokerCondition{
@@ -273,7 +273,7 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 	if nil != err ||
 		"test-namespace" != brokerServer.Spec.AuthSecret.Namespace ||
 		"test-name" != brokerServer.Spec.AuthSecret.Name {
-		return fmt.Errorf("broker wasn't updated (%s)", brokerServer)
+		return fmt.Errorf("broker wasn't updated (%v)", brokerServer)
 	}
 	if e, a := readyConditionFalse, brokerServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
@@ -286,7 +286,7 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 
 	brokerDeleted, err := brokerClient.Get(name)
 	if nil == err {
-		return fmt.Errorf("broker should be deleted (%s)", brokerDeleted)
+		return fmt.Errorf("broker should be deleted (%v)", brokerDeleted)
 	}
 	return nil
 }
@@ -334,7 +334,7 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 
 	serviceClassAtServer, err := serviceClassClient.Create(serviceClass)
 	if nil != err {
-		return fmt.Errorf("error creating the ServiceClass (%s)", serviceClass)
+		return fmt.Errorf("error creating the ServiceClass (%v)", serviceClass)
 	}
 	if name != serviceClassAtServer.Name {
 		return fmt.Errorf(
@@ -394,8 +394,9 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 
 	serviceClassDeleted, err := serviceClassClient.Get(name)
 	if nil == err {
-		return fmt.Errorf("serviceclass should be deleted (%s)", serviceClassDeleted)
+		return fmt.Errorf("serviceclass should be deleted (%v)", serviceClassDeleted)
 	}
+
 	return nil
 }
 
@@ -578,7 +579,7 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 
 	bindingServer, err := bindingClient.Create(binding)
 	if nil != err {
-		return fmt.Errorf("error creating the binding", binding)
+		return fmt.Errorf("error creating the binding, %v", binding)
 	}
 	if name != bindingServer.Name {
 		return fmt.Errorf(

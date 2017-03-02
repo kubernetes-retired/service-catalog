@@ -71,6 +71,8 @@ else
 	scBuildImageTarget = .scBuildImage
 endif
 
+NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
+
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
 # "apiserver" instead of "bin/apiserver".
@@ -210,9 +212,9 @@ verify: .init .generate_files verify-client-gen
 	    | grep -v v1alpha1/defaults.go); \
 	  do \
 	   golint --set_exit_status $$i || exit 1; \
-	   go vet $$i || exit 1; \
 	  done'
 	@#
+	$(DOCKER_CMD) go vet $(NON_VENDOR_DIRS)
 	@echo Running repo-infra verify scripts
 	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
