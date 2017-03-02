@@ -43,15 +43,18 @@ func (t *storageVersioner) UpdateObject(obj runtime.Object, resourceVersion uint
 		glog.Errorf("setting resource version (%s)", err)
 		return err
 	}
-	// name, err := accessor.Name(obj)
-	// if err != nil {
-	// 	glog.Errorf("getting name of the object (%s)", err)
-	// 	return err
-	// }
-	ns, err := accessor.Namespace(obj)
+	name, err := accessor.Name(obj)
 	if err != nil {
+		glog.Errorf("getting name of the object (%s)", err)
+		return err
+	}
+	// the Namespace function may return a nil error and an empty namespace. if it returns
+	// a non-nil error and/or an empty namespace, use the default namespace
+	ns, err := accessor.Namespace(obj)
+	if err != nil || ns == "" {
 		ns = t.defaultNS
 	}
+
 	data, err := runtime.Encode(t.codec, obj)
 	if err != nil {
 		glog.Errorf("encoding obj (%s)", err)
@@ -64,12 +67,11 @@ func (t *storageVersioner) UpdateObject(obj runtime.Object, resourceVersion uint
 		"namespaces",
 		ns,
 		t.singularKind.URLName(),
+		name,
 	).Body(data)
-	glog.Infof("PUTing to URL %s", req.URL().String())
-	glog.Infof("PUTing body %s", string(data))
 
 	if err := req.Do().Error(); err != nil {
-		glog.Errorf("executing request (%s)", err)
+		glog.Errorf("error updating object %s (%s)", name, err)
 		return err
 	}
 	return nil
