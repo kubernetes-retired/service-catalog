@@ -17,17 +17,18 @@ have found possible (or practical). Below is a summary of the repository's
 layout:
 
     .
-    ├── .glide         # Glide cache (untracked)
-    ├── bin            # Destination for binaries compiled for linux/amd64 (untracked)
-    ├── build          # Contains build-related scripts and subdirectories containing Dockerfiles
-    ├── cmd            # Contains "main" Go packages for each service catalog component binary
-    ├── contrib        # Contains all non-essential source
-    │   └── hack       # Non-build related scripts
-    ├── deploy
-    │   └── catalog    # Helm chart for deploying service catalog
-    ├── docs           # Documentation
-    ├── pkg            # Contains all non-"main" Go packages
-    └── vendor         # Glide-managed dependencies (untracked)
+    ├── .glide             # Glide cache (untracked)
+    ├── bin                # Destination for binaries compiled for linux/amd64 (untracked)
+    ├── build              # Contains build-related scripts and subdirectories containing Dockerfiles
+    ├── cmd                # Contains "main" Go packages for each service catalog component binary
+    ├── contrib            # Contains all non-essential source
+    │   └── hack           # Non-build related scripts
+    ├── deploy             # Helm charts for deployment
+    │   └── catalog        # Helm chart for deploying TPR-based prototype
+    │   └── wip-catalog    # Helm chart for deploying apiserver-based WIP
+    ├── docs               # Documentation
+    ├── pkg                # Contains all non-"main" Go packages
+    └── vendor             # Glide-managed dependencies (untracked)
 
 ## Working on Issues
 
@@ -173,6 +174,8 @@ The images are tagged with the current Git commit SHA:
 
 ## Deploying to Kubernetes
 
+**NOTE**: These instructions are for the TPR-based prototype and will change over
+to use the API server and controller-manager soon.
 **NOTE**: Do not forget to specify a Kubernetes namespace where the system will
 be deployed. Here, we will use `catalog`.
 

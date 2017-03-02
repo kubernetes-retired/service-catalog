@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: apiserver
-        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}apiserver:{{ if .Values.k8sApiServerVersion }}{{ .Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}apiserver:{{ if .Values.apiServerVersion }}{{ .Values.apiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
         args:
         - --global-namespace
@@ -44,7 +44,7 @@ spec:
           readOnly: true
       {{ if eq .Values.storageType "etcd" -}}
       - name: etcd
-        image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+        image: {{ default .Values.etcdImage "quay.io/coreos/etcd" }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
       {{- end }}
       volumes:
       - name: apiserver-ssl
