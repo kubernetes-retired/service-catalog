@@ -1868,6 +1868,12 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq155[0] = x.Kind != ""
 			yyq155[1] = x.APIVersion != ""
 			yyq155[2] = true
+			yyq155[8] = len(x.OSBTags) != 0
+			yyq155[9] = len(x.OSBRequires) != 0
+			yyq155[10] = x.OSBMaxDBPerNode != ""
+			yyq155[11] = x.OSBDashboardOAuth2ClientID != ""
+			yyq155[12] = x.OSBDashboardSecret != ""
+			yyq155[13] = x.OSBDashboardRedirectURI != ""
 			yyq155[14] = x.Description != ""
 			yyq155[15] = x.DisplayName != ""
 			yyq155[16] = x.ImageURL != ""
@@ -1879,7 +1885,7 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr155 || yy2arr155 {
 				r.EncodeArrayStart(21)
 			} else {
-				yynn155 = 11
+				yynn155 = 5
 				for _, b := range yyq155 {
 					if b {
 						yynn155++
@@ -2060,132 +2066,168 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr155 || yy2arr155 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.OSBTags == nil {
-					r.EncodeNil()
-				} else {
-					yym181 := z.EncBinary()
-					_ = yym181
-					if false {
+				if yyq155[8] {
+					if x.OSBTags == nil {
+						r.EncodeNil()
 					} else {
-						z.F.EncSliceStringV(x.OSBTags, false, e)
+						yym181 := z.EncBinary()
+						_ = yym181
+						if false {
+						} else {
+							z.F.EncSliceStringV(x.OSBTags, false, e)
+						}
 					}
+				} else {
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbTags"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.OSBTags == nil {
-					r.EncodeNil()
-				} else {
-					yym182 := z.EncBinary()
-					_ = yym182
-					if false {
+				if yyq155[8] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("osbTags"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.OSBTags == nil {
+						r.EncodeNil()
 					} else {
-						z.F.EncSliceStringV(x.OSBTags, false, e)
-					}
-				}
-			}
-			if yyr155 || yy2arr155 {
-				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.OSBRequires == nil {
-					r.EncodeNil()
-				} else {
-					yym184 := z.EncBinary()
-					_ = yym184
-					if false {
-					} else {
-						z.F.EncSliceStringV(x.OSBRequires, false, e)
-					}
-				}
-			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbRequires"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.OSBRequires == nil {
-					r.EncodeNil()
-				} else {
-					yym185 := z.EncBinary()
-					_ = yym185
-					if false {
-					} else {
-						z.F.EncSliceStringV(x.OSBRequires, false, e)
+						yym182 := z.EncBinary()
+						_ = yym182
+						if false {
+						} else {
+							z.F.EncSliceStringV(x.OSBTags, false, e)
+						}
 					}
 				}
 			}
 			if yyr155 || yy2arr155 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym187 := z.EncBinary()
-				_ = yym187
-				if false {
+				if yyq155[9] {
+					if x.OSBRequires == nil {
+						r.EncodeNil()
+					} else {
+						yym184 := z.EncBinary()
+						_ = yym184
+						if false {
+						} else {
+							z.F.EncSliceStringV(x.OSBRequires, false, e)
+						}
+					}
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBMaxDBPerNode))
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbMaxDBPerNode"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym188 := z.EncBinary()
-				_ = yym188
-				if false {
-				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBMaxDBPerNode))
+				if yyq155[9] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("osbRequires"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.OSBRequires == nil {
+						r.EncodeNil()
+					} else {
+						yym185 := z.EncBinary()
+						_ = yym185
+						if false {
+						} else {
+							z.F.EncSliceStringV(x.OSBRequires, false, e)
+						}
+					}
 				}
 			}
 			if yyr155 || yy2arr155 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym190 := z.EncBinary()
-				_ = yym190
-				if false {
+				if yyq155[10] {
+					yym187 := z.EncBinary()
+					_ = yym187
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBMaxDBPerNode))
+					}
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardOAuth2ClientID))
+					r.EncodeString(codecSelferC_UTF81234, "")
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbDashboardOAuth2ClientID"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym191 := z.EncBinary()
-				_ = yym191
-				if false {
-				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardOAuth2ClientID))
+				if yyq155[10] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("osbMaxDBPerNode"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					yym188 := z.EncBinary()
+					_ = yym188
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBMaxDBPerNode))
+					}
 				}
 			}
 			if yyr155 || yy2arr155 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym193 := z.EncBinary()
-				_ = yym193
-				if false {
+				if yyq155[11] {
+					yym190 := z.EncBinary()
+					_ = yym190
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardOAuth2ClientID))
+					}
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardSecret))
+					r.EncodeString(codecSelferC_UTF81234, "")
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbDashboardSecret"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym194 := z.EncBinary()
-				_ = yym194
-				if false {
-				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardSecret))
+				if yyq155[11] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("osbDashboardOAuth2ClientID"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					yym191 := z.EncBinary()
+					_ = yym191
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardOAuth2ClientID))
+					}
 				}
 			}
 			if yyr155 || yy2arr155 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym196 := z.EncBinary()
-				_ = yym196
-				if false {
+				if yyq155[12] {
+					yym193 := z.EncBinary()
+					_ = yym193
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardSecret))
+					}
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardRedirectURI))
+					r.EncodeString(codecSelferC_UTF81234, "")
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbDashboardRedirectURI"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym197 := z.EncBinary()
-				_ = yym197
-				if false {
+				if yyq155[12] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("osbDashboardSecret"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					yym194 := z.EncBinary()
+					_ = yym194
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardSecret))
+					}
+				}
+			}
+			if yyr155 || yy2arr155 {
+				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
+				if yyq155[13] {
+					yym196 := z.EncBinary()
+					_ = yym196
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardRedirectURI))
+					}
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardRedirectURI))
+					r.EncodeString(codecSelferC_UTF81234, "")
+				}
+			} else {
+				if yyq155[13] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("osbDashboardRedirectURI"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					yym197 := z.EncBinary()
+					_ = yym197
+					if false {
+					} else {
+						r.EncodeString(codecSelferC_UTF81234, string(x.OSBDashboardRedirectURI))
+					}
 				}
 			}
 			if yyr155 || yy2arr155 {
