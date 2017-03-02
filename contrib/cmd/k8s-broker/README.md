@@ -3,7 +3,7 @@
 This is an implementation of a service broker which runs in the Kubernetes
 cluster and deploys Kubernetes native resources only using Helm as the reifier.
 
-You need to have a [helm](https://github.com/k8s.io/helm) binary and tiller
+You need to have a [helm](https://github.com/kubernetes/helm) binary and tiller
 running in the cluster and need to point this broker to it.
 
 ## Create a type for Helm chart
