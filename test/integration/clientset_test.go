@@ -171,8 +171,7 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 	broker := &v1alpha1.Broker{
 		ObjectMeta: v1.ObjectMeta{Name: name},
 		Spec: v1alpha1.BrokerSpec{
-			URL:     "https://example.com",
-			OSBGUID: "OSBGUID field",
+			URL: "https://example.com",
 		},
 	}
 

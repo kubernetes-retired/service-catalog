@@ -7219,15 +7219,8 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Ref:         spec.MustCreateRef("#/definitions/v1.ObjectReference"),
 						},
 					},
-					"osbGuid": {
-						SchemaProps: spec.SchemaProps{
-							Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 				},
-				Required: []string{"url", "osbGuid"},
+				Required: []string{"url"},
 			},
 		},
 		Dependencies: []string{

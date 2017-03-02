@@ -44,8 +44,7 @@ func TestBroker(t *testing.T) {
 	// Create a broker or brokers
 	broker := &sc.Broker{
 		Spec: sc.BrokerSpec{
-			URL:     "abcd",
-			OSBGUID: "guid",
+			URL: "abcd",
 		},
 		Status: sc.BrokerStatus{
 			Conditions: nil,
