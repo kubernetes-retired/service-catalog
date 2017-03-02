@@ -42,7 +42,7 @@ import (
 	// for installation of API groups
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
-	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers"
+	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/wip"
 
