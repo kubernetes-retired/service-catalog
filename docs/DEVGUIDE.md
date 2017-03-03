@@ -172,6 +172,11 @@ The images are tagged with the current Git commit SHA:
 
     docker images
 
+You can set the `NO_DOCKER` variable when invoking `make` to run targets outside
+a container:
+
+    NO_DOCKER=1 make test-unit
+
 ## Deploying to Kubernetes
 
 **NOTE**: These instructions are for the TPR-based prototype and will change over
