@@ -172,6 +172,25 @@ The images are tagged with the current Git commit SHA:
 
     docker images
 
+----
+
+#### Tip: managing environment variables with direnv
+
+The [direnv](https://www.direnv.net)
+([github](https://github.com/direnv/direnv)) helps manages values of environment
+variables within a directory. This can be very convenient when setting variables
+like `KUBECONFIG` or `REGISTRY` within the service catalog directory.
+
+Once you [install direnv](https://github.com/direnv/direnv#install), you can
+create an `.envrc` file in your `service-catalog` directory:
+
+```
+$ cat .envrc
+export REGISTRY="hub.docker.io/yippee"
+export KUBECONFIG=/home/yippee/code/service-catalog/.kubeconfig
+```
+----
+
 ## Deploying to Kubernetes
 
 **NOTE**: These instructions are for the TPR-based prototype and will change over
