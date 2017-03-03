@@ -127,19 +127,19 @@ type ServiceClass struct {
 	// OSB-specific
 	OSBTags                    []string
 	OSBRequires                []string
-	OSBMaxDBPerNode            string
-	OSBDashboardOAuth2ClientID string
-	OSBDashboardSecret         string
-	OSBDashboardRedirectURI    string
+	OSBMaxDBPerNode            *string
+	OSBDashboardOAuth2ClientID *string
+	OSBDashboardSecret         *string
+	OSBDashboardRedirectURI    *string
 
 	// Metadata fields
-	Description         string
-	DisplayName         string
-	ImageURL            string
-	LongDescription     string
-	ProviderDisplayName string
-	DocumentationURL    string
-	SupportURL          string
+	Description         *string
+	DisplayName         *string
+	ImageURL            *string
+	LongDescription     *string
+	ProviderDisplayName *string
+	DocumentationURL    *string
+	SupportURL          *string
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -154,9 +154,9 @@ type ServicePlan struct {
 
 	// OSB-specific
 	OSBFree     bool
-	Description string
+	Description *string
 	Bullets     []string
-	DisplayName string
+	DisplayName *string
 
 	// TODO: add costs
 }
@@ -198,14 +198,14 @@ type InstanceSpec struct {
 	OSBGUID string
 
 	// OSB-specific
+	OSBDashboardURL  *string
+	OSBLastOperation *string
 	OSBCredentials   string
-	OSBDashboardURL  string
 	OSBInternalID    string
 	OSBServiceID     string
 	OSBPlanID        string
 	OSBType          string
 	OSBSpaceGUID     string
-	OSBLastOperation string
 }
 
 // InstanceStatus represents the current status of an Instance.
