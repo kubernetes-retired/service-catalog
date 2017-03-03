@@ -289,7 +289,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	}
 	updateAction := actions[0].(core.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
 	}
 	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
 	if e, a := broker.Name, updateObject.Name; e != a {
@@ -388,6 +388,105 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	if e, a := "ReferencesNonexistentServiceClass", updateActionObject.Status.Conditions[0].Reason; e != a {
 		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
 	}
+}
+
+func TestReconcileInstanceNonExistentBroker(t *testing.T) {
+	_, fakeCatalogClient, _, _, _, testController, sharedInformers := newTestController(t)
+
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: "test-instance"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: +%v", e, a, actions)
+	}
+
+	// There should only be one action that says it failed because no such broker exists.
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := "test-instance", updateActionObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+	}
+	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
+	}
+	if e, a := "ReferencesNonexistentBroker", updateActionObject.Status.Conditions[0].Reason; e != a {
+		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	}
+}
+
+func TestReconcileInstanceWithAuthError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, sharedInformers := newTestController(t)
+
+	broker := getTestBroker()
+	broker.Spec.AuthSecret = &v1.ObjectReference{
+		Namespace: "does_not_exist",
+		Name:      "auth-name",
+	}
+	sharedInformers.Brokers().Informer().GetStore().Add(broker)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: "test-instance"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+		return true, nil, errors.New("no secret defined")
+	})
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: +%v", e, a, actions)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := "test-instance", updateActionObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+	}
+	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
+	}
+	if e, a := "ErrorGettingAuthCredentials", updateActionObject.Status.Conditions[0].Reason; e != a {
+		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	}
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	getAction := kubeActions[0].(clientgotesting.GetAction)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	if e, a := "secrets", getAction.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+
 }
 
 func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
@@ -510,6 +609,137 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		if e, a := "second-arg", argsMap["second"].(string); e != a {
 			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
 		}
+	}
+}
+
+func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, fakeInstanceClient, _, testController, sharedInformers := newTestController(t)
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: "test-instance", Namespace: "test-ns"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
+	parameters.Args["first"] = "first-arg"
+	parameters.Args["second"] = "second-arg"
+
+	b, err := json.Marshal(parameters)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	}
+	// corrupt the byte slice to begin with a '!' instead of an opening JSON bracket '{'
+	b[0] = 0x21
+	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if si, notOK := fakeInstanceClient.Instances[instanceGUID]; notOK {
+		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
+	}
+}
+
+func TestReconcileInstanceWithInstanceError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, fakeInstanceClient, _, testController, sharedInformers := newTestController(t)
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: "test-instance", Namespace: "test-ns"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
+	parameters.Args["first"] = "first-arg"
+	parameters.Args["second"] = "second-arg"
+
+	b, err := json.Marshal(parameters)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	}
+	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+	fakeInstanceClient.CreateErr = errors.New("fake creation failure")
+
+	testController.reconcileInstance(instance)
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if si, notOK := fakeInstanceClient.Instances[instanceGUID]; notOK {
+		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
 	}
 }
 
