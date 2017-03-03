@@ -7373,14 +7373,20 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
-					"osbCredentials": {
+					"osbDashboardURL": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OSB-specific",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"osbDashboardURL": {
+					"osbLastOperation": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"osbCredentials": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -7416,14 +7422,8 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format: "",
 						},
 					},
-					"osbLastOperation": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 				},
-				Required: []string{"serviceClassName", "planName", "osbGuid", "osbCredentials", "osbDashboardURL", "osbInternalID", "osbServiceID", "osbPlanID", "osbType", "osbSpaceGUID", "osbLastOperation"},
+				Required: []string{"serviceClassName", "planName", "osbGuid", "osbDashboardURL", "osbLastOperation", "osbCredentials", "osbInternalID", "osbServiceID", "osbPlanID", "osbType", "osbSpaceGUID"},
 			},
 		},
 		Dependencies: []string{
@@ -7596,7 +7596,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 						},
 					},
 				},
-				Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid", "osbTags", "osbRequires", "osbMaxDBPerNode", "osbDashboardOAuth2ClientID", "osbDashboardSecret", "osbDashboardRedirectURI"},
+				Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid"},
 			},
 		},
 		Dependencies: []string{

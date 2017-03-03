@@ -412,14 +412,14 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.OSBGUID = in.OSBGUID
+	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
+	out.OSBLastOperation = (*string)(unsafe.Pointer(in.OSBLastOperation))
 	out.OSBCredentials = in.OSBCredentials
-	out.OSBDashboardURL = in.OSBDashboardURL
 	out.OSBInternalID = in.OSBInternalID
 	out.OSBServiceID = in.OSBServiceID
 	out.OSBPlanID = in.OSBPlanID
 	out.OSBType = in.OSBType
 	out.OSBSpaceGUID = in.OSBSpaceGUID
-	out.OSBLastOperation = in.OSBLastOperation
 	return nil
 }
 
@@ -432,14 +432,14 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.OSBGUID = in.OSBGUID
+	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
+	out.OSBLastOperation = (*string)(unsafe.Pointer(in.OSBLastOperation))
 	out.OSBCredentials = in.OSBCredentials
-	out.OSBDashboardURL = in.OSBDashboardURL
 	out.OSBInternalID = in.OSBInternalID
 	out.OSBServiceID = in.OSBServiceID
 	out.OSBPlanID = in.OSBPlanID
 	out.OSBType = in.OSBType
 	out.OSBSpaceGUID = in.OSBSpaceGUID
-	out.OSBLastOperation = in.OSBLastOperation
 	return nil
 }
 
@@ -477,17 +477,17 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	out.OSBGUID = in.OSBGUID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
-	out.OSBMaxDBPerNode = in.OSBMaxDBPerNode
-	out.OSBDashboardOAuth2ClientID = in.OSBDashboardOAuth2ClientID
-	out.OSBDashboardSecret = in.OSBDashboardSecret
-	out.OSBDashboardRedirectURI = in.OSBDashboardRedirectURI
-	out.Description = in.Description
-	out.DisplayName = in.DisplayName
-	out.ImageURL = in.ImageURL
-	out.LongDescription = in.LongDescription
-	out.ProviderDisplayName = in.ProviderDisplayName
-	out.DocumentationURL = in.DocumentationURL
-	out.SupportURL = in.SupportURL
+	out.OSBMaxDBPerNode = (*string)(unsafe.Pointer(in.OSBMaxDBPerNode))
+	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
+	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
+	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
+	out.Description = (*string)(unsafe.Pointer(in.Description))
+	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
+	out.ImageURL = (*string)(unsafe.Pointer(in.ImageURL))
+	out.LongDescription = (*string)(unsafe.Pointer(in.LongDescription))
+	out.ProviderDisplayName = (*string)(unsafe.Pointer(in.ProviderDisplayName))
+	out.DocumentationURL = (*string)(unsafe.Pointer(in.DocumentationURL))
+	out.SupportURL = (*string)(unsafe.Pointer(in.SupportURL))
 	return nil
 }
 
@@ -507,17 +507,17 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	out.OSBGUID = in.OSBGUID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
-	out.OSBMaxDBPerNode = in.OSBMaxDBPerNode
-	out.OSBDashboardOAuth2ClientID = in.OSBDashboardOAuth2ClientID
-	out.OSBDashboardSecret = in.OSBDashboardSecret
-	out.OSBDashboardRedirectURI = in.OSBDashboardRedirectURI
-	out.Description = in.Description
-	out.DisplayName = in.DisplayName
-	out.ImageURL = in.ImageURL
-	out.LongDescription = in.LongDescription
-	out.ProviderDisplayName = in.ProviderDisplayName
-	out.DocumentationURL = in.DocumentationURL
-	out.SupportURL = in.SupportURL
+	out.OSBMaxDBPerNode = (*string)(unsafe.Pointer(in.OSBMaxDBPerNode))
+	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
+	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
+	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
+	out.Description = (*string)(unsafe.Pointer(in.Description))
+	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
+	out.ImageURL = (*string)(unsafe.Pointer(in.ImageURL))
+	out.LongDescription = (*string)(unsafe.Pointer(in.LongDescription))
+	out.ProviderDisplayName = (*string)(unsafe.Pointer(in.ProviderDisplayName))
+	out.DocumentationURL = (*string)(unsafe.Pointer(in.DocumentationURL))
+	out.SupportURL = (*string)(unsafe.Pointer(in.SupportURL))
 	return nil
 }
 
@@ -549,9 +549,9 @@ func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServiceP
 	out.Name = in.Name
 	out.OSBGUID = in.OSBGUID
 	out.OSBFree = in.OSBFree
-	out.Description = in.Description
+	out.Description = (*string)(unsafe.Pointer(in.Description))
 	out.Bullets = *(*[]string)(unsafe.Pointer(&in.Bullets))
-	out.DisplayName = in.DisplayName
+	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
 	return nil
 }
 
@@ -563,9 +563,9 @@ func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicec
 	out.Name = in.Name
 	out.OSBGUID = in.OSBGUID
 	out.OSBFree = in.OSBFree
-	out.Description = in.Description
+	out.Description = (*string)(unsafe.Pointer(in.Description))
 	out.Bullets = *(*[]string)(unsafe.Pointer(&in.Bullets))
-	out.DisplayName = in.DisplayName
+	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
 	return nil
 }
 
