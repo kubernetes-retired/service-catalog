@@ -18,15 +18,17 @@ spec:
         - {{ default "etcd" .Values.storageType }}
         - -v
         - {{ default "\"10\"" .Values.verbosity }}
-        {{ if eq .Values.storageType "etcd" }}- --etcd-servers {{ end }}
-        {{ if eq .Values.storageType "etcd" }}- http://localhost:2379 {{ end }}
+        {{ if eq (default .Values.storageType "etcd") "etcd" -}}
+        - --etcd-servers
+        - http://localhost:2379
+        {{ end }}
         ports:
         - containerPort: 6443
         volumeMounts:
         - name: apiserver-ssl
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
-      {{ if eq .Values.storageType "etcd" -}}
+      {{ if eq (default .Values.storageType "etcd") "etcd" -}}
       - name: etcd
         image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
       {{- end }}

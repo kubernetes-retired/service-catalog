@@ -26,7 +26,7 @@ spec:
         - --insecure-port
         - {{ default 8081 .Values.insecurePort | quote }}
         {{- end }}
-        {{ if eq .Values.storageType "etcd" -}}
+        {{ if eq (default .Values.storageType "etcd") "etcd" -}}
         - --etcd-servers
         - http://localhost:2379
         {{- end }}
@@ -42,7 +42,7 @@ spec:
         - name: apiserver-ssl
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
-      {{ if eq .Values.storageType "etcd" -}}
+      {{ if eq (default .Values.storageType "etcd") "etcd" -}}
       - name: etcd
         image: {{ default .Values.etcdImage "quay.io/coreos/etcd" }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
       {{- end }}
