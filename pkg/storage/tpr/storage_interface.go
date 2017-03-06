@@ -179,7 +179,6 @@ func (t *storageInterface) Watch(
 		t.singularKind.URLName(),
 		name,
 	).Param("resourceVersion", resourceVersion)
-	glog.Infof("initiating the raw watch URL %s", req.URL().String())
 	watchIface, err := req.Watch()
 	if err != nil {
 		glog.Errorf("initiating the raw watch (%s)", err)
@@ -242,7 +241,6 @@ func (t *storageInterface) WatchList(
 		t.singularKind.URLName(),
 	).Param("resourceVersion", resourceVersion)
 
-	glog.Infof("watch request %s", req.URL().String())
 	watchIface, err := req.Watch()
 	if err != nil {
 		glog.Errorf("initiating the raw watch (%s)", err)
@@ -447,7 +445,6 @@ func decode(
 }
 
 func removeNamespace(obj runtime.Object) error {
-	glog.Infof("removing namespace from obj %#v", obj)
 	if err := accessor.SetNamespace(obj, ""); err != nil {
 		glog.Errorf("removing namespace from %#v (%s)", obj, err)
 		return err

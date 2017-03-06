@@ -78,13 +78,11 @@ func (t *storageVersioner) UpdateObject(obj runtime.Object, resourceVersion uint
 }
 
 func updateState(v storage.Versioner, st *objState, userUpdate storage.UpdateFunc) (runtime.Object, uint64, error) {
-	glog.Infof("calling userupdate on:\n%#v\nwith meta\n%#v", st.obj, *st.meta)
 	ret, ttlPtr, err := userUpdate(st.obj, *st.meta)
 	if err != nil {
 		glog.Errorf("user update (%s)", err)
 		return nil, 0, err
 	}
-	glog.Infof("object after userUpdate:\n%#v", st.obj)
 
 	version, err := v.ObjectResourceVersion(ret)
 	if err != nil {
