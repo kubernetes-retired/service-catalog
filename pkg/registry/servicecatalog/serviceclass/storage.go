@@ -63,6 +63,7 @@ func NewList() runtime.Object {
 		TypeMeta: metav1.TypeMeta{
 			Kind: tpr.ServiceClassListKind.String(),
 		},
+		Items: []servicecatalog.ServiceClass{},
 	}
 }
 
