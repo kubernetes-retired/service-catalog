@@ -200,7 +200,7 @@ and bindings. These resources are building blocks for composing services.
 Because we didn't create any services yet, `kubectl get` will return an empty
 list:
 
-    kubectl get servicebrokers,serviceclasses,serviceinstances,servicebindings
+    kubectl get brokers,serviceclasses,instances,bindings
 
 **NOTE**: If there are any resources left over from an earlier walkthrough, you
 can delete them using `contrib/hack/cleanup.sh`.
