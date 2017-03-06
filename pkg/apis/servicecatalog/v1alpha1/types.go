@@ -44,12 +44,6 @@ type BrokerList struct {
 	Items []Broker `json:"items"`
 }
 
-const (
-	// DescriptionKey is the key of an annotation that holds the brief
-	// description of an API resource
-	DescriptionKey = "alpha.service-catalog.kubernetes.io/description"
-)
-
 // BrokerSpec represents a description of a Broker.
 type BrokerSpec struct {
 	// The URL to communicate with the Broker via..
