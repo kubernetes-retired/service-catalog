@@ -18,8 +18,21 @@ package tpr
 
 import (
 	"testing"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"k8s.io/kubernetes/pkg/api"
 )
 
 func TestRemoveNamespace(t *testing.T) {
-	t.Skip("TODO")
+	obj := &servicecatalog.ServiceClass{
+		ObjectMeta: api.ObjectMeta{
+			Namespace: "testns",
+		},
+	}
+	if err := removeNamespace(obj); err != nil {
+		t.Fatalf("couldn't remove namespace (%s", err)
+	}
+	if obj.Namespace != "" {
+		t.Fatalf("couldn't remove namespace from object. it is still %s", obj.Namespace)
+	}
 }
