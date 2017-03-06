@@ -122,21 +122,21 @@ type ServiceClass struct {
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBTags                    []string `json:"osbTags"`
-	OSBRequires                []string `json:"osbRequires"`
-	OSBMaxDBPerNode            string   `json:"osbMaxDBPerNode"`
-	OSBDashboardOAuth2ClientID string   `json:"osbDashboardOAuth2ClientID"`
-	OSBDashboardSecret         string   `json:"osbDashboardSecret"`
-	OSBDashboardRedirectURI    string   `json:"osbDashboardRedirectURI"`
+	OSBTags                    []string `json:"osbTags,omitempty"`
+	OSBRequires                []string `json:"osbRequires,omitempty"`
+	OSBMaxDBPerNode            *string  `json:"osbMaxDBPerNode,omitempty"`
+	OSBDashboardOAuth2ClientID *string  `json:"osbDashboardOAuth2ClientID,omitempty"`
+	OSBDashboardSecret         *string  `json:"osbDashboardSecret,omitempty"`
+	OSBDashboardRedirectURI    *string  `json:"osbDashboardRedirectURI,omitempty"`
 
 	// Metadata fields
-	Description         string `json:"description,omitempty"`
-	DisplayName         string `json:"displayName,omitempty"`
-	ImageURL            string `json:"imageUrl,omitempty"`
-	LongDescription     string `json:"longDescription,omitempty"`
-	ProviderDisplayName string `json:"providerDisplayName,omitempty"`
-	DocumentationURL    string `json:"documentationUrl,omitempty"`
-	SupportURL          string `json:"supportUrl,omitempty"`
+	Description         *string `json:"description,omitempty"`
+	DisplayName         *string `json:"displayName,omitempty"`
+	ImageURL            *string `json:"imageUrl,omitempty"`
+	LongDescription     *string `json:"longDescription,omitempty"`
+	ProviderDisplayName *string `json:"providerDisplayName,omitempty"`
+	DocumentationURL    *string `json:"documentationUrl,omitempty"`
+	SupportURL          *string `json:"supportUrl,omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -151,9 +151,9 @@ type ServicePlan struct {
 
 	// OSB-specific
 	OSBFree     bool     `json:"osbFree"`
-	Description string   `json:"description,omitempty"`
+	Description *string  `json:"description,omitempty"`
 	Bullets     []string `json:"bullets,omitempty"`
-	DisplayName string   `json:"displayName,omitempty"`
+	DisplayName *string  `json:"displayName,omitempty"`
 }
 
 // InstanceList is a list of instances
@@ -193,14 +193,14 @@ type InstanceSpec struct {
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBCredentials   string `json:"osbCredentials"`
-	OSBDashboardURL  string `json:"osbDashboardURL"`
-	OSBInternalID    string `json:"osbInternalID"`
-	OSBServiceID     string `json:"osbServiceID"`
-	OSBPlanID        string `json:"osbPlanID"`
-	OSBType          string `json:"osbType"`
-	OSBSpaceGUID     string `json:"osbSpaceGUID"`
-	OSBLastOperation string `json:"osbLastOperation"`
+	OSBDashboardURL  *string `json:"osbDashboardURL"`
+	OSBLastOperation *string `json:"osbLastOperation"`
+	OSBCredentials   string  `json:"osbCredentials"`
+	OSBInternalID    string  `json:"osbInternalID"`
+	OSBServiceID     string  `json:"osbServiceID"`
+	OSBPlanID        string  `json:"osbPlanID"`
+	OSBType          string  `json:"osbType"`
+	OSBSpaceGUID     string  `json:"osbSpaceGUID"`
 }
 
 // InstanceStatus represents the current status of an Instance.
