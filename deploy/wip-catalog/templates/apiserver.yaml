@@ -45,8 +45,16 @@ spec:
       {{ if eq .Values.storageType "etcd" -}}
       - name: etcd
         image: {{ default .Values.etcdImage "quay.io/coreos/etcd" }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+        env:
+        - name: ETCD_DATA_DIR
+          value: /etcd-data-dir
+        volumeMounts:
+        - name: etcd-data-dir
+          mountPath: /etcd-data-dir 
       {{- end }}
       volumes:
+      - name: etcd-data-dir
+        emptyDir: {}
       - name: apiserver-ssl
         secret:
           secretName: apiserver-ssl
