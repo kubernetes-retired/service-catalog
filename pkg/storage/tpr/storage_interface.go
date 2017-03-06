@@ -17,7 +17,6 @@ limitations under the License.
 package tpr
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/golang/glog"
@@ -427,9 +426,7 @@ func (t *storageInterface) GuaranteedUpdate(
 			glog.Errorf("encoding return object (%s)", err)
 			return err
 		}
-		if bytes.Equal(data, origState.data) {
-			return decode(t.codec, t.Versioner(), origState.data, out)
-		}
+		return decode(t.codec, t.Versioner(), data, out)
 	}
 }
 
