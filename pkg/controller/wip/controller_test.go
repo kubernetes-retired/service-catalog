@@ -19,6 +19,7 @@ package wip
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -29,6 +30,7 @@ import (
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/runtime"
 
@@ -160,6 +162,80 @@ func TestReconcileBroker(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
+}
+
+func TestReconcileBrokerDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, _, testController, sharedInformers := newTestController(t)
+
+	testServiceClass := getTestServiceClass()
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	broker := getTestBroker()
+	broker.DeletionTimestamp = &metav1.Time{}
+	broker.Finalizers = []string{"kubernetes"}
+
+	testController.reconcileBroker(broker)
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The three actions should be:
+	// 0. Deleting the associated ServiceClass
+	// 1. Updating the ready condition
+	// 2. Removing the finalizer
+	if e, a := 3, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	deleteAction := actions[0].(core.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	if e, a := testServiceClass.Name, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of serviceclass: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[1].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updatedBroker := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updatedBroker.Name; e != a {
+		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updatedBroker.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.BrokerConditionReady, updatedBroker.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updatedBroker.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	updateAction = actions[2].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[2]; expected %v, got %v", e, a)
+	}
+
+	updatedBroker = updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := broker.Name, updatedBroker.Name; e != a {
+		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
+	}
+
+	if e, a := 0, len(updatedBroker.Finalizers); e != a {
+		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
+	}
 }
 
 func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
@@ -498,6 +574,88 @@ func TestReconcileInstance(t *testing.T) {
 	}
 }
 
+func TestReconcileInstanceDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, fakeInstanceClient, _, testController, sharedInformers := newTestController(t)
+
+	fakeInstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
+		instanceGUID: {},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{
+			Name:              "test-instance",
+			Namespace:         "test-ns",
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{"kubernetes"},
+		},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	testController.reconcileInstance(instance)
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The two actions should be:
+	// 0. Updating the ready condition
+	// 1. Removing the finalizer
+	if e, a := 2, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	updatedObject := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updatedObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updatedObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionReady, updatedObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updatedObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if _, ok := fakeInstanceClient.Instances[instanceGUID]; ok {
+		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
+	}
+
+	updateAction = actions[1].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updatedObject = updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updatedObject.Name; e != a {
+		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
+	}
+
+	if e, a := 0, len(updatedObject.Finalizers); e != a {
+		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
+	}
+}
+
 func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	_, fakeCatalogClient, _, _, _, testController, _ := newTestController(t)
 
@@ -648,6 +806,122 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	// wonky.
 	if _, ok := fakeBindingClient.Bindings[instanceGUID+":"+bindingGUID]; !ok {
 		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
+	}
+}
+
+func TestReconcileBindingDelete(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, _, fakeBindingClient, testController, sharedInformers := newTestController(t)
+
+	fakeBindingClient.Bindings = map[string]struct{}{
+		fmt.Sprintf("%s:%s", instanceGUID, bindingGUID): {},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-instance",
+			Namespace: "test-ns",
+		},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: "test-serviceclass",
+			PlanName:         "default",
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	sharedInformers.Instances().Informer().GetStore().Add(instance)
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: v1.ObjectMeta{
+			Name:              "test-binding",
+			Namespace:         "test-ns",
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{"kubernetes"},
+		},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.ObjectReference{Name: "test-instance", Namespace: "test-ns"},
+			OSBGUID:     bindingGUID,
+			SecretName:  "test-secret",
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	kubeActions := fakeKubeClient.Actions()
+	// The two actions should be:
+	// 0. Getting the secret
+	// 1. Deleting the secret
+	if e, a := 2, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	getAction := kubeActions[0].(clientgotesting.GetActionImpl)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[0]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, getAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	deleteAction := kubeActions[1].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	// The two actions should be:
+	// 0. Updating the ready condition
+	// 1. Removing the finalizer
+	if e, a := 2, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAction := actions[0].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	updatedObject := updateAction.GetObject().(*v1alpha1.Binding)
+	if e, a := binding.Name, updatedObject.Name; e != a {
+		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updatedObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.BindingConditionReady, updatedObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updatedObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if _, ok := fakeBindingClient.Bindings[bindingGUID]; ok {
+		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
+	}
+
+	updateAction = actions[1].(core.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updatedObject = updateAction.GetObject().(*v1alpha1.Binding)
+	if e, a := binding.Name, updatedObject.Name; e != a {
+		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
+	}
+
+	if e, a := 0, len(updatedObject.Finalizers); e != a {
+		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
 	}
 }
 
