@@ -7040,12 +7040,6 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Ref:         spec.MustCreateRef("#/definitions/v1.ObjectReference"),
 						},
 					},
-					"appLabelSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "AppLabelSelector selects the pods in the Binding's namespace that should be injected with the results of the binding.  Immutable.",
-							Ref:         spec.MustCreateRef("#/definitions/v1.LabelSelector"),
-						},
-					},
 					"parameters": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Parameters is a YAML representation of the properties to be passed to the underlying broker.",
@@ -7059,18 +7053,6 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
-					"serviceName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"configMapName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"osbGuid": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
@@ -7079,11 +7061,11 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 						},
 					},
 				},
-				Required: []string{"instanceRef", "appLabelSelector", "secretName", "serviceName", "configMapName", "osbGuid"},
+				Required: []string{"instanceRef", "secretName", "osbGuid"},
 			},
 		},
 		Dependencies: []string{
-			"runtime.RawExtension", "v1.LabelSelector", "v1.ObjectReference"},
+			"runtime.RawExtension", "v1.ObjectReference"},
 	},
 	"v1alpha1.BindingStatus": {
 		Schema: spec.Schema{
@@ -7386,44 +7368,8 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format: "",
 						},
 					},
-					"osbCredentials": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"osbInternalID": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"osbServiceID": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"osbPlanID": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"osbType": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"osbSpaceGUID": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 				},
-				Required: []string{"serviceClassName", "planName", "osbGuid", "osbDashboardURL", "osbLastOperation", "osbCredentials", "osbInternalID", "osbServiceID", "osbPlanID", "osbType", "osbSpaceGUID"},
+				Required: []string{"serviceClassName", "planName", "osbGuid"},
 			},
 		},
 		Dependencies: []string{

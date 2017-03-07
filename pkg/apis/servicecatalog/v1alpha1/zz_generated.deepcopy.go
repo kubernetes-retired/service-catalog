@@ -22,7 +22,6 @@ package v1alpha1
 
 import (
 	v1 "k8s.io/kubernetes/pkg/api/v1"
-	meta_v1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	conversion "k8s.io/kubernetes/pkg/conversion"
 	runtime "k8s.io/kubernetes/pkg/runtime"
 	reflect "reflect"
@@ -111,11 +110,6 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 		in := in.(*BindingSpec)
 		out := out.(*BindingSpec)
 		*out = *in
-		if newVal, err := c.DeepCopy(&in.AppLabelSelector); err != nil {
-			return err
-		} else {
-			out.AppLabelSelector = *newVal.(*meta_v1.LabelSelector)
-		}
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
 			if newVal, err := c.DeepCopy(*in); err != nil {

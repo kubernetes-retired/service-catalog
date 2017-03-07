@@ -160,11 +160,8 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 	if err := s.Convert(&in.InstanceRef, &out.InstanceRef, 0); err != nil {
 		return err
 	}
-	out.AppLabelSelector = in.AppLabelSelector
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
-	out.ServiceName = in.ServiceName
-	out.ConfigMapName = in.ConfigMapName
 	out.OSBGUID = in.OSBGUID
 	return nil
 }
@@ -178,11 +175,8 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 	if err := s.Convert(&in.InstanceRef, &out.InstanceRef, 0); err != nil {
 		return err
 	}
-	out.AppLabelSelector = in.AppLabelSelector
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
-	out.ServiceName = in.ServiceName
-	out.ConfigMapName = in.ConfigMapName
 	out.OSBGUID = in.OSBGUID
 	return nil
 }
@@ -414,12 +408,6 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.OSBGUID = in.OSBGUID
 	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
 	out.OSBLastOperation = (*string)(unsafe.Pointer(in.OSBLastOperation))
-	out.OSBCredentials = in.OSBCredentials
-	out.OSBInternalID = in.OSBInternalID
-	out.OSBServiceID = in.OSBServiceID
-	out.OSBPlanID = in.OSBPlanID
-	out.OSBType = in.OSBType
-	out.OSBSpaceGUID = in.OSBSpaceGUID
 	return nil
 }
 
@@ -434,12 +422,6 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.OSBGUID = in.OSBGUID
 	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
 	out.OSBLastOperation = (*string)(unsafe.Pointer(in.OSBLastOperation))
-	out.OSBCredentials = in.OSBCredentials
-	out.OSBInternalID = in.OSBInternalID
-	out.OSBServiceID = in.OSBServiceID
-	out.OSBPlanID = in.OSBPlanID
-	out.OSBType = in.OSBType
-	out.OSBSpaceGUID = in.OSBSpaceGUID
 	return nil
 }
 
