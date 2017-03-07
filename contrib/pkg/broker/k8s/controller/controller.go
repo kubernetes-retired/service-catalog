@@ -140,16 +140,16 @@ func (c *k8sController) GetServiceInstance(instanceID string) (string, error) {
 	return "", errors.New("Unimplemented")
 }
 
-func (c *k8sController) RemoveServiceInstance(instanceID string) error {
+func (c *k8sController) RemoveServiceInstance(instanceID string) (*brokerapi.DeleteServiceInstanceResponse, error) {
 	instanceName := createResourceName(instanceID, serviceInstance)
 
 	err := c.reifier.RemoveServiceInstance(instanceName)
 	if err != nil {
 		glog.Errorf("Failed to remove %s : %v", instanceID, err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &brokerapi.DeleteServiceInstanceResponse{}, nil
 }
 
 func (c *k8sController) Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {

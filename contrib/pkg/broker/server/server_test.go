@@ -120,7 +120,7 @@ type Controller struct {
 	catalog               func() (*brokerapi.Catalog, error)
 	getServiceInstance    func(id string) (string, error)
 	createServiceInstance func(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
-	removeServiceInstance func(id string) error
+	removeServiceInstance func(id string) (*brokerapi.DeleteServiceInstanceResponse, error)
 	bind                  func(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error)
 	unBind                func(instanceID string, bindingID string) error
 }
@@ -149,7 +149,7 @@ func (controller *Controller) CreateServiceInstance(id string, req *brokerapi.Cr
 	return controller.createServiceInstance(id, req)
 }
 
-func (controller *Controller) RemoveServiceInstance(id string) error {
+func (controller *Controller) RemoveServiceInstance(id string) (*brokerapi.DeleteServiceInstanceResponse, error) {
 	if controller.removeServiceInstance == nil {
 		controller.t.Error("Test failed to provide 'removeServiceInstance' handler")
 	}

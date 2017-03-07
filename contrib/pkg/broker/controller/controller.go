@@ -26,7 +26,7 @@ type Controller interface {
 
 	GetServiceInstance(id string) (string, error)
 	CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error)
-	RemoveServiceInstance(id string) error
+	RemoveServiceInstance(id string) (*brokerapi.DeleteServiceInstanceResponse, error)
 
 	Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error)
 	UnBind(instanceID string, bindingID string) error

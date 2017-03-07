@@ -94,14 +94,14 @@ func (c *userProvidedController) GetServiceInstance(id string) (string, error) {
 	return "", errors.New("Unimplemented")
 }
 
-func (c *userProvidedController) RemoveServiceInstance(id string) error {
+func (c *userProvidedController) RemoveServiceInstance(id string) (*brokerapi.DeleteServiceInstanceResponse, error) {
 	_, ok := c.instanceMap[id]
 	if ok {
 		delete(c.instanceMap, id)
-		return nil
+		return &brokerapi.DeleteServiceInstanceResponse{}, nil
 	}
 
-	return errors.New("Not found")
+	return &brokerapi.DeleteServiceInstanceResponse{}, nil
 }
 
 func (c *userProvidedController) Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
