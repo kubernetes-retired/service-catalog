@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
+	"k8s.io/kubernetes/pkg/api/meta"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/conversion"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -34,6 +35,7 @@ var (
 )
 
 type storageInterface struct {
+	hasNamespace     bool
 	codec            runtime.Codec
 	defaultNamespace string
 	cl               clientset.Interface
@@ -48,6 +50,7 @@ type storageInterface struct {
 // NewStorageInterface creates a new TPR-based storage.Interface implementation
 func NewStorageInterface(opts Options) (storage.Interface, factory.DestroyFunc) {
 	return &storageInterface{
+		hasNamespace:     opts.HasNamespace,
 		codec:            opts.RESTOptions.StorageConfig.Codec,
 		defaultNamespace: opts.DefaultNamespace,
 		cl:               opts.Client,
@@ -63,11 +66,12 @@ func NewStorageInterface(opts Options) (storage.Interface, factory.DestroyFunc) 
 // Versioned returns the versioned associated with this interface
 func (t *storageInterface) Versioner() storage.Versioner {
 	return &storageVersioner{
+		codec:        t.codec,
 		singularKind: t.singularKind,
 		listKind:     t.listKind,
 		checkObject:  t.checkObject,
-
-		cl: t.cl,
+		defaultNS:    t.defaultNamespace,
+		cl:           t.cl,
 	}
 }
 
@@ -129,10 +133,6 @@ func (t *storageInterface) Delete(
 		glog.Errorf("decoding key %s (%s)", key, err)
 		return err
 	}
-	// if ns == "" {
-	// 	glog.Infof("no namespace, defaulting to %s", t.defaultNamespace)
-	// 	ns = t.defaultNamespace
-	// }
 
 	req := t.cl.Core().RESTClient().Delete().AbsPath(
 		"apis",
@@ -173,13 +173,15 @@ func (t *storageInterface) Watch(
 		"apis",
 		groupName,
 		tprVersion,
+		"watch",
 		"namespaces",
 		ns,
 		t.singularKind.URLName(),
 		name,
-	).Param("watch", "true")
+	).Param("resourceVersion", resourceVersion)
 	watchIface, err := req.Watch()
 	if err != nil {
+		glog.Errorf("initiating the raw watch (%s)", err)
 		return nil, err
 	}
 	filteredIFace := watch.Filter(watchIface, watchFilterer(t, ns))
@@ -188,19 +190,25 @@ func (t *storageInterface) Watch(
 
 func watchFilterer(t *storageInterface, ns string) func(watch.Event) (watch.Event, bool) {
 	return func(in watch.Event) (watch.Event, bool) {
-		out := t.singularShell(ns, "")
-		unstruc, err := ToUnstructured(in.Object)
+		encodedBytes, err := runtime.Encode(t.codec, in.Object)
 		if err != nil {
-			glog.Errorf("%s object wasn't unstructured (%s)", in.Type, err)
-			return in, false
+			glog.Errorf("couldn't encode watch event object (%s)", err)
+			return watch.Event{}, false
 		}
-		if err := FromUnstructured(unstruc, out); err != nil {
-			glog.Errorf("object wasn't a %s (%s)", t.singularKind, err)
-			return in, false
+		finalObj := t.singularShell("", "")
+		if err := decode(t.codec, nil, encodedBytes, finalObj); err != nil {
+			glog.Errorf("couldn't decode watch event bytes (%s)", err)
+			return watch.Event{}, false
+		}
+		if !t.hasNamespace {
+			if err := removeNamespace(finalObj); err != nil {
+				glog.Errorf("couldn't remove namespace from %#v (%s)", finalObj, err)
+				return watch.Event{}, false
+			}
 		}
 		return watch.Event{
 			Type:   in.Type,
-			Object: out,
+			Object: finalObj,
 		}, true
 	}
 }
@@ -218,24 +226,27 @@ func (t *storageInterface) WatchList(
 	resourceVersion string,
 	p storage.SelectionPredicate,
 ) (watch.Interface, error) {
-	// ns, _, err := t.decodeKey(key)
-	_, _, err := t.decodeKey(key)
+	ns, _, err := t.decodeKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	// cl, err := GetResourceClient(t.cl, t.listKind, ns)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// list := t.listShell()
-	// // servicecatalog.BindingList{
-	// // 	TypeMeta: metav1.TypeMeta{
-	// // 		Kind: ServiceBindingListKind.String(),
-	// // 	},
-	// // }
-	// return cl.Watch(list)
-	return nil, nil
+	req := t.cl.Core().RESTClient().Get().AbsPath(
+		"apis",
+		groupName,
+		tprVersion,
+		"watch",
+		"namespaces",
+		ns,
+		t.singularKind.URLName(),
+	).Param("resourceVersion", resourceVersion)
+
+	watchIface, err := req.Watch()
+	if err != nil {
+		glog.Errorf("initiating the raw watch (%s)", err)
+		return nil, err
+	}
+	return watch.Filter(watchIface, watchFilterer(t, ns)), nil
 }
 
 // Get unmarshals json found at key into objPtr. On a not found error, will either
@@ -273,6 +284,12 @@ func (t *storageInterface) Get(
 
 	if err := decode(t.codec, nil, unknown.Raw, objPtr); err != nil {
 		return nil
+	}
+	if !t.hasNamespace {
+		if err := removeNamespace(objPtr); err != nil {
+			glog.Errorf("removing namespace from %#v (%s)", objPtr, err)
+			return err
+		}
 	}
 	return nil
 }
@@ -327,6 +344,12 @@ func (t *storageInterface) List(
 		return err
 	}
 
+	if !t.hasNamespace {
+		if err := meta.EachListItem(listObj, removeNamespace); err != nil {
+			glog.Errorf("removing namespace from all items in list (%s)", err)
+			return err
+		}
+	}
 	return nil
 }
 
@@ -364,14 +387,45 @@ func (t *storageInterface) List(
 func (t *storageInterface) GuaranteedUpdate(
 	ctx context.Context,
 	key string,
-	ptrToType runtime.Object,
+	out runtime.Object,
 	ignoreNotFound bool,
 	precondtions *storage.Preconditions,
 	tryUpdate storage.UpdateFunc,
 	suggestion ...runtime.Object,
 ) error {
-	// TODO: implement
-	return errNotImplemented
+	var origState *objState
+	if len(suggestion) == 1 && suggestion[0] != nil {
+		s, err := getStateFromObject(t, suggestion[0])
+		if err != nil {
+			glog.Errorf("getting state from suggested object (%s)", err)
+			return err
+		}
+		origState = s
+	} else {
+		if err := t.Get(ctx, key, "", out, false); err != nil {
+			glog.Errorf("getting initial object (%s)", err)
+			return err
+		}
+		s, err := getStateFromObject(t, out)
+		if err != nil {
+			glog.Errorf("getting state from fetched object (%s)", err)
+			return err
+		}
+		origState = s
+	}
+	for {
+		ret, _, err := updateState(t.Versioner(), origState, tryUpdate)
+		if err != nil {
+			glog.Errorf("updating the state (%s)", err)
+			return err
+		}
+		data, err := runtime.Encode(t.codec, ret)
+		if err != nil {
+			glog.Errorf("encoding return object (%s)", err)
+			return err
+		}
+		return decode(t.codec, t.Versioner(), data, out)
+	}
 }
 
 func decode(
@@ -385,6 +439,14 @@ func decode(
 	}
 	_, _, err := codec.Decode(value, nil, objPtr)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeNamespace(obj runtime.Object) error {
+	if err := accessor.SetNamespace(obj, ""); err != nil {
+		glog.Errorf("removing namespace from %#v (%s)", obj, err)
 		return err
 	}
 	return nil

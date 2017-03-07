@@ -78,6 +78,7 @@ func (p StorageProvider) v1alpha1Storage(
 			Trigger:       storage.NoTriggerPublisher,
 		},
 		tpr.Options{
+			HasNamespace:     false,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("brokers")),
 			DefaultNamespace: p.DefaultNamespace,
 			Client:           p.Client,
@@ -107,6 +108,7 @@ func (p StorageProvider) v1alpha1Storage(
 			Trigger:       storage.NoTriggerPublisher,
 		},
 		tpr.Options{
+			HasNamespace:     false,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("serviceclasses")),
 			DefaultNamespace: p.DefaultNamespace,
 			Client:           p.Client,
@@ -136,6 +138,7 @@ func (p StorageProvider) v1alpha1Storage(
 			Trigger:       storage.NoTriggerPublisher,
 		},
 		tpr.Options{
+			HasNamespace:     true,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("instances")),
 			DefaultNamespace: p.DefaultNamespace,
 			Client:           p.Client,
@@ -165,6 +168,7 @@ func (p StorageProvider) v1alpha1Storage(
 			Trigger:       storage.NoTriggerPublisher,
 		},
 		tpr.Options{
+			HasNamespace:     true,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("bindings")),
 			DefaultNamespace: p.DefaultNamespace,
 			Client:           p.Client,

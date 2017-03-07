@@ -24,6 +24,7 @@ import (
 
 // Options is the set of options to create a new TPR storage interface
 type Options struct {
+	HasNamespace     bool
 	RESTOptions      generic.RESTOptions
 	DefaultNamespace string
 	Client           clientset.Interface
