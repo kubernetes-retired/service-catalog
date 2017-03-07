@@ -46,8 +46,8 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
-	//defer close(stopCh)
 	shutdown := func() {
+		t.Logf("Shutting down server on port: %d", securePort)
 		close(stopCh)
 	}
 
@@ -66,6 +66,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			TPROptions:            &server.TPROptions{},
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
+			StopCh:                stopCh,
 		}
 		options.SecureServingOptions.ServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
