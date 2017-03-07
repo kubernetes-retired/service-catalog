@@ -129,10 +129,6 @@ func (t *storageInterface) Delete(
 		glog.Errorf("decoding key %s (%s)", key, err)
 		return err
 	}
-	// if ns == "" {
-	// 	glog.Infof("no namespace, defaulting to %s", t.defaultNamespace)
-	// 	ns = t.defaultNamespace
-	// }
 
 	req := t.cl.Core().RESTClient().Delete().AbsPath(
 		"apis",
@@ -173,13 +169,15 @@ func (t *storageInterface) Watch(
 		"apis",
 		groupName,
 		tprVersion,
+		"watch",
 		"namespaces",
 		ns,
 		t.singularKind.URLName(),
 		name,
-	).Param("watch", "true")
+	).Param("resourceVersion", resourceVersion)
 	watchIface, err := req.Watch()
 	if err != nil {
+		glog.Errorf("initiating the raw watch (%s)", err)
 		return nil, err
 	}
 	filteredIFace := watch.Filter(watchIface, watchFilterer(t, ns))
@@ -188,19 +186,19 @@ func (t *storageInterface) Watch(
 
 func watchFilterer(t *storageInterface, ns string) func(watch.Event) (watch.Event, bool) {
 	return func(in watch.Event) (watch.Event, bool) {
-		out := t.singularShell(ns, "")
-		unstruc, err := ToUnstructured(in.Object)
+		encodedBytes, err := runtime.Encode(t.codec, in.Object)
 		if err != nil {
-			glog.Errorf("%s object wasn't unstructured (%s)", in.Type, err)
-			return in, false
+			glog.Errorf("couldn't encode watch event object (%s)", err)
+			return watch.Event{}, false
 		}
-		if err := FromUnstructured(unstruc, out); err != nil {
-			glog.Errorf("object wasn't a %s (%s)", t.singularKind, err)
-			return in, false
+		finalObj := t.singularShell("", "")
+		if err := decode(t.codec, nil, encodedBytes, finalObj); err != nil {
+			glog.Errorf("couldn't decode watch event bytes (%s)", err)
+			return watch.Event{}, false
 		}
 		return watch.Event{
 			Type:   in.Type,
-			Object: out,
+			Object: finalObj,
 		}, true
 	}
 }
@@ -218,24 +216,27 @@ func (t *storageInterface) WatchList(
 	resourceVersion string,
 	p storage.SelectionPredicate,
 ) (watch.Interface, error) {
-	// ns, _, err := t.decodeKey(key)
-	_, _, err := t.decodeKey(key)
+	ns, _, err := t.decodeKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	// cl, err := GetResourceClient(t.cl, t.listKind, ns)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// list := t.listShell()
-	// // servicecatalog.BindingList{
-	// // 	TypeMeta: metav1.TypeMeta{
-	// // 		Kind: ServiceBindingListKind.String(),
-	// // 	},
-	// // }
-	// return cl.Watch(list)
-	return nil, nil
+	req := t.cl.Core().RESTClient().Get().AbsPath(
+		"apis",
+		groupName,
+		tprVersion,
+		"watch",
+		"namespaces",
+		ns,
+		t.singularKind.TPRName()+"s",
+	).Param("resourceVersion", resourceVersion)
+
+	watchIface, err := req.Watch()
+	if err != nil {
+		glog.Errorf("initiating the raw watch (%s)", err)
+		return nil, err
+	}
+	return watch.Filter(watchIface, watchFilterer(t, ns)), nil
 }
 
 // Get unmarshals json found at key into objPtr. On a not found error, will either
