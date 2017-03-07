@@ -129,9 +129,10 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// QualifiedResource should always be plural
 		QualifiedResource: api.Resource("instances"),
 
-		CreateStrategy: instanceRESTStrategies,
-		UpdateStrategy: instanceRESTStrategies,
-		DeleteStrategy: instanceRESTStrategies,
+		CreateStrategy:          instanceRESTStrategies,
+		UpdateStrategy:          instanceRESTStrategies,
+		DeleteStrategy:          instanceRESTStrategies,
+		EnableGarbageCollection: true,
 
 		Storage:     storageInterface,
 		DestroyFunc: dFunc,
