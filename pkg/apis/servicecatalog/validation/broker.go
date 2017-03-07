@@ -22,8 +22,6 @@ import (
 	// commented out until we use the base validation utilities
 
 	apivalidation "k8s.io/kubernetes/pkg/api/validation"
-	// "k8s.io/kubernetes/pkg/api/validation/path"
-	// utilvalidation "k8s.io/kubernetes/pkg/util/validation"
 	"k8s.io/kubernetes/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -43,8 +41,6 @@ func ValidateBroker(broker *sc.Broker) field.ErrorList {
 			field.NewPath("metadata"))...)
 
 	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("Spec"))...)
-	// Do we need to validate the status array?
-	// allErrs = append(allErrs, validateBrokerStatus(&broker.Spec, field.NewPath("Status"))...)
 	return allErrs
 }
 
@@ -64,12 +60,8 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 // ValidateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
 func ValidateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
-	// should each individual broker validate successfully before validating changes?
 	allErrs = append(allErrs, ValidateBroker(new)...)
 	allErrs = append(allErrs, ValidateBroker(old)...)
-	// allErrs = append(allErrs, validateObjectMetaUpdate(new, old)...)
-	// allErrs = append(allErrs, validateBrokerSpecUpdate(new, old)...)
-	// allErrs = append(allErrs, validateBrokerStatusUpdate(new, old)...)
 	return allErrs
 }
 

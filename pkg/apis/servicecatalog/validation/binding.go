@@ -34,8 +34,6 @@ func ValidateBinding(binding *sc.Binding) field.ErrorList {
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateBindingSpec(&binding.Spec, field.NewPath("Spec"))...)
 
-	// validate the status array
-	// allErrs = append(allErrs, validateBindingStatus(&binding.Spec, field.NewPath("Status"))...)
 	return allErrs
 }
 
@@ -50,9 +48,6 @@ func ValidateBindingUpdate(new *sc.Binding, old *sc.Binding) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateBinding(new)...)
 	allErrs = append(allErrs, ValidateBinding(old)...)
-	// allErrs = append(allErrs, validateObjectMetaUpdate(new, old)...)
-	// allErrs = append(allErrs, validateBindingSpecUpdate(new, old)...)
-	// allErrs = append(allErrs, validateBindingStatusUpdate(new, old)...)
 	return allErrs
 }
 

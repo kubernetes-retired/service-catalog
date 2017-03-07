@@ -18,10 +18,9 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	// "k8s.io/kubernetes/pkg/registry/generic"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	"k8s.io/kubernetes/pkg/genericapiserver"
 )
 
 // tprConfig is the configuration needed to run the API server in TPR storage mode
