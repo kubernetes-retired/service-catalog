@@ -1165,7 +1165,6 @@ func TestReconcileBindingDelete(t *testing.T) {
 // - a fake broker binding client
 // - a test controller
 // - the shared informers for the service catalog v1alpha1 api
-// - a stop channel hooked to the informer factory that was created
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
