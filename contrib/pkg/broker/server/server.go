@@ -112,8 +112,8 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["instance_id"]
 	glog.Infof("RemoveServiceInstance %s...\n", id)
 
-	if err := s.controller.RemoveServiceInstance(id); err == nil {
-		util.WriteResponse(w, http.StatusOK, "{}")
+	if result, err := s.controller.RemoveServiceInstance(id); err == nil {
+		util.WriteResponse(w, http.StatusOK, result)
 	} else {
 		util.WriteResponse(w, http.StatusBadRequest, err)
 	}

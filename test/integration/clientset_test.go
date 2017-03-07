@@ -285,6 +285,17 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 	}
 
 	brokerDeleted, err := brokerClient.Get(name)
+	if nil != err {
+		return fmt.Errorf("broker should not be deleted (%v): %v", brokerDeleted, err)
+	}
+
+	brokerDeleted.ObjectMeta.Finalizers = nil
+	_, err = brokerClient.UpdateStatus(brokerDeleted)
+	if nil != err {
+		return fmt.Errorf("broker should be deleted (%v): %v", brokerDeleted, err)
+	}
+
+	brokerDeleted, err = brokerClient.Get("test-broker")
 	if nil == err {
 		return fmt.Errorf("broker should be deleted (%v)", brokerDeleted)
 	}
@@ -521,6 +532,17 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 	}
 
 	instanceDeleted, err := instanceClient.Get(name)
+	if nil != err {
+		return fmt.Errorf("instance should still exist (%v): %v", instanceDeleted, err)
+	}
+
+	instanceDeleted.ObjectMeta.Finalizers = nil
+	_, err = instanceClient.UpdateStatus(instanceDeleted)
+	if nil != err {
+		return fmt.Errorf("error updating status (%v): %v", instanceDeleted, err)
+	}
+
+	instanceDeleted, err = instanceClient.Get("test-instance")
 	if nil == err {
 		return fmt.Errorf("instance should be deleted (%#v)", instanceDeleted)
 	}
@@ -667,10 +689,21 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 	}
 
 	if err = bindingClient.Delete(name, &v1.DeleteOptions{}); nil != err {
-		return fmt.Errorf("broker should be deleted (%s)", err)
+		return fmt.Errorf("broker should be deleted (%v)", err)
 	}
 
 	bindingDeleted, err := bindingClient.Get(name)
+	if nil != err {
+		return fmt.Errorf("binding should still exist (%v): %v", bindingDeleted, err)
+	}
+
+	bindingDeleted.ObjectMeta.Finalizers = nil
+	_, err = bindingClient.UpdateStatus(bindingDeleted)
+	if nil != err {
+		return fmt.Errorf("error updating status (%v): %v", bindingDeleted, err)
+	}
+
+	bindingDeleted, err = bindingClient.Get(name)
 	if nil == err {
 		return fmt.Errorf("binding should be deleted (%#v)", bindingDeleted)
 	}

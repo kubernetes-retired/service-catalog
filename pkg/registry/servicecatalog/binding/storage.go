@@ -130,9 +130,10 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 		// QualifiedResource should always be plural
 		QualifiedResource: api.Resource("bindings"),
 
-		CreateStrategy: bindingRESTStrategies,
-		UpdateStrategy: bindingRESTStrategies,
-		DeleteStrategy: bindingRESTStrategies,
+		CreateStrategy:          bindingRESTStrategies,
+		UpdateStrategy:          bindingRESTStrategies,
+		DeleteStrategy:          bindingRESTStrategies,
+		EnableGarbageCollection: true,
 
 		Storage:     storageInterface,
 		DestroyFunc: dFunc,
