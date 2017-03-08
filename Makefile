@@ -73,6 +73,8 @@ endif
 
 NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 
+IMAGES_PREFIX = service-catalog-
+
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
 # "apiserver" instead of "bin/apiserver".
@@ -267,28 +269,28 @@ images: k8s-broker-image user-broker-image \
 k8s-broker-image: contrib/build/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
 	mkdir -p contrib/build/k8s-broker/tmp
 	cp $(BINDIR)/k8s-broker contrib/build/k8s-broker/tmp
-	docker build -t k8s-broker:$(VERSION) contrib/build/k8s-broker
+	docker build -t $(IMAGES_PREFIX)k8s-broker:$(VERSION) contrib/build/k8s-broker
 	rm -rf contrib/build/k8s-broker/tmp
 
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	mkdir -p contrib/build/user-broker/tmp
 	cp $(BINDIR)/user-broker contrib/build/user-broker/tmp
-	docker build -t user-broker:$(VERSION) contrib/build/user-broker
-	docker tag user-broker:$(VERSION) user-broker:latest
+	docker build -t $(IMAGES_PREFIX)user-broker:$(VERSION) contrib/build/user-broker
+	docker tag $(IMAGES_PREFIX)user-broker:$(VERSION) $(IMAGES_PREFIX)user-broker:latest
 	rm -rf contrib/build/user-broker/tmp
 
 apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
 	mkdir -p build/apiserver/tmp
 	cp $(BINDIR)/apiserver build/apiserver/tmp
-	docker build -t apiserver:$(VERSION) build/apiserver
-	docker tag apiserver:$(VERSION) apiserver:latest
+	docker build -t $(IMAGES_PREFIX)apiserver:$(VERSION) build/apiserver
+	docker tag $(IMAGES_PREFIX)apiserver:$(VERSION) $(IMAGES_PREFIX)apiserver:latest
 	rm -rf build/apiserver/tmp
 
 controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controller-manager
 	mkdir -p build/controller-manager/tmp
 	cp $(BINDIR)/controller-manager build/controller-manager/tmp
-	docker build -t controller-manager:$(VERSION) build/controller-manager
-	docker tag controller-manager:$(VERSION) controller-manager:latest
+	docker build -t $(IMAGES_PREFIX)controller-manager:$(VERSION) build/controller-manager
+	docker tag $(IMAGES_PREFIX)controller-manager:$(VERSION) $(IMAGES_PREFIX)controller-manager:latest
 	rm -rf build/controller-manager/tmp
 
 # Push our Docker Images to a registry
@@ -297,22 +299,22 @@ push: k8s-broker-push user-broker-push controller-manager-push apiserver-push
 
 k8s-broker-push: k8s-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION)
-	docker push $(REGISTRY)/k8s-broker:$(VERSION)
+	docker tag $(IMAGES_PREFIX)k8s-broker:$(VERSION) $(REGISTRY)/$(IMAGES_PREFIX)k8s-broker:$(VERSION)
+	docker push $(REGISTRY)/$(IMAGES_PREFIX)k8s-broker:$(VERSION)
 
 user-broker-push: user-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:$(VERSION)
-	docker push $(REGISTRY)/user-broker:$(VERSION)
+	docker tag $(IMAGES_PREFIX)user-broker:$(VERSION) $(REGISTRY)/$(IMAGES_PREFIX)user-broker:$(VERSION)
+	docker push $(REGISTRY)/$(IMAGES_PREFIX)user-broker:$(VERSION)
 
 controller-manager-push: controller-manager-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:$(VERSION)
-	docker push $(REGISTRY)/controller-manager:$(VERSION)
+	docker tag $(IMAGES_PREFIX)controller-manager:$(VERSION) $(REGISTRY)/$(IMAGES_PREFIX)controller-manager:$(VERSION)
+	docker push $(REGISTRY)/$(IMAGES_PREFIX)controller-manager:$(VERSION)
 
 apiserver-push: apiserver-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:$(VERSION)
-	docker push $(REGISTRY)/apiserver:$(VERSION)
-	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:latest
-	docker push $(REGISTRY)/apiserver:latest
+	docker tag $(IMAGES_PREFIX)apiserver:$(VERSION) $(REGISTRY)/$(IMAGES_PREFIX)apiserver:$(VERSION)
+	docker push $(REGISTRY)/$(IMAGES_PREFIX)apiserver:$(VERSION)
+	docker tag $(IMAGES_PREFIX)apiserver:$(VERSION) $(REGISTRY)/$(IMAGES_PREFIX)apiserver:latest
+	docker push $(REGISTRY)/$(IMAGES_PREFIX)apiserver:latest
