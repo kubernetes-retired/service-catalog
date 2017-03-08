@@ -71,7 +71,7 @@ func (t *store) Versioner() storage.Versioner {
 		listKind:     t.listKind,
 		checkObject:  t.checkObject,
 		defaultNS:    t.defaultNamespace,
-		cl:           t.cl,
+		restClient:   t.cl.Core().RESTClient(),
 	}
 }
 

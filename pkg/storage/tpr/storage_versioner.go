@@ -17,11 +17,11 @@ limitations under the License.
 package tpr
 
 import (
-	"errors"
 	"strconv"
 
 	"github.com/golang/glog"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	"k8s.io/kubernetes/pkg/api/meta"
+	"k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/storage"
 )
@@ -31,14 +31,14 @@ type versioner struct {
 	singularKind Kind
 	listKind     Kind
 	checkObject  func(runtime.Object) error
-	cl           clientset.Interface
+	restClient   restclient.Interface
 	defaultNS    string
 }
 
 // UpdateObject sets storage metadata into an API object. Returns an error if the object
 // cannot be updated correctly. May return nil if the requested object does not need metadata
 // from database.
-func (t *versioner) UpdateObject(obj runtime.Object, resourceVersion uint64) error {
+func (v *versioner) UpdateObject(obj runtime.Object, resourceVersion uint64) error {
 	if err := accessor.SetResourceVersion(obj, strconv.Itoa(int(resourceVersion))); err != nil {
 		glog.Errorf("setting resource version (%s)", err)
 		return err
@@ -52,21 +52,21 @@ func (t *versioner) UpdateObject(obj runtime.Object, resourceVersion uint64) err
 	// a non-nil error and/or an empty namespace, use the default namespace
 	ns, err := accessor.Namespace(obj)
 	if err != nil || ns == "" {
-		ns = t.defaultNS
+		ns = v.defaultNS
 	}
 
-	data, err := runtime.Encode(t.codec, obj)
+	data, err := runtime.Encode(v.codec, obj)
 	if err != nil {
 		glog.Errorf("encoding obj (%s)", err)
 		return err
 	}
-	req := t.cl.Core().RESTClient().Put().AbsPath(
+	req := v.restClient.Put().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,
 		"namespaces",
 		ns,
-		t.singularKind.URLName(),
+		v.singularKind.URLName(),
 		name,
 	).Body(data)
 
@@ -103,37 +103,30 @@ func updateState(v storage.Versioner, st *objState, userUpdate storage.UpdateFun
 	return ret, ttl, nil
 }
 
-// UpdateList sets the resource version into an API list object. Returns an error if the object
-// cannot be updated correctly. May return nil if the requested object does not need metadata
-// from database.
-func (t *versioner) UpdateList(obj runtime.Object, resourceVersion uint64) error {
-	// ns, err := GetNamespace(obj)
-	// if err != nil {
-	// 	return err
-	// }
-	// if rvErr := GetAccessor().SetResourceVersion(
-	// 	obj,
-	// 	strconv.Itoa(int(resourceVersion)),
-	// ); rvErr != nil {
-	// 	return rvErr
-	// }
-	// unstruc, err := ToUnstructured(obj)
-	// if err != nil {
-	// 	return err
-	// }
-	// cl, err := GetResourceClient(t.cl, t.listKind, ns)
-	// if err != nil {
-	// 	return err
-	// }
-	// if _, err := cl.Update(unstruc); err != nil {
-	// 	return err
-	// }
-	return errors.New("UpdateList not implemented")
+// UpdateList receives a list object and ranges over constituent objects,
+// calling UpdateObject for each. Contrasted with the ETCD-based implementation
+// of UpdateList, here in this TPR-based implementation, we cannot update all
+// the objects within the list atomically. If any one object update fails, the
+// failure is logged and all remaining updates are aborted, but completed
+// updates are not rolled back.
+func (v *versioner) UpdateList(listObj runtime.Object, listResourceVersion uint64) error {
+	return meta.EachListItem(listObj, func(obj runtime.Object) error {
+		objResourceVersion, err := v.ObjectResourceVersion(obj)
+		if err != nil {
+			glog.Errorf("error getting resource version from %#v; aborting further updates (%s)", listObj, err)
+			return err
+		}
+		if err := v.UpdateObject(obj, objResourceVersion); err != nil {
+			glog.Errorf("error updating list object; aborting further updates (%s)", err)
+			return err
+		}
+		return nil
+	})
 }
 
 // ObjectResourceVersion returns the resource version (for persistence) of the specified object.
 // Should return an error if the specified object does not have a persistable version.
-func (t *versioner) ObjectResourceVersion(obj runtime.Object) (uint64, error) {
+func (v *versioner) ObjectResourceVersion(obj runtime.Object) (uint64, error) {
 	vsnStr, err := GetAccessor().ResourceVersion(obj)
 	if err != nil {
 		return 0, err
