@@ -16,8 +16,6 @@ limitations under the License.
 
 package validation
 
-// this contains stubs of nothing until it is understood how it works
-
 import (
 	// commented out until we use the base validation utilities
 
@@ -53,7 +51,16 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 				"brokers must have a remote url to contact"))
 	}
 
-	// spec.OSBGUID has no properties to validate
+	if spec.AuthSecret != nil {
+		for _, msg := range apivalidation.ValidateNamespaceName(spec.AuthSecret.Namespace, false /* prefix */) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("authSecret", "namespace"), spec.AuthSecret.Namespace, msg))
+		}
+
+		for _, msg := range apivalidation.ValidateSecretName(spec.AuthSecret.Name, false /* prefix */) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("authSecret", "name"), spec.AuthSecret.Name, msg))
+		}
+	}
+
 	return allErrs
 }
 
