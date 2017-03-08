@@ -18,12 +18,13 @@ package brokerapi
 
 // ServiceBinding represents a binding to a service instance
 type ServiceBinding struct {
-	ID                string `json:"id"`
-	ServiceID         string `json:"service_id"`
-	AppID             string `json:"app_id"`
-	ServicePlanID     string `json:"service_plan_id"`
-	PrivateKey        string `json:"private_key"`
-	ServiceInstanceID string `json:"service_instance_id"`
+	ID                string                 `json:"id"`
+	ServiceID         string                 `json:"service_id"`
+	AppID             string                 `json:"app_id"`
+	ServicePlanID     string                 `json:"service_plan_id"`
+	PrivateKey        string                 `json:"private_key"`
+	ServiceInstanceID string                 `json:"service_instance_id"`
+	Parameters        map[string]interface{} `json:"parameters, omitempty"`
 }
 
 // BindingRequest represents a request to bind to a service instance

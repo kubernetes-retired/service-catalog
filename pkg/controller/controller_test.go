@@ -19,7 +19,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -1031,20 +1030,45 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	if len(updateObject.Spec.Parameters.Raw) == 0 {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
-	// TODO(vaikas): Implement the storing logic in the fake Binding Client so that it stores
-	// something meaningful there. For now, it just stores a struct making the validation a bit
-	// wonky.
-	if _, ok := fakeBindingClient.Bindings[instanceGUID+":"+bindingGUID]; !ok {
+	if b, ok := fakeBindingClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; !ok {
 		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
+	} else {
+		if len(b.Parameters) == 0 {
+			t.Fatalf("Expected parameters, but got none")
+		}
+		if e, a := "test-param", b.Parameters["name"].(string); e != a {
+			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
+		}
+		argsArray := b.Parameters["args"].([]interface{})
+		if len(argsArray) != 2 {
+			t.Fatalf("Expected 2 elements in args array, but got %d", len(argsArray))
+		}
+		foundFirst := false
+		foundSecond := false
+		for _, el := range argsArray {
+			if el.(string) == "first-arg" {
+				foundFirst = true
+			}
+			if el.(string) == "second-arg" {
+				foundSecond = true
+			}
+		}
+		if !foundFirst {
+			t.Fatalf("Failed to find 'first-arg' in array, was %v", argsArray)
+		}
+		if !foundSecond {
+			t.Fatalf("Failed to find 'second-arg' in array, was %v", argsArray)
+		}
 	}
+
 }
 
 func TestReconcileBindingDelete(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, _, fakeBindingClient, testController, sharedInformers := newTestController(t)
 
-	fakeBindingClient.Bindings = map[string]struct{}{
-		fmt.Sprintf("%s:%s", instanceGUID, bindingGUID): {},
-	}
+	bindingsMapKey := fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)
+
+	fakeBindingClient.Bindings = map[string]*brokerapi.ServiceBinding{bindingsMapKey: {}}
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -1136,7 +1160,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
 	}
 
-	if _, ok := fakeBindingClient.Bindings[bindingGUID]; ok {
+	if _, ok := fakeBindingClient.Bindings[bindingsMapKey]; ok {
 		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
 	}
 
