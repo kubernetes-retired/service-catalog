@@ -180,6 +180,9 @@ func testBrokerClient(client servicecatalogclient.Interface, name string) error 
 	if err != nil {
 		return fmt.Errorf("error listing brokers (%s)", err)
 	}
+	if brokers.Items == nil {
+		return fmt.Errorf("Items field should not be set to nil")
+	}
 	if len(brokers.Items) > 0 {
 		return fmt.Errorf("brokers should not exist on start, had %v brokers", len(brokers.Items))
 	}
@@ -336,6 +339,9 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 	if err != nil {
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
+	if serviceClasses.Items == nil {
+		return fmt.Errorf("Items field should not be set to nil")
+	}
 	if len(serviceClasses.Items) > 0 {
 		return fmt.Errorf(
 			"serviceClasses should not exist on start, had %v serviceClasses",
@@ -445,6 +451,9 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 	instances, err := instanceClient.List(v1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing instances (%s)", err)
+	}
+	if instances.Items == nil {
+		return fmt.Errorf("Items field should not be set to nil")
 	}
 	if len(instances.Items) > 0 {
 		return fmt.Errorf(
@@ -594,6 +603,9 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 	bindings, err := bindingClient.List(v1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing bindings (%s)", err)
+	}
+	if bindings.Items == nil {
+		return fmt.Errorf("Items field should not be set to nil")
 	}
 	if len(bindings.Items) > 0 {
 		return fmt.Errorf("bindings should not exist on start, had %v bindings", len(bindings.Items))
