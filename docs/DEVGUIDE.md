@@ -9,6 +9,7 @@ Table of Contents
 - [Testing](#testing)
 - [Advanced Build Steps](#advanced-build-steps)
 - [Deploying to Kubernetes](#deploying-to-kubernetes)
+- [Demo walkthrough](#demo-walkthrough)
 
 ## Overview
 
@@ -17,18 +18,19 @@ have found possible (or practical). Below is a summary of the repository's
 layout:
 
     .
-    ├── .glide             # Glide cache (untracked)
-    ├── bin                # Destination for binaries compiled for linux/amd64 (untracked)
-    ├── build              # Contains build-related scripts and subdirectories containing Dockerfiles
-    ├── cmd                # Contains "main" Go packages for each service catalog component binary
-    ├── contrib            # Contains all non-essential source
-    │   └── hack           # Non-build related scripts
-    ├── deploy             # Helm charts for deployment
-    │   └── catalog        # Helm chart for deploying TPR-based prototype
-    │   └── wip-catalog    # Helm chart for deploying apiserver-based WIP
-    ├── docs               # Documentation
-    ├── pkg                # Contains all non-"main" Go packages
-    └── vendor             # Glide-managed dependencies (untracked)
+    ├── .glide                  # Glide cache (untracked)
+    ├── bin                     # Destination for binaries compiled for linux/amd64 (untracked)
+    ├── build                   # Contains build-related scripts and subdirectories containing Dockerfiles
+    ├── cmd                     # Contains "main" Go packages for each service catalog component binary
+    │   └── apiserver           # The service catalog API server binary
+    │   └── controller-manager  # The service catalog controller manager binary
+    ├── contrib                 # Contains all non-essential source
+    │   └── hack                # Non-build related scripts
+    ├── deploy                  # Helm charts for deployment
+    │   └── wip-catalog         # Helm chart for deploying apiserver-based WIP
+    ├── docs                    # Documentation
+    ├── pkg                     # Contains all non-"main" Go packages
+    └── vendor                  # Glide-managed dependencies (untracked)
 
 ## Working on Issues
 
@@ -53,6 +55,7 @@ close the issue when the PR is merged.
 ## Prerequisites
 
 At a minimum you will need:
+
 * [Docker](https://www.docker.com) installed locally
 * GNU Make
 * [git](https://git-scm.com)
@@ -62,12 +65,13 @@ Docker container.
 
 If you want to deploy service catalog components built from source, you will
 also need:
-* To be pre-authenticated to a Docker registry
+
 * A working Kubernetes cluster and `kubectl` installed in your local `PATH`,
   properly configured to access that cluster. The version of Kubernetes and
   `kubectl` must be >= 1.4
 * [Helm](https://helm.sh) (Tiller) installed in your Kubernetes cluster and the
   `helm` binary in your `PATH`
+* To be pre-authenticated to a Docker registry (if using a remote cluster)
 
 **Note:** It is not generally useful to run service catalog components outside
 a Kubernetes cluster. As such, our build process only supports compilation of
@@ -80,14 +84,14 @@ The Service Catalog github repository can be found
 
 To clone the repository:
 
-    git clone https://github.com/kubernetes-incubator/service-catalog.git
+    $ git clone https://github.com/kubernetes-incubator/service-catalog.git
 
 ## Building
 
 First `cd` to the root of the cloned repository tree.
 To build the service-catalog:
 
-    make build
+    $ make build
 
 The above will build all executables and place them in the `bin` directory. This
 is done within a Docker container-- meaning you do not need to have all of the
@@ -118,13 +122,13 @@ To deploy to Kubernetes, see the
 There are two types of tests: unit and integration. The unit testcases
 can be run via the `test-unit` Makefile target, e.g.:
 
-    make test-unit
+    $ make test-unit
 
 These will execute any `*_test.go` files within the source tree.
 The integration tests can be run via the `test-integration` Makefile target,
 e.g.:
 
-    make test-integration
+    $ make test-integration
 
 The integration tests require the Kubernetes client (`kubectl`) so there is a
 script called `contrib/hack/kubectl` that will run it from within a
@@ -133,20 +137,20 @@ youself. You may find it useful to add `contrib/hack` to your `PATH`.
 
 The `test` Makefile target will run both the unit and integration tests, e.g.:
 
-    make test
+    $ make test
 
 If you want to run just a subset of the unit testcases then you can
 specify the source directories of the tests:
 
-    TEST_DIRS="path1 path2" make test
+    $ TEST_DIRS="path1 path2" make test
 
 or you can specify a regexp expression for the test name:
 
-    UNIT_TESTS=TestBar* make test
+    $ UNIT_TESTS=TestBar* make test
 
 To see how well these tests cover the source code, you can use:
 
-    make coverage
+    $ make coverage
 
 These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
@@ -159,9 +163,9 @@ them to a Docker Registry so they can be accessed by your Kubernetes clusters:
 
     # Registry URL is the portion up to, but excluding the image name and its
     # preceding slash, e.g., "gcr.io/my-repo", "my-docker-id"
-    export REGISTRY=<registry URL>
+    $ export REGISTRY=<registry URL>
 
-    make images push
+    $ make images push
 
 This will build Docker images for the service controller, Kubernetes service
 broker, and service classes registry. The images are also pushed to the
@@ -170,7 +174,7 @@ can be accessed by your Kubernetes cluster.
 
 The images are tagged with the current Git commit SHA:
 
-    docker images
+    $ docker images
 
 ----
 
@@ -193,137 +197,246 @@ export KUBECONFIG=/home/yippee/code/service-catalog/.kubeconfig
 
 ## Deploying to Kubernetes
 
-**NOTE**: These instructions are for the TPR-based prototype and will change over
-to use the API server and controller-manager soon.
-**NOTE**: Do not forget to specify a Kubernetes namespace where the system will
-be deployed. Here, we will use `catalog`.
+Use the [`wip-catalog` chart](../deploy/wip-catalog) to deploy the service
+catalog into your cluster.  The easiest way to get started is to deploy into a
+cluster you regularly use and are familiar with.  One of the choices you can
+make when deploying the catalog is whether to back the API server with etcd or
+third party resources.  Currently, etcd is the best option; TPR support is
+experimental and still under development.
 
-Use Helm to create the Kubernetes deployments:
+## Demo Walkthrough
 
-    export VERSION=$(git describe --tags --always --abbrev=7 --dirty)
-    helm install \
-        --set "registry=${REGISTRY},version=${VERSION}" \
-        --namespace catalog \
-        ./deploy/catalog
+The rest of this guide is a walkthrough that is essentially the same as a
+basic demo of the catalog.
 
-After the deployment, observe the deployments and services:
+Now that the system has been deployed to our Kubernetes cluster, we can use
+`kubectl` to talk to the service catalog API server.  The service catalog API
+has four resources:
 
-    kubectl get deployments,services --namespace catalog
+- `Broker`: a service broker whose services appear in the catalog
+- `ServiceClass`: a service offered by a particular service broker
+- `Instance`: an instance of a `ServiceClass` provisioned by the `Broker` for
+  that `ServiceClass`
+- `Binding`: a binding to an `Instance` which is manifested into a Kubernetes
+  namespace
 
-### Walkthrough
+These resources are building blocks of the service catalog in Kubernetes from an
+API standpoint.
 
-Now that the system has been deployed to our Kubernetes cluster, multiple
-new Kubernetes resources were registered. Service brokers, classes, instances,
-and bindings. These resources are building blocks for composing services.
+----
 
-Because we didn't create any services yet, `kubectl get` will return an empty
-list:
+#### Note: accessing the service catalog
 
-    kubectl get brokers,serviceclasses,instances,bindings
+Unfortunately, `kubectl` doesn't know how to speak to both the service catalog
+API server and the main Kubernetes API server without switching contexts or
+`kubeconfig` files.  For now, the best way to access the service catalog API
+server is via a dedicated `kubeconfig` file.  You can manage the kubeconfig in
+use within a directory using the `direnv` tool.
 
-**NOTE**: If there are any resources left over from an earlier walkthrough, you
-can delete them using `contrib/hack/cleanup.sh`.
+----
 
-Now we are ready to use service catalog. First, register service broker with the
-catalog:
+Because we haven't created any resources in the service-catalog API server yet,
+`kubectl get` will return an empty list of resources:
 
-    cd contrib/examples/walkthrough/
+    $ kubectl get brokers,serviceclasses,instances,bindings
 
-    kubectl create -f broker.yaml
+### Registering a Broker
 
-Confirm that service types are now available for instantiation:
+First, we'll register a service broker with the catalog.  To do this, we'll
+create a new [`Broker`](../contrib/examples/walkthrough/ups-broker.yaml)
+resource:
 
-    kubectl get serviceclasses
+    $ kubectl create -f contrib/examples/walkthrough/ups-broker.yaml
+    broker "ups-broker" created
 
-This will output available service types, for example:
+Kubernetes APIs are intention based; creating this resource indicates that the
+want for the service broker it represents to be consumed in the catalog.  When
+we create the resource, the controller handles loading that broker into the
+catalog by seeing what services it provides and adding them to the catalog.
 
-    NAME               LABELS    DATA
-    booksbe            <none>    {"apiVersion":"...
+We can check the status of the broker using `kubectl get`:
 
-We can now create instances of these service classes and connect them
-using bindings:
+    $ kubectl get brokers ups-broker -o yaml
 
-    # Create backend (MySQL) instance.
-    kubectl create -f backend.yaml
+We should see something like:
 
-    # Create binding called 'database'.
-    kubectl create -f binding.yaml
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Broker
+metadata:
+  creationTimestamp: 2017-03-03T04:11:17Z
+  finalizers:
+  - kubernetes
+  name: ups-broker
+  resourceVersion: "6"
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/brokers/ups-broker
+  uid: 72fa629b-ffc7-11e6-b111-0242ac110005
+spec:
+  url: http://ups-broker.ups-broker.svc.cluster.local:8000
+status:
+  conditions:
+  - message: Successfully fetched catalog from broker
+    reason: FetchedCatalog
+    status: "True"
+    type: Ready
+```
 
-Creating the binding will create a `Secret` for binding consumption. This
-can now be used by a native Kubernetes app. You can inspect the config map
-using `kubectl get secret database`:
+Notice that the controller has set this brokers `status` field to reflect that
+it's catalog has been added to our cluster's catalog.
 
-    NAME       DATA      AGE
-    database   4         55s
+### Viewing ServiceClasses
 
-Now you can deploy the application that consumes the binding:
+The controller created a `ServiceClass` for each service that the broker we
+added provides. We can view the `ServiceClass` resources available in the
+cluster by doing:
 
-    kubectl create -f ../user-bookstore-client/bookstore.yaml
+    $ kubectl get serviceclasses
+    NAME                    KIND
+    user-provided-service   ServiceClass.v1alpha1.servicecatalog.k8s.io
 
-This will create a Kubernetes service `user-bookstore-fe`. Wait for deployments
-to start and an IP address of the frontend to be assigned. You can monitor the
-external IP address creation using `kubectl get services`:
+It looks like the broker we added provides a service called the `user-provided-
+service`.  Let's check it out:
 
-    NAME                    CLUSTER-IP       EXTERNAL-IP       PORT(S)    AGE
-    cf-i-3a121d22-booksbe   10.107.254.221   <none>            3306/TCP   2m
-    user-bookstore-fe       10.107.254.221   **<pending>**         3306/TCP   2m
-    kubernetes              10.107.240.1     <none>            443/TCP    1d
+    $ kubectl get serviceclasses user-provided-service -o yaml
 
-Once the IP address becomes available we can use it to contact the frontend
-endpoint. In this example, the IP address is `104.154.153.120`.
+We should see something like:
 
-Save the IP address in an environment variable:
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: ServiceClass
+metadata:
+  creationTimestamp: 2017-03-03T04:11:17Z
+  name: user-provided-service
+  resourceVersion: "7"
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/serviceclassesuser-provided-service
+  uid: 72fef5ce-ffc7-11e6-b111-0242ac110005
+brokerName: ups-broker
+osbGuid: 4F6E6CF6-FFDD-425F-A2C7-3C9258AD2468
+bindable: false
+planUpdatable: false
+plans:
+- name: default
+  osbFree: true
+  osbGuid: 86064792-7ea2-467b-af93-ac9694d96d52
+```
 
-    IP=104.154.153.120
+### Provisioning a new Instance
 
-And interact with the Bookstore API:
+Let's provision a new instance of the `user-provided-service`.  To do this, we
+create a new [`Instance`](../contrib/examples/walkthrough/ups-instance.yaml) to
+indicate that we want to provision a new instance of that service:
 
-    # List shelves
-    curl "http://${IP}:8080/shelves"
+    $ kubectl create -f contrib/examples/walkthrough/ups-instance.yaml
+    instance "ups-instance" created
 
-    # List a specific shelf
-    curl "http://${IP}:8080/shelves/1"
+We can check the status of the `Instance` using `kubectl get`:
 
-    # Create a new shelf
-    curl -H 'Content-Type: application/json' \
-         -H 'x-api-key: 123' \
-          -d '{ "theme": "Travel" }' \
-          "http://${IP}:8080/shelves"
+    $ kubectl get instances -n test-ns ups-instance -o yaml
 
-    # Create a book on the shelf:
-    curl -H 'Content-Type: application/json' \
-         -H 'x-api-key: 123' \
-         -d '{ "author": "Rick Steves", "title": "Travel as a Political Act" }' \
-         "http://${IP}:8080/shelves/3/books"
+We should see something like:
 
-    # List the books on the travel shelf:
-    curl -H 'x-api-key: 123' "http://${IP}:8080/shelves/3/books"
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  creationTimestamp: 2017-03-03T04:26:08Z
+  name: ups-instance
+  namespace: test-ns
+  resourceVersion: "9"
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/instances/ups-instance
+  uid: 8654e626-ffc9-11e6-b111-0242ac110005
+spec:
+  osbGuid: 34c984e1-4626-4574-8a95-9e500d0d48d3
+  planName: default
+  serviceClassName: user-provided-service
+status:
+  conditions:
+  - message: The instance was provisioned successfully
+    reason: ProvisionedSuccessfully
+    status: "True"
+    type: Ready
+```
 
-    # Get the book:
-    curl -H 'x-api-key: 123' "http://${IP}:8080/shelves/3/books/3"
+### Bind to the Instance
 
-### Consume a user-provided service
+Now that our `Instance` has been created, let's bind to it.  To do this, we
+create a new [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml).
 
-**NOTE**: This demo requires that you have cleaned up the resources created in
-the previous demo, specifically the binding and frontend.
+    $ kubectl create -f contrib/examples/walkthrough/ups-binding.yaml
+    binding "ups-binding" created
 
-User-provided services are external services which need to be consumed by
-Kubernetes applications through bindings.
+We can check the status of the `Instance` using `kubectl get`:
 
-Create a Kubernetes deployment. Even though this deployment is hosted in the
-Kubernetes cluster, for the walkthrough it assumes the role of an external,
-user-provided service:
+    $ kubectl get bindings -n test-ns ups-binding -o yaml
 
-    kubectl create -f contrib/examples/user-bookstore-mysql/bookstore.yaml
+We should see something like:
 
-Create a User-provided Service instance to make your service bindable. You will
-need to specify the hostname (either the service name from above or the IP
-address of the service), port, username, and password.
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Binding
+metadata:
+  creationTimestamp: 2017-03-07T01:44:36Z
+  finalizers:
+  - kubernetes
+  name: ups-binding
+  namespace: test-ns
+  resourceVersion: "29"
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/bindings/ups-binding
+  uid: 9eb2cdce-02d7-11e7-8edb-0242ac110005
+spec:
+  instanceRef:
+    name: ups-instance
+  osbGuid: b041db94-a5a0-41a2-87ae-1025ba760918
+  secretName: my-secret
+status:
+  conditions:
+  - message: Injected bind result
+    reason: InjectedBindResult
+    status: "True"
+    type: Ready
+```
 
-    kubectl create -f contrib/examples/walkthrough/ups-backend.yaml
+Notice that the status has a ready condition set.  This means our binding is
+ready to use.  If we look at the secrets in our `test-ns` namespace in
+kubernetes, we should see:
 
-Now you can use the same steps as above to create a binding and a consuming
-service.
+    $ kubectl get secrets -n test-ns
+    NAME                  TYPE                                  DATA      AGE
+    default-token-3k61z   kubernetes.io/service-account-token   3         29m
+    my-secret             Opaque                                2         1m
 
-    kubectl create -f contrib/examples/walkthrough/frontend.yaml
-    kubectl create -f contrib/examples/walkthrough/binding.yaml
+Notice that a secret named `my-secret` has been created in our namespace.
+
+### Unbind from the Instance
+
+Now, let's unbind from the Instance.  To do this, we just delete the `Binding`
+that we created:
+
+    $ kubectl delete -n test-ns bindings ups-binding
+
+If we check the secrets in the `test-ns` namespace, we should see that the
+secret we were injected with has been deleted:
+
+    $ kubectl get secrets -n test-ns
+    NAME                  TYPE                                  DATA      AGE
+    default-token-3k61z   kubernetes.io/service-account-token   3         30m
+
+### Deprovision the Instance
+
+Now, we can deprovision the instance.  To do this, we just delete the `Instance`
+that we created:
+
+    $ kubectl delete -n test-ns instances ups-instance
+
+### Delete the broker
+
+When an administrator wants to remove a broker and the services it offers from
+the catalog, they can just delete the broker:
+
+    $ kubectl delete brokers ups-broker
+
+And we should see that all the `ServiceClass` resources that came from that
+broker were cleaned up:
+
+    $ kubectl get serviceclasses
+    No resources found
