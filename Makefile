@@ -232,7 +232,10 @@ test-unit: .init build
 	$(DOCKER_CMD) go test $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
-test-integration: .init build
+test-integration: .init $(scBuildImageTarget) build
+	# test kubectl
+	contrib/hack/setup-kubectl.sh
+	contrib/hack/test-apiserver.sh
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
 

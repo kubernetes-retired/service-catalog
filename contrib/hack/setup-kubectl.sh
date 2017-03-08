@@ -17,33 +17,37 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+trap cleanup EXIT
+
+function cleanup {
+	rc=$?
+	echo Cleaning up
+	docker rm -f etcd-svc-cat apiserver > /dev/null 2>&1 || true
+	exit $rc
+}
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export PATH=${ROOT}/contrib/hack:${PATH}
 
 # Make our kubectl image, if not already there
 make-kubectl.sh
 
-# Clean up old containers if still around
-docker rm -f etcd apiserver > /dev/null 2>&1 || true
+# Stop any existing sever
+stop-server.sh > /dev/null 2>&1 || true
 
-# Start etcd, our DB
-docker run -ti --name etcd -d --net host quay.io/coreos/etcd > /dev/null
+# Start the API Server so that we can setup our kubectl env
+start-server.sh
 
-# And now our API Server
-docker run -ti --name apiserver -d --net host \
-	-v ${ROOT}:/go/src/github.com/kubernetes-incubator/service-catalog \
-	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
-	-v ${ROOT}/.kube:/root/.kube \
-	scbuildimage \
-	bin/apiserver -v 10 --etcd-servers http://localhost:2379 > /dev/null
+# Find the port # that Docker assigned to the server
+PORT=$(docker port etcd-svc-cat 8081 | sed "s/.*://")
 
-# Wait for apiserver to be up and running
-while ! curl -k http://localhost:6443 > /dev/null 2>&1 ; do
-	sleep 1
-done
+D_HOST=${DOCKER_HOST:-localhost}
+D_HOST=${D_HOST#*//}   # remove leading proto://
+D_HOST=${D_HOST%:*}    # remove trailing port #
 
 # Setup our credentials
 kubectl config set-credentials service-catalog-creds --username=admin --password=admin
-kubectl config set-cluster service-catalog-cluster --server=https://localhost:6443 --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
+#kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
+kubectl config set-cluster service-catalog-cluster --server=http://${D_HOST}:${PORT}
 kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds
 kubectl config use-context service-catalog-ctx

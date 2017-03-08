@@ -21,4 +21,4 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export PATH=${ROOT}/contrib/hack:${PATH}
 
 # Clean up old containers if still around
-docker rm -f etcd apiserver || true
+docker rm -f etcd-svc-cat apiserver || true

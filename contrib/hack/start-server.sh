@@ -21,22 +21,45 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export PATH=${ROOT}/contrib/hack:${PATH}
 
 # Clean up old containers if still around
-docker rm -f etcd apiserver > /dev/null 2>&1 || true
+docker rm -f etcd-svc-cat apiserver > /dev/null 2>&1 || true
 
-# Start etcd, our DB
+# Start etcd, our DB. Also, map 8081 (api server port) to some random
+# port on the host - then ask Docker for the port # as we'll need to use
+# that when we talk to it.
 echo Starting etcd
-docker run -ti --name etcd -d --net host quay.io/coreos/etcd > /dev/null
+docker run -ti --name etcd-svc-cat -d -p 8081 quay.io/coreos/etcd > /dev/null
+PORT=$(docker port etcd-svc-cat 8081 | sed "s/.*://")
 
 # And now our API Server
 echo Starting the API Server
-docker run -ti --name apiserver -d --net host \
+docker run -tid --name apiserver \
 	-v ${ROOT}:/go/src/github.com/kubernetes-incubator/service-catalog \
 	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
 	-v ${ROOT}/.kube:/root/.kube \
+	-e KUBERNETES_SERVICE_HOST=localhost \
+	-e KUBERNETES_SERVICE_PORT=6443 \
+	--privileged \
+	--net container:etcd-svc-cat \
 	scbuildimage \
-	bin/apiserver -v 10 --etcd-servers http://localhost:2379 > /dev/null
+	bin/apiserver -v 10 --etcd-servers http://localhost:2379 \
+		--insecure-bind-address=0.0.0.0 --insecure-port=8081 \
+		--storage-type=etcd
 
 # Wait for apiserver to be up and running
-while ! curl -k http://localhost:6443 > /dev/null 2>&1 ; do
+echo Waiting for API Server to be available...
+count=0
+D_HOST=${DOCKER_HOST:-localhost}
+D_HOST=${D_HOST#*//}   # remove leading proto://
+D_HOST=${D_HOST%:*}    # remove trailing port #
+while ! curl http://${D_HOST}:${PORT} > /dev/null 2>&1 ; do
 	sleep 1
+	(( count++ )) || true
+	if [ "${count}" == "30" ]; then
+		echo "Timed-out waiting for API Server"
+		(set -x ; curl http://${D_HOST}:${PORT})
+		(set -x ; docker ps)
+		(set -x ; docker logs apiserver)
+		exit 1
+	fi
 done
+echo API Server is ready
