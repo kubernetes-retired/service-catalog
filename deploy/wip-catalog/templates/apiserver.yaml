@@ -66,6 +66,8 @@ metadata:
 spec:
 {{ if .Values.debug }}
   type: LoadBalancer
+{{ else }}
+  type: NodePort
 {{ end }}
   selector:
     app: apiserver
