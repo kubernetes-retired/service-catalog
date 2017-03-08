@@ -242,7 +242,7 @@ func TestBindOk(t *testing.T) {
 		t.Errorf("Got the wrong type for the request, expected %v got %v", expected, actual)
 	}
 	received := fbs.RequestObject.(*brokerapi.BindingRequest)
-	if reflect.DeepEqual(*received, sent) {
+	if !reflect.DeepEqual(*received, *sent) {
 		t.Errorf("Sent does not match received, sent: %+v received: %+v", sent, received)
 	}
 }
