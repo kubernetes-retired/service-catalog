@@ -78,18 +78,8 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
 build: .init .generate_files \
-       $(BINDIR)/controller-manager $(BINDIR)/controller $(BINDIR)/apiserver \
-       $(BINDIR)/registry $(BINDIR)/k8s-broker $(BINDIR)/user-broker
-
-controller: $(BINDIR)/controller
-$(BINDIR)/controller: .init cmd/controller \
-	  $(shell find cmd/controller -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller
-
-registry: $(BINDIR)/registry
-$(BINDIR)/registry: .init contrib/cmd/registry \
-	  $(shell find contrib/cmd/registry -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/registry
+       $(BINDIR)/controller-manager $(BINDIR)/apiserver \
+       $(BINDIR)/k8s-broker $(BINDIR)/user-broker
 
 k8s-broker: $(BINDIR)/k8s-broker
 $(BINDIR)/k8s-broker: .init contrib/cmd/k8s-broker \
@@ -246,7 +236,6 @@ test-integration: .init build
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
 
-
 clean: clean-bin clean-deps clean-build-image clean-generated clean-coverage
 
 clean-bin:
@@ -269,15 +258,8 @@ clean-coverage:
 
 # Building Docker Images for our executables
 ############################################
-images: registry-image k8s-broker-image user-broker-image controller-image \
+images: k8s-broker-image user-broker-image \
     controller-manager-image apiserver-image
-
-registry-image: contrib/build/registry/Dockerfile $(BINDIR)/registry
-	mkdir -p contrib/build/registry/tmp
-	cp $(BINDIR)/registry contrib/build/registry/tmp
-	cp contrib/pkg/registry/data/charts/*.json contrib/build/registry/tmp
-	docker build -t registry:$(VERSION) contrib/build/registry
-	rm -rf contrib/build/registry/tmp
 
 k8s-broker-image: contrib/build/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
 	mkdir -p contrib/build/k8s-broker/tmp
@@ -291,12 +273,6 @@ user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	docker build -t user-broker:$(VERSION) contrib/build/user-broker
 	docker tag user-broker:$(VERSION) user-broker:latest
 	rm -rf contrib/build/user-broker/tmp
-
-controller-image: build/controller/Dockerfile $(BINDIR)/controller
-	mkdir -p build/controller/tmp
-	cp $(BINDIR)/controller build/controller/tmp
-	docker build -t controller:$(VERSION) build/controller
-	rm -rf build/controller/tmp
 
 apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
 	mkdir -p build/apiserver/tmp
@@ -314,13 +290,7 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 
 # Push our Docker Images to a registry
 ######################################
-push: registry-push k8s-broker-push user-broker-push controller-push \
-    controller-manager-push apiserver-push
-
-registry-push: registry-image
-	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag registry:$(VERSION) $(REGISTRY)/registry:$(VERSION)
-	docker push $(REGISTRY)/registry:$(VERSION)
+push: k8s-broker-push user-broker-push controller-manager-push apiserver-push
 
 k8s-broker-push: k8s-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
@@ -331,11 +301,6 @@ user-broker-push: user-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:$(VERSION)
 	docker push $(REGISTRY)/user-broker:$(VERSION)
-
-controller-push: controller-image
-	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag controller:$(VERSION) $(REGISTRY)/controller:$(VERSION)
-	docker push $(REGISTRY)/controller:$(VERSION)
 
 controller-manager-push: controller-manager-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
