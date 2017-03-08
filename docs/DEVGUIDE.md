@@ -27,7 +27,7 @@ layout:
     ├── contrib                 # Contains all non-essential source
     │   └── hack                # Non-build related scripts
     ├── deploy                  # Helm charts for deployment
-    │   └── wip-catalog         # Helm chart for deploying apiserver-based WIP
+    │   └── catalog             # Helm chart for deploying the catalog
     ├── docs                    # Documentation
     ├── pkg                     # Contains all non-"main" Go packages
     └── vendor                  # Glide-managed dependencies (untracked)
@@ -197,7 +197,7 @@ export KUBECONFIG=/home/yippee/code/service-catalog/.kubeconfig
 
 ## Deploying to Kubernetes
 
-Use the [`wip-catalog` chart](../deploy/wip-catalog) to deploy the service
+Use the [`catalog` chart](../deploy/catalog) to deploy the service
 catalog into your cluster.  The easiest way to get started is to deploy into a
 cluster you regularly use and are familiar with.  One of the choices you can
 make when deploying the catalog is whether to back the API server with etcd or

@@ -1,4 +1,4 @@
-# Service Catalog WIP Helm Chart
+# Service Catalog Helm Chart
 
 The Helm Chart deploys Service Catalog into an existing Kubernetes cluster.
 
@@ -16,8 +16,6 @@ Supported template parameters (values):
 
 - `registry`: Container registry with Service Catalog images; optional; defaults
   to unset
-- `namespace`: A Kubernetes namespace to use for deployment of this
-  chart into k8s; optional; defaults to `default`
 - `version`: Version of Service Catalog (container images) to deploy; optional;
   defaults to `latest`
 - `apiServerVersion`: The version of the API server image to deploy; optional;
@@ -35,8 +33,6 @@ Supported template parameters (values):
 - `verbosity`: The verbosity of logs; optional; defaults to `10`
 - `debug`: Whether to create a load balancer for the apiserver and
   controller-manager services; optional; defaults to `false`
-- `insecure`: Whether the API server should serve insecurely; optional; defaults
-  to `false`
 - `imagePullPolicy`: The image pull policy to use for all pods in this chart;
   optional; defaults to `Always`
 
@@ -57,24 +53,26 @@ Supported template parameters (values):
 
 ### Local cluster installation, backed with etcd
 
-This helm command installs into a local cluster, backing the API server with
-etcd, and serving insecurely on node port 30000:
+This helm command installs into a local cluster in namespace `service-
+catalog`, backing the API server with etcd, and serving insecurely on node
+port 30000:
 
 ```console
 helm install \
     --namespace=service-catalog \
     --set storageType=etcd,insecure=true,debug=true,nodePort=30000,imagePullPolicy=Never \
-    deploy/wip-catalog
+    deploy/catalog
 ```
 
 ### Local cluster installation, backed with TPR
 
-This helm command installs into a local cluster, backing the API server with
-third party resources in the main Kubernetes API server:
+This helm command installs into a local cluster in namespace `service-catalog-
+tpr`, backing the API server with third party resources in the main Kubernetes
+API server:
 
 ```console
 helm install \
     --namespace=service-catalog-tpr \
     --set version=${VERSION},storageType=tpr,debug=true,insecure=true,imagePullPolicy=Never,globalNamespace=service-catalog-global \
-    deploy/wip-catalog
+    deploy/catalog
 ```
