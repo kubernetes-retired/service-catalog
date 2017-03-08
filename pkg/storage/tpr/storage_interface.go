@@ -34,7 +34,7 @@ var (
 	errNotImplemented = errors.New("not implemented for third party resources")
 )
 
-type storageInterface struct {
+type store struct {
 	hasNamespace     bool
 	codec            runtime.Codec
 	defaultNamespace string
@@ -47,9 +47,9 @@ type storageInterface struct {
 	decodeKey        func(string) (string, string, error)
 }
 
-// NewStorageInterface creates a new TPR-based storage.Interface implementation
-func NewStorageInterface(opts Options) (storage.Interface, factory.DestroyFunc) {
-	return &storageInterface{
+// NewStorage creates a new TPR-based storage.Interface implementation
+func NewStorage(opts Options) (storage.Interface, factory.DestroyFunc) {
+	return &store{
 		hasNamespace:     opts.HasNamespace,
 		codec:            opts.RESTOptions.StorageConfig.Codec,
 		defaultNamespace: opts.DefaultNamespace,
@@ -64,8 +64,8 @@ func NewStorageInterface(opts Options) (storage.Interface, factory.DestroyFunc) 
 }
 
 // Versioned returns the versioned associated with this interface
-func (t *storageInterface) Versioner() storage.Versioner {
-	return &storageVersioner{
+func (t *store) Versioner() storage.Versioner {
+	return &versioner{
 		codec:        t.codec,
 		singularKind: t.singularKind,
 		listKind:     t.listKind,
@@ -78,7 +78,7 @@ func (t *storageInterface) Versioner() storage.Versioner {
 // Create adds a new object at a key unless it already exists. 'ttl' is time-to-live
 // in seconds (0 means forever). If no error is returned and out is not nil, out will be
 // set to the read value from database.
-func (t *storageInterface) Create(
+func (t *store) Create(
 	ctx context.Context,
 	key string,
 	obj,
@@ -122,7 +122,7 @@ func (t *storageInterface) Create(
 // If key didn't exist, it will return NotFound storage error.
 //
 // In this implementation, Delete will not write the deleted object back to out
-func (t *storageInterface) Delete(
+func (t *store) Delete(
 	ctx context.Context,
 	key string,
 	out runtime.Object,
@@ -158,7 +158,7 @@ func (t *storageInterface) Delete(
 // (e.g. reconnecting without missing any updates).
 // If resource version is "0", this interface will get current object at given key
 // and send it in an "ADDED" event, before watch starts.
-func (t *storageInterface) Watch(
+func (t *store) Watch(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
@@ -188,7 +188,7 @@ func (t *storageInterface) Watch(
 	return filteredIFace, nil
 }
 
-func watchFilterer(t *storageInterface, ns string) func(watch.Event) (watch.Event, bool) {
+func watchFilterer(t *store, ns string) func(watch.Event) (watch.Event, bool) {
 	return func(in watch.Event) (watch.Event, bool) {
 		encodedBytes, err := runtime.Encode(t.codec, in.Object)
 		if err != nil {
@@ -220,7 +220,7 @@ func watchFilterer(t *storageInterface, ns string) func(watch.Event) (watch.Even
 // (e.g. reconnecting without missing any updates).
 // If resource version is "0", this interface will list current objects directory defined by key
 // and send them in "ADDED" events, before watch starts.
-func (t *storageInterface) WatchList(
+func (t *store) WatchList(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
@@ -254,7 +254,7 @@ func (t *storageInterface) WatchList(
 // Treats empty responses and nil response nodes exactly like a not found error.
 // The returned contents may be delayed, but it is guaranteed that they will
 // be have at least 'resourceVersion'.
-func (t *storageInterface) Get(
+func (t *store) Get(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
@@ -298,7 +298,7 @@ func (t *storageInterface) Get(
 // (an object that satisfies the runtime.IsList definition).
 // The returned contents may be delayed, but it is guaranteed that they will
 // be have at least 'resourceVersion'.
-func (t *storageInterface) GetToList(
+func (t *store) GetToList(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
@@ -312,7 +312,7 @@ func (t *storageInterface) GetToList(
 // into *List api object (an object that satisfies runtime.IsList definition).
 // The returned contents may be delayed, but it is guaranteed that they will
 // be have at least 'resourceVersion'.
-func (t *storageInterface) List(
+func (t *store) List(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
@@ -384,7 +384,7 @@ func (t *storageInterface) List(
 //       return cur, nil, nil
 //    }
 // })
-func (t *storageInterface) GuaranteedUpdate(
+func (t *store) GuaranteedUpdate(
 	ctx context.Context,
 	key string,
 	out runtime.Object,
