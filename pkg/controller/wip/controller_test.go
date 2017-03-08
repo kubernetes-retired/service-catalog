@@ -587,6 +587,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+		// temporary debugging
+		t.Fatalf("MORE: Unexpected condition status: expected %v, got %v : %+v", e, a, updateObject.Status.Conditions[0])
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
