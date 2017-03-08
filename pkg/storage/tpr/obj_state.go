@@ -43,7 +43,7 @@ type objState struct {
 	data []byte
 }
 
-func getStateFromObject(s *storageInterface, obj runtime.Object) (*objState, error) {
+func getStateFromObject(s *store, obj runtime.Object) (*objState, error) {
 	versioner := s.Versioner()
 	state := &objState{
 		obj:  obj,
