@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package injector
+package controller
 
 import (
 	"encoding/json"
@@ -38,7 +38,7 @@ func TestSerializeInt(t *testing.T) {
 	for i := 0; i < fuzzIters; i++ {
 		var intVal int
 		fuzzer.Fuzz(&intVal)
-		bytes, err := Serialize(intVal)
+		bytes, err := serialize(intVal)
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)
 		}
@@ -57,7 +57,7 @@ func TestSerializeFloat(t *testing.T) {
 	for i := 0; i < fuzzIters; i++ {
 		var floatVal float64
 		fuzzer.Fuzz(&floatVal)
-		bytes, err := Serialize(floatVal)
+		bytes, err := serialize(floatVal)
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)
 		}
@@ -76,7 +76,7 @@ func TestSerializeString(t *testing.T) {
 	for i := 0; i < fuzzIters; i++ {
 		var strVal string
 		fuzzer.Fuzz(&strVal)
-		bytes, err := Serialize(strVal)
+		bytes, err := serialize(strVal)
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)
 		}
@@ -91,7 +91,7 @@ func TestSerializeMap(t *testing.T) {
 	var mapVal map[string]string
 	for i := 0; i < fuzzIters; i++ {
 		fuzzer.Fuzz(&mapVal)
-		bytes, err := Serialize(mapVal)
+		bytes, err := serialize(mapVal)
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)
 		}
@@ -110,7 +110,7 @@ func TestSerializeSlice(t *testing.T) {
 	var sliceVal []string
 	for i := 0; i < fuzzIters; i++ {
 		fuzzer.Fuzz(&sliceVal)
-		bytes, err := Serialize(sliceVal)
+		bytes, err := serialize(sliceVal)
 		if err != nil {
 			t.Fatalf("Unexpected error: %s", err)
 		}

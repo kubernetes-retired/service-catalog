@@ -44,7 +44,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/wip"
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -283,7 +282,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
 		glog.V(5).Info("Creating controller")
-		serviceCatalogController, err := wip.NewController(
+		serviceCatalogController, err := controller.NewController(
 			coreClient,
 			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
 			serviceCatalogSharedInformers.Brokers(),

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package wip
+package controller
 
 import (
 	"fmt"
@@ -36,7 +36,6 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/injector"
 )
 
 // NewController returns a new Open Service Broker catalog
@@ -832,7 +831,7 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 
 	for k, v := range *credentials {
 		var err error
-		secret.Data[k], err = injector.Serialize(v)
+		secret.Data[k], err = serialize(v)
 		if err != nil {
 			return fmt.Errorf("Unable to serialize credential value %q: %v; %s",
 				k, v, err)

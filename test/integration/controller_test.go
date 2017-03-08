@@ -31,7 +31,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	scinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller/wip"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 )
 
@@ -119,7 +119,7 @@ func newTestController(t *testing.T) (
 	*fakebrokerapi.CatalogClient,
 	*fakebrokerapi.InstanceClient,
 	*fakebrokerapi.BindingClient,
-	wip.Controller,
+	controller.Controller,
 	informers.Interface,
 	chan struct{},
 ) {
@@ -140,7 +140,7 @@ func newTestController(t *testing.T) (
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
 	// create a test controller
-	testController, err := wip.NewController(
+	testController, err := controller.NewController(
 		fakeKubeClient,
 		catalogClient.ServicecatalogV1alpha1(),
 		serviceCatalogSharedInformers.Brokers(),

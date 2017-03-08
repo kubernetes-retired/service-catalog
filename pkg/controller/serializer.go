@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package injector
+package controller
 
 import (
 	"encoding/json"
 )
 
-// Serialize converts values of any type to a []byte, suitable for addition to
+// TODO: does this need to move to another package?
+
+// serialize converts values of any type to a []byte, suitable for addition to
 // a k8s Secret's Data field (which is a map[string][]byte). Generally, this
 // serialization is performed using json.Unmarshal(), which easily handles
 // most primitives, but will also, conveniently, handle the scenario where the
@@ -40,7 +42,7 @@ import (
 // actually `password`. It's easy to see that's bad, so an alternative
 // strategy is used for serializing string values to avoid introducing those
 // errant quotes.
-func Serialize(value interface{}) ([]byte, error) {
+func serialize(value interface{}) ([]byte, error) {
 	if strVal, ok := value.(string); ok {
 		return []byte(strVal), nil
 	}
