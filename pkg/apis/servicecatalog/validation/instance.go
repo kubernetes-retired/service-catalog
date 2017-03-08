@@ -33,8 +33,6 @@ func ValidateInstance(instance *sc.Instance) field.ErrorList {
 		validateInstanceName,
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"))...)
-	// validate the status array
-	// allErrs = append(allErrs, validateInstanceStatus(&instance.Spec, field.NewPath("Status"))...)
 	return allErrs
 }
 
@@ -49,9 +47,7 @@ func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList 
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateInstance(new)...)
 	allErrs = append(allErrs, ValidateInstance(old)...)
-	// allErrs = append(allErrs, validateObjectMetaUpdate(new, old)...)
-	// allErrs = append(allErrs, validateInstanceSpecUpdate(new, old)...)
-	// allErrs = append(allErrs, validateInstanceStatusUpdate(new, old)...)
+
 	return allErrs
 }
 

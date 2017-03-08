@@ -44,10 +44,8 @@ func ValidateServiceclass(serviceclass *sc.ServiceClass) field.ErrorList {
 // serviceclass to a newer serviceclass is okay.
 func ValidateServiceclassUpdate(new *sc.ServiceClass, old *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
-	// should each individual serviceclass validate successfully before validating changes?
 	allErrs = append(allErrs, ValidateServiceclass(new)...)
 	allErrs = append(allErrs, ValidateServiceclass(old)...)
-	// allErrs = append(allErrs, validateObjectMetaUpdate(new, old)...)
-	// allErrs = append(allErrs, validateServiceclassFieldsUpdate(new, old)...)
+
 	return allErrs
 }
