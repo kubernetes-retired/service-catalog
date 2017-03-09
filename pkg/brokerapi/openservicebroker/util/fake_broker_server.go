@@ -33,6 +33,9 @@ type FakeBrokerServer struct {
 	shouldSucceedAsync bool
 	operation          string
 	server             *httptest.Server
+	// For inspecting on what was sent on the wire.
+	RequestObject interface{}
+	Request       *http.Request
 }
 
 // Start starts the fake broker server listening on a random port, passing
@@ -81,6 +84,7 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	f.RequestObject = req
 
 	var state string
 	switch {
@@ -105,6 +109,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	f.RequestObject = req
 
 	if !req.AcceptsIncomplete {
 		// Synchronous
@@ -124,6 +129,7 @@ func (f *FakeBrokerServer) deprovisionHandler(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	f.RequestObject = req
 
 	if !req.AcceptsIncomplete {
 		// Synchronous
@@ -143,11 +149,17 @@ func (f *FakeBrokerServer) updateHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (f *FakeBrokerServer) bindHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement
-	util.WriteResponse(w, http.StatusForbidden, nil)
+	f.Request = r
+	req := &brokerapi.BindingRequest{}
+	if err := util.BodyToObject(r, req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	f.RequestObject = req
+	util.WriteResponse(w, f.responseStatus, &brokerapi.DeleteServiceInstanceResponse{})
 }
 
 func (f *FakeBrokerServer) unbindHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement
-	util.WriteResponse(w, http.StatusForbidden, nil)
+	f.Request = r
+	util.WriteResponse(w, f.responseStatus, &brokerapi.DeleteServiceInstanceResponse{})
 }

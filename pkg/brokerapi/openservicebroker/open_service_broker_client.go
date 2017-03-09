@@ -42,11 +42,13 @@ const (
 )
 
 var (
-	errConflict       = errors.New("Service instance with same id but different attributes exists")
-	errAsynchronous   = errors.New("Broker only supports this action asynchronously")
-	errFailedState    = errors.New("Failed state received from broker")
-	errUnknownState   = errors.New("Unknown state received from broker")
-	errPollingTimeout = errors.New("Timed out while polling broker")
+	errConflict        = errors.New("Service instance with same id but different attributes exists")
+	errBindingConflict = errors.New("Service binding with same service instance id and binding id already exists")
+	errBindingGone     = errors.New("There is no binding with the specified service instance id and binding id")
+	errAsynchronous    = errors.New("Broker only supports this action asynchronously")
+	errFailedState     = errors.New("Failed state received from broker")
+	errUnknownState    = errors.New("Unknown state received from broker")
+	errPollingTimeout  = errors.New("Timed out while polling broker")
 )
 
 type (
@@ -221,14 +223,22 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 	}
 	defer resp.Body.Close()
 
-	sbr := brokerapi.CreateServiceBindingResponse{}
-	err = util.ResponseBodyToObject(resp, &sbr)
-	if err != nil {
-		glog.Errorf("Failed to unmarshal: %#v", err)
+	createServiceBindingResponse := brokerapi.CreateServiceBindingResponse{}
+	if err := util.ResponseBodyToObject(resp, &createServiceBindingResponse); err != nil {
+		glog.Errorf("Error unmarshalling create binding response from broker: %#v", err)
 		return nil, err
 	}
 
-	return &sbr, nil
+	switch resp.StatusCode {
+	case http.StatusCreated:
+		return &createServiceBindingResponse, nil
+	case http.StatusOK:
+		return &createServiceBindingResponse, nil
+	case http.StatusConflict:
+		return nil, errBindingConflict
+	default:
+		return nil, errStatusCode{statusCode: resp.StatusCode}
+	}
 }
 
 func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
@@ -249,7 +259,15 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
 	}
 	defer resp.Body.Close()
 
-	return nil
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return nil
+	case http.StatusGone:
+		return errBindingGone
+	default:
+		return errStatusCode{statusCode: resp.StatusCode}
+	}
+
 }
 
 func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error {
