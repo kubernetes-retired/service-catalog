@@ -26,7 +26,7 @@ import (
 // validateInstanceName is the validation function for Instance names.
 var validateInstanceName = apivalidation.NameIsDNSSubdomain
 
-// ValidateInstance checks the fields of a Instance.
+// ValidateInstance validates an Instance and returns a list of errors.
 func ValidateInstance(instance *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&instance.ObjectMeta, true, /*namespace*/
@@ -39,10 +39,27 @@ func ValidateInstance(instance *sc.Instance) field.ErrorList {
 func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
+	if "" == spec.ServiceClassName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassName"), "serviceClassName is required"))
+	}
+
+	for _, msg := range validateServiceClassName(spec.ServiceClassName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassName"), spec.ServiceClassName, msg))
+	}
+
+	if "" == spec.PlanName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("planName"), "planName is required"))
+	}
+
+	for _, msg := range validateServicePlanName(spec.PlanName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
+	}
+
 	return allErrs
 }
 
-// ValidateInstanceUpdate checks that when changing from an older instance to a newer instance is okay.
+// ValidateInstanceUpdate checks that when changing from an older instance to
+// a newer instance is okay.
 func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateInstance(new)...)
@@ -51,7 +68,8 @@ func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList 
 	return allErrs
 }
 
-// ValidateInstanceStatusUpdate checks that when changing from an older instance to a newer instance is okay.
+// ValidateInstanceStatusUpdate checks that when changing from an older
+// instance to a newer instance is okay.
 func ValidateInstanceStatusUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateInstanceUpdate(new, old)...)
