@@ -11,28 +11,50 @@ spec:
     spec:
       containers:
       - name: apiserver
-        image: "{{ .Values.registry }}/apiserver:{{ if .Values.k8sApiServerVersion }}{{.Values.k8sApiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}"
-        imagePullPolicy: Always
+        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}apiserver:{{ if .Values.apiServerVersion }}{{ .Values.apiServerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
         args:
+        - --global-namespace
+        - {{ default "servicecatalog" .Values.globalNamespace }}
         - --storage-type
         - {{ default "etcd" .Values.storageType }}
-        - -v
-        - {{ default "\"10\"" .Values.verbosity }}
+        {{ if .Values.insecure -}}
+        - --secure-port
+        - "0"
+        - --insecure-bind-address
+        - "0.0.0.0"
+        - --insecure-port
+        - {{ default 8081 .Values.insecurePort | quote }}
+        {{- end }}
         {{ if eq (default .Values.storageType "etcd") "etcd" -}}
         - --etcd-servers
         - http://localhost:2379
-        {{ end }}
+        {{- end }}
+        - -v
+        - {{ default 10 .Values.verbosity | quote }}
         ports:
         - containerPort: 6443
+        {{ if .Values.insecure -}}
+        - containerPort: {{ default 8081 .Values.insecurePort }}
+          hostPort: {{ default 8081 .Values.insecurePort }}
+        {{- end }}
         volumeMounts:
         - name: apiserver-ssl
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
       {{ if eq (default .Values.storageType "etcd") "etcd" -}}
       - name: etcd
-        image: {{ if .Values.etcdRepository }}{{ .Values.etcdRepository }}{{ else }}{{ "quay.io/coreos/etcd" }}{{ end }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+        image: {{ default .Values.etcdImage "quay.io/coreos/etcd" }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
+        env:
+        - name: ETCD_DATA_DIR
+          value: /etcd-data-dir
+        volumeMounts:
+        - name: etcd-data-dir
+          mountPath: /etcd-data-dir 
       {{- end }}
       volumes:
+      - name: etcd-data-dir
+        emptyDir: {}
       - name: apiserver-ssl
         secret:
           secretName: apiserver-ssl
@@ -48,6 +70,14 @@ spec:
   selector:
     app: apiserver
   ports:
-  - protocol: TCP
+  {{ if .Values.insecure -}}
+  - name: insecure
+    protocol: TCP
+    nodePort: {{ default 30001 .Values.insecureServicePort }}
+    port: 80
+    targetPort: {{ default 8081 .Values.insecurePort }}
+  {{- end }}
+  - name: secure
+    protocol: TCP
     port: 6443
     targetPort: 6443
