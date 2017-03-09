@@ -52,7 +52,7 @@ func InstallTypes(cs clientset.Interface) error {
 		glog.Infof("Created TPR '%s'", tpr.Name)
 		// There can be a delay, so poll until it's ready to go...
 		for i := 0; i < 30; i++ {
-			if _, err := tprs.Get(tpr.Name); err != nil {
+			if _, err := tprs.Get(tpr.Name); err == nil {
 				glog.Infof("TPR %s is ready", tpr.Name)
 				break
 			}
