@@ -38,9 +38,13 @@ import (
 	"k8s.io/kubernetes/pkg/util/configz"
 	"k8s.io/kubernetes/pkg/util/wait"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
-	// for installation of API groups
+	// The API groups for our API must be installed before we can use the
+	// client to work with them.  This needs to be done once per process; this
+	// is the point at which we handle this for the controller-manager
+	// process.  Please do not remove.
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+
+	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"

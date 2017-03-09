@@ -26,9 +26,13 @@ import (
 	// set up logging the k8s way
 	"k8s.io/kubernetes/pkg/util/logs"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
-	// install our API groups
+	// The API groups for our API must be installed before we can use the
+	// client to work with them.  This needs to be done once per process; this
+	// is the point at which we handle this for the API server process.
+	// Please do not remove.
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+
+	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 )
 
 func main() {
