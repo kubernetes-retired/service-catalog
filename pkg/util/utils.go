@@ -43,6 +43,8 @@ func SendRequest(c *http.Client, method string, url string, object interface{}) 
 		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to send request: %s", err.Error())
