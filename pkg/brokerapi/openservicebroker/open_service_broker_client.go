@@ -30,10 +30,11 @@ import (
 )
 
 const (
-	catalogFormatString         = "%s/v2/catalog"
-	serviceInstanceFormatString = "%s/v2/service_instances/%s"
-	pollingFormatString         = "%s/v2/service_instances/%s/last_operation"
-	bindingFormatString         = "%s/v2/service_instances/%s/service_bindings/%s"
+	catalogFormatString               = "%s/v2/catalog"
+	serviceInstanceFormatString       = "%s/v2/service_instances/%s"
+	serviceInstanceDeleteFormatString = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s"
+	pollingFormatString               = "%s/v2/service_instances/%s/last_operation"
+	bindingFormatString               = "%s/v2/service_instances/%s/service_bindings/%s"
 
 	httpTimeoutSeconds     = 15
 	pollingIntervalSeconds = 1
@@ -163,7 +164,7 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerap
 }
 
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) error {
-	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
+	serviceInstanceURL := fmt.Sprintf(serviceInstanceDeleteFormatString, c.url, ID, req.ServiceID, req.PlanID)
 	// TODO: Handle the auth
 	resp, err := util.SendRequest(c.client, http.MethodDelete, serviceInstanceURL, req)
 	if err != nil {
