@@ -17,13 +17,11 @@ limitations under the License.
 package integration
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/util/wait"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -33,22 +31,29 @@ import (
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
-// TestController is a very basic test to start
-//
-// need etcd running
-// start a fresh apiserver for the controller to talk to
-func TestController(t *testing.T) {
-	fakeKubeClient, catalogClient, fakeBrokerCatalog, _, _, testController, _, shutdownServer := newTestController(t)
+// TestAddAndRemoveBroker tests the add broker flow.  It creates a new Broker
+// resource and waits for that Broker to have a ready condition with true
+// status, establishes that the controller created the expected ServiceClass,
+// then deletes the Broker and establishes that the controller cleaned up the
+// ServiceClass.
+func TestAddAndRemoveBroker(t *testing.T) {
+	_, catalogClient, fakeBrokerCatalog, _, _, _, _, shutdownServer := newTestController(t)
 	defer shutdownServer()
 
-	t.Log(fakeKubeClient, catalogClient, fakeBrokerCatalog, testController)
+	client := catalogClient.ServicecatalogV1alpha1()
+
+	const (
+		testBrokerName       = "test-broker"
+		testServiceClassName = "test-service"
+	)
 
 	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
 			{
-				Name:        "test-service",
+				Name:        testServiceClassName,
 				ID:          "12345",
 				Description: "a test service",
 				Plans: []brokerapi.ServicePlan{
@@ -62,55 +67,48 @@ func TestController(t *testing.T) {
 			},
 		},
 	}
-	name := "test-name"
 	broker := &v1alpha1.Broker{
-		ObjectMeta: v1.ObjectMeta{Name: name},
+		ObjectMeta: v1.ObjectMeta{Name: testBrokerName},
 		Spec: v1alpha1.BrokerSpec{
 			URL: "https://example.com",
 		},
 	}
-	brokerClient := catalogClient.Servicecatalog().Brokers()
 
-	brokerServer, err := brokerClient.Create(broker)
+	_, err := client.Brokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %q (%q)", broker, err)
 	}
 
-	if err := wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
-		func() (bool, error) {
-			brokerServer, err = brokerClient.Get(name)
-			if nil != err {
-				return false,
-					fmt.Errorf("error getting broker %s (%s)",
-						name, err)
-			} else if len(brokerServer.Status.Conditions) > 0 {
-				t.Log(brokerServer)
-				return true, nil
-			} else {
-				return false, nil
-			}
-		},
-	); err != nil {
+	err = util.WaitForBrokerCondition(client,
+		testBrokerName,
+		v1alpha1.BrokerCondition{
+			Type:   v1alpha1.BrokerConditionReady,
+			Status: v1alpha1.ConditionTrue,
+		})
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	// check
-	serviceClassClient := catalogClient.Servicecatalog().ServiceClasses()
-	_, err = serviceClassClient.Get("test-service")
+	err = util.WaitForServiceClassToExist(client, testServiceClassName)
 	if nil != err {
-		t.Fatal("could not find the test service", err)
+		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
 
-	// cleanup our broker
-	err = brokerClient.Delete(name, &v1.DeleteOptions{})
+	// Delete the broker
+	err = client.Brokers().Delete(testBrokerName, &v1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	// uncomment if/when deleting a broker deletes the associated service
-	// if class, err := serviceClassClient.Get("test-service"); nil == err {
-	// 	t.Fatal("found the test service that should have been deleted", err, class)
-	// }
+	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	if err != nil {
+		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+	}
+
+	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	if err != nil {
+		t.Fatalf("error waiting for Broker to not exist: %v", err)
+	}
 }
 
 func newTestController(t *testing.T) (
