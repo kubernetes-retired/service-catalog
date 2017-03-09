@@ -891,7 +891,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	binding := &v1alpha1.Binding{
 		ObjectMeta: v1.ObjectMeta{Name: "test-binding"},
 		Spec: v1alpha1.BindingSpec{
-			InstanceRef: v1.ObjectReference{Name: "nothere"},
+			InstanceRef: v1.LocalObjectReference{Name: "nothere"},
 			OSBGUID:     bindingGUID,
 		},
 	}
@@ -940,7 +940,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	binding := &v1alpha1.Binding{
 		ObjectMeta: v1.ObjectMeta{Name: "test-binding", Namespace: "test-ns"},
 		Spec: v1alpha1.BindingSpec{
-			InstanceRef: v1.ObjectReference{Name: "test-instance", Namespace: "test-ns"},
+			InstanceRef: v1.LocalObjectReference{Name: "test-instance"},
 			OSBGUID:     bindingGUID,
 		},
 	}
@@ -989,7 +989,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	binding := &v1alpha1.Binding{
 		ObjectMeta: v1.ObjectMeta{Name: "test-binding", Namespace: "test-ns"},
 		Spec: v1alpha1.BindingSpec{
-			InstanceRef: v1.ObjectReference{Name: "test-instance", Namespace: "test-ns"},
+			InstanceRef: v1.LocalObjectReference{Name: "test-instance"},
 			OSBGUID:     bindingGUID,
 		},
 	}
@@ -1095,7 +1095,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 			Finalizers:        []string{"kubernetes"},
 		},
 		Spec: v1alpha1.BindingSpec{
-			InstanceRef: v1.ObjectReference{Name: "test-instance", Namespace: "test-ns"},
+			InstanceRef: v1.LocalObjectReference{Name: "test-instance"},
 			OSBGUID:     bindingGUID,
 			SecretName:  "test-secret",
 		},

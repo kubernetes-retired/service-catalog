@@ -26,7 +26,7 @@ import (
 // validateBindingName is the validation function for Binding names.
 var validateBindingName = apivalidation.NameIsDNSSubdomain
 
-// ValidateBinding checks the fields of a Binding.
+// ValidateBinding validates a Binding and returns a list of errors.
 func ValidateBinding(binding *sc.Binding) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, true, /*namespace*/
@@ -39,6 +39,14 @@ func ValidateBinding(binding *sc.Binding) field.ErrorList {
 
 func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
+
+	for _, msg := range validateInstanceName(spec.InstanceRef.Name, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("instanceRef", "name"), spec.InstanceRef.Name, msg))
+	}
+
+	for _, msg := range apivalidation.ValidateSecretName(spec.SecretName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("secretName"), spec.SecretName, msg))
+	}
 
 	return allErrs
 }

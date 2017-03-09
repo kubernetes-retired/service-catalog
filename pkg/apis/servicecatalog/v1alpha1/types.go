@@ -255,7 +255,7 @@ type Binding struct {
 type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	// Immutable.
-	InstanceRef v1.ObjectReference `json:"instanceRef"`
+	InstanceRef v1.LocalObjectReference `json:"instanceRef"`
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
