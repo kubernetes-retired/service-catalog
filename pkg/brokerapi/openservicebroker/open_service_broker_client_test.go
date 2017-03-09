@@ -57,7 +57,7 @@ func TestProvisionInstanceCreated(t *testing.T) {
 
 	fbs.SetResponseStatus(http.StatusCreated)
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -69,7 +69,7 @@ func TestProvisionInstanceOK(t *testing.T) {
 
 	fbs.SetResponseStatus(http.StatusOK)
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -83,9 +83,9 @@ func TestProvisionInstanceConflict(t *testing.T) {
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{})
 	switch {
 	case err == nil:
-		t.Errorf("Expected '%v'", errConflict)
+		t.Fatalf("Expected '%v'", errConflict)
 	case err != errConflict:
-		t.Errorf("Expected '%v', got '%v'", errConflict, err)
+		t.Fatalf("Expected '%v', got '%v'", errConflict, err)
 	}
 }
 
@@ -99,9 +99,9 @@ func TestProvisionInstanceUnprocessableEntity(t *testing.T) {
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{})
 	switch {
 	case err == nil:
-		t.Errorf("Expected '%v'", errAsynchronous)
+		t.Fatalf("Expected '%v'", errAsynchronous)
 	case err != errAsynchronous:
-		t.Errorf("Expected '%v', got '%v'", errAsynchronous, err)
+		t.Fatalf("Expected '%v', got '%v'", errAsynchronous, err)
 	}
 }
 
@@ -117,7 +117,7 @@ func TestProvisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 	}
 
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &req); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -135,9 +135,9 @@ func TestProvisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &req)
 	switch {
 	case err == nil:
-		t.Errorf("Expected '%v'", errFailedState)
+		t.Fatalf("Expected '%v'", errFailedState)
 	case err != errFailedState:
-		t.Errorf("Expected '%v', got '%v'", errFailedState, err)
+		t.Fatalf("Expected '%v', got '%v'", errFailedState, err)
 	}
 }
 
@@ -151,7 +151,7 @@ func TestDeprovisionInstanceOK(t *testing.T) {
 
 	fbs.SetResponseStatus(http.StatusOK)
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{}); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -163,7 +163,7 @@ func TestDeprovisionInstanceGone(t *testing.T) {
 
 	fbs.SetResponseStatus(http.StatusGone)
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{}); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -177,9 +177,9 @@ func TestDeprovisionInstanceUnprocessableEntity(t *testing.T) {
 	err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{})
 	switch {
 	case err == nil:
-		t.Errorf("Expected '%v'", errAsynchronous)
+		t.Fatalf("Expected '%v'", errAsynchronous)
 	case err != errAsynchronous:
-		t.Errorf("Expected '%v', got '%v'", errAsynchronous, err)
+		t.Fatalf("Expected '%v', got '%v'", errAsynchronous, err)
 	}
 }
 
@@ -195,7 +195,7 @@ func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 	}
 
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &req); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 
@@ -213,9 +213,9 @@ func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 	err := c.DeleteServiceInstance(testServiceInstanceID, &req)
 	switch {
 	case err == nil:
-		t.Errorf("Expected '%v'", errFailedState)
+		t.Fatalf("Expected '%v'", errFailedState)
 	case err != errFailedState:
-		t.Errorf("Expected '%v', got '%v'", errFailedState, err)
+		t.Fatalf("Expected '%v', got '%v'", errFailedState, err)
 	}
 }
 
@@ -228,22 +228,22 @@ func TestBindOk(t *testing.T) {
 	fbs.SetResponseStatus(http.StatusOK)
 	sent := &brokerapi.BindingRequest{}
 	if _, err := c.CreateServiceBinding(testServiceInstanceID, testServiceBindingID, sent); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	verifyBindingMethodAndPath(http.MethodPut, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 
 	if fbs.RequestObject == nil {
-		t.Errorf("BindingRequest was not received correctly")
+		t.Fatalf("BindingRequest was not received correctly")
 	}
 	actual := reflect.TypeOf(fbs.RequestObject)
 	expected := reflect.TypeOf(&brokerapi.BindingRequest{})
 	if actual != expected {
-		t.Errorf("Got the wrong type for the request, expected %v got %v", expected, actual)
+		t.Fatalf("Got the wrong type for the request, expected %v got %v", expected, actual)
 	}
 	received := fbs.RequestObject.(*brokerapi.BindingRequest)
 	if !reflect.DeepEqual(*received, *sent) {
-		t.Errorf("Sent does not match received, sent: %+v received: %+v", sent, received)
+		t.Fatalf("Sent does not match received, sent: %+v received: %+v", sent, received)
 	}
 }
 
@@ -256,22 +256,22 @@ func TestBindConflict(t *testing.T) {
 	fbs.SetResponseStatus(http.StatusConflict)
 	sent := &brokerapi.BindingRequest{}
 	if _, err := c.CreateServiceBinding(testServiceInstanceID, testServiceBindingID, sent); err == nil {
-		t.Error("Expected create service binding to fail with conflict, but didn't")
+		t.Fatal("Expected create service binding to fail with conflict, but didn't")
 	}
 
 	verifyBindingMethodAndPath(http.MethodPut, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 
 	if fbs.RequestObject == nil {
-		t.Errorf("BindingRequest was not received correctly")
+		t.Fatalf("BindingRequest was not received correctly")
 	}
 	actual := reflect.TypeOf(fbs.RequestObject)
 	expected := reflect.TypeOf(&brokerapi.BindingRequest{})
 	if actual != expected {
-		t.Errorf("Got the wrong type for the request, expected %v got %v", expected, actual)
+		t.Fatalf("Got the wrong type for the request, expected %v got %v", expected, actual)
 	}
 	received := fbs.RequestObject.(*brokerapi.BindingRequest)
-	if reflect.DeepEqual(*received, sent) {
-		t.Errorf("Sent does not match received, sent: %+v received: %+v", sent, received)
+	if !reflect.DeepEqual(*received, *sent) {
+		t.Fatalf("Sent does not match received, sent: %+v received: %+v", sent, received)
 	}
 }
 
@@ -283,17 +283,13 @@ func TestUnbindOk(t *testing.T) {
 
 	fbs.SetResponseStatus(http.StatusOK)
 	if err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID); err != nil {
-		t.Error(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	verifyBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 
 	if fbs.Request.ContentLength != 0 {
-		t.Errorf("not expecting a request body, but got one, size %d", fbs.Request.ContentLength)
-	}
-	expectPath := fmt.Sprintf(bindingSuffixFormatString, testServiceInstanceID, testServiceBindingID)
-	if !strings.HasSuffix(fbs.Request.URL.Path, expectPath) {
-		t.Errorf("Expected binding create path to have suffix %s but was: %s", expectPath, fbs.Request.URL.Path)
+		t.Fatalf("not expecting a request body, but got one, size %d", fbs.Request.ContentLength)
 	}
 }
 
@@ -306,10 +302,10 @@ func TestUnbindGone(t *testing.T) {
 	fbs.SetResponseStatus(http.StatusGone)
 	err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID)
 	if err == nil {
-		t.Error("Expected delete service binding to fail with gone, but didn't")
+		t.Fatal("Expected delete service binding to fail with gone, but didn't")
 	}
 	if !strings.Contains(err.Error(), "There is no binding") {
-		t.Errorf("Did not find the expected error message 'There is no binding' in error: %s", err)
+		t.Fatalf("Did not find the expected error message 'There is no binding' in error: %s", err)
 	}
 
 	verifyBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
@@ -319,11 +315,11 @@ func TestUnbindGone(t *testing.T) {
 // has the right method and the suffix URL for a binding request.
 func verifyBindingMethodAndPath(method, serviceID, bindingID string, req *http.Request, t *testing.T) {
 	if req.Method != method {
-		t.Errorf("Expected method to use %s but was %s", method, req.Method)
+		t.Fatalf("Expected method to use %s but was %s", method, req.Method)
 	}
 	expectPath := fmt.Sprintf(bindingSuffixFormatString, serviceID, bindingID)
 	if !strings.HasSuffix(req.URL.Path, expectPath) {
-		t.Errorf("Expected binding create path to have suffix %s but was: %s", expectPath, req.URL.Path)
+		t.Fatalf("Expected binding create path to have suffix %s but was: %s", expectPath, req.URL.Path)
 	}
 
 }
