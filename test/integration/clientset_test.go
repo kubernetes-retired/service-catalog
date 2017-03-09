@@ -330,6 +330,7 @@ func testServiceClassClient(client servicecatalogclient.Interface, name string) 
 		ObjectMeta: v1.ObjectMeta{Name: name},
 		BrokerName: "test-broker",
 		Bindable:   true,
+		OSBGUID:    "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 	}
 
 	// start from scratch

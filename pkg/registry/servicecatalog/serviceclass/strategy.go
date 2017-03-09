@@ -78,7 +78,7 @@ func (serviceclassRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.O
 }
 
 func (serviceclassRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateServiceclass(obj.(*sc.ServiceClass))
+	return scv.ValidateServiceClass(obj.(*sc.ServiceClass))
 }
 
 func (serviceclassRESTStrategy) AllowCreateOnUpdate() bool {
@@ -112,5 +112,5 @@ func (serviceclassRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtim
 		glog.Fatal("received a non-serviceclass object to validate from")
 	}
 
-	return scv.ValidateServiceclassUpdate(newServiceclass, oldServiceclass)
+	return scv.ValidateServiceClassUpdate(newServiceclass, oldServiceclass)
 }
