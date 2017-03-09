@@ -151,7 +151,7 @@ func convertInstanceRequest(req *brokerapi.CreateServiceInstanceRequest) *broker
 
 // BindingClient implements a fake CF binding API client
 type BindingClient struct {
-	Bindings    map[string]struct{}
+	Bindings    map[string]*brokerapi.ServiceBinding
 	CreateCreds brokerapi.Credential
 	CreateErr   error
 	DeleteErr   error
@@ -159,7 +159,7 @@ type BindingClient struct {
 
 // NewBindingClient creates a new empty binding client, ready for use
 func NewBindingClient() *BindingClient {
-	return &BindingClient{Bindings: make(map[string]struct{})}
+	return &BindingClient{Bindings: make(map[string]*brokerapi.ServiceBinding)}
 }
 
 // CreateServiceBinding returns b.CreateErr if it was non-nil. Otherwise, returns
@@ -179,7 +179,7 @@ func (b *BindingClient) CreateServiceBinding(
 		return nil, ErrBindingAlreadyExists
 	}
 
-	b.Bindings[bindingsMapKey(sID, bID)] = struct{}{}
+	b.Bindings[BindingsMapKey(sID, bID)] = convertBindingRequest(req)
 	return &brokerapi.CreateServiceBindingResponse{Credentials: b.CreateCreds}, nil
 }
 
@@ -194,15 +194,26 @@ func (b *BindingClient) DeleteServiceBinding(sID, bID string) error {
 		return ErrBindingNotFound
 	}
 
-	delete(b.Bindings, bindingsMapKey(sID, bID))
+	delete(b.Bindings, BindingsMapKey(sID, bID))
 	return nil
 }
 
 func (b *BindingClient) exists(sID, bID string) bool {
-	_, ok := b.Bindings[bindingsMapKey(sID, bID)]
+	_, ok := b.Bindings[BindingsMapKey(sID, bID)]
 	return ok
 }
 
-func bindingsMapKey(sID, bID string) string {
+func convertBindingRequest(req *brokerapi.BindingRequest) *brokerapi.ServiceBinding {
+	return &brokerapi.ServiceBinding{
+		ID:            uuid.NewV4().String(),
+		ServiceID:     req.ServiceID,
+		ServicePlanID: req.PlanID,
+		Parameters:    req.Parameters,
+	}
+}
+
+// BindingsMapKey constructs the key used for bindings given a Service ID and
+// a Binding ID
+func BindingsMapKey(sID, bID string) string {
 	return fmt.Sprintf("%s:%s", sID, bID)
 }
