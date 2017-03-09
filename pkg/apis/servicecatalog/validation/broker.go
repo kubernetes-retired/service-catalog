@@ -38,7 +38,7 @@ func ValidateBroker(broker *sc.Broker) field.ErrorList {
 			ValidateBrokerName,
 			field.NewPath("metadata"))...)
 
-	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("Spec"))...)
+	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("spec"))...)
 	return allErrs
 }
 
@@ -47,7 +47,7 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 
 	if "" == spec.URL {
 		allErrs = append(allErrs,
-			field.Required(fldPath.Child("URL"),
+			field.Required(fldPath.Child("url"),
 				"brokers must have a remote url to contact"))
 	}
 
