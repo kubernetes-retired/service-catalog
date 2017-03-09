@@ -42,7 +42,8 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	tprOpts := opts.TPROptions
 	glog.Infoln("Installing TPR types to the cluster")
-	if err := tpr.InstallTypes(tprOpts.clIface); err != nil {
+	tprInstaller := tpr.NewInstaller(tprOpts.clIface.Extensions().ThirdPartyResources())
+	if err := tprInstaller.InstallTypes(); err != nil {
 		glog.V(4).Infof("Installing TPR types failed, continuing anyway (%s)", err)
 	}
 	glog.V(4).Infoln("Preparing to run API server")
