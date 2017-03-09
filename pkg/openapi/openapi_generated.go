@@ -7037,7 +7037,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 					"instanceRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InstanceRef is the reference to the Instance this binding is to. Immutable.",
-							Ref:         spec.MustCreateRef("#/definitions/v1.ObjectReference"),
+							Ref:         spec.MustCreateRef("#/definitions/v1.LocalObjectReference"),
 						},
 					},
 					"parameters": {
@@ -7065,7 +7065,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 			},
 		},
 		Dependencies: []string{
-			"runtime.RawExtension", "v1.ObjectReference"},
+			"runtime.RawExtension", "v1.LocalObjectReference"},
 	},
 	"v1alpha1.BindingStatus": {
 		Schema: spec.Schema{

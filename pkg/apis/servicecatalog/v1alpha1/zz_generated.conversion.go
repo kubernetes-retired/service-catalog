@@ -156,10 +156,7 @@ func Convert_servicecatalog_BindingList_To_v1alpha1_BindingList(in *servicecatal
 }
 
 func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingSpec, out *servicecatalog.BindingSpec, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.InstanceRef, &out.InstanceRef, 0); err != nil {
-		return err
-	}
+	out.InstanceRef = in.InstanceRef
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.OSBGUID = in.OSBGUID
@@ -171,10 +168,7 @@ func Convert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingSpec,
 }
 
 func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicecatalog.BindingSpec, out *BindingSpec, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.InstanceRef, &out.InstanceRef, 0); err != nil {
-		return err
-	}
+	out.InstanceRef = in.InstanceRef
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.OSBGUID = in.OSBGUID

@@ -260,7 +260,7 @@ type Binding struct {
 type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this binding is to.
 	// Immutable.
-	InstanceRef kapi.ObjectReference
+	InstanceRef v1.LocalObjectReference
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.

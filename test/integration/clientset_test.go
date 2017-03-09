@@ -584,9 +584,8 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 	binding := &v1alpha1.Binding{
 		ObjectMeta: v1.ObjectMeta{Name: "test-binding"},
 		Spec: v1alpha1.BindingSpec{
-			InstanceRef: v1.ObjectReference{
-				Name:      "bar",
-				Namespace: "test-namespace",
+			InstanceRef: v1.LocalObjectReference{
+				Name: "bar",
 			},
 			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
 			SecretName: "secret-name",
@@ -607,7 +606,7 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 
 	bindingServer, err := bindingClient.Create(binding)
 	if nil != err {
-		return fmt.Errorf("error creating the binding, %v", binding)
+		return fmt.Errorf("error creating the binding: %v\n\n%#v", err, binding)
 	}
 	if name != bindingServer.Name {
 		return fmt.Errorf(

@@ -6242,7 +6242,7 @@ func (x *BindingSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 		switch yys581 {
 		case "instanceRef":
 			if r.TryDecodeAsNil() {
-				x.InstanceRef = pkg2_v1.ObjectReference{}
+				x.InstanceRef = pkg2_v1.LocalObjectReference{}
 			} else {
 				yyv582 := &x.InstanceRef
 				yyv582.CodecDecodeSelf(d)
@@ -6304,7 +6304,7 @@ func (x *BindingSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.InstanceRef = pkg2_v1.ObjectReference{}
+		x.InstanceRef = pkg2_v1.LocalObjectReference{}
 	} else {
 		yyv588 := &x.InstanceRef
 		yyv588.CodecDecodeSelf(d)
@@ -7591,7 +7591,7 @@ func (x codecSelfer1234) decSliceBinding(v *[]Binding, d *codec1978.Decoder) {
 
 			yyrg668 := len(yyv668) > 0
 			yyv2668 := yyv668
-			yyrl668, yyrt668 = z.DecInferLen(yyl668, z.DecBasicHandle().MaxInitLen, 432)
+			yyrl668, yyrt668 = z.DecInferLen(yyl668, z.DecBasicHandle().MaxInitLen, 336)
 			if yyrt668 {
 				if yyrl668 <= cap(yyv668) {
 					yyv668 = yyv668[:yyrl668]
