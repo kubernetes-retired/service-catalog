@@ -28,6 +28,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/restclient"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 	"k8s.io/kubernetes/pkg/runtime/schema"
+	"k8s.io/kubernetes/pkg/util/interrupt"
 )
 
 const (
@@ -61,6 +62,7 @@ func NewCommandServer(
 	flags := cmd.Flags()
 	flags.AddGoFlagSet(flag.CommandLine)
 
+	stopCh := make(chan struct{})
 	opts := &ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
@@ -69,6 +71,7 @@ func NewCommandServer(
 		InsecureServingOptions:  genericserveroptions.NewInsecureServingOptions(),
 		EtcdOptions:             NewEtcdOptions(),
 		TPROptions:              NewTPROptions(),
+		StopCh:                  stopCh,
 	}
 	opts.addFlags(flags)
 	// Set generated SSL cert path correctly
@@ -105,7 +108,10 @@ func NewCommandServer(
 	}
 
 	cmd.Run = func(c *cobra.Command, args []string) {
-		if err := RunServer(opts); err != nil {
+		h := interrupt.New(nil, func() {
+			close(stopCh)
+		})
+		if err := h.Run(func() error { return RunServer(opts) }); err != nil {
 			glog.Fatalf("error running server (%s)", err)
 			return
 		}
