@@ -17,11 +17,14 @@ limitations under the License.
 package tpr
 
 import (
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	extensionsv1beta "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5/typed/extensions/v1beta1"
+	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 // this is the set of third party resources to be installed. each key is the name of the TPR to
@@ -34,31 +37,71 @@ var thirdPartyResources = []v1beta1.ThirdPartyResource{
 	serviceBindingTPR,
 }
 
+//Installer takes in a client and exposes method for installing third party resources
+type Installer struct {
+	tprs extensionsv1beta.ThirdPartyResourceInterface
+}
+
+//NewInstaller is used to install third party resources
+func NewInstaller(tprs extensionsv1beta.ThirdPartyResourceInterface) *Installer {
+	return &Installer{
+		tprs: tprs,
+	}
+}
+
 // InstallTypes installs all third party resource types to the cluster
-func InstallTypes(cs clientset.Interface) error {
-	tprs := cs.Extensions().ThirdPartyResources()
+func (i *Installer) InstallTypes() error {
+	var wg sync.WaitGroup
+	errMsg := make(chan string, len(thirdPartyResources))
+
 	for _, tpr := range thirdPartyResources {
 		glog.Infof("Checking for existence of %s", tpr.Name)
-		if _, err := tprs.Get(tpr.Name); err == nil {
+		if _, err := i.tprs.Get(tpr.Name); err == nil {
 			glog.Infof("Found existing TPR %s", tpr.Name)
 			continue
 		}
 
 		glog.Infof("Creating Third Party Resource Type: %s", tpr.Name)
-		if _, err := tprs.Create(&tpr); err != nil {
-			glog.Errorf("Failed to create Third Party Resource Type: %s (%s))", tpr.Name, err)
-			return err
-		}
-		glog.Infof("Created TPR '%s'", tpr.Name)
-		// There can be a delay, so poll until it's ready to go...
-		for i := 0; i < 30; i++ {
-			if _, err := tprs.Get(tpr.Name); err != nil {
-				glog.Infof("TPR %s is ready", tpr.Name)
-				break
+
+		wg.Add(1)
+		go func(tpr v1beta1.ThirdPartyResource, tprInfce extensionsv1beta.ThirdPartyResourceInterface) {
+			defer wg.Done()
+			if _, err := i.tprs.Create(&tpr); err != nil {
+				errMsg <- fmt.Sprintf("%s: %s", tpr.Name, err)
+			} else {
+				glog.Infof("Created TPR '%s'", tpr.Name)
+
+				// There can be a delay, so poll until it's ready to go...
+				err := wait.PollImmediate(1*time.Second, 1*time.Second, func() (bool, error) {
+					if _, err := tprInfce.Get(tpr.Name); err == nil {
+						glog.Infof("TPR %s is ready", tpr.Name)
+						return true, nil
+					}
+
+					glog.Infof("TPR %s is not ready yet... waiting...", tpr.Name)
+					return false, nil
+				})
+				if err != nil {
+					glog.Infof("Error polling for TPR status:", err)
+				}
 			}
-			glog.Infof("TPR %s is not ready yet... waiting...", tpr.Name)
-			time.Sleep(1 * time.Second)
+		}(tpr, i.tprs)
+	}
+
+	wg.Wait()
+	close(errMsg)
+
+	var allErrMsg string
+	for msg := range errMsg {
+		if msg != "" {
+			allErrMsg = fmt.Sprintf("%s\n%s", allErrMsg, msg)
 		}
 	}
+
+	if allErrMsg != "" {
+		glog.Errorf("Failed to create Third Party Resource:\n%s)", allErrMsg)
+		return fmt.Errorf("Failed to create Third Party Resource:\n%s)", allErrMsg)
+	}
+
 	return nil
 }
