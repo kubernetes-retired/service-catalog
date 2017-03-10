@@ -40,10 +40,10 @@ import (
 // need etcd running
 // start a fresh apiserver for the controller to talk to
 func TestController(t *testing.T) {
-	fakeKubeClient, catalogClient, fakeBrokerCatalog, _, _, testController, _, stopCh := newTestController(t)
-	defer close(stopCh)
+	fakeKubeClient, catalogClient, fakeBrokerCatalog, _, _, testController, _, shutdownServer := newTestController(t)
+	defer shutdownServer()
 
-	t.Log(fakeKubeClient, catalogClient, fakeBrokerCatalog, testController, stopCh)
+	t.Log(fakeKubeClient, catalogClient, fakeBrokerCatalog, testController)
 
 	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
@@ -121,13 +121,12 @@ func newTestController(t *testing.T) (
 	*fakebrokerapi.BindingClient,
 	controller.Controller,
 	informers.Interface,
-	chan struct{},
+	func(),
 ) {
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
 	// create an sc client and running server
 	catalogClient, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String())
-	defer shutdownServer()
 
 	catalogCl := &fakebrokerapi.CatalogClient{}
 	instanceCl := fakebrokerapi.NewInstanceClient()
@@ -157,5 +156,5 @@ func newTestController(t *testing.T) (
 	informerFactory.Start(stopCh)
 
 	return fakeKubeClient, catalogClient, catalogCl, instanceCl, bindingCl,
-		testController, serviceCatalogSharedInformers, stopCh
+		testController, serviceCatalogSharedInformers, shutdownServer
 }

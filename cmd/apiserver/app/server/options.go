@@ -41,6 +41,7 @@ type ServiceCatalogServerOptions struct {
 	EtcdOptions *EtcdOptions
 	// TPROptions are options for serving with TPR as the backing store
 	TPROptions *TPROptions
+	StopCh     <-chan struct{}
 }
 
 func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {

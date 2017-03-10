@@ -33,6 +33,11 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 	if err != nil {
 		return err
 	}
+	if opts.StopCh == nil {
+		/* the caller of RunServer should generate the stop channel
+		if there is a need to stop the API server */
+		opts.StopCh = make(chan struct{})
+	}
 	if storageType == server.StorageTypeTPR {
 		return runTPRServer(opts)
 	}
@@ -66,8 +71,7 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	glog.Infoln("Running the API server")
-	stop := make(chan struct{})
-	server.GenericAPIServer.PrepareRun().Run(stop)
+	server.GenericAPIServer.PrepareRun().Run(opts.StopCh)
 
 	return nil
 }
@@ -131,8 +135,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 
 	// do we need to do any post api installation setup? We should have set up the api already?
 	glog.Infoln("Running the API server")
-	stop := make(chan struct{})
-	server.PrepareRun().Run(stop)
+	server.PrepareRun().Run(opts.StopCh)
 
 	return nil
 }
