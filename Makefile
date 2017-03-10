@@ -299,16 +299,22 @@ k8s-broker-push: k8s-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION)
 	docker push $(REGISTRY)/k8s-broker:$(VERSION)
+	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:latest
+	docker push $(REGISTRY)/user-broker:latest
 
 user-broker-push: user-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:$(VERSION)
 	docker push $(REGISTRY)/user-broker:$(VERSION)
+	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:latest
+	docker push $(REGISTRY)/user-broker:latest
 
 controller-manager-push: controller-manager-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:$(VERSION)
 	docker push $(REGISTRY)/controller-manager:$(VERSION)
+	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:latest
+	docker push $(REGISTRY)/controller-manager:latest
 
 apiserver-push: apiserver-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
