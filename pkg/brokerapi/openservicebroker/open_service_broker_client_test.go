@@ -17,69 +17,89 @@ limitations under the License.
 package openservicebroker
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker/util"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fakeserver"
 )
+
+func init() {
+	flag.Set("alsologtostderr", "true")
+	flag.Lookup("v").Value.Set("10")
+}
 
 const (
 	testBrokerName            = "test-broker"
 	bindingSuffixFormatString = "/v2/service_instances/%s/service_bindings/%s"
-	testServiceInstanceID     = "1"
+	testServiceInstanceID     = "123-456"
 	testServiceBindingID      = "2"
 )
 
-func setup() (*util.FakeBrokerServer, *servicecatalog.Broker) {
-	fbs := &util.FakeBrokerServer{}
+func setup() (*fakeserver.FakeBrokerServer, string) {
+	fbs := fakeserver.NewFakeBrokerServer()
 	url := fbs.Start()
-	fakeBroker := &servicecatalog.Broker{
-		Spec: servicecatalog.BrokerSpec{
-			URL: url,
-		},
-	}
 
-	return fbs, fakeBroker
+	return fbs, url
 }
 
-// Provision
+// Catalog tests
 
-func TestProvisionInstanceCreated(t *testing.T) {
-	fbs, fakeBroker := setup()
+func TestCatalog(t *testing.T) {
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.Catalog = &brokerapi.Catalog{}
 
-	fbs.SetResponseStatus(http.StatusCreated)
+	c := NewClient(testBrokerName, url, "", "")
+	if _, err := c.GetCatalog(); err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+// Provision tests
+
+func TestProvisionInstanceCreated(t *testing.T) {
+	fbs, url := setup()
+	defer fbs.Stop()
+
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusCreated,
+	}
+
+	c := NewClient(testBrokerName, url, "", "")
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
 func TestProvisionInstanceOK(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusOK,
+	}
+	c := NewClient(testBrokerName, url, "", "")
 
-	fbs.SetResponseStatus(http.StatusOK)
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
 func TestProvisionInstanceConflict(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusConflict,
+	}
 
-	fbs.SetResponseStatus(http.StatusConflict)
+	c := NewClient(testBrokerName, url, "", "")
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{})
 	switch {
 	case err == nil:
@@ -90,12 +110,16 @@ func TestProvisionInstanceConflict(t *testing.T) {
 }
 
 func TestProvisionInstanceUnprocessableEntity(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	// Set up an asynchronous reaction, but don't send an asynchronous
+	// request; the fake broker should send UnprocessableEntity
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Async: true,
+	}
 
-	fbs.SetResponseStatus(http.StatusUnprocessableEntity)
+	c := NewClient(testBrokerName, url, "", "")
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{})
 	switch {
 	case err == nil:
@@ -106,32 +130,45 @@ func TestProvisionInstanceUnprocessableEntity(t *testing.T) {
 }
 
 func TestProvisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
-
-	fbs.SetAsynchronous(2, true, "succeed_async")
-	req := brokerapi.CreateServiceInstanceRequest{
-		AcceptsIncomplete: true,
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status:      http.StatusAccepted,
+		Async:       true,
+		Operation:   "12345",
+		Polls:       2,
+		AsyncResult: brokerapi.StateSucceeded,
 	}
 
+	req := brokerapi.CreateServiceInstanceRequest{
+		AcceptsIncomplete: true,
+		ServiceID:         "014-01840",
+		PlanID:            "54331",
+	}
+	c := NewClient(testBrokerName, url, "", "")
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &req); err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
 func TestProvisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status:      http.StatusAccepted,
+		Async:       true,
+		Operation:   "12345",
+		Polls:       2,
+		AsyncResult: brokerapi.StateFailed,
+	}
 
-	fbs.SetAsynchronous(2, false, "fail_async")
 	req := brokerapi.CreateServiceInstanceRequest{
 		AcceptsIncomplete: true,
 	}
 
+	c := NewClient(testBrokerName, url, "", "")
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &req)
 	switch {
 	case err == nil:
@@ -144,36 +181,43 @@ func TestProvisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 // Deprovision
 
 func TestDeprovisionInstanceOK(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.DeprovisionReactions[testServiceInstanceID] = fakeserver.DeprovisionReaction{
+		Status: http.StatusOK,
+	}
 
-	fbs.SetResponseStatus(http.StatusOK)
+	c := NewClient(testBrokerName, url, "", "")
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
 func TestDeprovisionInstanceGone(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.DeprovisionReactions[testServiceInstanceID] = fakeserver.DeprovisionReaction{
+		Status: http.StatusGone,
+	}
 
-	fbs.SetResponseStatus(http.StatusGone)
+	c := NewClient(testBrokerName, url, "", "")
+
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
 func TestDeprovisionInstanceUnprocessableEntity(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.DeprovisionReactions[testServiceInstanceID] = fakeserver.DeprovisionReaction{
+		Async: true,
+	}
 
-	fbs.SetResponseStatus(http.StatusUnprocessableEntity)
+	c := NewClient(testBrokerName, url, "", "")
 	err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{})
 	switch {
 	case err == nil:
@@ -184,33 +228,72 @@ func TestDeprovisionInstanceUnprocessableEntity(t *testing.T) {
 }
 
 func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
-
-	fbs.SetAsynchronous(2, true, "succeed_async")
-	req := brokerapi.DeleteServiceInstanceRequest{
-		AcceptsIncomplete: true,
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status:      http.StatusAccepted,
+		Async:       true,
+		Operation:   "12345",
+		Polls:       2,
+		AsyncResult: brokerapi.StateSucceeded,
+	}
+	fbs.DeprovisionReactions[testServiceInstanceID] = fakeserver.DeprovisionReaction{
+		Status:      http.StatusAccepted,
+		Async:       true,
+		Operation:   "1980470161026",
+		Polls:       2,
+		AsyncResult: brokerapi.StateSucceeded,
 	}
 
-	if err := c.DeleteServiceInstance(testServiceInstanceID, &req); err != nil {
+	req := brokerapi.CreateServiceInstanceRequest{
+		AcceptsIncomplete: true,
+		ServiceID:         "014-01840",
+		PlanID:            "54331",
+	}
+	c := NewClient(testBrokerName, url, "", "")
+	if _, err := c.CreateServiceInstance(testServiceInstanceID, &req); err != nil {
+		t.Fatal(err.Error())
+	}
+
+	deleteReq := brokerapi.DeleteServiceInstanceRequest{
+		AcceptsIncomplete: true,
+		ServiceID:         "014-01840",
+		PlanID:            "54331",
+	}
+	if err := c.DeleteServiceInstance(testServiceInstanceID, &deleteReq); err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
 func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
-
-	fbs.SetAsynchronous(2, false, "fail_async")
-	req := brokerapi.DeleteServiceInstanceRequest{
-		AcceptsIncomplete: true,
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusCreated,
 	}
 
-	err := c.DeleteServiceInstance(testServiceInstanceID, &req)
+	c := NewClient(testBrokerName, url, "", "")
+	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
+		t.Fatal(err.Error())
+	}
+
+	fbs.DeprovisionReactions[testServiceInstanceID] = fakeserver.DeprovisionReaction{
+		Status:      http.StatusAccepted,
+		Async:       true,
+		Operation:   "018762308276",
+		Polls:       2,
+		AsyncResult: brokerapi.StateFailed,
+	}
+
+	deleteReq := brokerapi.DeleteServiceInstanceRequest{
+		AcceptsIncomplete: true,
+		ServiceID:         "014-01840",
+		PlanID:            "54331",
+	}
+
+	err := c.DeleteServiceInstance(testServiceInstanceID, &deleteReq)
 	switch {
 	case err == nil:
 		t.Fatalf("Expected '%v'", errFailedState)
@@ -219,11 +302,13 @@ func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 	}
 }
 
+// Bind tests
+
 func TestBindOk(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	c := NewClient(testBrokerName, url, "", "")
 
 	fbs.SetResponseStatus(http.StatusOK)
 	sent := &brokerapi.BindingRequest{}
@@ -248,10 +333,10 @@ func TestBindOk(t *testing.T) {
 }
 
 func TestBindConflict(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	c := NewClient(testBrokerName, url, "", "")
 
 	fbs.SetResponseStatus(http.StatusConflict)
 	sent := &brokerapi.BindingRequest{}
@@ -275,11 +360,13 @@ func TestBindConflict(t *testing.T) {
 	}
 }
 
+// Unbind tests
+
 func TestUnbindOk(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	c := NewClient(testBrokerName, url, "", "")
 
 	fbs.SetResponseStatus(http.StatusOK)
 	if err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID); err != nil {
@@ -294,10 +381,10 @@ func TestUnbindOk(t *testing.T) {
 }
 
 func TestUnbindGone(t *testing.T) {
-	fbs, fakeBroker := setup()
+	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	c := NewClient(testBrokerName, url, "", "")
 
 	fbs.SetResponseStatus(http.StatusGone)
 	err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID)

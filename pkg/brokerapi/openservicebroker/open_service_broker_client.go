@@ -267,7 +267,6 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
 	default:
 		return errStatusCode{statusCode: resp.StatusCode}
 	}
-
 }
 
 func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error {
