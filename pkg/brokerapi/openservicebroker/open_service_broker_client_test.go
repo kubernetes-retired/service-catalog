@@ -90,9 +90,11 @@ func TestProvisionInstanceConflict(t *testing.T) {
 	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, url, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusConflict,
+	}
 
-	fbs.SetResponseStatus(http.StatusConflict)
+	c := NewClient(testBrokerName, url, "", "")
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{})
 	switch {
 	case err == nil:
@@ -106,9 +108,11 @@ func TestProvisionInstanceUnprocessableEntity(t *testing.T) {
 	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, url, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusUnprocessableEntity,
+	}
 
-	fbs.SetResponseStatus(http.StatusUnprocessableEntity)
+	c := NewClient(testBrokerName, url, "", "")
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{})
 	switch {
 	case err == nil:
@@ -122,13 +126,17 @@ func TestProvisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, url, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status:    http.StatusOK,
+		Async:     true,
+		Operation: "12345",
+		Polls:     2,
+	}
 
-	fbs.SetAsynchronous(2, true, "succeed_async")
 	req := brokerapi.CreateServiceInstanceRequest{
 		AcceptsIncomplete: true,
 	}
-
+	c := NewClient(testBrokerName, url, "", "")
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &req); err != nil {
 		t.Fatal(err.Error())
 	}
@@ -138,13 +146,18 @@ func TestProvisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, url, "", "")
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status:    http.StatusOK,
+		Async:     true,
+		Operation: "12345",
+		Polls:     2,
+	}
 
-	fbs.SetAsynchronous(2, false, "fail_async")
 	req := brokerapi.CreateServiceInstanceRequest{
 		AcceptsIncomplete: true,
 	}
 
+	c := NewClient(testBrokerName, url, "", "")
 	_, err := c.CreateServiceInstance(testServiceInstanceID, &req)
 	switch {
 	case err == nil:
