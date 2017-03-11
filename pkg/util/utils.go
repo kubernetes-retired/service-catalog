@@ -26,8 +26,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 // SendRequest will serialize 'object' and send it using the given method to
@@ -97,13 +95,6 @@ func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	}
 
 	return nil
-}
-
-// ExtractVarFromRequest will return the values of the passed in
-// MUX variable name (varName). The variables are the substitution
-// strings from the URL.
-func ExtractVarFromRequest(r *http.Request, varName string) string {
-	return mux.Vars(r)[varName]
 }
 
 // ExecCmd executes a command and returns the stdout + error, if any
