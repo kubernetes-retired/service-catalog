@@ -19,6 +19,7 @@ package fakeserver
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -36,14 +37,30 @@ type FakeBrokerServer struct {
 	Catalog       *brokerapi.Catalog
 	CatalogStatus *int
 
-	ProvisionReactions   map[string]ProvisionReaction
-	BindReactions        map[string]BindReaction
-	DeprovisionReactions map[string]DeprovisionReaction
-	UnbindReactions      map[string]UnbindReaction
-
 	sync.Mutex
-	Actions []Action
 
+	// actions and reactions
+
+	// Actions is the list of actions that have been run against the
+	// FakeBrokerServer.
+	Actions []Action
+	// ProvisionReactions define how provision requests should be treated.
+	ProvisionReactions map[string]ProvisionReaction
+	// DeprovisionReactions define how deprovision requests should be treated.
+	DeprovisionReactions map[string]DeprovisionReaction
+	// BindReactions define how bind requests should be treated.
+	BindReactions map[string]BindReaction
+	// UnbindReactions define how unbind requests should be treated.
+	UnbindReactions map[string]UnbindReaction
+
+	// ActiveProvisions is a map of the active provision reactions for async
+	// provision requests that have been accepted.
+	ActiveProvisions map[string]ProvisionReaction
+
+	// ActiveInstances is a map of instances that the broker has told the user were correctly provisioned
+	ActiveInstances map[string]brokerapi.CreateServiceInstanceRequest
+
+	// old fields - remove
 	responseStatus     int
 	pollsRemaining     int
 	shouldSucceedAsync bool
@@ -57,16 +74,24 @@ type FakeBrokerServer struct {
 type ProvisionReaction struct {
 	Status   int
 	Response *brokerapi.CreateServiceInstanceResponse
+
+	Async     bool
+	Operation string
+	Polls     int
 }
 
 type DeprovisionReaction struct {
 	Status   int
-	Response *brokerapi.DeleteServiceInstanceResponse
+	Response brokerapi.DeleteServiceInstanceResponse
+
+	Async     bool
+	Operation string
+	Polls     int
 }
 
 type BindReaction struct {
 	Status   int
-	Response *brokerapi.CreateServiceBindingResponse
+	Response brokerapi.CreateServiceBindingResponse
 }
 
 type UnbindReaction struct {
@@ -79,6 +104,13 @@ type Action struct {
 	Request *http.Request
 	Object  interface{}
 }
+
+const (
+	// TODO: make all methods use instanceIDKey
+	instanceIDKey = "id"
+
+	bindingIDKey = "binding_id"
+)
 
 // Start starts the fake broker server listening on a random port, passing
 // back the server's URL.
@@ -150,22 +182,80 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 }
 
 func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Request) {
+	// create a new action for this call
+	action := Action{
+		Verb:    r.Method,
+		Path:    r.RequestURI,
+		Request: r,
+	}
+
+	// deserialize the request
 	req := &brokerapi.CreateServiceInstanceRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	f.RequestObject = req
+	actin.Object = req
 
-	if !req.AcceptsIncomplete {
-		// Synchronous
-		util.WriteResponse(w, f.responseStatus, &brokerapi.CreateServiceInstanceResponse{})
-	} else {
-		// Asynchronous
-		resp := brokerapi.CreateServiceInstanceResponse{
-			Operation: f.operation,
+	f.Lock()
+	defer f.Unlock()
+
+	// store the action
+	f.Actions = append(f.Actions, action)
+
+	// find the reaction for this request
+	id := mux.Vars(r)[instanceIDKey]
+	reaction, ok := f.ProvisionReactions[id]
+	if !ok {
+		// TODO: what's the default response if there's no reaction defined?
+	}
+
+	activeRequest, instanceIsActive := f.ActiveInstances[id]
+
+	if !reaction.Async || !req.AcceptsIncomplete {
+		// In order to return an async response, the request must set the
+		// `accepts_incomplete=true` param.
+		// TODO: does our client actually implement sending this correctly?
+
+		// we got the same request again; return a 200 and the reaction response
+		if instanceIsActive {
+			if !reflect.DeepEqual(req, activeRequest) {
+				util.WriteResponse(w, http.StatusOK, reaction.Response)
+			} else {
+				util.WriteResponse(w, http.StatusConflict, "{}")
+			}
+
+			return
 		}
-		util.WriteResponse(w, http.StatusAccepted, &resp)
+
+		// if the reaction has status OK or completed, record the request used
+		// to create the instance
+		if reaction.Status == http.StatusOK || reaction.stauts == http.StatusCreated {
+			f.ActiveInstances[id] = req
+		}
+
+		util.WriteResponse(w, reaction.Status, reaction.Response)
+	} else if reaction.Async {
+		// Asynchronous
+
+		// we got the same request again; return a 200 and the reaction response
+		if instanceIsActive && !reflect.DeepEqual(req, activeRequest) {
+			util.WriteResponse(w, http.StatusOK, reaction.Response)
+			return
+		}
+
+		// record the state of the async reaction
+		f.ActiveProvisions[id] = reaction
+
+		util.WriteResponse(w, http.StatusAccepted, &brokerapi.CreateServiceInstanceResponse{
+			Operation: reaction.Operation,
+		})
+	} else {
+		// The reaction was supposed to be async, but we got a synchronous request.  422
+
+		// TODO: send the expected 422 response body
+		util.WriteResponse(w, http.StatusUnprocessableEntity, reaction.Response)
 	}
 }
 

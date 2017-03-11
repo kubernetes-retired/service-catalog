@@ -62,8 +62,14 @@ func TestProvisionInstanceCreated(t *testing.T) {
 	defer fbs.Stop()
 
 	c := NewClient(testBrokerName, url, "", "")
-
+	fbs.ProvisionReactions = []fakeserver.ProvisionReaction{
+		{
+			ID:     testServiceInstanceID,
+			Status: http.StatusCreated,
+		},
+	}
 	fbs.SetResponseStatus(http.StatusCreated)
+
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
