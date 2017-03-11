@@ -1,10 +1,6 @@
 ## service-catalog docs
 
-This directory contains documentation for milestones of the service-catalog:
+- [Developer guide](DEVGUIDE.md)
+- [Design](design.md)
 
-1.  Use-cases
-2.  Design documents
-
-Each version will get its own subdirectory.  Each version's documentation
-should be a complete accounting of supported use-cases, architecture, etc for
-that version.
+We are collecting use-cases and other fundamental documentation for our eventual [V1 GA release here](./v1).
