@@ -35,7 +35,7 @@ const (
 )
 
 func setup() (*fakeserver.FakeBrokerServer, string) {
-	fbs := &fakeserver.FakeBrokerServer{}
+	fbs := fakeserver.NewFakeBrokerServer()
 	url := fbs.Start()
 
 	return fbs, url
@@ -61,15 +61,12 @@ func TestProvisionInstanceCreated(t *testing.T) {
 	fbs, url := setup()
 	defer fbs.Stop()
 
-	c := NewClient(testBrokerName, url, "", "")
-	fbs.ProvisionReactions = []fakeserver.ProvisionReaction{
-		{
-			ID:     testServiceInstanceID,
-			Status: http.StatusCreated,
-		},
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusCreated,
 	}
 	fbs.SetResponseStatus(http.StatusCreated)
 
+	c := NewClient(testBrokerName, url, "", "")
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
@@ -79,9 +76,11 @@ func TestProvisionInstanceOK(t *testing.T) {
 	fbs, url := setup()
 	defer fbs.Stop()
 
+	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
+		Status: http.StatusOK,
+	}
 	c := NewClient(testBrokerName, url, "", "")
 
-	fbs.SetResponseStatus(http.StatusOK)
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}

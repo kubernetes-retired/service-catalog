@@ -71,6 +71,19 @@ type FakeBrokerServer struct {
 	Request       *http.Request
 }
 
+func NewFakeBrokerServer() *FakeBrokerServer {
+	return &FakeBrokerServer{
+		Actions:              []Action{},
+		ProvisionReactions:   map[string]ProvisionReaction{},
+		DeprovisionReactions: map[string]DeprovisionReaction{},
+		BindReactions:        map[string]BindReaction{},
+		UnbindReactions:      map[string]UnbindReaction{},
+		ActiveProvisions:     map[string]ProvisionReaction{},
+		ActiveInstances:      map[string]brokerapi.CreateServiceInstanceRequest{},
+	}
+
+}
+
 type ProvisionReaction struct {
 	Status   int
 	Response *brokerapi.CreateServiceInstanceResponse
@@ -196,7 +209,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	f.RequestObject = req
-	actin.Object = req
+	action.Object = req
 
 	f.Lock()
 	defer f.Unlock()
@@ -212,7 +225,6 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	activeRequest, instanceIsActive := f.ActiveInstances[id]
-
 	if !reaction.Async || !req.AcceptsIncomplete {
 		// In order to return an async response, the request must set the
 		// `accepts_incomplete=true` param.
@@ -231,12 +243,12 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 
 		// if the reaction has status OK or completed, record the request used
 		// to create the instance
-		if reaction.Status == http.StatusOK || reaction.stauts == http.StatusCreated {
-			f.ActiveInstances[id] = req
+		if reaction.Status == http.StatusOK || reaction.Status == http.StatusCreated {
+			f.ActiveInstances[id] = *req
 		}
 
 		util.WriteResponse(w, reaction.Status, reaction.Response)
-	} else if reaction.Async {
+	} else if reaction.Async && req.AcceptsIncomplete {
 		// Asynchronous
 
 		// we got the same request again; return a 200 and the reaction response
@@ -252,7 +264,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 			Operation: reaction.Operation,
 		})
 	} else {
-		// The reaction was supposed to be async, but we got a synchronous request.  422
+		// The reaction was supposed to be async, but we got a synchronous request.
 
 		// TODO: send the expected 422 response body
 		util.WriteResponse(w, http.StatusUnprocessableEntity, reaction.Response)
