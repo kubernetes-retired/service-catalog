@@ -19,6 +19,7 @@ package fakeserver
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -30,18 +31,53 @@ import (
 // FakeBrokerServer is an http server that implements the Open Service Broker
 // REST API.
 type FakeBrokerServer struct {
+	server *httptest.Server
+
 	Catalog       *brokerapi.Catalog
 	CatalogStatus *int
+
+	ProvisionReactions   map[string]ProvisionReaction
+	BindReactions        map[string]BindReaction
+	DeprovisionReactions map[string]DeprovisionReaction
+	UnbindReactions      map[string]UnbindReaction
+
+	sync.Mutex
+	Actions []Action
 
 	responseStatus     int
 	pollsRemaining     int
 	shouldSucceedAsync bool
 	operation          string
-	server             *httptest.Server
 
 	// For inspecting on what was sent on the wire.
 	RequestObject interface{}
 	Request       *http.Request
+}
+
+type ProvisionReaction struct {
+	Status   int
+	Response *brokerapi.CreateServiceInstanceResponse
+}
+
+type DeprovisionReaction struct {
+	Status   int
+	Response *brokerapi.DeleteServiceInstanceResponse
+}
+
+type BindReaction struct {
+	Status   int
+	Response *brokerapi.CreateServiceBindingResponse
+}
+
+type UnbindReaction struct {
+	Status int
+}
+
+type Action struct {
+	Path    string
+	Verb    string
+	Request *http.Request
+	Object  interface{}
 }
 
 // Start starts the fake broker server listening on a random port, passing
