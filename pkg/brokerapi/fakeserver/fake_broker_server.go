@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package fakeserver
 
 import (
 	"net/http"
@@ -25,14 +25,20 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
-// FakeBrokerServer is a fake service broker server meant for testing that
-// allows for customizing the response behavior.  It does not support auth.
+// TODO: implement basic auth
+
+// FakeBrokerServer is an http server that implements the Open Service Broker
+// REST API.
 type FakeBrokerServer struct {
+	Catalog       *brokerapi.Catalog
+	CatalogStatus *int
+
 	responseStatus     int
 	pollsRemaining     int
 	shouldSucceedAsync bool
 	operation          string
 	server             *httptest.Server
+
 	// For inspecting on what was sent on the wire.
 	RequestObject interface{}
 	Request       *http.Request
@@ -75,7 +81,11 @@ func (f *FakeBrokerServer) SetAsynchronous(numPolls int, shouldSucceed bool, ope
 // HANDLERS
 
 func (f *FakeBrokerServer) catalogHandler(w http.ResponseWriter, r *http.Request) {
-	util.WriteResponse(w, http.StatusOK, &brokerapi.Catalog{})
+	if f.CatalogStatus != nil {
+		util.WriteResponse(w, *f.CatalogStatus, nil)
+	}
+
+	util.WriteResponse(w, http.StatusOK, f.Catalog)
 }
 
 func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.Request) {

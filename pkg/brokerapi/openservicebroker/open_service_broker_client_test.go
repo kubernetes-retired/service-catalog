@@ -25,7 +25,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker/util"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fakeserver"
 )
 
 const (
@@ -35,8 +35,8 @@ const (
 	testServiceBindingID      = "2"
 )
 
-func setup() (*util.FakeBrokerServer, *servicecatalog.Broker) {
-	fbs := &util.FakeBrokerServer{}
+func setup() (*fakeserver.FakeBrokerServer, *servicecatalog.Broker) {
+	fbs := &fakeserver.FakeBrokerServer{}
 	url := fbs.Start()
 	fakeBroker := &servicecatalog.Broker{
 		Spec: servicecatalog.BrokerSpec{
@@ -47,7 +47,21 @@ func setup() (*util.FakeBrokerServer, *servicecatalog.Broker) {
 	return fbs, fakeBroker
 }
 
-// Provision
+// Catalog tests
+
+func TestCatalog(t *testing.T) {
+	fbs, fakeBroker := setup()
+	defer fbs.Stop()
+
+	fbs.Catalog = &brokerapi.Catalog{}
+
+	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	if _, err := c.GetCatalog(); err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+// Provision tests
 
 func TestProvisionInstanceCreated(t *testing.T) {
 	fbs, fakeBroker := setup()
@@ -219,6 +233,8 @@ func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 	}
 }
 
+// Bind tests
+
 func TestBindOk(t *testing.T) {
 	fbs, fakeBroker := setup()
 	defer fbs.Stop()
@@ -274,6 +290,8 @@ func TestBindConflict(t *testing.T) {
 		t.Fatalf("Sent does not match received, sent: %+v received: %+v", sent, received)
 	}
 }
+
+// Unbind tests
 
 func TestUnbindOk(t *testing.T) {
 	fbs, fakeBroker := setup()
