@@ -96,6 +96,8 @@ func NewFakeBrokerServer() *FakeBrokerServer {
 
 }
 
+// ProvisionReaction represents a reaction that the fake server should make to
+// a provision request.
 type ProvisionReaction struct {
 	Status   int
 	Response *brokerapi.CreateServiceInstanceResponse
@@ -209,12 +211,11 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 				State: brokerapi.StateInProgress,
 			})
 		} else {
-			// TODO: add instance to list of active instances
-			// if activeProvision.AsyncResult == brokerapi.StateSucceeded
-			// 	f.ActiveInstances =
+			f.ActiveInstances[id] = f.OriginatingProvisionRequests[id]
 			delete(f.ActiveProvisions, req.Operation)
+			delete(f.OriginatingProvisionRequests, id)
 
-			glog.Infof("(provision) Returning response status %v to last_operation request %v", activeProvision.AsyncResult, req.Operation)
+			glog.Infof("Returning response status %v to last_operation request %v", activeProvision.AsyncResult, req.Operation)
 
 			util.WriteResponse(w, http.StatusOK, brokerapi.LastOperationResponse{
 				State: activeProvision.AsyncResult,
@@ -318,8 +319,14 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		// record the state of the async reaction
-		f.ActiveProvisions[reaction.Operation] = reaction
+		// record the state of the async reaction, if it is destined to succeed
+		if reaction.Status == http.StatusAccepted {
+			f.ActiveProvisions[reaction.Operation] = reaction
+		}
+
+		if reaction.AsyncResult == brokerapi.StateSucceeded {
+			f.OriginatingProvisionRequests[id] = *req
+		}
 
 		util.WriteResponse(w, reaction.Status, &brokerapi.CreateServiceInstanceResponse{
 			Operation: reaction.Operation,

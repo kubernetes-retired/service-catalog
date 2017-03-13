@@ -232,14 +232,12 @@ func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 	defer fbs.Stop()
 
 	fbs.ProvisionReactions[testServiceInstanceID] = fakeserver.ProvisionReaction{
-		Status: http.StatusCreated,
+		Status:      http.StatusAccepted,
+		Async:       true,
+		Operation:   "12345",
+		Polls:       2,
+		AsyncResult: brokerapi.StateSucceeded,
 	}
-
-	c := NewClient(testBrokerName, url, "", "")
-	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
-		t.Fatal(err.Error())
-	}
-
 	fbs.DeprovisionReactions[testServiceInstanceID] = fakeserver.DeprovisionReaction{
 		Status:      http.StatusAccepted,
 		Async:       true,
@@ -248,12 +246,21 @@ func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 		AsyncResult: brokerapi.StateSucceeded,
 	}
 
+	req := brokerapi.CreateServiceInstanceRequest{
+		AcceptsIncomplete: true,
+		ServiceID:         "014-01840",
+		PlanID:            "54331",
+	}
+	c := NewClient(testBrokerName, url, "", "")
+	if _, err := c.CreateServiceInstance(testServiceInstanceID, &req); err != nil {
+		t.Fatal(err.Error())
+	}
+
 	deleteReq := brokerapi.DeleteServiceInstanceRequest{
 		AcceptsIncomplete: true,
 		ServiceID:         "014-01840",
 		PlanID:            "54331",
 	}
-
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &deleteReq); err != nil {
 		t.Fatal(err.Error())
 	}
