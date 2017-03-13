@@ -22,12 +22,11 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
-
-// TODO: implement basic auth
 
 // FakeBrokerServer is an http server that implements the Open Service Broker
 // REST API.
@@ -53,12 +52,23 @@ type FakeBrokerServer struct {
 	// UnbindReactions define how unbind requests should be treated.
 	UnbindReactions map[string]UnbindReaction
 
-	// ActiveProvisions is a map of the active provision reactions for async
-	// provision requests that have been accepted.
-	ActiveProvisions map[string]ProvisionReaction
+	// state
 
-	// ActiveInstances is a map of instances that the broker has told the user were correctly provisioned
+	// ActiveProvisions is a map of the active provision reactions for async
+	// provision requests that have been accepted.  The key is the operation
+	// ID.
+	ActiveProvisions map[string]ProvisionReaction
+	// ActiveDeprovisions in a map of the active deprovision reactions for
+	// async deprovision requests that have been accepted.  The key is the
+	// operation ID.
+	ActiveDeprovisions map[string]DeprovisionReaction
+	// ActiveInstances is a map of instances that the broker has told the user
+	// were correctly provisioned.
 	ActiveInstances map[string]brokerapi.CreateServiceInstanceRequest
+	// OriginatingProvisionRequests is a map of instance ID to the async
+	// request for it to be provisioned.  Used to implement the correct
+	// semantics when the same request is issued.
+	OriginatingProvisionRequests map[string]brokerapi.CreateServiceInstanceRequest
 
 	// old fields - remove
 	responseStatus     int
@@ -73,13 +83,15 @@ type FakeBrokerServer struct {
 
 func NewFakeBrokerServer() *FakeBrokerServer {
 	return &FakeBrokerServer{
-		Actions:              []Action{},
-		ProvisionReactions:   map[string]ProvisionReaction{},
-		DeprovisionReactions: map[string]DeprovisionReaction{},
-		BindReactions:        map[string]BindReaction{},
-		UnbindReactions:      map[string]UnbindReaction{},
-		ActiveProvisions:     map[string]ProvisionReaction{},
-		ActiveInstances:      map[string]brokerapi.CreateServiceInstanceRequest{},
+		Actions:                      []Action{},
+		ProvisionReactions:           map[string]ProvisionReaction{},
+		DeprovisionReactions:         map[string]DeprovisionReaction{},
+		BindReactions:                map[string]BindReaction{},
+		UnbindReactions:              map[string]UnbindReaction{},
+		ActiveProvisions:             map[string]ProvisionReaction{},
+		ActiveDeprovisions:           map[string]DeprovisionReaction{},
+		ActiveInstances:              map[string]brokerapi.CreateServiceInstanceRequest{},
+		OriginatingProvisionRequests: map[string]brokerapi.CreateServiceInstanceRequest{},
 	}
 
 }
@@ -88,18 +100,20 @@ type ProvisionReaction struct {
 	Status   int
 	Response *brokerapi.CreateServiceInstanceResponse
 
-	Async     bool
-	Operation string
-	Polls     int
+	Async       bool
+	Operation   string
+	Polls       int
+	AsyncResult string
 }
 
 type DeprovisionReaction struct {
 	Status   int
 	Response brokerapi.DeleteServiceInstanceResponse
 
-	Async     bool
-	Operation string
-	Polls     int
+	Async       bool
+	Operation   string
+	Polls       int
+	AsyncResult string
 }
 
 type BindReaction struct {
@@ -133,9 +147,9 @@ func (f *FakeBrokerServer) Start() string {
 	router.HandleFunc("/v2/service_instances/{id}/last_operation", f.lastOperationHandler).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{id}", f.provisionHandler).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{id}", f.updateHandler).Methods("PATCH")
+	router.HandleFunc("/v2/service_instances/{id}", f.deprovisionHandler).Methods("DELETE")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", f.bindHandler).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", f.unbindHandler).Methods("DELETE")
-	router.HandleFunc("/v2/service_instances/{id}", f.deprovisionHandler).Methods("DELETE")
 	f.server = httptest.NewServer(router)
 	return f.server.URL
 }
@@ -180,32 +194,63 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 	f.Lock()
 	defer f.Unlock()
 
+	id := mux.Vars(r)[instanceIDKey]
+
 	// check active provisions
 	activeProvision, ok := f.ActiveProvisions[req.Operation]
 	if ok {
-		activeProvision.Polls--
-		if activeProvision.Polls == 0 {
-			util.WriteResponse(w, activeProvision.Status, map[string]string{"state": "succeeded"})
+		glog.Infof("last_operation request for provision %v; remaining polls: %v", req.Operation, activeProvision.Polls)
+
+		activeProvision.Polls -= 1
+		f.ActiveProvisions[req.Operation] = activeProvision
+
+		if activeProvision.Polls > 0 {
+			util.WriteResponse(w, http.StatusOK, brokerapi.LastOperationResponse{
+				State: brokerapi.StateInProgress,
+			})
 		} else {
-			util.WriteResponse(w, http.StatusOK, map[string]string{"state": "in_progress"})
+			// TODO: add instance to list of active instances
+			// if activeProvision.AsyncResult == brokerapi.StateSucceeded
+			// 	f.ActiveInstances =
+			delete(f.ActiveProvisions, req.Operation)
+
+			glog.Infof("(provision) Returning response status %v to last_operation request %v", activeProvision.AsyncResult, req.Operation)
+
+			util.WriteResponse(w, http.StatusOK, brokerapi.LastOperationResponse{
+				State: activeProvision.AsyncResult,
+			})
 		}
+		return
 	}
 
-	var state string
-	switch {
-	case f.pollsRemaining > 0:
-		f.pollsRemaining--
-		state = brokerapi.StateInProgress
-	case f.shouldSucceedAsync:
-		state = brokerapi.StateSucceeded
-	default:
-		state = brokerapi.StateFailed
+	// check active deprovisions
+	activeDeprovision, ok := f.ActiveDeprovisions[req.Operation]
+	if ok {
+		glog.Infof("last_operation request for deprovision %v; remaining polls: %v", req.Operation, activeDeprovision.Polls)
+
+		activeDeprovision.Polls -= 1
+		f.ActiveDeprovisions[req.Operation] = activeDeprovision
+
+		if activeDeprovision.Polls > 0 {
+			util.WriteResponse(w, http.StatusOK, brokerapi.LastOperationResponse{
+				State: brokerapi.StateInProgress,
+			})
+		} else {
+			delete(f.ActiveInstances, id)
+			delete(f.ActiveDeprovisions, req.Operation)
+
+			glog.Infof("Returning response status %v to last_operation request %v", activeDeprovision.AsyncResult, req.Operation)
+
+			util.WriteResponse(w, http.StatusOK, brokerapi.LastOperationResponse{
+				State: activeDeprovision.AsyncResult,
+			})
+		}
+		return
+	} else {
+		glog.Info("Couldn't find active deprovision for %v", req.Operation)
 	}
 
-	resp := brokerapi.LastOperationResponse{
-		State: state,
-	}
-	util.WriteResponse(w, http.StatusOK, &resp)
+	util.WriteResponse(w, http.StatusInternalServerError, "shrug")
 }
 
 func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Request) {
@@ -239,16 +284,18 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	activeRequest, instanceIsActive := f.ActiveInstances[id]
-	if !reaction.Async || !req.AcceptsIncomplete {
+	if !reaction.Async && !req.AcceptsIncomplete {
 		// In order to return an async response, the request must set the
 		// `accepts_incomplete=true` param.
 		// TODO: does our client actually implement sending this correctly?
 
-		// we got the same request again; return a 200 and the reaction response
 		if instanceIsActive {
-			if !reflect.DeepEqual(req, activeRequest) {
+			if reflect.DeepEqual(req, activeRequest) {
+				// we got the same request again; return a 200 and the
+				// reaction response
 				util.WriteResponse(w, http.StatusOK, reaction.Response)
 			} else {
+				// TODO: send correct conflict response body
 				util.WriteResponse(w, http.StatusConflict, "{}")
 			}
 
@@ -274,7 +321,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 		// record the state of the async reaction
 		f.ActiveProvisions[reaction.Operation] = reaction
 
-		util.WriteResponse(w, http.StatusAccepted, &brokerapi.CreateServiceInstanceResponse{
+		util.WriteResponse(w, reaction.Status, &brokerapi.CreateServiceInstanceResponse{
 			Operation: reaction.Operation,
 		})
 	} else {
@@ -286,22 +333,76 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (f *FakeBrokerServer) deprovisionHandler(w http.ResponseWriter, r *http.Request) {
+	action := Action{
+		Verb:    r.Method,
+		Path:    r.RequestURI,
+		Request: r,
+	}
+
 	req := &brokerapi.DeleteServiceInstanceRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	f.RequestObject = req
+	action.Object = req
 
-	if !req.AcceptsIncomplete {
-		// Synchronous
-		util.WriteResponse(w, f.responseStatus, &brokerapi.DeleteServiceInstanceResponse{})
-	} else {
-		// Asynchronous
-		resp := brokerapi.CreateServiceInstanceResponse{
-			Operation: f.operation,
+	f.Lock()
+	defer f.Unlock()
+
+	// store the action
+	f.Actions = append(f.Actions, action)
+
+	id := mux.Vars(r)[instanceIDKey]
+	reaction, ok := f.DeprovisionReactions[id]
+	if !ok {
+		// TODO: what's the default response if there's no reaction defined?
+	}
+
+	glog.Infof("Handling deprovision request for instance %v with reaction %#v", id, reaction)
+
+	_, instanceIsActive := f.ActiveInstances[id]
+	if !reaction.Async && !req.AcceptsIncomplete {
+		if reaction.Status == http.StatusOK {
+			if instanceIsActive {
+				// if the reaction status is 'ok', and the instance is
+				// currently active, delete it and send a 'success' response
+				delete(f.ActiveInstances, id)
+				util.WriteResponse(w, reaction.Status, &brokerapi.DeleteServiceInstanceResponse{})
+				return
+			} else {
+				// if the reaction status is 'ok', and the instance isn't
+				// currently active, send a 'gone' response
+				util.WriteResponse(w, http.StatusGone, &brokerapi.DeleteServiceInstanceResponse{})
+				return
+			}
 		}
-		util.WriteResponse(w, http.StatusAccepted, &resp)
+
+		// Fall-through: if the reaction has a status that is not 'ok', return
+		// it here.
+		util.WriteResponse(w, reaction.Status, &brokerapi.DeleteServiceInstanceResponse{})
+	} else if reaction.Async && req.AcceptsIncomplete {
+		// Asynchronous
+
+		if instanceIsActive {
+			glog.Infof("instance %v is active; storing operation %v in active deprovisions", id, reaction.Operation)
+			f.ActiveDeprovisions[reaction.Operation] = reaction
+
+			util.WriteResponse(w, reaction.Status, &brokerapi.DeleteServiceInstanceResponse{
+				reaction.Operation,
+			})
+		} else {
+			glog.Infof("instance %v is not active; returning 'gone' response", id)
+			// if the reaction status is 'ok', and the instance isn't
+			// currently active, send a 'gone' response
+			util.WriteResponse(w, http.StatusGone, &brokerapi.DeleteServiceInstanceResponse{})
+		}
+	} else {
+		// The reaction was supposed to be async, but we got a synchronous
+		// request.
+
+		// TODO: send the expected 422 response body
+		util.WriteResponse(w, http.StatusUnprocessableEntity, reaction.Response)
 	}
 }
 
