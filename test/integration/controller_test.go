@@ -132,7 +132,7 @@ func newTestController(t *testing.T) (
 	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
 
 	// create informers
-	resync, _ := time.ParseDuration("1m")
+	resync := 1 * time.Minute
 	informerFactory := scinformers.NewSharedInformerFactory(nil, catalogClient, resync)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
