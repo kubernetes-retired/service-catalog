@@ -37,12 +37,12 @@ var thirdPartyResources = []v1beta1.ThirdPartyResource{
 	serviceBindingTPR,
 }
 
-//Installer takes in a client and exposes method for installing third party resources
+// Installer takes in a client and exposes method for installing third party resources
 type Installer struct {
 	tprs extensionsv1beta.ThirdPartyResourceInterface
 }
 
-//NewInstaller is used to install third party resources
+// NewInstaller is used to install third party resources
 func NewInstaller(tprs extensionsv1beta.ThirdPartyResourceInterface) *Installer {
 	return &Installer{
 		tprs: tprs,
@@ -64,7 +64,7 @@ func (i *Installer) InstallTypes() error {
 		glog.Infof("Creating Third Party Resource Type: %s", tpr.Name)
 
 		wg.Add(1)
-		go func(tpr v1beta1.ThirdPartyResource, tprInfce extensionsv1beta.ThirdPartyResourceInterface) {
+		go func(tpr v1beta1.ThirdPartyResource, client extensionsv1beta.ThirdPartyResourceInterface) {
 			defer wg.Done()
 			if _, err := i.tprs.Create(&tpr); err != nil {
 				errMsg <- fmt.Sprintf("%s: %s", tpr.Name, err)
@@ -73,7 +73,7 @@ func (i *Installer) InstallTypes() error {
 
 				// There can be a delay, so poll until it's ready to go...
 				err := wait.PollImmediate(1*time.Second, 1*time.Second, func() (bool, error) {
-					if _, err := tprInfce.Get(tpr.Name); err == nil {
+					if _, err := client.Get(tpr.Name); err == nil {
 						glog.Infof("TPR %s is ready", tpr.Name)
 						return true, nil
 					}
