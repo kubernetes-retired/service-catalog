@@ -135,6 +135,8 @@ func TestProvisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 
 	req := brokerapi.CreateServiceInstanceRequest{
 		AcceptsIncomplete: true,
+		ServiceID:         "014-01840",
+		PlanID:            "54331",
 	}
 	c := NewClient(testBrokerName, url, "", "")
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &req); err != nil {

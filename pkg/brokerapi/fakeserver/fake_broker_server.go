@@ -177,6 +177,20 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 	}
 	f.RequestObject = req
 
+	f.Lock()
+	defer f.Unlock()
+
+	// check active provisions
+	activeProvision, ok := f.ActiveProvisions[req.Operation]
+	if ok {
+		activeProvision.Polls--
+		if activeProvision.Polls == 0 {
+			util.WriteResponse(w, activeProvision.Status, map[string]string{"state": "succeeded"})
+		} else {
+			util.WriteResponse(w, http.StatusOK, map[string]string{"state": "in_progress"})
+		}
+	}
+
 	var state string
 	switch {
 	case f.pollsRemaining > 0:
@@ -258,7 +272,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 		}
 
 		// record the state of the async reaction
-		f.ActiveProvisions[id] = reaction
+		f.ActiveProvisions[reaction.Operation] = reaction
 
 		util.WriteResponse(w, http.StatusAccepted, &brokerapi.CreateServiceInstanceResponse{
 			Operation: reaction.Operation,
