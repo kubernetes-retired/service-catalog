@@ -50,8 +50,10 @@ gcloud container clusters create "${CLUSTERNAME}" --project="${PROJECT}" --zone=
 
 echo "Using cluster ${CLUSTERNAME}."
 
+export KUBECONFIG="${K8S_KUBECONFIG}"
 gcloud container clusters get-credentials "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" \
   || { echo 'Cannot get credentials for cluster.'; exit 1; }
 
 helm init \
   || { echo 'Cannot initialize Helm.'; exit 1; }
+export KUBECONFIG=

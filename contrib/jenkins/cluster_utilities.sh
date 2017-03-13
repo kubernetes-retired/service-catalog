@@ -22,28 +22,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Cleanup services in Kubernetes to prevent network resource leaking
 function wipe_cluster() {
-  local namespace
-  for namespace in $(kubectl get namespaces -oname | grep -v kube-system); do
-    namespace="${namespace##*/}"
-    kubectl delete deployments,services,configmaps,pods,replicasets \
-        --all --namespace "${namespace}"
-
-    wait_for_expected_output -x -e 'Terminating' -n 20 -s 2 -t 60 \
-        kubectl get pods --namespace "${namespace}" \
-      || echo "WARNING: Some Kubernetes resources in namespace "${namespace}" failed to terminate."
-
-    if [[ "${namespace}" != "default" ]]; then
-      kubectl delete namespace "${namespace}"
-    fi
-  done
-
-  kubectl delete serviceinstances,serviceclasses,servicebindings,servicebrokers --all #TODO: Eventually this should work.
-
-  # Temporarily, delete all by name.
-  kubectl delete serviceinstances backend frontend
-  kubectl delete serviceclasses booksbe user-provided-service
-  kubectl delete servicebindings database
-  kubectl delete servicebrokers k8s ups
-
+  helm list -q | xargs helm delete
   return 0
 }
