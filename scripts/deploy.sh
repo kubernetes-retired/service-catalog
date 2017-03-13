@@ -16,7 +16,7 @@
 
 export REGISTRY=quay.io/kubernetes-service-catalog
 
-if [[ -n "${TRAVIS_TAG:-}" ]]; then
+if [[ -n "${TRAVIS_TAG}" ]]; then
     echo "Pushing images with tag ${TRAVIS_TAG}."
     VERSION="${TRAVIS_TAG}" make push
 else
