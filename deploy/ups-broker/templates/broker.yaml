@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: ups-broker
-        image: {{ if .Values.registry }}{{ .Values.registry}}/{{ end }}user-broker:{{ if .Values.upsBrokerVersion }}{{ .Values.upsBrokerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: {{ if .Values.registry }}{{ .Values.registry}}/{{ end }}service-catalog-user-broker:{{ if .Values.upsBrokerVersion }}{{ .Values.upsBrokerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
         args:
         - --port

@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: controller-manager
-        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}controller-manager:{{ if .Values.controllerManagerVersion }}{{ .Values.controllerManagerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
+        image: {{ if .Values.registry }}{{ .Values.registry }}/{{ end }}service-catalog-controller-manager:{{ if .Values.controllerManagerVersion }}{{ .Values.controllerManagerVersion }}{{ else }}{{ default "latest" .Values.version }}{{ end }}
         imagePullPolicy: {{ default "Always" .Values.imagePullPolicy }}
         args:
         - -v

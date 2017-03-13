@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: apiserver
-    image: apiserver
+    image: service-catalog-apiserver
     imagePullPolicy: IfNotPresent
     args: 
     - --etcd-servers
