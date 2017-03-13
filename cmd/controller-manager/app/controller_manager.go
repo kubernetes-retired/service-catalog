@@ -262,10 +262,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		return err
 	}
 
-	resyncDuration, err := time.ParseDuration("1m")
-	if err != nil {
-		glog.Fatal(err)
-	}
+	resyncDuration := 1 * time.Minute
 
 	coreKubeconfig = rest.AddUserAgent(coreKubeconfig, controllerManagerAgentName)
 	coreClient, err := kubernetes.NewForConfig(coreKubeconfig)
