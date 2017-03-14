@@ -51,6 +51,8 @@ GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
+REGISTRY      ?= quay.io/kubernetes-service-catalog/
+
 # precheck to avoid kubernetes-incubator/service-catalog#361
 $(if $(realpath vendor/k8s.io/kubernetes/vendor), \
 	$(error the vendor directory exists in the kubernetes \
@@ -296,29 +298,25 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 push: k8s-broker-push user-broker-push controller-manager-push apiserver-push
 
 k8s-broker-push: k8s-broker-image
-	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION)
-	docker push $(REGISTRY)/k8s-broker:$(VERSION)
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:canary
-	docker push $(REGISTRY)/k8s-broker:canary
+	docker tag k8s-broker:$(VERSION) $(REGISTRY)k8s-broker:$(VERSION)
+	docker push $(REGISTRY)k8s-broker:$(VERSION)
+	docker tag k8s-broker:$(VERSION) $(REGISTRY)k8s-broker:canary
+	docker push $(REGISTRY)k8s-broker:canary
 
 user-broker-push: user-broker-image
-	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:$(VERSION)
-	docker push $(REGISTRY)/user-broker:$(VERSION)
-	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:canary
-	docker push $(REGISTRY)/user-broker:canary
+	docker tag user-broker:$(VERSION) $(REGISTRY)user-broker:$(VERSION)
+	docker push $(REGISTRY)user-broker:$(VERSION)
+	docker tag user-broker:$(VERSION) $(REGISTRY)user-broker:canary
+	docker push $(REGISTRY)user-broker:canary
 
 controller-manager-push: controller-manager-image
-	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:$(VERSION)
-	docker push $(REGISTRY)/controller-manager:$(VERSION)
-	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:canary
-	docker push $(REGISTRY)/controller-manager:canary
+	docker tag controller-manager:$(VERSION) $(REGISTRY)controller-manager:$(VERSION)
+	docker push $(REGISTRY)controller-manager:$(VERSION)
+	docker tag controller-manager:$(VERSION) $(REGISTRY)controller-manager:canary
+	docker push $(REGISTRY)controller-manager:canary
 
 apiserver-push: apiserver-image
-	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
-	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:$(VERSION)
-	docker push $(REGISTRY)/apiserver:$(VERSION)
-	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:canary
-	docker push $(REGISTRY)/apiserver:canary
+	docker tag apiserver:$(VERSION) $(REGISTRY)apiserver:$(VERSION)
+	docker push $(REGISTRY)apiserver:$(VERSION)
+	docker tag apiserver:$(VERSION) $(REGISTRY)apiserver:canary
+	docker push $(REGISTRY)apiserver:canary

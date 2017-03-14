@@ -158,19 +158,28 @@ cover all code paths. The results are put into a file called:
 
 ## Advanced Build Steps
 
-You can build the service catalog executables into Docker images and push
-them to a Docker Registry so they can be accessed by your Kubernetes clusters:
+You can build the service catalog executables into Docker images yourself. By
+default, image names are `quay.io/kubernetes-service-catalog/<component>`. Since
+most contributors who hack on service catalog components will wish to produce
+custom-built images, but will be unable to push to this location, it can be
+overridden through use of the `REGISTRY` environment variable.
 
-    # Registry URL is the portion up to, but excluding the image name and its
-    # preceding slash, e.g., "gcr.io/my-repo", "my-docker-id"
-    $ export REGISTRY=<registry URL>
+Examples of apiserver image names:
+
+| `REGISTRY` | Fully Qualified Image Name | Notes |
+|----------|----------------------------|-------|
+| Unset; default | `quay.io/kubernetes-service-catalog/apiserver` | You probably don't have permissions to push to here |
+| Dockerhub username + trailing slash, e.g. `krancour/` | `krancour/apiserver` | Missing hostname == Dockerhub |
+| Dockerhub username + slash + some prefix, e.g. `krancour/sc-` | `krancour/sc-apiserver` | The prefix is useful for disambiguating similarly names images within a single namespace. |
+| 192.168.99.102:5000/ | `192.168.99.102:5000/apiserver` | A local registry |
+
+With `REGISTRY` set appropriately:
 
     $ make images push
 
-This will build Docker images for the service controller, Kubernetes service
-broker, and service classes registry. The images are also pushed to the
-registry specified by the `REGISTRY` environment variable, so they
-can be accessed by your Kubernetes cluster.
+This will build Docker images for all service catalog components. The images are
+also pushed to the registry specified by the `REGISTRY` environment variable, so
+they can be accessed by your Kubernetes cluster.
 
 The images are tagged with the current Git commit SHA:
 

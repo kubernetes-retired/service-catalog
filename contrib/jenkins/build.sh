@@ -73,7 +73,7 @@ if [[ "$(uname -s)" == "Linux" ]]; then
   gcloud docker --authorize-only --server=gcr.io \
     || error_exit 'gcloud docker authorization failed'
 
-  make "${MAKE_VARS[@]}" REGISTRY=gcr.io/${PROJECT}/catalog push \
+  make "${MAKE_VARS[@]}" REGISTRY=gcr.io/${PROJECT}/catalog/ push \
     || error_exit 'make push failed.'
 
   docker images \
