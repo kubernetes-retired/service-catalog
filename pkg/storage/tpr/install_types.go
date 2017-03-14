@@ -42,26 +42,18 @@ type ErrTPRInstall struct {
 	errMsg string
 }
 
-// Installer takes in a client and exposes method for installing third party resources
-type Installer struct {
-	tprs extensionsv1beta.ThirdPartyResourceInterface
-}
-
-// NewInstaller is used to install third party resources
-func NewInstaller(tprs extensionsv1beta.ThirdPartyResourceInterface) *Installer {
-	return &Installer{
-		tprs: tprs,
-	}
+func (e ErrTPRInstall) Error() string {
+	return e.errMsg
 }
 
 // InstallTypes installs all third party resource types to the cluster
-func (i *Installer) InstallTypes() error {
+func InstallTypes(cl extensionsv1beta.ThirdPartyResourceInterface) error {
 	var wg sync.WaitGroup
 	errMsg := make(chan string, len(thirdPartyResources))
 
 	for _, tpr := range thirdPartyResources {
 		glog.Infof("Checking for existence of %s", tpr.Name)
-		if _, err := i.tprs.Get(tpr.Name); err == nil {
+		if _, err := cl.Get(tpr.Name); err == nil {
 			glog.Infof("Found existing TPR %s", tpr.Name)
 			continue
 		}
@@ -71,7 +63,7 @@ func (i *Installer) InstallTypes() error {
 		wg.Add(1)
 		go func(tpr v1beta1.ThirdPartyResource, client extensionsv1beta.ThirdPartyResourceInterface) {
 			defer wg.Done()
-			if _, err := i.tprs.Create(&tpr); err != nil {
+			if _, err := cl.Create(&tpr); err != nil {
 				errMsg <- fmt.Sprintf("%s: %s", tpr.Name, err)
 			} else {
 				glog.Infof("Created TPR '%s'", tpr.Name)
@@ -90,7 +82,7 @@ func (i *Installer) InstallTypes() error {
 					glog.Infof("Error polling for TPR status:", err)
 				}
 			}
-		}(tpr, i.tprs)
+		}(tpr, cl)
 	}
 
 	wg.Wait()
@@ -109,8 +101,4 @@ func (i *Installer) InstallTypes() error {
 	}
 
 	return nil
-}
-
-func (e ErrTPRInstall) Error() string {
-	return e.errMsg
 }

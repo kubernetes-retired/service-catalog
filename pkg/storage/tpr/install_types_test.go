@@ -61,8 +61,9 @@ func TestInstallTypesAllResources(t *testing.T) {
 		},
 	)
 
-	installer := NewInstaller(fakeClientset.Extensions().ThirdPartyResources())
-	installer.InstallTypes()
+	if err := InstallTypes(fakeClientset.Extensions().ThirdPartyResources()); err != nil {
+		t.Fatalf("error installing types (%s)", err)
+	}
 
 	expectTotal := len(thirdPartyResources)
 	if createCallCount != expectTotal {
@@ -96,8 +97,9 @@ func TestInstallTypesResourceExisted(t *testing.T) {
 		},
 	)
 
-	installer := NewInstaller(fakeClientset.Extensions().ThirdPartyResources())
-	installer.InstallTypes()
+	if err := InstallTypes(fakeClientset.Extensions().ThirdPartyResources()); err != nil {
+		t.Fatalf("error installing (%s)", err)
+	}
 
 	if createCallCount != len(thirdPartyResources)-1 {
 		t.Errorf("Failed to skip 1 installed Third Party Resource")
@@ -135,8 +137,7 @@ func TestInstallTypesErrors(t *testing.T) {
 		},
 	)
 
-	installer := NewInstaller(fakeClientset.Extensions().ThirdPartyResources())
-	err := installer.InstallTypes()
+	err := InstallTypes(fakeClientset.Extensions().ThirdPartyResources())
 
 	errStr := err.Error()
 	if !strings.Contains(errStr, "Error 1") && !strings.Contains(errStr, "Error 2") {
@@ -170,8 +171,9 @@ func TestInstallTypesPolling(t *testing.T) {
 		},
 	)
 
-	installer := NewInstaller(fakeClientset.Extensions().ThirdPartyResources())
-	installer.InstallTypes()
+	if err := InstallTypes(fakeClientset.Extensions().ThirdPartyResources()); err == nil {
+		t.Fatal("InstallTypes was supposed to error but didn't")
+	}
 
 	for _, name := range getCallArgs {
 		if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {

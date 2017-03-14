@@ -47,8 +47,7 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 
 func installTPRsToCore(cl clientset.Interface) func() error {
 	return func() error {
-		installer := tpr.NewInstaller(cl.Extensions().ThirdPartyResources())
-		if err := installer.InstallTypes(); err != nil {
+		if err := tpr.InstallTypes(cl.Extensions().ThirdPartyResources()); err != nil {
 			glog.Errorf("Failed to install TPR types (%s)", err)
 			return err
 		}
@@ -60,6 +59,7 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	tprOpts := opts.TPROptions
 	glog.Infoln("Installing TPR types to the cluster")
 	if err := tprOpts.InstallTPRsFunc(); err != nil {
+		glog.V(4).Infof("Installing TPR types failed, continuing anyway (%s)", err)
 		return err
 	}
 
