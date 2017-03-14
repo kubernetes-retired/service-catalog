@@ -219,21 +219,9 @@ type InstanceCondition struct {
 type InstanceConditionType string
 
 const (
-	// InstanceConditionProvisioning represents that a given instance condition is in
-	// provisioning state
-	InstanceConditionProvisioning InstanceConditionType = "Provisioning"
 	// InstanceConditionReady represents that a given instance condition is in
 	// ready state
 	InstanceConditionReady InstanceConditionType = "Ready"
-	// InstanceConditionProvisionFailed represents that a given instance condition is in
-	// failed state
-	InstanceConditionProvisionFailed InstanceConditionType = "ProvisionFailed"
-	// InstanceConditionDeprovisioning represents that a given instance condition is in
-	// deprovisioning state
-	InstanceConditionDeprovisioning InstanceConditionType = "Deprovisioning"
-	// InstanceConditionDeprovisionFailed represents that a given instance condition is in
-	// deprovision failed state
-	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
 // BindingList is a list of Bindings
@@ -294,17 +282,4 @@ type BindingConditionType string
 const (
 	// BindingConditionReady represents a binding condition is in ready state
 	BindingConditionReady BindingConditionType = "Ready"
-	// BindingConditionFailed represents a binding condition is in failed state
-	BindingConditionFailed BindingConditionType = "Failed"
-	// BindingConditionUninjected represents a binding condition that the binding credentials have
-	// been deleted. It is the first condition recorded when a binding is removed
-	BindingConditionUninjected BindingConditionType = "Uninjected"
-	// BindingConditionUnbound represents a binding condition that the service catalog has performed
-	// the unbind operation on the backing CF broker. It is the second condition recorded when a
-	// binding is removed
-	BindingConditionUnbound BindingConditionType = "Unbound"
-	// BindingConditionDeleted represents a binding condition that the service catalog has
-	// intentionally deleted the binding. It is the third condition recorded when a binding is
-	// removed
-	BindingConditionDeleted BindingConditionType = "Deleted"
 )
