@@ -11,4 +11,5 @@ deploy:
   provider: script
   script: scripts/deploy.sh
   on:
+    repo: kubernetes-incubator/service-catalog
     branch: master
