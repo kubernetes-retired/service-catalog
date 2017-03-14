@@ -76,6 +76,126 @@ const (
 	testBindingName      = "test-binding"
 )
 
+const testCatalog = `{
+  "services": [{
+    "name": "fake-service",
+    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+    "description": "fake service",
+    "tags": ["no-sql", "relational"],
+    "requires": ["route_forwarding"],
+    "max_db_per_node": 5,
+    "bindable": true,
+    "metadata": {
+      "provider": {
+        "name": "The name"
+      },
+      "listing": {
+        "imageUrl": "http://example.com/cat.gif",
+        "blurb": "Add a blurb here",
+        "longDescription": "A long time ago, in a galaxy far far away..."
+      },
+      "displayName": "The Fake Broker"
+    },
+    "dashboard_client": {
+      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
+      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
+      "redirect_uri": "http://localhost:1234"
+    },
+    "plan_updateable": true,
+    "plans": [{
+      "name": "fake-plan-1",
+      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+      "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections",
+      "max_storage_tb": 5,
+      "metadata": {
+        "costs":[
+            {
+               "amount":{
+                  "usd":99.0
+               },
+               "unit":"MONTHLY"
+            },
+            {
+               "amount":{
+                  "usd":0.99
+               },
+               "unit":"1GB of messages over 20GB"
+            }
+         ],
+        "bullets": [
+            "Shared fake server",
+            "5 TB storage",
+            "40 concurrent connections"
+        ]
+      }
+    }, {
+      "name": "fake-plan-2",
+      "id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
+      "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async",
+      "max_storage_tb": 5,
+      "metadata": {
+        "costs":[
+            {
+               "amount":{
+                  "usd":199.0
+               },
+               "unit":"MONTHLY"
+            },
+            {
+               "amount":{
+                  "usd":0.99
+               },
+               "unit":"1GB of messages over 20GB"
+            }
+         ],
+        "bullets": [
+          "40 concurrent connections"
+        ]
+      }
+    }]
+  }]
+}`
+
+const testCatalogWithMultipleServices = `{
+  "services": [
+    {
+      "name": "service1",
+      "metadata": {
+        "field1": "value1"
+      },
+      "plans": [{
+        "name": "s1plan1",
+        "id": "s1_plan1_id",
+        "description": "s1 plan1 description"
+      },
+      {
+        "name": "s1plan2",
+        "id": "s1_plan2_id",
+        "description": "s1 plan2 description",
+        "metadata": {
+          "planmeta": "planvalue"
+        }
+      }]
+    },
+    {
+      "name": "service2",
+      "metadata": ["first", "second", "third"],
+      "plans": [{
+        "name": "s2plan1",
+        "id": "s2_plan1_id",
+        "description": "s2 plan1 description"
+      },
+      {
+        "name": "s2plan2",
+        "id": "s2_plan2_id",
+        "description": "s2 plan2 description",
+        "metadata": {
+          "planmeta": "planvalue"
+      }
+      }]
+    }
+]}`
+
 // broker used in most of the tests that need a broker
 func getTestBroker() *v1alpha1.Broker {
 	return &v1alpha1.Broker{
@@ -1183,6 +1303,129 @@ func TestReconcileBindingDelete(t *testing.T) {
 	if e, a := 0, len(updatedObject.Finalizers); e != a {
 		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
 	}
+}
+
+func TestEmptyCatalogConversion(t *testing.T) {
+	serviceClasses, err := convertCatalog(&brokerapi.Catalog{})
+	if err != nil {
+		t.Fatalf("Failed to convertCatalog: %v", err)
+	}
+	if len(serviceClasses) != 0 {
+		t.Fatalf("Expected 0 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
+	}
+}
+
+func TestCatalogConversion(t *testing.T) {
+	catalog := &brokerapi.Catalog{}
+	err := json.Unmarshal([]byte(testCatalog), &catalog)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+	}
+	serviceClasses, err := convertCatalog(catalog)
+	if err != nil {
+		t.Fatalf("Failed to convertCatalog: %v", err)
+	}
+	if len(serviceClasses) != 1 {
+		t.Fatalf("Expected 1 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
+	}
+
+}
+
+func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
+	catalog := &brokerapi.Catalog{}
+	err := json.Unmarshal([]byte(testCatalogWithMultipleServices), &catalog)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+	}
+
+	serviceClasses, err := convertCatalog(catalog)
+	if err != nil {
+		t.Fatalf("Failed to convertCatalog: %v", err)
+	}
+	if len(serviceClasses) != 2 {
+		t.Fatalf("Expected 2 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
+	}
+	foundSvcMeta1 := false
+	foundSvcMeta2 := false
+	foundPlanMeta := false
+	for _, sc := range serviceClasses {
+		// For service1 make sure we have service level metadata with field1 = value1 as the blob
+		// and for service1 plan s1plan2 we have planmeta = planvalue as the blob.
+		if sc.Name == "service1" {
+			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
+				m := make(map[string]string)
+				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err == nil {
+					if m["field1"] == "value1" {
+						foundSvcMeta1 = true
+					}
+				}
+
+			}
+			if len(sc.Plans) != 2 {
+				t.Fatalf("Expected 2 plans for service1 but got: %d", len(sc.Plans))
+			}
+			for _, sp := range sc.Plans {
+				if sp.Name == "s1plan2" {
+					if sp.OSBMetadata != nil && len(sp.OSBMetadata.Raw) > 0 {
+						m := make(map[string]string)
+						if err := json.Unmarshal(sp.OSBMetadata.Raw, &m); err != nil {
+							t.Fatalf("Failed to unmarshal plan metadata: %s: %v", string(sp.OSBMetadata.Raw), err)
+						}
+						if m["planmeta"] == "planvalue" {
+							foundPlanMeta = true
+						}
+					}
+				}
+			}
+		}
+		// For service2 make sure we have service level metadata with three element array with elements
+		// "first", "second", and "third"
+		if sc.Name == "service2" {
+			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
+				m := make([]string, 0)
+				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err != nil {
+					t.Fatalf("Failed to unmarshal service metadata: %s: %v", string(sc.OSBMetadata.Raw), err)
+				}
+				if len(m) != 3 {
+					t.Fatalf("Expected 3 fields in metadata, but got %d", len(m))
+				}
+				foundFirst := false
+				foundSecond := false
+				foundThird := false
+				for _, e := range m {
+					if e == "first" {
+						foundFirst = true
+					}
+					if e == "second" {
+						foundSecond = true
+					}
+					if e == "third" {
+						foundThird = true
+					}
+				}
+				if !foundFirst {
+					t.Fatalf("Didn't find 'first' in plan metadata")
+				}
+				if !foundSecond {
+					t.Fatalf("Didn't find 'second' in plan metadata")
+				}
+				if !foundThird {
+					t.Fatalf("Didn't find 'third' in plan metadata")
+				}
+				foundSvcMeta2 = true
+			}
+		}
+	}
+	if !foundSvcMeta1 {
+		t.Fatalf("Didn't find metadata in service1")
+	}
+	if !foundSvcMeta2 {
+		t.Fatalf("Didn't find metadata in service2")
+	}
+	if !foundPlanMeta {
+		t.Fatalf("Didn't find metadata '' in service1 plan2")
+	}
+
 }
 
 // newTestController creates a new test controller injected with fake clients
