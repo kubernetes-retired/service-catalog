@@ -29,30 +29,22 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
-var (
-	fakeClientset   *kubeclientfake.Clientset
-	getCallCount    int
-	createCallCount int
-	createCallArgs  []string
-	getCallArgs     []string
-)
-
-func setup(getFn, createFn func(core.Action) (bool, runtime.Object, error)) {
-	getCallCount = 0
-	createCallCount = 0
-	getCallArgs = []string{}
-	createCallArgs = []string{}
-
-	fakeClientset = &kubeclientfake.Clientset{}
+func setup(getFn, createFn func(core.Action) (bool, runtime.Object, error)) *kubeclientfake.Clientset {
+	fakeClientset := &kubeclientfake.Clientset{}
 
 	fakeClientset.AddReactor("get", "thirdpartyresources", getFn)
 
 	fakeClientset.AddReactor("create", "thirdpartyresources", createFn)
+
+	return fakeClientset
 }
 
 //make sure all resources types are installed
 func TestInstallTypesAllResources(t *testing.T) {
-	setup(
+	getCallCount := 0
+	createCallCount := 0
+
+	fakeClientset := setup(
 		func(core.Action) (bool, runtime.Object, error) {
 			getCallCount++
 			if getCallCount > len(thirdPartyResources) {
@@ -70,14 +62,19 @@ func TestInstallTypesAllResources(t *testing.T) {
 	installer := NewInstaller(fakeClientset.Extensions().ThirdPartyResources())
 	installer.InstallTypes()
 
-	if createCallCount != len(thirdPartyResources) {
-		t.Errorf("Error: The number of Third Party Resources installed is not 4")
+	expectTotal := len(thirdPartyResources)
+	if createCallCount != expectTotal {
+		t.Errorf("Expected %d Third Party Resources created instead of %d", expectTotal, createCallCount)
 	}
 }
 
 //make sure to skip resource that is already installed
 func TestInstallTypesResourceExisted(t *testing.T) {
-	setup(
+	getCallCount := 0
+	createCallCount := 0
+	createCallArgs := []string{}
+
+	fakeClientset := setup(
 		func(core.Action) (bool, runtime.Object, error) {
 			getCallCount++
 			if getCallCount == 1 {
@@ -111,7 +108,10 @@ func TestInstallTypesResourceExisted(t *testing.T) {
 
 //make sure all errors are received for all failed install
 func TestInstallTypesErrors(t *testing.T) {
-	setup(
+	getCallCount := 0
+	createCallCount := 0
+
+	fakeClientset := setup(
 		func(core.Action) (bool, runtime.Object, error) {
 			getCallCount++
 			if getCallCount > len(thirdPartyResources) {
@@ -140,7 +140,11 @@ func TestInstallTypesErrors(t *testing.T) {
 
 //make sure we don't poll on resource that was failed on install
 func TestInstallTypesPolling(t *testing.T) {
-	setup(
+	getCallCount := 0
+	createCallCount := 0
+	getCallArgs := []string{}
+
+	fakeClientset := setup(
 		func(action core.Action) (bool, runtime.Object, error) {
 			getCallCount++
 			if getCallCount > len(thirdPartyResources) {
