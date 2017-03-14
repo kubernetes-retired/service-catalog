@@ -388,54 +388,15 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 		} else {
 			out.OSBDashboardRedirectURI = nil
 		}
-		if in.Description != nil {
-			in, out := &in.Description, &out.Description
-			*out = new(string)
-			**out = **in
+		if in.OSBMetadata != nil {
+			in, out := &in.OSBMetadata, &out.OSBMetadata
+			if newVal, err := c.DeepCopy(*in); err != nil {
+				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
+			}
 		} else {
-			out.Description = nil
-		}
-		if in.DisplayName != nil {
-			in, out := &in.DisplayName, &out.DisplayName
-			*out = new(string)
-			**out = **in
-		} else {
-			out.DisplayName = nil
-		}
-		if in.ImageURL != nil {
-			in, out := &in.ImageURL, &out.ImageURL
-			*out = new(string)
-			**out = **in
-		} else {
-			out.ImageURL = nil
-		}
-		if in.LongDescription != nil {
-			in, out := &in.LongDescription, &out.LongDescription
-			*out = new(string)
-			**out = **in
-		} else {
-			out.LongDescription = nil
-		}
-		if in.ProviderDisplayName != nil {
-			in, out := &in.ProviderDisplayName, &out.ProviderDisplayName
-			*out = new(string)
-			**out = **in
-		} else {
-			out.ProviderDisplayName = nil
-		}
-		if in.DocumentationURL != nil {
-			in, out := &in.DocumentationURL, &out.DocumentationURL
-			*out = new(string)
-			**out = **in
-		} else {
-			out.DocumentationURL = nil
-		}
-		if in.SupportURL != nil {
-			in, out := &in.SupportURL, &out.SupportURL
-			*out = new(string)
-			**out = **in
-		} else {
-			out.SupportURL = nil
+			out.OSBMetadata = nil
 		}
 		return nil
 	}
@@ -473,19 +434,15 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 		} else {
 			out.Description = nil
 		}
-		if in.Bullets != nil {
-			in, out := &in.Bullets, &out.Bullets
-			*out = make([]string, len(*in))
-			copy(*out, *in)
+		if in.OSBMetadata != nil {
+			in, out := &in.OSBMetadata, &out.OSBMetadata
+			if newVal, err := c.DeepCopy(*in); err != nil {
+				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
+			}
 		} else {
-			out.Bullets = nil
-		}
-		if in.DisplayName != nil {
-			in, out := &in.DisplayName, &out.DisplayName
-			*out = new(string)
-			**out = **in
-		} else {
-			out.DisplayName = nil
+			out.OSBMetadata = nil
 		}
 		return nil
 	}

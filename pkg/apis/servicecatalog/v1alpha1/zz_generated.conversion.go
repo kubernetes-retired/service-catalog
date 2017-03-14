@@ -448,7 +448,17 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	}
 	out.BrokerName = in.BrokerName
 	out.Bindable = in.Bindable
-	out.Plans = *(*[]servicecatalog.ServicePlan)(unsafe.Pointer(&in.Plans))
+	if in.Plans != nil {
+		in, out := &in.Plans, &out.Plans
+		*out = make([]servicecatalog.ServicePlan, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Plans = nil
+	}
 	out.PlanUpdatable = in.PlanUpdatable
 	out.OSBGUID = in.OSBGUID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
@@ -457,13 +467,7 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
 	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
 	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
-	out.Description = (*string)(unsafe.Pointer(in.Description))
-	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
-	out.ImageURL = (*string)(unsafe.Pointer(in.ImageURL))
-	out.LongDescription = (*string)(unsafe.Pointer(in.LongDescription))
-	out.ProviderDisplayName = (*string)(unsafe.Pointer(in.ProviderDisplayName))
-	out.DocumentationURL = (*string)(unsafe.Pointer(in.DocumentationURL))
-	out.SupportURL = (*string)(unsafe.Pointer(in.SupportURL))
+	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }
 
@@ -478,7 +482,17 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	}
 	out.BrokerName = in.BrokerName
 	out.Bindable = in.Bindable
-	out.Plans = *(*[]ServicePlan)(unsafe.Pointer(&in.Plans))
+	if in.Plans != nil {
+		in, out := &in.Plans, &out.Plans
+		*out = make([]ServicePlan, len(*in))
+		for i := range *in {
+			if err := Convert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Plans = nil
+	}
 	out.PlanUpdatable = in.PlanUpdatable
 	out.OSBGUID = in.OSBGUID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
@@ -487,13 +501,7 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
 	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
 	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
-	out.Description = (*string)(unsafe.Pointer(in.Description))
-	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
-	out.ImageURL = (*string)(unsafe.Pointer(in.ImageURL))
-	out.LongDescription = (*string)(unsafe.Pointer(in.LongDescription))
-	out.ProviderDisplayName = (*string)(unsafe.Pointer(in.ProviderDisplayName))
-	out.DocumentationURL = (*string)(unsafe.Pointer(in.DocumentationURL))
-	out.SupportURL = (*string)(unsafe.Pointer(in.SupportURL))
+	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }
 
@@ -503,7 +511,17 @@ func Convert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servicecat
 
 func autoConvert_v1alpha1_ServiceClassList_To_servicecatalog_ServiceClassList(in *ServiceClassList, out *servicecatalog.ServiceClassList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]servicecatalog.ServiceClass)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]servicecatalog.ServiceClass, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -513,7 +531,17 @@ func Convert_v1alpha1_ServiceClassList_To_servicecatalog_ServiceClassList(in *Se
 
 func autoConvert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *servicecatalog.ServiceClassList, out *ServiceClassList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ServiceClass)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]ServiceClass, len(*in))
+		for i := range *in {
+			if err := Convert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -523,11 +551,10 @@ func Convert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *se
 
 func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan, out *servicecatalog.ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Description = (*string)(unsafe.Pointer(in.Description))
 	out.OSBGUID = in.OSBGUID
 	out.OSBFree = in.OSBFree
-	out.Description = (*string)(unsafe.Pointer(in.Description))
-	out.Bullets = *(*[]string)(unsafe.Pointer(&in.Bullets))
-	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
+	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }
 
@@ -540,8 +567,7 @@ func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicec
 	out.OSBGUID = in.OSBGUID
 	out.OSBFree = in.OSBFree
 	out.Description = (*string)(unsafe.Pointer(in.Description))
-	out.Bullets = *(*[]string)(unsafe.Pointer(&in.Bullets))
-	out.DisplayName = (*string)(unsafe.Pointer(in.DisplayName))
+	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }
 
