@@ -88,7 +88,7 @@ echo 'Deploying to Kubernetes cluster...'
 kubectl create namespace "${NAMESPACE}"
 
 retry -n 10 -s 10 -t 60 \
-    helm install "${ROOT}/deploy/catalog" \
+    helm install "${ROOT}/charts/catalog" \
     --set "registry=${GCR},version=${VERSION},debug=true" \
     --namespace "${NAMESPACE}" \
   || error_exit 'Error deploying to Kubernetes cluster.'

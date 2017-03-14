@@ -206,7 +206,7 @@ export KUBECONFIG=/home/yippee/code/service-catalog/.kubeconfig
 
 ## Deploying to Kubernetes
 
-Use the [`catalog` chart](../deploy/catalog) to deploy the service
+Use the [`catalog` chart](../charts/catalog) to deploy the service
 catalog into your cluster.  The easiest way to get started is to deploy into a
 cluster you regularly use and are familiar with.  One of the choices you can
 make when deploying the catalog is whether to back the API server with etcd or
