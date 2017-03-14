@@ -34,7 +34,7 @@ if [ -n "${PORT}" ]; then
 	SERVER_INFO="--server localhost:${PORT}"
 fi
 
-docker run --rm -ti --net host \
+docker run --rm --net host \
 	-w /root/service-catalog${PWD#${ROOT}} \
 	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
 	-v ${ROOT}/.kube:/.kube \

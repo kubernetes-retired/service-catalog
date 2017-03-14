@@ -27,12 +27,12 @@ docker rm -f etcd-svc-cat apiserver > /dev/null 2>&1 || true
 # port on the host - then ask Docker for the port # as we'll need to use
 # that when we talk to it.
 echo Starting etcd
-docker run -ti --name etcd-svc-cat -d -p 8081 quay.io/coreos/etcd > /dev/null
+docker run --name etcd-svc-cat -d -p 8081 quay.io/coreos/etcd > /dev/null
 PORT=$(docker port etcd-svc-cat 8081 | sed "s/.*://")
 
 # And now our API Server
 echo Starting the API Server
-docker run -tid --name apiserver \
+docker run -d --name apiserver \
 	-v ${ROOT}:/go/src/github.com/kubernetes-incubator/service-catalog \
 	-v ${ROOT}/.var/run/kubernetes-service-catalog:/var/run/kubernetes-service-catalog \
 	-v ${ROOT}/.kube:/root/.kube \

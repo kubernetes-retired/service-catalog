@@ -16,15 +16,15 @@
 set -o nounset
 set -o errexit
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 . "${ROOT}/contrib/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 ${ROOT}/contrib/jenkins/deploy.sh "${@}" \
   || error_exit 'Deployment to Kubernetes cluster failed.'
 
-IP="$(kubectl get services | xargs echo -n | sed 's/.*booksfe [0-9.]* \([0-9.]*\).*/\1/')"
+IP="$(kubectl get services | xargs echo -n | sed 's/.*user-bookstore-fe [0-9.]* \([0-9.]*\).*/\1/')"
 
-${ROOT}/contrib/jenkins/bookstore_client.py --host="${IP}:8080" --api_key=123 \
+${ROOT}/contrib/jenkins/bookstore_client.py --host="${IP}:8080" \
     --verify --verbose=true --count=1 \
   || error_exit 'Tests failed.'
