@@ -15,11 +15,11 @@ managed.
 
 As an example:
 
-Say that a distributed application needs a message broker that hosts a set of
-queues/topics.  The service-catalog allows Kubernetes applications to consume
-services like message brokers that exists _somewhere_ in a simple way:
+Most applications need a datastore of some kind.  The service-catalog allows
+Kubernetes applications to consume services like databases that exist
+_somewhere_ in a simple way:
 
-1.  A user wanting to consume a service in their application browses a list of
+1.  A user wanting to consume a database in their application browses a list of
     available services in the catalog
 2.  The user asks for a new instance of that service to be _provisioned_
 
@@ -49,7 +49,16 @@ For more details about the design and features of this project see the
 
 ---
 
-We are currently scoping our **v1** milestone [here](./docs/v1).
+### Overall Status
+
+We are currently working toward an MVP release to be used in conjunction with
+Kubernetes 1.6. See the
+[milestones list](https://github.com/kubernetes-incubator/service-catalog/milestones?direction=desc&sort=due_date&state=open) 
+for information about current and future milestones.  
+
+### Documentation
+
+See [here](./docs/v1) for [documentation](./docs/v1).
 
 ### Terminology
 
@@ -62,7 +71,7 @@ project.
 
 Interested in contributing?  Check out the [documentation](./CONTRIBUTING.md).
 
-Also see our [developer's guide](./docs/DEVGUIDE.md) for information on how to
+Also see the [developer's guide](./docs/DEVGUIDE.md) for information on how to
 build and test the code.
 
 ### Kubernetes Incubator

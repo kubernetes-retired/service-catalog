@@ -1,10 +1,11 @@
 ## V1 Milestone
 
-This directory contains design documents for the v1 milestone.
+This directory contains documentation for the eventual V1 GA release.
 
+- [User story](./user-story.md)
 - [Use cases](./use-cases.md)
-- [Design](./design.md)
+- [API description](./api.md)
 
-## Status
+### Release status
 
-We are currently developing the use-cases and high-level design of this milestone.
+See the list of [milestones](https://github.com/kubernetes-incubator/service-catalog/milestones?direction=desc&sort=due_date).
