@@ -7498,47 +7498,10 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format: "",
 						},
 					},
-					"description": {
+					"osbMetadata": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Metadata fields",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"displayName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"imageUrl": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"longDescription": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"providerDisplayName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"documentationUrl": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"supportUrl": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref:         spec.MustCreateRef("#/definitions/runtime.RawExtension"),
 						},
 					},
 				},
@@ -7546,7 +7509,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 			},
 		},
 		Dependencies: []string{
-			"v1.ObjectMeta", "v1alpha1.ServicePlan"},
+			"runtime.RawExtension", "v1.ObjectMeta", "v1alpha1.ServicePlan"},
 	},
 	"v1alpha1.ServiceClassList": {
 		Schema: spec.Schema{
@@ -7589,6 +7552,12 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"osbGuid": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
@@ -7603,35 +7572,16 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
-					"description": {
+					"osbMetadata": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"bullets": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"displayName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref: spec.MustCreateRef("#/definitions/runtime.RawExtension"),
 						},
 					},
 				},
 				Required: []string{"name", "osbGuid", "osbFree"},
 			},
 		},
-		Dependencies: []string{},
+		Dependencies: []string{
+			"runtime.RawExtension"},
 	},
 }
