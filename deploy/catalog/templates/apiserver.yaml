@@ -42,7 +42,7 @@ spec:
         - name: apiserver-ssl
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
-      {{ if eq (default .Values.storageType "etcd") "etcd" -}}
+      {{ if eq (.Values.storageType | default "etcd") "etcd" -}}
       - name: etcd
         image: {{ default .Values.etcdImage "quay.io/coreos/etcd" }}:{{ if .Values.etcdVersion }}{{ .Values.etcdVersion }}{{ else }}{{ "latest" }}{{ end }}
         env:
