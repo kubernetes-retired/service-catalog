@@ -299,20 +299,26 @@ k8s-broker-push: k8s-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:$(VERSION)
 	docker push $(REGISTRY)/k8s-broker:$(VERSION)
+	docker tag k8s-broker:$(VERSION) $(REGISTRY)/k8s-broker:canary
+	docker push $(REGISTRY)/k8s-broker:canary
 
 user-broker-push: user-broker-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:$(VERSION)
 	docker push $(REGISTRY)/user-broker:$(VERSION)
+	docker tag user-broker:$(VERSION) $(REGISTRY)/user-broker:canary
+	docker push $(REGISTRY)/user-broker:canary
 
 controller-manager-push: controller-manager-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:$(VERSION)
 	docker push $(REGISTRY)/controller-manager:$(VERSION)
+	docker tag controller-manager:$(VERSION) $(REGISTRY)/controller-manager:canary
+	docker push $(REGISTRY)/controller-manager:canary
 
 apiserver-push: apiserver-image
 	[ ! -z "$(REGISTRY)" ] || (echo Set your REGISTRY env var first ; exit 1)
 	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:$(VERSION)
 	docker push $(REGISTRY)/apiserver:$(VERSION)
-	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:latest
-	docker push $(REGISTRY)/apiserver:latest
+	docker tag apiserver:$(VERSION) $(REGISTRY)/apiserver:canary
+	docker push $(REGISTRY)/apiserver:canary

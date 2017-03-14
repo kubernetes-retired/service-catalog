@@ -7,3 +7,8 @@ cache:
   - .glide
 script:
 - make verify build test images
+deploy:
+  provider: script
+  script: scripts/deploy.sh
+  on:
+    branch: master
