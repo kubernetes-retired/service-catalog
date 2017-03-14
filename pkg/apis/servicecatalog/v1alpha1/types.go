@@ -130,13 +130,7 @@ type ServiceClass struct {
 	OSBDashboardRedirectURI    *string  `json:"osbDashboardRedirectURI,omitempty"`
 
 	// Metadata fields
-	Description         *string `json:"description,omitempty"`
-	DisplayName         *string `json:"displayName,omitempty"`
-	ImageURL            *string `json:"imageUrl,omitempty"`
-	LongDescription     *string `json:"longDescription,omitempty"`
-	ProviderDisplayName *string `json:"providerDisplayName,omitempty"`
-	DocumentationURL    *string `json:"documentationUrl,omitempty"`
-	SupportURL          *string `json:"supportUrl,omitempty"`
+	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -144,16 +138,16 @@ type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string `json:"name"`
 
+	Description *string `json:"description,omitempty"`
+
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
 	OSBGUID string `json:"osbGuid"`
 
 	// OSB-specific
-	OSBFree     bool     `json:"osbFree"`
-	Description *string  `json:"description,omitempty"`
-	Bullets     []string `json:"bullets,omitempty"`
-	DisplayName *string  `json:"displayName,omitempty"`
+	OSBFree     bool                  `json:"osbFree"`
+	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`
 }
 
 // InstanceList is a list of instances

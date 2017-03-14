@@ -34,6 +34,18 @@ import (
 	"k8s.io/kubernetes/pkg/types"
 )
 
+type serviceMetadata struct {
+	DisplayName string `json:"displayName"`
+}
+
+type planCost struct {
+	Unit string `json:"unit"`
+}
+
+type planMetadata struct {
+	Costs []planCost `json:"costs"`
+}
+
 type parameter struct {
 	Value string            `json:"value"`
 	Map   map[string]string `json:"map"`
@@ -47,6 +59,31 @@ func createParameter(c fuzz.Continue) (*runtime.RawExtension, error) {
 	}
 
 	b, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+	return &runtime.RawExtension{Raw: b}, nil
+}
+
+func createServiceMetadata(c fuzz.Continue) (*runtime.RawExtension, error) {
+	m := serviceMetadata{DisplayName: c.RandString()}
+
+	// TODO: Add more fields once OSB spec materialized
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return &runtime.RawExtension{Raw: b}, nil
+}
+
+func createPlanMetadata(c fuzz.Continue) (*runtime.RawExtension, error) {
+	m := planMetadata{}
+	for i := 0; i < c.Rand.Intn(10); i++ {
+		m.Costs = append(m.Costs, planCost{Unit: c.RandString()})
+	}
+
+	// TODO: Add more fields once OSB spec materialized
+	b, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +211,24 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 				return
 			}
 			bs.Parameters = parameters
+		},
+		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
+			c.FuzzNoCustom(sc)
+			metadata, err := createServiceMetadata(c)
+			if err != nil {
+				t.Errorf("Failed to create metadata object: %v", err)
+				return
+			}
+			sc.OSBMetadata = metadata
+		},
+		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
+			c.FuzzNoCustom(sp)
+			metadata, err := createPlanMetadata(c)
+			if err != nil {
+				t.Errorf("Failed to create metadata object: %v", err)
+				return
+			}
+			sp.OSBMetadata = metadata
 		},
 	)
 	return f

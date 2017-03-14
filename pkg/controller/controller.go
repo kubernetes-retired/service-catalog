@@ -19,6 +19,8 @@ package controller
 import (
 	"fmt"
 
+	"encoding/json"
+
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 
@@ -29,7 +31,8 @@ import (
 	kapiv1 "k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/util/runtime"
+	"k8s.io/kubernetes/pkg/runtime"
+	runtimeutil "k8s.io/kubernetes/pkg/util/runtime"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -49,6 +52,7 @@ func NewController(
 	bindingInformer informers.BindingInformer,
 	brokerClientCreateFunc brokerapi.CreateFunc,
 ) (Controller, error) {
+
 	var (
 		brokerLister       = brokerInformer.Lister()
 		serviceClassLister = serviceClassInformer.Lister()
@@ -110,7 +114,7 @@ type controller struct {
 
 // Run runs the controller until the given stop channel can be read from.
 func (c *controller) Run(stopCh <-chan struct{}) {
-	defer runtime.HandleCrash()
+	defer runtimeutil.HandleCrash()
 	glog.Info("Starting service-catalog controller")
 
 	<-stopCh
@@ -286,13 +290,15 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	toUpdate.OSBDashboardSecret = serviceClass.OSBDashboardSecret
 	toUpdate.OSBDashboardRedirectURI = serviceClass.OSBDashboardRedirectURI
 
-	toUpdate.Description = serviceClass.Description
-	toUpdate.DisplayName = serviceClass.DisplayName
-	toUpdate.ImageURL = serviceClass.ImageURL
-	toUpdate.LongDescription = serviceClass.LongDescription
-	toUpdate.ProviderDisplayName = serviceClass.ProviderDisplayName
-	toUpdate.DocumentationURL = serviceClass.DocumentationURL
-	toUpdate.SupportURL = serviceClass.SupportURL
+	/*
+		toUpdate.Description = serviceClass.Description
+		toUpdate.DisplayName = serviceClass.DisplayName
+		toUpdate.ImageURL = serviceClass.ImageURL
+		toUpdate.LongDescription = serviceClass.LongDescription
+		toUpdate.ProviderDisplayName = serviceClass.ProviderDisplayName
+		toUpdate.DocumentationURL = serviceClass.DocumentationURL
+		toUpdate.SupportURL = serviceClass.SupportURL
+	*/
 
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating serviceClass %v from Broker %v: %v", serviceClass.Name, broker.Name, err)
@@ -969,7 +975,10 @@ func GetAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.
 func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 	ret := make([]*v1alpha1.ServiceClass, len(in.Services))
 	for i, svc := range in.Services {
-		plans := convertServicePlans(svc.Plans)
+		plans, err := convertServicePlans(svc.Plans)
+		if err != nil {
+			return nil, err
+		}
 		ret[i] = &v1alpha1.ServiceClass{
 			Bindable:      svc.Bindable,
 			Plans:         plans,
@@ -977,30 +986,47 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 			OSBGUID:       svc.ID,
 			OSBTags:       svc.Tags,
 			OSBRequires:   svc.Requires,
-			// OSBMetadata:   svc.Metadata,
 		}
+
+		if svc.Metadata != nil {
+			metadata, err := json.Marshal(svc.Metadata)
+			if err != nil {
+				glog.Errorf("Failed to unmarshal metadata\n%+v\n %v", svc.Metadata, err)
+				return nil, fmt.Errorf("Failed to unmarshal metadata\n%+v\n %v", svc.Metadata, err)
+			}
+			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
+		}
+
 		ret[i].SetName(svc.Name)
 	}
 	return ret, nil
 }
 
-func convertServicePlans(plans []brokerapi.ServicePlan) []v1alpha1.ServicePlan {
+func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan, error) {
 	ret := make([]v1alpha1.ServicePlan, len(plans))
 	for i, plan := range plans {
 		ret[i] = v1alpha1.ServicePlan{
 			Name:    plan.Name,
 			OSBGUID: plan.ID,
-			// OSBMetadata: plan.Metadata,
 			OSBFree: plan.Free,
 		}
+		if plan.Metadata != nil {
+			metadata, err := json.Marshal(plan.Metadata)
+			if err != nil {
+				glog.Errorf("Failed to unmarshal metadata\n%+v\n %v", plan.Metadata, err)
+				return nil, fmt.Errorf("Failed to unmarshal metadata\n%+v\n %v", plan.Metadata, err)
+			}
+			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
+		}
+
 	}
-	return ret
+	return ret, nil
 }
 
 func unmarshalParameters(in []byte) (map[string]interface{}, error) {
 	parameters := make(map[string]interface{})
 	if len(in) > 0 {
-		if err := yaml.Unmarshal([]byte(in), &parameters); err != nil {
+		if err := yaml.Unmarshal(in, &parameters); err != nil {
 			return parameters, err
 		}
 	}
