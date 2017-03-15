@@ -43,6 +43,9 @@ import (
 	// is the point at which we handle this for the controller-manager
 	// process.  Please do not remove.
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	// The core API has to be installed in order for the client to understand
+	// error messages from the API server.  Please do not remove.
+	_ "k8s.io/kubernetes/pkg/api/install"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
