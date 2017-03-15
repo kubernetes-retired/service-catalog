@@ -49,6 +49,24 @@ func TestValidateServiceClass(t *testing.T) {
 			valid: true,
 		},
 		{
+			name: "valid serviceClass - uppercase in GUID",
+			serviceClass: &servicecatalog.ServiceClass{
+				ObjectMeta: kapi.ObjectMeta{
+					Name: "test-serviceclass",
+				},
+				Bindable:   true,
+				BrokerName: "test-broker",
+				OSBGUID:    "1234-4354a-49b",
+				Plans: []servicecatalog.ServicePlan{
+					{
+						Name:    "test-plan",
+						OSBGUID: "40D-0983-1b89",
+					},
+				},
+			},
+			valid: true,
+		},
+		{
 			name: "invalid serviceClass - has namespace",
 			serviceClass: &servicecatalog.ServiceClass{
 				ObjectMeta: kapi.ObjectMeta{
