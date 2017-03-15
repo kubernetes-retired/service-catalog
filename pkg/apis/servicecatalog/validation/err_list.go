@@ -31,6 +31,6 @@ func appendToErrListAndLog(list field.ErrorList, toAppend ...*field.Error) field
 
 func logErrList(list ...*field.Error) {
 	for i, err := range list {
-		glog.Infof("%d: %#v", i, *err)
+		glog.Infof("API Validation Error %d: %#v", i, *err)
 	}
 }
