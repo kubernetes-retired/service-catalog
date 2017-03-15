@@ -17,10 +17,11 @@ limitations under the License.
 package validation
 
 import (
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	apivalidation "k8s.io/kubernetes/pkg/api/validation"
 	"k8s.io/kubernetes/pkg/util/sets"
 	"k8s.io/kubernetes/pkg/util/validation/field"
+
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 // validateServiceClassName is the validation function for ServiceClass names.
@@ -42,49 +43,32 @@ var validateOSBGuid = apivalidation.NameIsDNSLabel
 func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	allErrs = appendToErrListAndLog(
-		allErrs,
+	allErrs = append(allErrs,
 		apivalidation.ValidateObjectMeta(
 			&serviceclass.ObjectMeta,
 			false, /* namespace required */
 			validateServiceClassName,
-			field.NewPath("metadata"),
-		)...,
-	)
+			field.NewPath("metadata"))...)
 
 	if "" == serviceclass.BrokerName {
-		allErrs = appendToErrListAndLog(allErrs, field.Required(
-			field.NewPath("brokerName"),
-			"brokerName is required",
-		))
+		allErrs = append(allErrs, field.Required(field.NewPath("brokerName"), "brokerName is required"))
 	}
 
 	if "" == serviceclass.OSBGUID {
-		allErrs = appendToErrListAndLog(allErrs, field.Required(
-			field.NewPath("osbGuid"),
-			"osbGuid is required",
-		))
+		allErrs = append(allErrs, field.Required(field.NewPath("osbGuid"), "osbGuid is required"))
 	}
 
 	for _, msg := range validateOSBGuid(serviceclass.OSBGUID, false /* prefix */) {
-		allErrs = appendToErrListAndLog(allErrs, field.Invalid(
-			field.NewPath("osbGuid"),
-			serviceclass.OSBGUID,
-			msg,
-		))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("osbGuid"), serviceclass.OSBGUID, msg))
 	}
 
 	planNames := sets.NewString()
 	for i, plan := range serviceclass.Plans {
 		planPath := field.NewPath("plans").Index(i)
-		allErrs = appendToErrListAndLog(allErrs, validateServicePlan(plan, planPath)...)
+		allErrs = append(allErrs, validateServicePlan(plan, planPath)...)
 
 		if planNames.Has(plan.Name) {
-			allErrs = appendToErrListAndLog(allErrs, field.Invalid(
-				planPath.Child("name"),
-				plan.Name,
-				"each plan must have a unique name",
-			))
+			allErrs = append(allErrs, field.Invalid(planPath.Child("name"), plan.Name, "each plan must have a unique name"))
 		}
 	}
 

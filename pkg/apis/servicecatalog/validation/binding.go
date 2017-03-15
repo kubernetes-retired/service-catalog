@@ -17,9 +17,10 @@ limitations under the License.
 package validation
 
 import (
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	apivalidation "k8s.io/kubernetes/pkg/api/validation"
 	"k8s.io/kubernetes/pkg/util/validation/field"
+
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 // validateBindingName is the validation function for Binding names.
@@ -28,19 +29,10 @@ var validateBindingName = apivalidation.NameIsDNSSubdomain
 // ValidateBinding validates a Binding and returns a list of errors.
 func ValidateBinding(binding *sc.Binding) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = appendToErrListAndLog(
-		allErrs,
-		apivalidation.ValidateObjectMeta(
-			&binding.ObjectMeta,
-			true, /*namespace*/
-			validateBindingName,
-			field.NewPath("metadata"),
-		)...,
-	)
-	allErrs = appendToErrListAndLog(
-		allErrs,
-		validateBindingSpec(&binding.Spec, field.NewPath("Spec"))...,
-	)
+	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, true, /*namespace*/
+		validateBindingName,
+		field.NewPath("metadata"))...)
+	allErrs = append(allErrs, validateBindingSpec(&binding.Spec, field.NewPath("Spec"))...)
 
 	return allErrs
 }
