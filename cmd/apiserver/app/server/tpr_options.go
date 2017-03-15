@@ -18,7 +18,7 @@ package server
 
 import (
 	"github.com/spf13/pflag"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	restclient "k8s.io/kubernetes/pkg/client/restclient"
 	// "k8s.io/kubernetes/pkg/client/typed/dynamic"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/genericapiserver"
@@ -29,9 +29,10 @@ import (
 // communicates with the core Kubernetes API server to use third party resources (TPRs)
 // as a database. It is exported so that integration tests can use it
 type TPROptions struct {
-	defaultGlobalNamespace string
-	clIface                clientset.Interface
-	globalNamespace        string
+	DefaultGlobalNamespace string
+	RESTClient             restclient.Interface
+	InstallTPRsFunc        func()
+	GlobalNamespace        string
 }
 
 // NewTPROptions creates a new, empty TPROptions struct

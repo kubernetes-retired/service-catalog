@@ -70,7 +70,7 @@ const (
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
 	// TODO: enable this storage type. https://github.com/kubernetes-incubator/service-catalog/issues/407
-	// server.StorageTypeTPR,
+	server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters

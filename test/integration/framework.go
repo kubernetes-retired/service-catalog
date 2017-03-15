@@ -27,14 +27,18 @@ import (
 
 	"github.com/golang/glog"
 
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	_ "k8s.io/kubernetes/pkg/api/install"
+	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	_ "k8s.io/kubernetes/pkg/api/install"
-
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+)
+
+const (
+	globalTPRNamespace = "globalTPRNamespace"
 )
 
 func init() {
@@ -54,6 +58,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
+	var fakeClient clientset.Interface // TODO
 	go func() {
 
 		options := &server.ServiceCatalogServerOptions{
@@ -63,7 +68,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			EtcdOptions: &server.EtcdOptions{
 				EtcdOptions: genericserveroptions.NewEtcdOptions(),
 			},
-			TPROptions:            &server.TPROptions{},
+			TPROptions:            server.NewTPROptions(fakeClient, globalTPRNamespace),
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 			StopCh:                stopCh,

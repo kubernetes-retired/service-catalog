@@ -27,7 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/kubernetes/pkg/api/rest"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	restclient "k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 	"k8s.io/kubernetes/pkg/registry"
 	"k8s.io/kubernetes/pkg/storage"
@@ -38,7 +38,7 @@ import (
 type StorageProvider struct {
 	DefaultNamespace string
 	StorageType      server.StorageType
-	Client           clientset.Interface
+	RESTClient       restclient.Interface
 }
 
 // NewRESTStorage is a factory method to make a new APIGroupInfo for the
@@ -81,7 +81,7 @@ func (p StorageProvider) v1alpha1Storage(
 			HasNamespace:     false,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("brokers")),
 			DefaultNamespace: p.DefaultNamespace,
-			Client:           p.Client,
+			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceBrokerKind,
 			NewSingularFunc:  broker.NewSingular,
 			ListKind:         tpr.ServiceBrokerListKind,
@@ -111,7 +111,7 @@ func (p StorageProvider) v1alpha1Storage(
 			HasNamespace:     false,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("serviceclasses")),
 			DefaultNamespace: p.DefaultNamespace,
-			Client:           p.Client,
+			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceClassKind,
 			NewSingularFunc:  serviceclass.NewSingular,
 			ListKind:         tpr.ServiceClassListKind,
@@ -141,7 +141,7 @@ func (p StorageProvider) v1alpha1Storage(
 			HasNamespace:     true,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("instances")),
 			DefaultNamespace: p.DefaultNamespace,
-			Client:           p.Client,
+			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceInstanceKind,
 			NewSingularFunc:  instance.NewSingular,
 			ListKind:         tpr.ServiceInstanceListKind,
@@ -171,7 +171,7 @@ func (p StorageProvider) v1alpha1Storage(
 			HasNamespace:     true,
 			RESTOptions:      restOptionsGetter(servicecatalog.Resource("bindings")),
 			DefaultNamespace: p.DefaultNamespace,
-			Client:           p.Client,
+			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceBindingKind,
 			NewSingularFunc:  binding.NewSingular,
 			ListKind:         tpr.ServiceBindingListKind,

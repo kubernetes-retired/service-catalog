@@ -24,6 +24,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/kubernetes/pkg/api"
+	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 )
 
@@ -44,13 +45,19 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 	return runEtcdServer(opts)
 }
 
+func installTPRsToCore(cl clientset.Interface) func() {
+	return func() {
+		installer := tpr.NewInstaller(cl.Extensions().ThirdPartyResources())
+		if err := installer.InstallTypes(); err != nil {
+			glog.V(4).Infof("Installing TPR types failed, continuing anyway (%s)", err)
+		}
+	}
+}
+
 func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	tprOpts := opts.TPROptions
 	glog.Infoln("Installing TPR types to the cluster")
-	tprInstaller := tpr.NewInstaller(tprOpts.clIface.Extensions().ThirdPartyResources())
-	if err := tprInstaller.InstallTypes(); err != nil {
-		glog.V(4).Infof("Installing TPR types failed, continuing anyway (%s)", err)
-	}
+	tprOpts.InstallTPRsFunc()
 	glog.V(4).Infoln("Preparing to run API server")
 	genericConfig, err := setupBasicServer(opts)
 	if err != nil {
@@ -58,7 +65,7 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	config := apiserver.NewTPRConfig(
-		tprOpts.clIface,
+		tprOpts.restClient,
 		genericConfig,
 		tprOpts.globalNamespace,
 		tprOpts.storageFactory(),
