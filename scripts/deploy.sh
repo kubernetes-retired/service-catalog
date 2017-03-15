@@ -18,6 +18,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+export REGISTRY=quay.io/kubernetes-service-catalog/
+
 docker login -e="${QUAY_EMAIL}" -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
 
 if [[ -n "${TRAVIS_TAG}" ]]; then
