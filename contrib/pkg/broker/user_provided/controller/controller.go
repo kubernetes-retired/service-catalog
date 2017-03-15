@@ -47,7 +47,7 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 		Services: []*brokerapi.Service{
 			{
 				Name:        "user-provided-service",
-				ID:          "4F6E6CF6-FFDD-425F-A2C7-3C9258AD2468",
+				ID:          "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
 				Description: "User Provided Service",
 				Plans: []brokerapi.ServicePlan{{
 					Name:        "default",
