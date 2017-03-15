@@ -20,17 +20,6 @@ limitations under the License.
 
 package componentconfig
 
-// ControllerConfiguration encapsulates all controller configuration.
-type ControllerConfiguration struct {
-	// Address is the IP address to serve on (set to 0.0.0.0 for all interfaces).
-	Address string
-	// Port is the port that the controller's http service runs on.
-	Port int32
-	// KubeconfigPath is the path to the kubeconfig file with authorization
-	// information.
-	KubeconfigPath string
-}
-
 // ControllerManagerConfiguration encapsulates configuration for the
 // controller manager.
 type ControllerManagerConfiguration struct {
