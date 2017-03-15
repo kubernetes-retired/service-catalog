@@ -29,10 +29,16 @@ var validateInstanceName = apivalidation.NameIsDNSSubdomain
 // ValidateInstance validates an Instance and returns a list of errors.
 func ValidateInstance(instance *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&instance.ObjectMeta, true, /*namespace*/
+	allErrs = appendToErrListAndLog(allErrs, apivalidation.ValidateObjectMeta(
+		&instance.ObjectMeta,
+		true, /*namespace*/
 		validateInstanceName,
-		field.NewPath("metadata"))...)
-	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"))...)
+		field.NewPath("metadata"),
+	)...)
+	allErrs = appendToErrListAndLog(
+		allErrs,
+		validateInstanceSpec(&instance.Spec, field.NewPath("Spec"))...,
+	)
 	return allErrs
 }
 
@@ -40,7 +46,10 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path) field.Erro
 	allErrs := field.ErrorList{}
 
 	if "" == spec.ServiceClassName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassName"), "serviceClassName is required"))
+		allErrs = append(allErrs, field.Required(
+			fldPath.Child("serviceClassName"),
+			"serviceClassName is required",
+		))
 	}
 
 	for _, msg := range validateServiceClassName(spec.ServiceClassName, false /* prefix */) {
