@@ -46,8 +46,8 @@ D_HOST=${D_HOST#*//}   # remove leading proto://
 D_HOST=${D_HOST%:*}    # remove trailing port #
 
 # Setup our credentials
-kubectl config set-credentials service-catalog-creds --username=admin --password=admin
-#kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
-kubectl config set-cluster service-catalog-cluster --server=http://${D_HOST}:${PORT}
-kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds
-kubectl config use-context service-catalog-ctx
+NO_TTY=1 kubectl config set-credentials service-catalog-creds --username=admin --password=admin
+#NO_TTY=1 kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
+NO_TTY=1 kubectl config set-cluster service-catalog-cluster --server=http://${D_HOST}:${PORT}
+NO_TTY=1 kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds
+NO_TTY=1 kubectl config use-context service-catalog-ctx

@@ -35,22 +35,22 @@ PORT=$(docker port etcd-svc-cat 8081 | sed "s/.*://")
 D_HOST=${DOCKER_HOST:-localhost}
 D_HOST=${D_HOST#*//}   # remove leading proto://
 D_HOST=${D_HOST%:*}    # remove trailing port #
-kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
+NO_TTY=1 kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
 
 # create a few resources
 set -x
-kubectl create -f contrib/examples/apiserver/broker.yaml
-kubectl create -f contrib/examples/apiserver/serviceclass.yaml
-kubectl create -f contrib/examples/apiserver/instance.yaml
-kubectl create -f contrib/examples/apiserver/binding.yaml
+NO_TTY=1 kubectl create -f contrib/examples/apiserver/broker.yaml
+NO_TTY=1 kubectl create -f contrib/examples/apiserver/serviceclass.yaml
+NO_TTY=1 kubectl create -f contrib/examples/apiserver/instance.yaml
+NO_TTY=1 kubectl create -f contrib/examples/apiserver/binding.yaml
 
-kubectl get broker test-broker -o yaml
-kubectl get serviceclass test-serviceclass -o yaml
-kubectl get instance test-instance --namespace test-ns -o yaml
-kubectl get binding test-binding --namespace test-ns -o yaml
+NO_TTY=1 kubectl get broker test-broker -o yaml
+NO_TTY=1 kubectl get serviceclass test-serviceclass -o yaml
+NO_TTY=1 kubectl get instance test-instance --namespace test-ns -o yaml
+NO_TTY=1 kubectl get binding test-binding --namespace test-ns -o yaml
 
-kubectl delete -f contrib/examples/apiserver/broker.yaml
-kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
-kubectl delete -f contrib/examples/apiserver/instance.yaml
-kubectl delete -f contrib/examples/apiserver/binding.yaml
+NO_TTY=1 kubectl delete -f contrib/examples/apiserver/broker.yaml
+NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
+NO_TTY=1 kubectl delete -f contrib/examples/apiserver/instance.yaml
+NO_TTY=1 kubectl delete -f contrib/examples/apiserver/binding.yaml
 set +x
