@@ -47,6 +47,21 @@ func setup() (*util.FakeBrokerServer, *servicecatalog.Broker) {
 	return fbs, fakeBroker
 }
 
+func TestTrailingSlash(t *testing.T) {
+	const (
+		input    = "http://a/b/c/"
+		expected = "http://a/b/c"
+	)
+	cl := NewClient("testBroker", input, "test-user", "test-pass")
+	osbCl, ok := cl.(*openServiceBrokerClient)
+	if !ok {
+		t.Fatalf("NewClient didn't return an openServiceBrokerClient")
+	}
+	if osbCl.url != expected {
+		t.Fatalf("URL was %s, expected %s", osbCl.url, expected)
+	}
+}
+
 // Provision
 
 func TestProvisionInstanceCreated(t *testing.T) {
