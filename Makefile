@@ -231,7 +231,7 @@ test: .init build test-unit test-integration
 
 test-unit: .init build
 	@echo Running tests:
-	$(DOCKER_CMD) go test $(UNIT_TEST_FLAGS) \
+	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
 test-integration: .init $(scBuildImageTarget) build
