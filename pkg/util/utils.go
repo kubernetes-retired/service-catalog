@@ -28,9 +28,17 @@ import (
 	"strings"
 )
 
+// BasicAuth holds a username & password for use with HTTP basic auth
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
 // SendRequest will serialize 'object' and send it using the given method to
-// the given URL, through the provided client
-func SendRequest(c *http.Client, method string, url string, object interface{}) (*http.Response, error) {
+// the given URL, through the provided client. If basicAuth is not nil, then
+// HTTP basic authentication headers will be set with basicAuth.Username & basicAuth.Password
+// before the request is sent
+func SendRequest(c *http.Client, method, url string, basicAuth *BasicAuth, object interface{}) (*http.Response, error) {
 	data, err := json.Marshal(object)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to marshal request: %s", err.Error())
@@ -39,6 +47,9 @@ func SendRequest(c *http.Client, method string, url string, object interface{}) 
 	req, err := http.NewRequest(method, url, bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
+	}
+	if basicAuth != nil {
+		req.SetBasicAuth(basicAuth.Username, basicAuth.Password)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
