@@ -29,8 +29,8 @@ import (
 
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	_ "k8s.io/kubernetes/pkg/api/install"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/client/restclient"
+	restclient "k8s.io/kubernetes/pkg/client/restclient"
 	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
@@ -58,9 +58,11 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
-	var fakeClient clientset.Interface // TODO
+	var fakeClient restclient.Interface // TODO
 	go func() {
 
+		tprOptions := server.NewTPROptions()
+		tprOptions.RESTClient = fakeClient
 		options := &server.ServiceCatalogServerOptions{
 			StorageTypeString:       storageTypeStr,
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
@@ -68,7 +70,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			EtcdOptions: &server.EtcdOptions{
 				EtcdOptions: genericserveroptions.NewEtcdOptions(),
 			},
-			TPROptions:            server.NewTPROptions(fakeClient, globalTPRNamespace),
+			TPROptions:            tprOptions,
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 			StopCh:                stopCh,
