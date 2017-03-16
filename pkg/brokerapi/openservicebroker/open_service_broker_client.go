@@ -21,12 +21,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker/constants"
 )
 
 const (
@@ -82,7 +85,7 @@ type openServiceBrokerClient struct {
 	url      string
 	username string
 	password string
-	client   *http.Client
+	*http.Client
 }
 
 // NewClient creates an instance of BrokerClient for communicating with brokers
@@ -93,7 +96,7 @@ func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 		url:      url,
 		username: username,
 		password: password,
-		client: &http.Client{
+		Client: &http.Client{
 			Timeout: httpTimeoutSeconds * time.Second,
 		},
 	}
@@ -102,13 +105,13 @@ func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 	catalogURL := fmt.Sprintf(catalogFormatString, c.url)
 
-	req, err := http.NewRequest("GET", catalogURL, nil)
+	req, err := c.newOSBRequest(http.MethodGet, catalogURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	req.SetBasicAuth(c.username, c.password)
-	resp, err := c.client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		glog.Errorf("Failed to fetch catalog %q from %s: response: %v error: %#v", c.name, catalogURL, resp, err)
 		return nil, err
@@ -126,7 +129,7 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 	// TODO: Handle the auth
-	resp, err := util.SendRequest(c.client, http.MethodPut, serviceInstanceURL, req)
+	resp, err := sendOSBRequest(c, http.MethodPut, serviceInstanceURL, req)
 	if err != nil {
 		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		return nil, errRequest{message: err.Error()}
@@ -168,7 +171,7 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerap
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) error {
 	serviceInstanceURL := fmt.Sprintf(serviceInstanceDeleteFormatString, c.url, ID, req.ServiceID, req.PlanID)
 	// TODO: Handle the auth
-	resp, err := util.SendRequest(c.client, http.MethodDelete, serviceInstanceURL, req)
+	resp, err := sendOSBRequest(c, http.MethodDelete, serviceInstanceURL, req)
 	if err != nil {
 		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		return errRequest{message: err.Error()}
@@ -210,13 +213,13 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
 
 	// TODO: Handle the auth
-	createHTTPReq, err := http.NewRequest("PUT", serviceBindingURL, bytes.NewReader(jsonBytes))
+	createHTTPReq, err := c.newOSBRequest("PUT", serviceBindingURL, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return nil, err
 	}
 
 	glog.Infof("Doing a request to: %s", serviceBindingURL)
-	resp, err := c.client.Do(createHTTPReq)
+	resp, err := c.Do(createHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to PUT: %#v", err)
 		return nil, err
@@ -245,14 +248,14 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
 	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
 
 	// TODO: Handle the auth
-	deleteHTTPReq, err := http.NewRequest("DELETE", serviceBindingURL, nil)
+	deleteHTTPReq, err := c.newOSBRequest("DELETE", serviceBindingURL, nil)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
 
 	glog.Infof("Doing a request to: %s", serviceBindingURL)
-	resp, err := c.client.Do(deleteHTTPReq)
+	resp, err := c.Do(deleteHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to DELETE: %#v", err)
 		return err
@@ -279,7 +282,7 @@ func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error 
 	pollingURL := fmt.Sprintf(pollingFormatString, c.url, ID)
 	for i := 0; i < pollingAmountLimit; i++ {
 		glog.V(3).Infof("Polling broker %v at %s attempt %v", c.name, pollingURL, i+1)
-		pollResp, err := util.SendRequest(c.client, http.MethodGet, pollingURL, pollReq)
+		pollResp, err := sendOSBRequest(c, http.MethodGet, pollingURL, pollReq)
 		if err != nil {
 			return err
 		}
@@ -304,4 +307,37 @@ func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error 
 	}
 
 	return errPollingTimeout
+}
+
+// SendRequest will serialize 'object' and send it using the given method to
+// the given URL, through the provided client
+func sendOSBRequest(c *openServiceBrokerClient, method string, url string, object interface{}) (*http.Response, error) {
+	data, err := json.Marshal(object)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal request: %s", err.Error())
+	}
+
+	req, err := c.newOSBRequest(method, url, bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to send request: %s", err.Error())
+	}
+
+	return resp, nil
+}
+
+func (c *openServiceBrokerClient) newOSBRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add(constants.APIVersionHeader, constants.APIVersion)
+	req.SetBasicAuth(c.username, c.password)
+	return req, nil
 }
