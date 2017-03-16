@@ -32,20 +32,13 @@ var ValidateBrokerName = apivalidation.NameIsDNSSubdomain
 func ValidateBroker(broker *sc.Broker) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	allErrs = appendToErrListAndLog(
-		allErrs,
-		apivalidation.ValidateObjectMeta(
-			&broker.ObjectMeta,
+	allErrs = append(allErrs,
+		apivalidation.ValidateObjectMeta(&broker.ObjectMeta,
 			false, /* namespace required */
 			ValidateBrokerName,
-			field.NewPath("metadata"),
-		)...,
-	)
+			field.NewPath("metadata"))...)
 
-	allErrs = appendToErrListAndLog(
-		allErrs,
-		validateBrokerSpec(&broker.Spec, field.NewPath("spec"))...,
-	)
+	allErrs = append(allErrs, validateBrokerSpec(&broker.Spec, field.NewPath("spec"))...)
 	return allErrs
 }
 
