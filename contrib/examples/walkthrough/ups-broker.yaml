@@ -3,4 +3,4 @@ kind: Broker
 metadata:
   name: ups-broker
 spec:
-        url: http://ups-broker.ups-broker.svc.cluster.local:8000
+  url: http://ups-broker-ups-broker.ups-broker.svc.cluster.local
