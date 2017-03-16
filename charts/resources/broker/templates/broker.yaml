@@ -1,0 +1,12 @@
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Broker
+metadata:
+   name: test-broker
+spec:
+  url: {{ .Values.brokerURL }}
+  # basic auth for the broker is stored in a secret. the service-catalog will pass the "username"
+  # and "password" keys of the secret to the broker server
+  authSecret:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Values.auth.secretName }}
+
