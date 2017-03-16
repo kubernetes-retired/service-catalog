@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -90,7 +91,7 @@ type openServiceBrokerClient struct {
 func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 	return &openServiceBrokerClient{
 		name:     name,
-		url:      url,
+		url:      strings.TrimRight(url, "/"), // remove trailing slashes from broker server URLs
 		username: username,
 		password: password,
 		client: &http.Client{
