@@ -65,9 +65,9 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	config := apiserver.NewTPRConfig(
-		tprOpts.restClient,
+		tprOpts.RESTClient,
 		genericConfig,
-		tprOpts.globalNamespace,
+		tprOpts.GlobalNamespace,
 		tprOpts.storageFactory(),
 	)
 	completed := config.Complete()
