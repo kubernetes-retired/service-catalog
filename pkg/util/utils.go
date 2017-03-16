@@ -17,7 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,30 +25,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/golang/glog"
 )
-
-// SendRequest will serialize 'object' and send it using the given method to
-// the given URL, through the provided client
-func SendRequest(c *http.Client, method string, url string, object interface{}) (*http.Response, error) {
-	data, err := json.Marshal(object)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal request: %s", err.Error())
-	}
-
-	req, err := http.NewRequest(method, url, bytes.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to send request: %s", err.Error())
-	}
-
-	return resp, nil
-}
 
 // WriteResponse will serialize 'object' to the HTTP ResponseWriter
 // using the 'code' as the HTTP status code
@@ -88,6 +66,7 @@ func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	if err != nil {
 		return err
 	}
+	glog.Info(string(body))
 
 	err = json.Unmarshal(body, object)
 	if err != nil {
