@@ -17,7 +17,7 @@ limitations under the License.
 package tpr
 
 import (
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	restclient "k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/registry/generic"
 	"k8s.io/kubernetes/pkg/runtime"
 )
@@ -27,7 +27,7 @@ type Options struct {
 	HasNamespace     bool
 	RESTOptions      generic.RESTOptions
 	DefaultNamespace string
-	Client           clientset.Interface
+	RESTClient       restclient.Interface
 	SingularKind     Kind
 	NewSingularFunc  func(string, string) runtime.Object
 	ListKind         Kind

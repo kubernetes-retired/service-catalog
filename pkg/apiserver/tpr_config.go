@@ -19,13 +19,13 @@ package apiserver
 import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	restclient "k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/genericapiserver"
 )
 
 // tprConfig is the configuration needed to run the API server in TPR storage mode
 type tprConfig struct {
-	cl              clientset.Interface
+	restClient      restclient.Interface
 	genericConfig   *genericapiserver.Config
 	globalNamespace string
 	storageFactory  genericapiserver.StorageFactory
@@ -33,13 +33,13 @@ type tprConfig struct {
 
 // NewTPRConfig returns a new Config for a server that is backed by TPR storage
 func NewTPRConfig(
-	cl clientset.Interface,
+	restClient restclient.Interface,
 	genericCfg *genericapiserver.Config,
 	globalNS string,
 	factory genericapiserver.StorageFactory,
 ) Config {
 	return &tprConfig{
-		cl:              cl,
+		restClient:      restClient,
 		genericConfig:   genericCfg,
 		globalNamespace: globalNS,
 		storageFactory:  factory,
@@ -50,8 +50,8 @@ func NewTPRConfig(
 func (t *tprConfig) Complete() CompletedConfig {
 	completeGenericConfig(t.genericConfig)
 	return &completedTPRConfig{
-		cl:        t.cl,
-		tprConfig: t,
+		restClient: t.restClient,
+		tprConfig:  t,
 		// Not every API group compiled in is necessarily enabled by the operator
 		// at runtime.
 		//
@@ -65,7 +65,7 @@ func (t *tprConfig) Complete() CompletedConfig {
 // CompletedTPRConfig is the completed version of the TPR config. It can be used to create a
 // new server, ready to be run
 type completedTPRConfig struct {
-	cl clientset.Interface
+	restClient restclient.Interface
 	*tprConfig
 	apiResourceConfigSource genericapiserver.APIResourceConfigSource
 	factory                 genericapiserver.StorageFactory
@@ -82,7 +82,7 @@ func (c *completedTPRConfig) NewServer() (*ServiceCatalogAPIServer, error) {
 	roFactory := tprRESTOptionsFactory{
 		storageFactory: c.factory,
 	}
-	providers := restStorageProviders(c.globalNamespace, server.StorageTypeTPR, c.cl)
+	providers := restStorageProviders(c.globalNamespace, server.StorageTypeTPR, c.restClient)
 	for _, provider := range providers {
 		groupInfo, err := provider.NewRESTStorage(
 			c.apiResourceConfigSource, // genericapiserver.APIResourceConfigSource

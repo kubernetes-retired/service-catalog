@@ -22,7 +22,7 @@ import (
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"k8s.io/kubernetes/pkg/api/meta"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
+	restclient "k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/conversion"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/storage"
@@ -38,7 +38,7 @@ type store struct {
 	hasNamespace     bool
 	codec            runtime.Codec
 	defaultNamespace string
-	cl               clientset.Interface
+	cl               restclient.Interface
 	singularKind     Kind
 	singularShell    func(string, string) runtime.Object
 	listKind         Kind
@@ -53,7 +53,7 @@ func NewStorage(opts Options) (storage.Interface, factory.DestroyFunc) {
 		hasNamespace:     opts.HasNamespace,
 		codec:            opts.RESTOptions.StorageConfig.Codec,
 		defaultNamespace: opts.DefaultNamespace,
-		cl:               opts.Client,
+		cl:               opts.RESTClient,
 		singularKind:     opts.SingularKind,
 		singularShell:    opts.NewSingularFunc,
 		listKind:         opts.ListKind,
@@ -71,7 +71,7 @@ func (t *store) Versioner() storage.Versioner {
 		listKind:     t.listKind,
 		checkObject:  t.checkObject,
 		defaultNS:    t.defaultNamespace,
-		restClient:   t.cl.Core().RESTClient(),
+		restClient:   t.cl,
 	}
 }
 
@@ -97,7 +97,7 @@ func (t *store) Create(
 		return err
 	}
 
-	req := t.cl.Core().RESTClient().Post().AbsPath(
+	req := t.cl.Post().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,
@@ -134,7 +134,7 @@ func (t *store) Delete(
 		return err
 	}
 
-	req := t.cl.Core().RESTClient().Delete().AbsPath(
+	req := t.cl.Delete().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,
@@ -169,7 +169,7 @@ func (t *store) Watch(
 		return nil, err
 	}
 
-	req := t.cl.Core().RESTClient().Get().AbsPath(
+	req := t.cl.Get().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,
@@ -231,7 +231,7 @@ func (t *store) WatchList(
 		return nil, err
 	}
 
-	req := t.cl.Core().RESTClient().Get().AbsPath(
+	req := t.cl.Get().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,
@@ -266,7 +266,7 @@ func (t *store) Get(
 		glog.Errorf("decoding key %s (%s)", key, err)
 		return err
 	}
-	req := t.cl.Core().RESTClient().Get().AbsPath(
+	req := t.cl.Get().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,
@@ -325,7 +325,7 @@ func (t *store) List(
 		return err
 	}
 
-	req := t.cl.Core().RESTClient().Get().AbsPath(
+	req := t.cl.Get().AbsPath(
 		"apis",
 		groupName,
 		tprVersion,

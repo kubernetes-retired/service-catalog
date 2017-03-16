@@ -62,7 +62,7 @@ func TestV1Alpha1Storage(t *testing.T) {
 	provider := StorageProvider{
 		DefaultNamespace: "test-default",
 		StorageType:      server.StorageTypeTPR,
-		Client:           nil,
+		RESTClient:       nil,
 	}
 	configSource := genericapiserver.NewResourceConfig()
 	roGetter := testRESTOptionsGetter(nil, func() {})

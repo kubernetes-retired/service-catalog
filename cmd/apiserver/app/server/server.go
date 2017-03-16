@@ -103,8 +103,9 @@ func NewCommandServer(
 		}
 
 		glog.Infof("using third party resources for storage")
-		opts.TPROptions.defaultGlobalNamespace = "servicecatalog"
-		opts.TPROptions.clIface = clIface
+		opts.TPROptions.DefaultGlobalNamespace = "servicecatalog"
+		opts.TPROptions.RESTClient = clIface.Core().RESTClient()
+		opts.TPROptions.InstallTPRsFunc = installTPRsToCore(clIface)
 	}
 
 	cmd.Run = func(c *cobra.Command, args []string) {
