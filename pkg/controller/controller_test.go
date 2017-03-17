@@ -28,6 +28,8 @@ import (
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	apiv1 "k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/pkg/types"
 	"k8s.io/kubernetes/pkg/api/v1"
 	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/client/testing/core"
@@ -687,8 +689,9 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 
 	// verify no kube resources created
+	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
+	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
@@ -832,8 +835,9 @@ func TestReconcileInstanceWithInstanceError(t *testing.T) {
 	testController.reconcileInstance(instance)
 
 	// verify no kube resources created
+	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
+	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
@@ -873,6 +877,14 @@ func TestReconcileInstance(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+		return true, &apiv1.Namespace{
+			ObjectMeta: apiv1.ObjectMeta{
+				UID: types.UID("test_uid_foo"),
+			},
+		}, nil
+	})
+
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
@@ -892,9 +904,10 @@ func TestReconcileInstance(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
 
-	// verify no kube resources created
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
+	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
@@ -919,14 +932,22 @@ func TestReconcileInstance(t *testing.T) {
 	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
 	}
-
 	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
 		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
 	} else {
 		if len(si.Parameters) > 0 {
 			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
 		}
+
+		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace)
+		if string(ns.UID) != si.OrganizationGUID {
+			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
+		}
+		if string(ns.UID) != si.SpaceGUID {
+			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
+		}
 	}
+
 }
 
 func TestReconcileInstanceDelete(t *testing.T) {

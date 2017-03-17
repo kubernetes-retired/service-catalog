@@ -142,7 +142,7 @@ func convertInstanceRequest(req *brokerapi.CreateServiceInstanceRequest) *broker
 		InternalID:       uuid.NewV4().String(),
 		ServiceID:        req.ServiceID,
 		PlanID:           req.PlanID,
-		OrganizationGUID: uuid.NewV4().String(),
+		OrganizationGUID: req.OrgID,
 		SpaceGUID:        req.SpaceID,
 		LastOperation:    nil,
 		Parameters:       req.Parameters,

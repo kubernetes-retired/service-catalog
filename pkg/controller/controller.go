@@ -480,10 +480,13 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			}
 		}
 
+		ns, _ := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
 		request := &brokerapi.CreateServiceInstanceRequest{
 			ServiceID:  serviceClass.OSBGUID,
 			PlanID:     servicePlan.OSBGUID,
 			Parameters: parameters,
+			OrgID:      string(ns.UID),
+			SpaceID:    string(ns.UID),
 		}
 
 		// TODO: handle async provisioning
