@@ -61,7 +61,7 @@ func EmptyObject() runtime.Object {
 func NewList() runtime.Object {
 	return &servicecatalog.BrokerList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceBrokerKind.TPRName(),
+			Kind: tpr.ServiceBrokerListKind.String(),
 		},
 		Items: []servicecatalog.Broker{},
 	}
