@@ -209,6 +209,7 @@ func convertBindingRequest(req *brokerapi.BindingRequest) *brokerapi.ServiceBind
 		ServiceID:     req.ServiceID,
 		ServicePlanID: req.PlanID,
 		Parameters:    req.Parameters,
+		AppID:         req.AppGUID,
 	}
 }
 

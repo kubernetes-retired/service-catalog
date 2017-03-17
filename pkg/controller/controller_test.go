@@ -1117,9 +1117,17 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 }
 
 func TestReconcileBindingWithParameters(t *testing.T) {
-	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+		return true, &apiv1.Namespace{
+			ObjectMeta: apiv1.ObjectMeta{
+				UID: types.UID("test_ns_uid"),
+			},
+		}, nil
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -1151,6 +1159,11 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	testController.reconcileBinding(binding)
+
+	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace)
+	if string(ns.UID) != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
+		t.Fatalf("Unexpected borker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+	}
 
 	actions := filterActions(fakeCatalogClient.Actions())
 	if e, a := 1, len(actions); e != a {
