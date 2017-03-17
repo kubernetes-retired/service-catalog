@@ -451,6 +451,11 @@ func TestInstanceClient(t *testing.T) {
 }
 
 func testInstanceClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+	const (
+		osbGUID          = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+		osbDashboardURL  = "http://test-dashboard.example.com"
+		osbLastOperation = "provisioned"
+	)
 	instanceClient := client.Servicecatalog().Instances("test-namespace")
 
 	instance := &v1alpha1.Instance{
@@ -459,9 +464,13 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
 			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
+			OSBGUID:          osbGUID,
+			OSBDashboardURL:  strPtr(osbDashboardURL),
+			OSBLastOperation: strPtr(osbLastOperation),
 		},
 	}
 
+	// list the instances & expect there to be none
 	instances, err := instanceClient.List(v1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing instances (%s)", err)
@@ -488,6 +497,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		)
 	}
 
+	// list instances again, expect there to be one
 	instances, err = instanceClient.List(v1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing instances (%s)", err)
@@ -496,15 +506,20 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("should have exactly one instance, had %v instances", len(instances.Items))
 	}
 
+	// get the name of the instance that's expected to exist
 	instanceServer, err = instanceClient.Get(name)
 	if err != nil {
 		return fmt.Errorf("error getting instance (%s)", err)
 	}
 	if instanceServer.Name != name &&
-		instanceServer.ResourceVersion == instance.ResourceVersion {
+		instanceServer.ResourceVersion == instance.ResourceVersion &&
+		instanceServer.Spec.OSBGUID != osbGUID &&
+		*instanceServer.Spec.OSBDashboardURL != osbDashboardURL &&
+		*instanceServer.Spec.OSBLastOperation != osbLastOperation {
 		return fmt.Errorf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
 	}
 
+	// expect the instance in the list to be the same as the instance just fetched by name
 	instanceListed := &instances.Items[0]
 	if !reflect.DeepEqual(instanceListed, instanceServer) {
 		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
@@ -518,6 +533,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return nil
 	}
 
+	// check the parameters of the fetched-by-name instance with what was expected
 	parameters := ipStruct{}
 	err = json.Unmarshal(instanceServer.Spec.Parameters.Raw, &parameters)
 	if err != nil {
@@ -536,6 +552,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
 	}
 
+	// update the instance's conditions
 	readyConditionTrue := v1alpha1.InstanceCondition{
 		Type:    v1alpha1.InstanceConditionReady,
 		Status:  v1alpha1.ConditionTrue,
@@ -545,10 +562,13 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	instanceServer.Status = v1alpha1.InstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{readyConditionTrue},
 	}
+
 	_, err = instanceClient.UpdateStatus(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance: %v", err)
 	}
+
+	// re-fetch the instance by name and check its conditions
 	instanceServer, err = instanceClient.Get(name)
 	if err != nil {
 		return fmt.Errorf("error getting instance (%s)", err)
@@ -560,8 +580,9 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("Checksum should have been set after updating ready condition to true")
 	}
 
-	err = instanceClient.Delete(name, &v1.DeleteOptions{})
-	if nil != err {
+	// delete the instance, set its finalizers to nil, update it, then ensure it is actually
+	// deleted
+	if err := instanceClient.Delete(name, &v1.DeleteOptions{}); err != nil {
 		return fmt.Errorf("instance should be deleted (%s)", err)
 	}
 

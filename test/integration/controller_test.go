@@ -20,9 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/client-go/1.5/kubernetes/fake"
-	"k8s.io/kubernetes/pkg/api/v1"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
@@ -32,6 +29,22 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
+	"k8s.io/client-go/1.5/kubernetes/fake"
+	"k8s.io/kubernetes/pkg/api/v1"
+	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+)
+
+const (
+	testNamespace        = "test-namespace"
+	testBrokerName       = "test-broker"
+	testServiceClassName = "test-service"
+	planName             = "test-plan"
+	testInstanceName     = "test-instance"
+	testBindingName      = "test-binding"
+	testSecretName       = "test-secret"
+	testOSBGUID          = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+	testOSBDashboardURL  = "http://test-dashboard.example.com"
+	testOSBLastOperation = "provisioned"
 )
 
 // TestBasicFlows tests:
@@ -104,39 +117,56 @@ func TestBasicFlows(t *testing.T) {
 
 	//-----------------
 
-	const (
-		testNamespace    = "test-ns"
-		testInstanceName = "test-instance"
-	)
-
 	instance := &v1alpha1.Instance{
 		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
+			OSBGUID:          testOSBGUID,
+			OSBDashboardURL:  strPtr(testOSBDashboardURL),
+			OSBLastOperation: strPtr(testOSBLastOperation),
 		},
 	}
 
-	_, err = client.Instances(testNamespace).Create(instance)
-	if err != nil {
+	if _, err := client.Instances(testNamespace).Create(instance); err != nil {
 		t.Fatalf("error creating Instance: %v", err)
 	}
 
-	err = util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.InstanceCondition{
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.InstanceCondition{
 		Type:   v1alpha1.InstanceConditionReady,
 		Status: v1alpha1.ConditionTrue,
-	})
-	if err != nil {
+	}); err != nil {
 		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
+
+	retInst, err := client.Instances(instance.Namespace).Get(instance.Name)
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if retInst.Spec.OSBGUID != instance.Spec.OSBGUID {
+		t.Fatalf(
+			"returned OSB GUID '%s' doesn't match original '%s'",
+			retInst.Spec.OSBGUID,
+			instance.Spec.OSBGUID,
+		)
+	}
+	if retInst.Spec.OSBDashboardURL != instance.Spec.OSBDashboardURL {
+		t.Fatalf(
+			"returned OSB Dashboard URL '%s' doesn't match original '%s'",
+			retInst.Spec.OSBDashboardURL,
+			instance.Spec.OSBDashboardURL,
+		)
+	}
+	if retInst.Spec.OSBLastOperation != instance.Spec.OSBLastOperation {
+		t.Fatalf(
+			"returned OSB last operation '%s' doesn't match original '%s'",
+			retInst.Spec.OSBLastOperation,
+			instance.Spec.OSBLastOperation,
+		)
 	}
 
 	// Binding test begins here
 	//-----------------
-
-	const (
-		testBindingName = "test-binding"
-		testSecretName  = "test-secret"
-	)
 
 	binding := &v1alpha1.Binding{
 		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
@@ -249,3 +279,4 @@ func newTestController(t *testing.T) (
 	return fakeKubeClient, catalogClient, catalogCl, instanceCl, bindingCl,
 		testController, serviceCatalogSharedInformers, shutdownServer
 }
+
