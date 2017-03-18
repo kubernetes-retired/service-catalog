@@ -533,6 +533,9 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 	if e, a := readyConditionTrue, instanceServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
 	}
+	if instanceServer.Spec.Checksum == nil {
+		return fmt.Errorf("Checksum should have been set after updating ready condition to true")
+	}
 
 	err = instanceClient.Delete(name, &v1.DeleteOptions{})
 	if nil != err {

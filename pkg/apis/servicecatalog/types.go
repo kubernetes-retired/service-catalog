@@ -189,6 +189,10 @@ type InstanceSpec struct {
 	// OSB-specific
 	OSBDashboardURL  *string
 	OSBLastOperation *string
+
+	// Checksum is the checksum of the InstanceSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string
 }
 
 // InstanceStatus represents the current status of an Instance.

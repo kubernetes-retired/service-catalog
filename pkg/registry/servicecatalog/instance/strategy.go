@@ -26,6 +26,7 @@ import (
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
@@ -118,6 +119,8 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 	if !ok {
 		glog.Fatal("received a non-instance object to update from")
 	}
+
+	// TODO: ensure that checksum is carried forward when we allow updates to the spec.
 	newInstance.Spec = oldInstance.Spec
 	newInstance.Status = oldInstance.Status
 }
@@ -146,6 +149,23 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old ru
 	}
 	// status changes are not allowed to update spec
 	newInstance.Spec = oldInstance.Spec
+
+	foundReadyConditionTrue := false
+	for _, condition := range newInstance.Status.Conditions {
+		if condition.Type == sc.InstanceConditionReady && condition.Status == sc.ConditionTrue {
+			foundReadyConditionTrue = true
+			break
+		}
+	}
+
+	if foundReadyConditionTrue {
+		glog.Infof("Found true ready condition for Instance %v/%v; updating checksum", newInstance.Namespace, newInstance.Name)
+		// This status update has a true ready condition; update the checksum if necessary
+		newInstance.Spec.Checksum = func() *string {
+			s := checksum.InstanceSpecChecksum(newInstance.Spec)
+			return &s
+		}()
+	}
 }
 
 func (instanceStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
