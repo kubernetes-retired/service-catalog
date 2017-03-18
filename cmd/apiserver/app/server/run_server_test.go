@@ -53,10 +53,29 @@ func TestRunServerInstallTPRFails(t *testing.T) {
 	}
 
 	// make sure no more action after tpr failed to install
+	getAction := 0
+	createAction := 0
 	actions := fakeClientset.Actions()
 	for _, action := range actions {
+		switch verb := action.GetVerb(); verb {
+		case "get":
+			getAction++
+		case "create":
+			createAction++
+		default:
+			t.Errorf("Unexpected action only 'get' and 'create' should be performed, got action: %s", verb)
+		}
+
 		if action.GetResource().Resource != "thirdpartyresources" {
 			t.Errorf("Unexpected action performed after failing to install third party resource")
 		}
+	}
+
+	if getAction != 4 {
+		t.Errorf("Expected 4 'get' action, got %d", getAction)
+	}
+
+	if createAction != 4 {
+		t.Errorf("Expected 4 'create' action, got %d", createAction)
 	}
 }
