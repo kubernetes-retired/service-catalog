@@ -47,10 +47,12 @@ func TestInstallTypesAllResources(t *testing.T) {
 	fakeClientset := setup(
 		func(core.Action) (bool, runtime.Object, error) {
 			getCallCount++
-			if getCallCount > len(thirdPartyResources) {
+			// if 'create' has been called on all tprs, return 'nil' error to indicate tpr is created
+			if createCallCount == len(thirdPartyResources) {
 				return true, &v1beta1.ThirdPartyResource{}, nil
 			}
 
+			// return error to indicate tpr is not found
 			return true, nil, errors.New("Resource not found")
 		},
 		func(core.Action) (bool, runtime.Object, error) {
@@ -78,8 +80,10 @@ func TestInstallTypesResourceExisted(t *testing.T) {
 		func(core.Action) (bool, runtime.Object, error) {
 			getCallCount++
 			if getCallCount == 1 {
+				// return broker TPR on 1st call to indicate broker TPR exists
 				return true, &serviceBrokerTPR, nil
-			} else if getCallCount > len(thirdPartyResources) {
+			} else if createCallCount == len(thirdPartyResources)-1 {
+				// once 'create' has been called on all tprs, return 'nil' error to indicate tpr is created
 				return true, &v1beta1.ThirdPartyResource{}, nil
 			}
 
@@ -114,10 +118,12 @@ func TestInstallTypesErrors(t *testing.T) {
 	fakeClientset := setup(
 		func(core.Action) (bool, runtime.Object, error) {
 			getCallCount++
-			if getCallCount > len(thirdPartyResources) {
+			// if 'create' has been called on all tprs, return 'nil' error to indicate tpr is created
+			if createCallCount == len(thirdPartyResources) {
 				return true, &v1beta1.ThirdPartyResource{}, nil
 			}
 
+			// return error to indicate tpr is not found
 			return true, nil, errors.New("Resource not found")
 		},
 		func(core.Action) (bool, runtime.Object, error) {
