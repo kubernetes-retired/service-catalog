@@ -480,7 +480,12 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			}
 		}
 
-		ns, _ := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
+		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
+		if err != nil {
+			glog.Errorf("Failed to get namespace during instance create (%s)", err)
+			return
+		}
+
 		request := &brokerapi.CreateServiceInstanceRequest{
 			ServiceID:  serviceClass.OSBGUID,
 			PlanID:     servicePlan.OSBGUID,
@@ -740,7 +745,12 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			}
 		}
 
-		ns, _ := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
+		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
+		if err != nil {
+			glog.Errorf("Failed to get namespace during binding (%s)", err)
+			return
+		}
+
 		request := &brokerapi.BindingRequest{
 			ServiceID:    serviceClass.OSBGUID,
 			PlanID:       servicePlan.OSBGUID,

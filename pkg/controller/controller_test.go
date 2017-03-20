@@ -948,7 +948,42 @@ func TestReconcileInstance(t *testing.T) {
 			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
 		}
 	}
+}
 
+func TestReconcileInstanceNamespaceError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+		return true, &apiv1.Namespace{}, errors.New("No namespace")
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: testServiceClassName,
+			PlanName:         testPlanName,
+			OSBGUID:          instanceGUID,
+		},
+	}
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if a := len(actions); a != 0 {
+		t.Fatalf("Unexpected number of actions: expected 0, got %v. Actions: %+v", a, actions)
+	}
+
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
 }
 
 func TestReconcileInstanceDelete(t *testing.T) {
@@ -1163,12 +1198,12 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace)
 	if string(ns.UID) != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
-		t.Fatalf("Unexpected borker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
 	}
 
 	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
 	if appGUID := bindResource["app_guid"]; string(ns.UID) != fmt.Sprintf("%v", appGUID) {
-		t.Fatalf("Unexpected borker AppID: expected %q, got %q", string(ns.UID), appGUID)
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), appGUID)
 	}
 
 	actions := filterActions(fakeCatalogClient.Actions())
@@ -1226,7 +1261,43 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 			t.Fatalf("Failed to find 'second-arg' in array, was %v", argsArray)
 		}
 	}
+}
 
+func TestReconcileBindingNamespaceError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+		return true, &apiv1.Namespace{}, errors.New("No namespace")
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: testServiceClassName,
+			PlanName:         testPlanName,
+			OSBGUID:          instanceGUID,
+		},
+	}
+	sharedInformers.Instances().Informer().GetStore().Add(instance)
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: v1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			OSBGUID:     bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if a := len(actions); a != 0 {
+		t.Fatalf("Unexpected number of actions: expected 0, got %v. Actions: %+v", a, actions)
+	}
 }
 
 func TestReconcileBindingDelete(t *testing.T) {
