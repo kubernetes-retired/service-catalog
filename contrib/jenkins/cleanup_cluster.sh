@@ -51,9 +51,6 @@ else
   DELETECONFIG='YES'
 fi
 
-KUBECONFIG="${CONFIG}" wipe_cluster \
-  || error_exit 'Failed to shutdown Kubernetes resources on cluster.'
-
 gcloud container clusters delete "${CLUSTERNAME}" --project="${PROJECT}" \
     --zone="${ZONE}" --quiet --async \
   || error_exit 'Failed to delete cluster on Google Cloud Platform.'

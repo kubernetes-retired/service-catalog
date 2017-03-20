@@ -73,8 +73,7 @@ node {
   env.GOPATH = env.WORKSPACE
   env.ROOT = "${env.WORKSPACE}/${root_path}"
 
-  env.K8S_KUBECONFIG = "${env.ROOT}/k8s-kubeconfig"
-  env.SC_KUBECONFIG = "${env.ROOT}/sc-kubeconfig"
+  env.KUBECONFIG = "${env.ROOT}/k8s-kubeconfig"
 
   dir([path: env.ROOT]) {
     // Run build.
@@ -102,13 +101,14 @@ node {
 
       // Run through the walkthrough on the cluster.
       sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
-            --registry gcr.io/${test_project}/catalog
+            --registry gcr.io/${test_project}/catalog \
+            --cleanup
       """
     } catch (Exception e) {
       currentBuild.result = 'FAILURE'
     } finally {
       try {
-        sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${K8S_KUBECONFIG}"""
+        sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
       } catch (Exception e) {
         currentBuild.result = 'FAILURE'
       }

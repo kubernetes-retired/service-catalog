@@ -25,18 +25,39 @@ while [[ $# -gt 0 ]]; do
   case "${1}" in
     --registry)   REGISTRY="${2:-}"; shift ;;
     --version)    VERSION="${2:-}"; shift ;;
-
+    --with-tpr)   WITH_TPR=1 ;;
+    --cleanup)    CLEANUP=1 ;;
     *) error_exit "Unrecognized command line parameter: $1" ;;
   esac
   shift
 done
+
+BROKER_RELEASE="ups-broker"
+CATALOG_RELEASE="catalog"
+
+K8S_KUBECONFIG="${KUBECONFIG:-~/.kube/config}"
+SC_KUBECONFIG="/tmp/sc-kubeconfig"
+
+function cleanup() {
+  echo 'Cleaning up resources...'
+  export KUBECONFIG="${K8S_KUBECONFIG}"
+  helm delete --purge "${BROKER_RELEASE}" || true
+  helm delete --purge "${CATALOG_RELEASE}" || true
+  rm -f "${SC_KUBECONFIG}"
+  kubectl delete secret -n test-ns my-secret > /dev/null 2>&1 || true
+  kubectl delete namespace test-ns || true
+  echo 'Cleanup done.'
+}
 
 VERSION="${VERSION:-"$(git describe --tags --always --abbrev=7 --dirty)"}" \
   || error_exit 'Cannot determine Git commit SHA'
 
 # Deploying to cluster
 
-export KUBECONFIG="${K8S_KUBECONFIG}"
+if [[ -n "${CLEANUP:-}" ]]; then
+  trap cleanup EXIT
+fi
+
 kubectl create namespace test-ns
 
 echo 'Deploying user-provided-service broker...'
@@ -48,7 +69,7 @@ fi
 
 retry -n 10 \
     helm install "${ROOT}/charts/ups-broker" \
-    --name "ups-broker" \
+    --name "${BROKER_RELEASE}" \
     --namespace "ups-broker" \
     --set "${VALUES}" \
   || error_exit 'Error deploy ups broker to cluster.'
@@ -58,10 +79,16 @@ echo 'Deploying service catalog...'
 VALUES+=',debug=true'
 VALUES+=',insecure=true'
 VALUES+=',apiserver.service.type=LoadBalancer'
+if [[ -n "${WITH_TPR:-}" ]]; then
+  VALUES+=',apiserver.storage.type=tpr'
+  VALUES+=',apiserver.storage.tpr.globalNamespace=test-ns'
+fi
+
+NAME="$(openssl rand -base64 100 | tr -dc a-z | cut -c -6)"
 
 retry -n 10 \
     helm install "${ROOT}/charts/catalog" \
-    --name "catalog" \
+    --name "${CATALOG_RELEASE}" \
     --namespace "catalog" \
     --set "${VALUES}" \
   || error_exit 'Error deploying service catalog to cluster.'
@@ -74,16 +101,16 @@ wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
     kubectl get pods --namespace ups-broker \
   || error_exit 'User provided service broker pod took an unexpected amount of time to come up.'
 
-[[ "$(kubectl get pods --namespace ups-broker | grep ups-broker | awk '{print $3}')" == 'Running' ]] \
+[[ "$(kubectl get pods --namespace ups-broker | grep ups-broker-ups-broker | awk '{print $3}')" == 'Running' ]] \
   || error_exit 'User provided service broker pod did not come up successfully.'
 
 wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
     kubectl get pods --namespace catalog \
   || error_exit 'Service catalog pods did not come up successfully.'
 
-[[ "$(kubectl get pods --namespace catalog | grep apiserver | awk '{print $3}')" == 'Running' ]] \
+[[ "$(kubectl get pods --namespace catalog | grep catalog-catalog-apiserver | awk '{print $3}')" == 'Running' ]] \
   || error_exit 'API server pod did not come up successfully.'
-[[ "$(kubectl get pods --namespace catalog | grep controller | awk '{print $3}')" == 'Running' ]] \
+[[ "$(kubectl get pods --namespace catalog | grep catalog-catalog-controller | awk '{print $3}')" == 'Running' ]] \
   || error_exit 'Controller pod did not come up successfully.'
 
 echo 'Waiting on external IP for service catalog API Server...'
@@ -107,6 +134,8 @@ kubectl config set-credentials service-catalog-creds --username=admin --password
 kubectl config set-cluster service-catalog-cluster --server="http://${API_SERVER_HOST}:80"
 kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds
 kubectl config use-context service-catalog-ctx
+
+sleep 15
 
 [[ "$(kubectl get brokers,serviceclasses,instances,bindings 2>&1)" == 'No resources found.' ]] \
   || error_exit 'Issue listing resources from service catalog API server.'
