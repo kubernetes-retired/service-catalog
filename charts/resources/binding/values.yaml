@@ -1,0 +1,4 @@
+name: test-binding
+instanceRef:
+  name: test-instance
+secretName: test-secret
