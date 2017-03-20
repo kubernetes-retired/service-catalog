@@ -19,11 +19,21 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"sync"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
+
+type errNoSuchInstance struct {
+	instanceID string
+}
+
+func (e errNoSuchInstance) Error() string {
+	return fmt.Sprintf("no such instance with ID %s", e.instanceID)
+}
 
 type userProvidedServiceInstance struct {
 	Name       string
@@ -31,6 +41,7 @@ type userProvidedServiceInstance struct {
 }
 
 type userProvidedController struct {
+	rwMutex     sync.RWMutex
 	instanceMap map[string]*userProvidedServiceInstance
 }
 
@@ -61,8 +72,13 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 	}, nil
 }
 
-func (c *userProvidedController) CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (c *userProvidedController) CreateServiceInstance(
+	id string,
+	req *brokerapi.CreateServiceInstanceRequest,
+) (*brokerapi.CreateServiceInstanceResponse, error) {
 	credString, ok := req.Parameters["credentials"]
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
 	if ok {
 		jsonCred, err := json.Marshal(credString)
 		if err != nil {
@@ -95,6 +111,8 @@ func (c *userProvidedController) GetServiceInstance(id string) (string, error) {
 }
 
 func (c *userProvidedController) RemoveServiceInstance(id string) (*brokerapi.DeleteServiceInstanceResponse, error) {
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
 	_, ok := c.instanceMap[id]
 	if ok {
 		delete(c.instanceMap, id)
@@ -104,8 +122,18 @@ func (c *userProvidedController) RemoveServiceInstance(id string) (*brokerapi.De
 	return &brokerapi.DeleteServiceInstanceResponse{}, nil
 }
 
-func (c *userProvidedController) Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
-	cred := c.instanceMap[instanceID].Credential
+func (c *userProvidedController) Bind(
+	instanceID,
+	bindingID string,
+	req *brokerapi.BindingRequest,
+) (*brokerapi.CreateServiceBindingResponse, error) {
+	c.rwMutex.RLock()
+	defer c.rwMutex.RUnlock()
+	instance, ok := c.instanceMap[instanceID]
+	if !ok {
+		return nil, errNoSuchInstance{instanceID: instanceID}
+	}
+	cred := instance.Credential
 	return &brokerapi.CreateServiceBindingResponse{Credentials: *cred}, nil
 }
 
