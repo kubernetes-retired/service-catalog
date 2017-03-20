@@ -1,4 +1,4 @@
-# Service Catalog Broker Resource
+# Service Catalog Instance Resource
 
 This chart contains a single instance resource intended for use by the service-catalog
 system running in Third Party Resource mode.

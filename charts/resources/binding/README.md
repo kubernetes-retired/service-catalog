@@ -1,4 +1,4 @@
-# Service Catalog Broker Resource
+# Service Catalog Binding Resource
 
 This chart contains a single binding resource intended for use by the service-catalog
 system running in Third Party Resource mode.
