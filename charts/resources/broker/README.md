@@ -1,6 +1,6 @@
 # Service Catalog Broker Resource
 
-This chart contains a single service broker resource intended for use by the service-catalog
+This chart contains a single broker resource intended for use by the service-catalog
 system running in Third Party Resource mode.
 
 For more information, [visit the Service Catalog project on github]
