@@ -252,12 +252,13 @@ Because we haven't created any resources in the service-catalog API server yet,
 ### Installing a UPS broker
 Service Catalog requires brokers to operate and there is a User Provided
 Service broker (UPS from now on), which allows consumption of existing
-services through the Service Catalog model. It runs as any other broker,
-and we need to deploy it first by installing using the
+services through the Service Catalog model. Just like any other broker, the
+UPS broker needs to be running somewhere before it can be added to the
+catalog. We need to deploy it first by using the
 [`ups-broker` chart](../charts/ups-broker) into your cluster, just like
 you installed the catalog chart above.
 
-### Registering a Broker
+### Registering a UPS Broker
 
 Next, we'll register a service broker with the catalog.  To do this, we'll
 create a new [`Broker`](../contrib/examples/walkthrough/ups-broker.yaml)
