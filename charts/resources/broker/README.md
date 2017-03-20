@@ -30,11 +30,11 @@ The following tables lists the configurable parameters of this chart.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `brokerURL` | The URL of the broker server | `http://doesnt-exist.com` |
-| `name` | The name of the broker server | `test-broker` |
-| `auth.secretName` | The name of the secret that contains basic authentication credentials. This secret should have a `username` and `password` field | `broker-secret` |
-| `auth.username` | The username that the broker should use to authenticate clients | `broker-username` |
-| `auth.password` | The password that the broker should use to authenticate clients | `broker-password` |
+| `brokerURL` | The URL of the broker server. | `http://doesnt-exist.com` |
+| `name` | The name of the broker server. | `test-broker` |
+| `auth.secretName` | The name of the secret that contains basic authentication credentials. This secret should have a `username` and `password` field. | `broker-secret` |
+| `auth.username` | The username that the broker should use to authenticate clients. | `broker-username` |
+| `auth.password` | The password that the broker should use to authenticate clients. | `broker-password` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
