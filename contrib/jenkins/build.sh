@@ -19,7 +19,7 @@ set -o errexit
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GOPATH="${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}"
 
-. "${ROOT}/contrib/jenkins/run_utilities.sh" || { echo 'Cannot load run utilities.'; exit 1; }
+. "${ROOT}/contrib/hack/utilities.sh" || { echo 'Cannot load bash utilities.'; exit 1; }
 
 # Parse command line arguments.
 while [[ $# -gt 0 ]]; do
