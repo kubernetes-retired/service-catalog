@@ -11,7 +11,7 @@ For more information, [visit the Service Catalog project on github]
 To install the chart with the release name `instance-resource`:
 
 ```bash
-$ helm install --name instance-resource --namespace test-ns charts/resources/broker
+$ helm install --name instance-resource --namespace test-ns charts/resources/instance
 ```
 
 ## Uninstalling the Chart
@@ -30,7 +30,7 @@ The following tables lists the configurable parameters of this chart.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `name` | The URL of the broker server. | `test-instance` |
+| `name` | The name of the instance. | `test-instance` |
 | `serviceClassName` | The name of the service class this instance should provision. | `test-service-class` |
 | `planName` | The name of the plan this instance should provision. | `test-plan` |
 
