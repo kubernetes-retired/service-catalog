@@ -26,8 +26,7 @@ The command removes all the Kubernetes components associated with the chart and 
 
 ## Configuration
 
-The following tables lists the configurable parameters of the User Provided
-Service Broker
+The following tables lists the configurable parameters of this chart.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
