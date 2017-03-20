@@ -242,6 +242,17 @@ API server and the main Kubernetes API server without switching contexts or
 server is via a dedicated `kubeconfig` file.  You can manage the kubeconfig in
 use within a directory using the `direnv` tool.
 
+Additionally, you'll need to have a version 1.6 beta build of `kubectl` to execute 
+`create` operations on the service catalog API server. To get one, execute the following:
+
+```console
+curl -o kubectl16 https://storage.googleapis.com/kubernetes-release/release/v1.6.0-beta.3/bin/darwin/amd64/kubectl
+chmod +x ./kubectl16
+```
+
+Note that you can use your existing `kubectl` tool to do all operations except
+for `create`.
+
 ----
 
 Because we haven't created any resources in the service-catalog API server yet,
@@ -264,7 +275,7 @@ Next, we'll register a service broker with the catalog.  To do this, we'll
 create a new [`Broker`](../contrib/examples/walkthrough/ups-broker.yaml)
 resource:
 
-    $ kubectl create -f contrib/examples/walkthrough/ups-broker.yaml
+    $ ./kubectl16 create -f contrib/examples/walkthrough/ups-broker.yaml
     broker "ups-broker" created
 
 Kubernetes APIs are intention based; creating this resource indicates that the
@@ -344,7 +355,7 @@ Let's provision a new instance of the `user-provided-service`.  To do this, we
 create a new [`Instance`](../contrib/examples/walkthrough/ups-instance.yaml) to
 indicate that we want to provision a new instance of that service:
 
-    $ kubectl create -f contrib/examples/walkthrough/ups-instance.yaml
+    $ ./kubectl16 create -f contrib/examples/walkthrough/ups-instance.yaml
     instance "ups-instance" created
 
 We can check the status of the `Instance` using `kubectl get`:
@@ -380,7 +391,7 @@ status:
 Now that our `Instance` has been created, let's bind to it.  To do this, we
 create a new [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml).
 
-    $ kubectl create -f contrib/examples/walkthrough/ups-binding.yaml
+    $ ./kubectl16 create -f contrib/examples/walkthrough/ups-binding.yaml
     binding "ups-binding" created
 
 We can check the status of the `Instance` using `kubectl get`:
