@@ -953,6 +953,10 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		},
 	}
 
+	fakeCatalogClient.AddReactor("get", "instances", func(action core.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
 	testController.reconcileInstance(instance)
 
 	// Verify no core kube actions occurred
@@ -965,7 +969,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	// The two actions should be:
 	// 0. Updating the ready condition
 	// 1. Removing the finalizer
-	if e, a := 2, len(actions); e != a {
+	if e, a := 3, len(actions); e != a {
 		t.Logf("%+v\n", actions)
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
@@ -996,7 +1000,15 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
 	}
 
-	updateAction = actions[1].(core.UpdateAction)
+	getAction := actions[1].(core.GetAction)
+	if e, a := "get", getAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	if e, a := testInstanceName, getAction.GetName(); e != a {
+		t.Fatalf("Unexpected name of object to get; expected %v; got %v", e, a)
+	}
+
+	updateAction = actions[2].(core.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -1227,6 +1239,10 @@ func TestReconcileBindingDelete(t *testing.T) {
 		},
 	}
 
+	fakeCatalogClient.AddReactor("get", "bindings", func(action core.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
 	testController.reconcileBinding(binding)
 
 	kubeActions := fakeKubeClient.Actions()
@@ -1259,7 +1275,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	// The two actions should be:
 	// 0. Updating the ready condition
 	// 1. Removing the finalizer
-	if e, a := 2, len(actions); e != a {
+	if e, a := 3, len(actions); e != a {
 		t.Logf("%+v\n", actions)
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
@@ -1290,7 +1306,15 @@ func TestReconcileBindingDelete(t *testing.T) {
 		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
 	}
 
-	updateAction = actions[1].(core.UpdateAction)
+	getAction2 := actions[1].(core.GetAction)
+	if e, a := "get", getAction2.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	if e, a := testBindingName, getAction2.GetName(); e != a {
+		t.Fatalf("Unexpected name of object to get; expected %v; got %v", e, a)
+	}
+
+	updateAction = actions[2].(core.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}

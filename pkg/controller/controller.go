@@ -143,7 +143,7 @@ func (c *controller) brokerDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Info("Received delete event for Broker %v", broker.Name)
+	glog.V(4).Infof("Received delete event for Broker %v", broker.Name)
 }
 
 const (
@@ -620,6 +620,14 @@ func (c *controller) updateInstanceFinalizers(
 	instance *v1alpha1.Instance,
 	finalizers []string) error {
 
+	// Get the latest version of the instance so that we can avoid conflicts
+	// (since we have probably just updated the status of the instance and are
+	// now removing the last finalizer).
+	instance, err := c.serviceCatalogClient.Instances(instance.Namespace).Get(instance.Name)
+	if err != nil {
+		glog.Errorf("Error getting Instance %v/%v to finalize: %v", instance.Namespace, instance.Name, err)
+	}
+
 	clone, err := api.Scheme.DeepCopy(instance)
 	if err != nil {
 		return err
@@ -944,6 +952,14 @@ func (c *controller) updateBindingCondition(
 func (c *controller) updateBindingFinalizers(
 	binding *v1alpha1.Binding,
 	finalizers []string) error {
+
+	// Get the latest version of the binding so that we can avoid conflicts
+	// (since we have probably just updated the status of the binding and are
+	// now removing the last finalizer).
+	binding, err := c.serviceCatalogClient.Bindings(binding.Namespace).Get(binding.Name)
+	if err != nil {
+		glog.Errorf("Error getting Binding %v/%v to finalize: %v", binding.Namespace, binding.Name, err)
+	}
 
 	clone, err := api.Scheme.DeepCopy(binding)
 	if err != nil {
