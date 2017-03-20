@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -1163,6 +1164,11 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace)
 	if string(ns.UID) != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
 		t.Fatalf("Unexpected borker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+	}
+
+	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
+	if appGUID := bindResource["app_guid"]; string(ns.UID) != fmt.Sprintf("%v", appGUID) {
+		t.Fatalf("Unexpected borker AppID: expected %q, got %q", string(ns.UID), appGUID)
 	}
 
 	actions := filterActions(fakeCatalogClient.Actions())

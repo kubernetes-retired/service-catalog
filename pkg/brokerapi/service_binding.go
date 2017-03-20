@@ -24,6 +24,7 @@ type ServiceBinding struct {
 	ServicePlanID     string                 `json:"service_plan_id"`
 	PrivateKey        string                 `json:"private_key"`
 	ServiceInstanceID string                 `json:"service_instance_id"`
+	BindResource      map[string]interface{} `json:"bind_resource,omitempty"`
 	Parameters        map[string]interface{} `json:"parameters, omitempty"`
 }
 

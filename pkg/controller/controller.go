@@ -742,10 +742,11 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 		ns, _ := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
 		request := &brokerapi.BindingRequest{
-			ServiceID:  serviceClass.OSBGUID,
-			PlanID:     servicePlan.OSBGUID,
-			Parameters: parameters,
-			AppGUID:    string(ns.UID),
+			ServiceID:    serviceClass.OSBGUID,
+			PlanID:       servicePlan.OSBGUID,
+			Parameters:   parameters,
+			AppGUID:      string(ns.UID),
+			BindResource: map[string]interface{}{"app_guid": string(ns.UID)},
 		}
 		response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
 		if err != nil {

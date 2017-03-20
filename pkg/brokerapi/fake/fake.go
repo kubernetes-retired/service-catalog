@@ -151,15 +151,19 @@ func convertInstanceRequest(req *brokerapi.CreateServiceInstanceRequest) *broker
 
 // BindingClient implements a fake CF binding API client
 type BindingClient struct {
-	Bindings    map[string]*brokerapi.ServiceBinding
-	CreateCreds brokerapi.Credential
-	CreateErr   error
-	DeleteErr   error
+	Bindings        map[string]*brokerapi.ServiceBinding
+	BindingRequests map[string]*brokerapi.BindingRequest
+	CreateCreds     brokerapi.Credential
+	CreateErr       error
+	DeleteErr       error
 }
 
 // NewBindingClient creates a new empty binding client, ready for use
 func NewBindingClient() *BindingClient {
-	return &BindingClient{Bindings: make(map[string]*brokerapi.ServiceBinding)}
+	return &BindingClient{
+		Bindings:        make(map[string]*brokerapi.ServiceBinding),
+		BindingRequests: make(map[string]*brokerapi.BindingRequest),
+	}
 }
 
 // CreateServiceBinding returns b.CreateErr if it was non-nil. Otherwise, returns
@@ -180,6 +184,7 @@ func (b *BindingClient) CreateServiceBinding(
 	}
 
 	b.Bindings[BindingsMapKey(sID, bID)] = convertBindingRequest(req)
+	b.BindingRequests[BindingsMapKey(sID, bID)] = req
 	return &brokerapi.CreateServiceBindingResponse{Credentials: b.CreateCreds}, nil
 }
 
