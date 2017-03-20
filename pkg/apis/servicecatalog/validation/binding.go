@@ -28,16 +28,20 @@ var validateBindingName = apivalidation.NameIsDNSSubdomain
 
 // ValidateBinding validates a Binding and returns a list of errors.
 func ValidateBinding(binding *sc.Binding) field.ErrorList {
+	return internalValidateBinding(binding, true)
+}
+
+func internalValidateBinding(binding *sc.Binding, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, true, /*namespace*/
 		validateBindingName,
 		field.NewPath("metadata"))...)
-	allErrs = append(allErrs, validateBindingSpec(&binding.Spec, field.NewPath("Spec"))...)
+	allErrs = append(allErrs, validateBindingSpec(&binding.Spec, field.NewPath("Spec"), create)...)
 
 	return allErrs
 }
 
-func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path) field.ErrorList {
+func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	for _, msg := range validateInstanceName(spec.InstanceRef.Name, false /* prefix */) {
@@ -48,15 +52,16 @@ func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path) field.ErrorL
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("secretName"), spec.SecretName, msg))
 	}
 
+	if create && spec.Checksum != nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("checksum"), "checksum may not be set during creation"))
+	}
+
 	return allErrs
 }
 
 // ValidateBindingUpdate checks that when changing from an older binding to a newer binding is okay.
 func ValidateBindingUpdate(new *sc.Binding, old *sc.Binding) field.ErrorList {
-	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateBinding(new)...)
-	allErrs = append(allErrs, ValidateBinding(old)...)
-	return allErrs
+	return internalValidateBinding(new, false)
 }
 
 // ValidateBindingStatusUpdate checks that when changing from an older binding to a newer binding is okay.

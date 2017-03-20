@@ -189,6 +189,10 @@ type InstanceSpec struct {
 	// OSB-specific
 	OSBDashboardURL  *string `json:"osbDashboardURL,omitempty"`
 	OSBLastOperation *string `json:"osbLastOperation,omitempty"`
+
+	// Checksum is the checksum of the InstanceSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string `json:"checksum,omitempty"`
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -262,6 +266,10 @@ type BindingSpec struct {
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
 	OSBGUID string `json:"osbGuid"`
+
+	// Checksum is the checksum of the BindingSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string `json:"checksum,omitempty"`
 }
 
 // BindingStatus represents the current status of a Binding.

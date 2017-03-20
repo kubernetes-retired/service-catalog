@@ -121,6 +121,13 @@ func DeepCopy_servicecatalog_BindingSpec(in interface{}, out interface{}, c *con
 		} else {
 			out.Parameters = nil
 		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
+		} else {
+			out.Checksum = nil
+		}
 		return nil
 	}
 }
@@ -303,6 +310,13 @@ func DeepCopy_servicecatalog_InstanceSpec(in interface{}, out interface{}, c *co
 			**out = **in
 		} else {
 			out.OSBLastOperation = nil
+		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
+		} else {
+			out.Checksum = nil
 		}
 		return nil
 	}

@@ -34,6 +34,7 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 	runtimeutil "k8s.io/kubernetes/pkg/util/runtime"
 
+	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
@@ -404,6 +405,21 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 
 // reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
+	// Determine whether the checksum has been invalidated by a change to the
+	// object.  If the instance's checksum matches the calculated checksum,
+	// there is no work to do.
+	//
+	// We only do this if the deletion timestamp is nil, because the deletion
+	// timestamp changes the object's state in a way that we must reconcile,
+	// but does not affect the checksum.
+	if instance.Spec.Checksum != nil && instance.DeletionTimestamp == nil {
+		instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
+		if instanceChecksum == *instance.Spec.Checksum {
+			glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
+			return
+		}
+	}
+
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
@@ -648,6 +664,21 @@ func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
+	// Determine whether the checksum has been invalidated by a change to the
+	// object.  If the binding's checksum matches the calculated checksum,
+	// there is no work to do.
+	//
+	// We only do this if the deletion timestamp is nil, because the deletion
+	// timestamp changes the object's state in a way that we must reconcile,
+	// but does not affect the checksum.
+	if binding.Spec.Checksum != nil && binding.DeletionTimestamp == nil {
+		bindingChecksum := checksum.BindingSpecChecksum(binding.Spec)
+		if bindingChecksum == *binding.Spec.Checksum {
+			glog.V(4).Infof("Not processing event for Binding %v/%v because checksum showed there is no work to do", binding.Namespace, binding.Name)
+			return
+		}
+	}
+
 	glog.V(4).Infof("Processing Binding %v/%v", binding.Namespace, binding.Name)
 
 	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)

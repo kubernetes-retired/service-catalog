@@ -28,15 +28,19 @@ var validateInstanceName = apivalidation.NameIsDNSSubdomain
 
 // ValidateInstance validates an Instance and returns a list of errors.
 func ValidateInstance(instance *sc.Instance) field.ErrorList {
+	return internalValidateInstance(instance, true)
+}
+
+func internalValidateInstance(instance *sc.Instance, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&instance.ObjectMeta, true, /*namespace*/
 		validateInstanceName,
 		field.NewPath("metadata"))...)
-	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"))...)
+	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"), create)...)
 	return allErrs
 }
 
-func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path) field.ErrorList {
+func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if "" == spec.ServiceClassName {
@@ -55,17 +59,16 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path) field.Erro
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
 	}
 
+	if create && spec.Checksum != nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("checksum"), "checksum may not be set during creation"))
+	}
+
 	return allErrs
 }
 
-// ValidateInstanceUpdate checks that when changing from an older instance to
-// a newer instance is okay.
+// ValidateInstanceUpdate validates a change to the Instance's spec.
 func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
-	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateInstance(new)...)
-	allErrs = append(allErrs, ValidateInstance(old)...)
-
-	return allErrs
+	return internalValidateInstance(new, false)
 }
 
 // ValidateInstanceStatusUpdate checks that when changing from an older
