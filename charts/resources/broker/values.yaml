@@ -1,0 +1,5 @@
+brokerURL: http://doesnt-exist.com
+auth:
+  secretName: broker-secret
+  username: broker-username
+  password: broker-password
