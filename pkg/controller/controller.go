@@ -664,6 +664,21 @@ func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
+	// Determine whether the checksum has been invalidated by a change to the
+	// object.  If the binding's checksum matches the calculated checksum,
+	// there is no work to do.
+	//
+	// We only do this if the deletion timestamp is nil, because the deletion
+	// timestamp changes the object's state in a way that we must reconcile,
+	// but does not affect the checksum.
+	if binding.Spec.Checksum != nil && binding.DeletionTimestamp == nil {
+		bindingChecksum := checksum.BindingSpecChecksum(binding.Spec)
+		if bindingChecksum == *binding.Spec.Checksum {
+			glog.V(4).Infof("Not processing event for Binding %v/%v because checksum showed there is no work to do", binding.Namespace, binding.Name)
+			return
+		}
+	}
+
 	glog.V(4).Infof("Processing Binding %v/%v", binding.Namespace, binding.Name)
 
 	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)

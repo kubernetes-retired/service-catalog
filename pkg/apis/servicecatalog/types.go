@@ -254,6 +254,10 @@ type BindingSpec struct {
 	// OSBGUID is the identity of this object for use with the OSB API.
 	// Immutable.
 	OSBGUID string
+
+	// Checksum is the checksum of the BindingSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string
 }
 
 // BindingStatus represents the current status of a Binding.

@@ -26,6 +26,7 @@ import (
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
@@ -147,6 +148,25 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old run
 	}
 	// status changes are not allowed to update spec
 	newBinding.Spec = oldBinding.Spec
+
+	// TODO: unit test
+
+	foundReadyConditionTrue := false
+	for _, condition := range newBinding.Status.Conditions {
+		if condition.Type == sc.BindingConditionReady && condition.Status == sc.ConditionTrue {
+			foundReadyConditionTrue = true
+			break
+		}
+	}
+
+	if foundReadyConditionTrue {
+		glog.Infof("Found true ready condition for Binding %v/%v; updating checksum", newBinding.Namespace, newBinding.Name)
+		// This status update has a true ready condition; update the checksum if necessary
+		newBinding.Spec.Checksum = func() *string {
+			s := checksum.BindingSpecChecksum(newBinding.Spec)
+			return &s
+		}()
+	}
 }
 
 func (bindingStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {

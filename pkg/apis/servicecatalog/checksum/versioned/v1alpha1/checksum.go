@@ -44,3 +44,23 @@ func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)
 }
+
+// BindingSpecChecksum calculates a checksum of the given BindingSpec based on
+// the following fields:
+//
+// - InstanceRef.Name
+// - Parameters
+// - OSBGUID
+func BindingSpecChecksum(spec v1alpha1.BindingSpec) string {
+	specString := ""
+	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
+
+	if spec.Parameters != nil {
+		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
+	}
+
+	specString += fmt.Sprintf("osbGuid: %v\n", spec.OSBGUID)
+
+	sum := sha256.Sum256([]byte(specString))
+	return fmt.Sprintf("%x", sum)
+}

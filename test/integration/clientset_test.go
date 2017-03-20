@@ -695,6 +695,9 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 	if e, a := readyConditionTrue, bindingServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
 	}
+	if bindingServer.Spec.Checksum == nil {
+		return fmt.Errorf("Checksum should have been set after updating ready condition to true")
+	}
 
 	if err = bindingClient.Delete(name, &v1.DeleteOptions{}); nil != err {
 		return fmt.Errorf("broker should be deleted (%v)", err)

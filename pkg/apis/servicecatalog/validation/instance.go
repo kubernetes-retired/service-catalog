@@ -66,7 +66,7 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 	return allErrs
 }
 
-// ValidateInstanceUpdate validates a change to the broker's spec.
+// ValidateInstanceUpdate validates a change to the Instance's spec.
 func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
 	return internalValidateInstance(new, false)
 }

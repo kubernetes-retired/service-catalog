@@ -150,6 +150,8 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old ru
 	// status changes are not allowed to update spec
 	newInstance.Spec = oldInstance.Spec
 
+	// TODO: unit test
+
 	foundReadyConditionTrue := false
 	for _, condition := range newInstance.Status.Conditions {
 		if condition.Type == sc.InstanceConditionReady && condition.Status == sc.ConditionTrue {

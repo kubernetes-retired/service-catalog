@@ -19,27 +19,46 @@ package checksum
 import (
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"k8s.io/kubernetes/pkg/api/v1"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 	checksumv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 )
 
-func TestInstanceChecksum(t *testing.T) {
-	instanceSpec := servicecatalog.InstanceSpec{
+func TestInstanceSpecChecksum(t *testing.T) {
+	spec := servicecatalog.InstanceSpec{
 		ServiceClassName: "blorb",
 		PlanName:         "plumbus",
-		OSBGUID:          "138177saf87)87fs08f7ASfAS*7",
+		OSBGUID:          "ea6d2fc8-0bb8-11e7-af5d-0242ac110005",
 	}
 
-	unversionedChecksum := unversioned.InstanceSpecChecksum(instanceSpec)
+	unversionedChecksum := unversioned.InstanceSpecChecksum(spec)
 
-	versionedInstanceSpec := v1alpha1.InstanceSpec{}
-	v1alpha1.Convert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(&instanceSpec, &versionedInstanceSpec, nil /* conversionScope */)
+	versionedSpec := v1alpha1.InstanceSpec{}
+	v1alpha1.Convert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	versionedChecksum := checksumv1alpha1.InstanceSpecChecksum(versionedSpec)
 
-	versionedChecksum := checksumv1alpha1.InstanceSpecChecksum(versionedInstanceSpec)
+	if e, a := unversionedChecksum, versionedChecksum; e != a {
+		t.Fatalf("versioned and unversioned checksums should match; expected %v, got %v", e, a)
+	}
+}
+
+// TestBindingChecksum tests that an internal and v1alpha1 checksum of the same object are equivalent
+func TestBindingSpecChecksum(t *testing.T) {
+	spec := servicecatalog.BindingSpec{
+		InstanceRef: v1.LocalObjectReference{Name: "test-instance"},
+		SecretName:  "test-secret",
+		OSBGUID:     "1995a7e6-d078-4ce6-9057-bcefd793634e",
+	}
+
+	unversionedChecksum := unversioned.BindingSpecChecksum(spec)
+
+	versionedSpec := v1alpha1.BindingSpec{}
+	v1alpha1.Convert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	versionedChecksum := checksumv1alpha1.BindingSpecChecksum(versionedSpec)
 
 	if e, a := unversionedChecksum, versionedChecksum; e != a {
 		t.Fatalf("versioned and unversioned checksums should match; expected %v, got %v", e, a)
