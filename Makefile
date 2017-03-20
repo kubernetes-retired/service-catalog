@@ -51,7 +51,15 @@ GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
-REGISTRY      ?= quay.io/kubernetes-service-catalog/
+MUTABLE_TAG                      ?= canary
+APISERVER_IMAGE                   = $(REGISTRY)apiserver:$(VERSION)
+APISERVER_MUTABLE_IMAGE           = $(REGISTRY)apiserver:$(MUTABLE_TAG)
+CONTROLLER_MANAGER_IMAGE          = $(REGISTRY)controller-manager:$(VERSION)
+CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager:$(MUTABLE_TAG)
+K8S_BROKER_IMAGE                  = $(REGISTRY)k8s-broker:$(VERSION)
+K8S_BROKER_MUTABLE_IMAGE          = $(REGISTRY)k8s-broker:$(MUTABLE_TAG)
+USER_BROKER_IMAGE                 = $(REGISTRY)user-broker:$(VERSION)
+USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker:$(MUTABLE_TAG)
 
 # precheck to avoid kubernetes-incubator/service-catalog#361
 $(if $(realpath vendor/k8s.io/kubernetes/vendor), \
@@ -269,28 +277,29 @@ images: k8s-broker-image user-broker-image \
 k8s-broker-image: contrib/build/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
 	mkdir -p contrib/build/k8s-broker/tmp
 	cp $(BINDIR)/k8s-broker contrib/build/k8s-broker/tmp
-	docker build -t k8s-broker:$(VERSION) contrib/build/k8s-broker
+	docker build -t $(K8S_BROKER_IMAGE) contrib/build/k8s-broker
+	docker tag $(K8S_BROKER_IMAGE) $(K8S_BROKER_MUTABLE_IMAGE)
 	rm -rf contrib/build/k8s-broker/tmp
 
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	mkdir -p contrib/build/user-broker/tmp
 	cp $(BINDIR)/user-broker contrib/build/user-broker/tmp
-	docker build -t user-broker:$(VERSION) contrib/build/user-broker
-	docker tag user-broker:$(VERSION) user-broker:latest
+	docker build -t $(USER_BROKER_IMAGE) contrib/build/user-broker
+	docker tag $(USER_BROKER_IMAGE) $(USER_BROKER_MUTABLE_IMAGE)
 	rm -rf contrib/build/user-broker/tmp
 
 apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
 	mkdir -p build/apiserver/tmp
 	cp $(BINDIR)/apiserver build/apiserver/tmp
-	docker build -t apiserver:$(VERSION) build/apiserver
-	docker tag apiserver:$(VERSION) apiserver:latest
+	docker build -t $(APISERVER_IMAGE) build/apiserver
+	docker tag $(APISERVER_IMAGE) $(APISERVER_MUTABLE_IMAGE)
 	rm -rf build/apiserver/tmp
 
 controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controller-manager
 	mkdir -p build/controller-manager/tmp
 	cp $(BINDIR)/controller-manager build/controller-manager/tmp
-	docker build -t controller-manager:$(VERSION) build/controller-manager
-	docker tag controller-manager:$(VERSION) controller-manager:latest
+	docker build -t $(CONTROLLER_MANAGER_IMAGE) build/controller-manager
+	docker tag $(CONTROLLER_MANAGER_IMAGE) $(CONTROLLER_MANAGER_MUTABLE_IMAGE)
 	rm -rf build/controller-manager/tmp
 
 # Push our Docker Images to a registry
@@ -298,25 +307,17 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 push: k8s-broker-push user-broker-push controller-manager-push apiserver-push
 
 k8s-broker-push: k8s-broker-image
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)k8s-broker:$(VERSION)
-	docker push $(REGISTRY)k8s-broker:$(VERSION)
-	docker tag k8s-broker:$(VERSION) $(REGISTRY)k8s-broker:canary
-	docker push $(REGISTRY)k8s-broker:canary
+	docker push $(K8S_BROKER_IMAGE)
+	docker push $(K8S_BROKER_MUTABLE_IMAGE)
 
 user-broker-push: user-broker-image
-	docker tag user-broker:$(VERSION) $(REGISTRY)user-broker:$(VERSION)
-	docker push $(REGISTRY)user-broker:$(VERSION)
-	docker tag user-broker:$(VERSION) $(REGISTRY)user-broker:canary
-	docker push $(REGISTRY)user-broker:canary
+	docker push $(USER_BROKER_IMAGE)
+	docker push $(USER_BROKER_MUTABLE_IMAGE)
 
 controller-manager-push: controller-manager-image
-	docker tag controller-manager:$(VERSION) $(REGISTRY)controller-manager:$(VERSION)
-	docker push $(REGISTRY)controller-manager:$(VERSION)
-	docker tag controller-manager:$(VERSION) $(REGISTRY)controller-manager:canary
-	docker push $(REGISTRY)controller-manager:canary
+	docker push $(CONTROLLER_MANAGER_IMAGE)
+	docker push $(CONTROLLER_MANAGER_MUTABLE_IMAGE)
 
 apiserver-push: apiserver-image
-	docker tag apiserver:$(VERSION) $(REGISTRY)apiserver:$(VERSION)
-	docker push $(REGISTRY)apiserver:$(VERSION)
-	docker tag apiserver:$(VERSION) $(REGISTRY)apiserver:canary
-	docker push $(REGISTRY)apiserver:canary
+	docker push $(APISERVER_IMAGE)
+	docker push $(APISERVER_MUTABLE_IMAGE)
