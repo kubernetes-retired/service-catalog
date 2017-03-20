@@ -31,7 +31,7 @@ import (
 type TPROptions struct {
 	DefaultGlobalNamespace string
 	RESTClient             restclient.Interface
-	InstallTPRsFunc        func()
+	InstallTPRsFunc        func() error
 	GlobalNamespace        string
 }
 

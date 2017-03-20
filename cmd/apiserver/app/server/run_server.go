@@ -45,19 +45,24 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 	return runEtcdServer(opts)
 }
 
-func installTPRsToCore(cl clientset.Interface) func() {
-	return func() {
+func installTPRsToCore(cl clientset.Interface) func() error {
+	return func() error {
 		installer := tpr.NewInstaller(cl.Extensions().ThirdPartyResources())
 		if err := installer.InstallTypes(); err != nil {
-			glog.V(4).Infof("Installing TPR types failed, continuing anyway (%s)", err)
+			glog.Errorf("Failed to install TPR types (%s)", err)
+			return err
 		}
+		return nil
 	}
 }
 
 func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	tprOpts := opts.TPROptions
 	glog.Infoln("Installing TPR types to the cluster")
-	tprOpts.InstallTPRsFunc()
+	if err := tprOpts.InstallTPRsFunc(); err != nil {
+		return err
+	}
+
 	glog.V(4).Infoln("Preparing to run API server")
 	genericConfig, err := setupBasicServer(opts)
 	if err != nil {

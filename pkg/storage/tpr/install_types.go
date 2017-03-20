@@ -37,6 +37,11 @@ var thirdPartyResources = []v1beta1.ThirdPartyResource{
 	serviceBindingTPR,
 }
 
+// ErrTPRInstall is returned when we fail to install TPR
+type ErrTPRInstall struct {
+	errMsg string
+}
+
 // Installer takes in a client and exposes method for installing third party resources
 type Installer struct {
 	tprs extensionsv1beta.ThirdPartyResourceInterface
@@ -100,8 +105,12 @@ func (i *Installer) InstallTypes() error {
 
 	if allErrMsg != "" {
 		glog.Errorf("Failed to create Third Party Resource:\n%s)", allErrMsg)
-		return fmt.Errorf("Failed to create Third Party Resource:\n%s)", allErrMsg)
+		return ErrTPRInstall{fmt.Sprintf("Failed to create Third Party Resource:%s)", allErrMsg)}
 	}
 
 	return nil
+}
+
+func (e ErrTPRInstall) Error() string {
+	return e.errMsg
 }
