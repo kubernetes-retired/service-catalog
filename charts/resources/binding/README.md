@@ -41,5 +41,5 @@ Alternatively, a YAML file that specifies the values for the parameters can be
 provided while installing the chart. For example:
 
 ```bash
-$ helm install --name instance-resource --namespace test-ns  --values values.yaml charts/resources/binding
+$ helm install --name binding-resource --namespace test-ns  --values values.yaml charts/resources/binding
 ```
