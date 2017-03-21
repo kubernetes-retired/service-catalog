@@ -26,8 +26,9 @@ layout:
     │   └── controller-manager  # The service catalog controller manager binary
     ├── contrib                 # Contains all non-essential source
     │   └── hack                # Non-build related scripts
-    ├── deploy                  # Helm charts for deployment
+    ├── charts                  # Helm charts for deployment
     │   └── catalog             # Helm chart for deploying the catalog
+    │   └── ups-broker          # Helm chart for deploying the user-provided service broker
     ├── docs                    # Documentation
     ├── pkg                     # Contains all non-"main" Go packages
     └── vendor                  # Glide-managed dependencies (untracked)
