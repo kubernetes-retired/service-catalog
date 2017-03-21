@@ -68,7 +68,8 @@ also need:
 
 * A working Kubernetes cluster and `kubectl` installed in your local `PATH`,
   properly configured to access that cluster. The version of Kubernetes and
-  `kubectl` must be >= 1.4
+  `kubectl` must be >= 1.6. See below for instructions on how to download these
+  versions of `kubectl`
 * [Helm](https://helm.sh) (Tiller) installed in your Kubernetes cluster and the
   `helm` binary in your `PATH`
 * To be pre-authenticated to a Docker registry (if using a remote cluster)
