@@ -142,7 +142,7 @@ func convertInstanceRequest(req *brokerapi.CreateServiceInstanceRequest) *broker
 		InternalID:       uuid.NewV4().String(),
 		ServiceID:        req.ServiceID,
 		PlanID:           req.PlanID,
-		OrganizationGUID: uuid.NewV4().String(),
+		OrganizationGUID: req.OrgID,
 		SpaceGUID:        req.SpaceID,
 		LastOperation:    nil,
 		Parameters:       req.Parameters,
@@ -151,15 +151,19 @@ func convertInstanceRequest(req *brokerapi.CreateServiceInstanceRequest) *broker
 
 // BindingClient implements a fake CF binding API client
 type BindingClient struct {
-	Bindings    map[string]*brokerapi.ServiceBinding
-	CreateCreds brokerapi.Credential
-	CreateErr   error
-	DeleteErr   error
+	Bindings        map[string]*brokerapi.ServiceBinding
+	BindingRequests map[string]*brokerapi.BindingRequest
+	CreateCreds     brokerapi.Credential
+	CreateErr       error
+	DeleteErr       error
 }
 
 // NewBindingClient creates a new empty binding client, ready for use
 func NewBindingClient() *BindingClient {
-	return &BindingClient{Bindings: make(map[string]*brokerapi.ServiceBinding)}
+	return &BindingClient{
+		Bindings:        make(map[string]*brokerapi.ServiceBinding),
+		BindingRequests: make(map[string]*brokerapi.BindingRequest),
+	}
 }
 
 // CreateServiceBinding returns b.CreateErr if it was non-nil. Otherwise, returns
@@ -180,6 +184,7 @@ func (b *BindingClient) CreateServiceBinding(
 	}
 
 	b.Bindings[BindingsMapKey(sID, bID)] = convertBindingRequest(req)
+	b.BindingRequests[BindingsMapKey(sID, bID)] = req
 	return &brokerapi.CreateServiceBindingResponse{Credentials: b.CreateCreds}, nil
 }
 
@@ -209,6 +214,7 @@ func convertBindingRequest(req *brokerapi.BindingRequest) *brokerapi.ServiceBind
 		ServiceID:     req.ServiceID,
 		ServicePlanID: req.PlanID,
 		Parameters:    req.Parameters,
+		AppID:         req.AppGUID,
 	}
 }
 

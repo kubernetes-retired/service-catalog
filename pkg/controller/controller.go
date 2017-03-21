@@ -496,10 +496,18 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			}
 		}
 
+		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
+		if err != nil {
+			glog.Errorf("Failed to get namespace during instance create (%s)", err)
+			return
+		}
+
 		request := &brokerapi.CreateServiceInstanceRequest{
 			ServiceID:  serviceClass.OSBGUID,
 			PlanID:     servicePlan.OSBGUID,
 			Parameters: parameters,
+			OrgID:      string(ns.UID),
+			SpaceID:    string(ns.UID),
 		}
 
 		// TODO: handle async provisioning
@@ -776,10 +784,18 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			}
 		}
 
+		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace)
+		if err != nil {
+			glog.Errorf("Failed to get namespace during binding (%s)", err)
+			return
+		}
+
 		request := &brokerapi.BindingRequest{
-			ServiceID:  serviceClass.OSBGUID,
-			PlanID:     servicePlan.OSBGUID,
-			Parameters: parameters,
+			ServiceID:    serviceClass.OSBGUID,
+			PlanID:       servicePlan.OSBGUID,
+			Parameters:   parameters,
+			AppGUID:      string(ns.UID),
+			BindResource: map[string]interface{}{"app_guid": string(ns.UID)},
 		}
 		response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
 		if err != nil {
