@@ -34,12 +34,16 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
-// TestAddAndRemoveBroker tests the add broker flow.  It creates a new Broker
-// resource and waits for that Broker to have a ready condition with true
-// status, establishes that the controller created the expected ServiceClass,
-// then deletes the Broker and establishes that the controller cleaned up the
-// ServiceClass.
-func TestAddAndRemoveBroker(t *testing.T) {
+// TestBasicFlows tests:
+//
+// - add Broker
+// - verify ServiceClasses added
+// - provision Instance
+// - make Binding
+// - unbind
+// - deprovision
+// - delete broker
+func TestBasicFlows(t *testing.T) {
 	_, catalogClient, fakeBrokerCatalog, _, _, _, _, shutdownServer := newTestController(t)
 	defer shutdownServer()
 
@@ -48,6 +52,7 @@ func TestAddAndRemoveBroker(t *testing.T) {
 	const (
 		testBrokerName       = "test-broker"
 		testServiceClassName = "test-service"
+		testPlanName         = "test-plan"
 	)
 
 	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
@@ -58,7 +63,7 @@ func TestAddAndRemoveBroker(t *testing.T) {
 				Description: "a test service",
 				Plans: []brokerapi.ServicePlan{
 					{
-						Name:        "test-plan",
+						Name:        testPlanName,
 						Free:        true,
 						ID:          "34567",
 						Description: "a test plan",
@@ -86,13 +91,101 @@ func TestAddAndRemoveBroker(t *testing.T) {
 			Status: v1alpha1.ConditionTrue,
 		})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
 	err = util.WaitForServiceClassToExist(client, testServiceClassName)
 	if nil != err {
 		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
+
+	// TODO: find some way to compose scenarios; extract method here for real
+	// logic for this test.
+
+	//-----------------
+
+	const (
+		testNamespace    = "test-ns"
+		testInstanceName = "test-instance"
+	)
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: testServiceClassName,
+			PlanName:         testPlanName,
+		},
+	}
+
+	_, err = client.Instances(testNamespace).Create(instance)
+	if err != nil {
+		t.Fatalf("error creating Instance: %v", err)
+	}
+
+	err = util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.InstanceCondition{
+		Type:   v1alpha1.InstanceConditionReady,
+		Status: v1alpha1.ConditionTrue,
+	})
+	if err != nil {
+		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
+
+	// Binding test begins here
+	//-----------------
+
+	const (
+		testBindingName = "test-binding"
+		testSecretName  = "test-secret"
+	)
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{
+				Name: testInstanceName,
+			},
+			SecretName: testSecretName,
+		},
+	}
+
+	_, err = client.Bindings(testNamespace).Create(binding)
+	if err != nil {
+		t.Fatalf("error creating Binding: %v", binding)
+	}
+
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.BindingCondition{
+		Type:   v1alpha1.BindingConditionReady,
+		Status: v1alpha1.ConditionTrue,
+	})
+	if err != nil {
+		t.Fatalf("error waiting for binding to become ready: %v", err)
+	}
+
+	err = client.Bindings(testNamespace).Delete(testBindingName, &v1.DeleteOptions{})
+	if err != nil {
+		t.Fatalf("binding delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForBindingToNotExist(client, testNamespace, testBindingName)
+	if err != nil {
+		t.Fatalf("error waiting for binding to not exist: %v", err)
+	}
+
+	//-----------------
+	// End binding test
+
+	err = client.Instances(testNamespace).Delete(testInstanceName, &v1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("instance delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForInstanceToNotExist(client, testNamespace, testInstanceName)
+	if err != nil {
+		t.Fatalf("error waiting for instance to be deleted: %v", err)
+	}
+
+	//-----------------
+	// End provision test
 
 	// Delete the broker
 	err = client.Brokers().Delete(testBrokerName, &v1.DeleteOptions{})
