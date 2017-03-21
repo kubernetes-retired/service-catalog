@@ -69,7 +69,8 @@ also need:
 
 * A working Kubernetes cluster and `kubectl` installed in your local `PATH`,
   properly configured to access that cluster. The version of Kubernetes and
-  `kubectl` must be >= 1.4
+  `kubectl` must be >= 1.6. See below for instructions on how to download these
+  versions of `kubectl`
 * [Helm](https://helm.sh) (Tiller) installed in your Kubernetes cluster and the
   `helm` binary in your `PATH`
 * To be pre-authenticated to a Docker registry (if using a remote cluster)
@@ -242,6 +243,17 @@ API server and the main Kubernetes API server without switching contexts or
 `kubeconfig` files.  For now, the best way to access the service catalog API
 server is via a dedicated `kubeconfig` file.  You can manage the kubeconfig in
 use within a directory using the `direnv` tool.
+
+Additionally, you'll need to have a version 1.6 beta build of `kubectl` to execute 
+`create` operations on the service catalog API server. To get one, execute the following:
+
+```console
+curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.6.0-beta.3/bin/darwin/amd64/kubectl
+chmod +x ./kubectl
+```
+
+For the rest of this document, we'll assume that all `kubectl` commands are using this newly 
+downloaded version 1.6.
 
 ----
 
