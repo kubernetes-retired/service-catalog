@@ -966,9 +966,10 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	}
 
 	actions := filterActions(fakeCatalogClient.Actions())
-	// The two actions should be:
+	// The three actions should be:
 	// 0. Updating the ready condition
-	// 1. Removing the finalizer
+	// 1. Get against the instance
+	// 2. Removing the finalizer
 	if e, a := 3, len(actions); e != a {
 		t.Logf("%+v\n", actions)
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
@@ -1272,9 +1273,10 @@ func TestReconcileBindingDelete(t *testing.T) {
 	}
 
 	actions := filterActions(fakeCatalogClient.Actions())
-	// The two actions should be:
+	// The three actions should be:
 	// 0. Updating the ready condition
-	// 1. Removing the finalizer
+	// 1. Get against the binding in question
+	// 2. Removing the finalizer
 	if e, a := 3, len(actions); e != a {
 		t.Logf("%+v\n", actions)
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
