@@ -46,6 +46,19 @@ function cleanup() {
   rm -f "${SC_KUBECONFIG}"
   kubectl delete secret -n test-ns my-secret > /dev/null 2>&1 || true
   kubectl delete namespace test-ns || true
+
+  wait_for_expected_output -x -e 'test-ns' -n 10 \
+    kubectl get namespaces
+
+  # TODO: Hack in order to delete TPRs. Will need to be removed when TPRs can be deleted
+  # by the catalog API server.
+  if [[ -n "${WITH_TPR:-}" ]]; then
+    kubectl delete thirdpartyresources binding.servicecatalog.k8s.io
+    kubectl delete thirdpartyresources instance.servicecatalog.k8s.io
+    kubectl delete thirdpartyresources broker.servicecatalog.k8s.io
+    kubectl delete thirdpartyresources service-class.servicecatalog.k8s.io
+  fi
+
   echo 'Cleanup done.'
 }
 
@@ -135,9 +148,8 @@ kubectl config set-cluster service-catalog-cluster --server="http://${API_SERVER
 kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster --user=service-catalog-creds
 kubectl config use-context service-catalog-ctx
 
-sleep 15
-
-[[ "$(kubectl get brokers,serviceclasses,instances,bindings 2>&1)" == 'No resources found.' ]] \
+retry -n 10 \
+  kubectl get brokers,serviceclasses,instances,bindings \
   || error_exit 'Issue listing resources from service catalog API server.'
 
 # Create the broker
@@ -188,38 +200,43 @@ wait_for_expected_output -e 'InjectedBindResult' -n 10 \
 [[ "$(KUBECONFIG="${K8S_KUBECONFIG}" kubectl get secrets -n test-ns)" == *my-secret* ]] \
   || error_exit '"my-secret" not present when listing secrets.'
 
-# Unbind from the instance
 
-echo 'Unbinding from instance...'
+# TODO: Cannot currently test TPR deletion; only delete if using an etcd-backed
+# API server
+if [[ -z "${WITH_TPR:-}" ]]; then
+  # Unbind from the instance
 
-kubectl delete -n test-ns bindings ups-binding \
-  || error_exit 'Error when deleting ups-binding.'
+  echo 'Unbinding from instance...'
 
-export KUBECONFIG="${K8S_KUBECONFIG}"
-wait_for_expected_output -x -e "my-secret" -n 10 \
-    kubectl get secrets -n test-ns \
-  || error_exit '"my-secret" not removed upon deleting ups-binding.'
-export KUBECONFIG="${SC_KUBECONFIG}"
+  kubectl delete -n test-ns bindings ups-binding \
+    || error_exit 'Error when deleting ups-binding.'
 
-# Deprovision the instance
+  export KUBECONFIG="${K8S_KUBECONFIG}"
+  wait_for_expected_output -x -e "my-secret" -n 10 \
+      kubectl get secrets -n test-ns \
+    || error_exit '"my-secret" not removed upon deleting ups-binding.'
+  export KUBECONFIG="${SC_KUBECONFIG}"
 
-echo 'Deprovisioning instance...'
+  # Deprovision the instance
 
-kubectl delete -n test-ns instances ups-instance \
-  || error_exit 'Error when deleting ups-instance.'
+  echo 'Deprovisioning instance...'
 
-# Delete the broker
+  kubectl delete -n test-ns instances ups-instance \
+    || error_exit 'Error when deleting ups-instance.'
 
-echo 'Deleting broker...'
+  # Delete the broker
 
-kubectl delete brokers ups-broker \
-  || error_exit 'Error when deleting ups-broker.'
+  echo 'Deleting broker...'
 
-wait_for_expected_output -x -e 'user-provided-service' -n 10 \
-    kubectl get serviceclasses \
-  || error_exit 'Service classes not successfully removed upon deleting ups-broker.'
+  kubectl delete brokers ups-broker \
+    || error_exit 'Error when deleting ups-broker.'
 
-[[ "$(kubectl get serviceclasses 2>&1)" == "No resources found." ]] \
-  || error_exit 'Service classes not successfully removed upon deleting ups-broker.'
+  wait_for_expected_output -x -e 'user-provided-service' -n 10 \
+      kubectl get serviceclasses \
+    || error_exit 'Service classes not successfully removed upon deleting ups-broker.'
+
+  [[ "$(kubectl get serviceclasses 2>&1)" == "No resources found." ]] \
+    || error_exit 'Service classes not successfully removed upon deleting ups-broker.'
+fi
 
 echo 'Walkthrough completed successfully.'

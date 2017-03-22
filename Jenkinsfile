@@ -99,9 +99,16 @@ node {
         }
       )
 
-      // Run through the walkthrough on the cluster.
+      // Run through the walkthrough on the cluster, once with an etcd-backed API server and once
+      // with a TPR-backed one.
       sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
             --registry gcr.io/${test_project}/catalog \
+            --cleanup
+      """
+
+      sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
+            --registry gcr.io/${test_project}/catalog \
+            --with-tpr \
             --cleanup
       """
     } catch (Exception e) {
