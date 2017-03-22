@@ -32,7 +32,7 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
-VERSION       ?= $(shell git describe --tags --always --abbrev=7 --dirty)
+VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
 ifeq ($(shell uname -s),Darwin)
 STAT           = stat -f '%c %N'
 else
