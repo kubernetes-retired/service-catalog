@@ -42,8 +42,9 @@ issue by adding a comment to it of the form:
 	#dibs
 
 However, it is a good idea to discuss the issue, and your intent to work on it,
-with the other members via the slack channel to make sure there isn't some
-other work alread going on with respect to that issue.
+with the other members via the [slack channel](https://kubernetes.slack.com/messages/sig-service-catalog)
+to make sure there isn't some other work already going on with respect to that
+issue.
 
 When you create a pull request (PR) that completely addresses an open issue
 please include a line in the initial comment that looks like:
@@ -218,6 +219,11 @@ If you choose etcd storage, the helm chart will launch an etcd server for you
 in the same pod as the service-catalog API server. You will be responsible for
 the data in the etcd server container.
 
-If you choose third party resources storage, the helm chart will not launch an etcd
-server, and instruct the API server to store all resources in the Kubernetes cluster
-as third party resources.
+If you choose third party resources storage, the helm chart will not launch an
+etcd server, but will instead instruct the API server to store all resources in
+the Kubernetes cluster as third party resources.
+
+## Demo walkthrough
+
+Check out the [walk-through](WALKTHROUGH.md) for a detailed guide of an example
+deployment.
