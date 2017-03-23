@@ -31,7 +31,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 	"k8s.io/client-go/1.5/kubernetes/fake"
 	"k8s.io/kubernetes/pkg/api/v1"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
 )
 
 const (
@@ -279,4 +278,3 @@ func newTestController(t *testing.T) (
 	return fakeKubeClient, catalogClient, catalogCl, instanceCl, bindingCl,
 		testController, serviceCatalogSharedInformers, shutdownServer
 }
-
