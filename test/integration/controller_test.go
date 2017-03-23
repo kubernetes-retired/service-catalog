@@ -149,18 +149,18 @@ func TestBasicFlows(t *testing.T) {
 			instance.Spec.OSBGUID,
 		)
 	}
-	if retInst.Spec.OSBDashboardURL != instance.Spec.OSBDashboardURL {
+	if *retInst.Spec.OSBDashboardURL != *instance.Spec.OSBDashboardURL {
 		t.Fatalf(
 			"returned OSB Dashboard URL '%s' doesn't match original '%s'",
-			retInst.Spec.OSBDashboardURL,
-			instance.Spec.OSBDashboardURL,
+			*retInst.Spec.OSBDashboardURL,
+			*instance.Spec.OSBDashboardURL,
 		)
 	}
-	if retInst.Spec.OSBLastOperation != instance.Spec.OSBLastOperation {
+	if *retInst.Spec.OSBLastOperation != *instance.Spec.OSBLastOperation {
 		t.Fatalf(
 			"returned OSB last operation '%s' doesn't match original '%s'",
-			retInst.Spec.OSBLastOperation,
-			instance.Spec.OSBLastOperation,
+			*retInst.Spec.OSBLastOperation,
+			*instance.Spec.OSBLastOperation,
 		)
 	}
 
