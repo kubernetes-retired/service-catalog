@@ -43,7 +43,7 @@ var (
 func NewSingular(ns, name string) runtime.Object {
 	return &servicecatalog.Broker{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceBrokerKind.TPRName(),
+			Kind: tpr.ServiceBrokerKind.String(),
 		},
 		ObjectMeta: api.ObjectMeta{
 			Namespace: ns,
@@ -61,7 +61,7 @@ func EmptyObject() runtime.Object {
 func NewList() runtime.Object {
 	return &servicecatalog.BrokerList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceBrokerKind.TPRName(),
+			Kind: tpr.ServiceBrokerListKind.String(),
 		},
 		Items: []servicecatalog.Broker{},
 	}

@@ -57,11 +57,14 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
-	var fakeClient restclient.Interface // TODO
 	go func() {
 
 		tprOptions := server.NewTPROptions()
-		tprOptions.RESTClient = fakeClient
+		tprOptions.RESTClient = getFakeCoreRESTClient()
+		tprOptions.InstallTPRsFunc = func() error {
+			return nil
+		}
+		tprOptions.GlobalNamespace = globalTPRNamespace
 		options := &server.ServiceCatalogServerOptions{
 			StorageTypeString:       storageTypeStr,
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),

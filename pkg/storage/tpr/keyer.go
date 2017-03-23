@@ -80,8 +80,8 @@ func (k Keyer) NamespaceAndNameFromKey(key string) (string, string, error) {
 	spl := strings.Split(key, k.Separator)
 	splLen := len(spl)
 	if splLen == 1 {
-		// single slice entry is namespace-less, so use the default
-		return k.DefaultNamespace, key, nil
+		// single slice entry is name-less, so return an empty name
+		return spl[0], "", nil
 	} else if splLen == 2 {
 		// two slice entries has a namespace
 		return spl[0], spl[1], nil
