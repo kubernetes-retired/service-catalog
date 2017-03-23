@@ -7,12 +7,12 @@ through a basic use case.
 
 ### Starting Kubernetes with DNS
 
-You *must* have a Kubernetes cluster with cluster DNS enabled.
+You *must* have a Kubernetes cluster with cluster DNS enabled. We can't list instructions here
+for enabling cluster DNS for all Kubernetes cluster installations, but here are a few notes:
 
-* If you are using Google Container Engine or minikube, no additional action is
-required.
-* If you are using hack/local-up-cluster.sh, ensure to set
-KUBE_ENABLE_CLUSTER_DNS:
+* If you are using Google Container Engine or minikube, you likely already have cluster DNS
+enabled with no additional steps
+* If you are using hack/local-up-cluster.sh, ensure to set `KUBE_ENABLE_CLUSTER_DNS` as follows:
 
 ```console
 KUBE_ENABLE_CLUSTER_DNS=true hack/local-up-cluster.sh -O
@@ -20,10 +20,12 @@ KUBE_ENABLE_CLUSTER_DNS=true hack/local-up-cluster.sh -O
 
 ### Getting Helm and installing Tiller
 
-If you already have Helm v2 or newer, executing `helm init` should be all that's
-required. Detailed helm installation instructions are available
-[here](https://github.com/kubernetes/helm/blob/master/docs/install.md). The
-charts will not work with Helm Classic.
+You must use Helm v2 or newer in the installation steps below. If you already have a `helm` v2 CLI,
+execute `helm init` (if you haven't already) to set up Tiller (the server-side component of Helm), 
+and you should be done with helm setup.
+
+If you don't already have Helm v2, see [the installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md). The instructions below will not
+work with previous versions of Helm.
 
 ## Step 1 - Installing the Service Catalog System
 
@@ -32,8 +34,10 @@ chart for installation.
 
 The chart is located in the [charts/catalog](../charts/catalog) directory in this
 repository, and supports a wide variety of customizations which are laid out in
-the README.md in that directory. To install the service-catalog with sensible
-defaults, execute this command from the Kubernetes context:
+the 
+[README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/README.md) 
+in that directory. To install the service-catalog with sensible defaults, execute this command from 
+the Kubernetes context:
 
 ```console
 helm install charts/catalog --name catalog --namespace catalog
@@ -60,60 +64,6 @@ has five main concepts:
 These components are building blocks of the service catalog in Kubernetes from an
 API standpoint.
 
-----
-
-#### Note: accessing the service catalog
-
-Unfortunately, `kubectl` doesn't know how to speak to both the service catalog
-API server and the main Kubernetes API server without switching contexts or
-`kubeconfig` files. One way to access the service catalog API server is via a
-dedicated `kubeconfig` file. You can manage the kubeconfig in use within a
-directory using the `direnv` tool. Alternatively, the context can be switched
-using kubectl commands shown later.
-
-### Creating kubeconfig for use with direnv
-Make sure to change to the service catalog directory and create the .kubeconfig
-file copying the following into your shell:
-
-```console
-cat << EOF > .kubeconfig
-apiVersion: v1
-clusters:
-- cluster:
-    server: http://<api server ip>:80
-  name: service-catalog-cluster
-contexts:
-- context:
-    cluster: service-catalog-cluster
-  name: service-catalog-ctx
-current-context: service-catalog-ctx
-kind: Config
-preferences: {}
-EOF
-```
-
-The above `.kubeconfig` file used in combination with `direnv` is the simplest
-way to switch between the core API server and the service-catalog API server.
-An example of an .envrc file in the service catalog directory would look like:
-
-```console
-export KUBECONFIG=<path to service-catalog>/.kubeconfig
-```
-
-Then kubectl commands executed from the service-catalog directory will
-now make requests to the correct API server.
-
-----
-
-Create a test-ns namespace while still executing Kubernetes API commands:
-
-```console
-kubectl create namespace test-ns
-```
-
-This is necessary because the `Instance` and `Binding` resources are namespaced,
-so they require a namespace.
-
 ## Step 3 - Installing a UPS broker
 
 Service Catalog requires broker servers to operate properly. There is a User 
@@ -129,40 +79,52 @@ defaults, execute this command from within the Kubernetes context:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-## Step 4 - Creating a `Broker` Resource
+## Step 4 - Install and Configure `kubectl` 1.6
+
+Before we begin doing operations on the service catalog API server, we'll
+need to do two setup steps:
+
+- Download and install `kubectl` version 1.6
+- Add entries to our `kubeconfig` file that tell `kubectl` how to talk to the service catalog API
+server
+
+To install `kubectl` 1.6, simply execute the following:
+
+```console
+curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.6.0-beta.3/bin/darwin/amd64/kubectl
+chmod +x ./kubectl
+```
+
+We'll assume that, after this step, all `kubectl` commands are using this newly-downloaded 
+executable. Now, we'll add configuration to allow `kubectl` to talk to our service catalog API
+server:
+
+```console
+kubectl config set-cluster service-catalog --server=http://$SVC_CAT_API_SERVER_IP:80
+kubectl config set-context service-catalog --cluster=service-catalog
+```
+
+Note that you'll need to specify the service IP of your service catalog API server, and 
+substitute `$SVC_CAT_API_SERVER_IP` for that IP.
+
+## Step 5 - Creating a `Broker` Resource
 
 Next, we'll register a service broker with the catalog.  To do this, we'll
 create a new [`Broker`](../contrib/examples/walkthrough/ups-broker.yaml)
 resource against our API server.
 
-Before we do so, we'll need to configure our `kubeconfig` file as described
-above, and download a 1.6-beta version of `kubectl`. We'll need this version of
-`kubectl` for all `create` operations against the service-catalog API server. For
-simplicity, all subsequent kubectl commands will be assumed to be using this
-newly downloaded version.
-
-Download & install the `kubectl` 1.6-beta version with this command:
-
-```console
-curl -o kubectl16 https://storage.googleapis.com/kubernetes-release/release/v1.6.0-beta.3/bin/darwin/amd64/kubectl
-chmod +x ./kubectl16
-```
-
 Because we haven't created any resources in the service-catalog API server yet,
-`kubectl get` will return an empty list of resources. (The first two commands
-may be skipped if direnv is setup.)
+`kubectl get` will return an empty list of resources.
 
 ```console
-kubectl config set-cluster service-catalog --server=http://<api server ip>:80
-kubectl config set-context service-catalog --cluster=service-catalog
-kubectl get brokers,serviceclasses,instances,bindings
+kubectl --context=service-catalog get brokers,serviceclasses,instances,bindings
 ```
 
 
 Then, create the new `Broker` resource with the commands below:
 
 ```console
-./kubectl16 create -f contrib/examples/walkthrough/ups-broker.yaml
+./kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-broker.yaml
 ```
 
 The output of that command should be the following:
@@ -176,12 +138,10 @@ want for the service broker it represents to be consumed in the catalog.  When
 we create the resource, the controller handles loading that broker into the
 catalog by seeing what services it provides and adding them to the catalog.
 
-We can check the status of the broker using `kubectl get` (notice that we don't have to use 
-`./kubectl16` here, because we only need that version to execute `create` operations against our
-server):
+We can check the status of the broker using `kubectl get`:
 
 ```console
-kubectl get brokers ups-broker -o yaml
+kubectl --context=service-catalog get brokers ups-broker -o yaml
 ```
 
 We should see something like:
@@ -210,7 +170,7 @@ status:
 Notice that the controller has set this brokers `status` field to reflect that
 it's catalog has been added to our cluster's catalog.
 
-## Step 5 - Viewing ServiceClasses
+## Step 6 - Viewing ServiceClasses
 
 The controller created a `ServiceClass` for each service that the broker we
 added provides. We can view the `ServiceClass` resources available in the
@@ -226,7 +186,7 @@ The `Broker` resource we created points to our UPS broker, which provides a serv
 called the `user-provided-service`.  Run the following command to get detail on this service:
 
 ```console
-kubectl get serviceclasses user-provided-service -o yaml
+kubectl --context=service-catalog get serviceclasses user-provided-service -o yaml
 ```
 
 We should see something like:
@@ -250,14 +210,14 @@ plans:
   osbGuid: 86064792-7ea2-467b-af93-ac9694d96d52
 ```
 
-## Step 6 - Provisioning a new Instance
+## Step 7 - Provisioning a new Instance
 
 Now that one or more `ServiceClass` resources are in the catalog, we can provision a new
 instance of the `user-provided-service`. We do this by creating a new 
 [`Instance`](../contrib/examples/walkthrough/ups-instance.yaml) resource for each provision:
 
 ```console
-./kubectl16 create -f contrib/examples/walkthrough/ups-instance.yaml
+./kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-instance.yaml
 ```
 
 That operation should output:
@@ -269,7 +229,7 @@ instance "ups-instance" created
 Now that the new `Instance` is created, we can check the status of it with:
 
 ```console
-kubectl get instances -n test-ns ups-instance -o yaml
+kubectl --context=service-catalog get instances -n test-ns ups-instance -o yaml
 ```
 
 We should see something like:
@@ -296,17 +256,27 @@ status:
     type: Ready
 ```
 
-## Step 7 - Bind to the Instance
+## Step 8 - Bind to the Instance
 
 Now that our `Instance` has been created, we can bind to it. After the bind
 operation is complete on the UPS broker server, the service catalog will write
-the resulting credentials to a Kubernetes secret. As mentioned in step 2, this is
-an action that requires the test-ns namespace to be present. Here's how we create
-the new [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml):
+the resulting credentials to a Kubernetes secret. 
 
+After a [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml) resource is created, 
+the service catalog will execute a bind operation on  the broker server and write the 
+results to a `Secret` in the same namespace as the `Binding` itself.
+
+In order for that operation to succeed, we'll need to ensure that namespace exists in 
+Kubernetes. Do so by executing this command:
 
 ```console
-kubectl create -f contrib/examples/walkthrough/ups-binding.yaml
+kubectl --context=service-catalog create namespace test-ns
+```
+
+Then, create the `Binding`:
+
+```console
+kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-binding.yaml
 ```
 
 That command should output:
@@ -318,7 +288,7 @@ binding "ups-binding" created
 We can check the status of the `Binding` using `kubectl get`:
 
 ```console
-kubectl get bindings -n test-ns ups-binding -o yaml
+kubectl --context=service-catalog get bindings -n test-ns ups-binding -o yaml
 ```
 
 We should see something like:
@@ -361,13 +331,13 @@ my-secret             Opaque                                2         1m
 
 Notice that a secret named `my-secret` has been created in our namespace.
 
-## Step 8 - Unbind from the Instance
+## Step 9 - Unbind from the Instance
 
 Now, let's unbind from the Instance.  To do this, we just delete the `Binding`
 that we created:
 
 ```console
-kubectl delete -n test-ns bindings ups-binding
+kubectl --context=service-catalog delete -n test-ns bindings ups-binding
 ```
 
 If we check the secrets in the `test-ns` namespace, we should see that the
@@ -379,13 +349,13 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-## Step 9 - Deprovision the Instance
+## Step 10 - Deprovision the Instance
 
 Now, we can deprovision the instance.  To do this, we just delete the `Instance`
 that we created:
 
 ```console
-kubectl delete -n test-ns instances ups-instance
+kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
 ### Delete the broker
@@ -394,7 +364,7 @@ When an administrator wants to remove a broker and the services it offers from
 the catalog, they can just delete the broker:
 
 ```console
-kubectl delete brokers ups-broker
+kubectl --context=service-catalog delete brokers ups-broker
 ```
 
 And we should see that all the `ServiceClass` resources that came from that
@@ -405,7 +375,7 @@ kubectl get serviceclasses
 No resources found
 ```
 
-## Step 10 - Final clean up
+## Step 11 - Final clean up
 
 Delete the test-ns namespace:
 
