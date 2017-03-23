@@ -30,9 +30,6 @@ import (
 // validateServiceClassName is the validation function for ServiceClass names.
 var validateServiceClassName = apivalidation.NameIsDNSSubdomain
 
-// validateServicePlanName is the validation function for ServicePlan names.
-var validateServicePlanName = apivalidation.NameIsDNSLabel
-
 // validateOSBGuid is the validation function for OSB GUIDs.  We generate
 // GUIDs for Instances and Bindings, but for ServiceClass and ServicePlan,
 // they are part of the payload returned from the Broker.
@@ -96,7 +93,7 @@ func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	for _, msg := range validateServicePlanName(plan.Name, false /* prefix */) {
+	for _, msg := range validateServicePlanName(plan.Name) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), plan.Name, msg))
 	}
 
@@ -109,6 +106,24 @@ func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorLi
 	}
 
 	return allErrs
+}
+
+const servicePlanNameFmt string = `[-_a-z0-9]+`
+const servicePlanNameMaxLength int = 63
+
+var servicePlanNameRegexp = regexp.MustCompile("^" + servicePlanNameFmt + "$")
+
+// validateServicePlanName is the validation function for ServicePlan names.
+func validateServicePlanName(value string) []string {
+	var errs []string
+	if len(value) > servicePlanNameMaxLength {
+		errs = append(errs, utilvalidation.MaxLenError(servicePlanNameMaxLength))
+	}
+	if !servicePlanNameRegexp.MatchString(value) {
+		errs = append(errs, utilvalidation.RegexError(servicePlanNameFmt, "plan-name", "plan_name"))
+	}
+
+	return errs
 }
 
 // ValidateServiceClassUpdate checks that when changing from an older
