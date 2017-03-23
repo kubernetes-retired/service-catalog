@@ -18,6 +18,7 @@ package openservicebroker
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -92,13 +93,20 @@ type openServiceBrokerClient struct {
 // NewClient creates an instance of BrokerClient for communicating with brokers
 // which implement the Open Service Broker API.
 func NewClient(name, url, username, password string) brokerapi.BrokerClient {
+	// TODO(vaikas): Make this into a flag/config option. Necessary to talk to brokers that
+	// have non-root signed certs.
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
 	return &openServiceBrokerClient{
 		name:     name,
 		url:      strings.TrimRight(url, "/"), // remove trailing slashes from broker server URLs
 		username: username,
 		password: password,
 		Client: &http.Client{
-			Timeout: httpTimeoutSeconds * time.Second,
+			Timeout:   httpTimeoutSeconds * time.Second,
+			Transport: tr,
 		},
 	}
 }
