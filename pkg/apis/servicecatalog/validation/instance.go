@@ -55,7 +55,7 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 		allErrs = append(allErrs, field.Required(fldPath.Child("planName"), "planName is required"))
 	}
 
-	for _, msg := range validateServicePlanName(spec.PlanName, false /* prefix */) {
+	for _, msg := range validateServicePlanName(spec.PlanName) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
 	}
 
