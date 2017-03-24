@@ -331,8 +331,6 @@ func sendOSBRequest(c *openServiceBrokerClient, method string, url string, objec
 		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to send request: %s", err.Error())
@@ -345,6 +343,9 @@ func (c *openServiceBrokerClient) newOSBRequest(method, urlStr string, body io.R
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Add(constants.APIVersionHeader, constants.APIVersion)
 	req.SetBasicAuth(c.username, c.password)

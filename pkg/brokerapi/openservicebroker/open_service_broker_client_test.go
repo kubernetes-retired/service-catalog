@@ -74,6 +74,8 @@ func TestProvisionInstanceCreated(t *testing.T) {
 	if _, err := c.CreateServiceInstance(testServiceInstanceID, &brokerapi.CreateServiceInstanceRequest{}); err != nil {
 		t.Fatal(err.Error())
 	}
+
+	verifyRequestContentType(fbs.Request, t)
 }
 
 func TestProvisionInstanceOK(t *testing.T) {
@@ -251,6 +253,8 @@ func TestBindOk(t *testing.T) {
 	if fbs.RequestObject == nil {
 		t.Fatalf("BindingRequest was not received correctly")
 	}
+	verifyRequestContentType(fbs.Request, t)
+
 	actual := reflect.TypeOf(fbs.RequestObject)
 	expected := reflect.TypeOf(&brokerapi.BindingRequest{})
 	if actual != expected {
@@ -337,4 +341,11 @@ func verifyBindingMethodAndPath(method, serviceID, bindingID string, req *http.R
 		t.Fatalf("Expected binding create path to have suffix %s but was: %s", expectPath, req.URL.Path)
 	}
 
+}
+
+func verifyRequestContentType(req *http.Request, t *testing.T) {
+	contentType := req.Header.Get("Content-Type")
+	if contentType != "application/json" {
+		t.Fatalf("Expected the request content-type to be application/json, but was %s", contentType)
+	}
 }

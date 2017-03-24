@@ -117,6 +117,7 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 
 func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Info("fake provision called")
+	f.Request = r
 	req := &brokerapi.CreateServiceInstanceRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
