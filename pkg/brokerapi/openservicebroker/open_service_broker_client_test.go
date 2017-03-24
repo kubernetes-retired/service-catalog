@@ -169,26 +169,17 @@ func TestDeprovisionInstanceOK(t *testing.T) {
 	fbs.SetResponseStatus(http.StatusOK)
 
 	req := brokerapi.DeleteServiceInstanceRequest{
-		ServiceID: testServiceClassID,
+		ServiceID: testServiceID,
 		PlanID:    testPlanID,
 	}
 	if err := c.DeleteServiceInstance(testServiceInstanceID, &req); err != nil {
 		t.Fatal(err.Error())
 	}
 
-	fmt.Printf("%v", fbs.Request)
 	expectedPath := fmt.Sprintf("/v2/service_instances/%s", testServiceInstanceID)
 	verifyRequestMethodAndPath(http.MethodDelete, expectedPath, fbs.Request, t)
-
-	serviceIDFormValue := fbs.Request.FormValue("service_id")
-	if serviceIDFormValue != testServiceClassID {
-		t.Fatalf("Expected service_id parameter to be %s, but was %s", testServiceClassID, serviceIDFormValue)
-	}
-
-	planIDFormValue := fbs.Request.FormValue("plan_id")
-	if planIDFormValue != testPlanID {
-		t.Fatalf("Expected plan_id parameter to be %s, but was %s", testPlanID, planIDFormValue)
-	}
+	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
+	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
 }
 
 func TestDeprovisionInstanceGone(t *testing.T) {
@@ -323,16 +314,8 @@ func TestUnbindOk(t *testing.T) {
 	}
 
 	verifyBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
-
-	serviceIDFormValue := fbs.Request.FormValue("service_id")
-	if serviceIDFormValue != testServiceID {
-		t.Fatalf("Expected service_id parameter to be %s, but was %s", testServiceID, serviceIDFormValue)
-	}
-
-	planIDFormValue := fbs.Request.FormValue("plan_id")
-	if planIDFormValue != testPlanID {
-		t.Fatalf("Expected plan_id parameter to be %s, but was %s", testPlanID, planIDFormValue)
-	}
+	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
+	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
 
 	if fbs.Request.ContentLength != 0 {
 		t.Fatalf("not expecting a request body, but got one, size %d", fbs.Request.ContentLength)
@@ -370,5 +353,12 @@ func verifyRequestMethodAndPath(method, expectedPath string, req *http.Request, 
 	}
 	if !strings.HasSuffix(req.URL.Path, expectedPath) {
 		t.Fatalf("Expected request path to end with %s but was: %s", expectedPath, req.URL.Path)
+	}
+}
+
+func verifyRequestParameter(paramName string, expectedValue string, req *http.Request, t *testing.T) {
+	actualValue := req.FormValue(paramName)
+	if actualValue != expectedValue {
+		t.Fatalf("Expected %s parameter to be %s, but was %s", paramName, expectedValue, actualValue)
 	}
 }
