@@ -53,7 +53,7 @@ var ServiceBrokerResource = metav1.APIResource{
 var ServiceClassResource = metav1.APIResource{
 	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
 	// it here
-	Name:       "service-class",
+	Name:       "serviceclass",
 	Namespaced: true,
 }
 
