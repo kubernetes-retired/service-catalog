@@ -395,24 +395,24 @@ Now, we can deprovision the instance.  To do this, we simply *delete* the
 kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
-### Delete the Broker
+## Step 11 - Delete the Broker
 
-When an administrator wants to remove a broker server and the services it offers
-from the catalog, they can simply delete the broker:
+Next, we should remove the broker server, and the services it offers, from the catalog. We can do
+so by simply deleting the broker:
 
 ```console
 kubectl --context=service-catalog delete brokers ups-broker
 ```
 
 We should then see that all the `ServiceClass` resources that came from that
-broker have been deleted:
+broker have also been deleted:
 
 ```console
 kubectl --context=service-catalog get serviceclasses
 No resources found
 ```
 
-## Step 11 - Final Cleanup
+## Step 12 - Final Cleanup
 
 Delete the `test-ns` namespace:
 
