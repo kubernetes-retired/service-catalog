@@ -61,9 +61,9 @@ type InstanceClient interface {
 type BindingClient interface {
 	// CreateServiceBinding creates a service binding in the respective broker.
 	// This method handles all asynchronous request handling.
-	CreateServiceBinding(sID, bID string, req *BindingRequest) (*CreateServiceBindingResponse, error)
+	CreateServiceBinding(instanceID, bindingID string, req *BindingRequest) (*CreateServiceBindingResponse, error)
 
 	// DeleteServiceBinding deletes an existing service binding in the respective
 	// broker. This method handles all asynchronous request handling.
-	DeleteServiceBinding(sID, bID, serviceID, planID string) error
+	DeleteServiceBinding(instanceID, bindingID, serviceID, planID string) error
 }

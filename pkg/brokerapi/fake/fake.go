@@ -171,40 +171,40 @@ func NewBindingClient() *BindingClient {
 // adds the IDs to b.Bindings and returns a new CreateServiceBindingResponse with b.CreateCreds in
 // it
 func (b *BindingClient) CreateServiceBinding(
-	sID,
-	bID string,
+	instanceID,
+	bindingID string,
 	req *brokerapi.BindingRequest,
 ) (*brokerapi.CreateServiceBindingResponse, error) {
 
 	if b.CreateErr != nil {
 		return nil, b.CreateErr
 	}
-	if b.exists(sID, bID) {
+	if b.exists(instanceID, bindingID) {
 		return nil, ErrBindingAlreadyExists
 	}
 
-	b.Bindings[BindingsMapKey(sID, bID)] = convertBindingRequest(req)
-	b.BindingRequests[BindingsMapKey(sID, bID)] = req
+	b.Bindings[BindingsMapKey(instanceID, bindingID)] = convertBindingRequest(req)
+	b.BindingRequests[BindingsMapKey(instanceID, bindingID)] = req
 	return &brokerapi.CreateServiceBindingResponse{Credentials: b.CreateCreds}, nil
 }
 
 // DeleteServiceBinding returns b.DeleteErr if it was non-nil. Otherwise, if the binding associated
 // with the given IDs didn't exist, returns ErrBindingNotFound. If it did exist, removes it and
 // returns nil
-func (b *BindingClient) DeleteServiceBinding(sID, bID, serviceID, planID string) error {
+func (b *BindingClient) DeleteServiceBinding(instanceID, bindingID, serviceID, planID string) error {
 	if b.DeleteErr != nil {
 		return b.DeleteErr
 	}
-	if !b.exists(sID, bID) {
+	if !b.exists(instanceID, bindingID) {
 		return ErrBindingNotFound
 	}
 
-	delete(b.Bindings, BindingsMapKey(sID, bID))
+	delete(b.Bindings, BindingsMapKey(instanceID, bindingID))
 	return nil
 }
 
-func (b *BindingClient) exists(sID, bID string) bool {
-	_, ok := b.Bindings[BindingsMapKey(sID, bID)]
+func (b *BindingClient) exists(instanceID, bindingID string) bool {
+	_, ok := b.Bindings[BindingsMapKey(instanceID, bindingID)]
 	return ok
 }
 
@@ -220,6 +220,6 @@ func convertBindingRequest(req *brokerapi.BindingRequest) *brokerapi.ServiceBind
 
 // BindingsMapKey constructs the key used for bindings given a Service ID and
 // a Binding ID
-func BindingsMapKey(sID, bID string) string {
-	return fmt.Sprintf("%s:%s", sID, bID)
+func BindingsMapKey(instanceID, bindingID string) string {
+	return fmt.Sprintf("%s:%s", instanceID, bindingID)
 }
