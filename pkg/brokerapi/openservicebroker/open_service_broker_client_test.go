@@ -167,8 +167,27 @@ func TestDeprovisionInstanceOK(t *testing.T) {
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
 	fbs.SetResponseStatus(http.StatusOK)
-	if err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{}); err != nil {
+
+	req := brokerapi.DeleteServiceInstanceRequest{
+		ServiceID: testServiceClassID,
+		PlanID:    testPlanID,
+	}
+	if err := c.DeleteServiceInstance(testServiceInstanceID, &req); err != nil {
 		t.Fatal(err.Error())
+	}
+
+	fmt.Printf("%v", fbs.Request)
+	expectedPath := fmt.Sprintf("/v2/service_instances/%s", testServiceInstanceID)
+	verifyRequestMethodAndPath(http.MethodDelete, expectedPath, fbs.Request, t)
+
+	serviceIDFormValue := fbs.Request.FormValue("service_id")
+	if serviceIDFormValue != testServiceClassID {
+		t.Fatalf("Expected service_id parameter to be %s, but was %s", testServiceClassID, serviceIDFormValue)
+	}
+
+	planIDFormValue := fbs.Request.FormValue("plan_id")
+	if planIDFormValue != testPlanID {
+		t.Fatalf("Expected plan_id parameter to be %s, but was %s", testPlanID, planIDFormValue)
 	}
 }
 
@@ -341,12 +360,15 @@ func TestUnbindGone(t *testing.T) {
 // verifyBindingMethodAndPath is a helper method that verifies that the request
 // has the right method and the suffix URL for a binding request.
 func verifyBindingMethodAndPath(method, serviceID, bindingID string, req *http.Request, t *testing.T) {
+	expectedPath := fmt.Sprintf(bindingSuffixFormatString, serviceID, bindingID)
+	verifyRequestMethodAndPath(method, expectedPath, req, t)
+}
+
+func verifyRequestMethodAndPath(method, expectedPath string, req *http.Request, t *testing.T) {
 	if req.Method != method {
 		t.Fatalf("Expected method to use %s but was %s", method, req.Method)
 	}
-	expectPath := fmt.Sprintf(bindingSuffixFormatString, serviceID, bindingID)
-	if !strings.HasSuffix(req.URL.Path, expectPath) {
-		t.Fatalf("Expected binding create path to have suffix %s but was: %s", expectPath, req.URL.Path)
+	if !strings.HasSuffix(req.URL.Path, expectedPath) {
+		t.Fatalf("Expected request path to end with %s but was: %s", expectedPath, req.URL.Path)
 	}
-
 }

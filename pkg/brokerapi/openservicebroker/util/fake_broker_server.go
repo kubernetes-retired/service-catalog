@@ -138,6 +138,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 
 func (f *FakeBrokerServer) deprovisionHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Info("fake deprovision called")
+	f.Request = r
 	req := &brokerapi.DeleteServiceInstanceRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
