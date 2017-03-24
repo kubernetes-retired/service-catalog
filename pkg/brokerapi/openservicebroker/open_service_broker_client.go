@@ -40,6 +40,7 @@ const (
 	serviceInstanceDeleteFormatString = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s"
 	pollingFormatString               = "%s/v2/service_instances/%s/last_operation"
 	bindingFormatString               = "%s/v2/service_instances/%s/service_bindings/%s"
+	bindingDeleteFormatString         = "%s/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s"
 
 	httpTimeoutSeconds     = 15
 	pollingIntervalSeconds = 1
@@ -253,8 +254,8 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 	}
 }
 
-func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
-	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
+func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID, serviceID, planID string) error {
+	serviceBindingURL := fmt.Sprintf(bindingDeleteFormatString, c.url, sID, bID, serviceID, planID)
 
 	// TODO: Handle the auth
 	deleteHTTPReq, err := c.newOSBRequest("DELETE", serviceBindingURL, nil)

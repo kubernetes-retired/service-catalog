@@ -65,5 +65,5 @@ type BindingClient interface {
 
 	// DeleteServiceBinding deletes an existing service binding in the respective
 	// broker. This method handles all asynchronous request handling.
-	DeleteServiceBinding(sID, bID string) error
+	DeleteServiceBinding(sID, bID, serviceID, planID string) error
 }

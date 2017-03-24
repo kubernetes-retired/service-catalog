@@ -723,6 +723,19 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		return
 	}
 
+	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
+	if servicePlan == nil {
+		glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			"ReferencesNonexistentServicePlan",
+			"The Binding references an Instance which references ServicePlan that does not exist",
+		)
+		return
+	}
+
 	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
 	if err != nil {
 		glog.Errorf("Binding %v/%v references a non-existent Broker %v", binding.Namespace, binding.Name, serviceClass.BrokerName)
@@ -754,19 +767,6 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 	if binding.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating Binding %v/%v", binding.Namespace, binding.Name)
-
-		servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
-		if servicePlan == nil {
-			glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
-			c.updateBindingCondition(
-				binding,
-				v1alpha1.BindingConditionReady,
-				v1alpha1.ConditionFalse,
-				"ReferencesNonexistentServicePlan",
-				"The Binding references an Instance which references ServicePlan that does not exist",
-			)
-			return
-		}
 
 		var parameters map[string]interface{}
 		if binding.Spec.Parameters != nil {
@@ -855,7 +855,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			)
 			return
 		}
-		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID)
+		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, serviceClass.OSBGUID, servicePlan.OSBGUID)
 		if err != nil {
 			glog.Errorf("Error unbinding Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
 			c.updateBindingCondition(

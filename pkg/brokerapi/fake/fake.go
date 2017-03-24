@@ -191,7 +191,7 @@ func (b *BindingClient) CreateServiceBinding(
 // DeleteServiceBinding returns b.DeleteErr if it was non-nil. Otherwise, if the binding associated
 // with the given IDs didn't exist, returns ErrBindingNotFound. If it did exist, removes it and
 // returns nil
-func (b *BindingClient) DeleteServiceBinding(sID, bID string) error {
+func (b *BindingClient) DeleteServiceBinding(sID, bID, serviceID, planID string) error {
 	if b.DeleteErr != nil {
 		return b.DeleteErr
 	}

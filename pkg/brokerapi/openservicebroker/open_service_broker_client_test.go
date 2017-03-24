@@ -33,6 +33,8 @@ const (
 	bindingSuffixFormatString = "/v2/service_instances/%s/service_bindings/%s"
 	testServiceInstanceID     = "1"
 	testServiceBindingID      = "2"
+	testServiceID             = "3"
+	testPlanID                = "4"
 )
 
 func setup() (*util.FakeBrokerServer, *servicecatalog.Broker) {
@@ -297,11 +299,21 @@ func TestUnbindOk(t *testing.T) {
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
 	fbs.SetResponseStatus(http.StatusOK)
-	if err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID); err != nil {
+	if err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID, testServiceID, testPlanID); err != nil {
 		t.Fatal(err.Error())
 	}
 
 	verifyBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
+
+	serviceIDFormValue := fbs.Request.FormValue("service_id")
+	if serviceIDFormValue != testServiceID {
+		t.Fatalf("Expected service_id parameter to be %s, but was %s", testServiceID, serviceIDFormValue)
+	}
+
+	planIDFormValue := fbs.Request.FormValue("plan_id")
+	if planIDFormValue != testPlanID {
+		t.Fatalf("Expected plan_id parameter to be %s, but was %s", testPlanID, planIDFormValue)
+	}
 
 	if fbs.Request.ContentLength != 0 {
 		t.Fatalf("not expecting a request body, but got one, size %d", fbs.Request.ContentLength)
@@ -315,7 +327,7 @@ func TestUnbindGone(t *testing.T) {
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
 	fbs.SetResponseStatus(http.StatusGone)
-	err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID)
+	err := c.DeleteServiceBinding(testServiceInstanceID, testServiceBindingID, testServiceID, testPlanID)
 	if err == nil {
 		t.Fatal("Expected delete service binding to fail with gone, but didn't")
 	}
