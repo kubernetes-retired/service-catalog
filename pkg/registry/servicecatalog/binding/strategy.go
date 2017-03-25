@@ -95,8 +95,6 @@ func (bindingRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object
 	// Fill in the first entry set to "creating"?
 	binding.Status.Conditions = []sc.BindingCondition{}
 
-	// TODO: Should we use a more specific string here?
-	binding.Finalizers = []string{"kubernetes"}
 }
 
 func (bindingRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {

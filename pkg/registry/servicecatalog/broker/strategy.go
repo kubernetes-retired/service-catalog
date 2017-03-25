@@ -95,8 +95,6 @@ func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object)
 	// Fill in the first entry set to "creating"?
 	broker.Status.Conditions = []sc.BrokerCondition{}
 
-	// TODO: Should we use a more specific string here?
-	broker.Finalizers = []string{"kubernetes"}
 }
 
 func (brokerRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
