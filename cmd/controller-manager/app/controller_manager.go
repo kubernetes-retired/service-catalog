@@ -90,19 +90,20 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// Build the K8s kubeconfig / client / clientBuilder
 	glog.V(4).Info("Building k8s kubeconfig")
 
-	k8sKubeconfig, err := rest.InClusterConfig()
+	var err error
+	var k8sKubeconfig *rest.Config
+	if controllerManagerOptions.K8sAPIServerURL == "" && controllerManagerOptions.K8sKubeconfigPath == "" {
+		k8sKubeconfig, err = rest.InClusterConfig()
+	} else {
+		k8sKubeconfig, err = clientcmd.BuildConfigFromFlags(
+			controllerManagerOptions.K8sAPIServerURL,
+			controllerManagerOptions.K8sKubeconfigPath)
+	}
 	if err != nil {
-		glog.Fatalf("Failed to get kube client config (%s)", err)
+		return fmt.Errorf("failed to get Kubernetes client config: %v", err)
 	}
 	k8sKubeconfig.GroupVersion = &schema.GroupVersion{}
 
-	// k8sKubeconfig, err := clientcmd.BuildConfigFromFlags(
-	// 	controllerManagerOptions.K8sAPIServerURL,
-	// 	controllerManagerOptions.K8sKubeconfigPath)
-	// if err != nil {
-	// 	// TODO: disambiguate API errors
-	// 	return err
-	// }
 	k8sKubeconfig.ContentConfig.ContentType = controllerManagerOptions.ContentType
 	// Override kubeconfig qps/burst settings from flags
 	k8sKubeconfig.QPS = controllerManagerOptions.KubeAPIQPS
@@ -111,20 +112,29 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		rest.AddUserAgent(k8sKubeconfig, controllerManagerAgentName),
 	)
 	if err != nil {
-		glog.Fatalf("Invalid k8s API configuration: %v", err)
+		return fmt.Errorf("invalid Kubernetes API configuration: %v", err)
 	}
 
 	glog.V(4).Infof("Building service-catalog kubeconfig for url: %v\n", controllerManagerOptions.ServiceCatalogAPIServerURL)
+
+	var serviceCatalogKubeconfig *rest.Config
 	// Build the service-catalog kubeconfig / clientBuilder
-	serviceCatalogKubeconfig, err := clientcmd.BuildConfigFromFlags(
-		controllerManagerOptions.ServiceCatalogAPIServerURL,
-		// controllerManagerOptions.ServiceCatalogKubeconfigPath,
-		"", // TODO: tolerate missing kubeconfig
-	)
+	if controllerManagerOptions.ServiceCatalogAPIServerURL == "" && controllerManagerOptions.ServiceCatalogKubeconfigPath == "" {
+		// explicitly fall back to InClusterConfig, assuming we're talking to an API server which does aggregation
+		// (BuildConfigFromFlags does this, but gives a more generic warning message than we do here)
+		glog.V(4).Infof("Using inClusterConfig to talk to service catalog API server -- make sure your API server is registered with the aggregator")
+		serviceCatalogKubeconfig, err = rest.InClusterConfig()
+	} else {
+		serviceCatalogKubeconfig, err = clientcmd.BuildConfigFromFlags(
+			controllerManagerOptions.ServiceCatalogAPIServerURL,
+			controllerManagerOptions.ServiceCatalogKubeconfigPath)
+	}
 	if err != nil {
 		// TODO: disambiguate API errors
-		return err
+		return fmt.Errorf("failed to get Service Catalog client configuration: %v", err)
 	}
+
+	// due to using both k8s.io/kubernetes and k8s.io/client-go, we need to convert this object over
 
 	glog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers
