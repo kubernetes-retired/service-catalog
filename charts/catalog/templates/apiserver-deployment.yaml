@@ -51,6 +51,9 @@ spec:
         {{- end }}
         - -v
         - "{{ .Values.apiserver.verbosity }}"
+        {{- if .Values.apiserver.tls.requestHeaderCA }}
+        - --requestheader-client-ca-file=/var/run/kubernetes-service-catalog/requestheader-ca.crt
+        {{- end }}
         ports:
         {{- if .Values.apiserver.insecure }}
         - containerPort: 8080
@@ -133,6 +136,10 @@ spec:
             path: apiserver.crt
           - key: tls.key
             path: apiserver.key
+          {{- if .Values.apiserver.tls.requestHeaderCA }}
+          - key: requestheader-ca.crt
+            path: requestheader-ca.crt
+          {{- end }}
       {{- if eq .Values.apiserver.storage.type "etcd" }}
       - name: etcd-data-dir
         emptyDir: {}

@@ -34,11 +34,13 @@ spec:
         args:
         - --port
         - "8080"
+        {{- if not .Values.useAggregator }}
         - --service-catalog-api-server-url
         {{- if .Values.apiserver.insecure }}
         - http://{{ template "fullname" . }}-apiserver
         {{- else }}
         - https://{{ template "fullname" . }}-apiserver
+        {{- end }}
         {{- end }}
         - -v
         - "{{ .Values.controllerManager.verbosity }}"

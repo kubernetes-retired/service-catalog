@@ -56,3 +56,4 @@ controllerManager:
   resyncInterval: 5m
   # Broker relist interval; format is a duration (`20m`, `1h`, etc)
   brokerRelistInterval: 24h
+useAggregator: false
