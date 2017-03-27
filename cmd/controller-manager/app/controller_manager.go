@@ -316,7 +316,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.V(1).Info("Starting shared informers")
 		informerFactory.Start(stop)
 	} else {
-		glog.V(1).Infof("Skipping starting service-catalog controller because servicecatalog/v1alpha1 is not available")
+		return fmt.Errorf("unable to start service-catalog controller: servicecatalog/v1alpha1 is not available")
 	}
 
 	select {}
