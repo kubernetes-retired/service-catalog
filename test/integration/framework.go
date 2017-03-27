@@ -83,6 +83,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			TPROptions:            tprOptions,
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
+			DisableAuth:           true,
 			StopCh:                stopCh,
 		}
 		options.InsecureServingOptions.BindPort = insecurePort

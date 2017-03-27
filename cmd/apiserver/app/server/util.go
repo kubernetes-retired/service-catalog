@@ -17,6 +17,8 @@ limitations under the License.
 package server
 
 import (
+	"github.com/golang/glog"
+
 	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
@@ -43,12 +45,17 @@ func setupBasicServer(s *ServiceCatalogServerOptions) (*genericapiserver.Config,
 		return nil, err
 	}
 
-	if err := s.AuthenticationOptions.ApplyTo(genericConfig); err != nil {
-		return nil, err
-	}
+	if !s.DisableAuth {
+		if err := s.AuthenticationOptions.ApplyTo(genericConfig); err != nil {
+			return nil, err
+		}
 
-	if err := s.AuthorizationOptions.ApplyTo(genericConfig); err != nil {
-		return nil, err
+		if err := s.AuthorizationOptions.ApplyTo(genericConfig); err != nil {
+			return nil, err
+		}
+	} else {
+		// always warn when auth is disabled, since this should only be used for testing
+		glog.Infof("Authentication and authorization disabled for testing purposes")
 	}
 
 	return genericConfig, nil

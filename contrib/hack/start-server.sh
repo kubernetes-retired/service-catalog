@@ -43,7 +43,7 @@ docker run -d --name apiserver \
 	scbuildimage \
 	bin/apiserver -v 10 --etcd-servers http://localhost:2379 \
 		--insecure-bind-address=0.0.0.0 --insecure-port=8081 \
-		--storage-type=etcd
+		--storage-type=etcd --disable-auth
 
 # Wait for apiserver to be up and running
 echo Waiting for API Server to be available...
