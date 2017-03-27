@@ -242,12 +242,13 @@ test-unit: .init build
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
-test-integration: .init $(scBuildImageTarget) build
-	# test kubectl
-	contrib/hack/setup-kubectl.sh
-	contrib/hack/test-apiserver.sh
-	# golang integration tests
-	$(DOCKER_CMD) test/integration.sh
+test-integration: #.init $(scBuildImageTarget) build
+	# # test kubectl
+	# contrib/hack/setup-kubectl.sh
+	# contrib/hack/test-apiserver.sh
+	# # golang integration tests
+	# $(DOCKER_CMD) test/integration.sh
+	go test -race -v github.com/kubernetes-incubator/service-catalog/test/integration/... --args -v 10 -logtostderr
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
 

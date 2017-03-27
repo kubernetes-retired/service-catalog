@@ -18,6 +18,7 @@ package integration
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -151,6 +152,7 @@ func getRouter() http.Handler {
 }
 
 func getItems(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	objs := storage.getList(ns, tipe)
@@ -209,6 +211,7 @@ func getItems(rw http.ResponseWriter, r *http.Request) {
 }
 
 func createItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	// TODO: Is there some type-agnostic way to get the codec?
@@ -239,6 +242,7 @@ func createItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func getItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	name := mux.Vars(r)["name"]
@@ -259,6 +263,7 @@ func getItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func updateItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	name := mux.Vars(r)["name"]
@@ -308,6 +313,7 @@ func updateItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func deleteItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	name := mux.Vars(r)["name"]
@@ -321,5 +327,6 @@ func deleteItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	rw.WriteHeader(http.StatusNotFound)
 }
