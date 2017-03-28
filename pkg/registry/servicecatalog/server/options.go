@@ -164,5 +164,5 @@ func (o Options) GetStorage(
 			trigger,
 		)
 	}
-	return tpr.NewStorage(o.TPROptions)
+	return tpr.New(o.TPROptions)
 }
