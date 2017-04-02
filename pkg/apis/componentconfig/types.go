@@ -20,6 +20,10 @@ limitations under the License.
 
 package componentconfig
 
+import (
+	"time"
+)
+
 // ControllerManagerConfiguration encapsulates configuration for the
 // controller manager.
 type ControllerManagerConfiguration struct {
@@ -48,4 +52,8 @@ type ControllerManagerConfiguration struct {
 	// ServiceCatalogKubeconfigPath is the path to the kubeconfig file with
 	// information about the service catalog API server.
 	ServiceCatalogKubeconfigPath string
+
+	// ResyncInterval is the interval on which the controller should re-sync
+	// all informers.
+	ResyncInterval time.Duration
 }

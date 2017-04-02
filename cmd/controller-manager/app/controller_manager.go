@@ -266,8 +266,6 @@ func StartControllers(s *options.ControllerManagerServer,
 		return err
 	}
 
-	resyncDuration := 1 * time.Minute
-
 	coreKubeconfig = rest.AddUserAgent(coreKubeconfig, controllerManagerAgentName)
 	coreClient, err := kubernetes.NewForConfig(coreKubeconfig)
 	if err != nil {
@@ -280,7 +278,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		// Build the informer factory for service-catalog resources
 		informerFactory := servicecataloginformers.NewSharedInformerFactory(
 			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
-			resyncDuration,
+			s.ResyncInterval,
 		)
 		// All shared informers are v1alpha1 API level
 		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()

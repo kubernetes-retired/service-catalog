@@ -42,6 +42,8 @@ spec:
         {{- end }}
         - -v
         - "{{ .Values.controllerManager.verbosity }}"
+        - --resync-interval
+        - {{ .Values.controllerManager.resyncInterval }}
         ports:
         - containerPort: 8080
         volumeMounts:

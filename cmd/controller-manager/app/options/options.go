@@ -21,8 +21,11 @@ limitations under the License.
 package options
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/componentconfig"
+	"time"
+
 	"github.com/spf13/pflag"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/componentconfig"
 	k8scomponentconfig "k8s.io/kubernetes/pkg/apis/componentconfig"
 )
 
@@ -32,16 +35,24 @@ type ControllerManagerServer struct {
 	componentconfig.ControllerManagerConfiguration
 }
 
+const defaultResyncInterval = 5 * time.Minute
+const defaultContentType = "application/json"
+const defaultBindAddress = "0.0.0.0"
+const defaultPort = 10000
+const defaultK8sKubeconfigPath = "./kubeconfig"
+const defaultServiceCatalogKubeconfigPath = "./service-catalog-kubeconfig"
+
 // NewControllerManagerServer creates a new ControllerManagerServer with a
 // default config.
 func NewControllerManagerServer() *ControllerManagerServer {
 	return &ControllerManagerServer{
 		ControllerManagerConfiguration: componentconfig.ControllerManagerConfiguration{
-			Address:                      "0.0.0.0",
-			Port:                         10000,
-			ContentType:                  "application/json",
-			K8sKubeconfigPath:            "./kubeconfig",
-			ServiceCatalogKubeconfigPath: "./service-catalog-kubeconfig",
+			Address:                      defaultBindAddress,
+			Port:                         defaultPort,
+			ContentType:                  defaultContentType,
+			K8sKubeconfigPath:            defaultK8sKubeconfigPath,
+			ServiceCatalogKubeconfigPath: defaultServiceCatalogKubeconfigPath,
+			ResyncInterval:               defaultResyncInterval,
 		},
 	}
 }
@@ -52,7 +63,8 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.Int32Var(&s.Port, "port", s.Port, "The port that the controller-manager's http service runs on")
 	fs.StringVar(&s.ContentType, "api-content-type", s.ContentType, "Content type of requests sent to API servers")
 	fs.StringVar(&s.K8sAPIServerURL, "k8s-api-server-url", "", "The URL for the k8s API server")
-	fs.StringVar(&s.K8sKubeconfigPath, "k8s-kubeconfig", "./kubeconfig", "Path to k8s core kubeconfig")
+	fs.StringVar(&s.K8sKubeconfigPath, "k8s-kubeconfig", s.K8sKubeconfigPath, "Path to k8s core kubeconfig")
 	fs.StringVar(&s.ServiceCatalogAPIServerURL, "service-catalog-api-server-url", "", "The URL for the service-catalog API server")
-	fs.StringVar(&s.ServiceCatalogKubeconfigPath, "service-catalog-kubeconfig", "./servicecatalogkubeconfig", "Path to service-catalog kubeconfig")
+	fs.StringVar(&s.ServiceCatalogKubeconfigPath, "service-catalog-kubeconfig", s.ServiceCatalogKubeconfigPath, "Path to service-catalog kubeconfig")
+	fs.DurationVar(&s.ResyncInterval, "resync-interval", s.ResyncInterval, "The interval on which the controller will resync its informers")
 }
