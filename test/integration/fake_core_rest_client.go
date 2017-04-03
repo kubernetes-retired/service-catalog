@@ -141,6 +141,7 @@ func getRouter() http.Handler {
 	r.HandleFunc("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}", getItem).Methods("GET")
 	r.HandleFunc("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}", updateItem).Methods("PUT")
 	r.HandleFunc("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}", deleteItem).Methods("DELETE")
+	r.HandleFunc("/apis/servicecatalog.k8s.i0/v1alpha1/watch/namespaces/{namespace}/{type}/{name}", watchItem).Methods("GET")
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
 }
