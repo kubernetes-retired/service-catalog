@@ -487,7 +487,7 @@ func (s *store) Watch(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
-	p storage.SelectionPredicate,
+	pred storage.SelectionPredicate,
 ) (watch.Interface, error) {
 	ns, name, err := s.decodeKey(key)
 	if err != nil {
@@ -501,10 +501,11 @@ func (s *store) Watch(
 		glog.Errorf("initiating the raw watch for %s/%s: %s", ns, name, err)
 		return nil, err
 	}
-	return watch.Filter(watchIface, watchFilterer(s, ns)), nil
+	return watch.Filter(watchIface, s.watchFilterer(pred)), nil
 }
 
-func watchFilterer(s *store, ns string) func(watch.Event) (watch.Event, bool) {
+func (s *store) watchFilterer(pred storage.SelectionPredicate) func(watch.Event) (watch.Event, bool) {
+	filter := storage.SimpleFilter(pred)
 	return func(in watch.Event) (watch.Event, bool) {
 		encodedBytes, err := runtime.Encode(s.codec, in.Object)
 		if err != nil {
@@ -527,7 +528,7 @@ func watchFilterer(s *store, ns string) func(watch.Event) (watch.Event, bool) {
 		return watch.Event{
 			Type:   in.Type,
 			Object: finalObj,
-		}, true
+		}, filter(finalObj)
 	}
 }
 
@@ -536,7 +537,7 @@ func (s *store) WatchList(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
-	p storage.SelectionPredicate,
+	pred storage.SelectionPredicate,
 ) (watch.Interface, error) {
 	ns, _, err := s.decodeKey(key)
 	if err != nil {
@@ -549,7 +550,7 @@ func (s *store) WatchList(
 		glog.Errorf("initiating the raw watch for %s: %s", ns, err)
 		return nil, err
 	}
-	return watch.Filter(watchIface, watchFilterer(s, ns)), nil
+	return watch.Filter(watchIface, s.watchFilterer(pred)), nil
 }
 
 func (s *store) getState(
