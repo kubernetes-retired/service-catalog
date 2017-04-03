@@ -316,6 +316,10 @@ func deleteItem(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 }
 
+func watchItem(rw http.ResponseWriter, r *http.Request) {
+
+}
+
 func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusNotFound)
 }
