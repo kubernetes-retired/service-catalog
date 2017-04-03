@@ -6,7 +6,6 @@ kubeconfig
 .kubeconfig
 log/**
 pid/**
-vendor/**
 bin/**
 coverage.html
 .idea/
