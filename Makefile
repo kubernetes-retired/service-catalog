@@ -87,27 +87,27 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 # Some will have dedicated targets to make it easier to type, for example
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
-build: .init .generate_files \
+build: .generate_files \
        $(BINDIR)/controller-manager $(BINDIR)/apiserver \
        $(BINDIR)/k8s-broker $(BINDIR)/user-broker
 
 k8s-broker: $(BINDIR)/k8s-broker
-$(BINDIR)/k8s-broker: .init contrib/cmd/k8s-broker \
+$(BINDIR)/k8s-broker: contrib/cmd/k8s-broker \
 	  $(shell find contrib/cmd/k8s-broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/k8s-broker
 
 user-broker: $(BINDIR)/user-broker
-$(BINDIR)/user-broker: .init contrib/cmd/user-broker \
+$(BINDIR)/user-broker: contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
 apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
+$(BINDIR)/apiserver: .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/apiserver
 
 controller-manager: $(BINDIR)/controller-manager
-$(BINDIR)/controller-manager: .init .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
+$(BINDIR)/controller-manager: .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
 
 # This section contains the code generation stuff
@@ -121,29 +121,29 @@ $(BINDIR)/controller-manager: .init .generate_files cmd/controller-manager $(NEW
                 $(BINDIR)/openapi-gen
 	touch $@
 
-$(BINDIR)/defaulter-gen: .init
+$(BINDIR)/defaulter-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/defaulter-gen
 
-$(BINDIR)/deepcopy-gen: .init
+$(BINDIR)/deepcopy-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/deepcopy-gen
 
-$(BINDIR)/conversion-gen: .init
+$(BINDIR)/conversion-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/conversion-gen
 
-$(BINDIR)/client-gen: .init
+$(BINDIR)/client-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/client-gen
 
-$(BINDIR)/lister-gen: .init
+$(BINDIR)/lister-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/lister-gen
 
-$(BINDIR)/informer-gen: .init
+$(BINDIR)/informer-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/informer-gen
 
 $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
-.generate_files: .init .generate_exes $(TYPES_FILES)
+.generate_files: .generate_exes $(TYPES_FILES)
 	# Generate defaults
 	$(DOCKER_CMD) $(BINDIR)/defaulter-gen \
 		--v 1 --logtostderr \
@@ -182,9 +182,6 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Some prereq stuff
 ###################
-.init: $(scBuildImageTarget) glide.yaml
-	$(DOCKER_CMD) glide install --strip-vendor
-	touch $@
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
@@ -193,8 +190,8 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Util targets
 ##############
-.PHONY: verify verify-client-gen
-verify: .init .generate_files verify-client-gen
+.PHONY: verify verify-client-gen 
+verify: .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || \
@@ -224,24 +221,24 @@ verify: .init .generate_files verify-client-gen
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
-verify-client-gen: .init .generate_files
+verify-client-gen: .generate_files
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
 
-format: .init
+format:
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
 
-coverage: .init
+coverage:
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init build test-unit test-integration
+test: build test-unit test-integration
 
-test-unit: .init build
+test-unit: build
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
-test-integration: .init $(scBuildImageTarget) build
+test-integration: $(scBuildImageTarget) build
 	# test kubectl
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
@@ -253,9 +250,6 @@ clean: clean-bin clean-deps clean-build-image clean-generated clean-coverage
 clean-bin:
 	rm -rf $(BINDIR)
 	rm -f .generate_exes
-
-clean-deps:
-	rm -f .init
 
 clean-build-image:
 	rm -f .scBuildImage
