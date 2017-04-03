@@ -430,10 +430,10 @@ func (s *store) GetToList(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
-	p storage.SelectionPredicate,
+	pred storage.SelectionPredicate,
 	listObj runtime.Object,
 ) error {
-	return s.List(ctx, key, resourceVersion, p, listObj)
+	return s.List(ctx, key, resourceVersion, pred, listObj)
 }
 
 // List implements storage.Interface.List.
@@ -441,7 +441,7 @@ func (s *store) List(
 	ctx context.Context,
 	key string,
 	resourceVersion string,
-	p storage.SelectionPredicate,
+	pred storage.SelectionPredicate,
 	listObj runtime.Object,
 ) error {
 	ns, _, err := s.decodeKey(key)
@@ -457,6 +457,21 @@ func (s *store) List(
 	}
 	if statusCode != http.StatusOK {
 		return storage.NewKeyNotFoundError(key, 0)
+	}
+	filter := storage.SimpleFilter(pred)
+	filteredList := make([]runtime.Object, 0)
+	if err := meta.EachListItem(listObj, func(obj runtime.Object) error {
+		if filter(obj) {
+			filteredList = append(filteredList, obj)
+		}
+		return nil
+	}); err != nil {
+		glog.Errorf("filtering list items: %s", err)
+		return err
+	}
+	if err = meta.SetList(listObj, filteredList); err != nil {
+		glog.Errorf("setting filtered list: %s", err)
+		return err
 	}
 	if !s.hasNamespace {
 		if err := meta.EachListItem(listObj, removeNamespace); err != nil {
