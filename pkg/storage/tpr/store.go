@@ -507,6 +507,7 @@ func (s *store) Watch(
 func (s *store) watchFilterer(pred storage.SelectionPredicate) func(watch.Event) (watch.Event, bool) {
 	filter := storage.SimpleFilter(pred)
 	return func(in watch.Event) (watch.Event, bool) {
+		fmt.Printf("----> event: %#v\n", in)
 		encodedBytes, err := runtime.Encode(s.codec, in.Object)
 		if err != nil {
 			glog.Errorf("encoding watch event object %#v: %s", in.Object, err)
