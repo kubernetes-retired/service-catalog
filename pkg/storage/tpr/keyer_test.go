@@ -81,4 +81,17 @@ func TestNamespaceAndNameFromKey(t *testing.T) {
 	if name != "" {
 		t.Fatalf("expected empty name, got '%s'", name)
 	}
+
+	key = "a" + separator + "b" + separator + "c"
+	ns, name, err = keyer.NamespaceAndNameFromKey(key)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if ns != "" {
+		t.Fatalf("expected empty namespace")
+	}
+	if name != "" {
+		t.Fatalf("expected empty name")
+	}
+
 }
