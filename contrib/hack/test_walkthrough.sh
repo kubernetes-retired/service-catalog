@@ -38,6 +38,11 @@ CATALOG_RELEASE="catalog"
 K8S_KUBECONFIG="${KUBECONFIG:-~/.kube/config}"
 SC_KUBECONFIG="/tmp/sc-kubeconfig"
 
+VERSION="${VERSION:-"$(git describe --tags --always --abbrev=7 --dirty)"}" \
+  || error_exit 'Cannot determine Git commit SHA'
+
+REGISTRY="${REGISTRY:-}"
+
 function cleanup() {
   echo 'Cleaning up resources...'
   export KUBECONFIG="${K8S_KUBECONFIG}"
@@ -62,9 +67,6 @@ function cleanup() {
   echo 'Cleanup done.'
 }
 
-VERSION="${VERSION:-"$(git describe --tags --always --abbrev=7 --dirty)"}" \
-  || error_exit 'Cannot determine Git commit SHA'
-
 # Deploying to cluster
 
 if [[ -n "${CLEANUP:-}" ]]; then
@@ -75,29 +77,23 @@ kubectl create namespace test-ns
 
 echo 'Deploying user-provided-service broker...'
 
-VALUES="version=${VERSION}"
-if [[ -n "${REGISTRY:-}" ]]; then
-  VALUES+=",registry=${REGISTRY}"
-fi
-
 retry -n 10 \
     helm install "${ROOT}/charts/ups-broker" \
     --name "${BROKER_RELEASE}" \
     --namespace "ups-broker" \
-    --set "${VALUES}" \
   || error_exit 'Error deploy ups broker to cluster.'
 
 echo 'Deploying service catalog...'
 
-VALUES+=',debug=true'
+VALUES='debug=true'
 VALUES+=',insecure=true'
+VALUES+=",controllerManager.image=${REGISTRY}controller-manager:${VERSION}"
+VALUES+=",apiserver.image=${REGISTRY}apiserver:${VERSION}"
 VALUES+=',apiserver.service.type=LoadBalancer'
 if [[ -n "${WITH_TPR:-}" ]]; then
   VALUES+=',apiserver.storage.type=tpr'
   VALUES+=',apiserver.storage.tpr.globalNamespace=test-ns'
 fi
-
-NAME="$(openssl rand -base64 100 | tr -dc a-z | cut -c -6)"
 
 retry -n 10 \
     helm install "${ROOT}/charts/catalog" \
