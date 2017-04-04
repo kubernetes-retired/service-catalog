@@ -414,7 +414,13 @@ No resources found
 
 ## Step 12 - Final Cleanup
 
-To clean up, delete all the namespaces we created:
+To clean up, delete all our helm deployments:
+
+```console
+helm delete --purge catalog ups-broker
+```
+
+Then, delete all the namespaces we created:
 
 ```console
 kubectl delete ns test-ns catalog ups-broker
