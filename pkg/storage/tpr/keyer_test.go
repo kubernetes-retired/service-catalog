@@ -25,6 +25,8 @@ import (
 const (
 	defaultCtxNS = "defaultTestNS"
 	ctxNS        = "testNS"
+	separator    = "/"
+	resourceName = "myResource"
 )
 
 func TestKeyRoot(t *testing.T) {
@@ -43,9 +45,40 @@ func TestKeyRoot(t *testing.T) {
 }
 
 func TestKey(t *testing.T) {
-	t.Skip("TODO")
+	ctx := api.NewContext()
+	ctx = api.WithNamespace(ctx, ctxNS)
+	keyer := Keyer{Separator: separator, ResourceName: resourceName}
+	key := keyer.Key(ctx, resourceName)
+	expected := ctxNS + separator + resourceName
+	if key != expected {
+		t.Fatalf("key was '%s', not expected '%s', key, expected")
+	}
 }
 
 func TestNamespaceAndNameFromKey(t *testing.T) {
-	t.Skip("TODO")
+	const testName = "testName"
+	keyer := Keyer{Separator: separator, ResourceName: resourceName}
+	key := ctxNS + separator + testName
+	ns, name, err := keyer.NamespaceAndNameFromKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if ns != ctxNS {
+		t.Fatalf("namespace was '%s', not expected '%s'", ns, ctxNS)
+	}
+	if name != testName {
+		t.Fatalf("name was '%s', not expected '%s'", name, testName)
+	}
+
+	key = ctxNS
+	ns, name, err = keyer.NamespaceAndNameFromKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if ns != ctxNS {
+		t.Fatalf("namespace was '%s', not expected '%s'", ns, ctxNS)
+	}
+	if name != "" {
+		t.Fatalf("expected empty name, got '%s'", name)
+	}
 }
