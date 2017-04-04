@@ -24,19 +24,20 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/client-go/1.5/kubernetes"
-	v1core "k8s.io/client-go/1.5/kubernetes/typed/core/v1"
-	"k8s.io/client-go/1.5/pkg/api/unversioned"
-	"k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/rest"
-	"k8s.io/client-go/1.5/tools/record"
+	"k8s.io/client-go/kubernetes"
+	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 
-	"k8s.io/kubernetes/pkg/client/typed/discovery"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/healthz"
-	"k8s.io/kubernetes/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/record"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/kubernetes/pkg/util/configz"
-	"k8s.io/kubernetes/pkg/util/wait"
 
 	// The API groups for our API must be installed before we can use the
 	// client to work with them.  This needs to be done once per process; this
@@ -45,11 +46,11 @@ import (
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	// The core API has to be installed in order for the client to understand
 	// error messages from the API server.  Please do not remove.
-	_ "k8s.io/kubernetes/pkg/api/install"
+	_ "k8s.io/client-go/pkg/api/install"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
-	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
+	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
 	"github.com/golang/glog"
@@ -93,7 +94,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	if err != nil {
 		glog.Fatalf("Failed to get kube client config (%s)", err)
 	}
-	k8sKubeconfig.GroupVersion = &unversioned.GroupVersion{}
+	k8sKubeconfig.GroupVersion = &schema.GroupVersion{}
 
 	// k8sKubeconfig, err := clientcmd.BuildConfigFromFlags(
 	// 	controllerManagerOptions.K8sAPIServerURL,
@@ -144,7 +145,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: k8sKubeClient.Core().Events("")})
-	recorder := eventBroadcaster.NewRecorder(v1.EventSource{Component: controllerManagerAgentName})
+	recorder := eventBroadcaster.NewRecorder(api.Scheme, v1.EventSource{Component: controllerManagerAgentName})
 
 	// 'run' is the logic to run the controllers for the controller manager
 	run := func(stop <-chan struct{}) {
@@ -278,7 +279,6 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.V(5).Info("Creating shared informers")
 		// Build the informer factory for service-catalog resources
 		informerFactory := servicecataloginformers.NewSharedInformerFactory(
-			nil, // internal clientset (not used)
 			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
 			resyncDuration,
 		)
