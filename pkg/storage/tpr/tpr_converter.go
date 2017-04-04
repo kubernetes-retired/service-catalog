@@ -19,14 +19,14 @@ package tpr
 import (
 	"encoding/json"
 
-	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // FromUnstructured converts o, a Kubernetes Third Party Resource type, into a
 // *runtime.Unstructured and writes it to object. Returns a non-nil error is there were any issues
 // with the conversion
-func FromUnstructured(in *runtime.Unstructured, out runtime.Object) error {
-	b, err := json.Marshal(in.Object)
+func FromUnstructured(in runtime.Unstructured, out runtime.Object) error {
+	b, err := json.Marshal(in.UnstructuredContent())
 	if err != nil {
 		return err
 	}

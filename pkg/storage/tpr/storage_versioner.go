@@ -20,10 +20,10 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/api/meta"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/storage"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/storage"
+	restclient "k8s.io/client-go/rest"
 )
 
 type versioner struct {
