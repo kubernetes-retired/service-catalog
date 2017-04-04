@@ -17,8 +17,8 @@ limitations under the License.
 package validation
 
 import (
-	apivalidation "k8s.io/kubernetes/pkg/api/validation"
-	"k8s.io/kubernetes/pkg/util/validation/field"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
@@ -48,7 +48,7 @@ func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path, create bool)
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("instanceRef", "name"), spec.InstanceRef.Name, msg))
 	}
 
-	for _, msg := range apivalidation.ValidateSecretName(spec.SecretName, false /* prefix */) {
+	for _, msg := range apivalidation.NameIsDNSSubdomain(spec.SecretName, false /* prefix */) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("secretName"), spec.SecretName, msg))
 	}
 

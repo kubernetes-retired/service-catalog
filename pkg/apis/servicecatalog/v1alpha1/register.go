@@ -17,12 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/kubernetes/pkg/api/v1"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/schema"
-	versionedwatch "k8s.io/kubernetes/pkg/watch/versioned"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // GroupName is the group name use in this package
@@ -51,14 +49,6 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		// so generated client list operation works
-		&v1.ListOptions{},
-		// for the client to support everything else, whatever
-		// that is
-		&v1.DeleteOptions{},
-		&metav1.ExportOptions{},
-		&metav1.GetOptions{},
-
 		&Broker{},
 		&BrokerList{},
 		&ServiceClass{},
@@ -68,8 +58,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Binding{},
 		&BindingList{},
 	)
-
-	versionedwatch.AddToGroupVersion(scheme, SchemeGroupVersion)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	scheme.AddKnownTypes(schema.GroupVersion{Version: "v1"}, &metav1.Status{})
 
 	return nil
 }

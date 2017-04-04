@@ -19,7 +19,7 @@ package validation
 import (
 	"testing"
 
-	kapi "k8s.io/kubernetes/pkg/api"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
@@ -33,7 +33,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "valid serviceClass",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -51,7 +51,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "valid serviceClass - plan with underscore in name",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -69,7 +69,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "valid serviceClass - uppercase in GUID",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -87,7 +87,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "invalid serviceClass - has namespace",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-serviceclass",
 					Namespace: "test-ns",
 				},
@@ -106,7 +106,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "invalid serviceClass - missing guid",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -123,7 +123,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "invalid serviceClass - invalid guid",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -141,7 +141,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "invalid serviceClass - invalid plan name",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -159,7 +159,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "invalid serviceClass - invalid plan guid",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,
@@ -177,7 +177,7 @@ func TestValidateServiceClass(t *testing.T) {
 		{
 			name: "invalid serviceClass - missing plan guid",
 			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: kapi.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-serviceclass",
 				},
 				Bindable:   true,

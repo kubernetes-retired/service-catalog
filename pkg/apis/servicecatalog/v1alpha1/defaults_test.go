@@ -23,12 +23,11 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	versioned "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/testapi"
-	"k8s.io/kubernetes/pkg/apimachinery/registered"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/pkg/api"
 )
 
 func init() {
@@ -38,7 +37,7 @@ func init() {
 	}
 
 	externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName,
-		Version: registered.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
+		Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
 
 	testapi.Groups[servicecatalog.GroupName] = testapi.NewTestGroup(
 		groupVersion,
