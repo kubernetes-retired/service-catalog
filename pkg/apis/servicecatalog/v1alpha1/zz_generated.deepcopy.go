@@ -21,9 +21,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	conversion "k8s.io/kubernetes/pkg/conversion"
-	runtime "k8s.io/kubernetes/pkg/runtime"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	conversion "k8s.io/apimachinery/pkg/conversion"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	api_v1 "k8s.io/client-go/pkg/api/v1"
 	reflect "reflect"
 )
 
@@ -98,8 +99,6 @@ func DeepCopy_v1alpha1_BindingList(in interface{}, out interface{}, c *conversio
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -117,15 +116,11 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.Parameters = nil
 		}
 		if in.Checksum != nil {
 			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
-		} else {
-			out.Checksum = nil
 		}
 		return nil
 	}
@@ -139,11 +134,7 @@ func DeepCopy_v1alpha1_BindingStatus(in interface{}, out interface{}, c *convers
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BindingCondition, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Conditions = nil
+			copy(*out, *in)
 		}
 		return nil
 	}
@@ -191,8 +182,6 @@ func DeepCopy_v1alpha1_BrokerList(in interface{}, out interface{}, c *conversion
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -205,10 +194,8 @@ func DeepCopy_v1alpha1_BrokerSpec(in interface{}, out interface{}, c *conversion
 		*out = *in
 		if in.AuthSecret != nil {
 			in, out := &in.AuthSecret, &out.AuthSecret
-			*out = new(v1.ObjectReference)
+			*out = new(api_v1.ObjectReference)
 			**out = **in
-		} else {
-			out.AuthSecret = nil
 		}
 		return nil
 	}
@@ -222,11 +209,7 @@ func DeepCopy_v1alpha1_BrokerStatus(in interface{}, out interface{}, c *conversi
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BrokerCondition, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Conditions = nil
+			copy(*out, *in)
 		}
 		return nil
 	}
@@ -274,8 +257,6 @@ func DeepCopy_v1alpha1_InstanceList(in interface{}, out interface{}, c *conversi
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -293,29 +274,21 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.Parameters = nil
 		}
 		if in.OSBDashboardURL != nil {
 			in, out := &in.OSBDashboardURL, &out.OSBDashboardURL
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardURL = nil
 		}
 		if in.OSBLastOperation != nil {
 			in, out := &in.OSBLastOperation, &out.OSBLastOperation
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBLastOperation = nil
 		}
 		if in.Checksum != nil {
 			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
-		} else {
-			out.Checksum = nil
 		}
 		return nil
 	}
@@ -329,11 +302,7 @@ func DeepCopy_v1alpha1_InstanceStatus(in interface{}, out interface{}, c *conver
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]InstanceCondition, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Conditions = nil
+			copy(*out, *in)
 		}
 		return nil
 	}
@@ -357,50 +326,36 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 					return err
 				}
 			}
-		} else {
-			out.Plans = nil
 		}
 		if in.OSBTags != nil {
 			in, out := &in.OSBTags, &out.OSBTags
 			*out = make([]string, len(*in))
 			copy(*out, *in)
-		} else {
-			out.OSBTags = nil
 		}
 		if in.OSBRequires != nil {
 			in, out := &in.OSBRequires, &out.OSBRequires
 			*out = make([]string, len(*in))
 			copy(*out, *in)
-		} else {
-			out.OSBRequires = nil
 		}
 		if in.OSBMaxDBPerNode != nil {
 			in, out := &in.OSBMaxDBPerNode, &out.OSBMaxDBPerNode
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBMaxDBPerNode = nil
 		}
 		if in.OSBDashboardOAuth2ClientID != nil {
 			in, out := &in.OSBDashboardOAuth2ClientID, &out.OSBDashboardOAuth2ClientID
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardOAuth2ClientID = nil
 		}
 		if in.OSBDashboardSecret != nil {
 			in, out := &in.OSBDashboardSecret, &out.OSBDashboardSecret
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardSecret = nil
 		}
 		if in.OSBDashboardRedirectURI != nil {
 			in, out := &in.OSBDashboardRedirectURI, &out.OSBDashboardRedirectURI
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardRedirectURI = nil
 		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
@@ -409,8 +364,6 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.OSBMetadata = nil
 		}
 		return nil
 	}
@@ -429,8 +382,6 @@ func DeepCopy_v1alpha1_ServiceClassList(in interface{}, out interface{}, c *conv
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -445,8 +396,6 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 			in, out := &in.Description, &out.Description
 			*out = new(string)
 			**out = **in
-		} else {
-			out.Description = nil
 		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
@@ -455,8 +404,6 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.OSBMetadata = nil
 		}
 		return nil
 	}

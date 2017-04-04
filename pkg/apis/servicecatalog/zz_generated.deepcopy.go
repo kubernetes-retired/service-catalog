@@ -21,10 +21,10 @@ limitations under the License.
 package servicecatalog
 
 import (
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	conversion "k8s.io/kubernetes/pkg/conversion"
-	runtime "k8s.io/kubernetes/pkg/runtime"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	conversion "k8s.io/apimachinery/pkg/conversion"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	api_v1 "k8s.io/client-go/pkg/api/v1"
 	reflect "reflect"
 )
 
@@ -65,7 +65,7 @@ func DeepCopy_servicecatalog_Binding(in interface{}, out interface{}, c *convers
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*api.ObjectMeta)
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
 		if err := DeepCopy_servicecatalog_BindingSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
@@ -99,8 +99,6 @@ func DeepCopy_servicecatalog_BindingList(in interface{}, out interface{}, c *con
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -118,15 +116,11 @@ func DeepCopy_servicecatalog_BindingSpec(in interface{}, out interface{}, c *con
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.Parameters = nil
 		}
 		if in.Checksum != nil {
 			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
-		} else {
-			out.Checksum = nil
 		}
 		return nil
 	}
@@ -140,11 +134,7 @@ func DeepCopy_servicecatalog_BindingStatus(in interface{}, out interface{}, c *c
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BindingCondition, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Conditions = nil
+			copy(*out, *in)
 		}
 		return nil
 	}
@@ -158,7 +148,7 @@ func DeepCopy_servicecatalog_Broker(in interface{}, out interface{}, c *conversi
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*api.ObjectMeta)
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
 		if err := DeepCopy_servicecatalog_BrokerSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
@@ -192,8 +182,6 @@ func DeepCopy_servicecatalog_BrokerList(in interface{}, out interface{}, c *conv
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -206,10 +194,8 @@ func DeepCopy_servicecatalog_BrokerSpec(in interface{}, out interface{}, c *conv
 		*out = *in
 		if in.AuthSecret != nil {
 			in, out := &in.AuthSecret, &out.AuthSecret
-			*out = new(v1.ObjectReference)
+			*out = new(api_v1.ObjectReference)
 			**out = **in
-		} else {
-			out.AuthSecret = nil
 		}
 		return nil
 	}
@@ -223,11 +209,7 @@ func DeepCopy_servicecatalog_BrokerStatus(in interface{}, out interface{}, c *co
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BrokerCondition, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Conditions = nil
+			copy(*out, *in)
 		}
 		return nil
 	}
@@ -241,7 +223,7 @@ func DeepCopy_servicecatalog_Instance(in interface{}, out interface{}, c *conver
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*api.ObjectMeta)
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
 		if err := DeepCopy_servicecatalog_InstanceSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
@@ -275,8 +257,6 @@ func DeepCopy_servicecatalog_InstanceList(in interface{}, out interface{}, c *co
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -294,29 +274,21 @@ func DeepCopy_servicecatalog_InstanceSpec(in interface{}, out interface{}, c *co
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.Parameters = nil
 		}
 		if in.OSBDashboardURL != nil {
 			in, out := &in.OSBDashboardURL, &out.OSBDashboardURL
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardURL = nil
 		}
 		if in.OSBLastOperation != nil {
 			in, out := &in.OSBLastOperation, &out.OSBLastOperation
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBLastOperation = nil
 		}
 		if in.Checksum != nil {
 			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
-		} else {
-			out.Checksum = nil
 		}
 		return nil
 	}
@@ -330,11 +302,7 @@ func DeepCopy_servicecatalog_InstanceStatus(in interface{}, out interface{}, c *
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]InstanceCondition, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Conditions = nil
+			copy(*out, *in)
 		}
 		return nil
 	}
@@ -348,7 +316,7 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*api.ObjectMeta)
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
 		if in.Plans != nil {
 			in, out := &in.Plans, &out.Plans
@@ -358,50 +326,36 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 					return err
 				}
 			}
-		} else {
-			out.Plans = nil
 		}
 		if in.OSBTags != nil {
 			in, out := &in.OSBTags, &out.OSBTags
 			*out = make([]string, len(*in))
 			copy(*out, *in)
-		} else {
-			out.OSBTags = nil
 		}
 		if in.OSBRequires != nil {
 			in, out := &in.OSBRequires, &out.OSBRequires
 			*out = make([]string, len(*in))
 			copy(*out, *in)
-		} else {
-			out.OSBRequires = nil
 		}
 		if in.OSBMaxDBPerNode != nil {
 			in, out := &in.OSBMaxDBPerNode, &out.OSBMaxDBPerNode
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBMaxDBPerNode = nil
 		}
 		if in.OSBDashboardOAuth2ClientID != nil {
 			in, out := &in.OSBDashboardOAuth2ClientID, &out.OSBDashboardOAuth2ClientID
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardOAuth2ClientID = nil
 		}
 		if in.OSBDashboardSecret != nil {
 			in, out := &in.OSBDashboardSecret, &out.OSBDashboardSecret
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardSecret = nil
 		}
 		if in.OSBDashboardRedirectURI != nil {
 			in, out := &in.OSBDashboardRedirectURI, &out.OSBDashboardRedirectURI
 			*out = new(string)
 			**out = **in
-		} else {
-			out.OSBDashboardRedirectURI = nil
 		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
@@ -410,8 +364,6 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.OSBMetadata = nil
 		}
 		return nil
 	}
@@ -430,8 +382,6 @@ func DeepCopy_servicecatalog_ServiceClassList(in interface{}, out interface{}, c
 					return err
 				}
 			}
-		} else {
-			out.Items = nil
 		}
 		return nil
 	}
@@ -446,8 +396,6 @@ func DeepCopy_servicecatalog_ServicePlan(in interface{}, out interface{}, c *con
 			in, out := &in.Description, &out.Description
 			*out = new(string)
 			**out = **in
-		} else {
-			out.Description = nil
 		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
@@ -456,8 +404,6 @@ func DeepCopy_servicecatalog_ServicePlan(in interface{}, out interface{}, c *con
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
-		} else {
-			out.OSBMetadata = nil
 		}
 		return nil
 	}
