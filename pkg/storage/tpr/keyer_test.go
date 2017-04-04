@@ -18,10 +18,28 @@ package tpr
 
 import (
 	"testing"
+
+	"k8s.io/kubernetes/pkg/api"
+)
+
+const (
+	defaultCtxNS = "defaultTestNS"
+	ctxNS        = "testNS"
 )
 
 func TestKeyRoot(t *testing.T) {
-	t.Skip("TODO")
+	ctx := api.NewContext()
+	ctx = api.WithNamespace(ctx, ctxNS)
+	keyer := Keyer{DefaultNamespace: defaultCtxNS}
+	root := keyer.KeyRoot(ctx)
+	if root != ctxNS {
+		t.Fatalf("key root '%s' wasn't expected '%s'", root, ctxNS)
+	}
+	ctx = api.NewContext()
+	root = keyer.NewRoot(ctx)
+	if root != keyer.DefaultNamespace {
+		t.Fatalf("key root '%s' wasn't expected '%s'", root, keyer.DefaultNamespace)
+	}
 }
 
 func TestKey(t *testing.T) {
