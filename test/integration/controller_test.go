@@ -20,17 +20,19 @@ import (
 	"testing"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/pkg/api/v1"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	scinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
+	scinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
+	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
-	"k8s.io/client-go/1.5/kubernetes/fake"
-	"k8s.io/kubernetes/pkg/api/v1"
 )
 
 const (
@@ -85,7 +87,7 @@ func TestBasicFlows(t *testing.T) {
 		},
 	}
 	broker := &v1alpha1.Broker{
-		ObjectMeta: v1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
 		Spec: v1alpha1.BrokerSpec{
 			URL: "https://example.com",
 		},
@@ -117,7 +119,7 @@ func TestBasicFlows(t *testing.T) {
 	//-----------------
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -138,7 +140,7 @@ func TestBasicFlows(t *testing.T) {
 		t.Fatalf("error waiting for instance to become ready: %v", err)
 	}
 
-	retInst, err := client.Instances(instance.Namespace).Get(instance.Name)
+	retInst, err := client.Instances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
 	}
@@ -168,7 +170,7 @@ func TestBasicFlows(t *testing.T) {
 	//-----------------
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
@@ -190,7 +192,7 @@ func TestBasicFlows(t *testing.T) {
 		t.Fatalf("error waiting for binding to become ready: %v", err)
 	}
 
-	err = client.Bindings(testNamespace).Delete(testBindingName, &v1.DeleteOptions{})
+	err = client.Bindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatalf("binding delete should have been accepted: %v", err)
 	}
@@ -203,7 +205,7 @@ func TestBasicFlows(t *testing.T) {
 	//-----------------
 	// End binding test
 
-	err = client.Instances(testNamespace).Delete(testInstanceName, &v1.DeleteOptions{})
+	err = client.Instances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("instance delete should have been accepted: %v", err)
 	}
@@ -217,7 +219,7 @@ func TestBasicFlows(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.Brokers().Delete(testBrokerName, &v1.DeleteOptions{})
+	err = client.Brokers().Delete(testBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -255,7 +257,8 @@ func newTestController(t *testing.T) (
 
 	// create informers
 	resync := 1 * time.Minute
-	informerFactory := scinformers.NewSharedInformerFactory(nil, catalogClient, resync)
+
+	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, resync)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
 	// create a test controller
