@@ -20,5 +20,5 @@ package apiserver
 type RunnableServer interface {
 	// Run starts the server, and blocks until the given channel is closed, after which point
 	// it returns and the server has stopped
-	Run(<-chan struct{})
+	Run(<-chan struct{}) error
 }

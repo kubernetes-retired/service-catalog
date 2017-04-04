@@ -19,9 +19,10 @@ package apiserver
 import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/generic"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/server/storage"
+	clientset "k8s.io/client-go/kubernetes"
 )
 
 // EtcdConfig contains a generic API server Config along with config specific to
@@ -32,14 +33,14 @@ type etcdConfig struct {
 
 	// BABYNETES: cargo culted from master.go
 	deleteCollectionWorkers int
-	storageFactory          genericapiserver.StorageFactory
+	storageFactory          storage.StorageFactory
 }
 
 // NewEtcdConfig returns a new server config to describe an etcd-backed API server
 func NewEtcdConfig(
 	genCfg *genericapiserver.Config,
 	deleteCollWorkers int,
-	factory genericapiserver.StorageFactory,
+	factory storage.StorageFactory,
 ) Config {
 	return &etcdConfig{
 		genericConfig:           genCfg,
@@ -67,7 +68,7 @@ func (c *etcdConfig) Complete() CompletedConfig {
 // the type system.
 type completedEtcdConfig struct {
 	*etcdConfig
-	apiResourceConfigSource genericapiserver.APIResourceConfigSource
+	apiResourceConfigSource storage.APIResourceConfigSource
 }
 
 // NewServer creates a new server that can be run. Returns a non-nil error if the server couldn't
@@ -81,7 +82,7 @@ func (c completedEtcdConfig) NewServer() (*ServiceCatalogAPIServer, error) {
 
 	roFactory := etcdRESTOptionsFactory{
 		deleteCollectionWorkers: c.deleteCollectionWorkers,
-		enableGarbageCollection: c.genericConfig.EnableGarbageCollection,
+		enableGarbageCollection: true,
 		storageFactory:          c.storageFactory,
 		storageDecorator:        generic.UndecoratedStorage,
 	}
@@ -90,7 +91,7 @@ func (c completedEtcdConfig) NewServer() (*ServiceCatalogAPIServer, error) {
 	// default namespace doesn't matter for etcd
 	providers := restStorageProviders("" /* default namespace */, server.StorageTypeEtcd, nil)
 	for _, provider := range providers {
-		groupInfo, err := provider.NewRESTStorage(c.apiResourceConfigSource, roFactory.NewFor)
+		groupInfo, err := provider.NewRESTStorage(c.apiResourceConfigSource, roFactory)
 		if IsErrAPIGroupDisabled(err) {
 			glog.Warningf("Skipping API group %v because it is not enabled", provider.GroupName())
 			continue

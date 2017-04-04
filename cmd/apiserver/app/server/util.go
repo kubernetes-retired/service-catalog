@@ -17,14 +17,11 @@ limitations under the License.
 package server
 
 import (
-	"k8s.io/kubernetes/pkg/genericapiserver"
+	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
 func setupBasicServer(s *ServiceCatalogServerOptions) (*genericapiserver.Config, error) {
-	if err := s.GenericServerRunOptions.DefaultExternalAddress(
-		s.SecureServingOptions,
-		nil,
-	); err != nil {
+	if _, err := s.SecureServingOptions.ServingOptions.DefaultExternalAddress(); err != nil {
 		return nil, err
 	}
 
@@ -34,15 +31,17 @@ func setupBasicServer(s *ServiceCatalogServerOptions) (*genericapiserver.Config,
 	); err != nil {
 		return nil, err
 	}
-
-	genericConfig := genericapiserver.NewConfig().ApplyOptions(s.GenericServerRunOptions)
-	// these are all mutators of each specific suboption in serverOptions object.
-	// this repeated pattern seems like we could refactor
-	if _, err := genericConfig.ApplySecureServingOptions(s.SecureServingOptions); err != nil {
+	genericConfig := genericapiserver.NewConfig()
+	if err := s.GenericServerRunOptions.ApplyTo(genericConfig); err != nil {
+		return nil, err
+	}
+	if err := s.SecureServingOptions.ApplyTo(genericConfig); err != nil {
 		return nil, err
 	}
 
-	genericConfig.ApplyInsecureServingOptions(s.InsecureServingOptions)
+	if err := s.InsecureServingOptions.ApplyTo(genericConfig); err != nil {
+		return nil, err
+	}
 
 	// glog.V(4).Info("Setting up authn (disabled)")
 	// need to figure out what's throwing the `missing clientCA file` err

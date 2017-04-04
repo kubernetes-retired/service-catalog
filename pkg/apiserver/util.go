@@ -19,9 +19,10 @@ package apiserver
 import (
 	servicecatalogrest "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/rest"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/version"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/version"
+	restclient "k8s.io/client-go/rest"
 )
 
 func restStorageProviders(
@@ -39,6 +40,7 @@ func restStorageProviders(
 }
 
 func completeGenericConfig(cfg *genericapiserver.Config) {
+	cfg.Serializer = api.Codecs
 	cfg.Complete()
 
 	version := version.Get()
