@@ -38,7 +38,7 @@ func TestKeyRoot(t *testing.T) {
 		t.Fatalf("key root '%s' wasn't expected '%s'", root, ctxNS)
 	}
 	ctx = api.NewContext()
-	root = keyer.NewRoot(ctx)
+	root = keyer.KeyRoot(ctx)
 	if root != keyer.DefaultNamespace {
 		t.Fatalf("key root '%s' wasn't expected '%s'", root, keyer.DefaultNamespace)
 	}
@@ -48,7 +48,10 @@ func TestKey(t *testing.T) {
 	ctx := api.NewContext()
 	ctx = api.WithNamespace(ctx, ctxNS)
 	keyer := Keyer{Separator: separator, ResourceName: resourceName}
-	key := keyer.Key(ctx, resourceName)
+	key, err := keyer.Key(ctx, resourceName)
+	if err != nil {
+		t.Fatalf("key func returned an error %s", err)
+	}
 	expected := ctxNS + separator + resourceName
 	if key != expected {
 		t.Fatalf("key was '%s', not expected '%s', key, expected", key, expected)
