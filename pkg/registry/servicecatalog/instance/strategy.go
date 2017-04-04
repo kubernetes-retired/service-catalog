@@ -19,10 +19,12 @@ package instance
 // this was copied from where else and edited to fit our objects
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/rest"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/validation/field"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
+	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apiserver/pkg/storage/names"
+	api "k8s.io/client-go/pkg/api"
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -39,7 +41,7 @@ func NewScopeStrategy() rest.NamespaceScopedStrategy {
 // NamespaceScopedStrategy
 type instanceRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
-	kapi.NameGenerator  // GenerateName method for CreateStrategy
+	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
 // implements interface RESTUpdateStrategy
@@ -51,10 +53,10 @@ var (
 	instanceRESTStrategies = instanceRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
-		ObjectTyper: kapi.Scheme,
+		ObjectTyper: api.Scheme,
 		// use the generator from upstream k8s, or implement method
 		// `GenerateName(base string) string`
-		NameGenerator: kapi.SimpleNameGenerator,
+		NameGenerator: names.SimpleNameGenerator,
 	}
 	_ rest.RESTCreateStrategy = instanceRESTStrategies
 	_ rest.RESTUpdateStrategy = instanceRESTStrategies
@@ -81,7 +83,7 @@ func (instanceRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives a the incoming Instance and clears it's
 // Status. Status is not a user settable field.
-func (instanceRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
+func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	instance, ok := obj.(*sc.Instance)
 	if !ok {
 		glog.Fatal("received a non-instance object to create")
@@ -98,7 +100,7 @@ func (instanceRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Objec
 	instance.Finalizers = []string{"kubernetes"}
 }
 
-func (instanceRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
+func (instanceRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateInstance(obj.(*sc.Instance))
 }
 
@@ -110,7 +112,7 @@ func (instanceRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (instanceRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newInstance, ok := new.(*sc.Instance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")
@@ -125,7 +127,7 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.
 	newInstance.Status = oldInstance.Status
 }
 
-func (instanceRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newInstance, ok := new.(*sc.Instance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate to")
@@ -138,7 +140,7 @@ func (instanceRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Ob
 	return scv.ValidateInstanceUpdate(newInstance, oldInstance)
 }
 
-func (instanceStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newInstance, ok := new.(*sc.Instance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")
@@ -170,7 +172,7 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old ru
 	}
 }
 
-func (instanceStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newInstance, ok := new.(*sc.Instance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate to")

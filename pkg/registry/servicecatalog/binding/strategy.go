@@ -19,10 +19,12 @@ package binding
 // this was copied from where else and edited to fit our objects
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/rest"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/validation/field"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
+	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apiserver/pkg/storage/names"
+	"k8s.io/client-go/pkg/api"
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -39,7 +41,7 @@ func NewScopeStrategy() rest.NamespaceScopedStrategy {
 // NamespaceScopedStrategy
 type bindingRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
-	kapi.NameGenerator  // GenerateName method for CreateStrategy
+	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
 // implements interface RESTUpdateStrategy
@@ -51,10 +53,10 @@ var (
 	bindingRESTStrategies = bindingRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
-		ObjectTyper: kapi.Scheme,
+		ObjectTyper: api.Scheme,
 		// use the generator from upstream k8s, or implement method
 		// `GenerateName(base string) string`
-		NameGenerator: kapi.SimpleNameGenerator,
+		NameGenerator: names.SimpleNameGenerator,
 	}
 	_ rest.RESTCreateStrategy = bindingRESTStrategies
 	_ rest.RESTUpdateStrategy = bindingRESTStrategies
@@ -81,7 +83,7 @@ func (bindingRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives a the incoming Binding and clears it's
 // Status. Status is not a user settable field.
-func (bindingRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
+func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	binding, ok := obj.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to create")
@@ -99,7 +101,7 @@ func (bindingRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object
 	binding.Finalizers = []string{"kubernetes"}
 }
 
-func (bindingRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
+func (bindingRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateBinding(obj.(*sc.Binding))
 }
 
@@ -111,7 +113,7 @@ func (bindingRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (bindingRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update to")
@@ -124,7 +126,7 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.O
 	newBinding.Status = oldBinding.Status
 }
 
-func (bindingRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate to")
@@ -137,7 +139,7 @@ func (bindingRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obj
 	return scv.ValidateBindingUpdate(newBinding, oldBinding)
 }
 
-func (bindingStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update to")
@@ -169,7 +171,7 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old run
 	}
 }
 
-func (bindingStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate to")

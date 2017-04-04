@@ -26,11 +26,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
-	"k8s.io/kubernetes/pkg/api/rest"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/registry"
-	"k8s.io/kubernetes/pkg/storage"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/rest"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	serverstorage "k8s.io/apiserver/pkg/server/storage"
+	"k8s.io/apiserver/pkg/storage"
+	"k8s.io/client-go/pkg/api"
+	restclient "k8s.io/client-go/rest"
 )
 
 // StorageProvider provides a factory method to create a new APIGroupInfo for
@@ -44,8 +46,8 @@ type StorageProvider struct {
 // NewRESTStorage is a factory method to make a new APIGroupInfo for the
 // servicecatalog API group.
 func (p StorageProvider) NewRESTStorage(
-	apiResourceConfigSource genericapiserver.APIResourceConfigSource,
-	restOptionsGetter registry.RESTOptionsGetter,
+	apiResourceConfigSource serverstorage.APIResourceConfigSource,
+	restOptionsGetter generic.RESTOptionsGetter,
 ) (*genericapiserver.APIGroupInfo, error) {
 
 	storage, err := p.v1alpha1Storage(apiResourceConfigSource, restOptionsGetter)
@@ -53,7 +55,7 @@ func (p StorageProvider) NewRESTStorage(
 		return nil, err
 	}
 
-	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(servicecatalog.GroupName)
+	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(servicecatalog.GroupName, api.Registry, api.Scheme, api.ParameterCodec, api.Codecs)
 	apiGroupInfo.GroupMeta.GroupVersion = servicecatalogv1alpha1.SchemeGroupVersion
 
 	apiGroupInfo.VersionedResourcesStorageMap = map[string]map[string]rest.Storage{
@@ -64,12 +66,16 @@ func (p StorageProvider) NewRESTStorage(
 }
 
 func (p StorageProvider) v1alpha1Storage(
-	apiResourceConfigSource genericapiserver.APIResourceConfigSource,
-	restOptionsGetter registry.RESTOptionsGetter,
+	apiResourceConfigSource serverstorage.APIResourceConfigSource,
+	restOptionsGetter generic.RESTOptionsGetter,
 ) (map[string]rest.Storage, error) {
+	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("brokers"))
+	if err != nil {
+		return nil, err
+	}
 	brokerOpts := server.NewOptions(
 		etcd.Options{
-			RESTOptions:   restOptionsGetter(servicecatalog.Resource("brokers")),
+			RESTOptions:   brokerRESTOptions,
 			Capacity:      1000,
 			ObjectType:    broker.EmptyObject(),
 			ScopeStrategy: broker.NewScopeStrategy(),
@@ -79,7 +85,7 @@ func (p StorageProvider) v1alpha1Storage(
 		},
 		tpr.Options{
 			HasNamespace:     false,
-			RESTOptions:      restOptionsGetter(servicecatalog.Resource("brokers")),
+			RESTOptions:      brokerRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceBrokerKind,
@@ -97,9 +103,13 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
+	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
+	if err != nil {
+		return nil, err
+	}
 	serviceClassOpts := server.NewOptions(
 		etcd.Options{
-			RESTOptions:   restOptionsGetter(servicecatalog.Resource("serviceclasses")),
+			RESTOptions:   serviceClassRESTOptions,
 			Capacity:      1000,
 			ObjectType:    serviceclass.EmptyObject(),
 			ScopeStrategy: serviceclass.NewScopeStrategy(),
@@ -109,7 +119,7 @@ func (p StorageProvider) v1alpha1Storage(
 		},
 		tpr.Options{
 			HasNamespace:     false,
-			RESTOptions:      restOptionsGetter(servicecatalog.Resource("serviceclasses")),
+			RESTOptions:      serviceClassRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceClassKind,
@@ -127,9 +137,13 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
+	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("instances"))
+	if err != nil {
+		return nil, err
+	}
 	instanceOpts := server.NewOptions(
 		etcd.Options{
-			RESTOptions:   restOptionsGetter(servicecatalog.Resource("instances")),
+			RESTOptions:   instanceClassRESTOptions,
 			Capacity:      1000,
 			ObjectType:    instance.EmptyObject(),
 			ScopeStrategy: instance.NewScopeStrategy(),
@@ -139,7 +153,7 @@ func (p StorageProvider) v1alpha1Storage(
 		},
 		tpr.Options{
 			HasNamespace:     true,
-			RESTOptions:      restOptionsGetter(servicecatalog.Resource("instances")),
+			RESTOptions:      instanceClassRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceInstanceKind,
@@ -157,9 +171,13 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
+	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("bindings"))
+	if err != nil {
+		return nil, err
+	}
 	bindingsOpts := server.NewOptions(
 		etcd.Options{
-			RESTOptions:   restOptionsGetter(servicecatalog.Resource("bindings")),
+			RESTOptions:   bindingClassRESTOptions,
 			Capacity:      1000,
 			ObjectType:    binding.EmptyObject(),
 			ScopeStrategy: binding.NewScopeStrategy(),
@@ -169,7 +187,7 @@ func (p StorageProvider) v1alpha1Storage(
 		},
 		tpr.Options{
 			HasNamespace:     true,
-			RESTOptions:      restOptionsGetter(servicecatalog.Resource("bindings")),
+			RESTOptions:      bindingClassRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceBindingKind,

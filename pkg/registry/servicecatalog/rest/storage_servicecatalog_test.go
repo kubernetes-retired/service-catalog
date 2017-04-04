@@ -20,42 +20,43 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	"k8s.io/kubernetes/pkg/api/rest"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/registry"
-	"k8s.io/kubernetes/pkg/registry/generic"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/schema"
-	"k8s.io/kubernetes/pkg/storage"
-	"k8s.io/kubernetes/pkg/storage/storagebackend"
-	"k8s.io/kubernetes/pkg/storage/storagebackend/factory"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/registry/generic"
+	serverstorage "k8s.io/apiserver/pkg/server/storage"
+	"k8s.io/apiserver/pkg/storage"
+	"k8s.io/apiserver/pkg/storage/storagebackend"
+	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
 )
+
+type GetRESTOptionsHelper struct {
+	retStorageInterface storage.Interface
+	retDestroyFunc      func()
+}
+
+func (g GetRESTOptionsHelper) GetRESTOptions(resource schema.GroupResource) (generic.RESTOptions, error) {
+	return generic.RESTOptions{
+		StorageConfig: &storagebackend.Config{},
+		Decorator: generic.StorageDecorator(func(
+			copier runtime.ObjectCopier,
+			config *storagebackend.Config,
+			capacity int,
+			objectType runtime.Object,
+			resourcePrefix string,
+			keyFunc func(obj runtime.Object) (string, error),
+			newListFunc func() runtime.Object,
+			getAttrsFunc storage.AttrFunc,
+			trigger storage.TriggerPublisherFunc,
+		) (storage.Interface, factory.DestroyFunc) {
+			return g.retStorageInterface, g.retDestroyFunc
+		})}, nil
+}
 
 func testRESTOptionsGetter(
 	retStorageInterface storage.Interface,
 	retDestroyFunc func(),
-) registry.RESTOptionsGetter {
-	return func(resource schema.GroupResource) generic.RESTOptions {
-		return generic.RESTOptions{
-			StorageConfig: &storagebackend.Config{},
-			Decorator: generic.StorageDecorator(func(
-				config *storagebackend.Config,
-				capacity int,
-				objectType runtime.Object,
-				resourcePrefix string,
-				scopeStrategy rest.NamespaceScopedStrategy,
-				newListFunc func() runtime.Object,
-				getAttrsFunc func(
-					runtime.Object,
-				) (labels.Set, fields.Set, error),
-				trigger storage.TriggerPublisherFunc,
-			) (storage.Interface, factory.DestroyFunc) {
-				return retStorageInterface, retDestroyFunc
-			}),
-		}
-	}
+) generic.RESTOptionsGetter {
+	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
 }
 
 func TestV1Alpha1Storage(t *testing.T) {
@@ -64,7 +65,7 @@ func TestV1Alpha1Storage(t *testing.T) {
 		StorageType:      server.StorageTypeTPR,
 		RESTClient:       nil,
 	}
-	configSource := genericapiserver.NewResourceConfig()
+	configSource := serverstorage.NewResourceConfig()
 	roGetter := testRESTOptionsGetter(nil, func() {})
 	storageMap, err := provider.v1alpha1Storage(configSource, roGetter)
 	if err != nil {
