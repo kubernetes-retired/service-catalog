@@ -51,7 +51,7 @@ func TestKey(t *testing.T) {
 	key := keyer.Key(ctx, resourceName)
 	expected := ctxNS + separator + resourceName
 	if key != expected {
-		t.Fatalf("key was '%s', not expected '%s', key, expected")
+		t.Fatalf("key was '%s', not expected '%s', key, expected", key, expected)
 	}
 }
 
