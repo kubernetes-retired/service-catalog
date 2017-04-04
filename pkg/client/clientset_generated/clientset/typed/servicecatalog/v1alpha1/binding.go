@@ -18,10 +18,11 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	watch "k8s.io/kubernetes/pkg/watch"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // BindingsGetter has a method to return a BindingInterface.
@@ -37,16 +38,16 @@ type BindingInterface interface {
 	UpdateStatus(*v1alpha1.Binding) (*v1alpha1.Binding, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string) (*v1alpha1.Binding, error)
+	Get(name string, options v1.GetOptions) (*v1alpha1.Binding, error)
 	List(opts v1.ListOptions) (*v1alpha1.BindingList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Binding, err error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Binding, err error)
 	BindingExpansion
 }
 
 // bindings implements BindingInterface
 type bindings struct {
-	client restclient.Interface
+	client rest.Interface
 	ns     string
 }
 
@@ -83,6 +84,9 @@ func (c *bindings) Update(binding *v1alpha1.Binding) (result *v1alpha1.Binding, 
 	return
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+
 func (c *bindings) UpdateStatus(binding *v1alpha1.Binding) (result *v1alpha1.Binding, err error) {
 	result = &v1alpha1.Binding{}
 	err = c.client.Put().
@@ -112,19 +116,20 @@ func (c *bindings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.Li
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("bindings").
-		VersionedParams(&listOptions, api.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
 		Error()
 }
 
 // Get takes name of the binding, and returns the corresponding binding object, and an error if there is any.
-func (c *bindings) Get(name string) (result *v1alpha1.Binding, err error) {
+func (c *bindings) Get(name string, options v1.GetOptions) (result *v1alpha1.Binding, err error) {
 	result = &v1alpha1.Binding{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("bindings").
 		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -136,7 +141,7 @@ func (c *bindings) List(opts v1.ListOptions) (result *v1alpha1.BindingList, err 
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("bindings").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -144,16 +149,16 @@ func (c *bindings) List(opts v1.ListOptions) (result *v1alpha1.BindingList, err 
 
 // Watch returns a watch.Interface that watches the requested bindings.
 func (c *bindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
 	return c.client.Get().
-		Prefix("watch").
 		Namespace(c.ns).
 		Resource("bindings").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
 
 // Patch applies the patch and returns the patched binding.
-func (c *bindings) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Binding, err error) {
+func (c *bindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Binding, err error) {
 	result = &v1alpha1.Binding{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).

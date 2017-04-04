@@ -18,11 +18,12 @@ package fake
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	api "k8s.io/kubernetes/pkg/api"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
-	labels "k8s.io/kubernetes/pkg/labels"
-	schema "k8s.io/kubernetes/pkg/runtime/schema"
-	watch "k8s.io/kubernetes/pkg/watch"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	testing "k8s.io/client-go/testing"
 )
 
 // FakeBindings implements BindingInterface
@@ -35,7 +36,7 @@ var bindingsResource = schema.GroupVersionResource{Group: "", Version: "", Resou
 
 func (c *FakeBindings) Create(binding *servicecatalog.Binding) (result *servicecatalog.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewCreateAction(bindingsResource, c.ns, binding), &servicecatalog.Binding{})
+		Invokes(testing.NewCreateAction(bindingsResource, c.ns, binding), &servicecatalog.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -45,7 +46,7 @@ func (c *FakeBindings) Create(binding *servicecatalog.Binding) (result *servicec
 
 func (c *FakeBindings) Update(binding *servicecatalog.Binding) (result *servicecatalog.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateAction(bindingsResource, c.ns, binding), &servicecatalog.Binding{})
+		Invokes(testing.NewUpdateAction(bindingsResource, c.ns, binding), &servicecatalog.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -53,23 +54,33 @@ func (c *FakeBindings) Update(binding *servicecatalog.Binding) (result *servicec
 	return obj.(*servicecatalog.Binding), err
 }
 
-func (c *FakeBindings) Delete(name string, options *api.DeleteOptions) error {
+func (c *FakeBindings) UpdateStatus(binding *servicecatalog.Binding) (*servicecatalog.Binding, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(bindingsResource, "status", c.ns, binding), &servicecatalog.Binding{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*servicecatalog.Binding), err
+}
+
+func (c *FakeBindings) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewDeleteAction(bindingsResource, c.ns, name), &servicecatalog.Binding{})
+		Invokes(testing.NewDeleteAction(bindingsResource, c.ns, name), &servicecatalog.Binding{})
 
 	return err
 }
 
-func (c *FakeBindings) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
-	action := core.NewDeleteCollectionAction(bindingsResource, c.ns, listOptions)
+func (c *FakeBindings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(bindingsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &servicecatalog.BindingList{})
 	return err
 }
 
-func (c *FakeBindings) Get(name string) (result *servicecatalog.Binding, err error) {
+func (c *FakeBindings) Get(name string, options v1.GetOptions) (result *servicecatalog.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewGetAction(bindingsResource, c.ns, name), &servicecatalog.Binding{})
+		Invokes(testing.NewGetAction(bindingsResource, c.ns, name), &servicecatalog.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -77,15 +88,15 @@ func (c *FakeBindings) Get(name string) (result *servicecatalog.Binding, err err
 	return obj.(*servicecatalog.Binding), err
 }
 
-func (c *FakeBindings) List(opts api.ListOptions) (result *servicecatalog.BindingList, err error) {
+func (c *FakeBindings) List(opts v1.ListOptions) (result *servicecatalog.BindingList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewListAction(bindingsResource, c.ns, opts), &servicecatalog.BindingList{})
+		Invokes(testing.NewListAction(bindingsResource, c.ns, opts), &servicecatalog.BindingList{})
 
 	if obj == nil {
 		return nil, err
 	}
 
-	label, _, _ := core.ExtractFromListOptions(opts)
+	label, _, _ := testing.ExtractFromListOptions(opts)
 	if label == nil {
 		label = labels.Everything()
 	}
@@ -99,16 +110,16 @@ func (c *FakeBindings) List(opts api.ListOptions) (result *servicecatalog.Bindin
 }
 
 // Watch returns a watch.Interface that watches the requested bindings.
-func (c *FakeBindings) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *FakeBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewWatchAction(bindingsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchAction(bindingsResource, c.ns, opts))
 
 }
 
 // Patch applies the patch and returns the patched binding.
-func (c *FakeBindings) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.Binding, err error) {
+func (c *FakeBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewPatchSubresourceAction(bindingsResource, c.ns, name, data, subresources...), &servicecatalog.Binding{})
+		Invokes(testing.NewPatchSubresourceAction(bindingsResource, c.ns, name, data, subresources...), &servicecatalog.Binding{})
 
 	if obj == nil {
 		return nil, err

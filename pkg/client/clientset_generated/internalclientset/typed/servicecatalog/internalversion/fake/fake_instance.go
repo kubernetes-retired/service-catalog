@@ -18,11 +18,12 @@ package fake
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	api "k8s.io/kubernetes/pkg/api"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
-	labels "k8s.io/kubernetes/pkg/labels"
-	schema "k8s.io/kubernetes/pkg/runtime/schema"
-	watch "k8s.io/kubernetes/pkg/watch"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	testing "k8s.io/client-go/testing"
 )
 
 // FakeInstances implements InstanceInterface
@@ -35,7 +36,7 @@ var instancesResource = schema.GroupVersionResource{Group: "", Version: "", Reso
 
 func (c *FakeInstances) Create(instance *servicecatalog.Instance) (result *servicecatalog.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewCreateAction(instancesResource, c.ns, instance), &servicecatalog.Instance{})
+		Invokes(testing.NewCreateAction(instancesResource, c.ns, instance), &servicecatalog.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -45,7 +46,7 @@ func (c *FakeInstances) Create(instance *servicecatalog.Instance) (result *servi
 
 func (c *FakeInstances) Update(instance *servicecatalog.Instance) (result *servicecatalog.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateAction(instancesResource, c.ns, instance), &servicecatalog.Instance{})
+		Invokes(testing.NewUpdateAction(instancesResource, c.ns, instance), &servicecatalog.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -53,23 +54,33 @@ func (c *FakeInstances) Update(instance *servicecatalog.Instance) (result *servi
 	return obj.(*servicecatalog.Instance), err
 }
 
-func (c *FakeInstances) Delete(name string, options *api.DeleteOptions) error {
+func (c *FakeInstances) UpdateStatus(instance *servicecatalog.Instance) (*servicecatalog.Instance, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(instancesResource, "status", c.ns, instance), &servicecatalog.Instance{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*servicecatalog.Instance), err
+}
+
+func (c *FakeInstances) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewDeleteAction(instancesResource, c.ns, name), &servicecatalog.Instance{})
+		Invokes(testing.NewDeleteAction(instancesResource, c.ns, name), &servicecatalog.Instance{})
 
 	return err
 }
 
-func (c *FakeInstances) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
-	action := core.NewDeleteCollectionAction(instancesResource, c.ns, listOptions)
+func (c *FakeInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(instancesResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &servicecatalog.InstanceList{})
 	return err
 }
 
-func (c *FakeInstances) Get(name string) (result *servicecatalog.Instance, err error) {
+func (c *FakeInstances) Get(name string, options v1.GetOptions) (result *servicecatalog.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewGetAction(instancesResource, c.ns, name), &servicecatalog.Instance{})
+		Invokes(testing.NewGetAction(instancesResource, c.ns, name), &servicecatalog.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -77,15 +88,15 @@ func (c *FakeInstances) Get(name string) (result *servicecatalog.Instance, err e
 	return obj.(*servicecatalog.Instance), err
 }
 
-func (c *FakeInstances) List(opts api.ListOptions) (result *servicecatalog.InstanceList, err error) {
+func (c *FakeInstances) List(opts v1.ListOptions) (result *servicecatalog.InstanceList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewListAction(instancesResource, c.ns, opts), &servicecatalog.InstanceList{})
+		Invokes(testing.NewListAction(instancesResource, c.ns, opts), &servicecatalog.InstanceList{})
 
 	if obj == nil {
 		return nil, err
 	}
 
-	label, _, _ := core.ExtractFromListOptions(opts)
+	label, _, _ := testing.ExtractFromListOptions(opts)
 	if label == nil {
 		label = labels.Everything()
 	}
@@ -99,16 +110,16 @@ func (c *FakeInstances) List(opts api.ListOptions) (result *servicecatalog.Insta
 }
 
 // Watch returns a watch.Interface that watches the requested instances.
-func (c *FakeInstances) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *FakeInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewWatchAction(instancesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchAction(instancesResource, c.ns, opts))
 
 }
 
 // Patch applies the patch and returns the patched instance.
-func (c *FakeInstances) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.Instance, err error) {
+func (c *FakeInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewPatchSubresourceAction(instancesResource, c.ns, name, data, subresources...), &servicecatalog.Instance{})
+		Invokes(testing.NewPatchSubresourceAction(instancesResource, c.ns, name, data, subresources...), &servicecatalog.Instance{})
 
 	if obj == nil {
 		return nil, err

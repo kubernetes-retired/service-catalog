@@ -18,12 +18,12 @@ package fake
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
-	labels "k8s.io/kubernetes/pkg/labels"
-	schema "k8s.io/kubernetes/pkg/runtime/schema"
-	watch "k8s.io/kubernetes/pkg/watch"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	testing "k8s.io/client-go/testing"
 )
 
 // FakeBrokers implements BrokerInterface
@@ -35,7 +35,7 @@ var brokersResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.io"
 
 func (c *FakeBrokers) Create(broker *v1alpha1.Broker) (result *v1alpha1.Broker, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootCreateAction(brokersResource, broker), &v1alpha1.Broker{})
+		Invokes(testing.NewRootCreateAction(brokersResource, broker), &v1alpha1.Broker{})
 	if obj == nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (c *FakeBrokers) Create(broker *v1alpha1.Broker) (result *v1alpha1.Broker, 
 
 func (c *FakeBrokers) Update(broker *v1alpha1.Broker) (result *v1alpha1.Broker, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootUpdateAction(brokersResource, broker), &v1alpha1.Broker{})
+		Invokes(testing.NewRootUpdateAction(brokersResource, broker), &v1alpha1.Broker{})
 	if obj == nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *FakeBrokers) Update(broker *v1alpha1.Broker) (result *v1alpha1.Broker, 
 
 func (c *FakeBrokers) UpdateStatus(broker *v1alpha1.Broker) (*v1alpha1.Broker, error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootUpdateSubresourceAction(brokersResource, "status", broker), &v1alpha1.Broker{})
+		Invokes(testing.NewRootUpdateSubresourceAction(brokersResource, "status", broker), &v1alpha1.Broker{})
 	if obj == nil {
 		return nil, err
 	}
@@ -62,20 +62,20 @@ func (c *FakeBrokers) UpdateStatus(broker *v1alpha1.Broker) (*v1alpha1.Broker, e
 
 func (c *FakeBrokers) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewRootDeleteAction(brokersResource, name), &v1alpha1.Broker{})
+		Invokes(testing.NewRootDeleteAction(brokersResource, name), &v1alpha1.Broker{})
 	return err
 }
 
 func (c *FakeBrokers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := core.NewRootDeleteCollectionAction(brokersResource, listOptions)
+	action := testing.NewRootDeleteCollectionAction(brokersResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.BrokerList{})
 	return err
 }
 
-func (c *FakeBrokers) Get(name string) (result *v1alpha1.Broker, err error) {
+func (c *FakeBrokers) Get(name string, options v1.GetOptions) (result *v1alpha1.Broker, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootGetAction(brokersResource, name), &v1alpha1.Broker{})
+		Invokes(testing.NewRootGetAction(brokersResource, name), &v1alpha1.Broker{})
 	if obj == nil {
 		return nil, err
 	}
@@ -84,12 +84,12 @@ func (c *FakeBrokers) Get(name string) (result *v1alpha1.Broker, err error) {
 
 func (c *FakeBrokers) List(opts v1.ListOptions) (result *v1alpha1.BrokerList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootListAction(brokersResource, opts), &v1alpha1.BrokerList{})
+		Invokes(testing.NewRootListAction(brokersResource, opts), &v1alpha1.BrokerList{})
 	if obj == nil {
 		return nil, err
 	}
 
-	label, _, _ := core.ExtractFromListOptions(opts)
+	label, _, _ := testing.ExtractFromListOptions(opts)
 	if label == nil {
 		label = labels.Everything()
 	}
@@ -105,13 +105,13 @@ func (c *FakeBrokers) List(opts v1.ListOptions) (result *v1alpha1.BrokerList, er
 // Watch returns a watch.Interface that watches the requested brokers.
 func (c *FakeBrokers) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewRootWatchAction(brokersResource, opts))
+		InvokesWatch(testing.NewRootWatchAction(brokersResource, opts))
 }
 
 // Patch applies the patch and returns the patched broker.
-func (c *FakeBrokers) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Broker, err error) {
+func (c *FakeBrokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Broker, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootPatchSubresourceAction(brokersResource, name, data, subresources...), &v1alpha1.Broker{})
+		Invokes(testing.NewRootPatchSubresourceAction(brokersResource, name, data, subresources...), &v1alpha1.Broker{})
 	if obj == nil {
 		return nil, err
 	}

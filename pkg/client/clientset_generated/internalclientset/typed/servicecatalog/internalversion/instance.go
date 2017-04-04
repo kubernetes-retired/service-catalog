@@ -18,9 +18,11 @@ package internalversion
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	api "k8s.io/kubernetes/pkg/api"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	watch "k8s.io/kubernetes/pkg/watch"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // InstancesGetter has a method to return a InstanceInterface.
@@ -33,18 +35,19 @@ type InstancesGetter interface {
 type InstanceInterface interface {
 	Create(*servicecatalog.Instance) (*servicecatalog.Instance, error)
 	Update(*servicecatalog.Instance) (*servicecatalog.Instance, error)
-	Delete(name string, options *api.DeleteOptions) error
-	DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error
-	Get(name string) (*servicecatalog.Instance, error)
-	List(opts api.ListOptions) (*servicecatalog.InstanceList, error)
-	Watch(opts api.ListOptions) (watch.Interface, error)
-	Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.Instance, err error)
+	UpdateStatus(*servicecatalog.Instance) (*servicecatalog.Instance, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*servicecatalog.Instance, error)
+	List(opts v1.ListOptions) (*servicecatalog.InstanceList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.Instance, err error)
 	InstanceExpansion
 }
 
 // instances implements InstanceInterface
 type instances struct {
-	client restclient.Interface
+	client rest.Interface
 	ns     string
 }
 
@@ -81,8 +84,24 @@ func (c *instances) Update(instance *servicecatalog.Instance) (result *serviceca
 	return
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+
+func (c *instances) UpdateStatus(instance *servicecatalog.Instance) (result *servicecatalog.Instance, err error) {
+	result = &servicecatalog.Instance{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("instances").
+		Name(instance.Name).
+		SubResource("status").
+		Body(instance).
+		Do().
+		Into(result)
+	return
+}
+
 // Delete takes name of the instance and deletes it. Returns an error if one occurs.
-func (c *instances) Delete(name string, options *api.DeleteOptions) error {
+func (c *instances) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("instances").
@@ -93,52 +112,53 @@ func (c *instances) Delete(name string, options *api.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *instances) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
+func (c *instances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("instances").
-		VersionedParams(&listOptions, api.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
 		Error()
 }
 
 // Get takes name of the instance, and returns the corresponding instance object, and an error if there is any.
-func (c *instances) Get(name string) (result *servicecatalog.Instance, err error) {
+func (c *instances) Get(name string, options v1.GetOptions) (result *servicecatalog.Instance, err error) {
 	result = &servicecatalog.Instance{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("instances").
 		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of Instances that match those selectors.
-func (c *instances) List(opts api.ListOptions) (result *servicecatalog.InstanceList, err error) {
+func (c *instances) List(opts v1.ListOptions) (result *servicecatalog.InstanceList, err error) {
 	result = &servicecatalog.InstanceList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("instances").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested instances.
-func (c *instances) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *instances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
 	return c.client.Get().
-		Prefix("watch").
 		Namespace(c.ns).
 		Resource("instances").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
 
 // Patch applies the patch and returns the patched instance.
-func (c *instances) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.Instance, err error) {
+func (c *instances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.Instance, err error) {
 	result = &servicecatalog.Instance{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).

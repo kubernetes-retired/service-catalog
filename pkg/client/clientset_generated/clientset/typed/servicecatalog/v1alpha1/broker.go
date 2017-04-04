@@ -18,10 +18,11 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	watch "k8s.io/kubernetes/pkg/watch"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // BrokersGetter has a method to return a BrokerInterface.
@@ -37,16 +38,16 @@ type BrokerInterface interface {
 	UpdateStatus(*v1alpha1.Broker) (*v1alpha1.Broker, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string) (*v1alpha1.Broker, error)
+	Get(name string, options v1.GetOptions) (*v1alpha1.Broker, error)
 	List(opts v1.ListOptions) (*v1alpha1.BrokerList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Broker, err error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Broker, err error)
 	BrokerExpansion
 }
 
 // brokers implements BrokerInterface
 type brokers struct {
-	client restclient.Interface
+	client rest.Interface
 }
 
 // newBrokers returns a Brokers
@@ -79,6 +80,9 @@ func (c *brokers) Update(broker *v1alpha1.Broker) (result *v1alpha1.Broker, err 
 	return
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+
 func (c *brokers) UpdateStatus(broker *v1alpha1.Broker) (result *v1alpha1.Broker, err error) {
 	result = &v1alpha1.Broker{}
 	err = c.client.Put().
@@ -105,18 +109,19 @@ func (c *brokers) Delete(name string, options *v1.DeleteOptions) error {
 func (c *brokers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	return c.client.Delete().
 		Resource("brokers").
-		VersionedParams(&listOptions, api.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
 		Error()
 }
 
 // Get takes name of the broker, and returns the corresponding broker object, and an error if there is any.
-func (c *brokers) Get(name string) (result *v1alpha1.Broker, err error) {
+func (c *brokers) Get(name string, options v1.GetOptions) (result *v1alpha1.Broker, err error) {
 	result = &v1alpha1.Broker{}
 	err = c.client.Get().
 		Resource("brokers").
 		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -127,7 +132,7 @@ func (c *brokers) List(opts v1.ListOptions) (result *v1alpha1.BrokerList, err er
 	result = &v1alpha1.BrokerList{}
 	err = c.client.Get().
 		Resource("brokers").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -135,15 +140,15 @@ func (c *brokers) List(opts v1.ListOptions) (result *v1alpha1.BrokerList, err er
 
 // Watch returns a watch.Interface that watches the requested brokers.
 func (c *brokers) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
 	return c.client.Get().
-		Prefix("watch").
 		Resource("brokers").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
 
 // Patch applies the patch and returns the patched broker.
-func (c *brokers) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Broker, err error) {
+func (c *brokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Broker, err error) {
 	result = &v1alpha1.Broker{}
 	err = c.client.Patch(pt).
 		Resource("brokers").

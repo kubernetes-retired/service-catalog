@@ -18,12 +18,12 @@ package fake
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
-	labels "k8s.io/kubernetes/pkg/labels"
-	schema "k8s.io/kubernetes/pkg/runtime/schema"
-	watch "k8s.io/kubernetes/pkg/watch"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	testing "k8s.io/client-go/testing"
 )
 
 // FakeBindings implements BindingInterface
@@ -36,7 +36,7 @@ var bindingsResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.io
 
 func (c *FakeBindings) Create(binding *v1alpha1.Binding) (result *v1alpha1.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewCreateAction(bindingsResource, c.ns, binding), &v1alpha1.Binding{})
+		Invokes(testing.NewCreateAction(bindingsResource, c.ns, binding), &v1alpha1.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (c *FakeBindings) Create(binding *v1alpha1.Binding) (result *v1alpha1.Bindi
 
 func (c *FakeBindings) Update(binding *v1alpha1.Binding) (result *v1alpha1.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateAction(bindingsResource, c.ns, binding), &v1alpha1.Binding{})
+		Invokes(testing.NewUpdateAction(bindingsResource, c.ns, binding), &v1alpha1.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (c *FakeBindings) Update(binding *v1alpha1.Binding) (result *v1alpha1.Bindi
 
 func (c *FakeBindings) UpdateStatus(binding *v1alpha1.Binding) (*v1alpha1.Binding, error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateSubresourceAction(bindingsResource, "status", c.ns, binding), &v1alpha1.Binding{})
+		Invokes(testing.NewUpdateSubresourceAction(bindingsResource, "status", c.ns, binding), &v1alpha1.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -66,21 +66,21 @@ func (c *FakeBindings) UpdateStatus(binding *v1alpha1.Binding) (*v1alpha1.Bindin
 
 func (c *FakeBindings) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewDeleteAction(bindingsResource, c.ns, name), &v1alpha1.Binding{})
+		Invokes(testing.NewDeleteAction(bindingsResource, c.ns, name), &v1alpha1.Binding{})
 
 	return err
 }
 
 func (c *FakeBindings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := core.NewDeleteCollectionAction(bindingsResource, c.ns, listOptions)
+	action := testing.NewDeleteCollectionAction(bindingsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.BindingList{})
 	return err
 }
 
-func (c *FakeBindings) Get(name string) (result *v1alpha1.Binding, err error) {
+func (c *FakeBindings) Get(name string, options v1.GetOptions) (result *v1alpha1.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewGetAction(bindingsResource, c.ns, name), &v1alpha1.Binding{})
+		Invokes(testing.NewGetAction(bindingsResource, c.ns, name), &v1alpha1.Binding{})
 
 	if obj == nil {
 		return nil, err
@@ -90,13 +90,13 @@ func (c *FakeBindings) Get(name string) (result *v1alpha1.Binding, err error) {
 
 func (c *FakeBindings) List(opts v1.ListOptions) (result *v1alpha1.BindingList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewListAction(bindingsResource, c.ns, opts), &v1alpha1.BindingList{})
+		Invokes(testing.NewListAction(bindingsResource, c.ns, opts), &v1alpha1.BindingList{})
 
 	if obj == nil {
 		return nil, err
 	}
 
-	label, _, _ := core.ExtractFromListOptions(opts)
+	label, _, _ := testing.ExtractFromListOptions(opts)
 	if label == nil {
 		label = labels.Everything()
 	}
@@ -112,14 +112,14 @@ func (c *FakeBindings) List(opts v1.ListOptions) (result *v1alpha1.BindingList, 
 // Watch returns a watch.Interface that watches the requested bindings.
 func (c *FakeBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewWatchAction(bindingsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchAction(bindingsResource, c.ns, opts))
 
 }
 
 // Patch applies the patch and returns the patched binding.
-func (c *FakeBindings) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Binding, err error) {
+func (c *FakeBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Binding, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewPatchSubresourceAction(bindingsResource, c.ns, name, data, subresources...), &v1alpha1.Binding{})
+		Invokes(testing.NewPatchSubresourceAction(bindingsResource, c.ns, name, data, subresources...), &v1alpha1.Binding{})
 
 	if obj == nil {
 		return nil, err

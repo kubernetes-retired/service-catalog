@@ -18,10 +18,11 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	watch "k8s.io/kubernetes/pkg/watch"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // ServiceClassesGetter has a method to return a ServiceClassInterface.
@@ -36,16 +37,16 @@ type ServiceClassInterface interface {
 	Update(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string) (*v1alpha1.ServiceClass, error)
+	Get(name string, options v1.GetOptions) (*v1alpha1.ServiceClass, error)
 	List(opts v1.ListOptions) (*v1alpha1.ServiceClassList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.ServiceClass, err error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.ServiceClass, err error)
 	ServiceClassExpansion
 }
 
 // serviceClasses implements ServiceClassInterface
 type serviceClasses struct {
-	client restclient.Interface
+	client rest.Interface
 }
 
 // newServiceClasses returns a ServiceClasses
@@ -92,18 +93,19 @@ func (c *serviceClasses) Delete(name string, options *v1.DeleteOptions) error {
 func (c *serviceClasses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	return c.client.Delete().
 		Resource("serviceclasses").
-		VersionedParams(&listOptions, api.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
 		Error()
 }
 
 // Get takes name of the serviceClass, and returns the corresponding serviceClass object, and an error if there is any.
-func (c *serviceClasses) Get(name string) (result *v1alpha1.ServiceClass, err error) {
+func (c *serviceClasses) Get(name string, options v1.GetOptions) (result *v1alpha1.ServiceClass, err error) {
 	result = &v1alpha1.ServiceClass{}
 	err = c.client.Get().
 		Resource("serviceclasses").
 		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -114,7 +116,7 @@ func (c *serviceClasses) List(opts v1.ListOptions) (result *v1alpha1.ServiceClas
 	result = &v1alpha1.ServiceClassList{}
 	err = c.client.Get().
 		Resource("serviceclasses").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -122,15 +124,15 @@ func (c *serviceClasses) List(opts v1.ListOptions) (result *v1alpha1.ServiceClas
 
 // Watch returns a watch.Interface that watches the requested serviceClasses.
 func (c *serviceClasses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
 	return c.client.Get().
-		Prefix("watch").
 		Resource("serviceclasses").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
 
 // Patch applies the patch and returns the patched serviceClass.
-func (c *serviceClasses) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.ServiceClass, err error) {
+func (c *serviceClasses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.ServiceClass, err error) {
 	result = &v1alpha1.ServiceClass{}
 	err = c.client.Patch(pt).
 		Resource("serviceclasses").
