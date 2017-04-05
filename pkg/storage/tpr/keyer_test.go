@@ -19,7 +19,7 @@ package tpr
 import (
 	"testing"
 
-	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
 const (
@@ -30,14 +30,14 @@ const (
 )
 
 func TestKeyRoot(t *testing.T) {
-	ctx := api.NewContext()
-	ctx = api.WithNamespace(ctx, ctxNS)
+	ctx := request.NewContext()
+	ctx = request.WithNamespace(ctx, ctxNS)
 	keyer := Keyer{DefaultNamespace: defaultCtxNS}
 	root := keyer.KeyRoot(ctx)
 	if root != ctxNS {
 		t.Fatalf("key root '%s' wasn't expected '%s'", root, ctxNS)
 	}
-	ctx = api.NewContext()
+	ctx = request.NewContext()
 	root = keyer.KeyRoot(ctx)
 	if root != keyer.DefaultNamespace {
 		t.Fatalf("key root '%s' wasn't expected '%s'", root, keyer.DefaultNamespace)
@@ -45,8 +45,8 @@ func TestKeyRoot(t *testing.T) {
 }
 
 func TestKey(t *testing.T) {
-	ctx := api.NewContext()
-	ctx = api.WithNamespace(ctx, ctxNS)
+	ctx := request.NewContext()
+	ctx = request.WithNamespace(ctx, ctxNS)
 	keyer := Keyer{Separator: separator, ResourceName: resourceName}
 	key, err := keyer.Key(ctx, resourceName)
 	if err != nil {
