@@ -261,7 +261,8 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	serviceClass.BrokerName = broker.Name
 
 	existingServiceClass, err := c.serviceClassLister.Get(serviceClass.Name)
-	if err != nil {
+	if errors.IsNotFound(err) {
+
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServiceClass.
 		if _, err := c.serviceCatalogClient.ServiceClasses().Create(serviceClass); err != nil {
@@ -270,7 +271,12 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 		}
 
 		return nil
+	} else if err != nil {
+		glog.Errorf("Error getting serviceClass %v: %v", serviceClass.Name, err)
+		return err
 	}
+
+	glog.V(5).Infof("Found existing serviceClass %v; updating", serviceClass.Name)
 
 	// There was an existing service class -- project the update onto it and
 	// update it.

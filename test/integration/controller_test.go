@@ -24,6 +24,11 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
 
+	// avoid error `servicecatalog/v1alpha1 is not enabled`
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	// avoid error `no kind is registered for the type metav1.ListOptions`
+	_ "k8s.io/client-go/pkg/api/install"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"

@@ -107,7 +107,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 }
 
 func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
-	minuteTimeout := time.After(time.Minute)
+	minuteTimeout := time.After(2 * time.Minute)
 	for {
 		select {
 		case <-stopCh:
@@ -127,6 +127,6 @@ func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
 		}
 		// no success or overall timeout or stop due to failure
 		// wait and go around again
-		<-time.After(100 * time.Millisecond)
+		<-time.After(10 * time.Second)
 	}
 }
