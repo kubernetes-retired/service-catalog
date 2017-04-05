@@ -28,16 +28,15 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
 
+	testapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	apitesting "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testing"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/meta"
-	"k8s.io/kubernetes/pkg/api/testapi"
-	"k8s.io/kubernetes/pkg/apimachinery/registered"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/schema"
-	"k8s.io/kubernetes/pkg/util/diff"
-	"k8s.io/kubernetes/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/pkg/api"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 
@@ -192,7 +191,7 @@ func serviceCatalogAPIGroup() testapi.TestGroup {
 	}
 
 	externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName,
-		Version: registered.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
+		Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
 
 	return testapi.NewTestGroup(
 		groupVersion,
@@ -275,7 +274,7 @@ func testEncodePtr(t *testing.T) {
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Broker",
 		},
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{"name": "broker_foo"},
 		},
 	}

@@ -24,22 +24,23 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	"k8s.io/kubernetes/pkg/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api/v1"
 
 	// TODO: fix this upstream
 	// we shouldn't have to install things to use our own generated client.
 
 	// avoid error `servicecatalog/v1alpha1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	// avoid error `no kind is registered for the type v1.ListOptions`
-	_ "k8s.io/kubernetes/pkg/api/install"
+	// avoid error `no kind is registered for the type metav1.ListOptions`
+	_ "k8s.io/client-go/pkg/api/install"
 	// our versioned types
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	// our versioned client
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/diff"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 // Used for testing instance parameters
@@ -69,7 +70,8 @@ const (
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
-	server.StorageTypeTPR,
+	// disabling TPR - this will be fixed in https://github.com/kubernetes-incubator/service-catalog/pull/612
+	//server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters
@@ -166,14 +168,14 @@ func TestBrokerClient(t *testing.T) {
 func testBrokerClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	brokerClient := client.Servicecatalog().Brokers()
 	broker := &v1alpha1.Broker{
-		ObjectMeta: v1.ObjectMeta{Name: name},
+		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.BrokerSpec{
 			URL: "https://example.com",
 		},
 	}
 
 	// start from scratch
-	brokers, err := brokerClient.List(v1.ListOptions{})
+	brokers, err := brokerClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing brokers (%s)", err)
 	}
@@ -192,7 +194,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
 	}
 
-	brokers, err = brokerClient.List(v1.ListOptions{})
+	brokers, err = brokerClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing brokers (%s)", err)
 	}
@@ -200,7 +202,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("should have exactly one broker, had %v brokers", len(brokers.Items))
 	}
 
-	brokerServer, err = brokerClient.Get(name)
+	brokerServer, err = brokerClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting broker %s (%s)", name, err)
 	}
@@ -277,7 +279,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("broker status wasn't updated (%s)", err)
 	}
 
-	brokerServer, err = brokerClient.Get(name)
+	brokerServer, err = brokerClient.Get(name, metav1.GetOptions{})
 	if nil != err ||
 		"test-namespace" != brokerServer.Spec.AuthSecret.Namespace ||
 		"test-name" != brokerServer.Spec.AuthSecret.Name {
@@ -287,12 +289,12 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
 	}
 
-	err = brokerClient.Delete(name, &v1.DeleteOptions{})
+	err = brokerClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("broker should be deleted (%s)", err)
 	}
 
-	brokerDeleted, err := brokerClient.Get(name)
+	brokerDeleted, err := brokerClient.Get(name, metav1.GetOptions{})
 	if nil != err {
 		return fmt.Errorf("broker should not be deleted (%v): %v", brokerDeleted, err)
 	}
@@ -303,7 +305,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("broker should be deleted (%v): %v", brokerDeleted, err)
 	}
 
-	brokerDeleted, err = brokerClient.Get("test-broker")
+	brokerDeleted, err = brokerClient.Get("test-broker", metav1.GetOptions{})
 	if nil == err {
 		return fmt.Errorf("broker should be deleted (%v)", brokerDeleted)
 	}
@@ -334,14 +336,14 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClassClient := client.Servicecatalog().ServiceClasses()
 
 	serviceClass := &v1alpha1.ServiceClass{
-		ObjectMeta: v1.ObjectMeta{Name: name},
+		ObjectMeta: metav1.ObjectMeta{Name: name},
 		BrokerName: "test-broker",
 		Bindable:   true,
 		OSBGUID:    "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 	}
 
 	// start from scratch
-	serviceClasses, err := serviceClassClient.List(v1.ListOptions{})
+	serviceClasses, err := serviceClassClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
@@ -367,7 +369,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	serviceClasses, err = serviceClassClient.List(v1.ListOptions{})
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
@@ -375,7 +377,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("should have exactly one ServiceClass, had %v ServiceClasses", len(serviceClasses.Items))
 	}
 
-	serviceClassAtServer, err = serviceClassClient.Get(name)
+	serviceClassAtServer, err = serviceClassClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
@@ -410,7 +412,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	if err != nil {
 		return fmt.Errorf("Error updating serviceClass: %v", err)
 	}
-	updated, err := serviceClassClient.Get(name)
+	updated, err := serviceClassClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Error getting serviceClass: %v", err)
 	}
@@ -418,12 +420,12 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return errors.New("Failed to update service class")
 	}
 
-	err = serviceClassClient.Delete(name, &v1.DeleteOptions{})
+	err = serviceClassClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("serviceclass should be deleted (%s)", err)
 	}
 
-	serviceClassDeleted, err := serviceClassClient.Get(name)
+	serviceClassDeleted, err := serviceClassClient.Get(name, metav1.GetOptions{})
 	if nil == err {
 		return fmt.Errorf("serviceclass should be deleted (%v)", serviceClassDeleted)
 	}
@@ -459,7 +461,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	instanceClient := client.Servicecatalog().Instances("test-namespace")
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: name},
+		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
@@ -471,7 +473,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// list the instances & expect there to be none
-	instances, err := instanceClient.List(v1.ListOptions{})
+	instances, err := instanceClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing instances (%s)", err)
 	}
@@ -498,7 +500,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// list instances again, expect there to be one
-	instances, err = instanceClient.List(v1.ListOptions{})
+	instances, err = instanceClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing instances (%s)", err)
 	}
@@ -507,7 +509,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// get the name of the instance that's expected to exist
-	instanceServer, err = instanceClient.Get(name)
+	instanceServer, err = instanceClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting instance (%s)", err)
 	}
@@ -569,7 +571,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// re-fetch the instance by name and check its conditions
-	instanceServer, err = instanceClient.Get(name)
+	instanceServer, err = instanceClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting instance (%s)", err)
 	}
@@ -582,11 +584,11 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 
 	// delete the instance, set its finalizers to nil, update it, then ensure it is actually
 	// deleted
-	if err := instanceClient.Delete(name, &v1.DeleteOptions{}); err != nil {
+	if err := instanceClient.Delete(name, &metav1.DeleteOptions{}); err != nil {
 		return fmt.Errorf("instance should be deleted (%s)", err)
 	}
 
-	instanceDeleted, err := instanceClient.Get(name)
+	instanceDeleted, err := instanceClient.Get(name, metav1.GetOptions{})
 	if nil != err {
 		return fmt.Errorf("instance should still exist (%v): %v", instanceDeleted, err)
 	}
@@ -597,7 +599,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("error updating status (%v): %v", instanceDeleted, err)
 	}
 
-	instanceDeleted, err = instanceClient.Get("test-instance")
+	instanceDeleted, err = instanceClient.Get("test-instance", metav1.GetOptions{})
 	if nil == err {
 		return fmt.Errorf("instance should be deleted (%#v)", instanceDeleted)
 	}
@@ -629,7 +631,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	bindingClient := client.Servicecatalog().Bindings("test-namespace")
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Name: "test-binding"},
+		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: "bar",
@@ -640,7 +642,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		},
 	}
 
-	bindings, err := bindingClient.List(v1.ListOptions{})
+	bindings, err := bindingClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing bindings (%s)", err)
 	}
@@ -663,7 +665,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		)
 	}
 
-	bindings, err = bindingClient.List(v1.ListOptions{})
+	bindings, err = bindingClient.List(metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("error listing bindings (%s)", err)
 	}
@@ -671,7 +673,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		return fmt.Errorf("should have exactly one binding, had %v bindings", len(bindings.Items))
 	}
 
-	bindingServer, err = bindingClient.Get(name)
+	bindingServer, err = bindingClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting binding (%s)", err)
 	}
@@ -740,7 +742,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	if _, err = bindingClient.UpdateStatus(bindingServer); err != nil {
 		return fmt.Errorf("Error updating binding: %v", err)
 	}
-	bindingServer, err = bindingClient.Get(name)
+	bindingServer, err = bindingClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting binding: %v", err)
 	}
@@ -751,11 +753,11 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		return fmt.Errorf("Checksum should have been set after updating ready condition to true")
 	}
 
-	if err = bindingClient.Delete(name, &v1.DeleteOptions{}); nil != err {
+	if err = bindingClient.Delete(name, &metav1.DeleteOptions{}); nil != err {
 		return fmt.Errorf("broker should be deleted (%v)", err)
 	}
 
-	bindingDeleted, err := bindingClient.Get(name)
+	bindingDeleted, err := bindingClient.Get(name, metav1.GetOptions{})
 	if nil != err {
 		return fmt.Errorf("binding should still exist (%v): %v", bindingDeleted, err)
 	}
@@ -766,7 +768,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		return fmt.Errorf("error updating status (%v): %v", bindingDeleted, err)
 	}
 
-	bindingDeleted, err = bindingClient.Get(name)
+	bindingDeleted, err = bindingClient.Get(name, metav1.GetOptions{})
 	if nil == err {
 		return fmt.Errorf("binding should be deleted (%#v)", bindingDeleted)
 	}

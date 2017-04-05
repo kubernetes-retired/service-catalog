@@ -22,9 +22,9 @@ package v1alpha1
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	conversion "k8s.io/kubernetes/pkg/conversion"
-	runtime "k8s.io/kubernetes/pkg/runtime"
+	conversion "k8s.io/apimachinery/pkg/conversion"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	v1 "k8s.io/client-go/pkg/api/v1"
 	unsafe "unsafe"
 )
 
@@ -76,10 +76,7 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_Binding_To_servicecatalog_Binding(in *Binding, out *servicecatalog.Binding, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -94,10 +91,7 @@ func Convert_v1alpha1_Binding_To_servicecatalog_Binding(in *Binding, out *servic
 }
 
 func autoConvert_servicecatalog_Binding_To_v1alpha1_Binding(in *servicecatalog.Binding, out *Binding, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -200,10 +194,7 @@ func Convert_servicecatalog_BindingStatus_To_v1alpha1_BindingStatus(in *servicec
 }
 
 func autoConvert_v1alpha1_Broker_To_servicecatalog_Broker(in *Broker, out *servicecatalog.Broker, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_BrokerSpec_To_servicecatalog_BrokerSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -218,10 +209,7 @@ func Convert_v1alpha1_Broker_To_servicecatalog_Broker(in *Broker, out *serviceca
 }
 
 func autoConvert_servicecatalog_Broker_To_v1alpha1_Broker(in *servicecatalog.Broker, out *Broker, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_servicecatalog_BrokerSpec_To_v1alpha1_BrokerSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -318,10 +306,7 @@ func Convert_servicecatalog_BrokerStatus_To_v1alpha1_BrokerStatus(in *servicecat
 }
 
 func autoConvert_v1alpha1_Instance_To_servicecatalog_Instance(in *Instance, out *servicecatalog.Instance, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -336,10 +321,7 @@ func Convert_v1alpha1_Instance_To_servicecatalog_Instance(in *Instance, out *ser
 }
 
 func autoConvert_servicecatalog_Instance_To_v1alpha1_Instance(in *servicecatalog.Instance, out *Instance, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -446,10 +428,7 @@ func Convert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus(in *servic
 }
 
 func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *ServiceClass, out *servicecatalog.ServiceClass, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	out.BrokerName = in.BrokerName
 	out.Bindable = in.Bindable
 	if in.Plans != nil {
@@ -480,10 +459,7 @@ func Convert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *ServiceCla
 }
 
 func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servicecatalog.ServiceClass, out *ServiceClass, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
-		return err
-	}
+	out.ObjectMeta = in.ObjectMeta
 	out.BrokerName = in.BrokerName
 	out.Bindable = in.Bindable
 	if in.Plans != nil {

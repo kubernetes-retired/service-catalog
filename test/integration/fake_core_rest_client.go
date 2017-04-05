@@ -24,15 +24,19 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/conversion"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	"k8s.io/client-go/pkg/api"
+	fakerestclient "k8s.io/client-go/rest/fake"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/meta"
-	"k8s.io/kubernetes/pkg/api/testapi"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	fakerestclient "k8s.io/kubernetes/pkg/client/restclient/fake"
-	"k8s.io/kubernetes/pkg/conversion"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/serializer"
 )
 
 type objStorage map[string]runtime.Object
@@ -89,6 +93,7 @@ func getFakeCoreRESTClient() *fakerestclient.RESTClient {
 		NegotiatedSerializer: serializer.DirectCodecFactory{
 			CodecFactory: api.Codecs,
 		},
+		APIRegistry: api.Registry,
 	}
 }
 

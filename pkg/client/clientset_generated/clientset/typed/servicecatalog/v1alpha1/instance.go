@@ -18,10 +18,11 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	watch "k8s.io/kubernetes/pkg/watch"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // InstancesGetter has a method to return a InstanceInterface.
@@ -37,16 +38,16 @@ type InstanceInterface interface {
 	UpdateStatus(*v1alpha1.Instance) (*v1alpha1.Instance, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string) (*v1alpha1.Instance, error)
+	Get(name string, options v1.GetOptions) (*v1alpha1.Instance, error)
 	List(opts v1.ListOptions) (*v1alpha1.InstanceList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Instance, err error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Instance, err error)
 	InstanceExpansion
 }
 
 // instances implements InstanceInterface
 type instances struct {
-	client restclient.Interface
+	client rest.Interface
 	ns     string
 }
 
@@ -83,6 +84,9 @@ func (c *instances) Update(instance *v1alpha1.Instance) (result *v1alpha1.Instan
 	return
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+
 func (c *instances) UpdateStatus(instance *v1alpha1.Instance) (result *v1alpha1.Instance, err error) {
 	result = &v1alpha1.Instance{}
 	err = c.client.Put().
@@ -112,19 +116,20 @@ func (c *instances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("instances").
-		VersionedParams(&listOptions, api.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
 		Error()
 }
 
 // Get takes name of the instance, and returns the corresponding instance object, and an error if there is any.
-func (c *instances) Get(name string) (result *v1alpha1.Instance, err error) {
+func (c *instances) Get(name string, options v1.GetOptions) (result *v1alpha1.Instance, err error) {
 	result = &v1alpha1.Instance{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("instances").
 		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -136,7 +141,7 @@ func (c *instances) List(opts v1.ListOptions) (result *v1alpha1.InstanceList, er
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("instances").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
@@ -144,16 +149,16 @@ func (c *instances) List(opts v1.ListOptions) (result *v1alpha1.InstanceList, er
 
 // Watch returns a watch.Interface that watches the requested instances.
 func (c *instances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
 	return c.client.Get().
-		Prefix("watch").
 		Namespace(c.ns).
 		Resource("instances").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
 
 // Patch applies the patch and returns the patched instance.
-func (c *instances) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Instance, err error) {
+func (c *instances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Instance, err error) {
 	result = &v1alpha1.Instance{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).

@@ -19,10 +19,12 @@ package broker
 // this was copied from where else and edited to fit our objects
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/rest"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/validation/field"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
+	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apiserver/pkg/storage/names"
+	"k8s.io/client-go/pkg/api"
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -38,7 +40,7 @@ func NewScopeStrategy() rest.NamespaceScopedStrategy {
 // NamespaceScopedStrategy
 type brokerRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
-	kapi.NameGenerator  // GenerateName method for CreateStrategy
+	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
 // implements interface RESTUpdateStrategy
@@ -51,10 +53,10 @@ var (
 		// embeds to pull in existing code behavior from upstream
 
 		// this has an interesting NOTE on it. Not sure if it applies to us.
-		ObjectTyper: kapi.Scheme,
+		ObjectTyper: api.Scheme,
 		// use the generator from upstream k8s, or implement method
 		// `GenerateName(base string) string`
-		NameGenerator: kapi.SimpleNameGenerator,
+		NameGenerator: names.SimpleNameGenerator,
 	}
 	_ rest.RESTCreateStrategy = brokerRESTStrategies
 	_ rest.RESTUpdateStrategy = brokerRESTStrategies
@@ -81,7 +83,7 @@ func (brokerRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives a the incoming Broker and clears it's
 // Status. Status is not a user settable field.
-func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
+func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.Broker)
 	if !ok {
 		glog.Fatal("received a non-broker object to create")
@@ -99,7 +101,7 @@ func (brokerRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object)
 	broker.Finalizers = []string{"kubernetes"}
 }
 
-func (brokerRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
+func (brokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateBroker(obj.(*sc.Broker))
 }
 
@@ -111,7 +113,7 @@ func (brokerRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (brokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
 		glog.Fatal("received a non-broker object to update to")
@@ -124,7 +126,7 @@ func (brokerRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Ob
 	newBroker.Status = oldBroker.Status
 }
 
-func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (brokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
 		glog.Fatal("received a non-broker object to validate to")
@@ -137,7 +139,7 @@ func (brokerRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Obje
 	return scv.ValidateBrokerUpdate(newBroker, oldBroker)
 }
 
-func (brokerStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (brokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
 		glog.Fatal("received a non-broker object to update to")
@@ -150,7 +152,7 @@ func (brokerStatusRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runt
 	newBroker.Spec = oldBroker.Spec
 }
 
-func (brokerStatusRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (brokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newBroker, ok := new.(*sc.Broker)
 	if !ok {
 		glog.Fatal("received a non-broker object to validate to")

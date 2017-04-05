@@ -17,30 +17,29 @@ limitations under the License.
 package clientset
 
 import (
-	"github.com/golang/glog"
-	v1alpha1servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	discovery "k8s.io/kubernetes/pkg/client/typed/discovery"
-	"k8s.io/kubernetes/pkg/util/flowcontrol"
-	_ "k8s.io/kubernetes/plugin/pkg/client/auth"
+	glog "github.com/golang/glog"
+	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
+	discovery "k8s.io/client-go/discovery"
+	rest "k8s.io/client-go/rest"
+	flowcontrol "k8s.io/client-go/util/flowcontrol"
 )
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	ServicecatalogV1alpha1() v1alpha1servicecatalog.ServicecatalogV1alpha1Interface
+	ServicecatalogV1alpha1() servicecatalogv1alpha1.ServicecatalogV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Servicecatalog() v1alpha1servicecatalog.ServicecatalogV1alpha1Interface
+	Servicecatalog() servicecatalogv1alpha1.ServicecatalogV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	*v1alpha1servicecatalog.ServicecatalogV1alpha1Client
+	*servicecatalogv1alpha1.ServicecatalogV1alpha1Client
 }
 
 // ServicecatalogV1alpha1 retrieves the ServicecatalogV1alpha1Client
-func (c *Clientset) ServicecatalogV1alpha1() v1alpha1servicecatalog.ServicecatalogV1alpha1Interface {
+func (c *Clientset) ServicecatalogV1alpha1() servicecatalogv1alpha1.ServicecatalogV1alpha1Interface {
 	if c == nil {
 		return nil
 	}
@@ -49,7 +48,7 @@ func (c *Clientset) ServicecatalogV1alpha1() v1alpha1servicecatalog.Servicecatal
 
 // Deprecated: Servicecatalog retrieves the default version of ServicecatalogClient.
 // Please explicitly pick a version.
-func (c *Clientset) Servicecatalog() v1alpha1servicecatalog.ServicecatalogV1alpha1Interface {
+func (c *Clientset) Servicecatalog() servicecatalogv1alpha1.ServicecatalogV1alpha1Interface {
 	if c == nil {
 		return nil
 	}
@@ -58,45 +57,48 @@ func (c *Clientset) Servicecatalog() v1alpha1servicecatalog.ServicecatalogV1alph
 
 // Discovery retrieves the DiscoveryClient
 func (c *Clientset) Discovery() discovery.DiscoveryInterface {
+	if c == nil {
+		return nil
+	}
 	return c.DiscoveryClient
 }
 
 // NewForConfig creates a new Clientset for the given config.
-func NewForConfig(c *restclient.Config) (*Clientset, error) {
+func NewForConfig(c *rest.Config) (*Clientset, error) {
 	configShallowCopy := *c
 	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
 		configShallowCopy.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(configShallowCopy.QPS, configShallowCopy.Burst)
 	}
-	var clientset Clientset
+	var cs Clientset
 	var err error
-	clientset.ServicecatalogV1alpha1Client, err = v1alpha1servicecatalog.NewForConfig(&configShallowCopy)
+	cs.ServicecatalogV1alpha1Client, err = servicecatalogv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
 
-	clientset.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
+	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
 		glog.Errorf("failed to create the DiscoveryClient: %v", err)
 		return nil, err
 	}
-	return &clientset, nil
+	return &cs, nil
 }
 
 // NewForConfigOrDie creates a new Clientset for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *restclient.Config) *Clientset {
-	var clientset Clientset
-	clientset.ServicecatalogV1alpha1Client = v1alpha1servicecatalog.NewForConfigOrDie(c)
+func NewForConfigOrDie(c *rest.Config) *Clientset {
+	var cs Clientset
+	cs.ServicecatalogV1alpha1Client = servicecatalogv1alpha1.NewForConfigOrDie(c)
 
-	clientset.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
-	return &clientset
+	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
+	return &cs
 }
 
 // New creates a new Clientset for the given RESTClient.
-func New(c restclient.Interface) *Clientset {
-	var clientset Clientset
-	clientset.ServicecatalogV1alpha1Client = v1alpha1servicecatalog.New(c)
+func New(c rest.Interface) *Clientset {
+	var cs Clientset
+	cs.ServicecatalogV1alpha1Client = servicecatalogv1alpha1.New(c)
 
-	clientset.DiscoveryClient = discovery.NewDiscoveryClient(c)
-	return &clientset
+	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
+	return &cs
 }

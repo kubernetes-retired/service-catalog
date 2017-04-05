@@ -18,9 +18,11 @@ package internalversion
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	api "k8s.io/kubernetes/pkg/api"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	watch "k8s.io/kubernetes/pkg/watch"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // BindingsGetter has a method to return a BindingInterface.
@@ -33,18 +35,19 @@ type BindingsGetter interface {
 type BindingInterface interface {
 	Create(*servicecatalog.Binding) (*servicecatalog.Binding, error)
 	Update(*servicecatalog.Binding) (*servicecatalog.Binding, error)
-	Delete(name string, options *api.DeleteOptions) error
-	DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error
-	Get(name string) (*servicecatalog.Binding, error)
-	List(opts api.ListOptions) (*servicecatalog.BindingList, error)
-	Watch(opts api.ListOptions) (watch.Interface, error)
-	Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.Binding, err error)
+	UpdateStatus(*servicecatalog.Binding) (*servicecatalog.Binding, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*servicecatalog.Binding, error)
+	List(opts v1.ListOptions) (*servicecatalog.BindingList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.Binding, err error)
 	BindingExpansion
 }
 
 // bindings implements BindingInterface
 type bindings struct {
-	client restclient.Interface
+	client rest.Interface
 	ns     string
 }
 
@@ -81,8 +84,24 @@ func (c *bindings) Update(binding *servicecatalog.Binding) (result *servicecatal
 	return
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+
+func (c *bindings) UpdateStatus(binding *servicecatalog.Binding) (result *servicecatalog.Binding, err error) {
+	result = &servicecatalog.Binding{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("bindings").
+		Name(binding.Name).
+		SubResource("status").
+		Body(binding).
+		Do().
+		Into(result)
+	return
+}
+
 // Delete takes name of the binding and deletes it. Returns an error if one occurs.
-func (c *bindings) Delete(name string, options *api.DeleteOptions) error {
+func (c *bindings) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("bindings").
@@ -93,52 +112,53 @@ func (c *bindings) Delete(name string, options *api.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *bindings) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
+func (c *bindings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("bindings").
-		VersionedParams(&listOptions, api.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
 		Error()
 }
 
 // Get takes name of the binding, and returns the corresponding binding object, and an error if there is any.
-func (c *bindings) Get(name string) (result *servicecatalog.Binding, err error) {
+func (c *bindings) Get(name string, options v1.GetOptions) (result *servicecatalog.Binding, err error) {
 	result = &servicecatalog.Binding{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("bindings").
 		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of Bindings that match those selectors.
-func (c *bindings) List(opts api.ListOptions) (result *servicecatalog.BindingList, err error) {
+func (c *bindings) List(opts v1.ListOptions) (result *servicecatalog.BindingList, err error) {
 	result = &servicecatalog.BindingList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("bindings").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested bindings.
-func (c *bindings) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *bindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
 	return c.client.Get().
-		Prefix("watch").
 		Namespace(c.ns).
 		Resource("bindings").
-		VersionedParams(&opts, api.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
 
 // Patch applies the patch and returns the patched binding.
-func (c *bindings) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.Binding, err error) {
+func (c *bindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.Binding, err error) {
 	result = &servicecatalog.Binding{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).

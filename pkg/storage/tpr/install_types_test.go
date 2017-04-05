@@ -22,11 +22,11 @@ import (
 	"strings"
 	"testing"
 
-	v1beta1 "k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
 
-	kubeclientfake "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5/fake"
-	"k8s.io/kubernetes/pkg/client/testing/core"
-	"k8s.io/kubernetes/pkg/runtime"
+	kubeclientfake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	core "k8s.io/client-go/testing"
 )
 
 func setup(getFn, createFn func(core.Action) (bool, runtime.Object, error)) *kubeclientfake.Clientset {

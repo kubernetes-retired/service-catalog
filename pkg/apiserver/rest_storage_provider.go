@@ -19,8 +19,9 @@ package apiserver
 import (
 	"fmt"
 
-	"k8s.io/kubernetes/pkg/genericapiserver"
-	"k8s.io/kubernetes/pkg/registry"
+	"k8s.io/apiserver/pkg/registry/generic"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/apiserver/pkg/server/storage"
 )
 
 // ErrAPIGroupDisabled is an error indicating that an API group should be disabled
@@ -51,7 +52,7 @@ type RESTStorageProvider interface {
 	// second parameter indicates whether the API group should be enabled. A non-nil error will
 	// be returned if a new group info couldn't be created
 	NewRESTStorage(
-		apiResourceConfigSource genericapiserver.APIResourceConfigSource,
-		restOptionsGetter registry.RESTOptionsGetter,
+		apiResourceConfigSource storage.APIResourceConfigSource,
+		restOptionsGetter generic.RESTOptionsGetter,
 	) (*genericapiserver.APIGroupInfo, error)
 }

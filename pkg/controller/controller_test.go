@@ -25,20 +25,18 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
-	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated"
-	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/servicecatalog/v1alpha1"
+	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
+	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	apiv1 "k8s.io/client-go/1.5/pkg/api/v1"
-	"k8s.io/client-go/1.5/pkg/types"
-	"k8s.io/kubernetes/pkg/api/v1"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/client/testing/core"
-	"k8s.io/kubernetes/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
-	clientgofake "k8s.io/client-go/1.5/kubernetes/fake"
-	clientgoruntime "k8s.io/client-go/1.5/pkg/runtime"
-	clientgotesting "k8s.io/client-go/1.5/testing"
+	clientgofake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/pkg/api/v1"
+	clientgotesting "k8s.io/client-go/testing"
+	core "k8s.io/client-go/testing"
 )
 
 // TLDR
@@ -202,7 +200,7 @@ const testCatalogWithMultipleServices = `{
 // broker used in most of the tests that need a broker
 func getTestBroker() *v1alpha1.Broker {
 	return &v1alpha1.Broker{
-		ObjectMeta: v1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
 		Spec: v1alpha1.BrokerSpec{
 			URL: "https://example.com",
 		},
@@ -211,7 +209,7 @@ func getTestBroker() *v1alpha1.Broker {
 
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
-		ObjectMeta: v1.ObjectMeta{Name: testServiceClassName},
+		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
 		BrokerName: testBrokerName,
 		Plans: []v1alpha1.ServicePlan{{
 			Name:    testPlanName,
@@ -405,7 +403,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 		Name:      "auth-name",
 	}
 
-	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("no secret defined")
 	})
 
@@ -486,7 +484,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, _, testController, _ := newTestController(t)
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         "nothere",
@@ -524,7 +522,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -568,7 +566,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -576,7 +574,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 		},
 	}
 
-	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("no secret defined")
 	})
 
@@ -624,7 +622,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         "nothere",
@@ -665,7 +663,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -748,7 +746,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -814,7 +812,7 @@ func TestReconcileInstanceWithInstanceError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -878,9 +876,9 @@ func TestReconcileInstance(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
-		return true, &apiv1.Namespace{
-			ObjectMeta: apiv1.ObjectMeta{
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
 				UID: types.UID("test_uid_foo"),
 			},
 		}, nil
@@ -890,7 +888,7 @@ func TestReconcileInstance(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -933,6 +931,7 @@ func TestReconcileInstance(t *testing.T) {
 	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
 	}
+
 	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
 		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
 	} else {
@@ -940,7 +939,7 @@ func TestReconcileInstance(t *testing.T) {
 			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
 		}
 
-		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace)
+		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 		if string(ns.UID) != si.OrganizationGUID {
 			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
 		}
@@ -955,15 +954,15 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
-		return true, &apiv1.Namespace{}, errors.New("No namespace")
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{}, errors.New("No namespace")
 	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -997,7 +996,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:              testInstanceName,
 			Namespace:         "test-ns",
 			DeletionTimestamp: &metav1.Time{},
@@ -1085,7 +1084,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	_, fakeCatalogClient, _, testController, _ := newTestController(t)
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Name: testBindingName},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: "nothere"},
 			OSBGUID:     bindingGUID,
@@ -1124,7 +1123,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         testPlanName,
@@ -1134,7 +1133,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	sharedInformers.Instances().Informer().GetStore().Add(instance)
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
@@ -1170,9 +1169,9 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
-		return true, &apiv1.Namespace{
-			ObjectMeta: apiv1.ObjectMeta{
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
 				UID: types.UID("test_ns_uid"),
 			},
 		}, nil
@@ -1181,7 +1180,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -1191,7 +1190,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	sharedInformers.Instances().Informer().GetStore().Add(instance)
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
@@ -1209,7 +1208,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace)
+	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace, metav1.GetOptions{})
 	if string(ns.UID) != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
 		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
 	}
@@ -1281,14 +1280,14 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, clientgoruntime.Object, error) {
-		return true, &apiv1.Namespace{}, errors.New("No namespace")
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{}, errors.New("No namespace")
 	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -1298,7 +1297,7 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 	sharedInformers.Instances().Informer().GetStore().Add(instance)
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
@@ -1324,7 +1323,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.Instance{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      testInstanceName,
 			Namespace: "test-ns",
 		},
@@ -1338,7 +1337,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	sharedInformers.Instances().Informer().GetStore().Add(instance)
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:              testBindingName,
 			Namespace:         "test-ns",
 			DeletionTimestamp: &metav1.Time{},
@@ -1601,7 +1600,7 @@ func newTestController(t *testing.T) (
 	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
 
 	// create informers
-	informerFactory := servicecataloginformers.NewSharedInformerFactory(nil, fakeCatalogClient, 0)
+	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
 	// create a test controller

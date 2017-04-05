@@ -25,12 +25,13 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/testapi"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	fakerestclient "k8s.io/kubernetes/pkg/client/restclient/fake"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/runtime/serializer"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/pkg/api"
+	_ "k8s.io/client-go/rest"
+	fakerestclient "k8s.io/client-go/rest/fake"
 )
 
 func TestUpdateNonExistentObject(t *testing.T) {
@@ -144,7 +145,7 @@ func getTestBroker() *servicecatalog.Broker {
 			Kind:       "Broker",
 			APIVersion: "servicecatalog.k8s.io/v1alpha1",
 		},
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Labels:          map[string]string{"name": "broker_foo"},
 			ResourceVersion: "0",
 		},
@@ -176,7 +177,8 @@ func getTestVersioner(
 		singularKind: ServiceBrokerKind,
 		listKind:     ServiceBrokerListKind,
 		restClient: &fakerestclient.RESTClient{
-			Client: fakerestclient.CreateHTTPClient(roundTripper),
+			APIRegistry: api.Registry,
+			Client:      fakerestclient.CreateHTTPClient(roundTripper),
 			NegotiatedSerializer: serializer.DirectCodecFactory{
 				CodecFactory: api.Codecs,
 			},

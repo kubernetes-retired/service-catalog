@@ -18,7 +18,8 @@ package apiserver
 
 import (
 	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"k8s.io/kubernetes/pkg/genericapiserver"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	serverstorage "k8s.io/apiserver/pkg/server/storage"
 )
 
 // ServiceCatalogAPIServer contains the base GenericAPIServer along with other
@@ -33,8 +34,8 @@ func (s ServiceCatalogAPIServer) PrepareRun() RunnableServer {
 }
 
 // DefaultAPIResourceConfigSource returns a default API Resource config source
-func DefaultAPIResourceConfigSource() *genericapiserver.ResourceConfig {
-	ret := genericapiserver.NewResourceConfig()
+func DefaultAPIResourceConfigSource() *serverstorage.ResourceConfig {
+	ret := serverstorage.NewResourceConfig()
 	ret.EnableVersions(
 		servicecatalogv1alpha1.SchemeGroupVersion,
 	)

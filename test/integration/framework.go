@@ -26,14 +26,19 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/pborman/uuid"
 
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	_ "k8s.io/kubernetes/pkg/api/install"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
+	"k8s.io/client-go/pkg/api"
+	restclient "k8s.io/client-go/rest"
+
+	genericserveroptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/apiserver/pkg/storage/storagebackend"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	_ "k8s.io/client-go/pkg/api/install"
+	_ "k8s.io/client-go/pkg/apis/extensions/install"
 )
 
 const (
@@ -69,8 +74,9 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			StorageTypeString:       storageTypeStr,
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 			SecureServingOptions:    secureServingOptions,
+			InsecureServingOptions:  genericserveroptions.NewInsecureServingOptions(),
 			EtcdOptions: &server.EtcdOptions{
-				EtcdOptions: genericserveroptions.NewEtcdOptions(),
+				EtcdOptions: genericserveroptions.NewEtcdOptions(storagebackend.NewDefaultConfig(uuid.New(), api.Scheme, nil)),
 			},
 			TPROptions:            tprOptions,
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
@@ -101,7 +107,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 }
 
 func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
-	minuteTimeout := time.After(time.Minute)
+	minuteTimeout := time.After(2 * time.Minute)
 	for {
 		select {
 		case <-stopCh:
@@ -121,6 +127,6 @@ func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
 		}
 		// no success or overall timeout or stop due to failure
 		// wait and go around again
-		<-time.After(100 * time.Millisecond)
+		<-time.After(10 * time.Second)
 	}
 }

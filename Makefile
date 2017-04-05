@@ -168,14 +168,13 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
 		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
 		--output-file-base zz_generated.conversion
-	# the previous three directories will be changed from kubernetes to apimachinery in the future
-	# gennerate all pkg/client contents
+	# generate all pkg/client contents
 	$(DOCKER_CMD) $(BUILD_DIR)/update-client-gen.sh
 	# generate openapi
 	$(DOCKER_CMD) $(BINDIR)/openapi-gen \
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1,k8s.io/kubernetes/pkg/api/v1,k8s.io/kubernetes/pkg/apis/meta/v1" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1,k8s.io/client-go/pkg/api/v1,k8s.io/apimachinery/pkg/apis/meta/v1" \
 		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/openapi"
 	# generate codec
 	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
@@ -194,7 +193,7 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Util targets
 ##############
-.PHONY: verify verify-client-gen 
+.PHONY: verify verify-client-gen
 verify: .init .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true

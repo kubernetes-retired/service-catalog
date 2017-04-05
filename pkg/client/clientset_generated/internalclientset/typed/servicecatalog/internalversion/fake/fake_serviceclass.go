@@ -18,11 +18,12 @@ package fake
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	api "k8s.io/kubernetes/pkg/api"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
-	labels "k8s.io/kubernetes/pkg/labels"
-	schema "k8s.io/kubernetes/pkg/runtime/schema"
-	watch "k8s.io/kubernetes/pkg/watch"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	testing "k8s.io/client-go/testing"
 )
 
 // FakeServiceClasses implements ServiceClassInterface
@@ -34,7 +35,7 @@ var serviceclassesResource = schema.GroupVersionResource{Group: "", Version: "",
 
 func (c *FakeServiceClasses) Create(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootCreateAction(serviceclassesResource, serviceClass), &servicecatalog.ServiceClass{})
+		Invokes(testing.NewRootCreateAction(serviceclassesResource, serviceClass), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}
@@ -43,43 +44,43 @@ func (c *FakeServiceClasses) Create(serviceClass *servicecatalog.ServiceClass) (
 
 func (c *FakeServiceClasses) Update(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootUpdateAction(serviceclassesResource, serviceClass), &servicecatalog.ServiceClass{})
+		Invokes(testing.NewRootUpdateAction(serviceclassesResource, serviceClass), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}
 	return obj.(*servicecatalog.ServiceClass), err
 }
 
-func (c *FakeServiceClasses) Delete(name string, options *api.DeleteOptions) error {
+func (c *FakeServiceClasses) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewRootDeleteAction(serviceclassesResource, name), &servicecatalog.ServiceClass{})
+		Invokes(testing.NewRootDeleteAction(serviceclassesResource, name), &servicecatalog.ServiceClass{})
 	return err
 }
 
-func (c *FakeServiceClasses) DeleteCollection(options *api.DeleteOptions, listOptions api.ListOptions) error {
-	action := core.NewRootDeleteCollectionAction(serviceclassesResource, listOptions)
+func (c *FakeServiceClasses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(serviceclassesResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &servicecatalog.ServiceClassList{})
 	return err
 }
 
-func (c *FakeServiceClasses) Get(name string) (result *servicecatalog.ServiceClass, err error) {
+func (c *FakeServiceClasses) Get(name string, options v1.GetOptions) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootGetAction(serviceclassesResource, name), &servicecatalog.ServiceClass{})
+		Invokes(testing.NewRootGetAction(serviceclassesResource, name), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}
 	return obj.(*servicecatalog.ServiceClass), err
 }
 
-func (c *FakeServiceClasses) List(opts api.ListOptions) (result *servicecatalog.ServiceClassList, err error) {
+func (c *FakeServiceClasses) List(opts v1.ListOptions) (result *servicecatalog.ServiceClassList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootListAction(serviceclassesResource, opts), &servicecatalog.ServiceClassList{})
+		Invokes(testing.NewRootListAction(serviceclassesResource, opts), &servicecatalog.ServiceClassList{})
 	if obj == nil {
 		return nil, err
 	}
 
-	label, _, _ := core.ExtractFromListOptions(opts)
+	label, _, _ := testing.ExtractFromListOptions(opts)
 	if label == nil {
 		label = labels.Everything()
 	}
@@ -93,15 +94,15 @@ func (c *FakeServiceClasses) List(opts api.ListOptions) (result *servicecatalog.
 }
 
 // Watch returns a watch.Interface that watches the requested serviceClasses.
-func (c *FakeServiceClasses) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *FakeServiceClasses) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewRootWatchAction(serviceclassesResource, opts))
+		InvokesWatch(testing.NewRootWatchAction(serviceclassesResource, opts))
 }
 
 // Patch applies the patch and returns the patched serviceClass.
-func (c *FakeServiceClasses) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceClass, err error) {
+func (c *FakeServiceClasses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewRootPatchSubresourceAction(serviceclassesResource, name, data, subresources...), &servicecatalog.ServiceClass{})
+		Invokes(testing.NewRootPatchSubresourceAction(serviceclassesResource, name, data, subresources...), &servicecatalog.ServiceClass{})
 	if obj == nil {
 		return nil, err
 	}

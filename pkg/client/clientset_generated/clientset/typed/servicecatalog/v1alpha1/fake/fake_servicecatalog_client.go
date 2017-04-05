@@ -18,12 +18,12 @@ package fake
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
+	rest "k8s.io/client-go/rest"
+	testing "k8s.io/client-go/testing"
 )
 
 type FakeServicecatalogV1alpha1 struct {
-	*core.Fake
+	*testing.Fake
 }
 
 func (c *FakeServicecatalogV1alpha1) Bindings(namespace string) v1alpha1.BindingInterface {
@@ -44,7 +44,7 @@ func (c *FakeServicecatalogV1alpha1) ServiceClasses() v1alpha1.ServiceClassInter
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeServicecatalogV1alpha1) RESTClient() restclient.Interface {
-	var ret *restclient.RESTClient
+func (c *FakeServicecatalogV1alpha1) RESTClient() rest.Interface {
+	var ret *rest.RESTClient
 	return ret
 }

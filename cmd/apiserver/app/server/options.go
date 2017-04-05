@@ -19,7 +19,7 @@ package server
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/spf13/pflag"
-	genericserveroptions "k8s.io/kubernetes/pkg/genericapiserver/options"
+	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 )
 
 // ServiceCatalogServerOptions contains the aggregation of configuration structs for

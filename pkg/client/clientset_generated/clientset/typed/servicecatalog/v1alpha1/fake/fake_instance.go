@@ -18,12 +18,12 @@ package fake
 
 import (
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	api "k8s.io/kubernetes/pkg/api"
-	v1 "k8s.io/kubernetes/pkg/api/v1"
-	core "k8s.io/kubernetes/pkg/client/testing/core"
-	labels "k8s.io/kubernetes/pkg/labels"
-	schema "k8s.io/kubernetes/pkg/runtime/schema"
-	watch "k8s.io/kubernetes/pkg/watch"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	testing "k8s.io/client-go/testing"
 )
 
 // FakeInstances implements InstanceInterface
@@ -36,7 +36,7 @@ var instancesResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.i
 
 func (c *FakeInstances) Create(instance *v1alpha1.Instance) (result *v1alpha1.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewCreateAction(instancesResource, c.ns, instance), &v1alpha1.Instance{})
+		Invokes(testing.NewCreateAction(instancesResource, c.ns, instance), &v1alpha1.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (c *FakeInstances) Create(instance *v1alpha1.Instance) (result *v1alpha1.In
 
 func (c *FakeInstances) Update(instance *v1alpha1.Instance) (result *v1alpha1.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateAction(instancesResource, c.ns, instance), &v1alpha1.Instance{})
+		Invokes(testing.NewUpdateAction(instancesResource, c.ns, instance), &v1alpha1.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (c *FakeInstances) Update(instance *v1alpha1.Instance) (result *v1alpha1.In
 
 func (c *FakeInstances) UpdateStatus(instance *v1alpha1.Instance) (*v1alpha1.Instance, error) {
 	obj, err := c.Fake.
-		Invokes(core.NewUpdateSubresourceAction(instancesResource, "status", c.ns, instance), &v1alpha1.Instance{})
+		Invokes(testing.NewUpdateSubresourceAction(instancesResource, "status", c.ns, instance), &v1alpha1.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -66,21 +66,21 @@ func (c *FakeInstances) UpdateStatus(instance *v1alpha1.Instance) (*v1alpha1.Ins
 
 func (c *FakeInstances) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(core.NewDeleteAction(instancesResource, c.ns, name), &v1alpha1.Instance{})
+		Invokes(testing.NewDeleteAction(instancesResource, c.ns, name), &v1alpha1.Instance{})
 
 	return err
 }
 
 func (c *FakeInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := core.NewDeleteCollectionAction(instancesResource, c.ns, listOptions)
+	action := testing.NewDeleteCollectionAction(instancesResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.InstanceList{})
 	return err
 }
 
-func (c *FakeInstances) Get(name string) (result *v1alpha1.Instance, err error) {
+func (c *FakeInstances) Get(name string, options v1.GetOptions) (result *v1alpha1.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewGetAction(instancesResource, c.ns, name), &v1alpha1.Instance{})
+		Invokes(testing.NewGetAction(instancesResource, c.ns, name), &v1alpha1.Instance{})
 
 	if obj == nil {
 		return nil, err
@@ -90,13 +90,13 @@ func (c *FakeInstances) Get(name string) (result *v1alpha1.Instance, err error) 
 
 func (c *FakeInstances) List(opts v1.ListOptions) (result *v1alpha1.InstanceList, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewListAction(instancesResource, c.ns, opts), &v1alpha1.InstanceList{})
+		Invokes(testing.NewListAction(instancesResource, c.ns, opts), &v1alpha1.InstanceList{})
 
 	if obj == nil {
 		return nil, err
 	}
 
-	label, _, _ := core.ExtractFromListOptions(opts)
+	label, _, _ := testing.ExtractFromListOptions(opts)
 	if label == nil {
 		label = labels.Everything()
 	}
@@ -112,14 +112,14 @@ func (c *FakeInstances) List(opts v1.ListOptions) (result *v1alpha1.InstanceList
 // Watch returns a watch.Interface that watches the requested instances.
 func (c *FakeInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(core.NewWatchAction(instancesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchAction(instancesResource, c.ns, opts))
 
 }
 
 // Patch applies the patch and returns the patched instance.
-func (c *FakeInstances) Patch(name string, pt api.PatchType, data []byte, subresources ...string) (result *v1alpha1.Instance, err error) {
+func (c *FakeInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Instance, err error) {
 	obj, err := c.Fake.
-		Invokes(core.NewPatchSubresourceAction(instancesResource, c.ns, name, data, subresources...), &v1alpha1.Instance{})
+		Invokes(testing.NewPatchSubresourceAction(instancesResource, c.ns, name, data, subresources...), &v1alpha1.Instance{})
 
 	if obj == nil {
 		return nil, err

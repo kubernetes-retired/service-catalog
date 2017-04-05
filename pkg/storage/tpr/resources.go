@@ -17,9 +17,8 @@ limitations under the License.
 package tpr
 
 import (
-	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 const (
@@ -64,7 +63,7 @@ var serviceInstanceTPR = v1beta1.ThirdPartyResource{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
-	ObjectMeta: v1.ObjectMeta{
+	ObjectMeta: metav1.ObjectMeta{
 		Name: withGroupName(ServiceInstanceKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
@@ -79,7 +78,7 @@ var serviceBindingTPR = v1beta1.ThirdPartyResource{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
-	ObjectMeta: v1.ObjectMeta{
+	ObjectMeta: metav1.ObjectMeta{
 		Name: withGroupName(ServiceBindingKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
@@ -94,7 +93,7 @@ var serviceBrokerTPR = v1beta1.ThirdPartyResource{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
-	ObjectMeta: v1.ObjectMeta{
+	ObjectMeta: metav1.ObjectMeta{
 		Name: withGroupName(ServiceBrokerKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
@@ -111,7 +110,7 @@ var serviceClassTPR = v1beta1.ThirdPartyResource{
 	},
 	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
 	// it here
-	ObjectMeta: v1.ObjectMeta{
+	ObjectMeta: metav1.ObjectMeta{
 		Name: withGroupName(ServiceClassKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{

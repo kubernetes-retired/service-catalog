@@ -17,10 +17,8 @@ limitations under the License.
 package validation
 
 import (
-	// commented out until we use the base validation utilities
-
-	apivalidation "k8s.io/kubernetes/pkg/api/validation"
-	"k8s.io/kubernetes/pkg/util/validation/field"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
@@ -56,7 +54,7 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("authSecret", "namespace"), spec.AuthSecret.Namespace, msg))
 		}
 
-		for _, msg := range apivalidation.ValidateSecretName(spec.AuthSecret.Name, false /* prefix */) {
+		for _, msg := range apivalidation.NameIsDNSSubdomain(spec.AuthSecret.Name, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("authSecret", "name"), spec.AuthSecret.Name, msg))
 		}
 	}

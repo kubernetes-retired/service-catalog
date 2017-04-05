@@ -18,7 +18,7 @@ package tpr
 
 import (
 	"fmt"
-	"k8s.io/kubernetes/pkg/client/typed/dynamic"
+	"k8s.io/client-go/dynamic"
 )
 
 type errUnsupportedResource struct {

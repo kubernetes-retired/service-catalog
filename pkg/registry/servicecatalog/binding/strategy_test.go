@@ -19,7 +19,7 @@ package binding
 import (
 	"testing"
 
-	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"

@@ -19,10 +19,12 @@ package serviceclass
 // this was copied from where else and edited to fit our objects
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/rest"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/validation/field"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
+	"k8s.io/apiserver/pkg/registry/rest"
+	"k8s.io/apiserver/pkg/storage/names"
+	"k8s.io/client-go/pkg/api"
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -38,17 +40,17 @@ func NewScopeStrategy() rest.NamespaceScopedStrategy {
 // NamespaceScopedStrategy
 type serviceclassRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
-	kapi.NameGenerator  // GenerateName method for CreateStrategy
+	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
 var (
 	serviceclassRESTStrategies = serviceclassRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
-		ObjectTyper: kapi.Scheme,
+		ObjectTyper: api.Scheme,
 		// use the generator from upstream k8s, or implement method
 		// `GenerateName(base string) string`
-		NameGenerator: kapi.SimpleNameGenerator,
+		NameGenerator: names.SimpleNameGenerator,
 	}
 	_ rest.RESTCreateStrategy = serviceclassRESTStrategies
 	_ rest.RESTUpdateStrategy = serviceclassRESTStrategies
@@ -69,7 +71,7 @@ func (serviceclassRESTStrategy) NamespaceScoped() bool {
 }
 
 // PrepareForCreate receives the incoming Serviceclass.
-func (serviceclassRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.Object) {
+func (serviceclassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
@@ -77,7 +79,7 @@ func (serviceclassRESTStrategy) PrepareForCreate(ctx kapi.Context, obj runtime.O
 	// service class is a data record and has no status to track
 }
 
-func (serviceclassRESTStrategy) Validate(ctx kapi.Context, obj runtime.Object) field.ErrorList {
+func (serviceclassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateServiceClass(obj.(*sc.ServiceClass))
 }
 
@@ -89,7 +91,7 @@ func (serviceclassRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (serviceclassRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runtime.Object) {
+func (serviceclassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update to")
@@ -102,7 +104,7 @@ func (serviceclassRESTStrategy) PrepareForUpdate(ctx kapi.Context, new, old runt
 	newServiceclass.BrokerName = oldServiceclass.BrokerName
 }
 
-func (serviceclassRESTStrategy) ValidateUpdate(ctx kapi.Context, new, old runtime.Object) field.ErrorList {
+func (serviceclassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate to")

@@ -17,9 +17,9 @@ limitations under the License.
 package tpr
 
 import (
-	restclient "k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/registry/generic"
-	"k8s.io/kubernetes/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apiserver/pkg/registry/generic"
+	restclient "k8s.io/client-go/rest"
 )
 
 // Options is the set of options to create a new TPR storage interface

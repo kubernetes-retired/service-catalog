@@ -17,7 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"k8s.io/kubernetes/pkg/client/restclient"
+	restclient "k8s.io/client-go/rest"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 

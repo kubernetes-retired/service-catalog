@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
 var (
@@ -50,8 +50,8 @@ type Keyer struct {
 // can parse the namespace and name from fields that it is later given.
 //
 // The returned string will never be empty is k.DefaultNamespace is not empty
-func (k Keyer) KeyRoot(ctx api.Context) string {
-	ns, ok := api.NamespaceFrom(ctx)
+func (k Keyer) KeyRoot(ctx request.Context) string {
+	ns, ok := request.NamespaceFrom(ctx)
 	if ok && len(ns) > 0 {
 		return ns
 	}
@@ -63,7 +63,7 @@ func (k Keyer) KeyRoot(ctx api.Context) string {
 //
 // It is meant to be passed to a Store's KeyRoot field, so that a TPR based storage interface
 // can parse the namespace and name from fields that it is later given
-func (k Keyer) Key(ctx api.Context, name string) (string, error) {
+func (k Keyer) Key(ctx request.Context, name string) (string, error) {
 	root := k.KeyRoot(ctx)
 	return strings.Join([]string{root, name}, k.Separator), nil
 }

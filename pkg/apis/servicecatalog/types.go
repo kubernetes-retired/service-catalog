@@ -17,10 +17,9 @@ limitations under the License.
 package servicecatalog
 
 import (
-	kapi "k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/v1"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 // TODO: all metadata and parametersfields need to be refactored to real
@@ -33,7 +32,7 @@ import (
 // service catalog.
 type Broker struct {
 	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.ObjectMeta
 
 	Spec   BrokerSpec
 	Status BrokerStatus
@@ -109,7 +108,7 @@ type ServiceClassList struct {
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
 	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.ObjectMeta
 
 	// BrokerName is the reference to the Broker that provides this service.
 	// Immutable.
@@ -163,7 +162,7 @@ type InstanceList struct {
 // Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
 	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.ObjectMeta
 
 	Spec   InstanceSpec
 	Status InstanceStatus
@@ -231,7 +230,7 @@ type BindingList struct {
 // Instance.
 type Binding struct {
 	metav1.TypeMeta
-	kapi.ObjectMeta
+	metav1.ObjectMeta
 
 	Spec   BindingSpec
 	Status BindingStatus

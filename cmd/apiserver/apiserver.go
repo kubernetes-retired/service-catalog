@@ -24,7 +24,7 @@ import (
 
 	"github.com/golang/glog"
 	// set up logging the k8s way
-	"k8s.io/kubernetes/pkg/util/logs"
+	"k8s.io/apiserver/pkg/util/logs"
 
 	// The API groups for our API must be installed before we can use the
 	// client to work with them.  This needs to be done once per process; this

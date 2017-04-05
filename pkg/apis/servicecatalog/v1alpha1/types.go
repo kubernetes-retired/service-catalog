@@ -17,9 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/kubernetes/pkg/api/v1"
-	metav1 "k8s.io/kubernetes/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 // +genclient=true
@@ -30,7 +30,7 @@ import (
 type Broker struct {
 	metav1.TypeMeta `json:",inline"`
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
-	v1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   BrokerSpec   `json:"spec"`
 	Status BrokerStatus `json:"status"`
@@ -105,8 +105,8 @@ type ServiceClassList struct {
 
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
-	metav1.TypeMeta `json:",inline"`
-	v1.ObjectMeta   `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// BrokerName is the reference to the Broker that provides this service.
 	// Immutable.
@@ -162,8 +162,8 @@ type InstanceList struct {
 
 // Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
-	metav1.TypeMeta `json:",inline"`
-	v1.ObjectMeta   `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   InstanceSpec   `json:"spec"`
 	Status InstanceStatus `json:"status"`
@@ -242,8 +242,8 @@ type BindingList struct {
 // Binding represents a "used by" relationship between an application and an
 // Instance.
 type Binding struct {
-	metav1.TypeMeta `json:",inline"`
-	v1.ObjectMeta   `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   BindingSpec   `json:"spec"`
 	Status BindingStatus `json:"status"`
