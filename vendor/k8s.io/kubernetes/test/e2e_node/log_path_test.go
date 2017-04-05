@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_node
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/kubelet"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
@@ -46,7 +47,7 @@ var _ = framework.KubeDescribe("ContainerLogPath", func() {
 				logDir := kubelet.ContainerLogsDir
 
 				logPod := &v1.Pod{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: logPodName,
 					},
 					Spec: v1.PodSpec{
@@ -67,14 +68,14 @@ var _ = framework.KubeDescribe("ContainerLogPath", func() {
 				framework.ExpectNoError(err, "Failed waiting for pod: %s to enter success state", logPodName)
 
 				// get containerID from created Pod
-				createdLogPod, err := podClient.Get(logPodName)
+				createdLogPod, err := podClient.Get(logPodName, metav1.GetOptions{})
 				logConID := kubecontainer.ParseContainerID(createdLogPod.Status.ContainerStatuses[0].ContainerID)
 				framework.ExpectNoError(err, "Failed to get pod: %s", logPodName)
 
 				expectedlogFile := logDir + "/" + logPodName + "_" + ns + "_" + logContName + "-" + logConID.ID + ".log"
 
 				checkPod := &v1.Pod{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: checkPodName,
 					},
 					Spec: v1.PodSpec{

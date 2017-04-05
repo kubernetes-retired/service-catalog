@@ -20,13 +20,15 @@ import (
 	"fmt"
 	"os"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/types"
 	"k8s.io/kubernetes/pkg/util/mount"
 	kstrings "k8s.io/kubernetes/pkg/util/strings"
 	"k8s.io/kubernetes/pkg/volume"
 
 	"github.com/golang/glog"
+	"k8s.io/kubernetes/pkg/volume/util"
 )
 
 // This is the primary entrypoint for volume plugins.
@@ -77,6 +79,14 @@ func (plugin *azureFilePlugin) RequiresRemount() bool {
 	return false
 }
 
+func (plugin *azureFilePlugin) SupportsMountOption() bool {
+	return true
+}
+
+func (plugin *azureFilePlugin) SupportsBulkVolumeVerification() bool {
+	return false
+}
+
 func (plugin *azureFilePlugin) GetAccessModes() []v1.PersistentVolumeAccessMode {
 	return []v1.PersistentVolumeAccessMode{
 		v1.ReadWriteOnce,
@@ -103,10 +113,11 @@ func (plugin *azureFilePlugin) newMounterInternal(spec *volume.Spec, pod *v1.Pod
 			plugin:          plugin,
 			MetricsProvider: volume.NewMetricsStatFS(getPath(pod.UID, spec.Name(), plugin.host)),
 		},
-		util:       util,
-		secretName: source.SecretName,
-		shareName:  source.ShareName,
-		readOnly:   readOnly,
+		util:         util,
+		secretName:   source.SecretName,
+		shareName:    source.ShareName,
+		readOnly:     readOnly,
+		mountOptions: volume.MountOptionFromSpec(spec),
 	}, nil
 }
 
@@ -118,7 +129,7 @@ func (plugin *azureFilePlugin) newUnmounterInternal(volName string, podUID types
 	return &azureFileUnmounter{&azureFile{
 		volName:         volName,
 		mounter:         mounter,
-		pod:             &v1.Pod{ObjectMeta: v1.ObjectMeta{UID: podUID}},
+		pod:             &v1.Pod{ObjectMeta: metav1.ObjectMeta{UID: podUID}},
 		plugin:          plugin,
 		MetricsProvider: volume.NewMetricsStatFS(getPath(podUID, volName, plugin.host)),
 	}}, nil
@@ -152,10 +163,11 @@ func (azureFileVolume *azureFile) GetPath() string {
 
 type azureFileMounter struct {
 	*azureFile
-	util       azureUtil
-	secretName string
-	shareName  string
-	readOnly   bool
+	util         azureUtil
+	secretName   string
+	shareName    string
+	readOnly     bool
+	mountOptions []string
 }
 
 var _ volume.Mounter = &azureFileMounter{}
@@ -200,7 +212,8 @@ func (b *azureFileMounter) SetUpAt(dir string, fsGroup *int64) error {
 	if b.readOnly {
 		options = append(options, "ro")
 	}
-	err = b.mounter.Mount(source, dir, "cifs", options)
+	mountOptions := volume.JoinMountOptions(b.mountOptions, options)
+	err = b.mounter.Mount(source, dir, "cifs", mountOptions)
 	if err != nil {
 		notMnt, mntErr := b.mounter.IsLikelyNotMountPoint(dir)
 		if mntErr != nil {
@@ -240,31 +253,7 @@ func (c *azureFileUnmounter) TearDown() error {
 }
 
 func (c *azureFileUnmounter) TearDownAt(dir string) error {
-	notMnt, err := c.mounter.IsLikelyNotMountPoint(dir)
-	if err != nil {
-		glog.Errorf("Error checking IsLikelyNotMountPoint: %v", err)
-		return err
-	}
-	if notMnt {
-		return os.Remove(dir)
-	}
-
-	if err := c.mounter.Unmount(dir); err != nil {
-		glog.Errorf("Unmounting failed: %v", err)
-		return err
-	}
-	notMnt, mntErr := c.mounter.IsLikelyNotMountPoint(dir)
-	if mntErr != nil {
-		glog.Errorf("IsLikelyNotMountPoint check failed: %v", mntErr)
-		return mntErr
-	}
-	if notMnt {
-		if err := os.Remove(dir); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return util.UnmountPath(dir, c.mounter)
 }
 
 func getVolumeSource(

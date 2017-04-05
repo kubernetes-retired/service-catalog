@@ -46,23 +46,85 @@ func (m ManualStruct) DeepCopy() ManualStruct {
 	return m
 }
 
-// Everything
-type Struct_Everything struct {
-	BoolField         bool
-	IntField          int
-	StringField       string
-	FloatField        float64
-	StructField       Struct_Primitives
-	EmptyStructField  Struct_Empty
-	ManualStructField ManualStruct
+type ManualStruct_Alias ManualStruct
+
+type Struct_Embed_ManualStruct struct {
+	ManualStruct
 }
 
-/*
 // Only pointers to primitives
 type Struct_PrimitivePointers struct {
-	BoolField   *bool
-	IntField    *int
-	StringField *string
-	FloatField  *float64
+	BoolPtrField   *bool
+	IntPtrField    *int
+	StringPtrField *string
+	FloatPtrField  *float64
 }
-*/
+type Struct_PrimitivePointers_Alias Struct_PrimitivePointers
+type Struct_Embed_Struct_PrimitivePointers struct {
+	Struct_PrimitivePointers
+}
+type Struct_Embed_Pointer struct {
+	*int
+}
+type Struct_Struct_PrimitivePointers struct {
+	StructField Struct_PrimitivePointers
+}
+
+// Manual DeepCopy method
+type ManualSlice []string
+
+func (m ManualSlice) DeepCopy() ManualSlice {
+	r := make(ManualSlice, len(m))
+	copy(r, m)
+	return r
+}
+
+// Slices
+type Struct_Slices struct {
+	SliceBoolField                         []bool
+	SliceByteField                         []byte
+	SliceIntField                          []int
+	SliceStringField                       []string
+	SliceFloatField                        []float64
+	SliceStructPrimitivesField             []Struct_Primitives
+	SliceStructPrimitivesAliasField        []Struct_Primitives_Alias
+	SliceStructPrimitivePointersField      []Struct_PrimitivePointers
+	SliceStructPrimitivePointersAliasField []Struct_PrimitivePointers_Alias
+	SliceSliceIntField                     [][]int
+	SliceManualStructField                 []ManualStruct
+	ManualSliceField                       ManualSlice
+}
+type Struct_Slices_Alias Struct_Slices
+type Struct_Embed_Struct_Slices struct {
+	Struct_Slices
+}
+type Struct_Struct_Slices struct {
+	StructField Struct_Slices
+}
+
+// Everything
+type Struct_Everything struct {
+	BoolField                 bool
+	IntField                  int
+	StringField               string
+	FloatField                float64
+	StructField               Struct_Primitives
+	EmptyStructField          Struct_Empty
+	ManualStructField         ManualStruct
+	ManualStructAliasField    ManualStruct_Alias
+	BoolPtrField              *bool
+	IntPtrField               *int
+	StringPtrField            *string
+	FloatPtrField             *float64
+	PrimitivePointersField    Struct_PrimitivePointers
+	ManualStructPtrField      *ManualStruct
+	ManualStructAliasPtrField *ManualStruct_Alias
+	SliceBoolField            []bool
+	SliceByteField            []byte
+	SliceIntField             []int
+	SliceStringField          []string
+	SliceFloatField           []float64
+	SlicesField               Struct_Slices
+	SliceManualStructField    []ManualStruct
+	ManualSliceField          ManualSlice
+}

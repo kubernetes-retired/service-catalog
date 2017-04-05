@@ -17,13 +17,10 @@ limitations under the License.
 package common
 
 import (
-	"fmt"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/kubelet/events"
 	"k8s.io/kubernetes/pkg/kubelet/sysctl"
-	"k8s.io/kubernetes/pkg/util/uuid"
-	"k8s.io/kubernetes/pkg/util/wait"
 	"k8s.io/kubernetes/test/e2e/framework"
 
 	. "github.com/onsi/ginkgo"
@@ -37,7 +34,7 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 	testPod := func() *v1.Pod {
 		podName := "sysctl-" + string(uuid.NewUUID())
 		pod := v1.Pod{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:        podName,
 				Annotations: map[string]string{},
 			},
@@ -53,27 +50,6 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 		}
 
 		return &pod
-	}
-
-	waitForPodErrorEventOrStarted := func(pod *v1.Pod) (*v1.Event, error) {
-		var ev *v1.Event
-		err := wait.Poll(framework.Poll, framework.PodStartTimeout, func() (bool, error) {
-			evnts, err := f.ClientSet.Core().Events(pod.Namespace).Search(pod)
-			if err != nil {
-				return false, fmt.Errorf("error in listing events: %s", err)
-			}
-			for _, e := range evnts.Items {
-				switch e.Reason {
-				case sysctl.UnsupportedReason, sysctl.ForbiddenReason:
-					ev = &e
-					return true, nil
-				case events.StartedContainer:
-					return true, nil
-				}
-			}
-			return false, nil
-		})
-		return ev, err
 	}
 
 	BeforeEach(func() {
@@ -97,7 +73,7 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 		// watch for events instead of termination of pod because the kubelet deletes
 		// failed pods without running containers. This would create a race as the pod
 		// might have already been deleted here.
-		ev, err := waitForPodErrorEventOrStarted(pod)
+		ev, err := f.PodClient().WaitForErrorEventOrSuccess(pod)
 		Expect(err).NotTo(HaveOccurred())
 		if ev != nil && ev.Reason == sysctl.UnsupportedReason {
 			framework.Skipf("No sysctl support in Docker <1.12")
@@ -107,7 +83,7 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 		By("Waiting for pod completion")
 		err = f.WaitForPodNoLongerRunning(pod.Name)
 		Expect(err).NotTo(HaveOccurred())
-		pod, err = podClient.Get(pod.Name)
+		pod, err = podClient.Get(pod.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Checking that the pod succeeded")
@@ -138,7 +114,7 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 		// watch for events instead of termination of pod because the kubelet deletes
 		// failed pods without running containers. This would create a race as the pod
 		// might have already been deleted here.
-		ev, err := waitForPodErrorEventOrStarted(pod)
+		ev, err := f.PodClient().WaitForErrorEventOrSuccess(pod)
 		Expect(err).NotTo(HaveOccurred())
 		if ev != nil && ev.Reason == sysctl.UnsupportedReason {
 			framework.Skipf("No sysctl support in Docker <1.12")
@@ -148,7 +124,7 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 		By("Waiting for pod completion")
 		err = f.WaitForPodNoLongerRunning(pod.Name)
 		Expect(err).NotTo(HaveOccurred())
-		pod, err = podClient.Get(pod.Name)
+		pod, err = podClient.Get(pod.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Checking that the pod succeeded")
@@ -220,7 +196,7 @@ var _ = framework.KubeDescribe("Sysctls", func() {
 		// watch for events instead of termination of pod because the kubelet deletes
 		// failed pods without running containers. This would create a race as the pod
 		// might have already been deleted here.
-		ev, err := waitForPodErrorEventOrStarted(pod)
+		ev, err := f.PodClient().WaitForErrorEventOrSuccess(pod)
 		Expect(err).NotTo(HaveOccurred())
 		if ev != nil && ev.Reason == sysctl.UnsupportedReason {
 			framework.Skipf("No sysctl support in Docker <1.12")

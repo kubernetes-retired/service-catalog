@@ -24,11 +24,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/util/rand"
 )
 
 const volumeAvailableStatus = "available"
@@ -246,14 +247,13 @@ func configFromEnv() (cfg Config, ok bool) {
 
 	cfg.Global.Username = os.Getenv("OS_USERNAME")
 	cfg.Global.Password = os.Getenv("OS_PASSWORD")
-	cfg.Global.ApiKey = os.Getenv("OS_API_KEY")
 	cfg.Global.Region = os.Getenv("OS_REGION_NAME")
 	cfg.Global.DomainId = os.Getenv("OS_DOMAIN_ID")
 	cfg.Global.DomainName = os.Getenv("OS_DOMAIN_NAME")
 
 	ok = (cfg.Global.AuthUrl != "" &&
 		cfg.Global.Username != "" &&
-		(cfg.Global.Password != "" || cfg.Global.ApiKey != "") &&
+		cfg.Global.Password != "" &&
 		(cfg.Global.TenantId != "" || cfg.Global.TenantName != "" ||
 			cfg.Global.DomainId != "" || cfg.Global.DomainName != ""))
 
@@ -270,50 +270,6 @@ func TestNewOpenStack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to construct/authenticate OpenStack: %s", err)
 	}
-}
-
-func TestInstances(t *testing.T) {
-	cfg, ok := configFromEnv()
-	if !ok {
-		t.Skipf("No config found in environment")
-	}
-
-	os, err := newOpenStack(cfg)
-	if err != nil {
-		t.Fatalf("Failed to construct/authenticate OpenStack: %s", err)
-	}
-
-	i, ok := os.Instances()
-	if !ok {
-		t.Fatalf("Instances() returned false")
-	}
-
-	srvs, err := i.List(".")
-	if err != nil {
-		t.Fatalf("Instances.List() failed: %s", err)
-	}
-	if len(srvs) == 0 {
-		t.Fatalf("Instances.List() returned zero servers")
-	}
-	t.Logf("Found servers (%d): %s\n", len(srvs), srvs)
-
-	srvExternalId, err := i.ExternalID(srvs[0])
-	if err != nil {
-		t.Fatalf("Instances.ExternalId(%s) failed: %s", srvs[0], err)
-	}
-	t.Logf("Found server (%s), with external id: %s\n", srvs[0], srvExternalId)
-
-	srvInstanceId, err := i.InstanceID(srvs[0])
-	if err != nil {
-		t.Fatalf("Instance.InstanceId(%s) failed: %s", srvs[0], err)
-	}
-	t.Logf("Found server (%s), with instance id: %s\n", srvs[0], srvInstanceId)
-
-	addrs, err := i.NodeAddresses(srvs[0])
-	if err != nil {
-		t.Fatalf("Instances.NodeAddresses(%s) failed: %s", srvs[0], err)
-	}
-	t.Logf("Found NodeAddresses(%s) = %s\n", srvs[0], addrs)
 }
 
 func TestLoadBalancer(t *testing.T) {
@@ -338,7 +294,7 @@ func TestLoadBalancer(t *testing.T) {
 			t.Fatalf("LoadBalancer() returned false - perhaps your stack doesn't support Neutron?")
 		}
 
-		_, exists, err := lb.GetLoadBalancer(testClusterName, &v1.Service{ObjectMeta: v1.ObjectMeta{Name: "noexist"}})
+		_, exists, err := lb.GetLoadBalancer(testClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "noexist"}})
 		if err != nil {
 			t.Fatalf("GetLoadBalancer(\"noexist\") returned error: %s", err)
 		}

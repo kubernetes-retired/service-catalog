@@ -73,20 +73,36 @@ addon-dir-create:
 {% endif %}
 
 {% if pillar.get('enable_cluster_dns', '').lower() == 'true' %}
-/etc/kubernetes/addons/dns/skydns-svc.yaml:
+/etc/kubernetes/addons/dns/kubedns-svc.yaml:
   file.managed:
-    - source: salt://kube-addons/dns/skydns-svc.yaml.in
+    - source: salt://kube-addons/dns/kubedns-svc.yaml.in
     - template: jinja
     - group: root
     - dir_mode: 755
     - makedirs: True
 
-/etc/kubernetes/addons/dns/skydns-rc.yaml:
+/etc/kubernetes/addons/dns/kubedns-controller.yaml:
   file.managed:
-    - source: salt://kube-addons/dns/skydns-rc.yaml.in
+    - source: salt://kube-addons/dns/kubedns-controller.yaml.in
     - template: jinja
     - group: root
     - dir_mode: 755
+    - makedirs: True
+
+/etc/kubernetes/addons/dns/kubedns-sa.yaml:
+  file.managed:
+    - source: salt://kube-addons/dns/kubedns-sa.yaml
+    - user: root
+    - group: root
+    - file_mode: 644
+    - makedirs: True
+
+/etc/kubernetes/addons/dns/kubedns-cm.yaml:
+  file.managed:
+    - source: salt://kube-addons/dns/kubedns-cm.yaml
+    - user: root
+    - group: root
+    - file_mode: 644
     - makedirs: True
 {% endif %}
 
@@ -138,11 +154,11 @@ addon-dir-create:
 {% endif %}
 
 {% if pillar.get('enable_node_logging', '').lower() == 'true'
-   and pillar.get('logging_destination', '').lower() == 'elasticsearch'
+   and 'logging_destination' in pillar
    and pillar.get('enable_cluster_logging', '').lower() == 'true' %}
-/etc/kubernetes/addons/fluentd-elasticsearch:
+/etc/kubernetes/addons/fluentd-{{ pillar.get('logging_destination') }}:
   file.recurse:
-    - source: salt://kube-addons/fluentd-elasticsearch
+    - source: salt://kube-addons/fluentd-{{ pillar.get('logging_destination') }}
     - include_pat: E@^.+\.yaml$
     - user: root
     - group: root
@@ -161,10 +177,10 @@ addon-dir-create:
     - file_mode: 644
 {% endif %}
 
-{% if pillar.get('enable_node_problem_detector', '').lower() == 'true' %}
-/etc/kubernetes/addons/node-problem-detector/node-problem-detector.yaml:
+{% if pillar.get('enable_node_problem_detector', '').lower() == 'daemonset' %}
+/etc/kubernetes/addons/node-problem-detector/npd.yaml:
   file.managed:
-    - source: salt://kube-addons/node-problem-detector/node-problem-detector.yaml
+    - source: salt://kube-addons/node-problem-detector/npd.yaml
     - user: root
     - group: root
     - file_mode: 644

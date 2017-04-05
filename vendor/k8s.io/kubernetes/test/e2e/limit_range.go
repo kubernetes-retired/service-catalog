@@ -19,7 +19,8 @@ package e2e
 import (
 	"fmt"
 
-	"k8s.io/kubernetes/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/test/e2e/framework"
 
@@ -46,19 +47,19 @@ var _ = framework.KubeDescribe("LimitRange", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Fetching the LimitRange to ensure it has proper values")
-		limitRange, err = f.ClientSet.Core().LimitRanges(f.Namespace.Name).Get(limitRange.Name)
+		limitRange, err = f.ClientSet.Core().LimitRanges(f.Namespace.Name).Get(limitRange.Name, metav1.GetOptions{})
 		expected := v1.ResourceRequirements{Requests: defaultRequest, Limits: defaultLimit}
 		actual := v1.ResourceRequirements{Requests: limitRange.Spec.Limits[0].DefaultRequest, Limits: limitRange.Spec.Limits[0].Default}
 		err = equalResourceRequirement(expected, actual)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Creating a Pod with no resource requirements")
-		pod := newTestPod(f, "pod-no-resources", v1.ResourceList{}, v1.ResourceList{})
+		pod := f.NewTestPod("pod-no-resources", v1.ResourceList{}, v1.ResourceList{})
 		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Create(pod)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Ensuring Pod has resource requirements applied from LimitRange")
-		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Get(pod.Name)
+		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Get(pod.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		for i := range pod.Spec.Containers {
 			err = equalResourceRequirement(expected, pod.Spec.Containers[i].Resources)
@@ -70,12 +71,12 @@ var _ = framework.KubeDescribe("LimitRange", func() {
 		}
 
 		By("Creating a Pod with partial resource requirements")
-		pod = newTestPod(f, "pod-partial-resources", getResourceList("", "150Mi"), getResourceList("300m", ""))
+		pod = f.NewTestPod("pod-partial-resources", getResourceList("", "150Mi"), getResourceList("300m", ""))
 		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Create(pod)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Ensuring Pod has merged resource requirements applied from LimitRange")
-		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Get(pod.Name)
+		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Get(pod.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		// This is an interesting case, so it's worth a comment
 		// If you specify a Limit, and no Request, the Limit will default to the Request
@@ -91,12 +92,12 @@ var _ = framework.KubeDescribe("LimitRange", func() {
 		}
 
 		By("Failing to create a Pod with less than min resources")
-		pod = newTestPod(f, podName, getResourceList("10m", "50Mi"), v1.ResourceList{})
+		pod = f.NewTestPod(podName, getResourceList("10m", "50Mi"), v1.ResourceList{})
 		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Create(pod)
 		Expect(err).To(HaveOccurred())
 
 		By("Failing to create a Pod with more than max resources")
-		pod = newTestPod(f, podName, getResourceList("600m", "600Mi"), v1.ResourceList{})
+		pod = f.NewTestPod(podName, getResourceList("600m", "600Mi"), v1.ResourceList{})
 		pod, err = f.ClientSet.Core().Pods(f.Namespace.Name).Create(pod)
 		Expect(err).To(HaveOccurred())
 	})
@@ -148,7 +149,7 @@ func newLimitRange(name string, limitType v1.LimitType,
 	defaultLimit, defaultRequest,
 	maxLimitRequestRatio v1.ResourceList) *v1.LimitRange {
 	return &v1.LimitRange{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: v1.LimitRangeSpec{
@@ -160,27 +161,6 @@ func newLimitRange(name string, limitType v1.LimitType,
 					Default:              defaultLimit,
 					DefaultRequest:       defaultRequest,
 					MaxLimitRequestRatio: maxLimitRequestRatio,
-				},
-			},
-		},
-	}
-}
-
-// newTestPod returns a pod that has the specified requests and limits
-func newTestPod(f *framework.Framework, name string, requests v1.ResourceList, limits v1.ResourceList) *v1.Pod {
-	return &v1.Pod{
-		ObjectMeta: v1.ObjectMeta{
-			Name: name,
-		},
-		Spec: v1.PodSpec{
-			Containers: []v1.Container{
-				{
-					Name:  "pause",
-					Image: framework.GetPauseImageName(f.ClientSet),
-					Resources: v1.ResourceRequirements{
-						Requests: requests,
-						Limits:   limits,
-					},
 				},
 			},
 		},

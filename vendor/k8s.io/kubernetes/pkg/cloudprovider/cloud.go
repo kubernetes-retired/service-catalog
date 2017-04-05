@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/types"
 )
 
 // Interface is an abstract, pluggable interface for cloud providers.
@@ -119,8 +119,6 @@ type Instances interface {
 	InstanceID(nodeName types.NodeName) (string, error)
 	// InstanceType returns the type of the specified instance.
 	InstanceType(name types.NodeName) (string, error)
-	// List lists instances that match 'filter' which is a regular expression which must match the entire instance name (fqdn)
-	List(filter string) ([]types.NodeName, error)
 	// AddSSHKeyToAllInstances adds an SSH public key as a legal identity for all instances
 	// expected format for the key is standard ssh-keygen format: <protocol> <blob>
 	AddSSHKeyToAllInstances(user string, keyData []byte) error
@@ -154,7 +152,10 @@ type Routes interface {
 	DeleteRoute(clusterName string, route *Route) error
 }
 
-var InstanceNotFound = errors.New("instance not found")
+var (
+	InstanceNotFound = errors.New("instance not found")
+	DiskNotFound     = errors.New("disk is not found")
+)
 
 // Zone represents the location of a particular machine.
 type Zone struct {

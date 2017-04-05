@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	"k8s.io/kubernetes/pkg/api/meta"
-	"k8s.io/kubernetes/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // rolesWithAllowStar are the controller roles which are allowed to contain a *.  These are
@@ -30,6 +30,7 @@ import (
 var rolesWithAllowStar = sets.NewString(
 	saRolePrefix+"namespace-controller",
 	saRolePrefix+"generic-garbage-collector",
+	saRolePrefix+"resourcequota-controller",
 )
 
 // TestNoStarsForControllers confirms that no controller role has star verbs, groups,
