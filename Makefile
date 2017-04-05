@@ -183,9 +183,12 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Some prereq stuff
 ###################
-.init: $(scBuildImageTarget) glide.yaml
+.init: $(scBuildImageTarget) glide.yaml src vendor/src
 	$(DOCKER_CMD) glide install --strip-vendor
 	touch $@
+
+src vendor/src:
+	mkdir -p $@
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
