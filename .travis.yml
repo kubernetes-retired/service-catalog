@@ -13,3 +13,4 @@ deploy:
   on:
     repo: kubernetes-incubator/service-catalog
     branch: master
+    tags: true
