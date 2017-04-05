@@ -249,7 +249,7 @@ test-integration: .init $(scBuildImageTarget) build
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
 
-clean: clean-bin clean-deps clean-build-image clean-generated clean-coverage
+clean: clean-bin clean-build-image clean-generated clean-coverage
 
 clean-bin:
 	rm -rf $(BINDIR)
