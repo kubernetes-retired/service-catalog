@@ -18,16 +18,83 @@ package tpr
 
 import (
 	"testing"
+
+	"k8s.io/kubernetes/pkg/api"
+)
+
+const (
+	defaultCtxNS = "defaultTestNS"
+	ctxNS        = "testNS"
+	separator    = "/"
+	resourceName = "myResource"
 )
 
 func TestKeyRoot(t *testing.T) {
-	t.Skip("TODO")
+	ctx := api.NewContext()
+	ctx = api.WithNamespace(ctx, ctxNS)
+	keyer := Keyer{DefaultNamespace: defaultCtxNS}
+	root := keyer.KeyRoot(ctx)
+	if root != ctxNS {
+		t.Fatalf("key root '%s' wasn't expected '%s'", root, ctxNS)
+	}
+	ctx = api.NewContext()
+	root = keyer.KeyRoot(ctx)
+	if root != keyer.DefaultNamespace {
+		t.Fatalf("key root '%s' wasn't expected '%s'", root, keyer.DefaultNamespace)
+	}
 }
 
 func TestKey(t *testing.T) {
-	t.Skip("TODO")
+	ctx := api.NewContext()
+	ctx = api.WithNamespace(ctx, ctxNS)
+	keyer := Keyer{Separator: separator, ResourceName: resourceName}
+	key, err := keyer.Key(ctx, resourceName)
+	if err != nil {
+		t.Fatalf("key func returned an error %s", err)
+	}
+	expected := ctxNS + separator + resourceName
+	if key != expected {
+		t.Fatalf("key was '%s', not expected '%s', key, expected", key, expected)
+	}
 }
 
 func TestNamespaceAndNameFromKey(t *testing.T) {
-	t.Skip("TODO")
+	const testName = "testName"
+	keyer := Keyer{Separator: separator, ResourceName: resourceName}
+	key := ctxNS + separator + testName
+	ns, name, err := keyer.NamespaceAndNameFromKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if ns != ctxNS {
+		t.Fatalf("namespace was '%s', not expected '%s'", ns, ctxNS)
+	}
+	if name != testName {
+		t.Fatalf("name was '%s', not expected '%s'", name, testName)
+	}
+
+	key = ctxNS
+	ns, name, err = keyer.NamespaceAndNameFromKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+	if ns != ctxNS {
+		t.Fatalf("namespace was '%s', not expected '%s'", ns, ctxNS)
+	}
+	if name != "" {
+		t.Fatalf("expected empty name, got '%s'", name)
+	}
+
+	key = "a" + separator + "b" + separator + "c"
+	ns, name, err = keyer.NamespaceAndNameFromKey(key)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if ns != "" {
+		t.Fatalf("expected empty namespace")
+	}
+	if name != "" {
+		t.Fatalf("expected empty name")
+	}
+
 }
