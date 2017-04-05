@@ -91,23 +91,23 @@ build: .init .generate_files \
        $(BINDIR)/controller-manager $(BINDIR)/apiserver \
        $(BINDIR)/k8s-broker $(BINDIR)/user-broker
 
-k8s-broker: $(BINDIR)/k8s-broker
-$(BINDIR)/k8s-broker: .init contrib/cmd/k8s-broker \
+k8s-broker: .init $(BINDIR)/k8s-broker
+$(BINDIR)/k8s-broker: contrib/cmd/k8s-broker \
 	  $(shell find contrib/cmd/k8s-broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/k8s-broker
 
-user-broker: $(BINDIR)/user-broker
-$(BINDIR)/user-broker: .init contrib/cmd/user-broker \
+user-broker: .init $(BINDIR)/user-broker
+$(BINDIR)/user-broker: contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
-apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
+apiserver: .init $(BINDIR)/apiserver
+$(BINDIR)/apiserver: .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/apiserver
 
-controller-manager: $(BINDIR)/controller-manager
-$(BINDIR)/controller-manager: .init .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
+controller-manager: .init $(BINDIR)/controller-manager
+$(BINDIR)/controller-manager: .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
 
 # This section contains the code generation stuff
@@ -182,9 +182,10 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Some prereq stuff
 ###################
-.init: $(scBuildImageTarget) glide.yaml
-	$(DOCKER_CMD) glide install --strip-vendor
+
+.init: $(scBuildImageTarget)
 	touch $@
+
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
@@ -193,7 +194,7 @@ $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 
 # Util targets
 ##############
-.PHONY: verify verify-client-gen
+.PHONY: verify verify-client-gen 
 verify: .init .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
@@ -253,9 +254,6 @@ clean: clean-bin clean-deps clean-build-image clean-generated clean-coverage
 clean-bin:
 	rm -rf $(BINDIR)
 	rm -f .generate_exes
-
-clean-deps:
-	rm -f .init
 
 clean-build-image:
 	rm -f .scBuildImage
