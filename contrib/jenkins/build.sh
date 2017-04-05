@@ -38,7 +38,7 @@ done
   || error_exit '--project is a required parameter'
 
 if [[ "$(uname -s)" == "Linux" ]]; then
-  GIT_HEAD="$(git describe --always --abbrev=7 --dirty)"
+  GIT_HEAD="$(git describe --tags --always --abbrev=7 --dirty)"
   MAKE_VARS=(
     V=1
     VERSION="${VERSION:-${GIT_HEAD}}"
