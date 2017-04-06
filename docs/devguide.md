@@ -24,14 +24,19 @@ layout:
     ├── cmd                     # Contains "main" Go packages for each service catalog component binary
     │   └── apiserver           # The service catalog API server binary
     │   └── controller-manager  # The service catalog controller manager binary
-    ├── contrib                 # Contains all non-essential source
+    ├── contrib                 # Contains examples, non-essential golang source, CI configurations, etc
+    │   └── build               # Dockerfiles for contrib images (example: ups-broker)
+    │   └── cmd                 # Entrypoints for contrib binaries
+    │   └── examples            # Example API resources
     │   └── hack                # Non-build related scripts
+    │   └── jenkins             # Jenkins configuration
+    │   └── pkg                 # Contrib golang code
     ├── charts                  # Helm charts for deployment
     │   └── catalog             # Helm chart for deploying the catalog
     │   └── ups-broker          # Helm chart for deploying the user-provided service broker
     ├── docs                    # Documentation
     ├── pkg                     # Contains all non-"main" Go packages
-    └── vendor                  # Glide-managed dependencies (untracked)
+    └── vendor                  # Glide-managed dependencies
 
 ## Working on Issues
 
