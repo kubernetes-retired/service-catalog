@@ -40,6 +40,7 @@ const (
 	serviceInstanceDeleteFormatString = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s"
 	pollingFormatString               = "%s/v2/service_instances/%s/last_operation"
 	bindingFormatString               = "%s/v2/service_instances/%s/service_bindings/%s"
+	bindingDeleteFormatString         = "%s/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s"
 
 	httpTimeoutSeconds     = 15
 	pollingIntervalSeconds = 1
@@ -212,14 +213,14 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	}
 }
 
-func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
+func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
 		glog.Errorf("Failed to marshal: %#v", err)
 		return nil, err
 	}
 
-	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
+	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
 
 	// TODO: Handle the auth
 	createHTTPReq, err := c.newOSBRequest("PUT", serviceBindingURL, bytes.NewReader(jsonBytes))
@@ -253,8 +254,8 @@ func (c *openServiceBrokerClient) CreateServiceBinding(sID, bID string, req *bro
 	}
 }
 
-func (c *openServiceBrokerClient) DeleteServiceBinding(sID, bID string) error {
-	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, sID, bID)
+func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, serviceID, planID string) error {
+	serviceBindingURL := fmt.Sprintf(bindingDeleteFormatString, c.url, instanceID, bindingID, serviceID, planID)
 
 	// TODO: Handle the auth
 	deleteHTTPReq, err := c.newOSBRequest("DELETE", serviceBindingURL, nil)
