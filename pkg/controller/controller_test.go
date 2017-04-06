@@ -947,8 +947,8 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	testController.reconcileInstance(instance)
 
 	actions := filterActions(fakeCatalogClient.Actions())
-	if a := len(actions); a != 0 {
-		t.Fatalf("Unexpected number of actions: expected 0, got %v. Actions: %+v", a, actions)
+	if a := len(actions); a != 1 {
+		t.Fatalf("Unexpected number of actions: expected 1, got %v. Actions: %+v", a, actions)
 	}
 
 	// verify no kube resources created.
@@ -956,6 +956,14 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	kubeActions := fakeKubeClient.Actions()
 	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+	updateAction := actions[0].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updatedInstance := updateAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updatedInstance.Name; e != a {
+		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
 	}
 }
 
@@ -1281,8 +1289,16 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 	testController.reconcileBinding(binding)
 
 	actions := filterActions(fakeCatalogClient.Actions())
-	if a := len(actions); a != 0 {
-		t.Fatalf("Unexpected number of actions: expected 0, got %v. Actions: %+v", a, actions)
+	if a := len(actions); a != 1 {
+		t.Fatalf("Unexpected number of actions: expected 1, got %v. Actions: %+v", a, actions)
+	}
+	updateAction := actions[0].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updatedBinding := updateAction.GetObject().(*v1alpha1.Binding)
+	if e, a := binding.Name, updatedBinding.Name; e != a {
+		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
 	}
 }
 
