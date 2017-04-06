@@ -1064,8 +1064,9 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 		if svc.Metadata != nil {
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
-				glog.Errorf("Failed to unmarshal metadata\n%+v\n %v", svc.Metadata, err)
-				return nil, fmt.Errorf("Failed to unmarshal metadata\n%+v\n %v", svc.Metadata, err)
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
+				glog.Errorf(err)
+				return nil, err
 			}
 			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
 		}
@@ -1088,8 +1089,9 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 		if plan.Metadata != nil {
 			metadata, err := json.Marshal(plan.Metadata)
 			if err != nil {
-				glog.Errorf("Failed to unmarshal metadata\n%+v\n %v", plan.Metadata, err)
-				return nil, fmt.Errorf("Failed to unmarshal metadata\n%+v\n %v", plan.Metadata, err)
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
+				glog.Errorf(err)
+				return nil, err
 			}
 			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
 		}
