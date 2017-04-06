@@ -157,7 +157,7 @@ const (
 func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	glog.V(4).Infof("Processing Broker %v", broker.Name)
 
-	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
 		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
 		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage)
@@ -467,7 +467,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		return
 	}
 
-	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
 		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
 		c.updateInstanceCondition(
@@ -757,7 +757,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		return
 	}
 
-	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
 		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
 		c.updateBindingCondition(
@@ -1015,11 +1015,11 @@ func (c *controller) bindingDelete(obj interface{}) {
 
 // Broker utility methods - move?
 
-// GetAuthCredentialsFromBroker returns the auth credentials, if any,
+// getAuthCredentialsFromBroker returns the auth credentials, if any,
 // contained in the secret referenced in the Broker's AuthSecret field, or
 // returns an error. If the AuthSecret field is nil, empty values are
 // returned.
-func GetAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (username, password string, err error) {
+func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (username, password string, err error) {
 	if broker.Spec.AuthSecret == nil {
 		return "", "", nil
 	}
