@@ -32,11 +32,11 @@ be done with Helm setup.
 If you don't already have Helm v2, see the
 [installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
 
-## Step 1 - Installing the Service Catalog System
+## Step 1 - Installing the Service Catalog
 
-The service catalog system is conveniently packaged as a Helm chart located in
-the [charts/catalog](../charts/catalog) directory in this repository, and
-supports a wide variety of customizations which are detailed in that directory's
+The service catalog is packaged as a Helm chart located in the
+[charts/catalog](../charts/catalog) directory in this repository, and supports a
+wide variety of customizations which are detailed in that directory's
 [README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/README.md).
 To install the service catalog system with sensible defaults:
 
@@ -47,7 +47,7 @@ helm install charts/catalog --name catalog --namespace catalog
 **Note:** In the event you need to start the walkthrough over, the easiest way
 is to execute `helm delete --purge catalog`.
 
-## Step 2 - Understand Service Catalog Components
+## Step 2 - Understanding Service Catalog Components
 
 The service catalog API has five main concepts:
 
@@ -63,12 +63,12 @@ that are provided by the service catalog API.
 type encapsulates connection details for that broker server. These are created
 and managed by cluster operators who wish to use that broker server to make new
 types of managed services available within their cluster.
-- `ServiceClass`: A *type*  of managed service offered by a particular broker.
+- `ServiceClass`: A *type* of managed service offered by a particular broker.
 Each time a new `Broker` resource is added to the cluster, the service catalog
 controller connects to the corresponding broker server to obtain a list of
 service offerings. A new `ServiceClass` resource will automatically be created
 for each.
-- `Instance`: An instance of a `ServiceClass`, so to speak. These are created
+- `Instance`: A provisioned instance of a `ServiceClass`. These are created
 by cluster users who wish to make a new concrete _instance_ of some _type_ of
 managed service to make that available for use by one or more in-cluster
 applications. When a new `Instance` resource is created, the service catalog
@@ -91,10 +91,10 @@ catalog system itself, this is easily installed using a provided Helm chart. The
 chart supports a wide variety of customizations which are detailed in that
 directory's [README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/ups-broker/README.md).
 
-**Note:** The UPS broker emulates user-provided services as they exist in Cloud
-Foundry. Essentially, values provided during provisioning are merely echoed
-during binding. (i.e. The values *are* the service.) This is a trivial broker
-server, to be sure, but it's deliberately employed in this walkthrough to avoid
+**Note:** The UPS broker emulates user-provided services as they exist in
+Cloud Foundry. Essentially, values provided during provisioning are merely
+echoed during binding. (i.e. The values *are* the service.) This is a trivial
+broker server but it's deliberately employed in this walkthrough to avoid
 getting hung up on the distracting details of some other technology.
 
 To install with defaults:
@@ -103,7 +103,7 @@ To install with defaults:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-## Step 4 - Install and Configure `kubectl` 1.6
+## Step 4 - Installing and Configuring `kubectl` 1.6
 
 As with Kubernetes itself, interaction with the service catalog system is
 achieved through the `kubectl` command line interface. Chances are high that
@@ -302,7 +302,7 @@ status:
     type: Ready
 ```
 
-## Step 8 - Bind to the Instance
+## Step 8 - Binding to the Instance
 
 Now that our `Instance` has been created, we can bind to it. To accomplish this,
 we will create a [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml)
@@ -368,7 +368,7 @@ my-secret             Opaque                                2         1m
 
 Notice that a new `Secret` named `my-secret` has been created.
 
-## Step 9 - Unbind from the Instance
+## Step 9 - Unbinding from the Instance
 
 Now, let's unbind from the instance.  To do this, we simply *delete* the
 `Binding` resource that we previously created:
@@ -386,7 +386,7 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-## Step 10 - Deprovision the Instance
+## Step 10 - Deprovisioning the Instance
 
 Now, we can deprovision the instance.  To do this, we simply *delete* the
 `Instance` resource that we previously created:
@@ -395,7 +395,7 @@ Now, we can deprovision the instance.  To do this, we simply *delete* the
 kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
-## Step 11 - Delete the Broker
+## Step 11 - Deleting the Broker
 
 Next, we should remove the broker server, and the services it offers, from the catalog. We can do
 so by simply deleting the broker:
