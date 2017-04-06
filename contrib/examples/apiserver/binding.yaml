@@ -7,5 +7,3 @@ spec:
   instanceRef:
     name: test-instance
   secretName: my-secret
-  configMapName: my-configmap
-  serviceName: my-service
