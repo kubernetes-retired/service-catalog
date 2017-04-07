@@ -509,11 +509,12 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		}
 
 		request := &brokerapi.CreateServiceInstanceRequest{
-			ServiceID:  serviceClass.OSBGUID,
-			PlanID:     servicePlan.OSBGUID,
-			Parameters: parameters,
-			OrgID:      string(ns.UID),
-			SpaceID:    string(ns.UID),
+			ServiceID:         serviceClass.OSBGUID,
+			PlanID:            servicePlan.OSBGUID,
+			Parameters:        parameters,
+			OrgID:             string(ns.UID),
+			SpaceID:           string(ns.UID),
+			AcceptsIncomplete: true,
 		}
 
 		// TODO: handle async provisioning
@@ -556,8 +557,9 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		glog.V(4).Infof("Finalizing Instance %v/%v", instance.Namespace, instance.Name)
 
 		request := &brokerapi.DeleteServiceInstanceRequest{
-			ServiceID: serviceClass.OSBGUID,
-			PlanID:    servicePlan.OSBGUID,
+			ServiceID:         serviceClass.OSBGUID,
+			PlanID:            servicePlan.OSBGUID,
+			AcceptsIncomplete: true,
 		}
 
 		// TODO: handle async deprovisioning
