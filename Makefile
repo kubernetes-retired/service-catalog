@@ -56,8 +56,6 @@ APISERVER_IMAGE                   = $(REGISTRY)apiserver:$(VERSION)
 APISERVER_MUTABLE_IMAGE           = $(REGISTRY)apiserver:$(MUTABLE_TAG)
 CONTROLLER_MANAGER_IMAGE          = $(REGISTRY)controller-manager:$(VERSION)
 CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager:$(MUTABLE_TAG)
-K8S_BROKER_IMAGE                  = $(REGISTRY)k8s-broker:$(VERSION)
-K8S_BROKER_MUTABLE_IMAGE          = $(REGISTRY)k8s-broker:$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker:$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker:$(MUTABLE_TAG)
 
@@ -89,12 +87,7 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 #########################################################################
 build: .init .generate_files \
        $(BINDIR)/controller-manager $(BINDIR)/apiserver \
-       $(BINDIR)/k8s-broker $(BINDIR)/user-broker
-
-k8s-broker: .init $(BINDIR)/k8s-broker
-$(BINDIR)/k8s-broker: contrib/cmd/k8s-broker \
-	  $(shell find contrib/cmd/k8s-broker -type f)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/k8s-broker
+       $(BINDIR)/user-broker
 
 user-broker: .init $(BINDIR)/user-broker
 $(BINDIR)/user-broker: contrib/cmd/user-broker \
@@ -268,15 +261,8 @@ clean-coverage:
 
 # Building Docker Images for our executables
 ############################################
-images: k8s-broker-image user-broker-image \
+images: user-broker-image \
     controller-manager-image apiserver-image
-
-k8s-broker-image: contrib/build/k8s-broker/Dockerfile $(BINDIR)/k8s-broker
-	mkdir -p contrib/build/k8s-broker/tmp
-	cp $(BINDIR)/k8s-broker contrib/build/k8s-broker/tmp
-	docker build -t $(K8S_BROKER_IMAGE) contrib/build/k8s-broker
-	docker tag $(K8S_BROKER_IMAGE) $(K8S_BROKER_MUTABLE_IMAGE)
-	rm -rf contrib/build/k8s-broker/tmp
 
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	mkdir -p contrib/build/user-broker/tmp
@@ -301,11 +287,7 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 
 # Push our Docker Images to a registry
 ######################################
-push: k8s-broker-push user-broker-push controller-manager-push apiserver-push
-
-k8s-broker-push: k8s-broker-image
-	docker push $(K8S_BROKER_IMAGE)
-	docker push $(K8S_BROKER_MUTABLE_IMAGE)
+push: user-broker-push controller-manager-push apiserver-push
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
