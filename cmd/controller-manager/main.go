@@ -26,11 +26,11 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app"
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
+	"github.com/kubernetes-incubator/service-catalog/pkg"
 
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/apiserver/pkg/util/flag"
 	"k8s.io/apiserver/pkg/util/logs"
-	"k8s.io/kubernetes/pkg/version/verflag"
 
 	"github.com/spf13/pflag"
 )
@@ -42,12 +42,13 @@ func init() {
 func main() {
 	s := options.NewControllerManagerServer()
 	s.AddFlags(pflag.CommandLine)
+	version := pkg.VersionFlag(pflag.CommandLine)
 
 	flag.InitFlags()
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
-	verflag.PrintAndExitIfRequested()
+	version.PrintAndExitIfRequested()
 
 	if err := app.Run(s); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)

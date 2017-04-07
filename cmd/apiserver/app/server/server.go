@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -77,7 +78,11 @@ func NewCommandServer(
 	// Set generated SSL cert path correctly
 	opts.SecureServingOptions.ServerCert.CertDirectory = certDirectory
 
+	version := pkg.VersionFlag(cmd.Flags())
+
 	flags.Parse(os.Args[1:])
+
+	version.PrintAndExitIfRequested()
 
 	storageType, err := opts.StorageType()
 	if err != nil {
