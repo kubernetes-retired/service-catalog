@@ -43,22 +43,13 @@ func setupBasicServer(s *ServiceCatalogServerOptions) (*genericapiserver.Config,
 		return nil, err
 	}
 
-	// glog.V(4).Info("Setting up authn (disabled)")
-	// need to figure out what's throwing the `missing clientCA file` err
-	/*
-		if _, err := genericConfig.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
-			glog.Infoln(err)
-			return err
-		}
-	*/
+	if err := s.AuthenticationOptions.ApplyTo(genericConfig); err != nil {
+		return nil, err
+	}
 
-	// glog.V(4).Infoln("Setting up authz (disabled)")
-	// having this enabled causes the server to crash for any call
-	/*
-		if _, err := genericConfig.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
-			glog.Infoln(err)
-			return err
-		}
-	*/
+	if err := s.AuthorizationOptions.ApplyTo(genericConfig); err != nil {
+		return nil, err
+	}
+
 	return genericConfig, nil
 }
