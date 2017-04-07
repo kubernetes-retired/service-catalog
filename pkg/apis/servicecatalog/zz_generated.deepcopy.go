@@ -357,6 +357,11 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 			*out = new(string)
 			**out = **in
 		}
+		if in.Description != nil {
+			in, out := &in.Description, &out.Description
+			*out = new(string)
+			**out = **in
+		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
 			if newVal, err := c.DeepCopy(*in); err != nil {
