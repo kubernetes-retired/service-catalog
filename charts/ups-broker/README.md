@@ -1,11 +1,12 @@
 # User Provided Service Broker
 
-User Provided Service Broker is an example [Open Service Broker]
-(https://www.openservicebrokerapi.org/) for use demonstrating the Kubernetes
+User Provided Service Broker is an example
+[Open Service Broker](https://www.openservicebrokerapi.org/)
+for use demonstrating the Kubernetes
 Service Catalog.
 
-For more information, [visit the Service Catalog project on github]
-(https://github.com/kubernetes-incubator/service-catalog).
+For more information,
+[visit the Service Catalog project on github](https://github.com/kubernetes-incubator/service-catalog).
 
 ## Installing the Chart
 
