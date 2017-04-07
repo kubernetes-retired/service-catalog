@@ -36,33 +36,7 @@ import (
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
-	core "k8s.io/client-go/testing"
 )
-
-// TLDR
-// For the time being, everything related to verifying actions on the k8s core
-// client should use the clientgo* packages. Everything related to verifying
-// expectations on the service catalog API fake should use the
-// k8s.io/kubernetes packages.
-//
-// NOTE:
-//
-// There are two different 'testing' packages imported here from kubernetes
-// projects:
-//
-// - k8s.io/kubernetes/client/testing/core
-// - k8s.io/client-go/1.5/testing
-//
-// These are the same package, but we have to import them from both locations
-// because our API is written using packages from kubernetes directly, while
-// for the kubernetes core API, we use client-go.
-//
-// We _have_ to do this for now because the version of kubernetes we vendor in
-// for the API server guts uses the kubernetes packages.  Once we rebase onto
-// the latest kubernetes repo, we'll be able to stop using the kubernetes/...
-// packages entirely and _just_ consume types from client-go.
-//
-// See issue: https://github.com/kubernetes-incubator/service-catalog/issues/413
 
 const (
 	serviceClassGUID = "SCGUID"
@@ -262,7 +236,7 @@ func TestReconcileBroker(t *testing.T) {
 	}
 
 	// first action should be a create action for a service class
-	createAction := actions[0].(core.CreateAction)
+	createAction := actions[0].(clientgotesting.CreateAction)
 	if e, a := "create", createAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -273,7 +247,7 @@ func TestReconcileBroker(t *testing.T) {
 	}
 
 	// second action should be an update action for broker status subresource
-	createAction2 := actions[1].(core.CreateAction)
+	createAction2 := actions[1].(clientgotesting.CreateAction)
 	if e, a := "update", createAction2.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -318,7 +292,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	deleteAction := actions[0].(core.DeleteActionImpl)
+	deleteAction := actions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -327,7 +301,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 		t.Fatalf("Unexpected name of serviceclass: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[1].(core.UpdateAction)
+	updateAction := actions[1].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -349,7 +323,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
 	}
 
-	updateAction = actions[2].(core.UpdateAction)
+	updateAction = actions[2].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[2]; expected %v, got %v", e, a)
 	}
@@ -376,7 +350,7 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 	if e, a := 1, len(actions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -413,7 +387,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	if e, a := 1, len(actions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
 	}
@@ -448,7 +422,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 		Name:      "auth-name",
 	}
 
-	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("error creating serviceclass")
 	})
 
@@ -458,7 +432,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	if e, a := 1, len(actions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -500,7 +474,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	}
 
 	// There should only be one action that says it failed because no such class exists.
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -538,7 +512,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	}
 
 	// There should only be one action that says it failed because no such broker exists.
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -585,7 +559,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: +%v", e, a, actions)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
 	}
@@ -638,7 +612,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	}
 
 	// There should only be one action that says it failed because no such class exists.
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -694,7 +668,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -778,7 +752,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -844,7 +818,7 @@ func TestReconcileInstanceWithInstanceError(t *testing.T) {
 	if e, a := 1, len(actions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
 	}
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
 	}
@@ -910,7 +884,7 @@ func TestReconcileInstance(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -1009,7 +983,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		},
 	}
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action core.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -1031,7 +1005,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -1057,7 +1031,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
 	}
 
-	getAction := actions[1].(core.GetAction)
+	getAction := actions[1].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -1065,7 +1039,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		t.Fatalf("Unexpected name of object to get; expected %v; got %v", e, a)
 	}
 
-	updateAction = actions[2].(core.UpdateAction)
+	updateAction = actions[2].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -1099,7 +1073,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	}
 
 	// There should only be one action that says it failed because no such instance exists.
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -1148,7 +1122,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	}
 
 	// There should only be one action that says it failed because no such service class.
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -1224,7 +1198,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	}
 
 	// There should only be one action that says binding was created
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -1350,7 +1324,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		},
 	}
 
-	fakeCatalogClient.AddReactor("get", "bindings", func(action core.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "bindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, binding, nil
 	})
 
@@ -1392,7 +1366,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	updateAction := actions[0].(core.UpdateAction)
+	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
@@ -1418,7 +1392,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
 	}
 
-	getAction2 := actions[1].(core.GetAction)
+	getAction2 := actions[1].(clientgotesting.GetAction)
 	if e, a := "get", getAction2.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -1426,7 +1400,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		t.Fatalf("Unexpected name of object to get; expected %v; got %v", e, a)
 	}
 
-	updateAction = actions[2].(core.UpdateAction)
+	updateAction = actions[2].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
@@ -1621,11 +1595,11 @@ func newTestController(t *testing.T) (
 }
 
 // filterActions filters the list/watch actions on service catalog resources
-// from an array of core.Action.  This is so that we can write tests without
+// from an array of clientgotesting.Action.  This is so that we can write tests without
 // worrying about the list/watching that the informer infrastructure might
 // have done.
-func filterActions(actions []core.Action) []core.Action {
-	ret := []core.Action{}
+func filterActions(actions []clientgotesting.Action) []clientgotesting.Action {
+	ret := []clientgotesting.Action{}
 	for _, action := range actions {
 		if len(action.GetNamespace()) == 0 &&
 			(action.Matches("list", "brokers") ||
