@@ -28,6 +28,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
+const asyncProvisionQueryParamKey = "accepts_incomplete"
+
 // FakeBrokerServer is a fake service broker server meant for testing that
 // allows for customizing the response behavior.  It does not support auth.
 type FakeBrokerServer struct {
@@ -125,7 +127,7 @@ func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Reque
 	}
 	f.RequestObject = req
 
-	if !req.AcceptsIncomplete {
+	if r.FormValue(asyncProvisionQueryParamKey) != "true" {
 		// Synchronous
 		util.WriteResponse(w, f.responseStatus, &brokerapi.CreateServiceInstanceResponse{})
 	} else {
@@ -147,7 +149,7 @@ func (f *FakeBrokerServer) deprovisionHandler(w http.ResponseWriter, r *http.Req
 	}
 	f.RequestObject = req
 
-	if !req.AcceptsIncomplete {
+	if r.FormValue(asyncProvisionQueryParamKey) != "true" {
 		// Synchronous
 		util.WriteResponse(w, f.responseStatus, &brokerapi.DeleteServiceInstanceResponse{})
 	} else {
