@@ -128,6 +128,8 @@ type ServiceClass struct {
 	OSBDashboardOAuth2ClientID *string  `json:"osbDashboardOAuth2ClientID,omitempty"`
 	OSBDashboardSecret         *string  `json:"osbDashboardSecret,omitempty"`
 	OSBDashboardRedirectURI    *string  `json:"osbDashboardRedirectURI,omitempty"`
+	// A short description of the service
+	Description *string `json:"description,omitempty"`
 
 	// Metadata fields
 	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`

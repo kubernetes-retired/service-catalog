@@ -130,7 +130,9 @@ type ServiceClass struct {
 	OSBDashboardOAuth2ClientID *string
 	OSBDashboardSecret         *string
 	OSBDashboardRedirectURI    *string
-	OSBMetadata                *runtime.RawExtension
+	// A short description of the service
+	Description *string
+	OSBMetadata *runtime.RawExtension
 }
 
 // ServicePlan represents a tier of a ServiceClass.
