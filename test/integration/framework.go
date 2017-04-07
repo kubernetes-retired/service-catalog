@@ -27,6 +27,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/pborman/uuid"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	"k8s.io/client-go/pkg/api"
 	restclient "k8s.io/client-go/rest"
 
@@ -107,23 +109,28 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	return clientset, shutdown
 }
 
-func waitForApiserverUp(insecureAddr string, stopCh <-chan struct{}) error {
-	minuteTimeout := time.After(2 * time.Minute)
-	for {
-		select {
-		case <-stopCh:
-			return fmt.Errorf("apiserver failed")
-		case <-minuteTimeout:
-			return fmt.Errorf("waiting for apiserver timed out")
-		default:
-			glog.Infof("Waiting for : %#v", insecureAddr)
-			_, err := http.Get(insecureAddr)
-			if err == nil {
-				return nil
+func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
+	interval := 1 * time.Second
+	timeout := 30 * time.Second
+	startWaiting := time.Now()
+	tries := 0
+	return wait.PollImmediate(interval, timeout,
+		func() (bool, error) {
+			select {
+			// we've been told to stop, so no reason to keep going
+			case <-stopCh:
+				return true, fmt.Errorf("apiserver failed")
+			default:
+				glog.Infof("Waiting for : %#v", serverURL)
+				_, err := http.Get(serverURL)
+				if err == nil {
+					glog.Infof("Found server after %v tries and duration %v",
+						tries, time.Since(startWaiting))
+					return true, nil
+				}
+				tries++
+				return false, nil
 			}
-		}
-		// no success or overall timeout or stop due to failure
-		// wait and go around again
-		<-time.After(10 * time.Second)
-	}
+		},
+	)
 }
