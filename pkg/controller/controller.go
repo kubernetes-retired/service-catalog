@@ -295,6 +295,7 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	toUpdate.OSBDashboardOAuth2ClientID = serviceClass.OSBDashboardOAuth2ClientID
 	toUpdate.OSBDashboardSecret = serviceClass.OSBDashboardSecret
 	toUpdate.OSBDashboardRedirectURI = serviceClass.OSBDashboardRedirectURI
+	toUpdate.Description = serviceClass.Description
 
 	/*
 		toUpdate.Description = serviceClass.Description
@@ -1054,6 +1055,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 			OSBGUID:       svc.ID,
 			OSBTags:       svc.Tags,
 			OSBRequires:   svc.Requires,
+			Description:   &svc.Description,
 			// OSBMetadata:   svc.Metadata,
 		}
 
