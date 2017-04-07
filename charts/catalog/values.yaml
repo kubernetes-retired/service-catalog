@@ -52,3 +52,5 @@ controllerManager:
   imagePullPolicy: Always
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
+  # Resync interval; format is a duration (`20m`, `1h`, etc)
+  resyncInterval: 5m

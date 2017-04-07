@@ -55,6 +55,8 @@ chart and their default values.
 | `controllerManager.image` | controller-manager image to use | `quay.io/kubernetes-service-catalog/controller-manager:canary` |
 | `controllerManager.imagePullPolicy` | `imagePullPolicy` for the controller-manager | `Always` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
+| `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
+
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
