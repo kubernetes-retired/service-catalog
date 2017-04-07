@@ -1080,7 +1080,8 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 			Name:    plan.Name,
 			OSBGUID: plan.ID,
 			// OSBMetadata: plan.Metadata,
-			OSBFree: plan.Free,
+			OSBFree:     plan.Free,
+			Description: &plan.Description,
 		}
 		if plan.Metadata != nil {
 			metadata, err := json.Marshal(plan.Metadata)
