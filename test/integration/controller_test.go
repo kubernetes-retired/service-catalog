@@ -276,13 +276,14 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
 	)
+	t.Log("controller start")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	stopCh := make(chan struct{})
 	informerFactory.Start(stopCh)
-
+	t.Log("informers start")
 	return fakeKubeClient, catalogClient, catalogCl, instanceCl, bindingCl,
 		testController, serviceCatalogSharedInformers, shutdownServer
 }
