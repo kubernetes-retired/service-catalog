@@ -85,11 +85,12 @@ These concepts and resources are the building blocks of the service catalog.
 ## Step 3 - Installing the UPS Broker
 
 In order to effectively demonstrate the service catalog, we will require a
-sample broker server. To proceed, we will deploy the User Provided Service
-broker (hereafter, "UPS") to our own Kubernetes cluster. Similar to the service
-catalog system itself, this is easily installed using a provided Helm chart. The
-chart supports a wide variety of customizations which are detailed in that
-directory's [README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/ups-broker/README.md).
+sample broker server. To proceed, we will deploy the [User Provided Service
+broker (hereafter, "UPS")](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/pkg/broker/user_provided/controller)
+to our own Kubernetes cluster. Similar to the service catalog system itself,
+this is easily installed using a provided Helm chart. The chart supports a
+wide variety of customizations which are detailed in that directory's
+[README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/ups-broker/README.md).
 
 **Note:** The UPS broker emulates user-provided services as they exist in
 Cloud Foundry. Essentially, values provided during provisioning are merely
