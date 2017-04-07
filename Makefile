@@ -27,7 +27,7 @@ BINDIR        ?= bin
 BUILD_DIR     ?= build
 COVERAGE      ?= $(CURDIR)/coverage.html
 SC_PKG         = github.com/kubernetes-incubator/service-catalog
-TOP_SRC_DIRS   = cmd contrib pkg
+TOP_SRC_DIRS   = cmd contrib pkg plugin
 SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \

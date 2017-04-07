@@ -38,6 +38,7 @@ docker run -d --name apiserver \
 	-v ${ROOT}/.kube:/root/.kube \
 	-e KUBERNETES_SERVICE_HOST=localhost \
 	-e KUBERNETES_SERVICE_PORT=6443 \
+	-e SERVICE_CATALOG_STANDALONE=true \
 	--privileged \
 	--net container:etcd-svc-cat \
 	scbuildimage \

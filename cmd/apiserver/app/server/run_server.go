@@ -66,7 +66,7 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	}
 
 	glog.V(4).Infoln("Preparing to run API server")
-	genericConfig, err := setupBasicServer(opts)
+	genericConfig, scConfig, err := buildGenericConfig(opts)
 	if err != nil {
 		return err
 	}
@@ -84,6 +84,7 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 	if err != nil {
 		return fmt.Errorf("error completing API server configuration: %v", err)
 	}
+	addPostStartHooks(server.GenericAPIServer, scConfig, opts.StopCh)
 
 	glog.Infoln("Running the API server")
 	server.GenericAPIServer.PrepareRun().Run(opts.StopCh)
@@ -94,7 +95,7 @@ func runTPRServer(opts *ServiceCatalogServerOptions) error {
 func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	etcdOpts := opts.EtcdOptions
 	glog.V(4).Infoln("Preparing to run API server")
-	genericConfig, err := setupBasicServer(opts)
+	genericConfig, scConfig, err := buildGenericConfig(opts)
 	if err != nil {
 		return err
 	}
@@ -148,6 +149,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	if err != nil {
 		return fmt.Errorf("error completing API server configuration: %v", err)
 	}
+	addPostStartHooks(server.GenericAPIServer, scConfig, opts.StopCh)
 
 	// do we need to do any post api installation setup? We should have set up the api already?
 	glog.Infoln("Running the API server")
