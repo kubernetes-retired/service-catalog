@@ -18,11 +18,9 @@ package util
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -127,19 +125,4 @@ func FetchObject(u string, object interface{}) error {
 		return err
 	}
 	return nil
-}
-
-// FetchChartToFile fetches the given chart to an opened file. File will be closed in any case.
-func FetchChartToFile(chart string, f *os.File) error {
-	defer f.Close()
-	if !strings.HasPrefix(chart, "gs://") {
-		return errors.New("chart name format gs://... is requried")
-	}
-	u := strings.Replace(chart, "gs://", "https://storage.googleapis.com/", 1)
-	bytes, err := Fetch(u)
-	if err != nil {
-		return err
-	}
-	_, err = f.Write([]byte(bytes))
-	return err
 }
