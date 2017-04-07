@@ -700,6 +700,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format: "",
 							},
 						},
+						"description": {
+							SchemaProps: spec.SchemaProps{
+								Description: "A short description of the service",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"osbMetadata": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Metadata fields",
