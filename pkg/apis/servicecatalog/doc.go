@@ -19,5 +19,5 @@ limitations under the License.
 
 // Package servicecatalog contains all of the sources needed to make
 // servicebrokers and their related service objects.
-// +groupName=
+// +groupName=servicecatalog.k8s.io
 package servicecatalog
