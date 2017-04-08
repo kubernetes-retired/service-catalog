@@ -145,11 +145,13 @@ func (c *controller) brokerDelete(obj interface{}) {
 	glog.V(4).Infof("Received delete event for Broker %v", broker.Name)
 }
 
+// the Message strings have a terminating period and space so they can
+// be easily combined with a follow on specific message.
 const (
 	errorFetchingCatalogReason  string = "ErrorFetchingCatalog"
-	errorFetchingCatalogMessage string = "Error fetching catalog"
+	errorFetchingCatalogMessage string = "Error fetching catalog. "
 	errorSyncingCatalogReason   string = "ErrorSyncingCatalog"
-	errorSyncingCatalogMessage  string = "Error syncing catalog from Broker"
+	errorSyncingCatalogMessage  string = "Error syncing catalog from Broker. "
 	errorWithParameters         string = "ErrorWithParameters"
 )
 
@@ -157,10 +159,12 @@ const (
 func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	glog.V(4).Infof("Processing Broker %v", broker.Name)
 
-	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
-		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage)
+		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+		glog.Info(s)
+		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
+			errorFetchingCatalogMessage+s)
 		return
 	}
 
@@ -171,9 +175,10 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		glog.V(4).Infof("Adding/Updating Broker %v", broker.Name)
 		brokerCatalog, err := brokerClient.GetCatalog()
 		if err != nil {
-			glog.Errorf("Error getting broker catalog for broker %v: %v", broker.Name, err)
-			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage)
-
+			s := fmt.Sprintf("Error getting broker catalog for broker %q: %s", broker.Name, err)
+			glog.Warning(s)
+			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
+				errorFetchingCatalogMessage+s)
 			return
 		}
 		glog.V(5).Infof("Successfully fetched %v catalog entries for Broker %v", len(brokerCatalog.Services), broker.Name)
@@ -181,8 +186,10 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		glog.V(4).Infof("Converting catalog response for Broker %v into service-catalog API", broker.Name)
 		catalog, err := convertCatalog(brokerCatalog)
 		if err != nil {
-			glog.Errorf("Error converting catalog payload for broker %v to service-catalog API: %v", broker.Name, err)
-			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage)
+			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
+			glog.Warning(s)
+			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+				errorSyncingCatalogMessage+s)
 			return
 		}
 		glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
@@ -190,15 +197,17 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		for _, serviceClass := range catalog {
 			glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 			if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
-				glog.Errorf("Error reconciling serviceClass %v (broker %v): %v", serviceClass.Name, broker.Name, err)
-				c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage)
+				s := fmt.Sprintf("Error reconciling serviceClass %q (broker %q): %s", serviceClass.Name, broker.Name, err)
+				glog.Warning(s)
+				c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+					errorSyncingCatalogMessage+s)
 				return
 			}
 
 			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 		}
 
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker")
+		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker.")
 		return
 	}
 
@@ -230,12 +239,13 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			if svcClass.BrokerName == broker.Name {
 				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 				if err != nil && !errors.IsNotFound(err) {
-					glog.Errorf("Error deleting ServiceClass %v (Broker %v): %v", svcClass.Name, broker.Name, err)
+					s := fmt.Sprintf("Error deleting ServiceClass %q (Broker %q): %s", svcClass.Name, broker.Name, err)
+					glog.Warning(s)
 					c.updateBrokerReadyCondition(
 						broker,
 						v1alpha1.ConditionUnknown,
 						"ErrorDeletingServiceClass",
-						"Error deleting ServiceClass",
+						"Error deleting ServiceClass. "+s,
 					)
 					return
 				}
@@ -430,52 +440,56 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
-		glog.Errorf("Instance %v/%v references a non-existent ServiceClass %v", instance.Namespace, instance.Name, instance.Spec.ServiceClassName)
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ServiceClassName)
+		glog.Info(s)
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentServiceClass",
-			"The instance references a ServiceClass that does not exist",
+			"The instance references a ServiceClass that does not exist. "+s,
 		)
 		return
 	}
 
 	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
 	if servicePlan == nil {
-		glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
+		glog.Warning(s)
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentServicePlan",
-			"The instance references a ServicePlan that does not exist",
+			"The instance references a ServicePlan that does not exist. "+s,
 		)
 		return
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
 	if err != nil {
-		glog.Errorf("Instance %v/%v references a non-existent broker %v", instance.Namespace, instance.Name, serviceClass.BrokerName)
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.BrokerName)
+		glog.Warning(s)
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentBroker",
-			"The instance references a Broker that does not exist",
+			"The instance references a Broker that does not exist. "+s,
 		)
 		return
 	}
 
-	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
-		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
+		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+		glog.Info(s)
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			"ErrorGettingAuthCredentials",
-			"Error getting auth credentials",
+			"Error getting auth credentials. "+s,
 		)
 		return
 	}
@@ -490,13 +504,14 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		if instance.Spec.Parameters != nil {
 			parameters, err = unmarshalParameters(instance.Spec.Parameters.Raw)
 			if err != nil {
-				glog.Errorf("Failed to unmarshal Instance parameters\n%s\n %v", instance.Spec.Parameters, err)
+				s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
+				glog.Warning(s)
 				c.updateInstanceCondition(
 					instance,
 					v1alpha1.InstanceConditionReady,
 					v1alpha1.ConditionFalse,
 					errorWithParameters,
-					"Error unmarshaling instance parameters",
+					"Error unmarshaling instance parameters. "+s,
 				)
 				return
 			}
@@ -504,7 +519,15 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 
 		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 		if err != nil {
-			glog.Errorf("Failed to get namespace during instance create (%s)", err)
+			s := fmt.Sprintf("Failed to get namespace %q during instance create: %s", instance.Namespace, err)
+			glog.Info(s)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				"ErrorFindingNamespaceForInstance",
+				"Error finding namespace for instance. "+s,
+			)
 			return
 		}
 
@@ -522,13 +545,14 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 		response, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
 		if err != nil {
-			glog.Errorf("Error provisioning Instance %v/%v of ServiceClass %v at Broker %v: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			glog.Warning(s)
 			c.updateInstanceCondition(
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				"ProvisionCallFailed",
-				"Provision call failed")
+				"Provision call failed. "+s)
 			return
 		}
 		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
@@ -567,13 +591,14 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 		err = brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
 		if err != nil {
-			glog.Errorf("Error deprovisioning Instance %v/%v of ServiceClass %v at Broker %v: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			glog.Warning(s)
 			c.updateInstanceCondition(
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionUnknown,
 				"DeprovisionCallFailed",
-				"Deprovision call failed")
+				"Deprovision call failed. "+s)
 			return
 		}
 
@@ -707,65 +732,70 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
-		glog.Errorf("Binding %v/%v references a non-existent Instance %v/%v", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Instance \"%s/%s\"", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
+		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentInstance",
-			"The binding references an Instance that does not exist",
+			"The binding references an Instance that does not exist. "+s,
 		)
 		return
 	}
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
-		glog.Errorf("Binding %v/%v references a non-existent ServiceClass %v", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
+		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentServiceClass",
-			"The binding references a ServiceClass that does not exist",
+			"The binding references a ServiceClass that does not exist. "+s,
 		)
 		return
 	}
 
 	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
 	if servicePlan == nil {
-		glog.Errorf("Instance %v/%v references a non-existent ServicePlan %v on ServiceClass %v", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentServicePlan",
-			"The Binding references an Instance which references ServicePlan that does not exist",
+			"The Binding references an Instance which references ServicePlan that does not exist. "+s,
 		)
 		return
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
 	if err != nil {
-		glog.Errorf("Binding %v/%v references a non-existent Broker %v", binding.Namespace, binding.Name, serviceClass.BrokerName)
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Broker %q", binding.Namespace, binding.Name, serviceClass.BrokerName)
+		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			"ReferencesNonexistentBroker",
-			"The binding references a Broker that does not exist",
+			"The binding references a Broker that does not exist. "+s,
 		)
 		return
 	}
 
-	username, password, err := GetAuthCredentialsFromBroker(c.kubeClient, broker)
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
-		glog.Errorf("Error getting broker auth credentials for broker %v: %v", broker.Name, err)
+		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			"ErrorGettingAuthCredentials",
-			"Error getting auth credentials",
+			"Error getting auth credentials. "+s,
 		)
 		return
 	}
@@ -780,13 +810,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		if binding.Spec.Parameters != nil {
 			parameters, err = unmarshalParameters(binding.Spec.Parameters.Raw)
 			if err != nil {
-				glog.Errorf("Failed to unmarshal Binding parameters\n%s\n %v", binding.Spec.Parameters, err)
+				s := fmt.Sprintf("Failed to unmarshal Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
+				glog.Warning(s)
 				c.updateBindingCondition(
 					binding,
 					v1alpha1.BindingConditionReady,
 					v1alpha1.ConditionFalse,
 					errorWithParameters,
-					"Error unmarshaling binding parameters",
+					"Error unmarshaling binding parameters. "+s,
 				)
 				return
 			}
@@ -794,7 +825,15 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 		if err != nil {
-			glog.Errorf("Failed to get namespace during binding (%s)", err)
+			s := fmt.Sprintf("Failed to get namespace %q during binding: %s", instance.Namespace, err)
+			glog.Info(s)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				"ErrorFindingNamespaceForInstance",
+				"Error finding namespace for instance. "+s,
+			)
 			return
 		}
 
@@ -807,24 +846,26 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		}
 		response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
 		if err != nil {
-			glog.Errorf("Error creating Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				"BindCallFailed",
-				"Bind call failed")
+				"Bind call failed. "+s)
 			return
 		}
 		err = c.injectBinding(binding, &response.Credentials)
 		if err != nil {
-			glog.Errorf("Error injecting binding results for Binding %v/%v: %v", binding.Namespace, binding.Name, err)
+			s := fmt.Sprintf("Error injecting binding results for Binding \"%s/%s\": %s", binding.Namespace, binding.Name, err)
+			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				"ErrorInjectingBindResult",
-				"Error injecting bind result",
+				"Error injecting bind result "+s,
 			)
 			return
 		}
@@ -851,27 +892,29 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 	// TODO: Should we use a more specific string here?
 	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "kubernetes" {
 		glog.V(4).Infof("Finalizing Binding %v/%v", binding.Namespace, binding.Name)
-
 		err = c.ejectBinding(binding)
 		if err != nil {
+			s := fmt.Sprintf("Error deleting secret: %s", err)
+			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionUnknown,
 				"ErrorEjectingBinding",
-				"Error ejecting binding",
+				"Error ejecting binding. "+s,
 			)
 			return
 		}
 		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, serviceClass.OSBGUID, servicePlan.OSBGUID)
 		if err != nil {
-			glog.Errorf("Error unbinding Binding %v/%v for Instance %v/%v of ServiceClass %v at Broker %v: %v", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				"UnbindCallFailed",
-				"Unbind call failed")
+				"Unbind call failed. "+s)
 			return
 		}
 
@@ -1015,11 +1058,11 @@ func (c *controller) bindingDelete(obj interface{}) {
 
 // Broker utility methods - move?
 
-// GetAuthCredentialsFromBroker returns the auth credentials, if any,
+// getAuthCredentialsFromBroker returns the auth credentials, if any,
 // contained in the secret referenced in the Broker's AuthSecret field, or
 // returns an error. If the AuthSecret field is nil, empty values are
 // returned.
-func GetAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (username, password string, err error) {
+func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (username, password string, err error) {
 	if broker.Spec.AuthSecret == nil {
 		return "", "", nil
 	}
@@ -1064,8 +1107,9 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 		if svc.Metadata != nil {
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
-				glog.Errorf("Failed to unmarshal metadata\n%+v\n %v", svc.Metadata, err)
-				return nil, fmt.Errorf("Failed to unmarshal metadata\n%+v\n %v", svc.Metadata, err)
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
+				glog.Error(err)
+				return nil, err
 			}
 			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
 		}
@@ -1088,8 +1132,9 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 		if plan.Metadata != nil {
 			metadata, err := json.Marshal(plan.Metadata)
 			if err != nil {
-				glog.Errorf("Failed to unmarshal metadata\n%+v\n %v", plan.Metadata, err)
-				return nil, fmt.Errorf("Failed to unmarshal metadata\n%+v\n %v", plan.Metadata, err)
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
+				glog.Error(err)
+				return nil, err
 			}
 			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
 		}
