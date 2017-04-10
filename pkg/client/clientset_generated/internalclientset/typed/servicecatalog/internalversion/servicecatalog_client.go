@@ -29,7 +29,7 @@ type ServicecatalogInterface interface {
 	ServiceClassesGetter
 }
 
-// ServicecatalogClient is used to interact with features provided by the  group.
+// ServicecatalogClient is used to interact with features provided by the servicecatalog.k8s.io group.
 type ServicecatalogClient struct {
 	restClient rest.Interface
 }
@@ -79,7 +79,7 @@ func New(c rest.Interface) *ServicecatalogClient {
 }
 
 func setConfigDefaults(config *rest.Config) error {
-	g, err := scheme.Registry.Group("")
+	g, err := scheme.Registry.Group("servicecatalog.k8s.io")
 	if err != nil {
 		return err
 	}

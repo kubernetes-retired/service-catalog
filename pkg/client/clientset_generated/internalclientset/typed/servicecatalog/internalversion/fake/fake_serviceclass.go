@@ -31,7 +31,7 @@ type FakeServiceClasses struct {
 	Fake *FakeServicecatalog
 }
 
-var serviceclassesResource = schema.GroupVersionResource{Group: "", Version: "", Resource: "serviceclasses"}
+var serviceclassesResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "", Resource: "serviceclasses"}
 
 func (c *FakeServiceClasses) Create(serviceClass *servicecatalog.ServiceClass) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
