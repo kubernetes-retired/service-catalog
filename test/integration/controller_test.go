@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/record"
 
 	// avoid error `servicecatalog/v1alpha1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
@@ -277,6 +278,7 @@ func newTestController(t *testing.T) (
 		brokerClFunc,
 		24*time.Hour,
 		true,
+		&record.FakeRecorder{},
 	)
 	t.Log("controller start")
 	if err != nil {

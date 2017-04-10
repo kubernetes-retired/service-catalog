@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -54,6 +55,7 @@ func NewController(
 	brokerClientCreateFunc brokerapi.CreateFunc,
 	brokerRelistInterval time.Duration,
 	osbAPIContextProfile bool,
+	recorder record.EventRecorder,
 ) (Controller, error) {
 
 	var (
@@ -70,6 +72,7 @@ func NewController(
 			instanceLister:            instanceLister,
 			brokerRelistInterval:      brokerRelistInterval,
 			enableOSBAPIContextProfle: osbAPIContextProfile,
+			recorder:                  recorder,
 		}
 	)
 
@@ -117,6 +120,7 @@ type controller struct {
 	instanceLister            listers.InstanceLister
 	brokerRelistInterval      time.Duration
 	enableOSBAPIContextProfle bool
+	recorder                  record.EventRecorder
 }
 
 // Run runs the controller until the given stop channel can be read from.

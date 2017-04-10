@@ -39,6 +39,7 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -1945,6 +1946,7 @@ func newTestController(t *testing.T) (
 		brokerClFunc,
 		24*time.Hour,
 		true,
+		&record.FakeRecorder{},
 	)
 	if err != nil {
 		t.Fatal(err)
