@@ -307,16 +307,6 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	toUpdate.OSBDashboardRedirectURI = serviceClass.OSBDashboardRedirectURI
 	toUpdate.Description = serviceClass.Description
 
-	/*
-		toUpdate.Description = serviceClass.Description
-		toUpdate.DisplayName = serviceClass.DisplayName
-		toUpdate.ImageURL = serviceClass.ImageURL
-		toUpdate.LongDescription = serviceClass.LongDescription
-		toUpdate.ProviderDisplayName = serviceClass.ProviderDisplayName
-		toUpdate.DocumentationURL = serviceClass.DocumentationURL
-		toUpdate.SupportURL = serviceClass.SupportURL
-	*/
-
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating serviceClass %v from Broker %v: %v", serviceClass.Name, broker.Name, err)
 		return err
