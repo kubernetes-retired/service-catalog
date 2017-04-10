@@ -43,6 +43,7 @@ const defaultPort = 10000
 const defaultK8sKubeconfigPath = "./kubeconfig"
 const defaultServiceCatalogKubeconfigPath = "./service-catalog-kubeconfig"
 const defaultOSBAPIContextProfile = true
+const defaultConcurrentSyncs = 5
 
 // NewControllerManagerServer creates a new ControllerManagerServer with a
 // default config.
@@ -57,6 +58,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			ResyncInterval:               defaultResyncInterval,
 			BrokerRelistInterval:         defaultBrokerRelistInterval,
 			OSBAPIContextProfile:         defaultOSBAPIContextProfile,
+			ConcurrentSyncs:              defaultConcurrentSyncs,
 		},
 	}
 }

@@ -29,11 +29,14 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
 
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -43,8 +46,16 @@ import (
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
 )
 
-// NewController returns a new Open Service Broker catalog
-// controller.
+const (
+	// maxRetries is the number of times a resource add/update will be retried before it is dropped out of the queue.
+	// With the current rate-limiter in use (5ms*2^(maxRetries-1)) the following numbers represent the times
+	// a resource is going to be requeued:
+	//
+	// 5ms, 10ms, 20ms, 40ms, 80ms, 160ms, 320ms, 640ms, 1.3s, 2.6s, 5.1s, 10.2s, 20.4s, 41s, 82s
+	maxRetries = 15
+)
+
+// NewController returns a new Open Service Broker catalog controller.
 func NewController(
 	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
@@ -57,48 +68,46 @@ func NewController(
 	osbAPIContextProfile bool,
 	recorder record.EventRecorder,
 ) (Controller, error) {
-
-	var (
-		brokerLister       = brokerInformer.Lister()
-		serviceClassLister = serviceClassInformer.Lister()
-		instanceLister     = instanceInformer.Lister()
-
-		controller = &controller{
-			kubeClient:                kubeClient,
-			serviceCatalogClient:      serviceCatalogClient,
-			brokerClientCreateFunc:    brokerClientCreateFunc,
-			brokerLister:              brokerLister,
-			serviceClassLister:        serviceClassLister,
-			instanceLister:            instanceLister,
-			brokerRelistInterval:      brokerRelistInterval,
-			enableOSBAPIContextProfle: osbAPIContextProfile,
-			recorder:                  recorder,
-		}
-	)
+	controller := &controller{
+		kubeClient:                kubeClient,
+		serviceCatalogClient:      serviceCatalogClient,
+		brokerClientCreateFunc:    brokerClientCreateFunc,
+		brokerRelistInterval:      brokerRelistInterval,
+		enableOSBAPIContextProfle: osbAPIContextProfile,
+		recorder:                  recorder,
+		brokerQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "broker"),
+		serviceClassQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
+		instanceQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
+		bindingQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
+	}
 
 	brokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.brokerAdd,
 		UpdateFunc: controller.brokerUpdate,
 		DeleteFunc: controller.brokerDelete,
 	})
+	controller.brokerLister = brokerInformer.Lister()
 
 	serviceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.serviceClassAdd,
 		UpdateFunc: controller.serviceClassUpdate,
 		DeleteFunc: controller.serviceClassDelete,
 	})
+	controller.serviceClassLister = serviceClassInformer.Lister()
 
 	instanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.instanceAdd,
 		UpdateFunc: controller.instanceUpdate,
 		DeleteFunc: controller.instanceDelete,
 	})
+	controller.instanceLister = instanceInformer.Lister()
 
 	bindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.bindingAdd,
 		UpdateFunc: controller.bindingUpdate,
 		DeleteFunc: controller.bindingDelete,
 	})
+	controller.bindingLister = bindingInformer.Lister()
 
 	return controller, nil
 }
@@ -107,7 +116,9 @@ func NewController(
 // Open Service Broker compliant Brokers.
 type Controller interface {
 	// Run runs the controller until the given stop channel can be read from.
-	Run(stopCh <-chan struct{})
+	// workers specifies the number of goroutines, per resource, processing work
+	// from the resource workqueues
+	Run(workers int, stopCh <-chan struct{})
 }
 
 // controller is a concrete Controller.
@@ -118,29 +129,86 @@ type controller struct {
 	brokerLister              listers.BrokerLister
 	serviceClassLister        listers.ServiceClassLister
 	instanceLister            listers.InstanceLister
+	bindingLister             listers.BindingLister
 	brokerRelistInterval      time.Duration
 	enableOSBAPIContextProfle bool
 	recorder                  record.EventRecorder
+	brokerQueue               workqueue.RateLimitingInterface
+	serviceClassQueue         workqueue.RateLimitingInterface
+	instanceQueue             workqueue.RateLimitingInterface
+	bindingQueue              workqueue.RateLimitingInterface
 }
 
 // Run runs the controller until the given stop channel can be read from.
-func (c *controller) Run(stopCh <-chan struct{}) {
+func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	defer runtimeutil.HandleCrash()
+
 	glog.Info("Starting service-catalog controller")
+
+	for i := 0; i < workers; i++ {
+		go wait.Until(worker(c.brokerQueue, "Broker", c.reconcileBrokerKey), time.Second, stopCh)
+		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", c.reconcileServiceClassKey), time.Second, stopCh)
+		go wait.Until(worker(c.instanceQueue, "Instance", c.reconcileInstanceKey), time.Second, stopCh)
+		go wait.Until(worker(c.bindingQueue, "Binding", c.reconcileBindingKey), time.Second, stopCh)
+	}
 
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
+
+	c.brokerQueue.ShutDown()
+	c.serviceClassQueue.ShutDown()
+	c.instanceQueue.ShutDown()
+	c.bindingQueue.ShutDown()
+}
+
+// worker runs a worker thread that just dequeues items, processes them, and marks them done.
+// It enforces that the reconciler is never invoked concurrently with the same key.
+func worker(queue workqueue.RateLimitingInterface, resourceType string, reconciler func(key string) error) func() {
+	return func() {
+		exit := false
+		for !exit {
+			exit = func() bool {
+				key, quit := queue.Get()
+				if quit {
+					return true
+				}
+				defer queue.Done(key)
+
+				err := reconciler(key.(string))
+				if err == nil {
+					queue.Forget(key)
+					return false
+				}
+
+				if queue.NumRequeues(key) < maxRetries {
+					glog.V(4).Infof("Error syncing %s %v: %v", resourceType, key, err)
+					queue.AddRateLimited(key)
+					return false
+				}
+
+				glog.V(4).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
+				queue.Forget(key)
+				return false
+			}()
+		}
+	}
 }
 
 // Broker handlers and control-loop
 
 func (c *controller) brokerAdd(obj interface{}) {
-	broker, ok := obj.(*v1alpha1.Broker)
-	if broker == nil || !ok {
+	// DeletionHandlingMetaNamespaceKeyFunc returns a unique key for the resource and
+	// handles the special case where the resource is of DeletedFinalStateUnknown type, which
+	// acts a place holder for resources that have been deleted from storage but the watch event
+	// confirming the deletion has not yet arrived.
+	// Generally, the key is "namespace/name" for namespaced-scoped resources and
+	// just "name" for cluster scoped resources.
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-
-	c.reconcileBroker(broker)
+	c.brokerQueue.Add(key)
 }
 
 func (c *controller) brokerUpdate(oldObj, newObj interface{}) {
@@ -231,15 +299,29 @@ func shouldReconcileBroker(broker *v1alpha1.Broker, now time.Time, relistInterva
 	return true
 }
 
+func (c *controller) reconcileBrokerKey(key string) error {
+	broker, err := c.brokerLister.Get(key)
+	if errors.IsNotFound(err) {
+		glog.Infof("Not doing work for Broker %v because it has been deleted", key)
+		return nil
+	}
+	if err != nil {
+		glog.Infof("Unable to retrieve Broker %v from store: %v", key, err)
+		return err
+	}
+
+	return c.reconcileBroker(broker)
+}
+
 // reconcileBroker is the control-loop that reconciles a Broker.
-func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
+func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 	glog.V(4).Infof("Processing Broker %v", broker.Name)
 
 	// If the broker's ready condition is true and the relist interval has not
 	// elapsed, do not reconcile it.
 	if !shouldReconcileBroker(broker, time.Now(), c.brokerRelistInterval) {
 		glog.V(10).Infof("Not processing Broker %v because relist interval has not elapsed since the broker became ready", broker.Name)
-		return
+		return nil
 	}
 
 	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
@@ -248,7 +330,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		glog.Info(s)
 		c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
 		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
-		return
+		return err
 	}
 
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
@@ -263,7 +345,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			c.recorder.Eventf(broker, api.EventTypeWarning, errorFetchingCatalogReason, s)
 			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
 				errorFetchingCatalogMessage+s)
-			return
+			return err
 		}
 		glog.V(5).Infof("Successfully fetched %v catalog entries for Broker %v", len(brokerCatalog.Services), broker.Name)
 
@@ -274,7 +356,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			glog.Warning(s)
 			c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
 			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s)
-			return
+			return err
 		}
 		glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
 
@@ -286,7 +368,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 				c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
 				c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s)
-				return
+				return err
 			}
 
 			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
@@ -294,7 +376,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 
 		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionTrue, successFetchedCatalogReason, successFetchedCatalogMessage)
 		c.recorder.Event(broker, api.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
-		return
+		return nil
 	}
 
 	// All updates not having a DeletingTimestamp will have been handled above
@@ -319,7 +401,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 				errorListingServiceClassesMessage,
 			)
 			c.recorder.Eventf(broker, api.EventTypeWarning, errorListingServiceClassesReason, "%v %v", errorListingServiceClassesMessage, err)
-			return
+			return err
 		}
 
 		// Delete ServiceClasses that are for THIS Broker.
@@ -337,7 +419,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 						errorDeletingServiceClassReason+s,
 					)
 					c.recorder.Eventf(broker, api.EventTypeWarning, errorDeletingServiceClassReason, "%v %v", errorDeletingServiceClassMessage, s)
-					return
+					return err
 				}
 			}
 		}
@@ -354,7 +436,10 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 
 		c.recorder.Eventf(broker, api.EventTypeNormal, successBrokerDeletedReason, successBrokerDeletedMessage, broker.Name)
 		glog.V(5).Infof("Successfully deleted Broker %v", broker.Name)
+		return nil
 	}
+
+	return nil
 }
 
 // reconcileServiceClassFromBrokerCatalog reconciles a ServiceClass after the
@@ -476,16 +561,31 @@ func (c *controller) updateBrokerFinalizers(
 // Service class handlers and control-loop
 
 func (c *controller) serviceClassAdd(obj interface{}) {
-	serviceClass, ok := obj.(*v1alpha1.ServiceClass)
-	if serviceClass == nil || !ok {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-
-	c.reconcileServiceClass(serviceClass)
+	c.serviceClassQueue.Add(key)
 }
 
-func (c *controller) reconcileServiceClass(serviceClass *v1alpha1.ServiceClass) {
+func (c *controller) reconcileServiceClassKey(key string) error {
+	serviceClass, err := c.serviceClassLister.Get(key)
+	if errors.IsNotFound(err) {
+		glog.Infof("Not doing work for ServiceClass %v because it has been deleted", key)
+		return nil
+	}
+	if err != nil {
+		glog.Errorf("Unable to retrieve ServiceClass %v from store: %v", key, err)
+		return err
+	}
+
+	return c.reconcileServiceClass(serviceClass)
+}
+
+func (c *controller) reconcileServiceClass(serviceClass *v1alpha1.ServiceClass) error {
 	glog.V(4).Infof("Processing ServiceClass %v", serviceClass.Name)
+	return nil
 }
 
 func (c *controller) serviceClassUpdate(oldObj, newObj interface{}) {
@@ -504,12 +604,32 @@ func (c *controller) serviceClassDelete(obj interface{}) {
 // Instance handlers and control-loop
 
 func (c *controller) instanceAdd(obj interface{}) {
-	instance, ok := obj.(*v1alpha1.Instance)
-	if instance == nil || !ok {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
+	c.instanceQueue.Add(key)
+}
 
-	c.reconcileInstance(instance)
+func (c *controller) reconcileInstanceKey(key string) error {
+	// For namespace-scoped resources, SplitMetaNamespaceKey splits the key
+	// i.e. "namespace/name" into two separate strings
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return err
+	}
+	instance, err := c.instanceLister.Instances(namespace).Get(name)
+	if errors.IsNotFound(err) {
+		glog.Infof("Not doing work for Instance %v because it has been deleted", key)
+		return nil
+	}
+	if err != nil {
+		glog.Errorf("Unable to retrieve Instance %v from store: %v", key, err)
+		return err
+	}
+
+	return c.reconcileInstance(instance)
 }
 
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
@@ -517,7 +637,7 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 }
 
 // reconcileInstance is the control-loop for reconciling Instances.
-func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
+func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	// Determine whether the checksum has been invalidated by a change to the
 	// object.  If the instance's checksum matches the calculated checksum,
 	// there is no work to do.
@@ -529,7 +649,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 		instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
 		if instanceChecksum == *instance.Spec.Checksum {
 			glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
-			return
+			return nil
 		}
 	}
 
@@ -547,7 +667,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			"The instance references a ServiceClass that does not exist. "+s,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
-		return
+		return err
 	}
 
 	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
@@ -562,7 +682,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			"The instance references a ServicePlan that does not exist. "+s,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
-		return
+		return nil
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
@@ -577,7 +697,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			"The instance references a Broker that does not exist. "+s,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentBrokerReason, s)
-		return
+		return err
 	}
 
 	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
@@ -592,7 +712,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			"Error getting auth credentials. "+s,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorAuthCredentialsReason, s)
-		return
+		return err
 	}
 
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
@@ -615,7 +735,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 					"Error unmarshaling instance parameters. "+s,
 				)
 				c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
-				return
+				return err
 			}
 		}
 
@@ -631,7 +751,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 				"Error finding namespace for instance. "+s,
 			)
 			c.recorder.Event(instance, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
-			return
+			return err
 		}
 
 		request := &brokerapi.CreateServiceInstanceRequest{
@@ -663,7 +783,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 				errorProvisionCalledReason,
 				"Provision call failed. "+s)
 			c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCalledReason, s)
-			return
+			return err
 		}
 		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
 
@@ -677,7 +797,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			successProvisionMessage,
 		)
 		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
-		return
+		return nil
 	}
 
 	// All updates not having a DeletingTimestamp will have been handled above
@@ -711,7 +831,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 				errorDeprovisionCalledReason,
 				"Deprovision call failed. "+s)
 			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
-			return
+			return err
 		}
 
 		c.updateInstanceCondition(
@@ -727,6 +847,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 
 		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 	}
+
+	return nil
 }
 
 func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.ServicePlan {
@@ -830,19 +952,37 @@ func (c *controller) instanceDelete(obj interface{}) {
 // Binding handlers and control-loop
 
 func (c *controller) bindingAdd(obj interface{}) {
-	binding, ok := obj.(*v1alpha1.Binding)
-	if binding == nil || !ok {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
+	c.bindingQueue.Add(key)
+}
 
-	c.reconcileBinding(binding)
+func (c *controller) reconcileBindingKey(key string) error {
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return err
+	}
+	binding, err := c.bindingLister.Bindings(namespace).Get(name)
+	if errors.IsNotFound(err) {
+		glog.Infof("Not doing work for Binding %v because it has been deleted", key)
+		return nil
+	}
+	if err != nil {
+		glog.Infof("Unable to retrieve Binding %v from store: %v", key, err)
+		return err
+	}
+
+	return c.reconcileBinding(binding)
 }
 
 func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
 	c.bindingAdd(newObj)
 }
 
-func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
+func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	// Determine whether the checksum has been invalidated by a change to the
 	// object.  If the binding's checksum matches the calculated checksum,
 	// there is no work to do.
@@ -854,7 +994,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 		bindingChecksum := checksum.BindingSpecChecksum(binding.Spec)
 		if bindingChecksum == *binding.Spec.Checksum {
 			glog.V(4).Infof("Not processing event for Binding %v/%v because checksum showed there is no work to do", binding.Namespace, binding.Name)
-			return
+			return nil
 		}
 	}
 
@@ -872,7 +1012,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			"The binding references an Instance that does not exist. "+s,
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentInstanceReason, s)
-		return
+		return err
 	}
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
@@ -887,7 +1027,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			"The binding references a ServiceClass that does not exist. "+s,
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
-		return
+		return err
 	}
 
 	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
@@ -902,7 +1042,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			"The Binding references an Instance which references ServicePlan that does not exist. "+s,
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
-		return
+		return fmt.Errorf("%s", s)
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
@@ -917,7 +1057,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			"The binding references a Broker that does not exist. "+s,
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentBrokerReason, s)
-		return
+		return err
 	}
 
 	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
@@ -932,7 +1072,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			"Error getting auth credentials. "+s,
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, errorAuthCredentialsReason, s)
-		return
+		return err
 	}
 
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
@@ -955,7 +1095,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 					"Error unmarshaling binding parameters. "+s,
 				)
 				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
-				return
+				return err
 			}
 		}
 
@@ -971,7 +1111,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				"Error finding namespace for instance. "+s,
 			)
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
-			return
+			return err
 		}
 
 		request := &brokerapi.BindingRequest{
@@ -992,7 +1132,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				errorBindCallReason,
 				"Bind call failed. "+s)
 			c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
-			return
+			return err
 		}
 		err = c.injectBinding(binding, &response.Credentials)
 		if err != nil {
@@ -1006,7 +1146,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				"Error injecting bind result "+s,
 			)
 			c.recorder.Event(binding, api.EventTypeWarning, errorInjectingBindResultReason, s)
-			return
+			return err
 		}
 		c.updateBindingCondition(
 			binding,
@@ -1019,7 +1159,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 
-		return
+		return nil
 	}
 
 	// All updates not having a DeletingTimestamp will have been handled above
@@ -1044,7 +1184,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				errorEjectingBindMessage+s,
 			)
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
-			return
+			return err
 		}
 		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, serviceClass.OSBGUID, servicePlan.OSBGUID)
 		if err != nil {
@@ -1057,7 +1197,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				errorUnbindCallReason,
 				"Unbind call failed. "+s)
 			c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
-			return
+			return err
 		}
 
 		c.updateBindingCondition(
@@ -1073,6 +1213,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 
 		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 	}
+
+	return nil
 }
 
 func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *brokerapi.Credential) error {

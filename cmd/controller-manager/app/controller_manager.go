@@ -301,7 +301,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		}
 
 		glog.V(5).Info("Running controller")
-		go serviceCatalogController.Run(stop)
+		go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
 
 		glog.V(1).Info("Starting shared informers")
 		informerFactory.Start(stop)
