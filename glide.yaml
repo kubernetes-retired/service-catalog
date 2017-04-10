@@ -32,6 +32,7 @@ import:
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo
+  version: cc7adb61f5c64d7a439bf5e528f1e22d84c42a80
   subpackages:
   - args
 - package: github.com/kubernetes/repo-infra
