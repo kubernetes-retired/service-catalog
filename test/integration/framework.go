@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -36,8 +37,12 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/pkg/api/install"
 	_ "k8s.io/client-go/pkg/apis/extensions/install"
+	coreserver "k8s.io/kubernetes/cmd/kube-apiserver/app"
+	corerunoptions "k8s.io/kubernetes/cmd/kube-apiserver/app/options"
 )
 
 const (
@@ -48,28 +53,93 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
+func getFreshCoreApiserverAndClient(t *testing.T) (*kubernetes.Clientset, func()) {
 	securePort := rand.Intn(31743) + 1024
 	insecurePort := rand.Intn(31743) + 1024
 	insecureAddr := fmt.Sprintf("http://localhost:%d", insecurePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
 	shutdown := func() {
-		t.Logf("Shutting down server on ports: %d and %d", insecurePort, securePort)
+		t.Logf("Shutting down core apiserver on port: %d", insecurePort)
 		close(stopCh)
+	}
+
+	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
+
+	go func() {
+		opts := corerunoptions.NewServerRunOptions()
+		opts.InsecureServing.BindPort = insecurePort
+		opts.SecureServing.ServingOptions.BindPort = securePort
+		opts.SecureServing.ServerCert.CertDirectory = certDir
+		opts.Etcd.StorageConfig.ServerList = []string{"http://localhost:2379"}
+		opts.Etcd.StorageConfig.Prefix = uuid.New()
+		_, serviceClusterIPRange, err := net.ParseCIDR("10.0.0.0/24")
+		if err != nil {
+			t.Fatalf("Error bringing up the core apiserver: %v", err)
+		}
+		opts.ServiceClusterIPRange = *serviceClusterIPRange
+		config, sharedInformers, err := coreserver.BuildMasterConfig(opts)
+		if err != nil {
+			t.Fatalf("Error bringing up the core apiserver: %v", err)
+		}
+		if err := coreserver.RunServer(config, sharedInformers, stopCh); err != nil {
+			close(serverFailed)
+			t.Fatalf("Error bringing up the core apiserver: %v", err)
+		}
+	}()
+
+	if err := waitForApiserverUp(insecureAddr, "core", serverFailed); err != nil {
+		shutdown()
+		t.Fatalf("%v", err)
+	}
+
+	config := &restclient.Config{}
+	config.Host = insecureAddr
+	config.Insecure = true
+	client, err := kubernetes.NewForConfig(config)
+	if nil != err {
+		t.Fatal("can't make the client from the config", err)
+	}
+	return client, shutdown
+}
+
+func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
+	securePort := rand.Intn(31743) + 1024
+	insecurePort := rand.Intn(31743) + 1024
+	insecureAddr := fmt.Sprintf("http://localhost:%d", insecurePort)
+	stopCh := make(chan struct{})
+	serverFailed := make(chan struct{})
+	// The following client and shutdown func are only used in TPR mode
+	var coreClient *kubernetes.Clientset
+	var coreShutdown func()
+	if storageTypeStr == "tpr" {
+		coreClient, coreShutdown = getFreshCoreApiserverAndClient(t)
+	}
+	shutdown := func() {
+		t.Logf("Shutting down catalog apiserver on port: %d", securePort)
+		close(stopCh)
+		if storageTypeStr == "tpr" {
+			coreShutdown()
+		}
 	}
 
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
 	go func() {
-
 		tprOptions := server.NewTPROptions()
-		tprOptions.RESTClient = getFakeCoreRESTClient()
-		tprOptions.InstallTPRsFunc = func() error {
-			return nil
+
+		if storageTypeStr == "tpr" {
+			if err := tpr.InstallTypes(coreClient.Extensions().ThirdPartyResources()); err != nil {
+				t.Fatalf("Failed to install TPR types (%s)", err)
+			}
+			tprOptions.RESTClient = coreClient.Core().RESTClient()
+			tprOptions.InstallTPRsFunc = func() error {
+				return nil
+			}
+			tprOptions.GlobalNamespace = globalTPRNamespace
 		}
-		tprOptions.GlobalNamespace = globalTPRNamespace
+
 		options := &server.ServiceCatalogServerOptions{
 			StorageTypeString:       storageTypeStr,
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
@@ -89,11 +159,12 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 		options.EtcdOptions.StorageConfig.ServerList = []string{"http://localhost:2379"}
 		if err := server.RunServer(options); err != nil {
 			close(serverFailed)
-			t.Fatalf("Error in bringing up the server: %v", err)
+			t.Fatalf("Error bringing up the catalog apiserver: %v", err)
 		}
 	}()
 
-	if err := waitForApiserverUp(insecureAddr, serverFailed); err != nil {
+	if err := waitForApiserverUp(insecureAddr, "catalog", serverFailed); err != nil {
+		shutdown()
 		t.Fatalf("%v", err)
 	}
 
@@ -107,16 +178,16 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	return clientset, shutdown
 }
 
-func waitForApiserverUp(insecureAddr string, stopCh <-chan struct{}) error {
+func waitForApiserverUp(insecureAddr string, qualifier string, stopCh <-chan struct{}) error {
 	minuteTimeout := time.After(2 * time.Minute)
 	for {
 		select {
 		case <-stopCh:
-			return fmt.Errorf("apiserver failed")
+			return fmt.Errorf("%s apiserver failed", qualifier)
 		case <-minuteTimeout:
-			return fmt.Errorf("waiting for apiserver timed out")
+			return fmt.Errorf("waiting for %s apiserver timed out", qualifier)
 		default:
-			glog.Infof("Waiting for : %#v", insecureAddr)
+			glog.Infof("Waiting for %s apiserver : %#v", qualifier, insecureAddr)
 			_, err := http.Get(insecureAddr)
 			if err == nil {
 				return nil

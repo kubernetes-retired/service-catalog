@@ -85,8 +85,13 @@ func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testGroupVersion(client); err != nil {
+			err := testGroupVersion(client)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -112,8 +117,13 @@ func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testNoName(client); err != nil {
+			err := testNoName(client)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -152,8 +162,13 @@ func TestBrokerClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testBrokerClient(sType, client, name); err != nil {
+			err := testBrokerClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -318,9 +333,13 @@ func TestServiceClassClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-
-			if err := testServiceClassClient(sType, client, name); err != nil {
+			err := testServiceClassClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -439,8 +458,13 @@ func TestInstanceClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-instance"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testInstanceClient(sType, client, name); err != nil {
+			err := testInstanceClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -612,9 +636,13 @@ func TestBindingClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-
-			if err := testBindingClient(sType, client, name); err != nil {
+			err := testBindingClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
