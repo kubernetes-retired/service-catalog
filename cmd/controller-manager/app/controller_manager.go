@@ -146,7 +146,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// Start http server and handlers
 	go func() {
 		mux := http.NewServeMux()
-		healthz.InstallHandler(mux)
+		healthz.InstallHandler(mux, healthz.PingHealthz)
 		configz.InstallHandler(mux)
 
 		if controllerManagerOptions.EnableProfiling {
