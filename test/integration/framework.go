@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	globalTPRNamespace = "globalTPRNamespace"
+	globalTPRNamespace = "global-trp-ns"
 )
 
 func init() {
