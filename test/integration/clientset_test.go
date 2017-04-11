@@ -70,8 +70,7 @@ const (
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
-	// disabling TPR - this will be fixed in https://github.com/kubernetes-incubator/service-catalog/pull/612
-	//server.StorageTypeTPR,
+	server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters
@@ -226,6 +225,14 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
 	}
 
+	// TODO: Here be dragons. Tests fail beyond this point due to known issues
+	// with our TPR-based storage implementation. Bail early (until those issues)
+	// are fixed, because some tests are better than no tests. If storage isn't
+	// TPR-based, carry on.
+	if sType == server.StorageTypeTPR {
+		return nil
+	}
+
 	// check that the broker is the same from get and list
 	brokerListed := &brokers.Items[0]
 	if !reflect.DeepEqual(brokerServer, brokerListed) {
@@ -233,14 +240,6 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 			"Didn't get the same instance from list and get: diff: %v",
 			diff.ObjectReflectDiff(brokerServer, brokerListed),
 		)
-	}
-
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
 	}
 
 	authSecret := &v1.ObjectReference{
@@ -409,21 +408,21 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	// check that the broker is the same from get and list
-	serviceClassListed := &serviceClasses.Items[0]
-	if !reflect.DeepEqual(serviceClassAtServer, serviceClassListed) {
-		return fmt.Errorf(
-			"Didn't get the same instance from list and get: diff: %v",
-			diff.ObjectReflectDiff(serviceClassAtServer, serviceClassListed),
-		)
-	}
-
 	// TODO: Here be dragons. Tests fail beyond this point due to known issues
 	// with our TPR-based storage implementation. Bail early (until those issues)
 	// are fixed, because some tests are better than no tests. If storage isn't
 	// TPR-based, carry on.
 	if sType == server.StorageTypeTPR {
 		return nil
+	}
+
+	// check that the service class is the same from get and list
+	serviceClassListed := &serviceClasses.Items[0]
+	if !reflect.DeepEqual(serviceClassAtServer, serviceClassListed) {
+		return fmt.Errorf(
+			"Didn't get the same instance from list and get: diff: %v",
+			diff.ObjectReflectDiff(serviceClassAtServer, serviceClassListed),
+		)
 	}
 
 	serviceClassAtServer.Bindable = false
@@ -545,18 +544,18 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
 	}
 
-	// expect the instance in the list to be the same as the instance just fetched by name
-	instanceListed := &instances.Items[0]
-	if !reflect.DeepEqual(instanceListed, instanceServer) {
-		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
-	}
-
 	// TODO: Here be dragons. Tests fail beyond this point due to known issues
 	// with our TPR-based storage implementation. Bail early (until those issues)
 	// are fixed, because some tests are better than no tests. If storage isn't
 	// TPR-based, carry on.
 	if sType == server.StorageTypeTPR {
 		return nil
+	}
+
+	// expect the instance in the list to be the same as the instance just fetched by name
+	instanceListed := &instances.Items[0]
+	if !reflect.DeepEqual(instanceListed, instanceServer) {
+		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
@@ -714,20 +713,20 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		)
 	}
 
-	bindingListed := &bindings.Items[0]
-	if !reflect.DeepEqual(bindingListed, bindingServer) {
-		return fmt.Errorf(
-			"Didn't get the same binding from list and get: diff: %v",
-			diff.ObjectReflectDiff(bindingListed, bindingServer),
-		)
-	}
-
 	// TODO: Here be dragons. Tests fail beyond this point due to known issues
 	// with our TPR-based storage implementation. Bail early (until those issues)
 	// are fixed, because some tests are better than no tests. If storage isn't
 	// TPR-based, carry on.
 	if sType == server.StorageTypeTPR {
 		return nil
+	}
+
+	bindingListed := &bindings.Items[0]
+	if !reflect.DeepEqual(bindingListed, bindingServer) {
+		return fmt.Errorf(
+			"Didn't get the same binding from list and get: diff: %v",
+			diff.ObjectReflectDiff(bindingListed, bindingServer),
+		)
 	}
 
 	parameters := bpStruct{}
