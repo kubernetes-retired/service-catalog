@@ -342,3 +342,21 @@ func StartControllers(s *options.ControllerManagerServer,
 
 	select {}
 }
+
+// PingAPIServer is a HealthzChecker that makes sure the
+// Service-Catalog APIServer is contactable.
+var PingAPIServer healthz.HealthzChecker = pingAPI{}
+
+type pingAPI struct {
+	// service-catalog client
+}
+
+func (pingAPI) Name() string {
+	return "pingAPIServer"
+}
+
+func (pingAPI) Check(_ *http.Request) error {
+	// put logic here to call the service-catalog healthz using
+	// the field member that is a client
+	return nil
+}

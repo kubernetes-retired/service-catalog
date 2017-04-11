@@ -18,7 +18,9 @@ package server
 
 import (
 	"fmt"
+	"net/http"
 
+	"k8s.io/apiserver/pkg/server/healthz"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
@@ -151,9 +153,29 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	}
 	addPostStartHooks(server.GenericAPIServer, scConfig, opts.StopCh)
 
+	// Install healthz checks before calling PrepareRun.
+	// This is an example. PingHealtz is installed by the default config.
+	// server.GenericAPIServer.AddHealthzChecks(healthz.PingHealthz)
+
 	// do we need to do any post api installation setup? We should have set up the api already?
 	glog.Infoln("Running the API server")
 	server.PrepareRun().Run(opts.StopCh)
 
+	return nil
+}
+
+// PingetcdServer is a HealthzChecker that makes sure the
+// Service-Catalog APIServer is contactable.
+var pingetcdServer healthz.HealthzChecker = pingetcd{}
+
+type pingetcd struct {
+	// service-catalog client
+}
+
+func (pingetcd) Name() string {
+	return "pingetcdServer"
+}
+
+func (pingetcd) Check(_ *http.Request) error {
 	return nil
 }
