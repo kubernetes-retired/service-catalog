@@ -103,17 +103,21 @@ node {
       // with a TPR-backed one.
       sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
             --registry gcr.io/${test_project}/catalog/ \
-            --cleanup
+            --cleanup \
+            --create-artifacts
       """
 
       sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
             --registry gcr.io/${test_project}/catalog/ \
             --with-tpr \
-            --cleanup
+            --cleanup \
+            --create-artifacts
       """
     } catch (Exception e) {
       currentBuild.result = 'FAILURE'
     } finally {
+      archiveArtifacts artifacts: 'etcd-backed*.txt', fingerprint: true
+      archiveArtifacts artifacts: 'tpr-backed*.txt', fingerprint: true
       try {
         sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
       } catch (Exception e) {
