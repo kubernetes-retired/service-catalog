@@ -538,6 +538,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			OrgID:             string(ns.UID),
 			SpaceID:           string(ns.UID),
 			AcceptsIncomplete: true,
+			ContextProfile: brokerapi.ContextProfile{
+				Platform:  brokerapi.ContextProfilePlatformKubernetes,
+				Namespace: instance.Namespace,
+			},
 		}
 
 		// TODO: handle async provisioning

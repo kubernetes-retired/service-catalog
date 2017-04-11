@@ -40,6 +40,20 @@ type CreateServiceInstanceRequest struct {
 	SpaceID           string                 `json:"space_guid,omitempty"`
 	Parameters        map[string]interface{} `json:"parameters,omitempty"`
 	AcceptsIncomplete bool                   `json:"accepts_incomplete,omitempty"`
+	ContextProfile    ContextProfile         `json:"context,omitempty"`
+}
+
+// ContextProfilePlatformKubernetes is a constant to send when the
+// client is representing a kubernetes style ecosystem.
+const ContextProfilePlatformKubernetes string = "kubernetes"
+
+// ContextProfile implements the optional OSB field
+// https://github.com/duglin/servicebroker/blob/CFisms/context-profiles.md#kubernetes
+type ContextProfile struct {
+	// Platform is always `kubernetes`
+	Platform string `json:"platform,omitempty"`
+	// Namespace is the Kubernetes namespace in which the service instance will be visible.
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // CreateServiceInstanceResponse represents the response from a broker after a
