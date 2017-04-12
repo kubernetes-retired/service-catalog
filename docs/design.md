@@ -16,7 +16,7 @@ Kubernetes. It allows for:
 - a Service Broker to specify the set of Services (and variantions of those
   Services) to Kubernetes that should then be made available to Kubernetes'
   users
-- a user of Kubernetes to discover the Services that are availble for use
+- a user of Kubernetes to discover the Services that are available for use
 - a user of Kubernetes to request for a new Instance of a Service
 - a user of Kubernetes to link an Instance of a Service to a set of Pods
 
@@ -24,7 +24,7 @@ This infrastructure allows for a loose-coupling between Applications
 running in Kubernetes and the Services they use.
 The Service Broker, in its most basic form, is a blackbox entity. Whether
 it is running within Kubernetes itself is not relevant. This allows for
-the Application that uses those Services to focus on its own busines logic
+the Application that uses those Services to focus on its own business logic
 while leaving the management of these Services to the entity that owns
 them.
 
@@ -52,7 +52,7 @@ them.
 
 ## Open Service Broker API
 
-The Service Catalog is a compliant implmentation of the
+The Service Catalog is a compliant implementation of the
 [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) (OSB API). The OSB API specification is the evolution of
 the [Cloud Foundry Service Broker API](https://docs.cloudfoundry.org/services/api.html).
 
@@ -117,7 +117,7 @@ a typical workflow:
 ### Registering a Service Broker
 
 **TODO** Talk about namespaces - Brokers, ServiceClasses are not in a ns.
-But Instances, Bindings, Secretts and ConfigMaps are. However, instances
+But Instances, Bindings, Secrets and ConfigMaps are. However, instances
 can be in different NS's than the rest (which must all be in the same).
 
 Before a Service can be used by an Application it must first be registered
@@ -217,19 +217,19 @@ Service Instance.
 
 Within the Binding object that is returned from the Service Broker are
 a set of Credentials. These Credentials contain all of the information
-needed for the applicaton to talk with the Service Instance. For example,
+needed for the application to talk with the Service Instance. For example,
 it might include things such as:
 - coordinates (URL) of the Service Instance
 - user-id and password to access the Service Instance
 
 The OSB API specification does not mandate what properties might appear
-in the Credentials, so the Application is required to understand the 
+in the Credentials, so the Application is required to understand the
 specified data returned and how to use it properly. This is typically done
 by reading the documentation of the Service.
 
 The Credentials will not be stored in the Service Catalog's datastore.
 Rather, they will be stored in the Kubenetes core as Secrets and a reference
-to the Secret will be saved within the `Binding` resource. If the 
+to the Secret will be saved within the `Binding` resource. If the
 Binding `Spec.SecretName` is not specified then the Controller will
 use the Binding `Name` property as the name of the Secret.
 
@@ -241,7 +241,7 @@ In addition to the Secret, the Controller will also create a Pod Injection
 Policy (PIP) resource in the Kubernetes core. See the
 [PIP Proposal](https://github.com/kubernetes/community/pull/254) for more
 information, but in short, the PIP defines how to modify the specification
-of a Pod during its creation to include additional volumes and envrionment 
+of a Pod during its creation to include additional volumes and environment
 variables.
 In particular, Service Catalog will use PIPs to allow the Application
 owner to indicate how the Secret should be made available to its Pods. For
@@ -249,7 +249,7 @@ example, they may define a PIP to indicate that the Secret should be mounted
 into its Pods. Or perhaps the Secret's names/values should be exposed as
 environment variables.
 
-PIPs will use label selectors to indicate which Pods wil be modified.
+PIPs will use label selectors to indicate which Pods will be modified.
 For example:
 
     kind: PodInjectionPolicy
@@ -271,7 +271,7 @@ of `frontend`.
 
 Eventually, the OSB API specification will hopefully have additional metadata
 about the Credentials to indicate which fields are considered "secret" and
-which are not. When that support is avaialble expect the non-secret Credential
+which are not. When that support is available expect the non-secret Credential
 information to be placed into a ConfigMap instead of a Secret.
 
 Once the Secret is made available to the Application's Pods, it is then up
@@ -283,7 +283,7 @@ Instance.
 As with all resources in Kubernetes, you can delete any of the Service
 Catalog resource by doing an HTTP DELETE to the resource's URL. However,
 it is important to note the you can not delete a Service Instance while
-there are Bindings assocated with it.  In other words, before a Service
+there are Bindings associated with it.  In other words, before a Service
 Instance can be delete, you must first delete all of its Bindings.
 Attempting to delete an Instance that still has a Binding will fail
 and generate an error.
