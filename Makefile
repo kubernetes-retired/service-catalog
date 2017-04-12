@@ -33,11 +33,7 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
-ifeq ($(shell uname -s),Darwin)
-STAT           = stat -f '%c %N'
-else
 STAT           = stat -c '%Y %n'
-endif
 NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
