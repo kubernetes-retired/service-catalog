@@ -54,7 +54,7 @@ func TestCreate(t *testing.T) {
 	}
 	if err := iface.Create(
 		context.Background(),
-		namespace+keyer.Separator+name,
+		name,
 		broker,
 		outBroker,
 		uint64(0),
@@ -77,7 +77,7 @@ func TestCreate(t *testing.T) {
 		)
 	}
 	// compare what's in storage to what was passed in
-	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
+	obj := fakeCl.storage.get(name, ServiceBrokerKind.URLName(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
 	}
