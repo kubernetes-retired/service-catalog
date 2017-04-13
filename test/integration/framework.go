@@ -49,8 +49,8 @@ func init() {
 }
 
 func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
-	securePort := rand.Intn(35534) + 3000
-	insecurePort := rand.Intn(35534) + 3000
+	securePort := rand.Intn(31743) + 1024
+	insecurePort := rand.Intn(31743) + 1024
 	serverIP := fmt.Sprintf("http://localhost:%d", insecurePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
