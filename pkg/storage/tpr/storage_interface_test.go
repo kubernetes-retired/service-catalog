@@ -45,10 +45,11 @@ func TestCreate(t *testing.T) {
 		ResourceName:     ServiceBrokerKind.String(),
 		Separator:        "/",
 	}
+	fakeCl := newFakeCoreRESTClient()
 	iface := &store{
 		decodeKey:    keyer.NamespaceAndNameFromKey,
 		codec:        &fakeJSONCodec{},
-		cl:           newFakeCoreRESTClient(),
+		cl:           fakeCl,
 		singularKind: ServiceBrokerKind,
 	}
 	if err := iface.Create(
@@ -59,6 +60,40 @@ func TestCreate(t *testing.T) {
 		uint64(0),
 	); err != nil {
 		t.Fatalf("error on create (%s)", err)
+	}
+	// compare basic attributes of Create's output broker to the input
+	if outBroker.Name != broker.Name {
+		t.Fatalf(
+			"name of output broker (%s) didn't match input (%s)",
+			outBroker.Name,
+			broker.Name,
+		)
+	}
+	if outBroker.Namespace != broker.Namespace {
+		t.Fatalf(
+			"namespace of output broker (%s) didn't match input (%s)",
+			outBroker.Namespace,
+			broker.Namespace,
+		)
+	}
+	// compare what's in storage to what was passed in
+	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
+	if obj == nil {
+		t.Fatal("no broker was in storage")
+	}
+	name, err := fakeCl.accessor.Name(obj)
+	if err != nil {
+		t.Fatalf("couldn't get name from obj (%s)", err)
+	}
+	ns, err := fakeCl.accessor.Namespace(obj)
+	if err != nil {
+		t.Fatalf("couldn't get namespace from obj (%s)", err)
+	}
+	if name != broker.Name {
+		t.Fatalf("name of broker-in-storage (%s) didn't match expected (%s)", name, broker.Name)
+	}
+	if ns != broker.Namespace {
+		t.Fatalf("namespace of broker-in-storage (%s) didn't match expected (%s)", ns, broker.Namespace)
 	}
 }
 
