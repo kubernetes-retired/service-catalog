@@ -17,7 +17,6 @@ limitations under the License.
 package integration
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -52,7 +51,7 @@ func init() {
 func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
 	securePort := rand.Intn(35534) + 3000
 	insecurePort := rand.Intn(35534) + 3000
-	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
+	serverIP := fmt.Sprintf("http://localhost:%d", insecurePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
 	shutdown := func() {
@@ -118,11 +117,7 @@ func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
 			return fmt.Errorf("waiting for apiserver timed out")
 		default:
 			glog.Infof("Waiting for : %#v", serverIP)
-			tr := &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
-			client := &http.Client{Transport: tr}
-			_, err := client.Get(serverIP)
+			_, err := http.Get(serverIP)
 			if err == nil {
 				return nil
 			}
