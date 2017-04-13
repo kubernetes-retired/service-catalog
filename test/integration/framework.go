@@ -51,11 +51,12 @@ func init() {
 
 func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
 	securePort := rand.Intn(35534) + 3000
+	insecurePort := rand.Intn(35534) + 3000
 	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
 	shutdown := func() {
-		t.Logf("Shutting down server on port: %d", securePort)
+		t.Logf("Shutting down server on ports: %d and %d", insecurePort, securePort)
 		close(stopCh)
 	}
 
@@ -83,6 +84,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 			StopCh:                stopCh,
 		}
+		options.InsecureServingOptions.BindPort = insecurePort
 		options.SecureServingOptions.ServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
 		options.EtcdOptions.StorageConfig.ServerList = []string{"http://localhost:2379"}
