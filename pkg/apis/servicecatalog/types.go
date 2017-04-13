@@ -67,6 +67,9 @@ type BrokerCondition struct {
 	Type BrokerConditionType
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
+	// LastTransitionTime is the timestamp corresponding to the last status
+	// change of this condition.
+	LastTransitionTime metav1.Time
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string
@@ -213,6 +216,9 @@ type InstanceCondition struct {
 	Type InstanceConditionType
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
+	// LastTransitionTime is the timestamp corresponding to the last status
+	// change of this condition.
+	LastTransitionTime metav1.Time
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string
@@ -284,6 +290,9 @@ type BindingCondition struct {
 	Type BindingConditionType
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
+	// LastTransitionTime is the timestamp corresponding to the last status
+	// change of this condition.
+	LastTransitionTime metav1.Time
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string

@@ -20,7 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -34,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	clientgofake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
 )
@@ -44,11 +47,13 @@ const (
 	instanceGUID     = "IGUID"
 	bindingGUID      = "BGUID"
 
-	testBrokerName       = "test-broker"
-	testServiceClassName = "test-serviceclass"
-	testPlanName         = "test-plan"
-	testInstanceName     = "test-instance"
-	testBindingName      = "test-binding"
+	testBrokerName        = "test-broker"
+	testServiceClassName  = "test-serviceclass"
+	testPlanName          = "test-plan"
+	testInstanceName      = "test-instance"
+	testBindingName       = "test-binding"
+	testNamespace         = "test-ns"
+	testBindingSecretName = "test-secret"
 )
 
 const testCatalog = `{
@@ -181,6 +186,7 @@ func getTestBroker() *v1alpha1.Broker {
 	}
 }
 
+// service class wired to the result of getTestBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
@@ -193,6 +199,8 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 	}
 }
 
+// broker catalog that provides the service class named in of
+// getTestServiceClass()
 func getTestCatalog() *brokerapi.Catalog {
 	return &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
@@ -211,6 +219,30 @@ func getTestCatalog() *brokerapi.Catalog {
 			},
 		},
 	}
+}
+
+// instance referencing the result of getTestServiceClass()
+func getTestInstance() *v1alpha1.Instance {
+	return &v1alpha1.Instance{
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: testNamespace},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: testServiceClassName,
+			PlanName:         testPlanName,
+			OSBGUID:          instanceGUID,
+		},
+	}
+}
+
+// binding referencing the result of getTestBinding()
+func getTestBinding() *v1alpha1.Binding {
+	return &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			OSBGUID:     bindingGUID,
+		},
+	}
+
 }
 
 type instanceParameters struct {
@@ -454,6 +486,113 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	}
 }
 
+func TestUpdateBrokerCondition(t *testing.T) {
+	getTestBrokerWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
+		broker := getTestBroker()
+		broker.Status = v1alpha1.BrokerStatus{
+			Conditions: []v1alpha1.BrokerCondition{{
+				Type:               v1alpha1.BrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+			}},
+		}
+
+		return broker
+	}
+
+	cases := []struct {
+		name                  string
+		input                 *v1alpha1.Broker
+		status                v1alpha1.ConditionStatus
+		transitionTimeChanged bool
+	}{
+
+		{
+			name:                  "initially unset",
+			input:                 getTestBroker(),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "not ready -> not ready",
+			input:                 getTestBrokerWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> ready",
+			input:                 getTestBrokerWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "ready -> ready",
+			input:                 getTestBrokerWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "ready -> not ready",
+			input:                 getTestBrokerWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+	}
+
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+
+		clone, err := api.Scheme.DeepCopy(tc.input)
+		if err != nil {
+			t.Errorf("%v: deep copy failed", tc.name)
+			continue
+		}
+
+		inputClone := clone.(*v1alpha1.Broker)
+
+		err = testController.updateBrokerCondition(tc.input, v1alpha1.BrokerConditionReady, tc.status, "reason", "message")
+		if err != nil {
+			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(tc.input, inputClone) {
+			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
+			continue
+		}
+
+		actions := fakeCatalogClient.Actions()
+		if e, a := 1, len(actions); e != a {
+			t.Errorf("%v: unexpected number of actions; expected %v, got %v.  Actions: %+v", tc.name, e, a, actions)
+			continue
+		}
+
+		updateAction := actions[0].(clientgotesting.UpdateAction)
+		if e, a := "update", updateAction.GetVerb(); e != a {
+			t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+		}
+		updateActionObject := updateAction.GetObject().(*v1alpha1.Broker)
+		if e, a := testBrokerName, updateActionObject.Name; e != a {
+			t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+		}
+
+		var initialTs metav1.Time
+		if len(inputClone.Status.Conditions) != 0 {
+			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+		}
+
+		newTs := updateActionObject.Status.Conditions[0].LastTransitionTime
+
+		if tc.transitionTimeChanged && initialTs == newTs {
+			t.Errorf("%v: transition time didn't change when it should have", tc.name)
+			continue
+		} else if !tc.transitionTimeChanged && initialTs != newTs {
+			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
+			continue
+		}
+	}
+}
+
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, _, testController, _ := newTestController(t)
 
@@ -495,14 +634,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
 
 	testController.reconcileInstance(instance)
 
@@ -539,14 +671,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(broker)
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
 
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("no secret defined")
@@ -636,14 +761,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
+
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
@@ -719,14 +838,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
@@ -779,20 +891,13 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	}
 }
 
-func TestReconcileInstanceWithInstanceError(t *testing.T) {
+func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
@@ -861,14 +966,7 @@ func TestReconcileInstance(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
 
 	testController.reconcileInstance(instance)
 
@@ -935,14 +1033,7 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
 
 	testController.reconcileInstance(instance)
 
@@ -977,19 +1068,9 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              testInstanceName,
-			Namespace:         "test-ns",
-			DeletionTimestamp: &metav1.Time{},
-			Finalizers:        []string{"kubernetes"},
-		},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
+	instance := getTestInstance()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{"kubernetes"}
 
 	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -1062,6 +1143,112 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	}
 }
 
+func TestUpdateInstanceCondition(t *testing.T) {
+	getTestInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Instance {
+		instance := getTestInstance()
+		instance.Status = v1alpha1.InstanceStatus{
+			Conditions: []v1alpha1.InstanceCondition{{
+				Type:               v1alpha1.InstanceConditionReady,
+				Status:             status,
+				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+			}},
+		}
+
+		return instance
+	}
+
+	cases := []struct {
+		name                  string
+		input                 *v1alpha1.Instance
+		status                v1alpha1.ConditionStatus
+		transitionTimeChanged bool
+	}{
+
+		{
+			name:                  "initially unset",
+			input:                 getTestInstance(),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "not ready -> not ready",
+			input:                 getTestInstanceWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> ready",
+			input:                 getTestInstanceWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "ready -> ready",
+			input:                 getTestInstanceWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "ready -> not ready",
+			input:                 getTestInstanceWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+	}
+
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+
+		clone, err := api.Scheme.DeepCopy(tc.input)
+		if err != nil {
+			t.Errorf("%v: deep copy failed", tc.name)
+			continue
+		}
+		inputClone := clone.(*v1alpha1.Instance)
+
+		err = testController.updateInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, "reason", "message")
+		if err != nil {
+			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(tc.input, inputClone) {
+			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
+			continue
+		}
+
+		actions := fakeCatalogClient.Actions()
+		if e, a := 1, len(actions); e != a {
+			t.Errorf("%v: unexpected number of actions; expected %v, got %v.  Actions: %+v", tc.name, e, a, actions)
+			continue
+		}
+
+		updateAction := actions[0].(clientgotesting.UpdateAction)
+		if e, a := "update", updateAction.GetVerb(); e != a {
+			t.Fatalf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+		}
+		updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
+		if e, a := testInstanceName, updateActionObject.Name; e != a {
+			t.Fatalf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+		}
+
+		var initialTs metav1.Time
+		if len(inputClone.Status.Conditions) != 0 {
+			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+		}
+
+		newTs := updateActionObject.Status.Conditions[0].LastTransitionTime
+
+		if tc.transitionTimeChanged && initialTs == newTs {
+			t.Errorf("%v: transition time didn't change when it should have", tc.name)
+			continue
+		} else if !tc.transitionTimeChanged && initialTs != newTs {
+			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
+			continue
+		}
+	}
+}
+
 func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	_, fakeCatalogClient, _, testController, _ := newTestController(t)
 
@@ -1105,7 +1292,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         testPlanName,
@@ -1115,7 +1302,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	sharedInformers.Instances().Informer().GetStore().Add(instance)
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
@@ -1161,18 +1348,10 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
-	sharedInformers.Instances().Informer().GetStore().Add(instance)
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
@@ -1268,18 +1447,10 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: "test-ns"},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
-	sharedInformers.Instances().Informer().GetStore().Add(instance)
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
 
 	binding := &v1alpha1.Binding{
-		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: "test-ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
@@ -1311,32 +1482,19 @@ func TestReconcileBindingDelete(t *testing.T) {
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	instance := &v1alpha1.Instance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testInstanceName,
-			Namespace: "test-ns",
-		},
-		Spec: v1alpha1.InstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
-		},
-	}
-
-	sharedInformers.Instances().Informer().GetStore().Add(instance)
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
 
 	binding := &v1alpha1.Binding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              testBindingName,
-			Namespace:         "test-ns",
+			Namespace:         testNamespace,
 			DeletionTimestamp: &metav1.Time{},
 			Finalizers:        []string{"kubernetes"},
 		},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			OSBGUID:     bindingGUID,
-			SecretName:  "test-secret",
+			SecretName:  testBindingSecretName,
 		},
 	}
 
@@ -1428,6 +1586,112 @@ func TestReconcileBindingDelete(t *testing.T) {
 
 	if e, a := 0, len(updatedObject.Finalizers); e != a {
 		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
+	}
+}
+
+func TestUpdateBindingCondition(t *testing.T) {
+	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Binding {
+		instance := getTestBinding()
+		instance.Status = v1alpha1.BindingStatus{
+			Conditions: []v1alpha1.BindingCondition{{
+				Type:               v1alpha1.BindingConditionReady,
+				Status:             status,
+				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+			}},
+		}
+
+		return instance
+	}
+
+	cases := []struct {
+		name                  string
+		input                 *v1alpha1.Binding
+		status                v1alpha1.ConditionStatus
+		transitionTimeChanged bool
+	}{
+
+		{
+			name:                  "initially unset",
+			input:                 getTestBinding(),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "not ready -> not ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "ready -> ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionTrue,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "ready -> not ready",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: true,
+		},
+	}
+
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+
+		clone, err := api.Scheme.DeepCopy(tc.input)
+		if err != nil {
+			t.Errorf("%v: deep copy failed", tc.name)
+			continue
+		}
+		inputClone := clone.(*v1alpha1.Binding)
+
+		err = testController.updateBindingCondition(tc.input, v1alpha1.BindingConditionReady, tc.status, "reason", "message")
+		if err != nil {
+			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
+			continue
+		}
+
+		if !reflect.DeepEqual(tc.input, inputClone) {
+			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
+			continue
+		}
+
+		actions := fakeCatalogClient.Actions()
+		if e, a := 1, len(actions); e != a {
+			t.Errorf("%v: unexpected number of actions; expected %v, got %v.  Actions: %+v", tc.name, e, a, actions)
+			continue
+		}
+
+		updateAction := actions[0].(clientgotesting.UpdateAction)
+		if e, a := "update", updateAction.GetVerb(); e != a {
+			t.Fatalf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+		}
+		updateActionObject := updateAction.GetObject().(*v1alpha1.Binding)
+		if e, a := testBindingName, updateActionObject.Name; e != a {
+			t.Fatalf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+		}
+
+		var initialTs metav1.Time
+		if len(inputClone.Status.Conditions) != 0 {
+			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+		}
+
+		newTs := updateActionObject.Status.Conditions[0].LastTransitionTime
+
+		if tc.transitionTimeChanged && initialTs == newTs {
+			t.Errorf("%v: transition time didn't change when it should have", tc.name)
+			continue
+		} else if !tc.transitionTimeChanged && initialTs != newTs {
+			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
+			continue
+		}
 	}
 }
 
