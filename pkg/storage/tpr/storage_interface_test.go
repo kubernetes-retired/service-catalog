@@ -21,6 +21,8 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,10 +32,14 @@ const (
 )
 
 func TestCreate(t *testing.T) {
-	broker := &servicecatalog.Broker{
+	broker := &v1alpha1.Broker{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1alpha1",
+			Kind:       ServiceBrokerKind.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
-	outBroker := &servicecatalog.Broker{}
+	outBroker := &v1alpha1.Broker{}
 	keyer := Keyer{
 		DefaultNamespace: namespace,
 		ResourceName:     ServiceBrokerKind.String(),
