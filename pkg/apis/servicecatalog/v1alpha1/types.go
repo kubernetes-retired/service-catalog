@@ -59,12 +59,18 @@ type BrokerStatus struct {
 	Conditions []BrokerCondition `json:"conditions"`
 }
 
-// BrokerCondition represents an aspect of a Broker's status.
+// BrokerCondition contains condition information for a Broker.
 type BrokerCondition struct {
-	Type    BrokerConditionType `json:"type"`
-	Status  ConditionStatus     `json:"status"`
-	Reason  string              `json:"reason"`
-	Message string              `json:"message"`
+	// Type of the condition, currently ('Ready').
+	Type BrokerConditionType `json:"type"`
+	// Status of the condition, one of ('True', 'False', 'Unknown').
+	Status ConditionStatus `json:"status"`
+	// Reason is a brief machine readable explanation for the condition's last
+	// transition.
+	Reason string `json:"reason"`
+	// Message is a human readable description of the details of the last
+	// transition, complementing reason.
+	Message string `json:"message"`
 }
 
 // BrokerConditionType represents a broker condition value
@@ -202,12 +208,18 @@ type InstanceStatus struct {
 	Conditions []InstanceCondition `json:"conditions"`
 }
 
-// InstanceCondition represents an aspect of an Instance's status.
+// InstanceCondition contains condition information for an Instance.
 type InstanceCondition struct {
-	Type    InstanceConditionType `json:"type"`
-	Status  ConditionStatus       `json:"status"`
-	Reason  string                `json:"reason"`
-	Message string                `json:"message"`
+	// Type of the condition, currently ('Ready').
+	Type InstanceConditionType `json:"type"`
+	// Status of the condition, one of ('True', 'False', 'Unknown').
+	Status ConditionStatus `json:"status"`
+	// Reason is a brief machine readable explanation for the condition's last
+	// transition.
+	Reason string `json:"reason"`
+	// Message is a human readable description of the details of the last
+	// transition, complementing reason.
+	Message string `json:"message"`
 }
 
 // InstanceConditionType represents a instance condition value
@@ -279,12 +291,18 @@ type BindingStatus struct {
 	Conditions []BindingCondition `json:"conditions"`
 }
 
-// BindingCondition represents an aspect of a Binding's status.
+// BindingCondition condition information for a Binding.
 type BindingCondition struct {
-	Type    BindingConditionType `json:"type"`
-	Status  ConditionStatus      `json:"status"`
-	Reason  string               `json:"reason"`
-	Message string               `json:"message"`
+	// Type of the condition, currently ('Ready').
+	Type BindingConditionType `json:"type"`
+	// Status of the condition, one of ('True', 'False', 'Unknown').
+	Status ConditionStatus `json:"status"`
+	// Reason is a brief machine readable explanation for the condition's last
+	// transition.
+	Reason string `json:"reason"`
+	// Message is a human readable description of the details of the last
+	// transition, complementing reason.
+	Message string `json:"message"`
 }
 
 // BindingConditionType represents a binding condition value
