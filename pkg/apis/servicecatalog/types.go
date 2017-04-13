@@ -61,11 +61,17 @@ type BrokerStatus struct {
 	Conditions []BrokerCondition
 }
 
-// BrokerCondition represents an aspect of a Broker's status.
+// BrokerCondition contains condition information for a Broker.
 type BrokerCondition struct {
-	Type    BrokerConditionType
-	Status  ConditionStatus
-	Reason  string
+	// Type of the condition, currently ('Ready').
+	Type BrokerConditionType
+	// Status of the condition, one of ('True', 'False', 'Unknown').
+	Status ConditionStatus
+	// Reason is a brief machine readable explanation for the condition's last
+	// transition.
+	Reason string
+	// Message is a human readable description of the details of the last
+	// transition, complementing reason.
 	Message string
 }
 
@@ -201,11 +207,17 @@ type InstanceStatus struct {
 	Conditions []InstanceCondition
 }
 
-// InstanceCondition represents an aspect of an Instance's status.
+// InstanceCondition contains condition information for an Instance.
 type InstanceCondition struct {
-	Type    InstanceConditionType
-	Status  ConditionStatus
-	Reason  string
+	// Type of the condition, currently ('Ready').
+	Type InstanceConditionType
+	// Status of the condition, one of ('True', 'False', 'Unknown').
+	Status ConditionStatus
+	// Reason is a brief machine readable explanation for the condition's last
+	// transition.
+	Reason string
+	// Message is a human readable description of the details of the last
+	// transition, complementing reason.
 	Message string
 }
 
@@ -266,11 +278,17 @@ type BindingStatus struct {
 	Conditions []BindingCondition
 }
 
-// BindingCondition represents an aspect of a Binding's status.
+// BindingCondition condition information for a Binding.
 type BindingCondition struct {
-	Type    BindingConditionType
-	Status  ConditionStatus
-	Reason  string
+	// Type of the condition, currently ('Ready').
+	Type BindingConditionType
+	// Status of the condition, one of ('True', 'False', 'Unknown').
+	Status ConditionStatus
+	// Reason is a brief machine readable explanation for the condition's last
+	// transition.
+	Reason string
+	// Message is a human readable description of the details of the last
+	// transition, complementing reason.
 	Message string
 }
 
