@@ -30,6 +30,10 @@ const (
 )
 
 func TestCreate(t *testing.T) {
+	broker := &servicecatalog.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	}
+	outBroker := &servicecatalog.Broker{}
 	keyer := Keyer{
 		DefaultNamespace: namespace,
 		ResourceName:     ServiceBrokerKind.String(),
@@ -37,14 +41,10 @@ func TestCreate(t *testing.T) {
 	}
 	iface := &store{
 		decodeKey:    keyer.NamespaceAndNameFromKey,
-		codec:        &fakeCodec{},
+		codec:        &fakeJSONCodec{},
 		cl:           newFakeCoreRESTClient(),
 		singularKind: ServiceBrokerKind,
 	}
-	broker := &servicecatalog.Broker{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-	}
-	outBroker := &servicecatalog.Broker{}
 	if err := iface.Create(
 		context.Background(),
 		namespace+keyer.Separator+name,
