@@ -17,11 +17,39 @@ limitations under the License.
 package tpr
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const (
+	namespace = "testns"
+	name      = "testthing"
+)
+
+func TestCreate(t *testing.T) {
+	keyer := Keyer{DefaultNamespace: namespace, ResourceName: "Broker", Separator: "/"}
+	iface := &store{
+		decodeKey: keyer.NamespaceAndNameFromKey,
+		codec:     &fakeCodec{},
+		cl:        newFakeCoreRESTClient(),
+	}
+	broker := &servicecatalog.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	}
+	outBroker := &servicecatalog.Broker{}
+	if err := iface.Create(
+		context.Background(),
+		namespace+keyer.Separator+name,
+		broker,
+		outBroker,
+		uint64(0),
+	); err != nil {
+		t.Fatalf("error on create (%s)", err)
+	}
+}
 
 func TestRemoveNamespace(t *testing.T) {
 	obj := &servicecatalog.ServiceClass{
