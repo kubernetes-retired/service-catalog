@@ -17,7 +17,6 @@ limitations under the License.
 package integration
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -50,12 +49,13 @@ func init() {
 }
 
 func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecatalogclient.Interface, func()) {
-	securePort := rand.Intn(35534) + 3000
-	serverIP := fmt.Sprintf("https://localhost:%d", securePort)
+	securePort := rand.Intn(31743) + 1024
+	insecurePort := rand.Intn(31743) + 1024
+	insecureAddr := fmt.Sprintf("http://localhost:%d", insecurePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
 	shutdown := func() {
-		t.Logf("Shutting down server on port: %d", securePort)
+		t.Logf("Shutting down server on ports: %d and %d", insecurePort, securePort)
 		close(stopCh)
 	}
 
@@ -83,6 +83,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 			StopCh:                stopCh,
 		}
+		options.InsecureServingOptions.BindPort = insecurePort
 		options.SecureServingOptions.ServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
 		options.EtcdOptions.StorageConfig.ServerList = []string{"http://localhost:2379"}
@@ -92,12 +93,12 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 		}
 	}()
 
-	if err := waitForApiserverUp(serverIP, serverFailed); err != nil {
+	if err := waitForApiserverUp(insecureAddr, serverFailed); err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	config := &restclient.Config{}
-	config.Host = serverIP
+	config.Host = insecureAddr
 	config.Insecure = true
 	clientset, err := servicecatalogclient.NewForConfig(config)
 	if nil != err {
@@ -106,7 +107,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	return clientset, shutdown
 }
 
-func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
+func waitForApiserverUp(insecureAddr string, stopCh <-chan struct{}) error {
 	minuteTimeout := time.After(2 * time.Minute)
 	for {
 		select {
@@ -115,12 +116,8 @@ func waitForApiserverUp(serverIP string, stopCh <-chan struct{}) error {
 		case <-minuteTimeout:
 			return fmt.Errorf("waiting for apiserver timed out")
 		default:
-			glog.Infof("Waiting for : %#v", serverIP)
-			tr := &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
-			client := &http.Client{Transport: tr}
-			_, err := client.Get(serverIP)
+			glog.Infof("Waiting for : %#v", insecureAddr)
+			_, err := http.Get(insecureAddr)
 			if err == nil {
 				return nil
 			}
