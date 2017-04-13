@@ -15,7 +15,6 @@
 
 set -o nounset
 set -o errexit
-set -x
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -23,10 +22,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 while [[ $# -gt 0 ]]; do
   case "${1}" in
-    --registry)   REGISTRY="${2:-}"; shift ;;
-    --version)    VERSION="${2:-}"; shift ;;
-    --with-tpr)   WITH_TPR=1 ;;
-    --cleanup)    CLEANUP=1 ;;
+    --registry)       REGISTRY="${2:-}"; shift ;;
+    --version)        VERSION="${2:-}"; shift ;;
+    --with-tpr)       WITH_TPR=1 ;;
+    --cleanup)        CLEANUP=1 ;;
+    --create-artifacts) CREATE_ARTIFACTS=1 ;;
     *) error_exit "Unrecognized command line parameter: $1" ;;
   esac
   shift
@@ -42,29 +42,54 @@ VERSION="${VERSION:-"$(git describe --tags --always --abbrev=7 --dirty)"}" \
   || error_exit 'Cannot determine Git commit SHA'
 
 REGISTRY="${REGISTRY:-}"
+CONTROLLER_MANAGER_IMAGE="${REGISTRY}controller-manager:${VERSION}"
+APISERVER_IMAGE="${REGISTRY}apiserver:${VERSION}"
+UPS_BROKER_IMAGE="${REGISTRY}user-broker:${VERSION}"
+
+echo 'TESTING WALKTHROUGH'
+echo '-------------------'
+echo "Using kubeconfig: ${K8S_KUBECONFIG}"
+echo "Using service catalog kubeconfig: ${SC_KUBECONFIG}"
+echo "Using controller-manager image: ${CONTROLLER_MANAGER_IMAGE}"
+echo "Using apiserver image: ${APISERVER_IMAGE}"
+echo "Using ups-broker image: ${UPS_BROKER_IMAGE}"
+echo '-------------------'
 
 function cleanup() {
-  echo 'Cleaning up resources...'
-  export KUBECONFIG="${K8S_KUBECONFIG}"
-  helm delete --purge "${BROKER_RELEASE}" || true
-  helm delete --purge "${CATALOG_RELEASE}" || true
-  rm -f "${SC_KUBECONFIG}"
-  kubectl delete secret -n test-ns my-secret > /dev/null 2>&1 || true
-  kubectl delete namespace test-ns || true
+  if [[ -n "${CREATE_ARTIFACTS:-}" ]]; then
+    echo 'Creating artifacts...'
+    PREFIX='etcd-backed'
+    if [[ -n "${WITH_TPR:-}" ]]; then
+      PREFIX='tpr-backed'
+    fi
 
-  wait_for_expected_output -x -e 'test-ns' -n 10 \
-    kubectl get namespaces
-
-  # TODO: Hack in order to delete TPRs. Will need to be removed when TPRs can be deleted
-  # by the catalog API server.
-  if [[ -n "${WITH_TPR:-}" ]]; then
-    kubectl delete thirdpartyresources binding.servicecatalog.k8s.io
-    kubectl delete thirdpartyresources instance.servicecatalog.k8s.io
-    kubectl delete thirdpartyresources broker.servicecatalog.k8s.io
-    kubectl delete thirdpartyresources service-class.servicecatalog.k8s.io
+    KUBECONFIG="${K8S_KUBECONFIG}" "${ROOT}/contrib/hack/create_artifacts.sh" \
+        --prefix "${PREFIX}" --location "${ROOT}" \
+        &> /dev/null \
+        || true
   fi
 
-  echo 'Cleanup done.'
+  echo 'Cleaning up resources...'
+  {
+    export KUBECONFIG="${K8S_KUBECONFIG}"
+    helm delete --purge "${BROKER_RELEASE}" || true
+    helm delete --purge "${CATALOG_RELEASE}" || true
+    rm -f "${SC_KUBECONFIG}"
+    kubectl delete secret -n test-ns my-secret || true
+    kubectl delete namespace test-ns || true
+
+    wait_for_expected_output -x -e 'test-ns' -n 10 \
+      kubectl get namespaces
+
+    # TODO: Hack in order to delete TPRs. Will need to be removed when TPRs can be deleted
+    # by the catalog API server.
+    if [[ -n "${WITH_TPR:-}" ]]; then
+      kubectl delete thirdpartyresources binding.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources instance.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources broker.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources service-class.servicecatalog.k8s.io
+    fi
+  } &> /dev/null
 }
 
 # Deploying to cluster
@@ -73,22 +98,28 @@ if [[ -n "${CLEANUP:-}" ]]; then
   trap cleanup EXIT
 fi
 
-kubectl create namespace test-ns
+echo 'Creating "test-ns" namespace...'
+
+kubectl create namespace test-ns \
+  || error_exit 'Error creating "test-ns" namespace.'
 
 echo 'Deploying user-provided-service broker...'
+
+VALUES="image=${UPS_BROKER_IMAGE}"
 
 retry -n 10 \
     helm install "${ROOT}/charts/ups-broker" \
     --name "${BROKER_RELEASE}" \
     --namespace "ups-broker" \
-  || error_exit 'Error deploy ups broker to cluster.'
+    --set "${VALUES}" \
+  || error_exit 'Error deploying ups-broker to cluster.'
 
 echo 'Deploying service catalog...'
 
 VALUES='debug=true'
 VALUES+=',insecure=true'
-VALUES+=",controllerManager.image=${REGISTRY}controller-manager:${VERSION}"
-VALUES+=",apiserver.image=${REGISTRY}apiserver:${VERSION}"
+VALUES+=",controllerManager.image=${CONTROLLER_MANAGER_IMAGE}"
+VALUES+=",apiserver.image=${APISERVER_IMAGE}"
 VALUES+=',apiserver.service.type=LoadBalancer'
 if [[ -n "${WITH_TPR:-}" ]]; then
   VALUES+=',apiserver.storage.type=tpr'
@@ -108,25 +139,41 @@ echo 'Waiting on pods to come up...'
 
 wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
     kubectl get pods --namespace ups-broker \
-  || error_exit 'User provided service broker pod took an unexpected amount of time to come up.'
+  || error_exit 'Timed out waiting for user-provided-service broker pod to come up.'
 
 [[ "$(kubectl get pods --namespace ups-broker | grep ups-broker-ups-broker | awk '{print $3}')" == 'Running' ]] \
-  || error_exit 'User provided service broker pod did not come up successfully.'
+  || {
+    POD_NAME="$(kubectl get pods --namespace ups-broker | grep ups-broker-ups-broker | awk '{print $1}')"
+    kubectl get pod "${POD_NAME}" --namespace ups-broker
+    kubectl describe pod "${POD_NAME}" --namespace ups-broker
+    error_exit 'User provided service broker pod did not come up successfully.'
+  }
 
 wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
     kubectl get pods --namespace catalog \
-  || error_exit 'Service catalog pods did not come up successfully.'
+  || error_exit 'Timed out waiting for service catalog pods to come up.'
 
 [[ "$(kubectl get pods --namespace catalog | grep catalog-catalog-apiserver | awk '{print $3}')" == 'Running' ]] \
-  || error_exit 'API server pod did not come up successfully.'
+  || {
+    POD_NAME="$(kubectl get pods --namespace catalog | grep catalog-catalog-apiserver | awk '{print $1}')"
+    kubectl get pod "${POD_NAME}" --namespace catalog
+    kubectl describe pod "${POD_NAME}" --namespace catalog
+    error_exit 'API server pod did not come up successfully.'
+  }
+
 [[ "$(kubectl get pods --namespace catalog | grep catalog-catalog-controller | awk '{print $3}')" == 'Running' ]] \
-  || error_exit 'Controller pod did not come up successfully.'
+  || {
+    POD_NAME="$(kubectl get pods --namespace catalog | grep catalog-catalog-controller | awk '{print $1}')"
+    kubectl get pod "${POD_NAME}" --namespace catalog
+    kubectl describe pod "${POD_NAME}" --namespace catalog
+    error_exit 'Controller manager pod did not come up successfully.'
+  }
 
 echo 'Waiting on external IP for service catalog API Server...'
 
 wait_for_expected_output -x -e 'pending' -n 10 \
     kubectl get services --namespace catalog \
-  || error_exit 'Could not get external IP for service catalog API Server.'
+  || error_exit 'Timed out waiting for external IP for service catalog API Server.'
 
 # Create kubeconfig for service catalog API server
 
@@ -157,10 +204,16 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-broker.yaml" \
 
 wait_for_expected_output -e 'FetchedCatalog' -n 10 \
     kubectl get brokers ups-broker -o yaml \
-  || error_exit 'Did not receive expected condition when creating ups-broker.'
+  || {
+    kubectl get brokers ups-broker -o yaml
+    error_exit 'Did not receive expected condition when creating ups-broker.'
+  }
 
 [[ "$(kubectl get brokers ups-broker -o yaml)" == *"status: \"True\""* ]] \
-  || error_exit 'Failure status reported when attempting to fetch catalog from ups-broker.'
+  || {
+    kubectl get brokers ups-broker -o yaml
+    error_exit 'Failure status reported when attempting to fetch catalog from ups-broker.'
+  }
 
 [[ "$(kubectl get serviceclasses)" == *user-provided-service* ]] \
   || error_exit 'user-provided-service not listed when fetching service classes.'
@@ -174,10 +227,16 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-instance.yaml" \
 
 wait_for_expected_output -e 'ProvisionedSuccessfully' -n 10 \
   kubectl get instances -n test-ns ups-instance -o yaml \
-  || error_exit 'Did not receive expected condition when provisioning ups-instance.'
+  || {
+    kubectl get instances -n test-ns ups-instance -o yaml
+    error_exit 'Did not receive expected condition when provisioning ups-instance.'
+  }
 
 [[ "$(kubectl get instances -n test-ns ups-instance -o yaml)" == *"status: \"True\""* ]] \
-  || error_exit 'Failure status reported when attempting to provision ups-instance.'
+  || {
+    kubectl get instances -n test-ns ups-instance -o yaml
+    error_exit 'Failure status reported when attempting to provision ups-instance.'
+  }
 
 # Bind to the instance
 
@@ -188,10 +247,16 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-binding.yaml" \
 
 wait_for_expected_output -e 'InjectedBindResult' -n 10 \
   kubectl get bindings -n test-ns ups-binding -o yaml \
-  || error_exit 'Did not receive expected condition when injecting ups-binding.'
+  || {
+    kubectl get bindings -n test-ns ups-binding -o yaml
+    error_exit 'Did not receive expected condition when injecting ups-binding.'
+  }
 
 [[ "$(kubectl get bindings -n test-ns ups-binding -o yaml)" == *"status: \"True\""* ]] \
-  || error_exit 'Failure status reported when attempting to inject ups-binding.'
+  || {
+    kubectl get bindings -n test-ns ups-binding -o yaml
+    error_exit 'Failure status reported when attempting to inject ups-binding.'
+  }
 
 [[ "$(KUBECONFIG="${K8S_KUBECONFIG}" kubectl get secrets -n test-ns)" == *my-secret* ]] \
   || error_exit '"my-secret" not present when listing secrets.'
@@ -229,10 +294,10 @@ if [[ -z "${WITH_TPR:-}" ]]; then
 
   wait_for_expected_output -x -e 'user-provided-service' -n 10 \
       kubectl get serviceclasses \
-    || error_exit 'Service classes not successfully removed upon deleting ups-broker.'
-
-  [[ "$(kubectl get serviceclasses 2>&1)" == "No resources found." ]] \
-    || error_exit 'Service classes not successfully removed upon deleting ups-broker.'
+    || {
+      kubectl get serviceclasses
+      error_exit 'Service classes not successfully removed upon deleting ups-broker.'
+    }
 fi
 
 echo 'Walkthrough completed successfully.'
