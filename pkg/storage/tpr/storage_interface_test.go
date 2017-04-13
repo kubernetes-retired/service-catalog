@@ -34,7 +34,7 @@ const (
 func TestCreate(t *testing.T) {
 	broker := &v1alpha1.Broker{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1alpha1",
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
 			Kind:       ServiceBrokerKind.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: name},
