@@ -72,37 +72,48 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BindingCondition": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BindingCondition represents an aspect of a Binding's status.",
+					Description: "BindingCondition condition information for a Binding.",
 					Properties: map[string]spec.Schema{
 						"type": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Type of the condition, currently ('Ready').",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Status of the condition, one of ('True', 'False', 'Unknown').",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"lastTransitionTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastTransitionTime is the timestamp corresponding to the last status change of this condition.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
 						"reason": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Reason is a brief machine readable explanation for the condition's last transition.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"message": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Message is a human readable description of the details of the last transition, complementing reason.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 					},
-					Required: []string{"type", "status", "reason", "message"},
+					Required: []string{"type", "status", "lastTransitionTime", "reason", "message"},
 				},
 			},
-			Dependencies: []string{},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BindingList": {
 			Schema: spec.Schema{
@@ -261,37 +272,48 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerCondition": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BrokerCondition represents an aspect of a Broker's status.",
+					Description: "BrokerCondition contains condition information for a Broker.",
 					Properties: map[string]spec.Schema{
 						"type": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Type of the condition, currently ('Ready').",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Status of the condition, one of ('True', 'False', 'Unknown').",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"lastTransitionTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastTransitionTime is the timestamp corresponding to the last status change of this condition.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
 						"reason": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Reason is a brief machine readable explanation for the condition's last transition.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"message": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Message is a human readable description of the details of the last transition, complementing reason.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 					},
-					Required: []string{"type", "status", "reason", "message"},
+					Required: []string{"type", "status", "lastTransitionTime", "reason", "message"},
 				},
 			},
-			Dependencies: []string{},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerList": {
 			Schema: spec.Schema{
@@ -429,37 +451,48 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceCondition": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "InstanceCondition represents an aspect of an Instance's status.",
+					Description: "InstanceCondition contains condition information for an Instance.",
 					Properties: map[string]spec.Schema{
 						"type": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Type of the condition, currently ('Ready').",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Status of the condition, one of ('True', 'False', 'Unknown').",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"lastTransitionTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastTransitionTime is the timestamp corresponding to the last status change of this condition.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
 						"reason": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Reason is a brief machine readable explanation for the condition's last transition.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"message": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Message is a human readable description of the details of the last transition, complementing reason.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 					},
-					Required: []string{"type", "status", "reason", "message"},
+					Required: []string{"type", "status", "lastTransitionTime", "reason", "message"},
 				},
 			},
-			Dependencies: []string{},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceList": {
 			Schema: spec.Schema{
