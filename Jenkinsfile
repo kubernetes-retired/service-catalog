@@ -108,6 +108,7 @@ node {
             --registry gcr.io/${test_project}/catalog/ \
             --version ${version} \
             --cleanup \
+            --fix-auth \
             --create-artifacts
       """
 
@@ -116,6 +117,7 @@ node {
             --version ${version} \
             --with-tpr \
             --cleanup \
+            --fix-auth \
             --create-artifacts
       """
     } catch (Exception e) {

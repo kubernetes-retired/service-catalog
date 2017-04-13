@@ -27,6 +27,7 @@ while [[ $# -gt 0 ]]; do
     --with-tpr)       WITH_TPR=1 ;;
     --cleanup)        CLEANUP=1 ;;
     --create-artifacts) CREATE_ARTIFACTS=1 ;;
+    --fix-auth)   FIX_CONFIGMAP=1 ;;
     *) error_exit "Unrecognized command line parameter: $1" ;;
   esac
   shift
@@ -113,6 +114,14 @@ retry -n 10 \
   || error_exit 'Error deploying ups-broker to cluster.'
 
 echo 'Deploying service catalog...'
+
+# The API server automatically provisions the configmap, but we need it to contain the requestheader CA as well,
+# which is only provisioned if you pass the appropriate flags to master.  GKE doesn't do this, so we work around it.
+if [[ -n "${FIX_CONFIGMAP:-}" ]] && [[ -z "$(kubectl --namespace kube-system get configmap extension-apiserver-authentication -o jsonpath="{ $.data['requestheader-client-ca-file'] }")" ]]; then
+    full_configmap=$(kubectl --namespace kube-system get configmap extension-apiserver-authentication -o json)
+    echo "$full_configmap" | jq '.data["requestheader-client-ca-file"] = .data["client-ca-file"]' | kubectl --namespace kube-system update configmap extension-apiserver-authentication -f -
+    [[ -n "$(kubectl --namespace kube-system get configmap extension-apiserver-authentication -o jsonpath="{ $.data['requestheader-client-ca-file'] }")" ]] || { echo "Could not add requestheader auth CA to extension-apiserver-authentication configmap."; exit 1; }
+fi
 
 VALUES='debug=true'
 VALUES+=',insecure=true'
