@@ -38,10 +38,9 @@ done
   || error_exit '--project is a required parameter'
 
 if [[ "$(uname -s)" == "Linux" ]]; then
-  GIT_HEAD="$(git describe --tags --always --abbrev=7 --dirty)"
   MAKE_VARS=(
     V=1
-    VERSION="${VERSION:-${GIT_HEAD}}"
+    VERSION="${VERSION:-"canary"}"
   )
 
   [[ -n "${NO_DOCKER_COMPILE:-}" ]] && MAKE_VARS+=(NO_DOCKER=1)

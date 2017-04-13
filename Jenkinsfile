@@ -81,6 +81,8 @@ node {
     def clustername = "jenkins-" + sh([returnStdout: true, script: '''openssl rand \
         -base64 100 | tr -dc a-z0-9 | cut -c -25''']).trim()
 
+    def version = sh([returnStdout: true, script: 'git describe --always --abbrev=7 --dirty']).trim()
+
     try {
       // These are done in parallel since creating the cluster takes a while,
       // and the build doesn't depend on it.
@@ -95,7 +97,8 @@ node {
         },
         'Build & Unit/Integration Tests': {
           sh """${env.ROOT}/contrib/jenkins/build.sh \
-                --project ${test_project}"""
+                --project ${test_project} \
+                --version ${version}"""
         }
       )
 
@@ -103,12 +106,14 @@ node {
       // with a TPR-backed one.
       sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
             --registry gcr.io/${test_project}/catalog/ \
+            --version ${version} \
             --cleanup \
             --create-artifacts
       """
 
       sh """${env.ROOT}/contrib/hack/test_walkthrough.sh \
             --registry gcr.io/${test_project}/catalog/ \
+            --version ${version} \
             --with-tpr \
             --cleanup \
             --create-artifacts
