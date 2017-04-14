@@ -56,4 +56,8 @@ type ControllerManagerConfiguration struct {
 	// ResyncInterval is the interval on which the controller should re-sync
 	// all informers.
 	ResyncInterval time.Duration
+
+	// Whether or not to send the proposed optional
+	// OpenServiceBroker API Context Profile field
+	OSBAPIContextProfile bool
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package fake
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -90,6 +91,13 @@ func (i *InstanceClient) CreateServiceInstance(
 	}
 	if i.exists(id) {
 		return nil, ErrInstanceAlreadyExists
+	}
+	// context profile and contents should always (optionally) exist.
+	if req.ContextProfile.Platform != brokerapi.ContextProfilePlatformKubernetes {
+		return nil, errors.New("OSB context profile not set to " + brokerapi.ContextProfilePlatformKubernetes)
+	}
+	if req.ContextProfile.Namespace == "" {
+		return nil, errors.New("missing valid OSB context profile namespace")
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)

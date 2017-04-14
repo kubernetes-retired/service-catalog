@@ -275,6 +275,7 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Instances(),
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
+		true,
 	)
 	t.Log("controller start")
 	if err != nil {

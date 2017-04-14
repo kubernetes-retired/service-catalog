@@ -52,6 +52,7 @@ func NewController(
 	instanceInformer informers.InstanceInformer,
 	bindingInformer informers.BindingInformer,
 	brokerClientCreateFunc brokerapi.CreateFunc,
+	osbAPIContextProfile bool,
 ) (Controller, error) {
 
 	var (
@@ -60,12 +61,13 @@ func NewController(
 		instanceLister     = instanceInformer.Lister()
 
 		controller = &controller{
-			kubeClient:             kubeClient,
-			serviceCatalogClient:   serviceCatalogClient,
-			brokerClientCreateFunc: brokerClientCreateFunc,
-			brokerLister:           brokerLister,
-			serviceClassLister:     serviceClassLister,
-			instanceLister:         instanceLister,
+			kubeClient:                kubeClient,
+			serviceCatalogClient:      serviceCatalogClient,
+			brokerClientCreateFunc:    brokerClientCreateFunc,
+			brokerLister:              brokerLister,
+			serviceClassLister:        serviceClassLister,
+			instanceLister:            instanceLister,
+			enableOSBAPIContextProfle: osbAPIContextProfile,
 		}
 	)
 
@@ -105,12 +107,13 @@ type Controller interface {
 
 // controller is a concrete Controller.
 type controller struct {
-	kubeClient             kubernetes.Interface
-	serviceCatalogClient   servicecatalogclientset.ServicecatalogV1alpha1Interface
-	brokerClientCreateFunc brokerapi.CreateFunc
-	brokerLister           listers.BrokerLister
-	serviceClassLister     listers.ServiceClassLister
-	instanceLister         listers.InstanceLister
+	kubeClient                kubernetes.Interface
+	serviceCatalogClient      servicecatalogclientset.ServicecatalogV1alpha1Interface
+	brokerClientCreateFunc    brokerapi.CreateFunc
+	brokerLister              listers.BrokerLister
+	serviceClassLister        listers.ServiceClassLister
+	instanceLister            listers.InstanceLister
+	enableOSBAPIContextProfle bool
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -547,6 +550,12 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			OrgID:             string(ns.UID),
 			SpaceID:           string(ns.UID),
 			AcceptsIncomplete: true,
+		}
+		if c.enableOSBAPIContextProfle {
+			request.ContextProfile = brokerapi.ContextProfile{
+				Platform:  brokerapi.ContextProfilePlatformKubernetes,
+				Namespace: instance.Namespace,
+			}
 		}
 
 		// TODO: handle async provisioning

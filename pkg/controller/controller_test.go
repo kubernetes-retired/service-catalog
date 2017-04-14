@@ -1866,6 +1866,7 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Instances(),
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
+		true,
 	)
 	if err != nil {
 		t.Fatal(err)
