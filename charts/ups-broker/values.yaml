@@ -1,5 +1,5 @@
 # Default values for Service Catalog
 # Image to use
-image: quay.io/kubernetes-service-catalog/user-broker:canary
+image: quay.io/kubernetes-service-catalog/user-broker:v0.0.3
 # ImagePullPolicy; valid values are "IfNotPresent" and "Always"
 imagePullPolicy: Always
