@@ -38,9 +38,7 @@ CATALOG_RELEASE="catalog"
 K8S_KUBECONFIG="${KUBECONFIG:-~/.kube/config}"
 SC_KUBECONFIG="/tmp/sc-kubeconfig"
 
-VERSION="${VERSION:-"$(git describe --tags --always --abbrev=7 --dirty)"}" \
-  || error_exit 'Cannot determine Git commit SHA'
-
+VERSION="${VERSION:-"canary"}"
 REGISTRY="${REGISTRY:-}"
 CONTROLLER_MANAGER_IMAGE="${REGISTRY}controller-manager:${VERSION}"
 APISERVER_IMAGE="${REGISTRY}apiserver:${VERSION}"
