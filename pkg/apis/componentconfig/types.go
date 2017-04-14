@@ -57,6 +57,10 @@ type ControllerManagerConfiguration struct {
 	// all informers.
 	ResyncInterval time.Duration
 
+	// BrokerRelistInterval is the interval on which Broker's catalogs are re-
+	// listed.
+	BrokerRelistInterval time.Duration
+
 	// Whether or not to send the proposed optional
 	// OpenServiceBroker API Context Profile field
 	OSBAPIContextProfile bool

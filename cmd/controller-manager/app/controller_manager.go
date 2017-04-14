@@ -274,7 +274,7 @@ func StartControllers(s *options.ControllerManagerServer,
 
 	// Launch service-catalog controller
 	if availableResources[schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}] {
-		glog.V(5).Info("Creating shared informers")
+		glog.V(5).Info("Creating shared informers; resync interval: %v", s.ResyncInterval)
 		// Build the informer factory for service-catalog resources
 		informerFactory := servicecataloginformers.NewSharedInformerFactory(
 			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
@@ -283,7 +283,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		// All shared informers are v1alpha1 API level
 		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
-		glog.V(5).Info("Creating controller")
+		glog.V(5).Info("Creating controller; broker relist interval: %v", s.BrokerRelistInterval)
 		serviceCatalogController, err := controller.NewController(
 			coreClient,
 			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
@@ -292,6 +292,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogSharedInformers.Instances(),
 			serviceCatalogSharedInformers.Bindings(),
 			openservicebroker.NewClient,
+			s.BrokerRelistInterval,
 			s.OSBAPIContextProfile,
 		)
 		if err != nil {

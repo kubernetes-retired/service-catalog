@@ -56,7 +56,7 @@ chart and their default values.
 | `controllerManager.imagePullPolicy` | `imagePullPolicy` for the controller-manager | `Always` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
-
+| `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

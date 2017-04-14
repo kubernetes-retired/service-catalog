@@ -186,6 +186,19 @@ func getTestBroker() *v1alpha1.Broker {
 	}
 }
 
+func getTestBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
+	broker := getTestBroker()
+	broker.Status = v1alpha1.BrokerStatus{
+		Conditions: []v1alpha1.BrokerCondition{{
+			Type:               v1alpha1.BrokerConditionReady,
+			Status:             status,
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+	}
+
+	return broker
+}
+
 // service class wired to the result of getTestBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
@@ -253,6 +266,83 @@ type instanceParameters struct {
 type bindingParameters struct {
 	Name string   `json:"name"`
 	Args []string `json:"args"`
+}
+
+func TestShouldReconcileBroker(t *testing.T) {
+	cases := []struct {
+		name      string
+		broker    *v1alpha1.Broker
+		now       time.Time
+		interval  time.Duration
+		reconcile bool
+	}{
+		{
+			name:      "no status",
+			broker:    getTestBroker(),
+			now:       time.Now(),
+			interval:  3 * time.Minute,
+			reconcile: true,
+		},
+		{
+			name: "no ready condition",
+			broker: func() *v1alpha1.Broker {
+				b := getTestBroker()
+				b.Status = v1alpha1.BrokerStatus{
+					Conditions: []v1alpha1.BrokerCondition{
+						{
+							Type:   v1alpha1.BrokerConditionType("NotARealCondition"),
+							Status: v1alpha1.ConditionTrue,
+						},
+					},
+				}
+				return b
+			}(),
+			now:       time.Now(),
+			interval:  3 * time.Minute,
+			reconcile: true,
+		},
+		{
+			name:      "not ready",
+			broker:    getTestBrokerWithStatus(v1alpha1.ConditionFalse),
+			now:       time.Now(),
+			interval:  3 * time.Minute,
+			reconcile: true,
+		},
+		{
+			name: "ready, interval elapsed",
+			broker: func() *v1alpha1.Broker {
+				broker := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
+				return broker
+			}(),
+			now:       time.Now(),
+			interval:  3 * time.Minute,
+			reconcile: true,
+		},
+		{
+			name: "ready, interval not elapsed",
+			broker: func() *v1alpha1.Broker {
+				broker := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
+				return broker
+			}(),
+			now:       time.Now(),
+			interval:  3 * time.Hour,
+			reconcile: false,
+		},
+	}
+
+	for _, tc := range cases {
+		var ltt *time.Time
+		if len(tc.broker.Status.Conditions) != 0 {
+			ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
+		}
+
+		t.Logf("%v: now: %v, interval: %v, last transition time: %v", tc.name, tc.now, tc.interval, ltt)
+		actual := shouldReconcileBroker(tc.broker, tc.now, tc.interval)
+
+		if e, a := tc.reconcile, actual; e != a {
+			t.Errorf("%v: unexpected result: expected %v, got %v", tc.name, e, a)
+		}
+	}
 }
 
 func TestReconcileBroker(t *testing.T) {
@@ -487,19 +577,6 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 }
 
 func TestUpdateBrokerCondition(t *testing.T) {
-	getTestBrokerWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
-		broker := getTestBroker()
-		broker.Status = v1alpha1.BrokerStatus{
-			Conditions: []v1alpha1.BrokerCondition{{
-				Type:               v1alpha1.BrokerConditionReady,
-				Status:             status,
-				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
-			}},
-		}
-
-		return broker
-	}
-
 	cases := []struct {
 		name                  string
 		input                 *v1alpha1.Broker
@@ -1866,6 +1943,7 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Instances(),
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
+		24*time.Hour,
 		true,
 	)
 	if err != nil {

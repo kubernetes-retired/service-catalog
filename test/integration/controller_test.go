@@ -275,6 +275,7 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Instances(),
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
+		24*time.Hour,
 		true,
 	)
 	t.Log("controller start")

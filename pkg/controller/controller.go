@@ -52,6 +52,7 @@ func NewController(
 	instanceInformer informers.InstanceInformer,
 	bindingInformer informers.BindingInformer,
 	brokerClientCreateFunc brokerapi.CreateFunc,
+	brokerRelistInterval time.Duration,
 	osbAPIContextProfile bool,
 ) (Controller, error) {
 
@@ -67,6 +68,7 @@ func NewController(
 			brokerLister:              brokerLister,
 			serviceClassLister:        serviceClassLister,
 			instanceLister:            instanceLister,
+			brokerRelistInterval:      brokerRelistInterval,
 			enableOSBAPIContextProfle: osbAPIContextProfile,
 		}
 	)
@@ -113,6 +115,7 @@ type controller struct {
 	brokerLister              listers.BrokerLister
 	serviceClassLister        listers.ServiceClassLister
 	instanceLister            listers.InstanceLister
+	brokerRelistInterval      time.Duration
 	enableOSBAPIContextProfle bool
 }
 
@@ -159,9 +162,51 @@ const (
 	errorWithParameters         string = "ErrorWithParameters"
 )
 
+// shouldReconcileBroker determines whether a broker should be reconciled; it
+// returns true unless the broker has a ready condition with status true and
+// the controller's broker relist interval has not elapsed since the broker's
+// ready condition became true.
+func shouldReconcileBroker(broker *v1alpha1.Broker, now time.Time, relistInterval time.Duration) bool {
+	if broker.DeletionTimestamp != nil || len(broker.Status.Conditions) == 0 {
+		// If the deletion timestamp is set or the broker has no status
+		// conditions, we should reconcile it.
+		return true
+	}
+
+	// find the ready condition in the broker's status
+	for _, condition := range broker.Status.Conditions {
+		if condition.Type == v1alpha1.BrokerConditionReady {
+			// The broker has a ready condition
+
+			if condition.Status == v1alpha1.ConditionTrue {
+				// The broker's ready condition has status true, meaning that
+				// at some point, we successfully listed the broker's catalog.
+				// We should reconcile the broker (relist the broker's
+				// catalog) if it has been longer than the configured relist
+				// interval since the broker's ready condition became true.
+				return now.After(condition.LastTransitionTime.Add(relistInterval))
+			}
+
+			// The broker's ready condition wasn't true; we should try to re-
+			// list the broker.
+			return true
+		}
+	}
+
+	// The broker didn't have a ready condition; we should reconcile it.
+	return true
+}
+
 // reconcileBroker is the control-loop that reconciles a Broker.
 func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	glog.V(4).Infof("Processing Broker %v", broker.Name)
+
+	// If the broker's ready condition is true and the relist interval has not
+	// elapsed, do not reconcile it.
+	if !shouldReconcileBroker(broker, time.Now(), c.brokerRelistInterval) {
+		glog.V(10).Infof("Not processing Broker %v because relist interval has not elapsed since the broker became ready", broker.Name)
+		return
+	}
 
 	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
