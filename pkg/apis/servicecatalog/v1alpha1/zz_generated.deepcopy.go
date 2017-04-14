@@ -82,6 +82,7 @@ func DeepCopy_v1alpha1_BindingCondition(in interface{}, out interface{}, c *conv
 		in := in.(*BindingCondition)
 		out := out.(*BindingCondition)
 		*out = *in
+		out.LastTransitionTime = in.LastTransitionTime.DeepCopy()
 		return nil
 	}
 }
@@ -134,7 +135,11 @@ func DeepCopy_v1alpha1_BindingStatus(in interface{}, out interface{}, c *convers
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BindingCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_BindingCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	}
@@ -165,6 +170,7 @@ func DeepCopy_v1alpha1_BrokerCondition(in interface{}, out interface{}, c *conve
 		in := in.(*BrokerCondition)
 		out := out.(*BrokerCondition)
 		*out = *in
+		out.LastTransitionTime = in.LastTransitionTime.DeepCopy()
 		return nil
 	}
 }
@@ -209,7 +215,11 @@ func DeepCopy_v1alpha1_BrokerStatus(in interface{}, out interface{}, c *conversi
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BrokerCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_BrokerCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	}
@@ -240,6 +250,7 @@ func DeepCopy_v1alpha1_InstanceCondition(in interface{}, out interface{}, c *con
 		in := in.(*InstanceCondition)
 		out := out.(*InstanceCondition)
 		*out = *in
+		out.LastTransitionTime = in.LastTransitionTime.DeepCopy()
 		return nil
 	}
 }
@@ -302,7 +313,11 @@ func DeepCopy_v1alpha1_InstanceStatus(in interface{}, out interface{}, c *conver
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]InstanceCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_InstanceCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	}

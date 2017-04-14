@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
@@ -163,7 +164,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Info(s)
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
+		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
 			errorFetchingCatalogMessage+s)
 		return
 	}
@@ -177,7 +178,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		if err != nil {
 			s := fmt.Sprintf("Error getting broker catalog for broker %q: %s", broker.Name, err)
 			glog.Warning(s)
-			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
+			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
 				errorFetchingCatalogMessage+s)
 			return
 		}
@@ -188,7 +189,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(s)
-			c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 				errorSyncingCatalogMessage+s)
 			return
 		}
@@ -199,7 +200,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
 				s := fmt.Sprintf("Error reconciling serviceClass %q (broker %q): %s", serviceClass.Name, broker.Name, err)
 				glog.Warning(s)
-				c.updateBrokerReadyCondition(broker, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+				c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s)
 				return
 			}
@@ -207,7 +208,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 		}
 
-		c.updateBrokerReadyCondition(broker, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker.")
+		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker.")
 		return
 	}
 
@@ -225,8 +226,9 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		// Get ALL ServiceClasses. Remove those that reference this Broker.
 		svcClasses, err := c.serviceClassLister.List(labels.Everything())
 		if err != nil {
-			c.updateBrokerReadyCondition(
+			c.updateBrokerCondition(
 				broker,
+				v1alpha1.BrokerConditionReady,
 				v1alpha1.ConditionUnknown,
 				"ErrorListingServiceClasses",
 				"Error listing ServiceClasses",
@@ -241,8 +243,9 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 				if err != nil && !errors.IsNotFound(err) {
 					s := fmt.Sprintf("Error deleting ServiceClass %q (Broker %q): %s", svcClass.Name, broker.Name, err)
 					glog.Warning(s)
-					c.updateBrokerReadyCondition(
+					c.updateBrokerCondition(
 						broker,
+						v1alpha1.BrokerConditionReady,
 						v1alpha1.ConditionUnknown,
 						"ErrorDeletingServiceClass",
 						"Error deleting ServiceClass. "+s,
@@ -252,8 +255,9 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			}
 		}
 
-		c.updateBrokerReadyCondition(
+		c.updateBrokerCondition(
 			broker,
+			v1alpha1.BrokerConditionReady,
 			v1alpha1.ConditionFalse,
 			"DeletedSuccessfully",
 			"The broker was deleted successfully",
@@ -272,7 +276,6 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 
 	existingServiceClass, err := c.serviceClassLister.Get(serviceClass.Name)
 	if errors.IsNotFound(err) {
-
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServiceClass.
 		if _, err := c.serviceCatalogClient.ServiceClasses().Create(serviceClass); err != nil {
@@ -317,19 +320,35 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 
 // updateBrokerReadyCondition updates the ready condition for the given Broker
 // with the given status, reason, and message.
-func (c *controller) updateBrokerReadyCondition(broker *v1alpha1.Broker, status v1alpha1.ConditionStatus, reason, message string) error {
-
+func (c *controller) updateBrokerCondition(broker *v1alpha1.Broker, conditionType v1alpha1.BrokerConditionType, status v1alpha1.ConditionStatus, reason, message string) error {
 	clone, err := api.Scheme.DeepCopy(broker)
 	if err != nil {
 		return err
 	}
 	toUpdate := clone.(*v1alpha1.Broker)
-	toUpdate.Status.Conditions = []v1alpha1.BrokerCondition{{
-		Type:    v1alpha1.BrokerConditionReady,
+	newCondition := v1alpha1.BrokerCondition{
+		Type:    conditionType,
 		Status:  status,
 		Reason:  reason,
 		Message: message,
-	}}
+	}
+
+	t := time.Now()
+
+	if len(broker.Status.Conditions) == 0 {
+		glog.Infof("Setting lastTransitionTime for Broker %q condition %q to %v", broker.Name, conditionType, t)
+		newCondition.LastTransitionTime = metav1.NewTime(t)
+		toUpdate.Status.Conditions = []v1alpha1.BrokerCondition{newCondition}
+	} else {
+		for i, cond := range broker.Status.Conditions {
+			if cond.Type == conditionType && cond.Status != newCondition.Status {
+				glog.Infof("Found status change for Broker %q condition %q: %q -> %q; setting lastTransitionTime to %v", broker.Name, conditionType, cond.Status, status, t)
+				newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+				toUpdate.Status.Conditions[i] = newCondition
+				break
+			}
+		}
+	}
 
 	glog.V(4).Infof("Updating ready condition for Broker %v to %v", broker.Name, status)
 	_, err = c.serviceCatalogClient.Brokers().UpdateStatus(toUpdate)
@@ -630,12 +649,29 @@ func (c *controller) updateInstanceCondition(
 	}
 	toUpdate := clone.(*v1alpha1.Instance)
 
-	toUpdate.Status.Conditions = []v1alpha1.InstanceCondition{{
+	newCondition := v1alpha1.InstanceCondition{
 		Type:    conditionType,
 		Status:  status,
 		Reason:  reason,
 		Message: message,
-	}}
+	}
+
+	t := time.Now()
+
+	if len(instance.Status.Conditions) == 0 {
+		glog.Infof(`Setting lastTransitionTime for Instance "%v/%v" condition %q to %v`, instance.Namespace, instance.Name, conditionType, t)
+		newCondition.LastTransitionTime = metav1.NewTime(t)
+		toUpdate.Status.Conditions = []v1alpha1.InstanceCondition{newCondition}
+	} else {
+		for i, cond := range instance.Status.Conditions {
+			if cond.Type == conditionType && cond.Status != newCondition.Status {
+				glog.Infof(`Found status change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Status, status, t)
+				newCondition.LastTransitionTime = metav1.NewTime(t)
+				toUpdate.Status.Conditions[i] = newCondition
+				break
+			}
+		}
+	}
 
 	glog.V(4).Infof("Updating %v condition for Instance %v/%v to %v", conditionType, instance.Namespace, instance.Name, status)
 	_, err = c.serviceCatalogClient.Instances(instance.Namespace).UpdateStatus(toUpdate)
@@ -987,12 +1023,29 @@ func (c *controller) updateBindingCondition(
 	}
 	toUpdate := clone.(*v1alpha1.Binding)
 
-	toUpdate.Status.Conditions = []v1alpha1.BindingCondition{{
+	newCondition := v1alpha1.BindingCondition{
 		Type:    conditionType,
 		Status:  status,
 		Reason:  reason,
 		Message: message,
-	}}
+	}
+
+	t := time.Now()
+
+	if len(binding.Status.Conditions) == 0 {
+		glog.Infof(`Setting lastTransitionTime for Binding "%v/%v" condition %q to %v`, binding.Namespace, binding.Name, conditionType, t)
+		newCondition.LastTransitionTime = metav1.NewTime(t)
+		toUpdate.Status.Conditions = []v1alpha1.BindingCondition{newCondition}
+	} else {
+		for i, cond := range binding.Status.Conditions {
+			if cond.Type == conditionType && cond.Status != newCondition.Status {
+				glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
+				newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+				toUpdate.Status.Conditions[i] = newCondition
+				break
+			}
+		}
+	}
 
 	logContext := fmt.Sprintf("%v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
 		conditionType, binding.Namespace, binding.Name, status, reason, message)

@@ -108,6 +108,7 @@ func Convert_servicecatalog_Binding_To_v1alpha1_Binding(in *servicecatalog.Bindi
 func autoConvert_v1alpha1_BindingCondition_To_servicecatalog_BindingCondition(in *BindingCondition, out *servicecatalog.BindingCondition, s conversion.Scope) error {
 	out.Type = servicecatalog.BindingConditionType(in.Type)
 	out.Status = servicecatalog.ConditionStatus(in.Status)
+	out.LastTransitionTime = in.LastTransitionTime
 	out.Reason = in.Reason
 	out.Message = in.Message
 	return nil
@@ -120,6 +121,7 @@ func Convert_v1alpha1_BindingCondition_To_servicecatalog_BindingCondition(in *Bi
 func autoConvert_servicecatalog_BindingCondition_To_v1alpha1_BindingCondition(in *servicecatalog.BindingCondition, out *BindingCondition, s conversion.Scope) error {
 	out.Type = BindingConditionType(in.Type)
 	out.Status = ConditionStatus(in.Status)
+	out.LastTransitionTime = in.LastTransitionTime
 	out.Reason = in.Reason
 	out.Message = in.Message
 	return nil
@@ -226,6 +228,7 @@ func Convert_servicecatalog_Broker_To_v1alpha1_Broker(in *servicecatalog.Broker,
 func autoConvert_v1alpha1_BrokerCondition_To_servicecatalog_BrokerCondition(in *BrokerCondition, out *servicecatalog.BrokerCondition, s conversion.Scope) error {
 	out.Type = servicecatalog.BrokerConditionType(in.Type)
 	out.Status = servicecatalog.ConditionStatus(in.Status)
+	out.LastTransitionTime = in.LastTransitionTime
 	out.Reason = in.Reason
 	out.Message = in.Message
 	return nil
@@ -238,6 +241,7 @@ func Convert_v1alpha1_BrokerCondition_To_servicecatalog_BrokerCondition(in *Brok
 func autoConvert_servicecatalog_BrokerCondition_To_v1alpha1_BrokerCondition(in *servicecatalog.BrokerCondition, out *BrokerCondition, s conversion.Scope) error {
 	out.Type = BrokerConditionType(in.Type)
 	out.Status = ConditionStatus(in.Status)
+	out.LastTransitionTime = in.LastTransitionTime
 	out.Reason = in.Reason
 	out.Message = in.Message
 	return nil
@@ -338,6 +342,7 @@ func Convert_servicecatalog_Instance_To_v1alpha1_Instance(in *servicecatalog.Ins
 func autoConvert_v1alpha1_InstanceCondition_To_servicecatalog_InstanceCondition(in *InstanceCondition, out *servicecatalog.InstanceCondition, s conversion.Scope) error {
 	out.Type = servicecatalog.InstanceConditionType(in.Type)
 	out.Status = servicecatalog.ConditionStatus(in.Status)
+	out.LastTransitionTime = in.LastTransitionTime
 	out.Reason = in.Reason
 	out.Message = in.Message
 	return nil
@@ -350,6 +355,7 @@ func Convert_v1alpha1_InstanceCondition_To_servicecatalog_InstanceCondition(in *
 func autoConvert_servicecatalog_InstanceCondition_To_v1alpha1_InstanceCondition(in *servicecatalog.InstanceCondition, out *InstanceCondition, s conversion.Scope) error {
 	out.Type = InstanceConditionType(in.Type)
 	out.Status = ConditionStatus(in.Status)
+	out.LastTransitionTime = in.LastTransitionTime
 	out.Reason = in.Reason
 	out.Message = in.Message
 	return nil

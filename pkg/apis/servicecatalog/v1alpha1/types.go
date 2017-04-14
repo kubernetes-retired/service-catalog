@@ -65,6 +65,9 @@ type BrokerCondition struct {
 	Type BrokerConditionType `json:"type"`
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus `json:"status"`
+	// LastTransitionTime is the timestamp corresponding to the last status
+	// change of this condition.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string `json:"reason"`
@@ -214,6 +217,9 @@ type InstanceCondition struct {
 	Type InstanceConditionType `json:"type"`
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus `json:"status"`
+	// LastTransitionTime is the timestamp corresponding to the last status
+	// change of this condition.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string `json:"reason"`
@@ -297,6 +303,9 @@ type BindingCondition struct {
 	Type BindingConditionType `json:"type"`
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus `json:"status"`
+	// LastTransitionTime is the timestamp corresponding to the last status
+	// change of this condition.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string `json:"reason"`

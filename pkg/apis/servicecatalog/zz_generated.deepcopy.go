@@ -82,6 +82,7 @@ func DeepCopy_servicecatalog_BindingCondition(in interface{}, out interface{}, c
 		in := in.(*BindingCondition)
 		out := out.(*BindingCondition)
 		*out = *in
+		out.LastTransitionTime = in.LastTransitionTime.DeepCopy()
 		return nil
 	}
 }
@@ -134,7 +135,11 @@ func DeepCopy_servicecatalog_BindingStatus(in interface{}, out interface{}, c *c
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BindingCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_servicecatalog_BindingCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	}
@@ -165,6 +170,7 @@ func DeepCopy_servicecatalog_BrokerCondition(in interface{}, out interface{}, c 
 		in := in.(*BrokerCondition)
 		out := out.(*BrokerCondition)
 		*out = *in
+		out.LastTransitionTime = in.LastTransitionTime.DeepCopy()
 		return nil
 	}
 }
@@ -209,7 +215,11 @@ func DeepCopy_servicecatalog_BrokerStatus(in interface{}, out interface{}, c *co
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]BrokerCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_servicecatalog_BrokerCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	}
@@ -240,6 +250,7 @@ func DeepCopy_servicecatalog_InstanceCondition(in interface{}, out interface{}, 
 		in := in.(*InstanceCondition)
 		out := out.(*InstanceCondition)
 		*out = *in
+		out.LastTransitionTime = in.LastTransitionTime.DeepCopy()
 		return nil
 	}
 }
@@ -302,7 +313,11 @@ func DeepCopy_servicecatalog_InstanceStatus(in interface{}, out interface{}, c *
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]InstanceCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_servicecatalog_InstanceCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	}
