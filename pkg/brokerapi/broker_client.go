@@ -45,7 +45,7 @@ type InstanceClient interface {
 
 	// CreateServiceInstance creates a service instance in the respective broker.
 	// This method handles all asynchronous request handling.
-	CreateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*CreateServiceInstanceResponse, error)
+	CreateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*CreateServiceInstanceResponse, int, error)
 
 	// UpdateServiceInstance updates an existing service instance in the respective
 	// broker. This method handles all asynchronous request handling.
@@ -54,6 +54,9 @@ type InstanceClient interface {
 	// DeleteServiceInstance deletes an existing service instance in the respective
 	// broker. This method handles all asynchronous request handling.
 	DeleteServiceInstance(ID string, req *DeleteServiceInstanceRequest) error
+
+	// PollServiceInstance polls a broker for a Service Instance Last Operation
+	PollServiceInstance(ID string, req *LastOperationRequest) (*LastOperationResponse, error)
 }
 
 // BindingClient defines the interface for managing service bindings with a

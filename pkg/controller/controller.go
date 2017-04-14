@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -227,29 +228,31 @@ func (c *controller) brokerDelete(obj interface{}) {
 // the Message strings have a terminating period and space so they can
 // be easily combined with a follow on specific message.
 const (
-	errorFetchingCatalogReason          string = "ErrorFetchingCatalog"
-	errorFetchingCatalogMessage         string = "Error fetching catalog. "
-	errorSyncingCatalogReason           string = "ErrorSyncingCatalog"
-	errorSyncingCatalogMessage          string = "Error syncing catalog from Broker. "
-	errorWithParameters                 string = "ErrorWithParameters"
-	errorListingServiceClassesReason    string = "ErrorListingServiceClasses"
-	errorListingServiceClassesMessage   string = "Error listing service classes."
-	errorDeletingServiceClassReason     string = "ErrorDeletingServiceClass"
-	errorDeletingServiceClassMessage    string = "Error deleting service class."
-	errorNonexistentServiceClassReason  string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServiceClassMessage string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServicePlanReason   string = "ReferencesNonexistentServicePlan"
-	errorNonexistentBrokerReason        string = "ReferencesNonexistentBroker"
-	errorNonexistentInstanceReason      string = "ReferencesNonexistentInstance"
-	errorAuthCredentialsReason          string = "ErrorGettingAuthCredentials"
-	errorFindingNamespaceInstanceReason string = "ErrorFindingNamespaceForInstance"
-	errorProvisionCalledReason          string = "ProvisionCallFailed"
-	errorDeprovisionCalledReason        string = "DeprovisionCallFailed"
-	errorBindCallReason                 string = "BindCallFailed"
-	errorInjectingBindResultReason      string = "ErrorInjectingBindResult"
-	errorEjectingBindReason             string = "ErrorEjectingBinding"
-	errorEjectingBindMessage            string = "Error ejecting binding."
-	errorUnbindCallReason               string = "UnbindCallFailed"
+	errorFetchingCatalogReason            string = "ErrorFetchingCatalog"
+	errorFetchingCatalogMessage           string = "Error fetching catalog. "
+	errorSyncingCatalogReason             string = "ErrorSyncingCatalog"
+	errorSyncingCatalogMessage            string = "Error syncing catalog from Broker. "
+	errorWithParameters                   string = "ErrorWithParameters"
+	errorListingServiceClassesReason      string = "ErrorListingServiceClasses"
+	errorListingServiceClassesMessage     string = "Error listing service classes."
+	errorDeletingServiceClassReason       string = "ErrorDeletingServiceClass"
+	errorDeletingServiceClassMessage      string = "Error deleting service class."
+	errorNonexistentServiceClassReason    string = "ReferencesNonexistentServiceClass"
+	errorNonexistentServiceClassMessage   string = "ReferencesNonexistentServiceClass"
+	errorNonexistentServicePlanReason     string = "ReferencesNonexistentServicePlan"
+	errorNonexistentBrokerReason          string = "ReferencesNonexistentBroker"
+	errorNonexistentInstanceReason        string = "ReferencesNonexistentInstance"
+	errorAuthCredentialsReason            string = "ErrorGettingAuthCredentials"
+	errorFindingNamespaceInstanceReason   string = "ErrorFindingNamespaceForInstance"
+	errorProvisionCalledReason            string = "ProvisionCallFailed"
+	errorDeprovisionCalledReason          string = "DeprovisionCallFailed"
+	errorBindCallReason                   string = "BindCallFailed"
+	errorInjectingBindResultReason        string = "ErrorInjectingBindResult"
+	errorEjectingBindReason               string = "ErrorEjectingBinding"
+	errorEjectingBindMessage              string = "Error ejecting binding."
+	errorUnbindCallReason                 string = "UnbindCallFailed"
+	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
+	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
 
 	successInjectedBindResultReason  string = "InjectedBindResult"
 	successInjectedBindResultMessage string = "Injected bind result"
@@ -262,6 +265,8 @@ const (
 	successBrokerDeletedReason       string = "DeletedSuccessfully"
 	successBrokerDeletedMessage      string = "The broker %v was deleted successfully."
 	successUnboundReason             string = "UnboundSuccessfully"
+	asyncProvisioningReason          string = "Provisioning"
+	asyncProvisioningMessage         string = "The instance is being provisioned asynchronously"
 )
 
 // shouldReconcileBroker determines whether a broker should be reconciled; it
@@ -781,10 +786,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			}
 		}
 
-		// TODO: handle async provisioning
-
 		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
-		response, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
+		response, respCode, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
 		if err != nil {
 			s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
 			glog.Warning(s)
@@ -797,19 +800,50 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCalledReason, s)
 			return err
 		}
-		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
 
-		// TODO: process response
+		if respCode == http.StatusAccepted {
+			glog.V(5).Infof("Received asynchronous provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
+			if response.Operation != "" {
+				instance.Spec.OSBLastOperation = &response.Operation
+			}
 
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionTrue,
-			successProvisionReason,
-			successProvisionMessage,
-		)
-		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
-		return nil
+			// Tag this instance as having an ongoing async operation so we can enforce
+			// no other operations against it can start.
+			c.setAsyncOperationOngoing(instance, true)
+
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				asyncProvisioningReason,
+				asyncProvisioningMessage,
+			)
+			c.recorder.Eventf(instance, api.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
+
+			// Start polling this Service Instance
+			lastOperationRequest := &brokerapi.LastOperationRequest{
+				ServiceID: serviceClass.OSBGUID,
+				PlanID:    servicePlan.OSBGUID,
+			}
+			if response.Operation != "" {
+				lastOperationRequest.Operation = *instance.Spec.OSBLastOperation
+			}
+
+			err = c.poller.CreatePoller(brokerClient, instance, lastOperationRequest, c.handleLastOperationResponse)
+		} else {
+			glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
+
+			// TODO: process response
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionTrue,
+				successProvisionReason,
+				successProvisionMessage,
+			)
+			c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
+		}
+		return
 	}
 
 	// All updates not having a DeletingTimestamp will have been handled above

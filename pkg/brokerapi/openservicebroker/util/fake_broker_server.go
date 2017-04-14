@@ -93,6 +93,7 @@ func (f *FakeBrokerServer) catalogHandler(w http.ResponseWriter, r *http.Request
 
 func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Info("fake lastOperation called")
+	f.Request = r
 	req := &brokerapi.LastOperationRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -114,7 +115,7 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 	resp := brokerapi.LastOperationResponse{
 		State: state,
 	}
-	util.WriteResponse(w, http.StatusOK, &resp)
+	util.WriteResponse(w, f.responseStatus, &resp)
 }
 
 func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Request) {
