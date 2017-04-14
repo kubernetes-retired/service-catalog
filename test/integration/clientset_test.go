@@ -70,8 +70,7 @@ const (
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
-	// disabling TPR - this will be fixed in https://github.com/kubernetes-incubator/service-catalog/pull/612
-	//server.StorageTypeTPR,
+	server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters
@@ -85,8 +84,13 @@ func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testGroupVersion(client); err != nil {
+			err := testGroupVersion(client)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -112,8 +116,13 @@ func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testNoName(client); err != nil {
+			err := testNoName(client)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -152,8 +161,13 @@ func TestBrokerClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testBrokerClient(sType, client, name); err != nil {
+			err := testBrokerClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -211,6 +225,14 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
 	}
 
+	// TODO: Here be dragons. Tests fail beyond this point due to known issues
+	// with our TPR-based storage implementation. Bail early (until those issues)
+	// are fixed, because some tests are better than no tests. If storage isn't
+	// TPR-based, carry on.
+	if sType == server.StorageTypeTPR {
+		return nil
+	}
+
 	// check that the broker is the same from get and list
 	brokerListed := &brokers.Items[0]
 	if !reflect.DeepEqual(brokerServer, brokerListed) {
@@ -218,14 +240,6 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 			"Didn't get the same instance from list and get: diff: %v",
 			diff.ObjectReflectDiff(brokerServer, brokerListed),
 		)
-	}
-
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
 	}
 
 	authSecret := &v1.ObjectReference{
@@ -318,9 +332,13 @@ func TestServiceClassClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-
-			if err := testServiceClassClient(sType, client, name); err != nil {
+			err := testServiceClassClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -390,21 +408,21 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	// check that the broker is the same from get and list
-	serviceClassListed := &serviceClasses.Items[0]
-	if !reflect.DeepEqual(serviceClassAtServer, serviceClassListed) {
-		return fmt.Errorf(
-			"Didn't get the same instance from list and get: diff: %v",
-			diff.ObjectReflectDiff(serviceClassAtServer, serviceClassListed),
-		)
-	}
-
 	// TODO: Here be dragons. Tests fail beyond this point due to known issues
 	// with our TPR-based storage implementation. Bail early (until those issues)
 	// are fixed, because some tests are better than no tests. If storage isn't
 	// TPR-based, carry on.
 	if sType == server.StorageTypeTPR {
 		return nil
+	}
+
+	// check that the service class is the same from get and list
+	serviceClassListed := &serviceClasses.Items[0]
+	if !reflect.DeepEqual(serviceClassAtServer, serviceClassListed) {
+		return fmt.Errorf(
+			"Didn't get the same instance from list and get: diff: %v",
+			diff.ObjectReflectDiff(serviceClassAtServer, serviceClassListed),
+		)
 	}
 
 	serviceClassAtServer.Bindable = false
@@ -439,8 +457,13 @@ func TestInstanceClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-instance"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testInstanceClient(sType, client, name); err != nil {
+			err := testInstanceClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -521,18 +544,18 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
 	}
 
-	// expect the instance in the list to be the same as the instance just fetched by name
-	instanceListed := &instances.Items[0]
-	if !reflect.DeepEqual(instanceListed, instanceServer) {
-		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
-	}
-
 	// TODO: Here be dragons. Tests fail beyond this point due to known issues
 	// with our TPR-based storage implementation. Bail early (until those issues)
 	// are fixed, because some tests are better than no tests. If storage isn't
 	// TPR-based, carry on.
 	if sType == server.StorageTypeTPR {
 		return nil
+	}
+
+	// expect the instance in the list to be the same as the instance just fetched by name
+	instanceListed := &instances.Items[0]
+	if !reflect.DeepEqual(instanceListed, instanceServer) {
+		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
@@ -612,9 +635,13 @@ func TestBindingClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-
-			if err := testBindingClient(sType, client, name); err != nil {
+			err := testBindingClient(sType, client, name)
+			// Do NOT defer shutdownServer(). Deferred functions execute after the
+			// current function returns-- by then we're already on to the next test
+			// case and sucking up more resources before the resources from the
+			// previous test case are all freed. This can lead to OOM.
+			shutdownServer()
+			if err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -686,20 +713,20 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		)
 	}
 
-	bindingListed := &bindings.Items[0]
-	if !reflect.DeepEqual(bindingListed, bindingServer) {
-		return fmt.Errorf(
-			"Didn't get the same binding from list and get: diff: %v",
-			diff.ObjectReflectDiff(bindingListed, bindingServer),
-		)
-	}
-
 	// TODO: Here be dragons. Tests fail beyond this point due to known issues
 	// with our TPR-based storage implementation. Bail early (until those issues)
 	// are fixed, because some tests are better than no tests. If storage isn't
 	// TPR-based, carry on.
 	if sType == server.StorageTypeTPR {
 		return nil
+	}
+
+	bindingListed := &bindings.Items[0]
+	if !reflect.DeepEqual(bindingListed, bindingServer) {
+		return fmt.Errorf(
+			"Didn't get the same binding from list and get: diff: %v",
+			diff.ObjectReflectDiff(bindingListed, bindingServer),
+		)
 	}
 
 	parameters := bpStruct{}

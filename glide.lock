@@ -1,8 +1,64 @@
-hash: 5b53ab53ac08aeb4a1d3427cb2dba097c7864ad12477995320eb5ab28e40b7ed
-updated: 2017-04-04T17:12:42.659656376-04:00
+hash: 825d1e49f68ce0a949f4705f8694eb4f450bcd4650666244980a0b094a74009f
+updated: 2017-04-11T14:28:49.469077659-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
+- name: cloud.google.com/go
+  version: 3b1ae45394a234c385be014e9a488f2bb6eef821
+  subpackages:
+  - compute/metadata
+  - internal
+- name: github.com/aws/aws-sdk-go
+  version: 63ce630574a5ec05ecd8e8de5cea16332a5a684d
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/ec2query
+  - private/protocol/json/jsonutil
+  - private/protocol/jsonrpc
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
+  - service/autoscaling
+  - service/ec2
+  - service/ecr
+  - service/elb
+  - service/route53
+  - service/sts
+- name: github.com/Azure/azure-sdk-for-go
+  version: 0984e0641ae43b89283223034574d6465be93bf4
+  subpackages:
+  - arm/compute
+  - arm/containerregistry
+  - arm/network
+  - arm/storage
+  - storage
+- name: github.com/Azure/go-autorest
+  version: d7c034a8af24eda120dd6460bfcd6d9ed14e43ca
+  subpackages:
+  - autorest
+  - autorest/azure
+  - autorest/date
+  - autorest/to
+  - autorest/validation
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
@@ -21,6 +77,14 @@ imports:
   - pkg/tlsutil
   - pkg/transport
   - pkg/types
+- name: github.com/coreos/go-oidc
+  version: be73733bb8cc830d0205609b95d125215f8e9c70
+  subpackages:
+  - http
+  - jose
+  - key
+  - oauth2
+  - oidc
 - name: github.com/coreos/go-systemd
   version: 4484981625c1a6a2ecb40a390fcb6a9bcfee76e3
   subpackages:
@@ -30,15 +94,44 @@ imports:
   version: fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8
   subpackages:
   - capnslog
+  - health
+  - httputil
+  - timeutil
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
   - spew
+- name: github.com/dgrijalva/jwt-go
+  version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/docker/distribution
   version: cd27f179f2c10c5d300e6d09025b538c475b0d51
   subpackages:
   - digest
   - reference
+- name: github.com/docker/engine-api
+  version: dea108d3aa0c67d7162a3fd8aa65f38a430019fd
+  subpackages:
+  - client
+  - client/transport
+  - client/transport/cancellable
+  - types
+  - types/blkiodev
+  - types/container
+  - types/filters
+  - types/network
+  - types/reference
+  - types/registry
+  - types/strslice
+  - types/time
+  - types/versions
+- name: github.com/docker/go-connections
+  version: f549a9393d05688dff0992ef3efd8bbe6c628aeb
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-units
+  version: e30f1e79f3cd72542f2026ceec18d3bd67ab859c
 - name: github.com/elazarl/go-bindata-assetfs
   version: 3dcc96556217539f50599357fb481ac0dc7439b9
 - name: github.com/emicklei/go-restful
@@ -47,9 +140,13 @@ imports:
   - log
   - swagger
 - name: github.com/evanphx/json-patch
-  version: 465937c80b3c07a7c7ad20cc934898646a91c1de
+  version: ba18e35c5c1b36ef6334cad706eb681153d2d379
+- name: github.com/exponent-io/jsonpath
+  version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
-  version: 04f313413ffd65ce25f2541bfd2b2ceec5c0908c
+  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-ini/ini
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -76,24 +173,72 @@ imports:
   - proto
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/gophercloud/gophercloud
+  version: 12f19e5e04d617182cffa5c11f189ef0013b9791
+  subpackages:
+  - openstack
+  - openstack/blockstorage/v1/volumes
+  - openstack/common/extensions
+  - openstack/compute/v2/extensions/volumeattach
+  - openstack/compute/v2/flavors
+  - openstack/compute/v2/images
+  - openstack/compute/v2/servers
+  - openstack/identity/v2/tenants
+  - openstack/identity/v2/tokens
+  - openstack/identity/v3/extensions/trusts
+  - openstack/identity/v3/tokens
+  - openstack/networking/v2/extensions
+  - openstack/networking/v2/extensions/layer3/floatingips
+  - openstack/networking/v2/extensions/layer3/routers
+  - openstack/networking/v2/extensions/lbaas/members
+  - openstack/networking/v2/extensions/lbaas/monitors
+  - openstack/networking/v2/extensions/lbaas/pools
+  - openstack/networking/v2/extensions/lbaas/vips
+  - openstack/networking/v2/extensions/lbaas_v2/listeners
+  - openstack/networking/v2/extensions/lbaas_v2/loadbalancers
+  - openstack/networking/v2/extensions/lbaas_v2/monitors
+  - openstack/networking/v2/extensions/lbaas_v2/pools
+  - openstack/networking/v2/extensions/security/groups
+  - openstack/networking/v2/extensions/security/rules
+  - openstack/networking/v2/ports
+  - openstack/utils
+  - pagination
 - name: github.com/gorilla/context
-  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/handlers
-  version: 13d73096a474cac93275c679c7b8a2dc17ddba82
+  version: 3a5767ca75ece5f7f1440b1d16975247f8d8b221
 - name: github.com/gorilla/mux
-  version: 599cba5e7b6137d46ddf58fb1765f5d928e69604
+  version: 757bef944d0f21880861c2dd9c871ca543023cba
 - name: github.com/grpc-ecosystem/grpc-gateway
   version: f52d055dc48aec25854ed7d31862f78913cf17d1
   subpackages:
   - runtime
   - runtime/internal
   - utilities
+- name: github.com/hashicorp/golang-lru
+  version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
+  subpackages:
+  - simplelru
+- name: github.com/hawkular/hawkular-client-go
+  version: 1d46ce7e1eca635f372357a8ccbf1fa7cc28b7d2
+  subpackages:
+  - metrics
 - name: github.com/howeyc/gopass
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/influxdata/influxdb
+  version: 383332daed5595926c235f250b11433f67229c35
+  subpackages:
+  - client
+  - models
+  - pkg/escape
+- name: github.com/jmespath/go-jmespath
+  version: 3433f3ea46d9f8019119e7dd41274e112a2359a9
+- name: github.com/jonboulle/clockwork
+  version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/jteeuwen/go-bindata
   version: a0ff2567cfb70903282db057e799fd826784d41d
 - name: github.com/juju/ratelimit
@@ -110,6 +255,20 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/mesos/mesos-go
+  version: 45c8b08e9af666add36a6f93ff8c1c75812367b0
+  subpackages:
+  - detector
+  - detector/zoo
+  - mesosproto
+  - mesosutil
+  - upid
+- name: github.com/mitchellh/mapstructure
+  version: 740c764bc6149d3f1806231418adb9f52c11bcbf
+- name: github.com/mxk/go-flowrate
+  version: cca7078d478f8520f85629ad7c68962d31ed7682
+  subpackages:
+  - flowrate
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pkg/errors
@@ -133,6 +292,39 @@ imports:
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
+- name: github.com/rackspace/gophercloud
+  version: e00690e87603abe613e9f02c816c7c4bef82e063
+  subpackages:
+  - openstack
+  - openstack/blockstorage/v1/volumes
+  - openstack/compute/v2/extensions/bootfromvolume
+  - openstack/compute/v2/extensions/diskconfig
+  - openstack/compute/v2/extensions/volumeattach
+  - openstack/compute/v2/flavors
+  - openstack/compute/v2/images
+  - openstack/compute/v2/servers
+  - openstack/identity/v2/tenants
+  - openstack/identity/v2/tokens
+  - openstack/identity/v3/tokens
+  - openstack/utils
+  - pagination
+  - rackspace
+  - rackspace/blockstorage/v1/volumes
+  - rackspace/compute/v2/servers
+  - rackspace/compute/v2/volumeattach
+  - rackspace/identity/v2/tokens
+  - testhelper
+  - testhelper/client
+- name: github.com/robfig/cron
+  version: 783cfcb01fb00c48f740c9de79122bd410294149
+- name: github.com/rubiojr/go-vhd
+  version: 0bfd3b39853cdde5762efda92289f14b0ac0491b
+  subpackages:
+  - vhd
+- name: github.com/samuel/go-zookeeper
+  version: 177002e16a0061912f02377e2dd8951a8b3551bc
+  subpackages:
+  - zk
 - name: github.com/satori/go.uuid
   version: b061729afc07e77a8aa4fad0a2fd840958f1942a
 - name: github.com/spf13/cobra
@@ -144,14 +336,48 @@ imports:
   subpackages:
   - codec
   - codec/codecgen
-- name: golang.org/x/crypto
-  version: 1f22c0103821b9390939b6776727195525381532
+- name: github.com/vmware/govmomi
+  version: 0a28e595c8e9e99879e8d2f796e82c5a68202ff0
   subpackages:
+  - find
+  - list
+  - object
+  - property
+  - session
+  - task
+  - vim25
+  - vim25/debug
+  - vim25/methods
+  - vim25/mo
+  - vim25/progress
+  - vim25/soap
+  - vim25/types
+  - vim25/xml
+- name: github.com/vmware/photon-controller-go-sdk
+  version: 4a435daef6ccd3d0edaac1161e76f51a70c2589a
+  subpackages:
+  - SSPI
+  - photon
+  - photon/lightwave
+- name: github.com/xanzy/go-cloudstack
+  version: 1e2cbf647e57fa90353612074fdfc42faf5073bf
+  subpackages:
+  - cloudstack
+- name: golang.org/x/crypto
+  version: d172538b2cfce0c13cee31e647d0367aa8cd2486
+  subpackages:
+  - bcrypt
+  - blowfish
+  - curve25519
+  - ed25519
+  - ed25519/internal/edwards25519
+  - ssh
   - ssh/terminal
 - name: golang.org/x/net
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
+  - context/ctxhttp
   - html
   - html/atom
   - http2
@@ -161,6 +387,13 @@ imports:
   - lex/httplex
   - trace
   - websocket
+- name: golang.org/x/oauth2
+  version: 3c3a985cb79f52a3190fbc056984415ca6763d01
+  subpackages:
+  - google
+  - internal
+  - jws
+  - jwt
 - name: golang.org/x/sys
   version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
   subpackages:
@@ -178,6 +411,29 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: google.golang.org/api
+  version: 55146ba61254fdb1c26d65ff3c04bc1611ad73fb
+  subpackages:
+  - cloudmonitoring/v2beta2
+  - compute/v1
+  - container/v1
+  - dns/v1
+  - gensupport
+  - googleapi
+  - googleapi/internal/uritemplates
+  - logging/v2beta1
+- name: google.golang.org/appengine
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  subpackages:
+  - internal
+  - internal/app_identity
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/modules
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: google.golang.org/grpc
   version: 231b4cfea0e79843053a33f5fe90bd4d84b23cd3
   subpackages:
@@ -189,12 +445,18 @@ imports:
   - naming
   - peer
   - transport
+- name: gopkg.in/gcfg.v1
+  version: 083575c3955c85df16fe9590cceab64d03f5eb6e
+  subpackages:
+  - scanner
+  - token
+  - types
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/natefinch/lumberjack.v2
   version: 20b71e5b60d756d3d2f80def009790325acc2b23
 - name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/apimachinery
   version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
   subpackages:
@@ -281,6 +543,7 @@ imports:
   - pkg/features
   - pkg/registry/generic
   - pkg/registry/generic/registry
+  - pkg/registry/generic/rest
   - pkg/registry/rest
   - pkg/server
   - pkg/server/filters
@@ -311,6 +574,11 @@ imports:
   - pkg/util/trie
   - pkg/util/webhook
   - pkg/util/wsstream
+  - plugin/pkg/authenticator/password/keystone
+  - plugin/pkg/authenticator/password/passwordfile
+  - plugin/pkg/authenticator/request/basicauth
+  - plugin/pkg/authenticator/token/anytoken
+  - plugin/pkg/authenticator/token/oidc
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
@@ -403,10 +671,13 @@ imports:
   - pkg/util
   - pkg/util/parsers
   - pkg/version
+  - plugin/pkg/client/auth/gcp
+  - plugin/pkg/client/auth/oidc
   - rest
   - rest/fake
   - rest/watch
   - testing
+  - third_party/forked/golang/template
   - tools/auth
   - tools/cache
   - tools/clientcmd
@@ -421,6 +692,8 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
+  - util/jsonpath
+  - util/workqueue
 - name: k8s.io/gengo
   version: cc7adb61f5c64d7a439bf5e528f1e22d84c42a80
   subpackages:
@@ -428,10 +701,390 @@ imports:
 - name: k8s.io/kubernetes
   version: 9497139cb62015905ba5b3d11836f2b0c117ff80
   subpackages:
+  - cmd/kube-apiserver/app
+  - cmd/kube-apiserver/app/options
+  - cmd/kube-apiserver/app/preflight
   - pkg/api
+  - pkg/api/endpoints
+  - pkg/api/install
+  - pkg/api/pod
+  - pkg/api/service
+  - pkg/api/util
+  - pkg/api/v1
+  - pkg/api/v1/service
+  - pkg/api/validation
+  - pkg/apis/abac
+  - pkg/apis/abac/latest
+  - pkg/apis/abac/v0
+  - pkg/apis/abac/v1beta1
+  - pkg/apis/apps
+  - pkg/apis/apps/install
+  - pkg/apis/apps/v1beta1
+  - pkg/apis/apps/validation
+  - pkg/apis/authentication
+  - pkg/apis/authentication/install
+  - pkg/apis/authentication/v1
+  - pkg/apis/authentication/v1beta1
+  - pkg/apis/authorization
+  - pkg/apis/authorization/install
+  - pkg/apis/authorization/v1
+  - pkg/apis/authorization/v1beta1
+  - pkg/apis/authorization/validation
+  - pkg/apis/autoscaling
+  - pkg/apis/autoscaling/install
+  - pkg/apis/autoscaling/v1
+  - pkg/apis/autoscaling/v2alpha1
+  - pkg/apis/autoscaling/validation
+  - pkg/apis/batch
+  - pkg/apis/batch/install
+  - pkg/apis/batch/v1
+  - pkg/apis/batch/v2alpha1
+  - pkg/apis/batch/validation
+  - pkg/apis/certificates
+  - pkg/apis/certificates/install
+  - pkg/apis/certificates/v1beta1
+  - pkg/apis/certificates/validation
   - pkg/apis/componentconfig
+  - pkg/apis/componentconfig/install
+  - pkg/apis/componentconfig/v1alpha1
+  - pkg/apis/extensions
+  - pkg/apis/extensions/install
+  - pkg/apis/extensions/v1beta1
+  - pkg/apis/extensions/validation
+  - pkg/apis/imagepolicy
+  - pkg/apis/imagepolicy/install
+  - pkg/apis/imagepolicy/v1alpha1
+  - pkg/apis/policy
+  - pkg/apis/policy/install
+  - pkg/apis/policy/v1beta1
+  - pkg/apis/policy/validation
+  - pkg/apis/rbac
+  - pkg/apis/rbac/install
+  - pkg/apis/rbac/v1alpha1
+  - pkg/apis/rbac/v1beta1
+  - pkg/apis/rbac/validation
+  - pkg/apis/settings
+  - pkg/apis/settings/install
+  - pkg/apis/settings/v1alpha1
+  - pkg/apis/settings/validation
+  - pkg/apis/storage
+  - pkg/apis/storage/install
+  - pkg/apis/storage/util
+  - pkg/apis/storage/v1
+  - pkg/apis/storage/v1beta1
+  - pkg/apis/storage/validation
+  - pkg/auth/authorizer/abac
+  - pkg/bootstrap/api
+  - pkg/capabilities
+  - pkg/client/clientset_generated/clientset
+  - pkg/client/clientset_generated/clientset/scheme
+  - pkg/client/clientset_generated/clientset/typed/apps/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/authentication/v1
+  - pkg/client/clientset_generated/clientset/typed/authentication/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/authorization/v1
+  - pkg/client/clientset_generated/clientset/typed/authorization/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/autoscaling/v1
+  - pkg/client/clientset_generated/clientset/typed/autoscaling/v2alpha1
+  - pkg/client/clientset_generated/clientset/typed/batch/v1
+  - pkg/client/clientset_generated/clientset/typed/batch/v2alpha1
+  - pkg/client/clientset_generated/clientset/typed/certificates/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/core/v1
+  - pkg/client/clientset_generated/clientset/typed/extensions/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/policy/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/rbac/v1alpha1
+  - pkg/client/clientset_generated/clientset/typed/rbac/v1beta1
+  - pkg/client/clientset_generated/clientset/typed/settings/v1alpha1
+  - pkg/client/clientset_generated/clientset/typed/storage/v1
+  - pkg/client/clientset_generated/clientset/typed/storage/v1beta1
+  - pkg/client/clientset_generated/internalclientset
+  - pkg/client/clientset_generated/internalclientset/scheme
+  - pkg/client/clientset_generated/internalclientset/typed/apps/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/authentication/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/authorization/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/autoscaling/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/batch/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/certificates/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/core/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/extensions/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/policy/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/rbac/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/settings/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/storage/internalversion
+  - pkg/client/informers/informers_generated/externalversions
+  - pkg/client/informers/informers_generated/externalversions/apps
+  - pkg/client/informers/informers_generated/externalversions/apps/v1beta1
+  - pkg/client/informers/informers_generated/externalversions/autoscaling
+  - pkg/client/informers/informers_generated/externalversions/autoscaling/v1
+  - pkg/client/informers/informers_generated/externalversions/autoscaling/v2alpha1
+  - pkg/client/informers/informers_generated/externalversions/batch
+  - pkg/client/informers/informers_generated/externalversions/batch/v1
+  - pkg/client/informers/informers_generated/externalversions/batch/v2alpha1
+  - pkg/client/informers/informers_generated/externalversions/certificates
+  - pkg/client/informers/informers_generated/externalversions/certificates/v1beta1
+  - pkg/client/informers/informers_generated/externalversions/core
+  - pkg/client/informers/informers_generated/externalversions/core/v1
+  - pkg/client/informers/informers_generated/externalversions/extensions
+  - pkg/client/informers/informers_generated/externalversions/extensions/v1beta1
+  - pkg/client/informers/informers_generated/externalversions/internalinterfaces
+  - pkg/client/informers/informers_generated/externalversions/policy
+  - pkg/client/informers/informers_generated/externalversions/policy/v1beta1
+  - pkg/client/informers/informers_generated/externalversions/rbac
+  - pkg/client/informers/informers_generated/externalversions/rbac/v1alpha1
+  - pkg/client/informers/informers_generated/externalversions/rbac/v1beta1
+  - pkg/client/informers/informers_generated/externalversions/settings
+  - pkg/client/informers/informers_generated/externalversions/settings/v1alpha1
+  - pkg/client/informers/informers_generated/externalversions/storage
+  - pkg/client/informers/informers_generated/externalversions/storage/v1
+  - pkg/client/informers/informers_generated/externalversions/storage/v1beta1
+  - pkg/client/informers/informers_generated/internalversion
+  - pkg/client/informers/informers_generated/internalversion/apps
+  - pkg/client/informers/informers_generated/internalversion/apps/internalversion
+  - pkg/client/informers/informers_generated/internalversion/autoscaling
+  - pkg/client/informers/informers_generated/internalversion/autoscaling/internalversion
+  - pkg/client/informers/informers_generated/internalversion/batch
+  - pkg/client/informers/informers_generated/internalversion/batch/internalversion
+  - pkg/client/informers/informers_generated/internalversion/certificates
+  - pkg/client/informers/informers_generated/internalversion/certificates/internalversion
+  - pkg/client/informers/informers_generated/internalversion/core
+  - pkg/client/informers/informers_generated/internalversion/core/internalversion
+  - pkg/client/informers/informers_generated/internalversion/extensions
+  - pkg/client/informers/informers_generated/internalversion/extensions/internalversion
+  - pkg/client/informers/informers_generated/internalversion/internalinterfaces
+  - pkg/client/informers/informers_generated/internalversion/policy
+  - pkg/client/informers/informers_generated/internalversion/policy/internalversion
+  - pkg/client/informers/informers_generated/internalversion/rbac
+  - pkg/client/informers/informers_generated/internalversion/rbac/internalversion
+  - pkg/client/informers/informers_generated/internalversion/settings
+  - pkg/client/informers/informers_generated/internalversion/settings/internalversion
+  - pkg/client/informers/informers_generated/internalversion/storage
+  - pkg/client/informers/informers_generated/internalversion/storage/internalversion
+  - pkg/client/listers/apps/internalversion
+  - pkg/client/listers/apps/v1beta1
+  - pkg/client/listers/autoscaling/internalversion
+  - pkg/client/listers/autoscaling/v1
+  - pkg/client/listers/autoscaling/v2alpha1
+  - pkg/client/listers/batch/internalversion
+  - pkg/client/listers/batch/v1
+  - pkg/client/listers/batch/v2alpha1
+  - pkg/client/listers/certificates/internalversion
+  - pkg/client/listers/certificates/v1beta1
+  - pkg/client/listers/core/internalversion
+  - pkg/client/listers/core/v1
+  - pkg/client/listers/extensions/internalversion
+  - pkg/client/listers/extensions/v1beta1
+  - pkg/client/listers/policy/internalversion
+  - pkg/client/listers/policy/v1beta1
+  - pkg/client/listers/rbac/internalversion
+  - pkg/client/listers/rbac/v1alpha1
+  - pkg/client/listers/rbac/v1beta1
+  - pkg/client/listers/settings/internalversion
+  - pkg/client/listers/settings/v1alpha1
+  - pkg/client/listers/storage/internalversion
+  - pkg/client/listers/storage/v1
+  - pkg/client/listers/storage/v1beta1
+  - pkg/client/retry
+  - pkg/cloudprovider
+  - pkg/cloudprovider/providers
+  - pkg/cloudprovider/providers/aws
+  - pkg/cloudprovider/providers/azure
+  - pkg/cloudprovider/providers/cloudstack
+  - pkg/cloudprovider/providers/gce
+  - pkg/cloudprovider/providers/mesos
+  - pkg/cloudprovider/providers/openstack
+  - pkg/cloudprovider/providers/ovirt
+  - pkg/cloudprovider/providers/photon
+  - pkg/cloudprovider/providers/rackspace
+  - pkg/cloudprovider/providers/vsphere
+  - pkg/controller/serviceaccount
+  - pkg/credentialprovider
+  - pkg/credentialprovider/aws
+  - pkg/features
+  - pkg/generated/openapi
+  - pkg/kubeapiserver
+  - pkg/kubeapiserver/admission
+  - pkg/kubeapiserver/authenticator
+  - pkg/kubeapiserver/authorizer
+  - pkg/kubeapiserver/authorizer/modes
+  - pkg/kubeapiserver/options
+  - pkg/kubelet/client
+  - pkg/kubelet/qos
+  - pkg/kubelet/types
+  - pkg/master
+  - pkg/master/ports
+  - pkg/master/thirdparty
+  - pkg/master/tunneler
+  - pkg/probe
+  - pkg/probe/http
+  - pkg/quota
+  - pkg/quota/evaluator/core
+  - pkg/quota/generic
+  - pkg/quota/install
+  - pkg/registry/apps/petset
+  - pkg/registry/apps/petset/storage
+  - pkg/registry/apps/rest
+  - pkg/registry/authentication/rest
+  - pkg/registry/authentication/tokenreview
+  - pkg/registry/authorization/localsubjectaccessreview
+  - pkg/registry/authorization/rest
+  - pkg/registry/authorization/selfsubjectaccessreview
+  - pkg/registry/authorization/subjectaccessreview
+  - pkg/registry/authorization/util
+  - pkg/registry/autoscaling/horizontalpodautoscaler
+  - pkg/registry/autoscaling/horizontalpodautoscaler/storage
+  - pkg/registry/autoscaling/rest
+  - pkg/registry/batch/cronjob
+  - pkg/registry/batch/cronjob/storage
+  - pkg/registry/batch/job
+  - pkg/registry/batch/job/storage
+  - pkg/registry/batch/rest
+  - pkg/registry/cachesize
+  - pkg/registry/certificates/certificates
+  - pkg/registry/certificates/certificates/storage
+  - pkg/registry/certificates/rest
+  - pkg/registry/core/componentstatus
+  - pkg/registry/core/configmap
+  - pkg/registry/core/configmap/storage
+  - pkg/registry/core/endpoint
+  - pkg/registry/core/endpoint/storage
+  - pkg/registry/core/event
+  - pkg/registry/core/event/storage
+  - pkg/registry/core/limitrange
+  - pkg/registry/core/limitrange/storage
+  - pkg/registry/core/namespace
+  - pkg/registry/core/namespace/storage
+  - pkg/registry/core/node
+  - pkg/registry/core/node/rest
+  - pkg/registry/core/node/storage
+  - pkg/registry/core/persistentvolume
+  - pkg/registry/core/persistentvolume/storage
+  - pkg/registry/core/persistentvolumeclaim
+  - pkg/registry/core/persistentvolumeclaim/storage
+  - pkg/registry/core/pod
+  - pkg/registry/core/pod/rest
+  - pkg/registry/core/pod/storage
+  - pkg/registry/core/podtemplate
+  - pkg/registry/core/podtemplate/storage
+  - pkg/registry/core/rangeallocation
+  - pkg/registry/core/replicationcontroller
+  - pkg/registry/core/replicationcontroller/storage
+  - pkg/registry/core/resourcequota
+  - pkg/registry/core/resourcequota/storage
+  - pkg/registry/core/rest
+  - pkg/registry/core/secret
+  - pkg/registry/core/secret/storage
+  - pkg/registry/core/service
+  - pkg/registry/core/service/allocator
+  - pkg/registry/core/service/allocator/storage
+  - pkg/registry/core/service/ipallocator
+  - pkg/registry/core/service/ipallocator/controller
+  - pkg/registry/core/service/portallocator
+  - pkg/registry/core/service/portallocator/controller
+  - pkg/registry/core/service/storage
+  - pkg/registry/core/serviceaccount
+  - pkg/registry/core/serviceaccount/storage
+  - pkg/registry/extensions/controller/storage
+  - pkg/registry/extensions/daemonset
+  - pkg/registry/extensions/daemonset/storage
+  - pkg/registry/extensions/deployment
+  - pkg/registry/extensions/deployment/storage
+  - pkg/registry/extensions/ingress
+  - pkg/registry/extensions/ingress/storage
+  - pkg/registry/extensions/networkpolicy
+  - pkg/registry/extensions/networkpolicy/storage
+  - pkg/registry/extensions/podsecuritypolicy
+  - pkg/registry/extensions/podsecuritypolicy/storage
+  - pkg/registry/extensions/replicaset
+  - pkg/registry/extensions/replicaset/storage
+  - pkg/registry/extensions/rest
+  - pkg/registry/extensions/thirdpartyresource
+  - pkg/registry/extensions/thirdpartyresource/storage
+  - pkg/registry/extensions/thirdpartyresourcedata
+  - pkg/registry/extensions/thirdpartyresourcedata/storage
+  - pkg/registry/policy/poddisruptionbudget
+  - pkg/registry/policy/poddisruptionbudget/storage
+  - pkg/registry/policy/rest
+  - pkg/registry/rbac
+  - pkg/registry/rbac/clusterrole
+  - pkg/registry/rbac/clusterrole/policybased
+  - pkg/registry/rbac/clusterrole/storage
+  - pkg/registry/rbac/clusterrolebinding
+  - pkg/registry/rbac/clusterrolebinding/policybased
+  - pkg/registry/rbac/clusterrolebinding/storage
+  - pkg/registry/rbac/reconciliation
+  - pkg/registry/rbac/rest
+  - pkg/registry/rbac/role
+  - pkg/registry/rbac/role/policybased
+  - pkg/registry/rbac/role/storage
+  - pkg/registry/rbac/rolebinding
+  - pkg/registry/rbac/rolebinding/policybased
+  - pkg/registry/rbac/rolebinding/storage
+  - pkg/registry/rbac/validation
+  - pkg/registry/settings/podpreset
+  - pkg/registry/settings/podpreset/storage
+  - pkg/registry/settings/rest
+  - pkg/registry/storage/rest
+  - pkg/registry/storage/storageclass
+  - pkg/registry/storage/storageclass/storage
+  - pkg/routes
+  - pkg/security/apparmor
+  - pkg/security/podsecuritypolicy
+  - pkg/security/podsecuritypolicy/apparmor
+  - pkg/security/podsecuritypolicy/capabilities
+  - pkg/security/podsecuritypolicy/group
+  - pkg/security/podsecuritypolicy/seccomp
+  - pkg/security/podsecuritypolicy/selinux
+  - pkg/security/podsecuritypolicy/sysctl
+  - pkg/security/podsecuritypolicy/user
+  - pkg/security/podsecuritypolicy/util
+  - pkg/securitycontext
+  - pkg/serviceaccount
+  - pkg/ssh
+  - pkg/util
+  - pkg/util/async
+  - pkg/util/chmod
+  - pkg/util/chown
   - pkg/util/configz
+  - pkg/util/exec
+  - pkg/util/hash
   - pkg/util/interrupt
+  - pkg/util/io
+  - pkg/util/maps
+  - pkg/util/metrics
+  - pkg/util/mount
+  - pkg/util/net/sets
+  - pkg/util/node
+  - pkg/util/parsers
+  - pkg/util/workqueue/prometheus
   - pkg/version
-  - pkg/version/verflag
+  - pkg/volume
+  - pkg/volume/util
+  - pkg/volume/validation
+  - plugin/pkg/admission/admit
+  - plugin/pkg/admission/alwayspullimages
+  - plugin/pkg/admission/antiaffinity
+  - plugin/pkg/admission/defaulttolerationseconds
+  - plugin/pkg/admission/deny
+  - plugin/pkg/admission/exec
+  - plugin/pkg/admission/gc
+  - plugin/pkg/admission/imagepolicy
+  - plugin/pkg/admission/initialresources
+  - plugin/pkg/admission/limitranger
+  - plugin/pkg/admission/namespace/autoprovision
+  - plugin/pkg/admission/namespace/exists
+  - plugin/pkg/admission/namespace/lifecycle
+  - plugin/pkg/admission/persistentvolume/label
+  - plugin/pkg/admission/podnodeselector
+  - plugin/pkg/admission/podpreset
+  - plugin/pkg/admission/resourcequota
+  - plugin/pkg/admission/resourcequota/apis/resourcequota
+  - plugin/pkg/admission/resourcequota/apis/resourcequota/install
+  - plugin/pkg/admission/resourcequota/apis/resourcequota/v1alpha1
+  - plugin/pkg/admission/resourcequota/apis/resourcequota/validation
+  - plugin/pkg/admission/security/podsecuritypolicy
+  - plugin/pkg/admission/securitycontext/scdeny
+  - plugin/pkg/admission/serviceaccount
+  - plugin/pkg/admission/storageclass/default
+  - plugin/pkg/auth/authenticator/token/bootstrap
+  - plugin/pkg/auth/authorizer/rbac
+  - plugin/pkg/auth/authorizer/rbac/bootstrappolicy
 testImports: []
