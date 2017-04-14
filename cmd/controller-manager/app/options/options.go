@@ -41,6 +41,7 @@ const defaultBindAddress = "0.0.0.0"
 const defaultPort = 10000
 const defaultK8sKubeconfigPath = "./kubeconfig"
 const defaultServiceCatalogKubeconfigPath = "./service-catalog-kubeconfig"
+const defaultOSBAPIContextProfile = true
 
 // NewControllerManagerServer creates a new ControllerManagerServer with a
 // default config.
@@ -53,6 +54,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			K8sKubeconfigPath:            defaultK8sKubeconfigPath,
 			ServiceCatalogKubeconfigPath: defaultServiceCatalogKubeconfigPath,
 			ResyncInterval:               defaultResyncInterval,
+			OSBAPIContextProfile:         defaultOSBAPIContextProfile,
 		},
 	}
 }
@@ -67,4 +69,5 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServiceCatalogAPIServerURL, "service-catalog-api-server-url", "", "The URL for the service-catalog API server")
 	fs.StringVar(&s.ServiceCatalogKubeconfigPath, "service-catalog-kubeconfig", s.ServiceCatalogKubeconfigPath, "Path to service-catalog kubeconfig")
 	fs.DurationVar(&s.ResyncInterval, "resync-interval", s.ResyncInterval, "The interval on which the controller will resync its informers")
+	fs.BoolVar(&s.OSBAPIContextProfile, "enable-osb-api-context-profile", s.OSBAPIContextProfile, "Whether or not to send the proposed optional OpenServiceBroker API Context Profile field")
 }

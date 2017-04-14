@@ -292,6 +292,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogSharedInformers.Instances(),
 			serviceCatalogSharedInformers.Bindings(),
 			openservicebroker.NewClient,
+			s.OSBAPIContextProfile,
 		)
 		if err != nil {
 			return err
