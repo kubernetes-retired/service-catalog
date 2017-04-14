@@ -69,9 +69,8 @@ const (
 )
 
 var storageTypes = []server.StorageType{
-	server.StorageTypeEtcd,
-	// disabling TPR - this will be fixed in https://github.com/kubernetes-incubator/service-catalog/pull/612
-	//server.StorageTypeTPR,
+	// server.StorageTypeEtcd,
+	server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters
@@ -80,23 +79,23 @@ type bpStruct struct {
 	Baz []string `json:"baz"`
 }
 
-// TestGroupVersion is trivial.
-func TestGroupVersion(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testGroupVersion(client); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
-	}
-}
+// // TestGroupVersion is trivial.
+// func TestGroupVersion(t *testing.T) {
+// 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+// 		return func(t *testing.T) {
+// 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+// 			defer shutdownServer()
+// 			if err := testGroupVersion(client); err != nil {
+// 				t.Fatal(err)
+// 			}
+// 		}
+// 	}
+// 	for _, sType := range storageTypes {
+// 		if !t.Run(sType.String(), rootTestFunc(sType)) {
+// 			t.Errorf("%s test failed", sType)
+// 		}
+// 	}
+// }
 
 func testGroupVersion(client servicecatalogclient.Interface) error {
 	gv := client.Servicecatalog().RESTClient().APIVersion()
@@ -106,25 +105,25 @@ func testGroupVersion(client servicecatalogclient.Interface) error {
 	return nil
 }
 
-// TestNoName checks that all creates fail for objects that have no
-// name given.
-func TestNoName(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testNoName(client); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
+// // TestNoName checks that all creates fail for objects that have no
+// // name given.
+// func TestNoName(t *testing.T) {
+// 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+// 		return func(t *testing.T) {
+// 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+// 			defer shutdownServer()
+// 			if err := testNoName(client); err != nil {
+// 				t.Fatal(err)
+// 			}
+// 		}
+// 	}
 
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
-	}
-}
+// 	for _, sType := range storageTypes {
+// 		if !t.Run(sType.String(), rootTestFunc(sType)) {
+// 			t.Errorf("%s test failed", sType)
+// 		}
+// 	}
+// }
 
 func testNoName(client servicecatalogclient.Interface) error {
 	scClient := client.Servicecatalog()
@@ -220,14 +219,6 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		)
 	}
 
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
-	}
-
 	authSecret := &v1.ObjectReference{
 		Namespace: "test-namespace",
 		Name:      "test-name",
@@ -312,25 +303,25 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	return nil
 }
 
-// TestServiceClassClient exercises the ServiceClass client.
-func TestServiceClassClient(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			const name = "test-serviceclass"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
+// // TestServiceClassClient exercises the ServiceClass client.
+// func TestServiceClassClient(t *testing.T) {
+// 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+// 		return func(t *testing.T) {
+// 			const name = "test-serviceclass"
+// 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+// 			defer shutdownServer()
 
-			if err := testServiceClassClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
-	}
-}
+// 			if err := testServiceClassClient(client, name); err != nil {
+// 				t.Fatal(err)
+// 			}
+// 		}
+// 	}
+// 	for _, sType := range storageTypes {
+// 		if !t.Run(sType.String(), rootTestFunc(sType)) {
+// 			t.Errorf("%s test failed", sType)
+// 		}
+// 	}
+// }
 
 func testServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	serviceClassClient := client.Servicecatalog().ServiceClasses()
@@ -399,14 +390,6 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
-	}
-
 	serviceClassAtServer.Bindable = false
 	_, err = serviceClassClient.Update(serviceClassAtServer)
 	if err != nil {
@@ -433,24 +416,24 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	return nil
 }
 
-// TestInstanceClient exercises the Instance client.
-func TestInstanceClient(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			const name = "test-instance"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
-			if err := testInstanceClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
-	}
-}
+// // TestInstanceClient exercises the Instance client.
+// func TestInstanceClient(t *testing.T) {
+// 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+// 		return func(t *testing.T) {
+// 			const name = "test-instance"
+// 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+// 			defer shutdownServer()
+// 			if err := testInstanceClient(client, name); err != nil {
+// 				t.Fatal(err)
+// 			}
+// 		}
+// 	}
+// 	for _, sType := range storageTypes {
+// 		if !t.Run(sType.String(), rootTestFunc(sType)) {
+// 			t.Errorf("%s test failed", sType)
+// 		}
+// 	}
+// }
 
 func testInstanceClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	const (
@@ -527,14 +510,6 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
 	}
 
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
-	}
-
 	// check the parameters of the fetched-by-name instance with what was expected
 	parameters := ipStruct{}
 	err = json.Unmarshal(instanceServer.Spec.Parameters.Raw, &parameters)
@@ -606,26 +581,26 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	return nil
 }
 
-// TestBindingClient exercises the Binding client.
-func TestBindingClient(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			const name = "test-binding"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
-			defer shutdownServer()
+// // TestBindingClient exercises the Binding client.
+// func TestBindingClient(t *testing.T) {
+// 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+// 		return func(t *testing.T) {
+// 			const name = "test-binding"
+// 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+// 			defer shutdownServer()
 
-			if err := testBindingClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
+// 			if err := testBindingClient(client, name); err != nil {
+// 				t.Fatal(err)
+// 			}
+// 		}
+// 	}
+// 	for _, sType := range storageTypes {
+// 		if !t.Run(sType.String(), rootTestFunc(sType)) {
+// 			t.Errorf("%s test failed", sType)
+// 		}
 
-	}
-}
+// 	}
+// }
 
 func testBindingClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	bindingClient := client.Servicecatalog().Bindings("test-namespace")
@@ -692,14 +667,6 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			"Didn't get the same binding from list and get: diff: %v",
 			diff.ObjectReflectDiff(bindingListed, bindingServer),
 		)
-	}
-
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
 	}
 
 	parameters := bpStruct{}

@@ -18,6 +18,7 @@ package integration
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -25,18 +26,16 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-
+	"k8s.io/apiserver/pkg/storage/etcd"
 	"k8s.io/client-go/pkg/api"
 	fakerestclient "k8s.io/client-go/rest/fake"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 )
 
 type objStorage map[string]runtime.Object
@@ -78,8 +77,9 @@ func (s namespacedStorage) delete(ns, tipe, name string) {
 }
 
 var (
-	accessor = meta.NewAccessor()
-	storage  = make(namespacedStorage)
+	accessor  = meta.NewAccessor()
+	versioner = etcd.APIObjectVersioner{}
+	storage   = make(namespacedStorage)
 )
 
 func getFakeCoreRESTClient() *fakerestclient.RESTClient {
@@ -151,6 +151,7 @@ func getRouter() http.Handler {
 }
 
 func getItems(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	objs := storage.getList(ns, tipe)
@@ -209,6 +210,7 @@ func getItems(rw http.ResponseWriter, r *http.Request) {
 }
 
 func createItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	// TODO: Is there some type-agnostic way to get the codec?
@@ -228,7 +230,10 @@ func createItem(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("couldn't get object name: %s", err)
 	}
-	accessor.SetResourceVersion(item, "1")
+	err = versioner.UpdateObject(item, 1)
+	if err != nil {
+		log.Fatalf("error setting resource version: %s", err)
+	}
 	storage.set(ns, tipe, name, item)
 	rw.WriteHeader(http.StatusCreated)
 	bytes, err := runtime.Encode(codec, item)
@@ -239,6 +244,7 @@ func createItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func getItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	name := mux.Vars(r)["name"]
@@ -259,6 +265,7 @@ func getItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func updateItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	name := mux.Vars(r)["name"]
@@ -280,24 +287,26 @@ func updateItem(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf("error decoding body bytes: %s", err)
 	}
-	origResourceVersionStr, err := accessor.ResourceVersion(origItem)
+	origResourceVersion, err := versioner.ObjectResourceVersion(origItem)
 	if err != nil {
-		log.Fatalf("error getting resource version")
+		log.Fatalf("error getting resource version: %s", err)
 	}
-	resourceVersionStr, err := accessor.ResourceVersion(item)
+	resourceVersion, err := versioner.ObjectResourceVersion(item)
 	if err != nil {
-		log.Fatalf("error getting resource version")
+		log.Fatalf("error getting resource version: %s", err)
 	}
 	// As with the actual core apiserver, "0" is a special resource version that
 	// forces an update as if the current / most up-to-date resource version had
 	// been passed in.
-	if resourceVersionStr != "0" && resourceVersionStr != origResourceVersionStr {
+	if resourceVersion != 0 && resourceVersion != origResourceVersion {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	resourceVersion, err := strconv.Atoi(origResourceVersionStr)
 	resourceVersion++
-	accessor.SetResourceVersion(item, strconv.Itoa(resourceVersion))
+	err = versioner.UpdateObject(item, resourceVersion)
+	if err != nil {
+		log.Fatalf("error setting resource version: %s", err)
+	}
 	storage.set(ns, tipe, name, item)
 	rw.WriteHeader(http.StatusCreated)
 	bytes, err := runtime.Encode(codec, item)
@@ -308,6 +317,7 @@ func updateItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func deleteItem(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	ns := mux.Vars(r)["namespace"]
 	tipe := mux.Vars(r)["type"]
 	name := mux.Vars(r)["name"]
@@ -321,5 +331,6 @@ func deleteItem(rw http.ResponseWriter, r *http.Request) {
 }
 
 func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Printf("----> %s %s\n", r.Method, r.URL.Path)
 	rw.WriteHeader(http.StatusNotFound)
 }
