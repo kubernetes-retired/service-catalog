@@ -337,6 +337,18 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 		return err
 	}
 
+	if existingServiceClass.BrokerName != broker.Name {
+		errMsg := fmt.Sprintf("ServiceClass %q for Broker %q already exists for Broker %q", serviceClass.Name, broker.Name, existingServiceClass.BrokerName)
+		glog.Error(errMsg)
+		return fmt.Errorf(errMsg)
+	}
+
+	if existingServiceClass.OSBGUID != serviceClass.OSBGUID {
+		errMsg := fmt.Sprintf("ServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Name, existingServiceClass.OSBGUID, serviceClass.OSBGUID)
+		glog.Error(errMsg)
+		return fmt.Errorf(errMsg)
+	}
+
 	glog.V(5).Infof("Found existing serviceClass %v; updating", serviceClass.Name)
 
 	// There was an existing service class -- project the update onto it and
