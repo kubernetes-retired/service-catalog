@@ -36,6 +36,7 @@ type ControllerManagerServer struct {
 }
 
 const defaultResyncInterval = 5 * time.Minute
+const defaultBrokerRelistInterval = 24 * time.Hour
 const defaultContentType = "application/json"
 const defaultBindAddress = "0.0.0.0"
 const defaultPort = 10000
@@ -54,6 +55,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			K8sKubeconfigPath:            defaultK8sKubeconfigPath,
 			ServiceCatalogKubeconfigPath: defaultServiceCatalogKubeconfigPath,
 			ResyncInterval:               defaultResyncInterval,
+			BrokerRelistInterval:         defaultBrokerRelistInterval,
 			OSBAPIContextProfile:         defaultOSBAPIContextProfile,
 		},
 	}
@@ -69,5 +71,6 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServiceCatalogAPIServerURL, "service-catalog-api-server-url", "", "The URL for the service-catalog API server")
 	fs.StringVar(&s.ServiceCatalogKubeconfigPath, "service-catalog-kubeconfig", s.ServiceCatalogKubeconfigPath, "Path to service-catalog kubeconfig")
 	fs.DurationVar(&s.ResyncInterval, "resync-interval", s.ResyncInterval, "The interval on which the controller will resync its informers")
+	fs.DurationVar(&s.BrokerRelistInterval, "broker-relist-interval", s.BrokerRelistInterval, "The interval on which a broker's catalog is relisted after the broker becomes ready")
 	fs.BoolVar(&s.OSBAPIContextProfile, "enable-osb-api-context-profile", s.OSBAPIContextProfile, "Whether or not to send the proposed optional OpenServiceBroker API Context Profile field")
 }

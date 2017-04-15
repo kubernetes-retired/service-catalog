@@ -44,6 +44,8 @@ spec:
         - "{{ .Values.controllerManager.verbosity }}"
         - --resync-interval
         - {{ .Values.controllerManager.resyncInterval }}
+        - --broker-relist-interval
+        - {{ .Values.controllerManager.brokerRelistInterval }}
         ports:
         - containerPort: 8080
         volumeMounts:
