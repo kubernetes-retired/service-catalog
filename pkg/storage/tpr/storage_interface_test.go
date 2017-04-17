@@ -18,6 +18,7 @@ package tpr
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -25,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 const (
@@ -66,39 +68,25 @@ func TestCreate(t *testing.T) {
 	); err != nil {
 		t.Fatalf("error on create (%s)", err)
 	}
-	// compare basic attributes of Create's output broker to the input
-	if outBroker.Name != broker.Name {
-		t.Fatalf(
-			"name of output broker (%s) didn't match input (%s)",
-			outBroker.Name,
-			broker.Name,
-		)
+	// Confirm resource version got set during the create operation
+	if outBroker.ResourceVersion == "" {
+		t.Fatalf("resource version was not set as expected")
 	}
-	if outBroker.Namespace != broker.Namespace {
-		t.Fatalf(
-			"namespace of output broker (%s) didn't match input (%s)",
-			outBroker.Namespace,
-			broker.Namespace,
-		)
-	}
-	// compare what's in storage to what was passed in
+	// Confirm the output is identical to what is in storage (nothing funny
+	// happened during encoding / decoding the response).
 	obj := fakeCl.storage.get(name, ServiceBrokerKind.URLName(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
 	}
-	name, err := fakeCl.accessor.Name(obj)
-	if err != nil {
-		t.Fatalf("couldn't get name from obj (%s)", err)
+	if !reflect.DeepEqual(outBroker, obj) {
+		t.Fatalf("output and object in storage are different: %s", diff.ObjectReflectDiff(outBroker, obj))
 	}
-	ns, err := fakeCl.accessor.Namespace(obj)
-	if err != nil {
-		t.Fatalf("couldn't get namespace from obj (%s)", err)
-	}
-	if name != broker.Name {
-		t.Fatalf("name of broker-in-storage (%s) didn't match expected (%s)", name, broker.Name)
-	}
-	if ns != broker.Namespace {
-		t.Fatalf("namespace of broker-in-storage (%s) didn't match expected (%s)", ns, broker.Namespace)
+	// Output and what's in storage should be known to be deeply equal at this
+	// point. Compare either of those to what was passed in. The only diff should
+	// be resource version, so we will clear that first.
+	outBroker.ResourceVersion = ""
+	if !reflect.DeepEqual(broker, outBroker) {
+		t.Fatalf("input and output are different: %s", diff.ObjectReflectDiff(broker, outBroker))
 	}
 }
 
