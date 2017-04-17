@@ -15,8 +15,8 @@ following:
 
 1. All Go code must pass the Go linter checks
     - We have these checks integrated into our CI system
-2. All Go code should pass the `go vet`
-    - These checks are not integrated into our CI system
+2. All Go code should pass `go vet`
+    - This check is integrated into our CI system
     - Anyone with the Go toolchain installed on their system can run the vet checks by executing the
     following command on their machine:
 
