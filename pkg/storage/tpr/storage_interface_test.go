@@ -35,6 +35,7 @@ const (
 )
 
 func TestCreate(t *testing.T) {
+	iface, fakeCl := getTPRStorageIFaceAndFakeCoreRESTClient(t)
 	broker := &v1alpha1.Broker{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: v1alpha1.SchemeGroupVersion.String(),
@@ -43,22 +44,6 @@ func TestCreate(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
 	outBroker := &v1alpha1.Broker{}
-	keyer := Keyer{
-		DefaultNamespace: namespace,
-		ResourceName:     ServiceBrokerKind.String(),
-		Separator:        "/",
-	}
-	codec, err := testapi.GetCodecForObject(broker)
-	fakeCl := newFakeCoreRESTClient()
-	if err != nil {
-		t.Fatalf("error getting codec (%s)", err)
-	}
-	iface := &store{
-		decodeKey:    keyer.NamespaceAndNameFromKey,
-		codec:        codec,
-		cl:           fakeCl,
-		singularKind: ServiceBrokerKind,
-	}
 	if err := iface.Create(
 		context.Background(),
 		name,
@@ -79,14 +64,20 @@ func TestCreate(t *testing.T) {
 		t.Fatal("no broker was in storage")
 	}
 	if !reflect.DeepEqual(outBroker, obj) {
-		t.Fatalf("output and object in storage are different: %s", diff.ObjectReflectDiff(outBroker, obj))
+		t.Fatalf(
+			"output and object in storage are different: %s",
+			diff.ObjectReflectDiff(outBroker, obj),
+		)
 	}
 	// Output and what's in storage should be known to be deeply equal at this
 	// point. Compare either of those to what was passed in. The only diff should
 	// be resource version, so we will clear that first.
 	outBroker.ResourceVersion = ""
 	if !reflect.DeepEqual(broker, outBroker) {
-		t.Fatalf("input and output are different: %s", diff.ObjectReflectDiff(broker, outBroker))
+		t.Fatalf(
+			"input and output are different: %s",
+			diff.ObjectReflectDiff(broker, outBroker),
+		)
 	}
 }
 
@@ -100,6 +91,30 @@ func TestRemoveNamespace(t *testing.T) {
 		t.Fatalf("couldn't remove namespace (%s", err)
 	}
 	if obj.Namespace != "" {
-		t.Fatalf("couldn't remove namespace from object. it is still %s", obj.Namespace)
+		t.Fatalf(
+			"couldn't remove namespace from object. it is still %s",
+			obj.Namespace,
+		)
 	}
+}
+
+func getTPRStorageIFaceAndFakeCoreRESTClient(
+	t *testing.T,
+) (*store, *fakeCoreRESTClient) {
+	keyer := Keyer{
+		DefaultNamespace: namespace,
+		ResourceName:     ServiceBrokerKind.String(),
+		Separator:        "/",
+	}
+	codec, err := testapi.GetCodecForObject(&v1alpha1.Broker{})
+	fakeCl := newFakeCoreRESTClient()
+	if err != nil {
+		t.Fatalf("error getting codec (%s)", err)
+	}
+	return &store{
+		decodeKey:    keyer.NamespaceAndNameFromKey,
+		codec:        codec,
+		cl:           fakeCl,
+		singularKind: ServiceBrokerKind,
+	}, fakeCl
 }
