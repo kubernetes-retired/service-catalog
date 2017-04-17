@@ -59,6 +59,9 @@ please include a line in the initial comment that looks like:
 where `1234` is the issue number. This allows Github to automatically
 close the issue when the PR is merged.
 
+Also, before you start working on your issue, please read our [Code Standards](./code-standards.md)
+document.
+
 ## Prerequisites
 
 At a minimum you will need:
