@@ -22,6 +22,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,10 +46,14 @@ func TestCreate(t *testing.T) {
 		ResourceName:     ServiceBrokerKind.String(),
 		Separator:        "/",
 	}
+	codec, err := testapi.GetCodecForObject(broker)
 	fakeCl := newFakeCoreRESTClient()
+	if err != nil {
+		t.Fatalf("error getting codec (%s)", err)
+	}
 	iface := &store{
 		decodeKey:    keyer.NamespaceAndNameFromKey,
-		codec:        &fakeJSONCodec{},
+		codec:        codec,
 		cl:           fakeCl,
 		singularKind: ServiceBrokerKind,
 	}
