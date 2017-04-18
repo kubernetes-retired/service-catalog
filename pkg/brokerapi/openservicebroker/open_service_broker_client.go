@@ -45,8 +45,8 @@ const (
 	bindingDeleteFormatString              = "%s/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s"
 
 	httpTimeoutSeconds     = 15
-	pollingIntervalSeconds = 1
-	pollingAmountLimit     = 30
+	pollingIntervalSeconds = 10
+	pollingAmountLimit     = 120
 )
 
 var (
