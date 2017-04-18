@@ -18,6 +18,7 @@ package tpr
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -86,7 +87,7 @@ func (t *store) Create(
 	ttl uint64,
 ) error {
 
-	ns, _, err := t.decodeKey(key)
+	ns, name, err := t.decodeKey(key)
 	if err != nil {
 		glog.Errorf("decoding key %s (%s)", key, err)
 		return err
@@ -96,7 +97,6 @@ func (t *store) Create(
 	if err != nil {
 		return err
 	}
-
 	req := t.cl.Post().AbsPath(
 		"apis",
 		groupName,
@@ -106,8 +106,18 @@ func (t *store) Create(
 		t.singularKind.URLName(),
 	).Body(data)
 
+	res := req.Do()
+	if res.Error() != nil {
+		glog.Errorf("executing POST for %s/%s (%s)", ns, name, res.Error())
+	}
+	var statusCode int
+	res.StatusCode(&statusCode)
+	if statusCode == http.StatusConflict {
+		return storage.NewKeyExistsError(key, 0)
+	}
+
 	var unknown runtime.Unknown
-	if err := req.Do().Into(&unknown); err != nil {
+	if err := res.Into(&unknown); err != nil {
 		glog.Errorf("decoding response (%s)", err)
 		return err
 	}
@@ -143,9 +153,15 @@ func (t *store) Delete(
 		t.singularKind.URLName(),
 		name,
 	)
-	if err := req.Do().Error(); err != nil {
-		glog.Errorf("error deleting (%s)", err)
-		return err
+
+	res := req.Do()
+	if res.Error() != nil {
+		glog.Errorf("executing DELETE for %s/%s (%s)", ns, name, res.Error())
+	}
+	var statusCode int
+	res.StatusCode(&statusCode)
+	if statusCode == http.StatusNotFound {
+		return storage.NewKeyNotFoundError(key, 0)
 	}
 
 	return nil
@@ -276,8 +292,22 @@ func (t *store) Get(
 		name,
 	)
 
+	res := req.Do()
+	if res.Error() != nil {
+		glog.Errorf("executing GET for %s/%s (%s)", ns, name, res.Error())
+	}
+	var statusCode int
+	res.StatusCode(&statusCode)
+	if statusCode == http.StatusNotFound {
+		if ignoreNotFound {
+			return runtime.SetZeroValue(objPtr)
+		}
+		glog.Errorf("executing GET for %s/%s: not found", ns, name)
+		return storage.NewKeyNotFoundError(key, 0)
+	}
+
 	var unknown runtime.Unknown
-	if err := req.Do().Into(&unknown); err != nil {
+	if res.Into(&unknown); err != nil {
 		glog.Errorf("decoding response (%s)", err)
 		return err
 	}

@@ -18,6 +18,8 @@ package tpr
 
 import (
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTPRName(t *testing.T) {
@@ -56,4 +58,8 @@ func TestURLName(t *testing.T) {
 			t.Errorf("expected %s, got %s", testCase.after, kind.URLName())
 		}
 	}
+}
+
+func newTypeMeta(kind Kind) metav1.TypeMeta {
+	return metav1.TypeMeta{Kind: kind.TPRName(), APIVersion: groupName + "/v1alpha1'"}
 }
