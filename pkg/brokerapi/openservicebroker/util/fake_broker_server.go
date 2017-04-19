@@ -29,6 +29,9 @@ import (
 )
 
 const asyncProvisionQueryParamKey = "accepts_incomplete"
+
+// LastOperationResponseTestDescription is returned as the description to
+// last_operation requests.
 const LastOperationResponseTestDescription = "test description for last operation"
 
 // FakeBrokerServer is a fake service broker server meant for testing that
