@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
 
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -54,6 +55,7 @@ func NewController(
 	brokerClientCreateFunc brokerapi.CreateFunc,
 	brokerRelistInterval time.Duration,
 	osbAPIContextProfile bool,
+	recorder record.EventRecorder,
 ) (Controller, error) {
 
 	var (
@@ -70,6 +72,7 @@ func NewController(
 			instanceLister:            instanceLister,
 			brokerRelistInterval:      brokerRelistInterval,
 			enableOSBAPIContextProfle: osbAPIContextProfile,
+			recorder:                  recorder,
 		}
 	)
 
@@ -117,6 +120,7 @@ type controller struct {
 	instanceLister            listers.InstanceLister
 	brokerRelistInterval      time.Duration
 	enableOSBAPIContextProfle bool
+	recorder                  record.EventRecorder
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -155,11 +159,41 @@ func (c *controller) brokerDelete(obj interface{}) {
 // the Message strings have a terminating period and space so they can
 // be easily combined with a follow on specific message.
 const (
-	errorFetchingCatalogReason  string = "ErrorFetchingCatalog"
-	errorFetchingCatalogMessage string = "Error fetching catalog. "
-	errorSyncingCatalogReason   string = "ErrorSyncingCatalog"
-	errorSyncingCatalogMessage  string = "Error syncing catalog from Broker. "
-	errorWithParameters         string = "ErrorWithParameters"
+	errorFetchingCatalogReason          string = "ErrorFetchingCatalog"
+	errorFetchingCatalogMessage         string = "Error fetching catalog. "
+	errorSyncingCatalogReason           string = "ErrorSyncingCatalog"
+	errorSyncingCatalogMessage          string = "Error syncing catalog from Broker. "
+	errorWithParameters                 string = "ErrorWithParameters"
+	errorListingServiceClassesReason    string = "ErrorListingServiceClasses"
+	errorListingServiceClassesMessage   string = "Error listing service classes."
+	errorDeletingServiceClassReason     string = "ErrorDeletingServiceClass"
+	errorDeletingServiceClassMessage    string = "Error deleting service class."
+	errorNonexistentServiceClassReason  string = "ReferencesNonexistentServiceClass"
+	errorNonexistentServiceClassMessage string = "ReferencesNonexistentServiceClass"
+	errorNonexistentServicePlanReason   string = "ReferencesNonexistentServicePlan"
+	errorNonexistentBrokerReason        string = "ReferencesNonexistentBroker"
+	errorNonexistentInstanceReason      string = "ReferencesNonexistentInstance"
+	errorAuthCredentialsReason          string = "ErrorGettingAuthCredentials"
+	errorFindingNamespaceInstanceReason string = "ErrorFindingNamespaceForInstance"
+	errorProvisionCalledReason          string = "ProvisionCallFailed"
+	errorDeprovisionCalledReason        string = "DeprovisionCallFailed"
+	errorBindCallReason                 string = "BindCallFailed"
+	errorInjectingBindResultReason      string = "ErrorInjectingBindResult"
+	errorEjectingBindReason             string = "ErrorEjectingBinding"
+	errorEjectingBindMessage            string = "Error ejecting binding."
+	errorUnbindCallReason               string = "UnbindCallFailed"
+
+	successInjectedBindResultReason  string = "InjectedBindResult"
+	successInjectedBindResultMessage string = "Injected bind result"
+	successDeprovisionReason         string = "DeprovisionedSuccessfully"
+	successDeprovisionMessage        string = "The instance was deprovisioned successfully"
+	successProvisionReason           string = "ProvisionedSuccessfully"
+	successProvisionMessage          string = "The instance was provisioned successfully"
+	successFetchedCatalogReason      string = "FetchedCatalog"
+	successFetchedCatalogMessage     string = "Successfully fetched catalog entries from broker."
+	successBrokerDeletedReason       string = "DeletedSuccessfully"
+	successBrokerDeletedMessage      string = "The broker %v was deleted successfully."
+	successUnboundReason             string = "UnboundSuccessfully"
 )
 
 // shouldReconcileBroker determines whether a broker should be reconciled; it
@@ -212,8 +246,8 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Info(s)
-		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
-			errorFetchingCatalogMessage+s)
+		c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
 		return
 	}
 
@@ -226,6 +260,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		if err != nil {
 			s := fmt.Sprintf("Error getting broker catalog for broker %q: %s", broker.Name, err)
 			glog.Warning(s)
+			c.recorder.Eventf(broker, api.EventTypeWarning, errorFetchingCatalogReason, s)
 			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason,
 				errorFetchingCatalogMessage+s)
 			return
@@ -237,8 +272,8 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(s)
-			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
-				errorSyncingCatalogMessage+s)
+			c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s)
 			return
 		}
 		glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
@@ -248,6 +283,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
 				s := fmt.Sprintf("Error reconciling serviceClass %q (broker %q): %s", serviceClass.Name, broker.Name, err)
 				glog.Warning(s)
+				c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
 				c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s)
 				return
@@ -256,7 +292,8 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 		}
 
-		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionTrue, "FetchedCatalog", "Successfully fetched catalog from broker.")
+		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionTrue, successFetchedCatalogReason, successFetchedCatalogMessage)
+		c.recorder.Event(broker, api.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
 		return
 	}
 
@@ -278,9 +315,10 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 				broker,
 				v1alpha1.BrokerConditionReady,
 				v1alpha1.ConditionUnknown,
-				"ErrorListingServiceClasses",
-				"Error listing ServiceClasses",
+				errorListingServiceClassesReason,
+				errorListingServiceClassesMessage,
 			)
+			c.recorder.Eventf(broker, api.EventTypeWarning, errorListingServiceClassesReason, "%v %v", errorListingServiceClassesMessage, err)
 			return
 		}
 
@@ -295,9 +333,10 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 						broker,
 						v1alpha1.BrokerConditionReady,
 						v1alpha1.ConditionUnknown,
-						"ErrorDeletingServiceClass",
-						"Error deleting ServiceClass. "+s,
+						errorDeletingServiceClassMessage,
+						errorDeletingServiceClassReason+s,
 					)
+					c.recorder.Eventf(broker, api.EventTypeWarning, errorDeletingServiceClassReason, "%v %v", errorDeletingServiceClassMessage, s)
 					return
 				}
 			}
@@ -307,12 +346,13 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) {
 			broker,
 			v1alpha1.BrokerConditionReady,
 			v1alpha1.ConditionFalse,
-			"DeletedSuccessfully",
+			successBrokerDeletedReason,
 			"The broker was deleted successfully",
 		)
 		// Clear the finalizer
 		c.updateBrokerFinalizers(broker, broker.Finalizers[1:])
 
+		c.recorder.Eventf(broker, api.EventTypeNormal, successBrokerDeletedReason, successBrokerDeletedMessage, broker.Name)
 		glog.V(5).Infof("Successfully deleted Broker %v", broker.Name)
 	}
 }
@@ -503,9 +543,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServiceClass",
+			errorNonexistentServiceClassReason,
 			"The instance references a ServiceClass that does not exist. "+s,
 		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
 		return
 	}
 
@@ -520,6 +561,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			"ReferencesNonexistentServicePlan",
 			"The instance references a ServicePlan that does not exist. "+s,
 		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
 		return
 	}
 
@@ -531,9 +573,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentBroker",
+			errorNonexistentBrokerReason,
 			"The instance references a Broker that does not exist. "+s,
 		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentBrokerReason, s)
 		return
 	}
 
@@ -545,9 +588,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			"ErrorGettingAuthCredentials",
+			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorAuthCredentialsReason, s)
 		return
 	}
 
@@ -570,6 +614,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 					errorWithParameters,
 					"Error unmarshaling instance parameters. "+s,
 				)
+				c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
 				return
 			}
 		}
@@ -582,9 +627,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				"ErrorFindingNamespaceForInstance",
+				errorFindingNamespaceInstanceReason,
 				"Error finding namespace for instance. "+s,
 			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
 			return
 		}
 
@@ -614,8 +660,9 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				"ProvisionCallFailed",
+				errorProvisionCalledReason,
 				"Provision call failed. "+s)
+			c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCalledReason, s)
 			return
 		}
 		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
@@ -626,9 +673,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionTrue,
-			"ProvisionedSuccessfully",
-			"The instance was provisioned successfully",
+			successProvisionReason,
+			successProvisionMessage,
 		)
+		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
 		return
 	}
 
@@ -660,8 +708,9 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionUnknown,
-				"DeprovisionCallFailed",
+				errorDeprovisionCalledReason,
 				"Deprovision call failed. "+s)
+			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 			return
 		}
 
@@ -669,11 +718,12 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) {
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			"DeprovisionedSuccessfully",
-			"The instance was deprovisioned successfully",
+			successDeprovisionReason,
+			successDeprovisionMessage,
 		)
 		// Clear the finalizer
 		c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 
 		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 	}
@@ -818,9 +868,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentInstance",
+			errorNonexistentInstanceReason,
 			"The binding references an Instance that does not exist. "+s,
 		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentInstanceReason, s)
 		return
 	}
 
@@ -832,9 +883,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServiceClass",
+			errorNonexistentServiceClassReason,
 			"The binding references a ServiceClass that does not exist. "+s,
 		)
+		c.recorder.Event(binding, api.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
 		return
 	}
 
@@ -846,9 +898,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServicePlan",
+			errorNonexistentServicePlanReason,
 			"The Binding references an Instance which references ServicePlan that does not exist. "+s,
 		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
 		return
 	}
 
@@ -860,9 +913,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentBroker",
+			errorNonexistentBrokerReason,
 			"The binding references a Broker that does not exist. "+s,
 		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentBrokerReason, s)
 		return
 	}
 
@@ -874,9 +928,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"ErrorGettingAuthCredentials",
+			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorAuthCredentialsReason, s)
 		return
 	}
 
@@ -899,6 +954,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 					errorWithParameters,
 					"Error unmarshaling binding parameters. "+s,
 				)
+				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
 				return
 			}
 		}
@@ -911,9 +967,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
-				"ErrorFindingNamespaceForInstance",
+				errorFindingNamespaceInstanceReason,
 				"Error finding namespace for instance. "+s,
 			)
+			c.recorder.Eventf(binding, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
 			return
 		}
 
@@ -932,8 +989,9 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
-				"BindCallFailed",
+				errorBindCallReason,
 				"Bind call failed. "+s)
+			c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
 			return
 		}
 		err = c.injectBinding(binding, &response.Credentials)
@@ -944,18 +1002,20 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
-				"ErrorInjectingBindResult",
+				errorInjectingBindResultReason,
 				"Error injecting bind result "+s,
 			)
+			c.recorder.Event(binding, api.EventTypeWarning, errorInjectingBindResultReason, s)
 			return
 		}
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionTrue,
-			"InjectedBindResult",
-			"Injected bind result",
+			successInjectedBindResultReason,
+			successInjectedBindResultMessage,
 		)
+		c.recorder.Event(binding, api.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
 
 		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 
@@ -980,9 +1040,10 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionUnknown,
-				"ErrorEjectingBinding",
-				"Error ejecting binding. "+s,
+				errorEjectingBindReason,
+				errorEjectingBindMessage+s,
 			)
+			c.recorder.Eventf(binding, api.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
 			return
 		}
 		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, serviceClass.OSBGUID, servicePlan.OSBGUID)
@@ -993,8 +1054,9 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
-				"UnbindCallFailed",
+				errorUnbindCallReason,
 				"Unbind call failed. "+s)
+			c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
 			return
 		}
 
@@ -1002,11 +1064,12 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) {
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"UnboundSuccessfully",
+			successUnboundReason,
 			"The binding was deleted successfully",
 		)
 		// Clear the finalizer
 		c.updateBindingFinalizers(binding, binding.Finalizers[1:])
+		c.recorder.Event(binding, api.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
 
 		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
 	}

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,6 +40,7 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -384,6 +386,16 @@ func TestReconcileBroker(t *testing.T) {
 	if e, a := 0, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileBrokerDelete(t *testing.T) {
@@ -458,6 +470,16 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	if e, a := 0, len(updatedBroker.Finalizers); e != a {
 		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successBrokerDeletedReason + " " + "The broker test-broker was deleted successfully."
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
@@ -487,6 +509,16 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 	kubeActions := fakeKubeClient.Actions()
 	if e, a := 0, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorFetchingCatalogReason + " " + "Error getting broker catalog for broker \"test-broker\": instance not found"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -533,6 +565,16 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	if e, a := "secrets", getAction.GetResource().Resource; e != a {
 		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileBrokerWithReconcileError(t *testing.T) {
@@ -573,6 +615,16 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": auth secret didn't contain username"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -704,6 +756,16 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	if e, a := "ReferencesNonexistentServiceClass", updateActionObject.Status.Conditions[0].Reason; e != a {
 		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "Instance \"/test-instance\" references a non-existent ServiceClass \"nothere\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileInstanceNonExistentBroker(t *testing.T) {
@@ -734,6 +796,16 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	}
 	if e, a := "ReferencesNonexistentBroker", updateActionObject.Status.Conditions[0].Reason; e != a {
 		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentBrokerReason + " " + "Instance \"test-ns/test-instance\" references a non-existent broker \"test-broker\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -789,6 +861,15 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
 	}
 
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
@@ -827,6 +908,16 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	}
 	if e, a := "ReferencesNonexistentServicePlan", updateActionObject.Status.Conditions[0].Reason; e != a {
 		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "Instance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -907,6 +998,16 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
 		}
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
@@ -966,6 +1067,15 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
 		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to unmarshal Instance parameters"
+	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
@@ -1024,6 +1134,16 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 
 	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
 		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorProvisionCalledReason + " " + "Error provisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": fake creation failure"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -1096,6 +1216,16 @@ func TestReconcileInstance(t *testing.T) {
 			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
 		}
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileInstanceNamespaceError(t *testing.T) {
@@ -1132,6 +1262,16 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	updatedInstance := updateAction.GetObject().(*v1alpha1.Instance)
 	if e, a := instance.Name, updatedInstance.Name; e != a {
 		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceInstanceReason + " " + "Failed to get namespace \"test-ns\" during instance create: No namespace"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -1217,6 +1357,16 @@ func TestReconcileInstanceDelete(t *testing.T) {
 
 	if e, a := 0, len(updatedObject.Finalizers); e != a {
 		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -1359,6 +1509,16 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	if e, a := "ReferencesNonexistentInstance", updateActionObject.Status.Conditions[0].Reason; e != a {
 		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentInstanceReason + " " + "Binding \"/test-binding\" references a non-existent Instance \"/nothere\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
@@ -1407,6 +1567,16 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	}
 	if e, a := "ReferencesNonexistentServiceClass", updateActionObject.Status.Conditions[0].Reason; e != a {
 		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassMessage + " " + "Binding \"test-ns/test-binding\" references a non-existent ServiceClass \"nothere\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -1511,6 +1681,16 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 			t.Fatalf("Failed to find 'second-arg' in array, was %v", argsArray)
 		}
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
 func TestReconcileBindingNamespaceError(t *testing.T) {
@@ -1547,6 +1727,16 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 	updatedBinding := updateAction.GetObject().(*v1alpha1.Binding)
 	if e, a := binding.Name, updatedBinding.Name; e != a {
 		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceInstanceReason + " " + "Failed to get namespace \"test-ns\" during binding: No namespace"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -1663,6 +1853,16 @@ func TestReconcileBindingDelete(t *testing.T) {
 
 	if e, a := 0, len(updatedObject.Finalizers); e != a {
 		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -1934,6 +2134,8 @@ func newTestController(t *testing.T) (
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
+	fakeRecorder := record.NewFakeRecorder(5)
+
 	// create a test controller
 	testController, err := NewController(
 		fakeKubeClient,
@@ -1945,6 +2147,7 @@ func newTestController(t *testing.T) (
 		brokerClFunc,
 		24*time.Hour,
 		true,
+		fakeRecorder,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1975,4 +2178,18 @@ func filterActions(actions []clientgotesting.Action) []clientgotesting.Action {
 	}
 
 	return ret
+}
+
+func getRecordedEvents(source <-chan string) []string {
+	done := false
+	events := []string{}
+	for !done {
+		select {
+		case event := <-source:
+			events = append(events, event)
+		default:
+			done = true
+		}
+	}
+	return events
 }

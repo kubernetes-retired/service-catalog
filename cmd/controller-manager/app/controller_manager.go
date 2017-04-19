@@ -294,6 +294,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			openservicebroker.NewClient,
 			s.BrokerRelistInterval,
 			s.OSBAPIContextProfile,
+			recorder,
 		)
 		if err != nil {
 			return err
