@@ -68,8 +68,9 @@ func NewController(
 	brokerRelistInterval time.Duration,
 	osbAPIContextProfile bool,
 	recorder record.EventRecorder,
+	poller brokerapi.Poller,
 ) (Controller, error) {
-	controller := &controller{
+	controller = &controller{
 		kubeClient:                kubeClient,
 		serviceCatalogClient:      serviceCatalogClient,
 		brokerClientCreateFunc:    brokerClientCreateFunc,
@@ -80,6 +81,7 @@ func NewController(
 		serviceClassQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
 		instanceQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
 		bindingQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
+		poller:                    poller,
 	}
 
 	brokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -138,6 +140,7 @@ type controller struct {
 	serviceClassQueue         workqueue.RateLimitingInterface
 	instanceQueue             workqueue.RateLimitingInterface
 	bindingQueue              workqueue.RateLimitingInterface
+	poller                    brokerapi.Poller
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -254,19 +257,21 @@ const (
 	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
 	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
 
-	successInjectedBindResultReason  string = "InjectedBindResult"
-	successInjectedBindResultMessage string = "Injected bind result"
-	successDeprovisionReason         string = "DeprovisionedSuccessfully"
-	successDeprovisionMessage        string = "The instance was deprovisioned successfully"
-	successProvisionReason           string = "ProvisionedSuccessfully"
-	successProvisionMessage          string = "The instance was provisioned successfully"
-	successFetchedCatalogReason      string = "FetchedCatalog"
-	successFetchedCatalogMessage     string = "Successfully fetched catalog entries from broker."
-	successBrokerDeletedReason       string = "DeletedSuccessfully"
-	successBrokerDeletedMessage      string = "The broker %v was deleted successfully."
-	successUnboundReason             string = "UnboundSuccessfully"
-	asyncProvisioningReason          string = "Provisioning"
-	asyncProvisioningMessage         string = "The instance is being provisioned asynchronously"
+	successInjectedBindResultReason       string = "InjectedBindResult"
+	successInjectedBindResultMessage      string = "Injected bind result"
+	successDeprovisionReason              string = "DeprovisionedSuccessfully"
+	successDeprovisionMessage             string = "The instance was deprovisioned successfully"
+	successProvisionReason                string = "ProvisionedSuccessfully"
+	successProvisionMessage               string = "The instance was provisioned successfully"
+	successFetchedCatalogReason           string = "FetchedCatalog"
+	successFetchedCatalogMessage          string = "Successfully fetched catalog entries from broker."
+	successBrokerDeletedReason            string = "DeletedSuccessfully"
+	successBrokerDeletedMessage           string = "The broker %v was deleted successfully."
+	successUnboundReason                  string = "UnboundSuccessfully"
+	asyncProvisioningReason               string = "Provisioning"
+	asyncProvisioningMessage              string = "The instance is being provisioned asynchronously"
+	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
+	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
 )
 
 // shouldReconcileBroker determines whether a broker should be reconciled; it
@@ -655,6 +660,11 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 
 // reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
+	// TODO(vaikas): When the controller first comes up (say it restarted),
+	// does this method get called? If so, seems like this would be a good place
+	// to check if an async op was ongoing and then kick off a poller to complete
+	// the operation even if there have been no changes to the checksum.
+
 	// Determine whether the checksum has been invalidated by a change to the
 	// object.  If the instance's checksum matches the calculated checksum,
 	// there is no work to do.
@@ -907,6 +917,65 @@ func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.Servic
 	return nil
 }
 
+// handleLastOperationResponse gets called when a last operation poll has happened.
+func (c *controller) handleLastOperationResponse(instance *v1alpha1.Instance, resp *brokerapi.LastOperationResponse) bool {
+	switch resp.State {
+	case "in progress":
+		setAsyncOperation(instance, true)
+		return true
+	case "succeeded":
+		setAsyncOperation(instance, false)
+		// TODO(vaikas): Update the instance condition ready to true and set to succeed
+	case "failed":
+		setAsyncOperation(instance, false)
+		// TODO(vaikas): Update the instance condition ready to true and set to fail
+	default:
+		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
+	}
+	return false
+}
+
+// setAsyncOperationOngoing updates the
+// InstanceConditionAsyncOperationInProgress to the specified status.
+func (c *controller) setAsyncOperationOngoing(instance *v1alpha1.Instance, status bool) {
+	if status {
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionAsyncOperationInProgress,
+			v1alpha1.ConditionTrue,
+			"AsynchronousOperation",
+			"The instance is being asynchronously operated on",
+		)
+	} else {
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionAsyncOperationInProgress,
+			v1alpha1.ConditionFalse,
+			"AsynchronousOperation",
+			"The instance is not being asynchronously operated on",
+		)
+	}
+}
+
+// isAsyncOperationOngoing checks to see if there's an ongoing asynchronous
+// operation ongoing.
+// InstanceConditionAsyncOperationInProgress to the specified status.
+func (c *controller) isAsyncOperationOngoing(instance *v1alpha1.Instance) bool {
+	if instance == nil {
+		return false
+	}
+
+	for _, cond := range instance.Status.Conditions {
+		if cond.Type == v1alpha1.InstanceConditionAsyncOperationInProgress {
+			if cond.Status == v1alpha1.ConditionTrue {
+				glog.Infof(`Found ongoing async operation for Instance "%v/%v"`, instance.Namespace, instance.Name)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // updateInstanceCondition updates the given condition for the given Instance
 // with the given status, reason, and message.
 func (c *controller) updateInstanceCondition(
@@ -936,11 +1005,19 @@ func (c *controller) updateInstanceCondition(
 		toUpdate.Status.Conditions = []v1alpha1.InstanceCondition{newCondition}
 	} else {
 		for i, cond := range instance.Status.Conditions {
-			if cond.Type == conditionType && cond.Status != newCondition.Status {
-				glog.Infof(`Found status change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Status, status, t)
-				newCondition.LastTransitionTime = metav1.NewTime(t)
-				toUpdate.Status.Conditions[i] = newCondition
-				break
+			if cond.Type == conditionType {
+				if cond.Status != status {
+					glog.Infof(`Found status change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Status, status, t)
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+				}
+				if cond.Message != message {
+					glog.Infof(`Found Message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+				}
 			}
 		}
 	}
@@ -1059,6 +1136,33 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentInstanceReason, s)
 		return err
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////// DISCUSSION //////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// TODO(vaikas): This seems like this should fail earlier in the process, I tried to find a
+	// previous example of registry/.../strategy.go to validate cross resource objects, but was
+	// unable to. Is there no way to reject the request earlier on? It seems like this should be
+	// handled in /pkg/registry/servicecatalog/binding/strategy.go where the binding could
+	// be checked, however just like above, we just check it here, so maybe it's ok to do it here
+	// according to the spec, when a 'platform user', aka, Service Catalog user tries to create a
+	// binding to a Service Instance that has an ongoing operation ongoing, they should be given
+	// a 400 response, but that's not really how k8s really works, so I guess in the spirit of
+	// the platform, this seems like a place to put it.
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////// DISCUSSION //////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	if c.isAsyncOperationOngoing(instance) {
+		glog.Info("Async operation ongoing, refusing to move forward with the bind operation")
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			"OngoingAsynchronousOperation",
+			"The binding references an Instance that has an ongoing asynchronous operation ongoing. ",
+		)
+		return
 	}
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)

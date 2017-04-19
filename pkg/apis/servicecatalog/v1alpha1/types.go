@@ -232,21 +232,14 @@ type InstanceCondition struct {
 type InstanceConditionType string
 
 const (
-	// InstanceConditionProvisioning represents that a given instance condition is in
-	// provisioning state
-	InstanceConditionProvisioning InstanceConditionType = "Provisioning"
+	// InstanceConditionAsyncOperationInProgress represents that a given instance has an
+	// ongoing Async operation in progress. This means the controller must not
+	// send any further operation requests to the broker responsible for this
+	// Service Instance. Exception of course is to poll for last state.
+	InstanceConditionAsyncOperationInProgress InstanceConditionType = "AsyncOperationInProgress"
 	// InstanceConditionReady represents that a given instance condition is in
 	// ready state
 	InstanceConditionReady InstanceConditionType = "Ready"
-	// InstanceConditionProvisionFailed represents that a given instance condition is in
-	// failed state
-	InstanceConditionProvisionFailed InstanceConditionType = "ProvisionFailed"
-	// InstanceConditionDeprovisioning represents that a given instance condition is in
-	// deprovisioning state
-	InstanceConditionDeprovisioning InstanceConditionType = "Deprovisioning"
-	// InstanceConditionDeprovisionFailed represents that a given instance condition is in
-	// deprovision failed state
-	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
 // BindingList is a list of Bindings

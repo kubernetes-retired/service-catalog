@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -351,7 +352,8 @@ func TestShouldReconcileBroker(t *testing.T) {
 }
 
 func TestReconcileBroker(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _, _ := newTestController(t)
+
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
 	testController.reconcileBroker(getTestBroker())
@@ -464,7 +466,7 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 }
 
 func TestReconcileBrokerDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers, _ := newTestController(t)
 
 	testServiceClass := getTestServiceClass()
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
@@ -504,7 +506,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 }
 
 func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetErr = fakebrokerapi.ErrInstanceNotFound
 	broker := getTestBroker()
@@ -529,7 +531,7 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 }
 
 func TestReconcileBrokerWithAuthError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 	broker := getTestBroker()
 	broker.Spec.AuthSecret = &v1.ObjectReference{
@@ -571,7 +573,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 }
 
 func TestReconcileBrokerWithReconcileError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 	broker := getTestBroker()
 	broker.Spec.AuthSecret = &v1.ObjectReference{
@@ -649,7 +651,7 @@ func TestUpdateBrokerCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+		_, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 		clone, err := api.Scheme.DeepCopy(tc.input)
 		if err != nil {
@@ -700,7 +702,7 @@ func TestUpdateBrokerCondition(t *testing.T) {
 }
 
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
-	_, fakeCatalogClient, _, testController, _ := newTestController(t)
+	_, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 	instance := &v1alpha1.Instance{
 		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
@@ -732,7 +734,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 }
 
 func TestReconcileInstanceNonExistentBroker(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, _, testController, sharedInformers, _ := newTestController(t)
 
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
@@ -757,7 +759,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 }
 
 func TestReconcileInstanceWithAuthError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers, _ := newTestController(t)
 
 	broker := getTestBroker()
 	broker.Spec.AuthSecret = &v1.ObjectReference{
@@ -815,7 +817,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 }
 
 func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, _, testController, sharedInformers, _ := newTestController(t)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -848,7 +850,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 }
 
 func TestReconcileInstanceWithParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
@@ -917,7 +919,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 }
 
 func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -961,7 +963,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 }
 
 func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -1006,7 +1008,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 }
 
 func TestReconcileInstance(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
@@ -1061,8 +1063,102 @@ func TestReconcileInstance(t *testing.T) {
 	}
 }
 
+func TestReconcileInstanceAsynchronous(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID("test_uid_foo"),
+			},
+		}, nil
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusAccepted
+	instance := getTestInstance()
+
+	testController.reconcileInstance(instance)
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 2, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updateAsyncAction := actions[0].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAsyncAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+	updateAsyncObject := updateAsyncAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updateAsyncObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateAsyncObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionAsyncOperationInProgress, updateAsyncObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionTrue, updateAsyncObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	updateReadyAction := actions[1].(clientgotesting.UpdateAction)
+	if e, a := "update", updateReadyAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateReadyAction.GetObject().(*v1alpha1.Instance)
+	if e, a := instance.Name, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+
+	if e, a := 1, len(updateObject.Status.Conditions); e != a {
+		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
+		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
+	}
+
+	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
+		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	}
+
+	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
+		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
+	} else {
+		if len(si.Parameters) > 0 {
+			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
+		}
+
+		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
+		if string(ns.UID) != si.OrganizationGUID {
+			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
+		}
+		if string(ns.UID) != si.SpaceGUID {
+			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
+		}
+	}
+}
+
 func TestReconcileInstanceNamespaceError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
@@ -1104,7 +1200,7 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 }
 
 func TestReconcileInstanceDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.InstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
 		instanceGUID: {},
@@ -1208,7 +1304,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+		_, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 		clone, err := api.Scheme.DeepCopy(tc.input)
 		if err != nil {
@@ -1260,7 +1356,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 }
 
 func TestReconcileBindingNonExistingInstance(t *testing.T) {
-	_, fakeCatalogClient, _, testController, _ := newTestController(t)
+	_, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 	binding := &v1alpha1.Binding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName},
@@ -1293,7 +1389,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 }
 
 func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
-	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
@@ -1336,7 +1432,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 }
 
 func TestReconcileBindingWithParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
@@ -1438,7 +1534,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 }
 
 func TestReconcileBindingNamespaceError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
@@ -1475,7 +1571,7 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 }
 
 func TestReconcileBindingDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	bindingsMapKey := fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)
 
@@ -1611,7 +1707,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+		_, fakeCatalogClient, _, testController, _, _ := newTestController(t)
 
 		clone, err := api.Scheme.DeepCopy(tc.input)
 		if err != nil {
@@ -1823,7 +1919,8 @@ func newTestController(t *testing.T) (
 	*servicecatalogclientset.Clientset,
 	*fakebrokerapi.Client,
 	*controller,
-	v1alpha1informers.Interface) {
+	v1alpha1informers.Interface,
+	brokerapi.Poller) {
 	// create a fake kube client
 	fakeKubeClient := &clientgofake.Clientset{}
 	// create a fake sc client
@@ -1846,6 +1943,9 @@ func newTestController(t *testing.T) (
 
 	fakeRecorder := record.NewFakeRecorder(5)
 
+	// Create a poller
+	poller := fakebrokerapi.NewPoller()
+
 	// create a test controller
 	testController, err := NewController(
 		fakeKubeClient,
@@ -1858,12 +1958,13 @@ func newTestController(t *testing.T) (
 		24*time.Hour,
 		true,
 		fakeRecorder,
+		poller,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController.(*controller), serviceCatalogSharedInformers
+	return fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController.(*controller), serviceCatalogSharedInformers, poller
 }
 
 func getRecordedEvents(testController *controller) []string {

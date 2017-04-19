@@ -466,6 +466,9 @@ func TestPollServiceInstanceWithSuccess(t *testing.T) {
 	if resp.State == "" {
 		t.Fatalf("Did not receive state for last_operation_request, got: %+v", resp)
 	}
+	if resp.Description == "" {
+		t.Fatalf("Did not receive description for last_operation_request, got: %+v", resp)
+	}
 }
 
 // verifyBindingMethodAndPath is a helper method that verifies that the request

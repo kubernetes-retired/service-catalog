@@ -29,6 +29,7 @@ import (
 )
 
 const asyncProvisionQueryParamKey = "accepts_incomplete"
+const LastOperationResponseTestDescription = "test description for last operation"
 
 // FakeBrokerServer is a fake service broker server meant for testing that
 // allows for customizing the response behavior.  It does not support auth.
@@ -113,7 +114,8 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 	}
 
 	resp := brokerapi.LastOperationResponse{
-		State: state,
+		State:       state,
+		Description: LastOperationResponseTestDescription,
 	}
 	util.WriteResponse(w, f.responseStatus, &resp)
 }
