@@ -257,21 +257,19 @@ const (
 	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
 	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
 
-	successInjectedBindResultReason       string = "InjectedBindResult"
-	successInjectedBindResultMessage      string = "Injected bind result"
-	successDeprovisionReason              string = "DeprovisionedSuccessfully"
-	successDeprovisionMessage             string = "The instance was deprovisioned successfully"
-	successProvisionReason                string = "ProvisionedSuccessfully"
-	successProvisionMessage               string = "The instance was provisioned successfully"
-	successFetchedCatalogReason           string = "FetchedCatalog"
-	successFetchedCatalogMessage          string = "Successfully fetched catalog entries from broker."
-	successBrokerDeletedReason            string = "DeletedSuccessfully"
-	successBrokerDeletedMessage           string = "The broker %v was deleted successfully."
-	successUnboundReason                  string = "UnboundSuccessfully"
-	asyncProvisioningReason               string = "Provisioning"
-	asyncProvisioningMessage              string = "The instance is being provisioned asynchronously"
-	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
-	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
+	successInjectedBindResultReason  string = "InjectedBindResult"
+	successInjectedBindResultMessage string = "Injected bind result"
+	successDeprovisionReason         string = "DeprovisionedSuccessfully"
+	successDeprovisionMessage        string = "The instance was deprovisioned successfully"
+	successProvisionReason           string = "ProvisionedSuccessfully"
+	successProvisionMessage          string = "The instance was provisioned successfully"
+	successFetchedCatalogReason      string = "FetchedCatalog"
+	successFetchedCatalogMessage     string = "Successfully fetched catalog entries from broker."
+	successBrokerDeletedReason       string = "DeletedSuccessfully"
+	successBrokerDeletedMessage      string = "The broker %v was deleted successfully."
+	successUnboundReason             string = "UnboundSuccessfully"
+	asyncProvisioningReason          string = "Provisioning"
+	asyncProvisioningMessage         string = "The instance is being provisioned asynchronously"
 )
 
 // shouldReconcileBroker determines whether a broker should be reconciled; it
@@ -921,13 +919,13 @@ func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.Servic
 func (c *controller) handleLastOperationResponse(instance *v1alpha1.Instance, resp *brokerapi.LastOperationResponse) bool {
 	switch resp.State {
 	case "in progress":
-		setAsyncOperation(instance, true)
+		c.setAsyncOperationOngoing(instance, true)
 		return true
 	case "succeeded":
-		setAsyncOperation(instance, false)
+		c.setAsyncOperationOngoing(instance, false)
 		// TODO(vaikas): Update the instance condition ready to true and set to succeed
 	case "failed":
-		setAsyncOperation(instance, false)
+		c.setAsyncOperationOngoing(instance, false)
 		// TODO(vaikas): Update the instance condition ready to true and set to fail
 	default:
 		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
