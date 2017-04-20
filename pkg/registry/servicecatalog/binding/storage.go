@@ -140,6 +140,14 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 		DestroyFunc: dFunc,
 	}
 
+	//Turn Garbage Collection for TPR storage.
+	//We haven't implemented graceful delete for TPR, with garbage collection
+	//off, we are skipping all graceful deletion machanism, thus, allowing
+	//TPR to be deleted successfully
+	if t, _ := opts.StorageType(); t == server.StorageTypeTPR {
+		store.EnableGarbageCollection = false
+	}
+
 	statusStore := store
 	statusStore.UpdateStrategy = bindingStatusUpdateStrategy
 
