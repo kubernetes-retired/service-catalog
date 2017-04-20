@@ -96,22 +96,23 @@ func TestListResource(t *testing.T) {
 	if len(objs) != 0 {
 		t.Fatalf("expected 0 objects returned, got %d instead", len(objs))
 	}
-	objStorage := newObjStorage()
-	objStorage["broker1"] = &sc.Broker{
+	cl.storage.set(ns, "brokers", "broker1", &sc.Broker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker1"},
-	}
-	objStorage["broker2"] = &sc.Broker{
+	})
+	cl.storage.set(ns, "brokers", "broker2", &sc.Broker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker2"},
-	}
-	cl.storage[ns] = newTypedStorage()
-	cl.storage[ns][ServiceBrokerKind.URLName()] = objStorage
+	})
 	objs, err = listResource(cl, ns, kind, &listObj, codec)
 	if err != nil {
 		t.Fatalf("error listing resource (%s)", err)
 	}
-	if len(objs) != len(objStorage) {
-		t.Fatalf("expected %d objects returned, got %d instead", len(objStorage), len(objs))
+	if len(objs) != len(cl.storage[ns]["brokers"]) {
+		t.Fatalf(
+			"expected %d objects returned, got %d instead",
+			len(cl.storage[ns]["brokers"]),
+			len(objs),
+		)
 	}
 }
