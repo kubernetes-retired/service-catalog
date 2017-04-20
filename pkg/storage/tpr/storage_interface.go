@@ -18,6 +18,7 @@ package tpr
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/golang/glog"
@@ -115,6 +116,14 @@ func (t *store) Create(
 	if statusCode == http.StatusConflict {
 		return storage.NewKeyExistsError(key, 0)
 	}
+	if statusCode != http.StatusCreated {
+		return fmt.Errorf(
+			"executing POST for %s/%s, received response code %d",
+			ns,
+			name,
+			statusCode,
+		)
+	}
 
 	var unknown runtime.Unknown
 	if err := res.Into(&unknown); err != nil {
@@ -162,6 +171,14 @@ func (t *store) Delete(
 	res.StatusCode(&statusCode)
 	if statusCode == http.StatusNotFound {
 		return storage.NewKeyNotFoundError(key, 0)
+	}
+	if statusCode != http.StatusAccepted {
+		return fmt.Errorf(
+			"executing DELETE for %s/%s, received response code %d",
+			ns,
+			name,
+			statusCode,
+		)
 	}
 
 	return nil
@@ -304,6 +321,14 @@ func (t *store) Get(
 		}
 		glog.Errorf("executing GET for %s/%s: not found", ns, name)
 		return storage.NewKeyNotFoundError(key, 0)
+	}
+	if statusCode != http.StatusOK {
+		return fmt.Errorf(
+			"executing GET for %s/%s, received response code %d",
+			ns,
+			name,
+			statusCode,
+		)
 	}
 
 	var unknown runtime.Unknown
