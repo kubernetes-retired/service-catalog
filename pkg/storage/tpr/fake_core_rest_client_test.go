@@ -18,29 +18,32 @@ package tpr
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
-
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-
 	"k8s.io/client-go/pkg/api"
 	fakerestclient "k8s.io/client-go/rest/fake"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
-
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"k8s.io/kubernetes/pkg/api/v1"
 )
 
 type objStorage map[string]runtime.Object
 type typedStorage map[string]objStorage
 type namespacedStorage map[string]typedStorage
+
+func newObjStorage() objStorage               { return map[string]runtime.Object{} }
+func newTypedStorage() typedStorage           { return map[string]objStorage{} }
+func newNamespacedStorage() namespacedStorage { return map[string]typedStorage{} }
 
 func (s namespacedStorage) set(ns, tipe, name string, obj runtime.Object) {
 	if _, ok := s[ns]; !ok {
@@ -167,6 +170,10 @@ func getRouter(storage namespacedStorage) http.Handler {
 		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
 		deleteItem(storage),
 	).Methods("DELETE")
+	r.HandleFunc(
+		"/api/v1/namespaces",
+		listNamespaces(storage),
+	)
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
 }
@@ -353,6 +360,21 @@ func deleteItem(storage namespacedStorage) func(http.ResponseWriter, *http.Reque
 		}
 		storage.delete(ns, tipe, name)
 		rw.WriteHeader(http.StatusOK)
+	}
+}
+
+func listNamespaces(storage namespacedStorage) func(http.ResponseWriter, *http.Request) {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		nsList := v1.NamespaceList{}
+		for ns := range storage {
+			nsList.Items = append(nsList.Items, v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{Name: ns},
+			})
+		}
+		if err := json.NewEncoder(rw).Encode(&nsList); err != nil {
+			log.Printf("Error encoding namespace list (%s)", err)
+			rw.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
 

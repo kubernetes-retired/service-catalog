@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"testing"
 
@@ -30,11 +29,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/storage"
-	"k8s.io/client-go/pkg/api"
 	restclient "k8s.io/client-go/rest"
 )
 
@@ -75,6 +72,8 @@ func TestCreateAndRead(t *testing.T) {
 	}
 	// Confirm the output is identical to what is in storage (nothing funny
 	// happened during encoding / decoding the response).
+	// the object will have been encoded by the test coder as an unversioned
+	// servicecatalog.Broker type
 	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
@@ -308,27 +307,6 @@ func getTPRStorageIFace(t *testing.T, keyer Keyer, restCl restclient.Interface) 
 		cl:           restCl,
 		singularKind: ServiceBrokerKind,
 	}
-}
-
-func serviceCatalogAPIGroup() testapi.TestGroup {
-	groupVersion := schema.GroupVersion{Group: servicecatalog.GroupName, Version: "v1alpha1"}
-
-	externalGroupVersion := schema.GroupVersion{
-		Group:   groupName,
-		Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version,
-	}
-
-	return testapi.NewTestGroup(
-		groupVersion,
-		servicecatalog.SchemeGroupVersion,
-		api.Scheme.KnownTypes(servicecatalog.SchemeGroupVersion),
-		api.Scheme.KnownTypes(externalGroupVersion),
-	)
-}
-
-func init() {
-	log.SetFlags(log.Lshortfile)
-	testapi.Groups[servicecatalog.GroupName] = serviceCatalogAPIGroup()
 }
 
 func verifyStorageError(err error, errorCode int) error {
