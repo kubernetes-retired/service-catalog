@@ -286,6 +286,7 @@ func newTestController(t *testing.T) (
 	}
 
 	stopCh := make(chan struct{})
+	go testController.Run(1, stopCh)
 	informerFactory.Start(stopCh)
 	t.Log("informers start")
 	return fakeKubeClient, catalogClient, catalogCl, instanceCl, bindingCl,
