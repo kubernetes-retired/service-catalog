@@ -67,6 +67,7 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 					Free:        true,
 				},
 				},
+				Bindable: true,
 			},
 		},
 	}, nil
