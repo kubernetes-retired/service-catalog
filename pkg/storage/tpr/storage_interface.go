@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/conversion"
@@ -100,7 +101,7 @@ func (t *store) Create(
 	}
 	req := t.cl.Post().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"namespaces",
 		ns,
@@ -155,7 +156,7 @@ func (t *store) Delete(
 
 	req := t.cl.Delete().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"namespaces",
 		ns,
@@ -204,7 +205,7 @@ func (t *store) Watch(
 
 	req := t.cl.Get().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"watch",
 		"namespaces",
@@ -266,7 +267,7 @@ func (t *store) WatchList(
 
 	req := t.cl.Get().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"watch",
 		"namespaces",
@@ -301,7 +302,7 @@ func (t *store) Get(
 	}
 	req := t.cl.Get().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"namespaces",
 		ns,
@@ -382,7 +383,7 @@ func (t *store) List(
 
 	req := t.cl.Get().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"namespaces",
 		ns,

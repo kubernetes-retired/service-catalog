@@ -19,6 +19,7 @@ package tpr
 import (
 	"testing"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -61,5 +62,8 @@ func TestURLName(t *testing.T) {
 }
 
 func newTypeMeta(kind Kind) metav1.TypeMeta {
-	return metav1.TypeMeta{Kind: kind.TPRName(), APIVersion: groupName + "/v1alpha1'"}
+	return metav1.TypeMeta{
+		Kind:       kind.TPRName(),
+		APIVersion: servicecatalog.GroupName + "/v1alpha1'",
+	}
 }

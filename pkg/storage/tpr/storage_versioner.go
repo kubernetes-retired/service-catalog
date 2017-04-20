@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/storage"
@@ -62,7 +63,7 @@ func (v *versioner) UpdateObject(obj runtime.Object, resourceVersion uint64) err
 	}
 	req := v.restClient.Put().AbsPath(
 		"apis",
-		groupName,
+		servicecatalog.GroupName,
 		tprVersion,
 		"namespaces",
 		ns,

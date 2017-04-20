@@ -20,14 +20,12 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
-)
 
-const (
-	groupName = "servicecatalog.k8s.io"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 func withGroupName(name string) string {
-	return fmt.Sprintf("%s.%s", name, groupName)
+	return fmt.Sprintf("%s.%s", name, servicecatalog.GroupName)
 }
 
 // Kind represents the kind of a third party resource. This type implements fmt.Stringer

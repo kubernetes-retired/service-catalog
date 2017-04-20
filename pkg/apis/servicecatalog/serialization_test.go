@@ -44,7 +44,7 @@ import (
 )
 
 func init() {
-	testapi.Groups[servicecatalog.GroupName] = serviceCatalogAPIGroup()
+	testapi.Groups[servicecatalog.GroupName] = ServiceCatalogAPIGroup()
 }
 
 // BABYNETES: ripped from pkg/api/serialization_test.go
@@ -181,24 +181,6 @@ func roundTrip(t *testing.T, codec runtime.Codec, item runtime.Object) {
 		t.Errorf("3: %v: diff: %v\nCodec: %#v", name, diff.ObjectReflectDiff(item, obj3), codec)
 		return
 	}
-}
-
-func serviceCatalogAPIGroup() testapi.TestGroup {
-	// OOPS: didn't register the right group version
-	groupVersion, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1alpha1")
-	if err != nil {
-		panic(fmt.Sprintf("Error parsing groupversion: %v", err))
-	}
-
-	externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName,
-		Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
-
-	return testapi.NewTestGroup(
-		groupVersion,
-		servicecatalog.SchemeGroupVersion,
-		api.Scheme.KnownTypes(servicecatalog.SchemeGroupVersion),
-		api.Scheme.KnownTypes(externalGroupVersion),
-	)
 }
 
 // For debugging problems
