@@ -49,6 +49,9 @@ func TestCreateAndRead(t *testing.T) {
 	iface := getTPRStorageIFace(t, keyer, fakeCl)
 	origBroker := &sc.Broker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: sc.BrokerSpec{
+			URL: "http://my-awesome-broker.io",
+		},
 	}
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
