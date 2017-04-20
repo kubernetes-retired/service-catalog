@@ -26,7 +26,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -36,7 +35,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 type objStorage map[string]runtime.Object
@@ -180,9 +179,7 @@ func getItems(storage namespacedStorage) func(http.ResponseWriter, *http.Request
 		items := make([]runtime.Object, 0, len(objs))
 		for _, obj := range objs {
 			// We need to strip away typemeta, but we don't want to tamper with what's
-			// in memory, so we're going to make a deep copy first. We can actually
-			// convert from a *runtime.Object to a *v1alpha1.Broker at the same
-			// time!
+			// in memory, so we're going to make a deep copy first.
 			objCopy, err := conversion.NewCloner().DeepCopy(obj)
 			if err != nil {
 				log.Fatalf("error performing deep copy: %s", err)
@@ -191,33 +188,36 @@ func getItems(storage namespacedStorage) func(http.ResponseWriter, *http.Request
 			if !ok {
 				log.Fatalf("error performing type assertion: %s", err)
 			}
-			accessor.SetKind(item, "")
-			accessor.SetAPIVersion(item, "")
 			items = append(items, item)
 		}
-		list := &api.List{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "servicecatalog.k8s.io/v1alpha1",
-			},
-			Items: items,
-		}
-		// list is actually an *api.List, but we're going to encode it as if it were
-		// a list for a specific type. This cheat sends the right bytes over the wire.
+		var list runtime.Object
 		var codec runtime.Codec
 		var err error
 		switch tipe {
 		case "brokers":
-			accessor.SetKind(list, "BrokerList")
-			codec, err = testapi.GetCodecForObject(&v1alpha1.BrokerList{})
+			list = &sc.BrokerList{TypeMeta: newTypeMeta(ServiceBrokerListKind)}
+			if err := meta.SetList(list, items); err != nil {
+				log.Fatalf("Error setting list items (%s)", err)
+			}
+			codec, err = testapi.GetCodecForObject(&sc.BrokerList{})
 		case "serviceclasses":
-			accessor.SetKind(list, "ServiceClassList")
-			codec, err = testapi.GetCodecForObject(&v1alpha1.ServiceClassList{})
+			list = &sc.ServiceClassList{TypeMeta: newTypeMeta(ServiceClassListKind)}
+			if err := meta.SetList(list, items); err != nil {
+				log.Fatalf("Error setting list items (%s)", err)
+			}
+			codec, err = testapi.GetCodecForObject(&sc.ServiceClassList{})
 		case "instances":
-			accessor.SetKind(list, "InstanceList")
-			codec, err = testapi.GetCodecForObject(&v1alpha1.InstanceList{})
+			list = &sc.InstanceList{TypeMeta: newTypeMeta(ServiceInstanceListKind)}
+			if err := meta.SetList(list, items); err != nil {
+				log.Fatalf("Error setting list items (%s)", err)
+			}
+			codec, err = testapi.GetCodecForObject(&sc.InstanceList{})
 		case "bindings":
-			accessor.SetKind(list, "BindingList")
-			codec, err = testapi.GetCodecForObject(&v1alpha1.BindingList{})
+			list = &sc.BindingList{TypeMeta: newTypeMeta(ServiceBindingListKind)}
+			if err := meta.SetList(list, items); err != nil {
+				log.Fatalf("Error setting list items (%s)", err)
+			}
+			codec, err = testapi.GetCodecForObject(&sc.BindingList{})
 		default:
 			log.Fatalf("unrecognized resource type: %s", tipe)
 		}
@@ -237,7 +237,7 @@ func createItem(storage namespacedStorage) func(rw http.ResponseWriter, r *http.
 		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
 		// TODO: Is there some type-agnostic way to get the codec?
-		codec, err := testapi.GetCodecForObject(&v1alpha1.Broker{})
+		codec, err := testapi.GetCodecForObject(&sc.Broker{})
 		if err != nil {
 			log.Fatalf("error getting codec: %s", err)
 		}
@@ -252,6 +252,10 @@ func createItem(storage namespacedStorage) func(rw http.ResponseWriter, r *http.
 		name, err := accessor.Name(item)
 		if err != nil {
 			log.Fatalf("couldn't get object name: %s", err)
+		}
+		if storage.get(ns, tipe, name) != nil {
+			rw.WriteHeader(http.StatusConflict)
+			return
 		}
 		accessor.SetResourceVersion(item, "1")
 		storage.set(ns, tipe, name, item)
@@ -297,7 +301,7 @@ func updateItem(storage namespacedStorage) func(http.ResponseWriter, *http.Reque
 			return
 		}
 		// TODO: Is there some type-agnostic way to get the codec?
-		codec, err := testapi.GetCodecForObject(&v1alpha1.Broker{})
+		codec, err := testapi.GetCodecForObject(&sc.Broker{})
 		if err != nil {
 			log.Fatalf("error getting codec: %s", err)
 		}
