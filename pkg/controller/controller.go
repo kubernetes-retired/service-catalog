@@ -70,7 +70,7 @@ func NewController(
 	recorder record.EventRecorder,
 	poller brokerapi.Poller,
 ) (Controller, error) {
-	controller = &controller{
+	controller := &controller{
 		kubeClient:                kubeClient,
 		serviceCatalogClient:      serviceCatalogClient,
 		brokerClientCreateFunc:    brokerClientCreateFunc,
@@ -851,7 +851,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			)
 			c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
 		}
-		return
+		return nil
 	}
 
 	// All updates not having a DeletingTimestamp will have been handled above
@@ -1160,7 +1160,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			"OngoingAsynchronousOperation",
 			"The binding references an Instance that has an ongoing asynchronous operation ongoing. ",
 		)
-		return
+		// TODO(vaikas): Return an error here, do not check in like this...
+		return err
 	}
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
