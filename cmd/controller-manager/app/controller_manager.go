@@ -305,7 +305,6 @@ func StartControllers(s *options.ControllerManagerServer,
 			s.BrokerRelistInterval,
 			s.OSBAPIContextProfile,
 			recorder,
-			openservicebroker.NewPoller(),
 		)
 		if err != nil {
 			return err
