@@ -350,42 +350,29 @@ func TestShouldReconcileBroker(t *testing.T) {
 
 func TestReconcileBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t)
-
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
 	testController.reconcileBroker(getTestBroker())
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 2, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
 
 	// first action should be a create action for a service class
-	createAction := actions[0].(clientgotesting.CreateAction)
-	if e, a := "create", createAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-
-	createActionObject := createAction.GetObject().(*v1alpha1.ServiceClass)
-	if e, a := testServiceClassName, createActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
-	}
+	assertCreate(t, actions[0], getTestServiceClass())
 
 	// second action should be an update action for broker status subresource
-	updateAction := actions[1].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := testBrokerName, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
-	}
+	updatedBroker := assertUpdateStatus(t, actions[1], getTestBroker())
+	assertBrokerReadyTrue(t, updatedBroker)
 
 	// verify no kube resources created
-	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -399,38 +386,19 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 
 	testController.reconcileBroker(getTestBroker())
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 2, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
 
 	// first action should be an update action for a service class
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-
-	updateObject := updateAction.GetObject().(*v1alpha1.ServiceClass)
-	if e, a := testServiceClassName, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
-	}
+	assertUpdate(t, actions[0], testServiceClass)
 
 	// second action should be an update action for broker status subresource
-	updateAction2 := actions[1].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction2.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updateObject2 := updateAction2.GetObject().(*v1alpha1.Broker)
-	if e, a := testBrokerName, updateObject2.Name; e != a {
-		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
-	}
+	updatedBroker := assertUpdateStatus(t, actions[1], getTestBroker())
+	assertBrokerReadyTrue(t, updatedBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 0)
 }
 
 func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
@@ -444,32 +412,18 @@ func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
 
 	testController.reconcileBroker(getTestBroker())
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
-	// second action should be an update action for broker status subresource
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := testBrokerName, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
-	}
+	updatedBroker := assertUpdateStatus(t, actions[0], getTestBroker())
+	assertBrokerReadyFalse(t, updatedBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 0)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" already exists with OSB guid "notTheSame", received different guid "SCGUID"`
 	if e, a := expectedEvent, events[0]; e != a {
@@ -488,32 +442,18 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 
 	testController.reconcileBroker(getTestBroker())
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
-	// second action should be an update action for broker status subresource
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := testBrokerName, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
-	}
+	updatedBroker := assertUpdateStatus(t, actions[0], getTestBroker())
+	assertBrokerReadyFalse(t, updatedBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 0)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" for Broker "test-broker" already exists for Broker "notTheSame"`
 	if e, a := expectedEvent, events[0]; e != a {
@@ -535,69 +475,25 @@ func TestReconcileBrokerDelete(t *testing.T) {
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 0)
 
-	actions := filterActions(fakeCatalogClient.Actions())
+	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Deleting the associated ServiceClass
 	// 1. Updating the ready condition
 	// 2. Removing the finalizer
-	if e, a := 3, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, actions, 3)
 
-	deleteAction := actions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
+	assertDelete(t, actions[0], testServiceClass)
 
-	if e, a := testServiceClass.Name, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of serviceclass: expected %v, got %v", e, a)
-	}
+	updatedBroker := assertUpdateStatus(t, actions[1], broker)
+	assertBrokerReadyFalse(t, updatedBroker)
 
-	updateAction := actions[1].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
+	updatedBroker = assertUpdateStatus(t, actions[2], broker)
+	assertEmptyFinalizers(t, updatedBroker)
 
-	updatedBroker := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := broker.Name, updatedBroker.Name; e != a {
-		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
-	}
-
-	if e, a := 1, len(updatedBroker.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.BrokerConditionReady, updatedBroker.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionFalse, updatedBroker.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
-
-	updateAction = actions[2].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[2]; expected %v, got %v", e, a)
-	}
-
-	updatedBroker = updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := broker.Name, updatedBroker.Name; e != a {
-		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
-	}
-
-	if e, a := 0, len(updatedBroker.Finalizers); e != a {
-		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
-	}
-
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successBrokerDeletedReason + " " + "The broker test-broker was deleted successfully."
 	if e, a := expectedEvent, events[0]; e != a {
@@ -613,31 +509,16 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 
 	testController.reconcileBroker(broker)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := broker.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
-	}
-	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
-	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	updatedBroker := assertUpdateStatus(t, actions[0], broker)
+	assertBrokerReadyFalse(t, updatedBroker)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorFetchingCatalogReason + " " + "Error getting broker catalog for broker \"test-broker\": instance not found"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -660,27 +541,16 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 
 	testController.reconcileBroker(broker)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
-	}
-	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := broker.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
-	}
-	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedBroker := assertUpdateStatus(t, actions[0], broker)
+	assertBrokerReadyFalse(t, updatedBroker)
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
+
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
@@ -689,10 +559,8 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -715,35 +583,22 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 
 	testController.reconcileBroker(broker)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
-	if e, a := broker.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of broker: expected %v, got %v", e, a)
-	}
-	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedBroker := assertUpdateStatus(t, actions[0], broker)
+	assertBrokerReadyFalse(t, updatedBroker)
 
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
+
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": auth secret didn't contain username"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -814,18 +669,15 @@ func TestUpdateBrokerCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		if e, a := 1, len(actions); e != a {
-			t.Errorf("%v: unexpected number of actions; expected %v, got %v.  Actions: %+v", tc.name, e, a, actions)
-			continue
-		}
+		assertNumberOfActions(t, actions, 1)
 
 		updateAction := actions[0].(clientgotesting.UpdateAction)
 		if e, a := "update", updateAction.GetVerb(); e != a {
-			t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+			t.Errorf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 		}
 		updateActionObject := updateAction.GetObject().(*v1alpha1.Broker)
 		if e, a := testBrokerName, updateActionObject.Name; e != a {
-			t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+			t.Errorf("Unexpected name of instance created: expected %v, got %v", e, a)
 		}
 
 		var initialTs metav1.Time
@@ -859,28 +711,14 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such class exists.
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := testInstanceName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "ReferencesNonexistentServiceClass", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance, errorNonexistentServiceClassReason)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	events := getRecordedEvents(testController)
 	if e, a := 1, len(events); e != a {
 		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
 	}
@@ -900,31 +738,15 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: +%v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such broker exists.
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := testInstanceName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "ReferencesNonexistentBroker", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance, errorNonexistentBrokerReason)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentBrokerReason + " " + "Instance \"test-ns/test-instance\" references a non-existent broker \"test-broker\""
 	if e, a := expectedEvent, events[0]; e != a {
@@ -951,10 +773,8 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: +%v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
@@ -973,9 +793,8 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
+
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
@@ -984,10 +803,8 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1012,31 +829,15 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such class exists.
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := testInstanceName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "ReferencesNonexistentServicePlan", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance, errorNonexistentServicePlanReason)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "Instance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\""
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1066,38 +867,20 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
 
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyTrue(t, updatedInstance)
 
-	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
-	}
-
-	if e, a := 1, len(updateObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
+	updateObject, ok := updatedInstance.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.Instance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
@@ -1122,10 +905,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		}
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1154,47 +935,23 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 0)
 
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
-	}
-
-	if e, a := 1, len(updateObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
 
 	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
 		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
 	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to unmarshal Instance parameters"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
 		t.Fatalf("Received unexpected event: %v", a)
@@ -1225,44 +982,20 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
-	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
-	}
-
-	if e, a := 1, len(updateObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionFalse, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
 
 	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
 		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorProvisionCalledReason + " " + "Error provisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": fake creation failure"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1290,39 +1023,16 @@ func TestReconcileInstance(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
 
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updateObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
-	}
-
-	if e, a := 1, len(updateObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.InstanceConditionReady, updateObject.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionTrue, updateObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyTrue(t, updatedInstance)
 
 	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
 		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
@@ -1340,10 +1050,8 @@ func TestReconcileInstance(t *testing.T) {
 		}
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1367,17 +1075,14 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if a := len(actions); a != 1 {
-		t.Fatalf("Unexpected number of actions: expected 1, got %v. Actions: %+v", a, actions)
-	}
-
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 1, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 1)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
@@ -1387,10 +1092,8 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceInstanceReason + " " + "Failed to get namespace \"test-ns\" during instance create: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1420,72 +1123,28 @@ func TestReconcileInstanceDelete(t *testing.T) {
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 0)
 
-	actions := filterActions(fakeCatalogClient.Actions())
+	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Updating the ready condition
 	// 1. Get against the instance
 	// 2. Removing the finalizer
-	if e, a := 3, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, actions, 3)
 
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
 
-	updatedObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updatedObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
-	}
-
-	if e, a := 1, len(updatedObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.InstanceConditionReady, updatedObject.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionFalse, updatedObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	assertGet(t, actions[1], instance)
+	updatedInstance = assertUpdateStatus(t, actions[2], instance)
+	assertEmptyFinalizers(t, updatedInstance)
 
 	if _, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; ok {
 		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
 	}
 
-	getAction := actions[1].(clientgotesting.GetAction)
-	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-	if e, a := testInstanceName, getAction.GetName(); e != a {
-		t.Fatalf("Unexpected name of object to get; expected %v; got %v", e, a)
-	}
-
-	updateAction = actions[2].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updatedObject = updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updatedObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
-	}
-
-	if e, a := 0, len(updatedObject.Finalizers); e != a {
-		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
-	}
-
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1568,18 +1227,17 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		if e, a := 1, len(actions); e != a {
-			t.Errorf("%v: unexpected number of actions; expected %v, got %v.  Actions: %+v", tc.name, e, a, actions)
-			continue
-		}
+		assertNumberOfActions(t, actions, 1)
 
 		updateAction := actions[0].(clientgotesting.UpdateAction)
 		if e, a := "update", updateAction.GetVerb(); e != a {
-			t.Fatalf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+			continue
 		}
 		updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
 		if e, a := testInstanceName, updateActionObject.Name; e != a {
-			t.Fatalf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+			continue
 		}
 
 		var initialTs metav1.Time
@@ -1612,31 +1270,19 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such instance exists.
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
-	updateActionObject := updateAction.GetObject().(*v1alpha1.Binding)
-	if e, a := testBindingName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of binding created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "ReferencesNonexistentInstance", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
-	}
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding, errorNonexistentInstanceReason)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentInstanceReason + " " + "Binding \"/test-binding\" references a non-existent Instance \"/nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1671,31 +1317,15 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such service class.
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-	updateActionObject := updateAction.GetObject().(*v1alpha1.Binding)
-	if e, a := testBindingName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of binding created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "ReferencesNonexistentServiceClass", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
-	}
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding, errorNonexistentServiceClassMessage)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassMessage + " " + "Binding \"test-ns/test-binding\" references a non-existent ServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1749,25 +1379,16 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), appGUID)
 	}
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if e, a := 1, len(actions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says binding was created
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
-	updateObject := updateAction.GetObject().(*v1alpha1.Binding)
-	if e, a := testBindingName, updateObject.Name; e != a {
-		t.Fatalf("Unexpected name of binding created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "InjectedBindResult", updateObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyTrue(t, updatedBinding)
+
+	updateObject, ok := updatedBinding.(*v1alpha1.Binding)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.Binding")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, array with two values in it.
@@ -1805,10 +1426,8 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		}
 	}
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1839,23 +1458,13 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	actions := filterActions(fakeCatalogClient.Actions())
-	if a := len(actions); a != 1 {
-		t.Fatalf("Unexpected number of actions: expected 1, got %v. Actions: %+v", a, actions)
-	}
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-	updatedBinding := updateAction.GetObject().(*v1alpha1.Binding)
-	if e, a := binding.Name, updatedBinding.Name; e != a {
-		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding)
 
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceInstanceReason + " " + "Failed to get namespace \"test-ns\" during binding: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1898,9 +1507,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	// The two actions should be:
 	// 0. Getting the secret
 	// 1. Deleting the secret
-	if e, a := 2, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, kubeActions, 2)
 
 	getAction := kubeActions[0].(clientgotesting.GetActionImpl)
 	if e, a := "get", getAction.GetVerb(); e != a {
@@ -1920,68 +1527,27 @@ func TestReconcileBindingDelete(t *testing.T) {
 		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
 	}
 
-	actions := filterActions(fakeCatalogClient.Actions())
+	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Updating the ready condition
 	// 1. Get against the binding in question
 	// 2. Removing the finalizer
-	if e, a := 3, len(actions); e != a {
-		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
-	}
+	assertNumberOfActions(t, actions, 3)
 
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
-	}
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding)
 
-	updatedObject := updateAction.GetObject().(*v1alpha1.Binding)
-	if e, a := binding.Name, updatedObject.Name; e != a {
-		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
-	}
+	assertGet(t, actions[1], binding)
 
-	if e, a := 1, len(updatedObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of status conditions: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.BindingConditionReady, updatedObject.Status.Conditions[0].Type; e != a {
-		t.Fatalf("Unexpected condition type: expected %v, got %v", e, a)
-	}
-
-	if e, a := v1alpha1.ConditionFalse, updatedObject.Status.Conditions[0].Status; e != a {
-		t.Fatalf("Unexpected condition status: expected %v, got %v", e, a)
-	}
+	updatedBinding = assertUpdateStatus(t, actions[2], binding)
+	assertEmptyFinalizers(t, updatedBinding)
 
 	if _, ok := fakeBrokerClient.BindingClient.Bindings[bindingsMapKey]; ok {
 		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
 	}
 
-	getAction2 := actions[1].(clientgotesting.GetAction)
-	if e, a := "get", getAction2.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-	if e, a := testBindingName, getAction2.GetName(); e != a {
-		t.Fatalf("Unexpected name of object to get; expected %v; got %v", e, a)
-	}
-
-	updateAction = actions[2].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-
-	updatedObject = updateAction.GetObject().(*v1alpha1.Binding)
-	if e, a := binding.Name, updatedObject.Name; e != a {
-		t.Fatalf("Unexpected name of binding: expected %v, got %v", e, a)
-	}
-
-	if e, a := 0, len(updatedObject.Finalizers); e != a {
-		t.Fatalf("Unexpected number of finalizers: expected %v, got %v", e, a)
-	}
-
-	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
 	if e, a := expectedEvent, events[0]; e != a {
@@ -2064,18 +1630,15 @@ func TestUpdateBindingCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		if e, a := 1, len(actions); e != a {
-			t.Errorf("%v: unexpected number of actions; expected %v, got %v.  Actions: %+v", tc.name, e, a, actions)
-			continue
-		}
+		assertNumberOfActions(t, actions, 1)
 
 		updateAction := actions[0].(clientgotesting.UpdateAction)
 		if e, a := "update", updateAction.GetVerb(); e != a {
-			t.Fatalf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
 		}
 		updateActionObject := updateAction.GetObject().(*v1alpha1.Binding)
 		if e, a := testBindingName, updateActionObject.Name; e != a {
-			t.Fatalf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
 		}
 
 		var initialTs metav1.Time
@@ -2279,31 +1842,8 @@ func newTestController(t *testing.T) (
 	return fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController.(*controller), serviceCatalogSharedInformers
 }
 
-// filterActions filters the list/watch actions on service catalog resources
-// from an array of clientgotesting.Action.  This is so that we can write tests without
-// worrying about the list/watching that the informer infrastructure might
-// have done.
-func filterActions(actions []clientgotesting.Action) []clientgotesting.Action {
-	ret := []clientgotesting.Action{}
-	for _, action := range actions {
-		if len(action.GetNamespace()) == 0 &&
-			(action.Matches("list", "brokers") ||
-				action.Matches("list", "serviceclasses") ||
-				action.Matches("list", "instances") ||
-				action.Matches("list", "bindings") ||
-				action.Matches("watch", "brokers") ||
-				action.Matches("watch", "serviceclasses") ||
-				action.Matches("watch", "instances") ||
-				action.Matches("watch", "bindings")) {
-			continue
-		}
-		ret = append(ret, action)
-	}
-
-	return ret
-}
-
-func getRecordedEvents(source <-chan string) []string {
+func getRecordedEvents(testController *controller) []string {
+	source := testController.recorder.(*record.FakeRecorder).Events
 	done := false
 	events := []string{}
 	for !done {
@@ -2315,4 +1855,219 @@ func getRecordedEvents(source <-chan string) []string {
 		}
 	}
 	return events
+}
+
+func assertNumEvents(t *testing.T, strings []string, number int) {
+	if e, a := number, len(strings); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+}
+
+func assertNumberOfActions(t *testing.T, actions []clientgotesting.Action, number int) {
+	if e, a := number, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+}
+
+func assertGet(t *testing.T, action clientgotesting.Action, obj interface{}) {
+	assertActionFor(t, action, "get", "" /* subresource */, obj)
+}
+
+func assertCreate(t *testing.T, action clientgotesting.Action, obj interface{}) runtime.Object {
+	return assertActionFor(t, action, "create", "" /* subresource */, obj)
+}
+
+func assertUpdate(t *testing.T, action clientgotesting.Action, obj interface{}) runtime.Object {
+	return assertActionFor(t, action, "update", "" /* subresource */, obj)
+}
+
+func assertUpdateStatus(t *testing.T, action clientgotesting.Action, obj interface{}) runtime.Object {
+	return assertActionFor(t, action, "update", "status", obj)
+}
+
+func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) {
+	assertActionFor(t, action, "delete", "" /* subresource */, obj)
+}
+
+func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) runtime.Object {
+	if e, a := verb, action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb: expected %v, got %v", e, a)
+	}
+
+	var resource string
+
+	switch obj.(type) {
+	case *v1alpha1.Broker:
+		resource = "brokers"
+	case *v1alpha1.ServiceClass:
+		resource = "serviceclasses"
+	case *v1alpha1.Instance:
+		resource = "instances"
+	case *v1alpha1.Binding:
+		resource = "bindings"
+	}
+
+	if e, a := resource, action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource; expected %v, got %v", e, a)
+	}
+
+	if e, a := subresource, action.GetSubresource(); e != a {
+		t.Fatalf("Unexpected subresource; expected %v, got %v", e, a)
+	}
+
+	rtObject, ok := obj.(runtime.Object)
+	if !ok {
+		t.Fatalf("Object %+v was not a runtime.Object", obj)
+	}
+
+	paramAccessor, err := metav1.ObjectMetaFor(rtObject)
+	if err != nil {
+		t.Fatalf("Error creating ObjectMetaAccessor for param object %+v: %v", rtObject, err)
+	}
+
+	var (
+		objectMeta   metav1.Object
+		fakeRtObject runtime.Object
+	)
+
+	switch verb {
+	case "get":
+		getAction, ok := action.(clientgotesting.GetAction)
+		if !ok {
+			t.Fatalf("Unexpected type; failed to convert action %+v to DeleteAction", action)
+		}
+
+		if e, a := paramAccessor.GetName(), getAction.GetName(); e != a {
+			t.Fatalf("unexpected name: expected %v, got %v", e, a)
+		}
+
+		return nil
+	case "delete":
+		deleteAction, ok := action.(clientgotesting.DeleteAction)
+		if !ok {
+			t.Fatalf("Unexpected type; failed to convert action %+v to DeleteAction", action)
+		}
+
+		if e, a := paramAccessor.GetName(), deleteAction.GetName(); e != a {
+			t.Fatalf("unexpected name: expected %v, got %v", e, a)
+		}
+
+		return nil
+	case "create":
+		createAction, ok := action.(clientgotesting.CreateAction)
+		if !ok {
+			t.Fatalf("Unexpected type; failed to convert action %+v to CreateAction", action)
+		}
+
+		fakeRtObject = createAction.GetObject()
+		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
+		if err != nil {
+			t.Fatalf("Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+		}
+	case "update":
+		updateAction, ok := action.(clientgotesting.UpdateAction)
+		if !ok {
+			t.Fatalf("Unexpected type; failed to convert action %+v to UpdateAction", action)
+		}
+
+		fakeRtObject = updateAction.GetObject()
+		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
+		if err != nil {
+			t.Fatalf("Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+		}
+	}
+
+	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
+		t.Fatalf("unexpected name: expected %v, got %v", e, a)
+	}
+
+	fakeValue := reflect.ValueOf(fakeRtObject)
+	paramValue := reflect.ValueOf(obj)
+
+	if e, a := paramValue.Type(), fakeValue.Type(); e != a {
+		t.Fatalf("Unexpected type of object passed to fake client; expected %v, got %v", e, a)
+	}
+
+	return fakeRtObject
+}
+
+func assertBrokerReadyTrue(t *testing.T, obj runtime.Object) {
+	assertBrokerReadyCondition(t, obj, v1alpha1.ConditionTrue)
+}
+
+func assertBrokerReadyFalse(t *testing.T, obj runtime.Object) {
+	assertBrokerReadyCondition(t, obj, v1alpha1.ConditionFalse)
+}
+
+func assertBrokerReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus) {
+	broker, ok := obj.(*v1alpha1.Broker)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Broker", obj)
+	}
+
+	for _, condition := range broker.Status.Conditions {
+		if condition.Type == v1alpha1.BrokerConditionReady && condition.Status != status {
+			t.Fatalf("ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+		}
+	}
+}
+
+func assertInstanceReadyTrue(t *testing.T, obj runtime.Object) {
+	assertInstanceReadyCondition(t, obj, v1alpha1.ConditionTrue)
+}
+
+func assertInstanceReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
+	assertInstanceReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
+}
+
+func assertInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
+	instance, ok := obj.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+	}
+
+	for _, condition := range instance.Status.Conditions {
+		if condition.Type == v1alpha1.InstanceConditionReady && condition.Status != status {
+			t.Fatalf("ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+		}
+		if len(reason) == 1 && condition.Reason != reason[0] {
+			t.Fatalf("unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+		}
+	}
+}
+
+func assertBindingReadyTrue(t *testing.T, obj runtime.Object) {
+	assertBindingReadyCondition(t, obj, v1alpha1.ConditionTrue)
+}
+
+func assertBindingReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
+	assertBindingReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
+}
+
+func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
+	binding, ok := obj.(*v1alpha1.Binding)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Binding", obj)
+	}
+
+	for _, condition := range binding.Status.Conditions {
+		if condition.Type == v1alpha1.BindingConditionReady && condition.Status != status {
+			t.Fatalf("ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+		}
+		if len(reason) == 1 && condition.Reason != reason[0] {
+			t.Fatalf("unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+		}
+	}
+}
+
+func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
+	accessor, err := metav1.ObjectMetaFor(obj)
+	if err != nil {
+		t.Fatalf("Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
+	}
+
+	if len(accessor.GetFinalizers()) != 0 {
+		t.Fatalf("Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
+	}
 }
