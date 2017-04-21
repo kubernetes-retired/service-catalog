@@ -206,6 +206,7 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
 		BrokerName: testBrokerName,
+		OSBGUID:    serviceClassGUID,
 		Plans: []v1alpha1.ServicePlan{{
 			Name:    testPlanName,
 			OSBFree: true,
@@ -371,13 +372,125 @@ func TestReconcileBroker(t *testing.T) {
 	}
 
 	// second action should be an update action for broker status subresource
-	createAction2 := actions[1].(clientgotesting.CreateAction)
-	if e, a := "update", createAction2.GetVerb(); e != a {
+	updateAction := actions[1].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
 
-	createActionObject2 := createAction2.GetObject().(*v1alpha1.Broker)
-	if e, a := testBrokerName, createActionObject2.Name; e != a {
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := testBrokerName, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+}
+
+func TestReconcileBrokerExistingServiceClass(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	testServiceClass := getTestServiceClass()
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	testController.reconcileBroker(getTestBroker())
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 2, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+
+	// first action should be an update action for a service class
+	updateAction := actions[0].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.ServiceClass)
+	if e, a := testServiceClassName, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of serviceClass created: expected %v, got %v", e, a)
+	}
+
+	// second action should be an update action for broker status subresource
+	updateAction2 := actions[1].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction2.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject2 := updateAction2.GetObject().(*v1alpha1.Broker)
+	if e, a := testBrokerName, updateObject2.Name; e != a {
+		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+}
+
+func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	testServiceClass := getTestServiceClass()
+	testServiceClass.OSBGUID = "notTheSame"
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	testController.reconcileBroker(getTestBroker())
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+
+	// second action should be an update action for broker status subresource
+	updateAction := actions[0].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := testBrokerName, updateObject.Name; e != a {
+		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
+	}
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+}
+
+func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	testServiceClass := getTestServiceClass()
+	testServiceClass.BrokerName = "notTheSame"
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	testController.reconcileBroker(getTestBroker())
+
+	actions := filterActions(fakeCatalogClient.Actions())
+	if e, a := 1, len(actions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v. Actions: %+v", e, a, actions)
+	}
+
+	// second action should be an update action for broker status subresource
+	updateAction := actions[0].(clientgotesting.UpdateAction)
+	if e, a := "update", updateAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+	}
+
+	updateObject := updateAction.GetObject().(*v1alpha1.Broker)
+	if e, a := testBrokerName, updateObject.Name; e != a {
 		t.Fatalf("Unexpected name of broker created: expected %v, got %v", e, a)
 	}
 
