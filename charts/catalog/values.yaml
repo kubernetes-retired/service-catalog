@@ -1,7 +1,7 @@
 # Default values for Service Catalog
 apiserver:
   # apiserver image to use
-  image: quay.io/kubernetes-service-catalog/apiserver:v0.0.3
+  image: quay.io/kubernetes-service-catalog/apiserver:v0.0.4
   # imagePullPolicy for the apiserver; valid values are "IfNotPresent" and
   # "Always"
   imagePullPolicy: Always
@@ -46,7 +46,7 @@ apiserver:
   verbosity: 10
 controllerManager:
   # controller-manager image to use
-  image: quay.io/kubernetes-service-catalog/controller-manager:v0.0.3
+  image: quay.io/kubernetes-service-catalog/controller-manager:v0.0.4
   # imagePullPolicy for the controller-manager; valid values are "IfNotPresent"
   # and "Always"
   imagePullPolicy: Always
@@ -58,5 +58,5 @@ controllerManager:
   brokerRelistInterval: 24h
   # Whether or not the controller supports a --broker-relist-interval flag. If this is 
   # set to true, brokerRelistInterval will be used as the value for that flag
-  brokerRelistIntervalActivated: false
+  brokerRelistIntervalActivated: true
 useAggregator: false
