@@ -381,7 +381,7 @@ func TestReconcileBroker(t *testing.T) {
 }
 
 func TestReconcileBrokerExistingServiceClass(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	testServiceClass := getTestServiceClass()
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
@@ -406,7 +406,7 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 }
 
 func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	testServiceClass := getTestServiceClass()
 	testServiceClass.OSBGUID = "notTheSame"
@@ -436,7 +436,7 @@ func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
 }
 
 func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers, _ := newTestController(t)
 
 	testServiceClass := getTestServiceClass()
 	testServiceClass.BrokerName = "notTheSame"

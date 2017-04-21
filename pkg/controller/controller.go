@@ -819,7 +819,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 
 			// Tag this instance as having an ongoing async operation so we can enforce
 			// no other operations against it can start.
-			c.setAsyncOperationOngoing(instance, true)
+			instance.Status.AsyncOpInProgress = true
 
 			c.updateInstanceCondition(
 				instance,
@@ -897,7 +897,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 
 			// Tag this instance as having an ongoing async operation so we can enforce
 			// no other operations against it can start.
-			c.setAsyncOperationOngoing(instance, true)
+			instance.Status.AsyncOpInProgress = true
 
 			c.updateInstanceCondition(
 				instance,
@@ -938,57 +938,16 @@ func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.Servic
 func (c *controller) handleLastOperationResponse(instance *v1alpha1.Instance, resp *brokerapi.LastOperationResponse) bool {
 	switch resp.State {
 	case "in progress":
-		c.setAsyncOperationOngoing(instance, true)
+		instance.Status.AsyncOpInProgress = true
 		return true
 	case "succeeded":
-		c.setAsyncOperationOngoing(instance, false)
-		// TODO(vaikas): Update the instance condition ready to true and set to succeed
+		instance.Status.AsyncOpInProgress = false
+		// TODO(vaikas): Update the instance condition ready to true and set to fail
 	case "failed":
-		c.setAsyncOperationOngoing(instance, false)
+		instance.Status.AsyncOpInProgress = false
 		// TODO(vaikas): Update the instance condition ready to true and set to fail
 	default:
 		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
-	}
-	return false
-}
-
-// setAsyncOperationOngoing updates the
-// InstanceConditionAsyncOperationInProgress to the specified status.
-func (c *controller) setAsyncOperationOngoing(instance *v1alpha1.Instance, status bool) {
-	if status {
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionAsyncOperationInProgress,
-			v1alpha1.ConditionTrue,
-			"AsynchronousOperation",
-			"The instance is being asynchronously operated on",
-		)
-	} else {
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionAsyncOperationInProgress,
-			v1alpha1.ConditionFalse,
-			"AsynchronousOperation",
-			"The instance is not being asynchronously operated on",
-		)
-	}
-}
-
-// isAsyncOperationOngoing checks to see if there's an ongoing asynchronous
-// operation ongoing.
-// InstanceConditionAsyncOperationInProgress to the specified status.
-func (c *controller) isAsyncOperationOngoing(instance *v1alpha1.Instance) bool {
-	if instance == nil {
-		return false
-	}
-
-	for _, cond := range instance.Status.Conditions {
-		if cond.Type == v1alpha1.InstanceConditionAsyncOperationInProgress {
-			if cond.Status == v1alpha1.ConditionTrue {
-				glog.Infof(`Found ongoing async operation for Instance "%v/%v"`, instance.Namespace, instance.Name)
-				return true
-			}
-		}
 	}
 	return false
 }
@@ -1155,14 +1114,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		return err
 	}
 
-	if c.isAsyncOperationOngoing(instance) {
+	if instance.Status.AsyncOpInProgress {
 		glog.Info("Async operation ongoing, refusing to move forward with the bind operation")
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			"OngoingAsynchronousOperation",
-			"The binding references an Instance that has an ongoing asynchronous operation ongoing. ",
+			errorWithOngoingAsyncOperation,
+			errorWithOngoingAsyncOperationMessage,
 		)
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
