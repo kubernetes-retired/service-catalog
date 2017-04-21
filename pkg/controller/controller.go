@@ -270,6 +270,8 @@ const (
 	successUnboundReason             string = "UnboundSuccessfully"
 	asyncProvisioningReason          string = "Provisioning"
 	asyncProvisioningMessage         string = "The instance is being provisioned asynchronously"
+	asyncDeprovisioningReason        string = "Derovisioning"
+	asyncDeprovisioningMessage       string = "The instance is being deprovisioned asynchronously"
 )
 
 // shouldReconcileBroker determines whether a broker should be reconciled; it
@@ -871,10 +873,9 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			AcceptsIncomplete: true,
 		}
 
-		// TODO: handle async deprovisioning
-
 		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
-		err = brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
+		response, respCode, err := brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
+
 		if err != nil {
 			s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
 			glog.Warning(s)
@@ -888,18 +889,36 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			return err
 		}
 
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			successDeprovisionReason,
-			successDeprovisionMessage,
-		)
-		// Clear the finalizer
-		c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
-		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+		if respCode == http.StatusAccepted {
+			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
+			if response.Operation != "" {
+				instance.Spec.OSBLastOperation = &response.Operation
+			}
 
-		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+			// Tag this instance as having an ongoing async operation so we can enforce
+			// no other operations against it can start.
+			c.setAsyncOperationOngoing(instance, true)
+
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				asyncDeprovisioningReason,
+				asyncDeprovisioningMessage,
+			)
+		} else {
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				successDeprovisionReason,
+				successDeprovisionMessage,
+			)
+			// Clear the finalizer
+			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+		}
 	}
 
 	return nil
@@ -1136,21 +1155,6 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		return err
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////// DISCUSSION //////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	// TODO(vaikas): This seems like this should fail earlier in the process, I tried to find a
-	// previous example of registry/.../strategy.go to validate cross resource objects, but was
-	// unable to. Is there no way to reject the request earlier on? It seems like this should be
-	// handled in /pkg/registry/servicecatalog/binding/strategy.go where the binding could
-	// be checked, however just like above, we just check it here, so maybe it's ok to do it here
-	// according to the spec, when a 'platform user', aka, Service Catalog user tries to create a
-	// binding to a Service Instance that has an ongoing operation ongoing, they should be given
-	// a 400 response, but that's not really how k8s really works, so I guess in the spirit of
-	// the platform, this seems like a place to put it.
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////// DISCUSSION //////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////
 	if c.isAsyncOperationOngoing(instance) {
 		glog.Info("Async operation ongoing, refusing to move forward with the bind operation")
 		c.updateBindingCondition(
@@ -1160,8 +1164,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			"OngoingAsynchronousOperation",
 			"The binding references an Instance that has an ongoing asynchronous operation ongoing. ",
 		)
-		// TODO(vaikas): Return an error here, do not check in like this...
-		return err
+		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
 
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)

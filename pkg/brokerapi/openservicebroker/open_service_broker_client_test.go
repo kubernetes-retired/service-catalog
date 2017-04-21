@@ -198,8 +198,15 @@ func TestDeprovisionInstanceOK(t *testing.T) {
 		ServiceID: testServiceID,
 		PlanID:    testPlanID,
 	}
-	if err := c.DeleteServiceInstance(testServiceInstanceID, &req); err != nil {
+	resp, rc, err := c.DeleteServiceInstance(testServiceInstanceID, &req)
+	if err != nil {
 		t.Fatal(err.Error())
+	}
+	if rc != http.StatusOK {
+		t.Fatalf("Expected %d http status code, got %d", http.StatusOK, rc)
+	}
+	if resp.Operation != "" {
+		t.Fatalf("Expected empty operation, got %q", resp.Operation)
 	}
 
 	expectedPath := fmt.Sprintf("/v2/service_instances/%s", testServiceInstanceID)
@@ -215,8 +222,15 @@ func TestDeprovisionInstanceGone(t *testing.T) {
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
 	fbs.SetResponseStatus(http.StatusGone)
-	if err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{}); err != nil {
+	resp, rc, err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{})
+	if err != nil {
 		t.Fatal(err.Error())
+	}
+	if rc != http.StatusGone {
+		t.Fatalf("Expected %d http status code, got %d", http.StatusGone, rc)
+	}
+	if resp.Operation != "" {
+		t.Fatalf("Expected empty operation, got %q", resp.Operation)
 	}
 }
 
@@ -227,7 +241,13 @@ func TestDeprovisionInstanceUnprocessableEntity(t *testing.T) {
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
 	fbs.SetResponseStatus(http.StatusUnprocessableEntity)
-	err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{})
+	resp, rc, err := c.DeleteServiceInstance(testServiceInstanceID, &brokerapi.DeleteServiceInstanceRequest{})
+	if rc != http.StatusUnprocessableEntity {
+		t.Fatalf("Expected %d http status code, got %d", http.StatusUnprocessableEntity, rc)
+	}
+	if resp.Operation != "" {
+		t.Fatalf("Expected empty operation, got %q", resp.Operation)
+	}
 	switch {
 	case err == nil:
 		t.Fatalf("Expected '%v'", errAsynchronous)
@@ -247,9 +267,17 @@ func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 		AcceptsIncomplete: true,
 	}
 
-	if err := c.DeleteServiceInstance(testServiceInstanceID, &req); err != nil {
+	resp, rc, err := c.DeleteServiceInstance(testServiceInstanceID, &req)
+	if err != nil {
 		t.Fatal(err.Error())
 	}
+	if rc != http.StatusAccepted {
+		t.Fatalf("Expected %d http status code, got %d", http.StatusAccepted, rc)
+	}
+	if resp.Operation != "" {
+		t.Fatalf("Expected empty operation, got %q", resp.Operation)
+	}
+
 }
 
 func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
@@ -263,12 +291,18 @@ func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
 		AcceptsIncomplete: true,
 	}
 
-	err := c.DeleteServiceInstance(testServiceInstanceID, &req)
+	resp, rc, err := c.DeleteServiceInstance(testServiceInstanceID, &req)
 	switch {
 	case err == nil:
 		t.Fatalf("Expected '%v'", errFailedState)
 	case err != errFailedState:
 		t.Fatalf("Expected '%v', got '%v'", errFailedState, err)
+	}
+	if rc != http.StatusOK {
+		t.Fatalf("Expected %d http status code, got %d", http.StatusOK, rc)
+	}
+	if resp.Operation != "" {
+		t.Fatalf("Expected empty operation, got %q", resp.Operation)
 	}
 }
 

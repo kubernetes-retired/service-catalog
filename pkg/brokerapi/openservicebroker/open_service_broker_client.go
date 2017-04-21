@@ -179,12 +179,12 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 	}
 }
 
-func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.ServiceInstance, error) {
+func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.ServiceInstance, int, error) {
 	// TODO: https://github.com/kubernetes-incubator/service-catalog/issues/114
-	return nil, fmt.Errorf("Not implemented")
+	return nil, 0, fmt.Errorf("Not implemented")
 }
 
-func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) error {
+func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) (*brokerapi.DeleteServiceInstanceResponse, int, error) {
 	var serviceInstanceURL string
 
 	if req.AcceptsIncomplete {
@@ -197,35 +197,28 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	resp, err := sendOSBRequest(c, http.MethodDelete, serviceInstanceURL, req)
 	if err != nil {
 		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
-		return errRequest{message: err.Error()}
+		return nil, resp.StatusCode, errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
 
 	deleteServiceInstanceResponse := brokerapi.DeleteServiceInstanceResponse{}
 	if err := util.ResponseBodyToObject(resp, &deleteServiceInstanceResponse); err != nil {
 		glog.Errorf("Error unmarshalling delete service instance response from broker %q: %#v", c.name, err)
-		return errResponse{message: err.Error()}
+		return nil, resp.StatusCode, errResponse{message: err.Error()}
 	}
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		return nil
+		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusAccepted:
-		glog.V(3).Infof("Asynchronous response received. Polling broker %q", c.name)
-		// TODO(vaikas): DO NOT CHECK IN, FIX THIS
-		/*
-			if err := c.pollBroker(ID, deleteServiceInstanceResponse.Operation); err != nil {
-				return err
-			}
-		*/
-
-		return nil
+		glog.V(3).Infof("Asynchronous response received.")
+		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusGone:
-		return nil
+		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusUnprocessableEntity:
-		return errAsynchronous
+		return &deleteServiceInstanceResponse, resp.StatusCode, errAsynchronous
 	default:
-		return errStatusCode{statusCode: resp.StatusCode}
+		return &deleteServiceInstanceResponse, resp.StatusCode, errStatusCode{statusCode: resp.StatusCode}
 	}
 }
 
@@ -367,44 +360,6 @@ func appendQueryParam(buffer *bytes.Buffer, key, value string) error {
 	_, err := buffer.WriteString(fmt.Sprintf(queryParamFormatString, key, value))
 	return err
 }
-
-/* REMOVE THIS
-func (c *openServiceBrokerClient) pollBroker(ID string, operation string) error {
-	pollReq := brokerapi.LastOperationRequest{}
-	if operation != "" {
-		pollReq.Operation = operation
-	}
-
-	pollingURL := fmt.Sprintf(pollingFormatString, c.url, ID)
-	for i := 0; i < pollingAmountLimit; i++ {
-		glog.V(3).Infof("Polling broker %v at %s attempt %v", c.name, pollingURL, i+1)
-		pollResp, err := sendOSBRequest(c, http.MethodGet, pollingURL, pollReq)
-		if err != nil {
-			return err
-		}
-		defer pollResp.Body.Close()
-
-		lo := brokerapi.LastOperationResponse{}
-		if err := util.ResponseBodyToObject(pollResp, &lo); err != nil {
-			return err
-		}
-
-		switch lo.State {
-		case brokerapi.StateInProgress:
-		case brokerapi.StateSucceeded:
-			return nil
-		case brokerapi.StateFailed:
-			return errFailedState
-		default:
-			return errUnknownState
-		}
-
-		time.Sleep(pollingIntervalSeconds * time.Second)
-	}
-
-	return errPollingTimeout
-}
-*/
 
 // SendRequest will serialize 'object' and send it using the given method to
 // the given URL, through the provided client

@@ -49,11 +49,11 @@ type InstanceClient interface {
 
 	// UpdateServiceInstance updates an existing service instance in the respective
 	// broker. This method handles all asynchronous request handling.
-	UpdateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*ServiceInstance, error)
+	UpdateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*ServiceInstance, int, error)
 
 	// DeleteServiceInstance deletes an existing service instance in the respective
 	// broker. This method handles all asynchronous request handling.
-	DeleteServiceInstance(ID string, req *DeleteServiceInstanceRequest) error
+	DeleteServiceInstance(ID string, req *DeleteServiceInstanceRequest) (*DeleteServiceInstanceResponse, int, error)
 
 	// PollServiceInstance polls a broker for a Service Instance Last Operation
 	PollServiceInstance(ID string, req *LastOperationRequest) (*LastOperationResponse, error)

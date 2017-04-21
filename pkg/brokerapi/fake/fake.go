@@ -66,13 +66,14 @@ func (c *CatalogClient) GetCatalog() (*brokerapi.Catalog, error) {
 
 // InstanceClient implements a fake CF instance API client
 type InstanceClient struct {
-	Instances             map[string]*brokerapi.ServiceInstance
-	ResponseCode          int
-	LastOperationResponse *brokerapi.LastOperationResponse
-	CreateErr             error
-	UpdateErr             error
-	DeleteErr             error
-	PollErr               error
+	Instances                     map[string]*brokerapi.ServiceInstance
+	ResponseCode                  int
+	LastOperationResponse         *brokerapi.LastOperationResponse
+	DeleteServiceInstanceResponse *brokerapi.DeleteServiceInstanceResponse
+	CreateErr                     error
+	UpdateErr                     error
+	DeleteErr                     error
+	PollErr                       error
 }
 
 // NewInstanceClient creates a new empty instance client ready for use
@@ -115,32 +116,36 @@ func (i *InstanceClient) CreateServiceInstance(
 func (i *InstanceClient) UpdateServiceInstance(
 	id string,
 	req *brokerapi.CreateServiceInstanceRequest,
-) (*brokerapi.ServiceInstance, error) {
+) (*brokerapi.ServiceInstance, int, error) {
 
 	if i.UpdateErr != nil {
-		return nil, i.UpdateErr
+		return nil, i.ResponseCode, i.UpdateErr
 	}
 	if !i.exists(id) {
-		return nil, ErrInstanceNotFound
+		return nil, i.ResponseCode, ErrInstanceNotFound
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return i.Instances[id], nil
+	return i.Instances[id], i.ResponseCode, nil
 }
 
 // DeleteServiceInstance returns i.DeleteErr if it was non-nil. Otherwise returns
 // ErrInstanceNotFound if id didn't already exist in i.Instances. If it it did already exist,
 // removes i.Instances[id] from the map and returns nil
-func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteServiceInstanceRequest) error {
+func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteServiceInstanceRequest) (*brokerapi.DeleteServiceInstanceResponse, int, error) {
+	resp := &brokerapi.DeleteServiceInstanceResponse{}
+	if i.DeleteServiceInstanceResponse != nil {
+		resp = i.DeleteServiceInstanceResponse
+	}
 
 	if i.DeleteErr != nil {
-		return i.DeleteErr
+		return resp, i.ResponseCode, i.DeleteErr
 	}
 	if !i.exists(id) {
-		return ErrInstanceNotFound
+		return resp, i.ResponseCode, ErrInstanceNotFound
 	}
 	delete(i.Instances, id)
-	return nil
+	return resp, i.ResponseCode, nil
 }
 
 // PollServiceInstance returns i.PollErr if it was non-nil. Otherwise returns i.LastOperationResponse
