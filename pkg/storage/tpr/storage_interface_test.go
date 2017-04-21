@@ -40,11 +40,48 @@ const (
 	name      = "testthing"
 )
 
-func TestCreateAndRead(t *testing.T) {
+func TestCreateExisting(t *testing.T) {
 	keyer := getKeyer()
 	fakeCl := newFakeCoreRESTClient()
 	iface := getTPRStorageIFace(t, keyer, fakeCl)
-	origBroker := &sc.Broker{
+	// Ensure an existing broker
+	fakeCl.storage.set(namespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	})
+	inputBroker := &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	}
+	key, err := keyer.Key(request.NewContext(), name)
+	if err != nil {
+		t.Fatalf("error constructing key (%s)", err)
+	}
+	createdBroker := &sc.Broker{}
+	err = iface.Create(
+		context.Background(),
+		key,
+		inputBroker,
+		createdBroker,
+		uint64(0),
+	)
+	if err = verifyStorageError(err, storage.ErrCodeKeyExists); err != nil {
+		t.Fatal(err)
+	}
+	// Object should remain unmodified-- i.e. deeply equal to a new broker
+	if err = deepCompare(
+		"output",
+		createdBroker,
+		"new broker",
+		&sc.Broker{},
+	); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreate(t *testing.T) {
+	keyer := getKeyer()
+	fakeCl := newFakeCoreRESTClient()
+	iface := getTPRStorageIFace(t, keyer, fakeCl)
+	inputBroker := &sc.Broker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: sc.BrokerSpec{
 			URL: "http://my-awesome-broker.io",
@@ -54,13 +91,11 @@ func TestCreateAndRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-
-	// Begin create test
 	createdBroker := &sc.Broker{}
 	if err := iface.Create(
 		context.Background(),
 		key,
-		origBroker,
+		inputBroker,
 		createdBroker,
 		uint64(0),
 	); err != nil {
@@ -72,8 +107,6 @@ func TestCreateAndRead(t *testing.T) {
 	}
 	// Confirm the output is identical to what is in storage (nothing funny
 	// happened during encoding / decoding the response).
-	// the object will have been encoded by the test coder as an unversioned
-	// servicecatalog.Broker type
 	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
@@ -85,81 +118,87 @@ func TestCreateAndRead(t *testing.T) {
 	// Output and what's in storage should be known to be deeply equal at this
 	// point. Compare either of those to what was passed in. The only diff should
 	// be resource version, so we will set that first.
-	origBroker.ResourceVersion = createdBroker.ResourceVersion
-	err = deepCompare("input", origBroker, "output", createdBroker)
+	inputBroker.ResourceVersion = createdBroker.ResourceVersion
+	err = deepCompare("input", inputBroker, "output", createdBroker)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// End create test
+}
 
-	// Begin create existing test
-	origBroker2 := &sc.Broker{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
+func TestGetNonExistent(t *testing.T) {
+	keyer := getKeyer()
+	fakeCl := newFakeCoreRESTClient()
+	iface := getTPRStorageIFace(t, keyer, fakeCl)
+	key, err := keyer.Key(request.NewContext(), name)
+	if err != nil {
+		t.Fatalf("error constructing key (%s)", err)
 	}
-	createdBroker2 := &sc.Broker{}
-	err = iface.Create(
-		context.Background(),
-		key,
-		origBroker2,
-		createdBroker2,
-		uint64(0),
-	)
-	if err = verifyStorageError(err, storage.ErrCodeKeyExists); err != nil {
-		t.Fatal(err)
-	}
-	// End create existing test
-
-	// Begin get test
-	gottenBroker := &sc.Broker{}
+	outBroker := &sc.Broker{}
+	// Ignore not found
 	if err := iface.Get(
 		context.Background(),
 		key,
 		"", // TODO: Current impl ignores resource version-- may be wrong
-		gottenBroker,
+		outBroker,
+		true,
+	); err != nil {
+		t.Fatalf("expected no error, but received one (%s)", err)
+	}
+	// Object should remain unmodified-- i.e. deeply equal to a new broker
+	err = deepCompare("output", outBroker, "new broker", &sc.Broker{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Do not ignore not found
+	err = iface.Get(
+		context.Background(),
+		key,
+		"", // TODO: Current impl ignores resource version-- may be wrong
+		outBroker,
+		false,
+	)
+	if err = verifyStorageError(err, storage.ErrCodeKeyNotFound); err != nil {
+		t.Fatal(err)
+	}
+	// Object should remain unmodified-- i.e. deeply equal to a new broker
+	err = deepCompare("output", outBroker, "new broker", &sc.Broker{})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGet(t *testing.T) {
+	keyer := getKeyer()
+	fakeCl := newFakeCoreRESTClient()
+	iface := getTPRStorageIFace(t, keyer, fakeCl)
+	// Ensure an existing broker
+	fakeCl.storage.set(namespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	})
+	key, err := keyer.Key(request.NewContext(), name)
+	if err != nil {
+		t.Fatalf("error constructing key (%s)", err)
+	}
+	broker := &sc.Broker{}
+	if err := iface.Get(
+		context.Background(),
+		key,
+		"", // TODO: Current impl ignores resource version-- may be wrong
+		broker,
 		false, // Do not ignore if not found; error instead
 	); err != nil {
 		t.Fatalf("error getting object (%s)", err)
 	}
-	// Retrieved object should be deeply equal to what we created earlier
-	if err = deepCompare(
-		"retrieved object",
-		gottenBroker,
-		"expected object",
-		createdBroker,
-	); err != nil {
+	// Confirm the output is identical to what is in storage (nothing funny
+	// happened during encoding / decoding the response).
+	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
+	if obj == nil {
+		t.Fatal("no broker was in storage")
+	}
+	err = deepCompare("output", broker, "object in storage", obj)
+	if err != nil {
 		t.Fatal(err)
 	}
-	// End get test
-
-	// Begin list test
-	gottenList := &sc.BrokerList{}
-	if err := iface.List(
-		context.Background(),
-		keyer.KeyRoot(request.NewContext()),
-		"", // TODO: Current impl ignores resource version-- may be wrong
-		// TODO: Current impl ignores selection predicate-- may be wrong
-		storage.SelectionPredicate{},
-		gottenList,
-	); err != nil {
-		t.Fatalf("error listing objects (%s)", err)
-	}
-	// List should contain precisely one item
-	if len(gottenList.Items) != 1 {
-		t.Fatalf(
-			"expected list to contain exactly one item, but got %d items",
-			len(gottenList.Items),
-		)
-	}
-	// That one list item should be deeply equal to the one we retrieved earlier
-	if err = deepCompare(
-		"retrieved list item",
-		&gottenList.Items[0],
-		"expected object",
-		gottenBroker,
-	); err != nil {
-		t.Fatal(err)
-	}
-	// End list test
 }
 
 func TestGetEmptyList(t *testing.T) {
@@ -203,44 +242,43 @@ func TestGetEmptyList(t *testing.T) {
 	}
 }
 
-func TestGetNonExistent(t *testing.T) {
+func TestGetList(t *testing.T) {
 	keyer := getKeyer()
 	fakeCl := newFakeCoreRESTClient()
 	iface := getTPRStorageIFace(t, keyer, fakeCl)
-	key, err := keyer.Key(request.NewContext(), name)
-	if err != nil {
-		t.Fatalf("error constructing key (%s)", err)
-	}
-	outBroker := &sc.Broker{}
-	// Ignore not found
-	if err := iface.Get(
+	// Ensure an existing broker
+	fakeCl.storage.set(namespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	})
+	list := &sc.BrokerList{}
+	if err := iface.List(
 		context.Background(),
-		key,
+		keyer.KeyRoot(request.NewContext()),
 		"", // TODO: Current impl ignores resource version-- may be wrong
-		outBroker,
-		true,
+		// TODO: Current impl ignores selection predicate-- may be wrong
+		storage.SelectionPredicate{},
+		list,
 	); err != nil {
-		t.Fatalf("expected no error, but received one (%s)", err)
+		t.Fatalf("error listing objects (%s)", err)
 	}
-	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("output", outBroker, "new broker", &sc.Broker{})
-	if err != nil {
-		t.Fatal(err)
+	// List should contain precisely one item
+	if len(list.Items) != 1 {
+		t.Fatalf(
+			"expected list to contain exactly one item, but got %d items",
+			len(list.Items),
+		)
 	}
-	// Do not ignore not found
-	err = iface.Get(
-		context.Background(),
-		key,
-		"", // TODO: Current impl ignores resource version-- may be wrong
-		outBroker,
-		false,
-	)
-	if err = verifyStorageError(err, storage.ErrCodeKeyNotFound); err != nil {
-		t.Fatal(err)
+	// That one list item should be deeply equal to what's in storage
+	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
+	if obj == nil {
+		t.Fatal("no broker was in storage")
 	}
-	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("output", outBroker, "new broker", &sc.Broker{})
-	if err != nil {
+	if err := deepCompare(
+		"retrieved list item",
+		&list.Items[0],
+		"object in storage",
+		obj,
+	); err != nil {
 		t.Fatal(err)
 	}
 }
