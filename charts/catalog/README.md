@@ -44,6 +44,8 @@ chart and their default values.
 | `apiserver.insecure`  | Whether to expose an insecure endpoint; keep this enabled because there are some outstanding problems with the TLS-secured endpoint | `true` |
 | `apiserver.tls.cert` | Base64-encoded x509 certificate | A self-signed certificate |
 | `apiserver.tls.key` | Base64-encoded private key | The private key for the certificate above |
+| `apiserver.tls.ca` | Base64-encoded CA certificate used to sign the above certificate | |
+| `apiserver.tls.requestHeaderCA` | Base64-encoded CA used to validate request-header authentication, when receiving delegated authentication from an aggregator | *none (will disable requestheader authentication)* |
 | `apiserver.service.type` | Type of service; valid values are `LoadBalancer` and `NodePort` | `NodePort` |
 | `apiserver.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30443` |
 | `apiserver.service.nodePort.insecurePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The insecure endpoint, if enabled, will be exposed here | `30080` |
@@ -57,6 +59,7 @@ chart and their default values.
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
+| `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator (requires setting `apiserver.tls.ca` to work) | `false` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

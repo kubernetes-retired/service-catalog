@@ -41,7 +41,9 @@ type ServiceCatalogServerOptions struct {
 	EtcdOptions *EtcdOptions
 	// TPROptions are options for serving with TPR as the backing store
 	TPROptions *TPROptions
-	StopCh     <-chan struct{}
+	// DisableAuth disables delegating authentication and authorization for testing scenarios
+	DisableAuth bool
+	StopCh      <-chan struct{}
 }
 
 func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
@@ -50,6 +52,13 @@ func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
 		"storage-type",
 		"etcd",
 		"The type of backing storage this API server should use",
+	)
+
+	flags.BoolVar(
+		&s.DisableAuth,
+		"disable-auth",
+		false,
+		"Disable authentication and authorization for testing purposes",
 	)
 
 	s.GenericServerRunOptions.AddUniversalFlags(flags)

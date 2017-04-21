@@ -17,6 +17,8 @@ limitations under the License.
 package server
 
 import (
+	"github.com/golang/glog"
+
 	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
@@ -43,22 +45,18 @@ func setupBasicServer(s *ServiceCatalogServerOptions) (*genericapiserver.Config,
 		return nil, err
 	}
 
-	// glog.V(4).Info("Setting up authn (disabled)")
-	// need to figure out what's throwing the `missing clientCA file` err
-	/*
-		if _, err := genericConfig.ApplyDelegatingAuthenticationOptions(serverOptions.AuthenticationOptions); err != nil {
-			glog.Infoln(err)
-			return err
+	if !s.DisableAuth {
+		if err := s.AuthenticationOptions.ApplyTo(genericConfig); err != nil {
+			return nil, err
 		}
-	*/
 
-	// glog.V(4).Infoln("Setting up authz (disabled)")
-	// having this enabled causes the server to crash for any call
-	/*
-		if _, err := genericConfig.ApplyDelegatingAuthorizationOptions(serverOptions.AuthorizationOptions); err != nil {
-			glog.Infoln(err)
-			return err
+		if err := s.AuthorizationOptions.ApplyTo(genericConfig); err != nil {
+			return nil, err
 		}
-	*/
+	} else {
+		// always warn when auth is disabled, since this should only be used for testing
+		glog.Infof("Authentication and authorization disabled for testing purposes")
+	}
+
 	return genericConfig, nil
 }

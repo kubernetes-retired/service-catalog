@@ -45,7 +45,7 @@ gcloud auth activate-service-account \
   || { echo "Cannot activate GCloud service account from ${CREDENTIALS}"; exit 1; }
 
 echo "Creating cluster ${CLUSTERNAME}"
-gcloud container clusters create "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" \
+gcloud container clusters create "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" --cluster-version 1.6.1 \
   || { echo 'Cannot create cluster.'; exit 1; }
 
 echo "Using cluster ${CLUSTERNAME}."
