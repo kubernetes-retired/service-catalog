@@ -209,6 +209,10 @@ type InstanceSpec struct {
 // InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
 	Conditions []InstanceCondition `json:"conditions"`
+
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this Service Instance in progress.
+	AsyncOpInProgress bool `json:"asyncOpInProgress"`
 }
 
 // InstanceCondition contains condition information for an Instance.
@@ -232,11 +236,6 @@ type InstanceCondition struct {
 type InstanceConditionType string
 
 const (
-	// InstanceConditionAsyncOperationInProgress represents that a given instance has an
-	// ongoing Async operation in progress. This means the controller must not
-	// send any further operation requests to the broker responsible for this
-	// Service Instance. Exception of course is to poll for last state.
-	InstanceConditionAsyncOperationInProgress InstanceConditionType = "AsyncOperationInProgress"
 	// InstanceConditionReady represents that a given instance condition is in
 	// ready state
 	InstanceConditionReady InstanceConditionType = "Ready"

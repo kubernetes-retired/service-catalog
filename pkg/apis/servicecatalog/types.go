@@ -208,6 +208,9 @@ type InstanceSpec struct {
 // InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
 	Conditions []InstanceCondition
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this Service Instance in progress.
+	AsyncOpInProgress bool
 }
 
 // InstanceCondition contains condition information for an Instance.

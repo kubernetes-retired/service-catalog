@@ -613,8 +613,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
+						"asyncOpInProgress": {
+							SchemaProps: spec.SchemaProps{
+								Description: "AsyncOpInProgress is set to true if there is an ongoing async operation against this Service Instance in progress.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 					},
-					Required: []string{"conditions"},
+					Required: []string{"conditions", "asyncOpInProgress"},
 				},
 			},
 			Dependencies: []string{
