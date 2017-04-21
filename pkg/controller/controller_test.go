@@ -465,6 +465,16 @@ func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
 	if e, a := 0, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
+
+	events := getRecordedEvents(testController.recorder.(*record.FakeRecorder).Events)
+	if e, a := 1, len(events); e != a {
+		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+	}
+
+	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" already exists with OSB guid "notTheSame", received different guid "SCGUID"`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
+	}
 }
 
 func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
@@ -505,9 +515,9 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
 	}
 
-	expectedEvent := api.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
+	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" for Broker "test-broker" already exists for Broker "notTheSame"`
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
 	}
 }
 
