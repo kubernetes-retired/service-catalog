@@ -48,7 +48,7 @@ func listResource(
 		return nil, err
 	}
 
-	if err := decode(codec, nil, unknown.Raw, listObj); err != nil {
+	if err := decode(codec, unknown.Raw, listObj); err != nil {
 		return nil, err
 	}
 	objs, err := meta.ExtractList(listObj)

@@ -43,8 +43,8 @@ type objState struct {
 	data []byte
 }
 
-func getStateFromObject(s *store, obj runtime.Object) (*objState, error) {
-	versioner := s.Versioner()
+func (t *store) getStateFromObject(obj runtime.Object) (*objState, error) {
+	versioner := t.Versioner()
 	state := &objState{
 		obj:  obj,
 		meta: &storage.ResponseMeta{},
@@ -57,7 +57,7 @@ func getStateFromObject(s *store, obj runtime.Object) (*objState, error) {
 	state.rev = int64(rv)
 	state.meta.ResourceVersion = uint64(state.rev)
 
-	data, err := runtime.Encode(s.codec, obj)
+	data, err := runtime.Encode(t.codec, obj)
 	if err != nil {
 		return nil, err
 	}

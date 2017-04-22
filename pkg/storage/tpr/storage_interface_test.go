@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/storage"
+	"k8s.io/apiserver/pkg/storage/etcd"
 	restclient "k8s.io/client-go/rest"
 )
 
@@ -283,6 +284,57 @@ func TestGetList(t *testing.T) {
 	}
 }
 
+func TestUpdate(t *testing.T) {
+	keyer := getKeyer()
+	fakeCl := newFakeCoreRESTClient()
+	iface := getTPRStorageIFace(t, keyer, fakeCl)
+	var origRev uint64 = 1
+	newURL := "http://your-incredible-broker.io"
+	fakeCl.storage.set(namespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			ResourceVersion: fmt.Sprintf("%d", origRev),
+		},
+		Spec: sc.BrokerSpec{
+			URL: "http://my-awesome-broker.io",
+		},
+	})
+	key, err := keyer.Key(request.NewContext(), name)
+	if err != nil {
+		t.Fatalf("error constructing key (%s)", err)
+	}
+	updatedBroker := &sc.Broker{}
+	err = iface.GuaranteedUpdate(
+		context.Background(),
+		key,
+		updatedBroker,
+		false, // Don't ignore not found
+		nil,   // No preconditions for the update
+		storage.SimpleUpdate(func(obj runtime.Object) (runtime.Object, error) {
+			broker := obj.(*sc.Broker)
+			broker.Spec.URL = newURL
+			return broker, nil
+		}),
+	)
+	if err != nil {
+		t.Fatalf("unexpected error updating object (%s)", err)
+	}
+	updatedRev, err := iface.versioner.ObjectResourceVersion(updatedBroker)
+	if err != nil {
+		t.Fatalf("error extracting resource version (%s)", err)
+	}
+	if updatedRev <= origRev {
+		t.Fatalf(
+			"expected a new resource version > %d; got %d",
+			origRev,
+			updatedRev,
+		)
+	}
+	if updatedBroker.Spec.URL != newURL {
+		t.Fatal("expectd url to have been updated, but it was not")
+	}
+}
+
 func TestDeleteNonExistent(t *testing.T) {
 	keyer := getKeyer()
 	fakeCl := newFakeCoreRESTClient()
@@ -344,6 +396,18 @@ func getTPRStorageIFace(t *testing.T, keyer Keyer, restCl restclient.Interface) 
 		codec:        codec,
 		cl:           restCl,
 		singularKind: ServiceBrokerKind,
+		versioner:    etcd.APIObjectVersioner{},
+		singularShell: func(ns, name string) runtime.Object {
+			return &servicecatalog.Broker{
+				TypeMeta: metav1.TypeMeta{
+					Kind: ServiceBrokerKind.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: ns,
+					Name:      name,
+				},
+			}
+		},
 	}
 }
 
