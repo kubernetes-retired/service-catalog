@@ -14,6 +14,7 @@
 
 FROM debian
 
+RUN apt update && apt-get install -y dnsutils
 ADD tmp/apiserver /opt/services/
 
 ENTRYPOINT ["/opt/services/apiserver" ]
