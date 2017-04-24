@@ -53,7 +53,14 @@ the appropriate values will be automatically populated.
 However, if you do not see the `requestheader-client-ca-file` value in the
 config map (which is the case on some GKE setups), you can either populate
 the configmap with a valid CA certificate, or set the
-`apiserver.tls.requestHeaderCA` option when installing the Helm chart.
+`apiserver.tls.requestHeaderCA` option when installing the Helm chart:
+
+```shell
+helm install charts/catalog --name catalog --namespace catalog --set apiserver.tls.requestHeaderCA=$(base64 --wrap 0 /path/to/requestheader-client-ca.crt)
+```
+
+For more information about certificate setup, see the [documentation on
+authentication and authorization](./auth.md).
 
 **Note:** In the event you need to start the walkthrough over, the easiest way
 is to execute `helm delete --purge catalog`.
