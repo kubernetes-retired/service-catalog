@@ -1215,6 +1215,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			Conditions: []v1alpha1.InstanceCondition{{
 				Type:               v1alpha1.InstanceConditionReady,
 				Status:             status,
+				Message:            "message",
 				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 			}},
 		}
@@ -1226,6 +1227,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		name                  string
 		input                 *v1alpha1.Instance
 		status                v1alpha1.ConditionStatus
+		message               string
 		transitionTimeChanged bool
 	}{
 
@@ -1233,30 +1235,42 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			name:                  "initially unset",
 			input:                 getTestInstance(),
 			status:                v1alpha1.ConditionFalse,
+			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "not ready -> not ready",
 			input:                 getTestInstanceWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionFalse,
+			message:               "message",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> ready",
 			input:                 getTestInstanceWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionTrue,
+			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "ready -> ready",
 			input:                 getTestInstanceWithStatus(v1alpha1.ConditionTrue),
 			status:                v1alpha1.ConditionTrue,
+			message:               "message",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "ready -> not ready",
 			input:                 getTestInstanceWithStatus(v1alpha1.ConditionTrue),
 			status:                v1alpha1.ConditionFalse,
+			message:               "message",
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "message -> message2",
+			input:                 getTestInstanceWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionFalse,
+			message:               "message2",
 			transitionTimeChanged: true,
 		},
 	}
@@ -1271,9 +1285,9 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		}
 		inputClone := clone.(*v1alpha1.Instance)
 
-		err = testController.updateInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, "reason", "message")
+		err = testController.updateInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, "reason", tc.message)
 		if err != nil {
-			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
+			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue
 		}
 

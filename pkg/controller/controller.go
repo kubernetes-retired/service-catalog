@@ -785,7 +785,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			)
 			c.recorder.Eventf(instance, api.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
 
-			// Actually, tart polling this Service Instance by adding it into the polling queue
+			// Actually, start polling this Service Instance by adding it into the polling queue
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 			if err != nil {
 				glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
@@ -1029,7 +1029,7 @@ func (c *controller) updateInstanceCondition(
 					break
 				}
 				if cond.Message != message {
-					glog.Infof(`Found Message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
+					glog.Warningf(`Found message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
 					newCondition.LastTransitionTime = metav1.NewTime(t)
 					toUpdate.Status.Conditions[i] = newCondition
 					break

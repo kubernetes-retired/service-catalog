@@ -146,41 +146,22 @@ func TestProvisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
-	fbs.SetAsynchronous(2, true, "succeed_async")
+	fbs.SetResponseStatus(http.StatusAccepted)
+	fbs.SetOperation(testOperation)
 	req := brokerapi.CreateServiceInstanceRequest{
 		AcceptsIncomplete: true,
 	}
 
-	_, rc, err := c.CreateServiceInstance(testServiceInstanceID, &req)
+	resp, rc, err := c.CreateServiceInstance(testServiceInstanceID, &req)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 	if rc != http.StatusAccepted {
-		t.Fatalf("Expected '%d', got '%d'", http.StatusOK, rc)
+		t.Fatalf("Expected '%d', got '%d'", http.StatusAccepted, rc)
 	}
 
-}
-
-func TestProvisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
-	fbs, fakeBroker := setup()
-	defer fbs.Stop()
-
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
-
-	fbs.SetAsynchronous(2, false, "fail_async")
-	req := brokerapi.CreateServiceInstanceRequest{
-		AcceptsIncomplete: true,
-	}
-
-	_, rc, err := c.CreateServiceInstance(testServiceInstanceID, &req)
-	switch {
-	case err == nil:
-		t.Fatalf("Expected '%v'", errFailedState)
-	case err != errFailedState:
-		t.Fatalf("Expected '%v', got '%v'", errFailedState, err)
-	}
-	if rc != http.StatusOK {
-		t.Fatalf("Expected '%d', got '%d'", http.StatusOK, rc)
+	if resp.Operation != testOperation {
+		t.Fatalf("Expected operation %q for async operation, got %q", testOperation, resp.Operation)
 	}
 }
 
@@ -262,7 +243,8 @@ func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 
-	fbs.SetAsynchronous(2, true, "succeed_async")
+	fbs.SetResponseStatus(http.StatusAccepted)
+	fbs.SetOperation(testOperation)
 	req := brokerapi.DeleteServiceInstanceRequest{
 		AcceptsIncomplete: true,
 	}
@@ -274,36 +256,10 @@ func TestDeprovisionInstanceAcceptedSuccessAsynchronous(t *testing.T) {
 	if rc != http.StatusAccepted {
 		t.Fatalf("Expected %d http status code, got %d", http.StatusAccepted, rc)
 	}
-	if resp.Operation != "" {
-		t.Fatalf("Expected empty operation, got %q", resp.Operation)
+	if resp.Operation != testOperation {
+		t.Fatalf("Expected operation %q for async operation, got %q", testOperation, resp.Operation)
 	}
 
-}
-
-func TestDeprovisionInstanceAcceptedFailureAsynchronous(t *testing.T) {
-	fbs, fakeBroker := setup()
-	defer fbs.Stop()
-
-	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
-
-	fbs.SetAsynchronous(2, false, "fail_async")
-	req := brokerapi.DeleteServiceInstanceRequest{
-		AcceptsIncomplete: true,
-	}
-
-	resp, rc, err := c.DeleteServiceInstance(testServiceInstanceID, &req)
-	switch {
-	case err == nil:
-		t.Fatalf("Expected '%v'", errFailedState)
-	case err != errFailedState:
-		t.Fatalf("Expected '%v', got '%v'", errFailedState, err)
-	}
-	if rc != http.StatusOK {
-		t.Fatalf("Expected %d http status code, got %d", http.StatusOK, rc)
-	}
-	if resp.Operation != "" {
-		t.Fatalf("Expected empty operation, got %q", resp.Operation)
-	}
 }
 
 func TestBindOk(t *testing.T) {
@@ -486,6 +442,7 @@ func TestPollServiceInstanceWithSuccess(t *testing.T) {
 
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 	fbs.SetResponseStatus(http.StatusOK)
+	fbs.SetLastOperationState("success")
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID, Operation: testOperation}
 	resp, err := c.PollServiceInstance(testServiceInstanceID, r)
 	if err != nil {
@@ -497,8 +454,35 @@ func TestPollServiceInstanceWithSuccess(t *testing.T) {
 	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
 	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
 	verifyRequestParameter("operation", testOperation, fbs.Request, t)
-	if resp.State == "" {
-		t.Fatalf("Did not receive state for last_operation_request, got: %+v", resp)
+	if resp.State != "success" {
+		t.Fatalf("Did not receive state %q for last_operation_request, got: %q", "success", resp.State)
+	}
+	if resp.Description == "" {
+		t.Fatalf("Did not receive description for last_operation_request, got: %+v", resp)
+	}
+}
+
+func TestPollServiceInstanceWithNoOperation(t *testing.T) {
+	fbs, fakeBroker := setup()
+	defer fbs.Stop()
+
+	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.SetResponseStatus(http.StatusOK)
+	fbs.SetLastOperationState("failed")
+	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID}
+	resp, err := c.PollServiceInstance(testServiceInstanceID, r)
+	if err != nil {
+		t.Fatalf("PollServiceInstance failed unexpectedly with: %s", err)
+	}
+
+	expectedPath := fmt.Sprintf("/v2/service_instances/%s/last_operation", testServiceInstanceID)
+	verifyRequestMethodAndPath(http.MethodGet, expectedPath, fbs.Request, t)
+	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
+	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
+	// Make sure operation is not set.
+	verifyRequestParameter("operation", "", fbs.Request, t)
+	if resp.State != "failed" {
+		t.Fatalf("Did not receive state %q for last_operation_request, got: %q", "success", resp.State)
 	}
 	if resp.Description == "" {
 		t.Fatalf("Did not receive description for last_operation_request, got: %+v", resp)
