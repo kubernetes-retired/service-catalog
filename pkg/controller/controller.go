@@ -1166,7 +1166,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBrokerForBinding(instance, binding)
 	if err != nil {
 		return err
 	}
@@ -1451,9 +1451,9 @@ func (c *controller) bindingDelete(obj interface{}) {
 	glog.V(4).Infof("Received delete event for Binding %v/%v", binding.Namespace, binding.Name)
 }
 
-// getServiceClassPlanAndBroker is a sequence of operations that's done in multiple
+// getServiceClassPlanAndBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
-// a brokerClient to use for that method
+// a brokerClient to use for that method given an Instance.
 func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, brokerapi.BrokerClient, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
@@ -1482,7 +1482,7 @@ func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (
 			"The instance references a ServicePlan that does not exist. "+s,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
@@ -1512,6 +1512,75 @@ func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (
 			"Error getting auth credentials. "+s,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
+	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
+	return serviceClass, servicePlan, broker.Name, brokerClient, nil
+}
+
+// getServiceClassPlanAndBrokerForBinding is a sequence of operations that's
+// done to validate service plan, service class exist, and handles creating
+// a brokerclient to use for a given Instance.
+func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.Instance, binding *v1alpha1.Binding) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, brokerapi.BrokerClient, error) {
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
+	if err != nil {
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentServiceClassReason,
+			"The binding references a ServiceClass that does not exist. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
+		return nil, nil, "", nil, err
+	}
+
+	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
+	if servicePlan == nil {
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentServicePlanReason,
+			"The Binding references an Instance which references ServicePlan that does not exist. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		return nil, nil, "", nil, fmt.Errorf(s)
+	}
+
+	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
+	if err != nil {
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Broker %q", binding.Namespace, binding.Name, serviceClass.BrokerName)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentBrokerReason,
+			"The binding references a Broker that does not exist. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentBrokerReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
+	if err != nil {
+		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorAuthCredentialsReason,
+			"Error getting auth credentials. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorAuthCredentialsReason, s)
 		return nil, nil, "", nil, err
 	}
 
