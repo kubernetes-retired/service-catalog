@@ -68,6 +68,7 @@ func (c *CatalogClient) GetCatalog() (*brokerapi.Catalog, error) {
 type InstanceClient struct {
 	Instances                     map[string]*brokerapi.ServiceInstance
 	ResponseCode                  int
+	Operation                     string
 	LastOperationResponse         *brokerapi.LastOperationResponse
 	DeleteServiceInstanceResponse *brokerapi.DeleteServiceInstanceResponse
 	CreateErr                     error
@@ -107,7 +108,11 @@ func (i *InstanceClient) CreateServiceInstance(
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return &brokerapi.CreateServiceInstanceResponse{}, i.ResponseCode, nil
+	resp := &brokerapi.CreateServiceInstanceResponse{}
+	if i.Operation != "" {
+		resp.Operation = i.Operation
+	}
+	return resp, i.ResponseCode, nil
 }
 
 // UpdateServiceInstance returns i.UpdateErr if it was non-nil. Otherwise, returns

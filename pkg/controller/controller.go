@@ -925,28 +925,28 @@ func (c *controller) pollInstance(instance *v1alpha1.Instance) error {
 	case "in progress":
 		// The way the worker keeps on requeueing is by returning an error, so
 		// we need to keep on polling.
-		// TODO(vaikas): Update the instance condition with progress message?
-		return fmt.Errorf("last operation not completed for %v/%v", instance.Namespace, instance.Name)
+		// TODO(vaikas): Update the instance condition with progress message here?
+		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
 	case "succeeded":
-		// Because we were deleting the instance, finish the finalizers
-		// We were asynchronously deleting a Service Instance, finish
+		// this gets updated as a side effect in both cases below.
+		instance.Status.AsyncOpInProgress = false
+
+		// If we were asynchronously deleting a Service Instance, finish
 		// the finalizers.
 		if instance.DeletionTimestamp != nil {
 			// Clear the finalizer
 			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		} else {
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionTrue,
+				successProvisionReason,
+				successProvisionMessage,
+			)
 		}
-
-		instance.Status.AsyncOpInProgress = false
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			successDeprovisionReason,
-			successDeprovisionMessage,
-		)
-
 	case "failed":
 		instance.Status.AsyncOpInProgress = false
 		c.updateInstanceCondition(
@@ -972,24 +972,6 @@ func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.Servic
 	}
 
 	return nil
-}
-
-// handleLastOperationResponse gets called when a last operation poll has happened.
-func (c *controller) handleLastOperationResponse(instance *v1alpha1.Instance, resp *brokerapi.LastOperationResponse) bool {
-	switch resp.State {
-	case "in progress":
-		instance.Status.AsyncOpInProgress = true
-		return true
-	case "succeeded":
-		instance.Status.AsyncOpInProgress = false
-		// TODO(vaikas): Update the instance condition ready to true and set to fail
-	case "failed":
-		instance.Status.AsyncOpInProgress = false
-		// TODO(vaikas): Update the instance condition ready to true and set to fail
-	default:
-		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
-	}
-	return false
 }
 
 // updateInstanceCondition updates the given condition for the given Instance
@@ -1029,7 +1011,7 @@ func (c *controller) updateInstanceCondition(
 					break
 				}
 				if cond.Message != message {
-					glog.Warningf(`Found message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
+					glog.Infof(`Found message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
 					newCondition.LastTransitionTime = metav1.NewTime(t)
 					toUpdate.Status.Conditions[i] = newCondition
 					break

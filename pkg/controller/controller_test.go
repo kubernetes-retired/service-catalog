@@ -57,6 +57,7 @@ const (
 	testBindingName       = "test-binding"
 	testNamespace         = "test-ns"
 	testBindingSecretName = "test-secret"
+	testOperation         = "test-operation"
 )
 
 const testCatalog = `{
@@ -1027,6 +1028,11 @@ func TestReconcileInstance(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
+	// Since synchronous operation, must not make it into the polling queue.
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected the polling queue to be empty")
+	}
+
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
@@ -1081,7 +1087,13 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 
 	// Specify we want asynchronous provisioning...
 	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusAccepted
+	// And specify that we want broker to return an operation
+	fakeBrokerClient.InstanceClient.Operation = testOperation
 	instance := getTestInstance()
+
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected the polling queue to be empty")
+	}
 
 	testController.reconcileInstance(instance)
 
@@ -1113,6 +1125,94 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
 		}
 	}
+
+	// The item should've been added to the pollingQueue for later processing
+	if testController.pollingQueue.Len() != 1 {
+		t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
+	}
+	item, _ := testController.pollingQueue.Get()
+	if item == nil {
+		t.Fatalf("Did not get back a key from polling queue")
+	}
+	key := item.(string)
+	expectedKey := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
+	if key != expectedKey {
+		t.Fatalf("got key as %q expected %q", key, expectedKey)
+	}
+	assertAsyncOpInProgressTrue(t, updatedInstance)
+	assertInstanceLastOperation(t, updatedInstance, testOperation)
+}
+
+func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID("test_uid_foo"),
+			},
+		}, nil
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusAccepted
+	instance := getTestInstance()
+
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected the polling queue to be empty")
+	}
+
+	testController.reconcileInstance(instance)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
+
+	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
+		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
+	} else {
+		if len(si.Parameters) > 0 {
+			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
+		}
+
+		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
+		if string(ns.UID) != si.OrganizationGUID {
+			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
+		}
+		if string(ns.UID) != si.SpaceGUID {
+			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
+		}
+	}
+
+	// The item should've been added to the pollingQueue for later processing
+	if testController.pollingQueue.Len() != 1 {
+		t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
+	}
+	item, _ := testController.pollingQueue.Get()
+	if item == nil {
+		t.Fatalf("Did not get back a key from polling queue")
+	}
+	key := item.(string)
+	expectedKey := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
+	if key != expectedKey {
+		t.Fatalf("got key as %q expected %q", key, expectedKey)
+	}
+	assertAsyncOpInProgressTrue(t, updatedInstance)
+	assertInstanceLastOperation(t, updatedInstance, "")
 }
 
 func TestReconcileInstanceNamespaceError(t *testing.T) {
@@ -2126,6 +2226,43 @@ func assertInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alp
 		if len(reason) == 1 && condition.Reason != reason[0] {
 			t.Fatalf("unexpected reason; expected %v, got %v", reason[0], condition.Reason)
 		}
+	}
+}
+
+func assertAsyncOpInProgressTrue(t *testing.T, obj runtime.Object) {
+	instance, ok := obj.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+	}
+	if !instance.Status.AsyncOpInProgress {
+		t.Fatalf("expected AsyncOpInProgress to be true but was %v", instance.Status.AsyncOpInProgress)
+	}
+}
+
+func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
+	instance, ok := obj.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+	}
+	if instance.Status.AsyncOpInProgress {
+		t.Fatalf("expected AsyncOpInProgress to be false but was %v", instance.Status.AsyncOpInProgress)
+	}
+}
+
+func assertInstanceLastOperation(t *testing.T, obj runtime.Object, operation string) {
+	instance, ok := obj.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+	}
+	if instance.Spec.OSBLastOperation == nil && operation == "" {
+		return
+	}
+	if instance.Spec.OSBLastOperation == nil && operation != "" {
+		t.Fatalf("Had nil last operation was expecting %q", operation)
+	}
+	if instance.Spec.OSBLastOperation != nil && operation != *instance.Spec.OSBLastOperation {
+		t.Fatalf("Got unexpected last operation: %q expected %q", *instance.Spec.OSBLastOperation, operation)
+
 	}
 }
 
