@@ -269,6 +269,7 @@ const (
 	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
 	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
 	errorNonbindableServiceClassReason    string = "ErrorNonbindableServiceClass"
+	errorInstanceNotReadyReason           string = "ErrorInstanceNotReady"
 
 	successInjectedBindResultReason  string = "InjectedBindResult"
 	successInjectedBindResultMessage string = "Injected bind result"
@@ -1247,6 +1248,20 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			return err
 		}
 
+		if !isInstanceReady(instance) {
+			s := fmt.Sprintf(`Binding cannot begin because referenced instance "%v/%v" is not ready`, instance.Namespace, instance.Name)
+			glog.Info(s)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				errorInstanceNotReadyReason,
+				s,
+			)
+			c.recorder.Eventf(binding, api.EventTypeWarning, errorInstanceNotReadyReason, s)
+			return err
+		}
+
 		request := &brokerapi.BindingRequest{
 			ServiceID:    serviceClass.OSBGUID,
 			PlanID:       servicePlan.OSBGUID,
@@ -1729,4 +1744,16 @@ func unmarshalParameters(in []byte) (map[string]interface{}, error) {
 		}
 	}
 	return parameters, nil
+}
+
+// isInstanceReady returns whether the given instance has a ready condition
+// with status true.
+func isInstanceReady(instance *v1alpha1.Instance) bool {
+	for _, cond := range instance.Status.Conditions {
+		if cond.Type == v1alpha1.InstanceConditionReady {
+			return cond.Status == v1alpha1.ConditionTrue
+		}
+	}
+
+	return false
 }

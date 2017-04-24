@@ -284,6 +284,19 @@ func getTestNonbindableInstance() *v1alpha1.Instance {
 	return i
 }
 
+func getTestInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Instance {
+	instance := getTestInstance()
+	instance.Status = v1alpha1.InstanceStatus{
+		Conditions: []v1alpha1.InstanceCondition{{
+			Type:               v1alpha1.InstanceConditionReady,
+			Status:             status,
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+	}
+
+	return instance
+}
+
 // getTestInstanceAsync returns an instance in async mode
 func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 	instance := getTestInstance()
@@ -1925,7 +1938,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.Binding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
@@ -2095,6 +2108,53 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 	}
 	if !strings.Contains(events[0], testNamespace+"/"+testBindingName) {
 		t.Fatalf("Did not find expected binding name : got %q", events[0])
+	}
+}
+
+func TestReconcileBindingInstanceNotReady(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID("test_ns_uid"),
+			},
+		}, nil
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			OSBGUID:     bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	if _, ok := fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; ok {
+		t.Fatalf("Unexpected broker binding call")
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorInstanceNotReadyReason + " " + `Binding cannot begin because referenced instance "test-ns/test-instance" is not ready`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
@@ -2497,6 +2557,36 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		t.Fatalf("Didn't find metadata '' in service1 plan2")
 	}
 
+}
+
+func TestIsBrokerReady(t *testing.T) {
+	cases := []struct {
+		name  string
+		input *v1alpha1.Instance
+		ready bool
+	}{
+		{
+			name:  "ready",
+			input: getTestInstanceWithStatus(v1alpha1.ConditionTrue),
+			ready: true,
+		},
+		{
+			name:  "no status",
+			input: getTestInstance(),
+			ready: false,
+		},
+		{
+			name:  "not ready",
+			input: getTestInstanceWithStatus(v1alpha1.ConditionFalse),
+			ready: false,
+		},
+	}
+
+	for _, tc := range cases {
+		if e, a := tc.ready, isInstanceReady(tc.input); e != a {
+			t.Errorf("%v: expected result %v, got %v", tc.name, e, a)
+		}
+	}
 }
 
 // newTestController creates a new test controller injected with fake clients
