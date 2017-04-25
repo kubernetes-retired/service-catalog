@@ -17,6 +17,7 @@ limitations under the License.
 package tpr
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,10 +25,12 @@ import (
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/storage"
+	"k8s.io/apiserver/pkg/storage/etcd"
 	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
 	restclient "k8s.io/client-go/rest"
 )
@@ -47,6 +50,7 @@ type store struct {
 	listShell        func() runtime.Object
 	checkObject      func(runtime.Object) error
 	decodeKey        func(string) (string, string, error)
+	versioner        storage.Versioner
 }
 
 // NewStorage creates a new TPR-based storage.Interface implementation
@@ -62,19 +66,13 @@ func NewStorage(opts Options) (storage.Interface, factory.DestroyFunc) {
 		listShell:        opts.NewListFunc,
 		checkObject:      opts.CheckObjectFunc,
 		decodeKey:        opts.Keyer.NamespaceAndNameFromKey,
+		versioner:        etcd.APIObjectVersioner{},
 	}, opts.DestroyFunc
 }
 
 // Versioned returns the versioned associated with this interface
 func (t *store) Versioner() storage.Versioner {
-	return &versioner{
-		codec:        t.codec,
-		singularKind: t.singularKind,
-		listKind:     t.listKind,
-		checkObject:  t.checkObject,
-		defaultNS:    t.defaultNamespace,
-		restClient:   t.cl,
-	}
+	return t.versioner
 }
 
 // Create adds a new object at a key unless it already exists. 'ttl' is time-to-live
@@ -131,7 +129,7 @@ func (t *store) Create(
 		return err
 	}
 
-	if err := decode(t.codec, nil, unknown.Raw, out); err != nil {
+	if err := decode(t.codec, unknown.Raw, out); err != nil {
 		return err
 	}
 	return nil
@@ -229,7 +227,7 @@ func watchFilterer(t *store, ns string) func(watch.Event) (watch.Event, bool) {
 			return watch.Event{}, false
 		}
 		finalObj := t.singularShell("", "")
-		if err := decode(t.codec, nil, encodedBytes, finalObj); err != nil {
+		if err := decode(t.codec, encodedBytes, finalObj); err != nil {
 			glog.Errorf("couldn't decode watch event bytes (%s)", err)
 			return watch.Event{}, false
 		}
@@ -337,7 +335,7 @@ func (t *store) Get(
 		return err
 	}
 
-	if err := decode(t.codec, nil, unknown.Raw, objPtr); err != nil {
+	if err := decode(t.codec, unknown.Raw, objPtr); err != nil {
 		return nil
 	}
 	if !t.hasNamespace {
@@ -429,84 +427,128 @@ func (t *store) List(
 	return nil
 }
 
-// GuaranteedUpdate keeps calling 'tryUpdate()' to update key 'key' (of type 'ptrToType')
-// retrying the update until success if there is index conflict.
-// Note that object passed to tryUpdate may change across invocations of tryUpdate() if
-// other writers are simultaneously updating it, so tryUpdate() needs to take into account
-// the current contents of the object when deciding how the update object should look.
-// If the key doesn't exist, it will return NotFound storage error if ignoreNotFound=false
-// or zero value in 'ptrToType' parameter otherwise.
-// If the object to update has the same value as previous, it won't do any update
-// but will return the object in 'ptrToType' parameter.
-// If 'suggestion' can contain zero or one element - in such case this can be used as
-// a suggestion about the current version of the object to avoid read operation from
-// storage to get it.
-//
-// Example:
-//
-// s := /* implementation of Interface */
-// err := s.GuaranteedUpdate(
-//     "myKey", &MyType{}, true,
-//     func(input runtime.Object, res ResponseMeta) (runtime.Object, *uint64, error) {
-//       // Before each incovation of the user defined function, "input" is reset to
-//       // current contents for "myKey" in database.
-//       curr := input.(*MyType)  // Guaranteed to succeed.
-//
-//       // Make the modification
-//       curr.Counter++
-//
-//       // Return the modified object - return an error to stop iterating. Return
-//       // a uint64 to alter the TTL on the object, or nil to keep it the same value.
-//       return cur, nil, nil
-//    }
-// })
+// GuaranteedUpdate implements storage.Interface.GuaranteedUpdate.
 func (t *store) GuaranteedUpdate(
 	ctx context.Context,
 	key string,
 	out runtime.Object,
 	ignoreNotFound bool,
 	precondtions *storage.Preconditions,
-	tryUpdate storage.UpdateFunc,
+	userUpdate storage.UpdateFunc,
 	suggestion ...runtime.Object,
 ) error {
-	var origState *objState
+	// If a suggestion was passed, use that as the initial object, otherwise
+	// use Get() to retrieve it
+	var initObj runtime.Object
 	if len(suggestion) == 1 && suggestion[0] != nil {
-		s, err := getStateFromObject(t, suggestion[0])
-		if err != nil {
-			glog.Errorf("getting state from suggested object (%s)", err)
-			return err
-		}
-		origState = s
+		initObj = suggestion[0]
 	} else {
-		if err := t.Get(ctx, key, "", out, false); err != nil {
+		initObj = t.singularShell("", "")
+		if err := t.Get(ctx, key, "", initObj, ignoreNotFound); err != nil {
 			glog.Errorf("getting initial object (%s)", err)
 			return err
 		}
-		s, err := getStateFromObject(t, out)
-		if err != nil {
-			glog.Errorf("getting state from fetched object (%s)", err)
-			return err
-		}
-		origState = s
 	}
+	// In either case, extract current state from the initial object
+	curState, err := t.getStateFromObject(initObj)
+	if err != nil {
+		glog.Errorf("getting state from initial object (%s)", err)
+		return err
+	}
+	// Loop until update succeeds or we get an error
 	for {
-		ret, _, err := updateState(t.Versioner(), origState, tryUpdate)
-		if err != nil {
-			glog.Errorf("updating the state (%s)", err)
+		if err := checkPreconditions(key, precondtions, curState.obj); err != nil {
+			glog.Errorf("checking preconditions (%s)", err)
 			return err
 		}
-		data, err := runtime.Encode(t.codec, ret)
+		// Create a candidate for the new object by applying the userUpdate func
+		candidate, _, err := userUpdate(curState.obj, *curState.meta)
 		if err != nil {
-			glog.Errorf("encoding return object (%s)", err)
+			glog.Errorf("applying user update: (%s)", err)
 			return err
 		}
-		return decode(t.codec, t.Versioner(), data, out)
+		// Get bytes from the candidate
+		candidateData, err := runtime.Encode(t.codec, candidate)
+		if err != nil {
+			glog.Errorf("encoding candidate obj (%s)", err)
+			return err
+		}
+		// If the candidate matches what we already have, then all we need to do is
+		// decode into the out object
+		if bytes.Equal(candidateData, curState.data) {
+			err := decode(t.codec, candidateData, out)
+			if err != nil {
+				glog.Errorf("decoding to output object (%s)", err)
+			}
+			return err
+		}
+		// Otherwise, get an up-to-date copy of the resource we're trying to update
+		// (because it may have changed if we're looping and in a race)
+		newCurObj := t.singularShell("", "")
+		if err := t.Get(ctx, key, "", newCurObj, ignoreNotFound); err != nil {
+			glog.Errorf("getting new current object (%s)", err)
+			return err
+		}
+		newCurState, err := t.getStateFromObject(newCurObj)
+		if err != nil {
+			glog.Errorf("getting state from new current object (%s)", err)
+			return err
+		}
+		// If the new current version of the object is the same as the old current
+		// then proceed with trying to PUT the candidate to the core apiserver
+		if newCurState.rev == curState.rev {
+			ns, name, err := t.decodeKey(key)
+			if err != nil {
+				glog.Errorf("decoding key %s (%s)", key, err)
+				return err
+			}
+			putReq := t.cl.Put().AbsPath(
+				"apis",
+				groupName,
+				tprVersion,
+				"namespaces",
+				ns,
+				t.singularKind.URLName(),
+				name,
+			).Body(candidateData)
+			putRes := putReq.Do()
+			if putRes.Error() != nil {
+				glog.Errorf("executing PUT to %s/%s (%s)", ns, name, putRes.Error())
+				return err
+			}
+			var statusCode int
+			putRes.StatusCode(&statusCode)
+			if statusCode != http.StatusOK {
+				return fmt.Errorf(
+					"executing PUT for %s/%s, received response code %d",
+					ns,
+					name,
+					statusCode,
+				)
+			}
+			var putUnknown runtime.Unknown
+			if err := putRes.Into(&putUnknown); err != nil {
+				glog.Errorf("reading response (%s)", err)
+				return err
+			}
+			if err := decode(t.codec, putUnknown.Raw, out); err != nil {
+				glog.Errorf("decoding response (%s)", err)
+				return err
+			}
+		} else {
+			glog.V(4).Infof(
+				"GuaranteedUpdate of %s failed because of a conflict, going to retry",
+				key,
+			)
+			curState = newCurState
+			continue
+		}
+		return nil
 	}
 }
 
 func decode(
 	codec runtime.Codec,
-	versioner storage.Versioner,
 	value []byte,
 	objPtr runtime.Object,
 ) error {
@@ -524,6 +566,31 @@ func removeNamespace(obj runtime.Object) error {
 	if err := accessor.SetNamespace(obj, ""); err != nil {
 		glog.Errorf("removing namespace from %#v (%s)", obj, err)
 		return err
+	}
+	return nil
+}
+
+func checkPreconditions(
+	key string,
+	preconditions *storage.Preconditions,
+	out runtime.Object,
+) error {
+	if preconditions == nil {
+		return nil
+	}
+	objMeta, err := v1.ObjectMetaFor(out)
+	if err != nil {
+		return storage.NewInternalErrorf(
+			"can't enforce preconditions %v on un-introspectable object %v, got error: %v",
+			*preconditions, out, err,
+		)
+	}
+	if preconditions.UID != nil && *preconditions.UID != objMeta.UID {
+		errMsg := fmt.Sprintf(
+			"Precondition failed: UID in precondition: %v, UID in object meta: %v",
+			*preconditions.UID, objMeta.UID,
+		)
+		return storage.NewInvalidObjError(key, errMsg)
 	}
 	return nil
 }

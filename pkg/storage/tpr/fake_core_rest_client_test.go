@@ -339,7 +339,6 @@ func updateItem(storage namespacedStorage) func(http.ResponseWriter, *http.Reque
 		resourceVersion++
 		accessor.SetResourceVersion(item, strconv.Itoa(resourceVersion))
 		storage.set(ns, tipe, name, item)
-		rw.WriteHeader(http.StatusCreated)
 		bytes, err := runtime.Encode(codec, item)
 		if err != nil {
 			log.Fatalf("error encoding item: %s", err)
