@@ -159,7 +159,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, c.reconcileServiceClassKey), time.Second, stopCh)
 		go wait.Until(worker(c.instanceQueue, "Instance", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
 		go wait.Until(worker(c.bindingQueue, "Binding", maxRetries, c.reconcileBindingKey), time.Second, stopCh)
-		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, c.pollInstanceKey), time.Second, stopCh)
+		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
 	}
 
 	<-stopCh
@@ -673,26 +673,33 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 // reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 
-	// Determine whether the checksum has been invalidated by a change to the
-	// object. If the instance's checksum matches the calculated checksum,
-	// there is no work to do.
+	// If there's no async op in progress, determine whether the checksum
+	// has been invalidated by a change to the object. If the instance's
+	// checksum matches the calculated checksum, there is no work to do.
+	// If there's an async op in progress, we need to keep polling, hence
+	// do not bail if checksum hasn't changed.
 	//
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
 	// but does not affect the checksum.
-	if instance.Spec.Checksum != nil && instance.DeletionTimestamp == nil {
-		instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
-		if instanceChecksum == *instance.Spec.Checksum {
-			glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
-			return nil
+	if !instance.Status.AsyncOpInProgress {
+		if instance.Spec.Checksum != nil && instance.DeletionTimestamp == nil {
+			instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
+			if instanceChecksum == *instance.Spec.Checksum {
+				glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
+				return nil
+			}
 		}
 	}
-
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
 	if err != nil {
 		return err
+	}
+
+	if instance.Status.AsyncOpInProgress {
+		return c.pollInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
 	}
 
 	if instance.DeletionTimestamp == nil { // Add or update
@@ -897,16 +904,20 @@ func (c *controller) pollInstanceKey(key string) error {
 		glog.Infof("stopping polling for instance %v because there's no async op in progress anymore", key)
 		return nil
 	}
-	return c.pollInstance(instance)
+	return c.pollInstanceInternal(instance)
 }
 
-func (c *controller) pollInstance(instance *v1alpha1.Instance) error {
+func (c *controller) pollInstanceInternal(instance *v1alpha1.Instance) error {
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
 	if err != nil {
 		return err
 	}
+	return c.pollInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
+}
+
+func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient brokerapi.BrokerClient, instance *v1alpha1.Instance) error {
 
 	lastOperationRequest := &brokerapi.LastOperationRequest{
 		ServiceID: serviceClass.OSBGUID,

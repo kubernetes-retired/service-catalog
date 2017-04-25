@@ -1360,13 +1360,13 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
-	err := testController.pollInstance(instance)
+	err := testController.pollInstanceInternal(instance)
 	if err == nil {
-		t.Fatalf("Expected pollInstance to fail while in progress")
+		t.Fatalf("Expected pollInstanceInternal to fail while in progress")
 	}
 	// Make sure we get an error which means it will get requeued.
 	if !strings.Contains(err.Error(), "still in progress") {
-		t.Fatalf("pollInstance failed but not with expected error, expected %q got %q", "still in progress", err)
+		t.Fatalf("pollInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
 	}
 
 	actions := fakeCatalogClient.Actions()
