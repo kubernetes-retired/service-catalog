@@ -145,6 +145,7 @@ type controller struct {
 	// pollingQueue is separate from instanceQueue because we want
 	// it to have different backoff / timeout characteristics from
 	//  a reconciling of an instance.
+	// TODO(vaikas): get rid of two queues per instance.
 	pollingQueue workqueue.RateLimitingInterface
 }
 
@@ -883,30 +884,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	return nil
 }
 
-func (c *controller) pollInstanceKey(key string) error {
-	// For namespace-scoped resources, SplitMetaNamespaceKey splits the key
-	// i.e. "namespace/name" into two separate strings
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		return err
-	}
-	instance, err := c.instanceLister.Instances(namespace).Get(name)
-	if errors.IsNotFound(err) {
-		glog.Infof("Not doing work for Instance %v because it has been deleted", key)
-		return nil
-	}
-	if err != nil {
-		glog.Errorf("Unable to retrieve Instance %v from store: %v", key, err)
-		return err
-	}
-	// If the async op already finished, return nil which stops polling process
-	if !instance.Status.AsyncOpInProgress {
-		glog.Infof("stopping polling for instance %v because there's no async op in progress anymore", key)
-		return nil
-	}
-	return c.pollInstanceInternal(instance)
-}
-
 func (c *controller) pollInstanceInternal(instance *v1alpha1.Instance) error {
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
@@ -1160,7 +1137,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	}
 
 	if instance.Status.AsyncOpInProgress {
-		glog.Info("Async operation ongoing, refusing to move forward with the bind operation")
+		s := fmt.Sprintf("Binding \"%s/%s\" trying to bind to Instance \"%s/%s\" that has ongoing asynchronous operation", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
+		glog.Info(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
@@ -1168,6 +1146,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			errorWithOngoingAsyncOperation,
 			errorWithOngoingAsyncOperationMessage,
 		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorWithOngoingAsyncOperation, s)
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
 
@@ -1395,18 +1374,26 @@ func (c *controller) updateBindingCondition(
 		toUpdate.Status.Conditions = []v1alpha1.BindingCondition{newCondition}
 	} else {
 		for i, cond := range binding.Status.Conditions {
-			if cond.Type == conditionType && cond.Status != newCondition.Status {
-				glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
-				newCondition.LastTransitionTime = metav1.NewTime(time.Now())
-				toUpdate.Status.Conditions[i] = newCondition
-				break
+			if cond.Type == conditionType {
+				if cond.Status != newCondition.Status {
+					glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
+					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+				}
+				if cond.Message != message {
+					glog.Infof(`Found message change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Message, message, t)
+					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+
+				}
 			}
 		}
 	}
 
 	logContext := fmt.Sprintf("%v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
 		conditionType, binding.Namespace, binding.Name, status, reason, message)
-
 	glog.V(4).Infof("Updating %v", logContext)
 	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {

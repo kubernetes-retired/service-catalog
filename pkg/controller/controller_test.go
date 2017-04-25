@@ -266,6 +266,7 @@ func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 			Message:            "Provisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
+		AsyncOpInProgress: true,
 	}
 
 	return instance
@@ -283,6 +284,7 @@ func getTestInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
 			Message:            "Deprovisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
+		AsyncOpInProgress: true,
 	}
 
 	// Set the deleted timestamp to simulate deletion
@@ -1375,9 +1377,75 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	if e, a := 0, len(kubeActions); e != a {
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	assertNumberOfActions(t, kubeActions, 0)
+}
+
+func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
+
+	instance := getTestInstanceAsyncProvisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err != nil {
+		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	// Instance should be ready and there no longer is an async operation
+	// in place.
+	assertInstanceReadyTrue(t, updatedInstance)
+	assertAsyncOpInProgressFalse(t, updatedInstance)
+}
+
+func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "failed"}
+
+	instance := getTestInstanceAsyncProvisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err != nil {
+		t.Fatalf("pollInstanceInternal failed: %s", err)
+	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	// Instance should be not ready and there no longer is an async operation
+	// in place.
+	assertInstanceReadyFalse(t, updatedInstance)
+	assertAsyncOpInProgressFalse(t, updatedInstance)
 }
 
 func TestUpdateInstanceCondition(t *testing.T) {
@@ -1677,6 +1745,58 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	}
 }
 
+func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceAsyncProvisioning(""))
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			OSBGUID:     bindingGUID,
+		},
+	}
+
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatalf("reconcileBinding did not fail with async operation ongoing")
+	}
+
+	if !strings.Contains(err.Error(), "Ongoing Asynchronous") {
+		t.Fatalf("Did not get the expected error %q : got %q", "Ongoing Asynchronous", err)
+	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	if !strings.Contains(events[0], "has ongoing asynchronous operation") {
+		t.Fatalf("Did not find expected error %q : got %q", "has ongoing asynchronous operation", events[0])
+	}
+	if !strings.Contains(events[0], testNamespace+"/"+testInstanceName) {
+		t.Fatalf("Did not find expected instance name : got %q", events[0])
+	}
+	if !strings.Contains(events[0], testNamespace+"/"+testBindingName) {
+		t.Fatalf("Did not find expected binding name : got %q", events[0])
+	}
+}
+
 func TestReconcileBindingNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
@@ -1804,6 +1924,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 			Conditions: []v1alpha1.BindingCondition{{
 				Type:               v1alpha1.BindingConditionReady,
 				Status:             status,
+				Message:            "message",
 				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 			}},
 		}
@@ -1815,6 +1936,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 		name                  string
 		input                 *v1alpha1.Binding
 		status                v1alpha1.ConditionStatus
+		message               string
 		transitionTimeChanged bool
 	}{
 
@@ -1822,30 +1944,42 @@ func TestUpdateBindingCondition(t *testing.T) {
 			name:                  "initially unset",
 			input:                 getTestBinding(),
 			status:                v1alpha1.ConditionFalse,
+			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "not ready -> not ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionFalse,
+			message:               "message",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionTrue,
+			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "ready -> ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
 			status:                v1alpha1.ConditionTrue,
+			message:               "message",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "ready -> not ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
 			status:                v1alpha1.ConditionFalse,
+			message:               "message",
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "message -> message2",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
+			status:                v1alpha1.ConditionFalse,
+			message:               "message2",
 			transitionTimeChanged: true,
 		},
 	}
