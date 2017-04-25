@@ -142,6 +142,7 @@ const testCatalogWithMultipleServices = `{
   "services": [
     {
       "name": "service1",
+      "description": "service 1 description",
       "metadata": {
         "field1": "value1"
       },
@@ -161,6 +162,7 @@ const testCatalogWithMultipleServices = `{
     },
     {
       "name": "service2",
+      "description": "service 2 description",
       "metadata": ["first", "second", "third"],
       "plans": [{
         "name": "s2plan1",
@@ -1679,9 +1681,25 @@ func TestCatalogConversion(t *testing.T) {
 		t.Fatalf("Failed to convertCatalog: %v", err)
 	}
 	if len(serviceClasses) != 1 {
-		t.Fatalf("Expected 1 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
+		t.Fatalf("Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
+	}
+	serviceClass := serviceClasses[0]
+	if len(serviceClass.Plans) != 2 {
+		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(serviceClass.Plans))
 	}
 
+	checkPlan(serviceClass, 0, "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
+	checkPlan(serviceClass, 1, "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
+}
+
+func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDescription string, t *testing.T) {
+	plan := serviceClass.Plans[index]
+	if plan.Name != planName {
+		t.Fatalf("Expected plan %d's name to be \"%s\", but was: %s", index, planName, plan.Name)
+	}
+	if *plan.Description != planDescription {
+		t.Fatalf("Expected plan %d's description to be \"%s\", but was: %s", index, planDescription, *plan.Description)
+	}
 }
 
 func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
@@ -1705,6 +1723,9 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// For service1 make sure we have service level metadata with field1 = value1 as the blob
 		// and for service1 plan s1plan2 we have planmeta = planvalue as the blob.
 		if sc.Name == "service1" {
+			if *sc.Description != "service 1 description" {
+				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", sc.Description)
+			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make(map[string]string)
 				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err == nil {
@@ -1734,6 +1755,9 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// For service2 make sure we have service level metadata with three element array with elements
 		// "first", "second", and "third"
 		if sc.Name == "service2" {
+			if *sc.Description != "service 2 description" {
+				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", sc.Description)
+			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make([]string, 0)
 				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err != nil {
