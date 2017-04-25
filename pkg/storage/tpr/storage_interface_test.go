@@ -284,6 +284,57 @@ func TestGetList(t *testing.T) {
 	}
 }
 
+func TestUpdateNonExistent(t *testing.T) {
+	keyer := getKeyer()
+	fakeCl := newFakeCoreRESTClient()
+	iface := getTPRStorageIFace(t, keyer, fakeCl)
+	key, err := keyer.Key(request.NewContext(), name)
+	newURL := "http://your-incredible-broker.io"
+	if err != nil {
+		t.Fatalf("error constructing key (%s)", err)
+	}
+	updatedBroker := &sc.Broker{}
+	// Ignore not found
+	err = iface.GuaranteedUpdate(
+		context.Background(),
+		key,
+		updatedBroker,
+		true, // Ignore not found
+		nil,  // No preconditions for the update
+		storage.SimpleUpdate(func(obj runtime.Object) (runtime.Object, error) {
+			broker := obj.(*sc.Broker)
+			broker.Spec.URL = newURL
+			return broker, nil
+		}),
+	)
+	// Object should remain unmodified-- i.e. deeply equal to a new broker
+	err = deepCompare("updated broker", updatedBroker, "new broker", &sc.Broker{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Do not ignore not found
+	err = iface.GuaranteedUpdate(
+		context.Background(),
+		key,
+		updatedBroker,
+		false, // Do not ignore not found
+		nil,   // No preconditions for the update
+		storage.SimpleUpdate(func(obj runtime.Object) (runtime.Object, error) {
+			broker := obj.(*sc.Broker)
+			broker.Spec.URL = newURL
+			return broker, nil
+		}),
+	)
+	if err = verifyStorageError(err, storage.ErrCodeKeyNotFound); err != nil {
+		t.Fatal(err)
+	}
+	// Object should remain unmodified-- i.e. deeply equal to a new broker
+	err = deepCompare("updated broker", updatedBroker, "new broker", &sc.Broker{})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestUpdate(t *testing.T) {
 	keyer := getKeyer()
 	fakeCl := newFakeCoreRESTClient()
