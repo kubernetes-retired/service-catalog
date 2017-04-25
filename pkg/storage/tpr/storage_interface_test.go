@@ -344,7 +344,6 @@ func TestDeleteNonExistent(t *testing.T) {
 		t.Fatalf("error constructing key (%s)", err)
 	}
 	outBroker := &sc.Broker{}
-	// Ignore not found
 	err = iface.Delete(
 		context.Background(),
 		key,
@@ -358,6 +357,37 @@ func TestDeleteNonExistent(t *testing.T) {
 	err = deepCompare("output", outBroker, "new broker", &sc.Broker{})
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	keyer := getKeyer()
+	fakeCl := newFakeCoreRESTClient()
+	iface := getTPRStorageIFace(t, keyer, fakeCl)
+	var origRev uint64 = 1
+	fakeCl.storage.set(namespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			ResourceVersion: fmt.Sprintf("%d", origRev),
+		},
+	})
+	key, err := keyer.Key(request.NewContext(), name)
+	if err != nil {
+		t.Fatalf("error constructing key (%s)", err)
+	}
+	outBroker := &sc.Broker{}
+	err = iface.Delete(
+		context.Background(),
+		key,
+		outBroker,
+		nil, // TODO: Current impl ignores preconditions-- may be wrong
+	)
+	// Object should be removed from underlying storage
+	obj := fakeCl.storage.get(namespace, ServiceBrokerKind.URLName(), name)
+	if obj != nil {
+		t.Fatalf(
+			"expected object to be removed from underlying sotrage, but it was not",
+		)
 	}
 }
 
