@@ -411,7 +411,7 @@ func TestPollServiceInstanceWithMissingPlanID(t *testing.T) {
 
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID}
-	_, err := c.PollServiceInstance(testServiceInstanceID, r)
+	_, _, err := c.PollServiceInstance(testServiceInstanceID, r)
 	if err == nil {
 		t.Fatal("PollServiceInstance did not fail with invalid LastOperationRequest")
 	}
@@ -427,12 +427,31 @@ func TestPollServiceInstanceWithFailure(t *testing.T) {
 	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
 	fbs.SetResponseStatus(http.StatusBadRequest)
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID, Operation: testOperation}
-	_, err := c.PollServiceInstance(testServiceInstanceID, r)
+	_, rc, err := c.PollServiceInstance(testServiceInstanceID, r)
 	if err == nil {
 		t.Fatal("PollServiceInstance did not fail with statusBadRequest")
 	}
 	if !strings.Contains(err.Error(), "400") {
 		t.Fatalf("Did not find the expected error message '400' error: %s", err)
+	}
+	if rc != http.StatusBadRequest {
+		t.Fatalf("Expected http status %d but got %d", http.StatusOK, rc)
+	}
+}
+
+func TestPollServiceInstanceWithGone(t *testing.T) {
+	fbs, fakeBroker := setup()
+	defer fbs.Stop()
+
+	c := NewClient(testBrokerName, fakeBroker.Spec.URL, "", "")
+	fbs.SetResponseStatus(http.StatusGone)
+	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID, Operation: testOperation}
+	_, rc, err := c.PollServiceInstance(testServiceInstanceID, r)
+	if err == nil {
+		t.Fatal("PollServiceInstance did not fail with statusBadRequest")
+	}
+	if rc != http.StatusGone {
+		t.Fatalf("Expected http status %d but got %d", http.StatusOK, rc)
 	}
 }
 
@@ -444,7 +463,7 @@ func TestPollServiceInstanceWithSuccess(t *testing.T) {
 	fbs.SetResponseStatus(http.StatusOK)
 	fbs.SetLastOperationState("success")
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID, Operation: testOperation}
-	resp, err := c.PollServiceInstance(testServiceInstanceID, r)
+	resp, rc, err := c.PollServiceInstance(testServiceInstanceID, r)
 	if err != nil {
 		t.Fatalf("PollServiceInstance failed unexpectedly with: %s", err)
 	}
@@ -454,6 +473,9 @@ func TestPollServiceInstanceWithSuccess(t *testing.T) {
 	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
 	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
 	verifyRequestParameter("operation", testOperation, fbs.Request, t)
+	if rc != http.StatusOK {
+		t.Fatalf("Expected http status %d but got %d", http.StatusOK, rc)
+	}
 	if resp.State != "success" {
 		t.Fatalf("Did not receive state %q for last_operation_request, got: %q", "success", resp.State)
 	}
@@ -470,7 +492,7 @@ func TestPollServiceInstanceWithNoOperation(t *testing.T) {
 	fbs.SetResponseStatus(http.StatusOK)
 	fbs.SetLastOperationState("failed")
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID}
-	resp, err := c.PollServiceInstance(testServiceInstanceID, r)
+	resp, rc, err := c.PollServiceInstance(testServiceInstanceID, r)
 	if err != nil {
 		t.Fatalf("PollServiceInstance failed unexpectedly with: %s", err)
 	}
@@ -481,6 +503,9 @@ func TestPollServiceInstanceWithNoOperation(t *testing.T) {
 	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
 	// Make sure operation is not set.
 	verifyRequestParameter("operation", "", fbs.Request, t)
+	if rc != http.StatusOK {
+		t.Fatalf("Expected http status %d but got %d", http.StatusOK, rc)
+	}
 	if resp.State != "failed" {
 		t.Fatalf("Did not receive state %q for last_operation_request, got: %q", "success", resp.State)
 	}

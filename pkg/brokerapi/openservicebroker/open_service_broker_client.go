@@ -292,30 +292,30 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, se
 
 }
 
-func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, error) {
+func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, int, error) {
 	q, err := createPollParameters(req)
 	if err != nil {
 		glog.Errorf("Failed to create query parameters for poll last operation: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 	url := fmt.Sprintf(pollingFormatString, c.url, ID, q)
 	pollReq := brokerapi.LastOperationRequest{}
 	resp, err := sendOSBRequest(c, http.MethodGet, url, pollReq)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errStatusCode{statusCode: resp.StatusCode}
+		return nil, resp.StatusCode, errStatusCode{statusCode: resp.StatusCode}
 	}
 
 	lo := brokerapi.LastOperationResponse{}
 	if err := util.ResponseBodyToObject(resp, &lo); err != nil {
-		return nil, err
+		return nil, resp.StatusCode, err
 	}
-	return &lo, nil
+	return &lo, resp.StatusCode, nil
 }
 
 // createPollParameters creates the query parameter string from the LastOperationRequest

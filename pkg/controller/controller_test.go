@@ -253,6 +253,44 @@ func getTestInstance() *v1alpha1.Instance {
 	}
 }
 
+// getTestInstanceAsync returns an instance in async mode
+func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
+	instance := getTestInstance()
+	if operation != "" {
+		instance.Spec.OSBLastOperation = &operation
+	}
+	instance.Status = v1alpha1.InstanceStatus{
+		Conditions: []v1alpha1.InstanceCondition{{
+			Type:               v1alpha1.InstanceConditionReady,
+			Status:             v1alpha1.ConditionFalse,
+			Message:            "Provisioning",
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+	}
+
+	return instance
+}
+
+func getTestInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
+	instance := getTestInstance()
+	if operation != "" {
+		instance.Spec.OSBLastOperation = &operation
+	}
+	instance.Status = v1alpha1.InstanceStatus{
+		Conditions: []v1alpha1.InstanceCondition{{
+			Type:               v1alpha1.InstanceConditionReady,
+			Status:             v1alpha1.ConditionFalse,
+			Message:            "Deprovisioning",
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+	}
+
+	// Set the deleted timestamp to simulate deletion
+	ts := metav1.NewTime(time.Now().Add(-5 * time.Minute))
+	instance.DeletionTimestamp = &ts
+	return instance
+}
+
 // binding referencing the result of getTestBinding()
 func getTestBinding() *v1alpha1.Binding {
 	return &v1alpha1.Binding{
@@ -1305,6 +1343,40 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "in progress"}
+
+	instance := getTestInstanceAsyncProvisioning(testOperation)
+
+	err := testController.pollInstance(instance)
+	if err == nil {
+		t.Fatalf("Expected pollInstance to fail while in progress")
+	}
+	// Make sure we get an error which means it will get requeued.
+	if !strings.Contains(err.Error(), "still in progress") {
+		t.Fatalf("pollInstance failed but not with expected error, expected %q got %q", "still in progress", err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 0, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 }
 

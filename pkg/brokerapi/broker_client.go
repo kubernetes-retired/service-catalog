@@ -44,19 +44,18 @@ type InstanceClient interface {
 	// TODO: these should return appropriate response objects (https://github.com/kubernetes-incubator/service-catalog/issues/116).
 
 	// CreateServiceInstance creates a service instance in the respective broker.
-	// This method handles all asynchronous request handling.
 	CreateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*CreateServiceInstanceResponse, int, error)
 
 	// UpdateServiceInstance updates an existing service instance in the respective
-	// broker. This method handles all asynchronous request handling.
+	// broker.
 	UpdateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*ServiceInstance, int, error)
 
 	// DeleteServiceInstance deletes an existing service instance in the respective
-	// broker. This method handles all asynchronous request handling.
+	// broker.
 	DeleteServiceInstance(ID string, req *DeleteServiceInstanceRequest) (*DeleteServiceInstanceResponse, int, error)
 
 	// PollServiceInstance polls a broker for a Service Instance Last Operation
-	PollServiceInstance(ID string, req *LastOperationRequest) (*LastOperationResponse, error)
+	PollServiceInstance(ID string, req *LastOperationRequest) (*LastOperationResponse, int, error)
 }
 
 // BindingClient defines the interface for managing service bindings with a

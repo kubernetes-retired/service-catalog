@@ -154,11 +154,15 @@ func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteS
 }
 
 // PollServiceInstance returns i.PollErr if it was non-nil. Otherwise returns i.LastOperationResponse
-func (i *InstanceClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, error) {
+func (i *InstanceClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, int, error) {
 	if i.PollErr != nil {
-		return nil, i.PollErr
+		return nil, i.ResponseCode, i.PollErr
 	}
-	return i.LastOperationResponse, nil
+	resp := &brokerapi.LastOperationResponse{}
+	if i.LastOperationResponse != nil {
+		resp = i.LastOperationResponse
+	}
+	return resp, i.ResponseCode, nil
 }
 
 func (i *InstanceClient) exists(id string) bool {

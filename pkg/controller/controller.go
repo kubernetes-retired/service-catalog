@@ -915,12 +915,24 @@ func (c *controller) pollInstance(instance *v1alpha1.Instance) error {
 	if instance.Spec.OSBLastOperation != nil {
 		lastOperationRequest.Operation = *instance.Spec.OSBLastOperation
 	}
-	resp, err := brokerClient.PollServiceInstance(instance.Spec.OSBGUID, lastOperationRequest)
+	resp, rc, err := brokerClient.PollServiceInstance(instance.Spec.OSBGUID, lastOperationRequest)
 	if err != nil {
 		glog.Warningf("Poll failed for %v/%v  : %s", instance.Namespace, instance.Name, err)
 		return err
 	}
 	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, resp.State, resp.Description)
+
+	// If the operation was for delete and we receive a http.StatusGone,
+	// this is considered a success as per the spec
+	if rc == http.StatusGone && instance.DeletionTimestamp != nil {
+		instance.Status.AsyncOpInProgress = false
+		// Clear the finalizer
+		c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		return nil
+	}
+
 	switch resp.State {
 	case "in progress":
 		// The way the worker keeps on requeueing is by returning an error, so
