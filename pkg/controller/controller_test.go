@@ -721,15 +721,19 @@ func TestUpdateBrokerCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		assertNumberOfActions(t, actions, 1)
-
-		updateAction := actions[0].(clientgotesting.UpdateAction)
-		if e, a := "update", updateAction.GetVerb(); e != a {
-			t.Errorf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+		if ok := expectNumberOfActions(tc.name, t, actions, 1); !ok {
+			continue
 		}
-		updateActionObject := updateAction.GetObject().(*v1alpha1.Broker)
-		if e, a := testBrokerName, updateActionObject.Name; e != a {
-			t.Errorf("Unexpected name of instance created: expected %v, got %v", e, a)
+
+		updatedBroker, ok := expectUpdateStatus(tc.name, t, actions[0], tc.input)
+		if !ok {
+			continue
+		}
+
+		updateActionObject, ok := updatedBroker.(*v1alpha1.Broker)
+		if !ok {
+			t.Errorf("%v: couldn't convert to broker", tc.name)
+			continue
 		}
 
 		var initialTs metav1.Time
@@ -1286,14 +1290,7 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
-	}
-	updatedInstance := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := instance.Name, updatedInstance.Name; e != a {
-		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
-	}
+	assertUpdateStatus(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1732,16 +1729,18 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		assertNumberOfActions(t, actions, 1)
-
-		updateAction := actions[0].(clientgotesting.UpdateAction)
-		if e, a := "update", updateAction.GetVerb(); e != a {
-			t.Errorf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+		if ok := expectNumberOfActions(tc.name, t, actions, 1); !ok {
 			continue
 		}
-		updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
-		if e, a := testInstanceName, updateActionObject.Name; e != a {
-			t.Errorf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+
+		updatedInstance, ok := expectUpdateStatus(tc.name, t, actions[0], tc.input)
+		if !ok {
+			continue
+		}
+
+		updateActionObject, ok := updatedInstance.(*v1alpha1.Instance)
+		if !ok {
+			t.Errorf("%v: couldn't convert to instance", tc.name)
 			continue
 		}
 
@@ -2201,15 +2200,19 @@ func TestUpdateBindingCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		assertNumberOfActions(t, actions, 1)
-
-		updateAction := actions[0].(clientgotesting.UpdateAction)
-		if e, a := "update", updateAction.GetVerb(); e != a {
-			t.Errorf("%v: unexpected verb on actions[0]; expected %v, got %v", tc.name, e, a)
+		if ok := expectNumberOfActions(tc.name, t, actions, 1); !ok {
+			continue
 		}
-		updateActionObject := updateAction.GetObject().(*v1alpha1.Binding)
-		if e, a := testBindingName, updateActionObject.Name; e != a {
-			t.Errorf("%v: unexpected name of instance created: expected %v, got %v", tc.name, e, a)
+
+		updatedBinding, ok := expectUpdateStatus(tc.name, t, actions[0], tc.input)
+		if !ok {
+			continue
+		}
+
+		updateActionObject, ok := updatedBinding.(*v1alpha1.Binding)
+		if !ok {
+			t.Errorf("%v: couldn't convert to binding", tc.name)
+			continue
 		}
 
 		var initialTs metav1.Time
@@ -2456,11 +2459,47 @@ func assertNumEvents(t *testing.T, strings []string, number int) {
 	}
 }
 
+// failfFunc is a type that defines the common signatures of T.Fatalf and
+// T.Errorf.
+type failfFunc func(t *testing.T, msg string, args ...interface{})
+
+func fatalf(t *testing.T, msg string, args ...interface{}) {
+	t.Log(string(debug.Stack()))
+	t.Fatalf(msg, args...)
+}
+
+func errorf(t *testing.T, msg string, args ...interface{}) {
+	t.Log(string(debug.Stack()))
+	t.Errorf(msg, args...)
+}
+
+// assertion and expectation methods:
+//
+// - assertX will call t.Fatalf
+// - expectX will call t.Errorf and return a boolean, allowing you to drive a 'continue'
+//   in a table-type test
+
 func assertNumberOfActions(t *testing.T, actions []clientgotesting.Action, number int) {
+	testNumberOfActions("" /* name */, fatalf, t, actions, number)
+}
+
+func expectNumberOfActions(name string, t *testing.T, actions []clientgotesting.Action, number int) bool {
+	return testNumberOfActions(name, errorf, t, actions, number)
+}
+
+func testNumberOfActions(name string, f failfFunc, t *testing.T, actions []clientgotesting.Action, number int) bool {
+	logContext := ""
+	if len(name) > 0 {
+		logContext = name + ": "
+	}
+
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		fatalf(t, "Unexpected number of actions: expected %v, got %v", e, a)
+		f(t, "%vUnexpected number of actions: expected %v, got %v", logContext, e, a)
+		return false
 	}
+
+	return true
 }
 
 func assertGet(t *testing.T, action clientgotesting.Action, obj interface{}) {
@@ -2479,13 +2518,28 @@ func assertUpdateStatus(t *testing.T, action clientgotesting.Action, obj interfa
 	return assertActionFor(t, action, "update", "status", obj)
 }
 
+func expectUpdateStatus(name string, t *testing.T, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
+	return testActionFor(name, errorf, t, action, "update", "status", obj)
+}
+
 func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) {
 	assertActionFor(t, action, "delete", "" /* subresource */, obj)
 }
 
 func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) runtime.Object {
+	r, _ := testActionFor("" /* name */, fatalf, t, action, verb, subresource, obj)
+	return r
+}
+
+func testActionFor(name string, f failfFunc, t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) (runtime.Object, bool) {
+	logContext := ""
+	if len(name) > 0 {
+		logContext = name + ": "
+	}
+
 	if e, a := verb, action.GetVerb(); e != a {
-		fatalf(t, "Unexpected verb: expected %v, got %v", e, a)
+		f(t, "%vUnexpected verb: expected %v, got %v", logContext, e, a)
+		return nil, false
 	}
 
 	var resource string
@@ -2502,21 +2556,25 @@ func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresou
 	}
 
 	if e, a := resource, action.GetResource().Resource; e != a {
-		fatalf(t, "Unexpected resource; expected %v, got %v", e, a)
+		f(t, "%vUnexpected resource; expected %v, got %v", logContext, e, a)
+		return nil, false
 	}
 
 	if e, a := subresource, action.GetSubresource(); e != a {
-		fatalf(t, "Unexpected subresource; expected %v, got %v", e, a)
+		f(t, "%vUnexpected subresource; expected %v, got %v", logContext, e, a)
+		return nil, false
 	}
 
 	rtObject, ok := obj.(runtime.Object)
 	if !ok {
-		fatalf(t, "Object %+v was not a runtime.Object", obj)
+		f(t, "%vObject %+v was not a runtime.Object", logContext, obj)
+		return nil, false
 	}
 
 	paramAccessor, err := metav1.ObjectMetaFor(rtObject)
 	if err != nil {
-		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", rtObject, err)
+		f(t, "%vError creating ObjectMetaAccessor for param object %+v: %v", logContext, rtObject, err)
+		return nil, false
 	}
 
 	var (
@@ -2528,61 +2586,71 @@ func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresou
 	case "get":
 		getAction, ok := action.(clientgotesting.GetAction)
 		if !ok {
-			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
+			f(t, "%vUnexpected type; failed to convert action %+v to DeleteAction", logContext, action)
+			return nil, false
 		}
 
 		if e, a := paramAccessor.GetName(), getAction.GetName(); e != a {
-			fatalf(t, "unexpected name: expected %v, got %v", e, a)
+			f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
+			return nil, false
 		}
 
-		return nil
+		return nil, true
 	case "delete":
 		deleteAction, ok := action.(clientgotesting.DeleteAction)
 		if !ok {
-			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
+			f(t, "%vUnexpected type; failed to convert action %+v to DeleteAction", logContext, action)
+			return nil, false
 		}
 
 		if e, a := paramAccessor.GetName(), deleteAction.GetName(); e != a {
-			fatalf(t, "unexpected name: expected %v, got %v", e, a)
+			f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
+			return nil, false
 		}
 
-		return nil
+		return nil, true
 	case "create":
 		createAction, ok := action.(clientgotesting.CreateAction)
 		if !ok {
-			fatalf(t, "Unexpected type; failed to convert action %+v to CreateAction", action)
+			f(t, "%vUnexpected type; failed to convert action %+v to CreateAction", logContext, action)
+			return nil, false
 		}
 
 		fakeRtObject = createAction.GetObject()
 		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
 		if err != nil {
-			fatalf(t, "Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
+			return nil, false
 		}
 	case "update":
 		updateAction, ok := action.(clientgotesting.UpdateAction)
 		if !ok {
-			fatalf(t, "Unexpected type; failed to convert action %+v to UpdateAction", action)
+			f(t, "%vUnexpected type; failed to convert action %+v to UpdateAction", logContext, action)
+			return nil, false
 		}
 
 		fakeRtObject = updateAction.GetObject()
 		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
 		if err != nil {
-			fatalf(t, "Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
+			return nil, false
 		}
 	}
 
 	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
-		fatalf(t, "unexpected name: expected %v, got %v", e, a)
+		f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
+		return nil, false
 	}
 
 	fakeValue := reflect.ValueOf(fakeRtObject)
 	paramValue := reflect.ValueOf(obj)
 
 	if e, a := paramValue.Type(), fakeValue.Type(); e != a {
-		fatalf(t, "Unexpected type of object passed to fake client; expected %v, got %v", e, a)
+		f(t, "%vUnexpected type of object passed to fake client; expected %v, got %v", logContext, e, a)
+		return nil, false
 	}
 
-	return fakeRtObject
+	return fakeRtObject, true
 }
 
 func assertBrokerReadyTrue(t *testing.T, obj runtime.Object) {
@@ -2700,14 +2768,4 @@ func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 	if len(accessor.GetFinalizers()) != 0 {
 		fatalf(t, "Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
 	}
-}
-
-func fatalf(t *testing.T, msg string, args ...interface{}) {
-	t.Log(string(debug.Stack()))
-	t.Fatalf(msg, args...)
-}
-
-func errorf(t *testing.T, msg string, args ...interface{}) {
-	t.Log(string(debug.Stack()))
-	t.Errorf(msg, args...)
 }
