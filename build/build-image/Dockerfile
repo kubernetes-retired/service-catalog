@@ -23,10 +23,19 @@ ENV GLIDE_VERSION=v0.12.3 \
 RUN curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz \
     | tar -vxz -C /usr/local/bin --strip=1
 
+# Install etcd
 RUN curl -sSL https://github.com/coreos/etcd/releases/download/v3.1.0/etcd-v3.1.0-linux-amd64.tar.gz \
     | tar -vxz -C /usr/local/bin --strip=1 etcd-v3.1.0-linux-amd64/etcd
 
+# Install the golint, use this to check our source for niceness
 RUN go get -u github.com/golang/lint/golint
 
+# Install the href checker for our md files, update PATH to include it
+RUN git clone https://github.com/duglin/vlinker.git /vlinker
+ENV PATH=$PATH:/vlinker/bin
+
+# Create the full dir tree that we'll mount our src into when we run the image
 RUN mkdir -p /go/src/github.com/kubernetes-incubator/service-catalog
+
+# Default to our src dir
 WORKDIR /go/src/github.com/kubernetes-incubator/service-catalog
