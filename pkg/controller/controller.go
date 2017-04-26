@@ -896,6 +896,14 @@ func (c *controller) pollInstanceInternal(instance *v1alpha1.Instance) error {
 
 func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient brokerapi.BrokerClient, instance *v1alpha1.Instance) error {
 
+	// There are some conditions that are different if we're
+	// deleting, this is more readable than checking the
+	// timestamps in various places.
+	deleting := false
+	if instance.DeletionTimestamp != nil {
+		deleting = true
+	}
+
 	lastOperationRequest := &brokerapi.LastOperationRequest{
 		ServiceID: serviceClass.OSBGUID,
 		PlanID:    servicePlan.OSBGUID,
@@ -911,11 +919,21 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, resp.State, resp.Description)
 
 	// If the operation was for delete and we receive a http.StatusGone,
-	// this is considered a success as per the spec
-	if rc == http.StatusGone && instance.DeletionTimestamp != nil {
+	// this is considered a success as per the spec, so mark as deleted
+	// and remove any finalizers.
+	if rc == http.StatusGone && deleting {
 		instance.Status.AsyncOpInProgress = false
 		// Clear the finalizer
-		c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+		if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
+			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+		}
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			successDeprovisionReason,
+			successDeprovisionMessage,
+		)
 		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		return nil
@@ -933,9 +951,18 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 
 		// If we were asynchronously deleting a Service Instance, finish
 		// the finalizers.
-		if instance.DeletionTimestamp != nil {
+		if deleting {
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				successDeprovisionReason,
+				successDeprovisionMessage,
+			)
 			// Clear the finalizer
-			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
+				c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			}
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		} else {
@@ -948,15 +975,24 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 			)
 		}
 	case "failed":
+		s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %q", instance.Namespace, instance.Name, serviceClass.Name, brokerName, resp.Description)
 		instance.Status.AsyncOpInProgress = false
+		cond := v1alpha1.ConditionFalse
+		reason := errorProvisionCalledReason
+		msg := "Provision call failed: " + s
+		if deleting {
+			cond = v1alpha1.ConditionUnknown
+			reason = errorDeprovisionCalledReason
+			msg = "Deprovision call failed:" + s
+		}
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			successDeprovisionReason,
-			successDeprovisionMessage,
+			cond,
+			reason,
+			msg,
 		)
-		// TODO(vaikas): Update the instance condition ready to true and set to fail
+		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 	default:
 		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
 		return fmt.Errorf("Got invalid state in LastOperationResponse: %q", resp.State)

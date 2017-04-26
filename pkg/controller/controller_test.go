@@ -293,6 +293,12 @@ func getTestInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
 	return instance
 }
 
+func getTestInstanceAsyncDeprovisioningWithFinalizer(operation string) *v1alpha1.Instance {
+	instance := getTestInstanceAsyncDeprovisioning(operation)
+	instance.ObjectMeta.Finalizers = []string{"kubernetes"}
+	return instance
+}
+
 // binding referencing the result of getTestBinding()
 func getTestBinding() *v1alpha1.Binding {
 	return &v1alpha1.Binding{
@@ -1446,6 +1452,194 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	// in place.
 	assertInstanceReadyFalse(t, updatedInstance)
 	assertAsyncOpInProgressFalse(t, updatedInstance)
+}
+
+func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "in progress"}
+
+	instance := getTestInstanceAsyncDeprovisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err == nil {
+		t.Fatalf("Expected pollInstanceInternal to fail while in progress")
+	}
+	// Make sure we get an error which means it will get requeued.
+	if !strings.Contains(err.Error(), "still in progress") {
+		t.Fatalf("pollInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+}
+
+func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
+
+	instance := getTestInstanceAsyncDeprovisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err != nil {
+		t.Fatalf("pollInstanceInternal failed: %s", err)
+	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	// Instance should have been deprovisioned
+	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	assertAsyncOpInProgressFalse(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+}
+
+func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "failed"}
+
+	instance := getTestInstanceAsyncDeprovisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err != nil {
+		t.Fatalf("pollInstanceInternal failed: %s", err)
+	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	// Instance should be set to unknown since the operation on the broker
+	// failed.
+	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionUnknown, errorDeprovisionCalledReason)
+	assertAsyncOpInProgressFalse(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+}
+
+func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusGone
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
+
+	instance := getTestInstanceAsyncDeprovisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err != nil {
+		t.Fatalf("pollInstanceInternal failed: %s", err)
+	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	// Instance should have been deprovisioned
+	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	assertAsyncOpInProgressFalse(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+}
+
+func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	// Specify we want asynchronous provisioning...
+	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
+	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
+
+	instance := getTestInstanceAsyncDeprovisioningWithFinalizer(testOperation)
+	// updateInstanceFinalizers fetches the latest object.
+	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	err := testController.pollInstanceInternal(instance)
+	if err != nil {
+		t.Fatalf("pollInstanceInternal failed: %s", err)
+	}
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The three actions should be:
+	// 0. Updating the ready condition
+	// 1. Get against the instance (updateFinalizers calls)
+	// 2. Removing the finalizer
+	assertNumberOfActions(t, actions, 3)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+
+	// Instance should have been deprovisioned
+	assertGet(t, actions[1], instance)
+	updatedInstance = assertUpdateStatus(t, actions[2], instance)
+	assertEmptyFinalizers(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
 }
 
 func TestUpdateInstanceCondition(t *testing.T) {
