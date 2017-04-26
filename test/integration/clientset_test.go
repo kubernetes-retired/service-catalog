@@ -456,7 +456,6 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	const (
 		osbGUID         = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 		osbDashboardURL = "http://test-dashboard.example.com"
-		LastOperation   = "provisioned"
 	)
 	instanceClient := client.Servicecatalog().Instances("test-namespace")
 
