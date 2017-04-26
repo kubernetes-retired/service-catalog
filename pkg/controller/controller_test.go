@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"runtime/debug"
 	"strings"
 	"testing"
 	"time"
@@ -374,7 +375,7 @@ func TestReconcileBroker(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -429,7 +430,7 @@ func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" already exists with OSB guid "notTheSame", received different guid "SCGUID"`
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
+		fatalf(t, "Received unexpected event; expected\n%v, got\n%v", e, a)
 	}
 }
 
@@ -459,7 +460,7 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" for Broker "test-broker" already exists for Broker "notTheSame"`
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
+		fatalf(t, "Received unexpected event; expected\n%v, got\n%v", e, a)
 	}
 }
 
@@ -499,7 +500,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successBrokerDeletedReason + " " + "The broker test-broker was deleted successfully."
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -524,7 +525,7 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorFetchingCatalogReason + " " + "Error getting broker catalog for broker \"test-broker\": instance not found"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -555,10 +556,10 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on action; expected %v, got %v", e, a)
 	}
 	if e, a := "secrets", getAction.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected resource on action; expected %v, got %v", e, a)
 	}
 
 	events := getRecordedEvents(testController)
@@ -566,7 +567,7 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -596,7 +597,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on action; expected %v, got %v", e, a)
 	}
 
 	events := getRecordedEvents(testController)
@@ -604,7 +605,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": auth secret didn't contain username"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -722,12 +723,12 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected number of events: expected %v, got %v", e, a)
 	}
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "Instance \"/test-instance\" references a non-existent ServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -752,7 +753,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentBrokerReason + " " + "Instance \"test-ns/test-instance\" references a non-existent broker \"test-broker\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -780,17 +781,17 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on action; expected %v, got %v", e, a)
 	}
 	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
 	if e, a := testInstanceName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected name of instance created: expected %v, got %v", e, a)
 	}
 	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected number of conditions: expected %v, got %v", e, a)
 	}
 	if e, a := "ErrorGettingAuthCredentials", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected condition reason: expected %v, got %v", e, a)
 	}
 
 	// verify one kube action occurred
@@ -799,10 +800,10 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on action; expected %v, got %v", e, a)
 	}
 	if e, a := "secrets", getAction.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected resource on action; expected %v, got %v", e, a)
 	}
 
 	events := getRecordedEvents(testController)
@@ -810,7 +811,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -843,7 +844,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "Instance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -863,7 +864,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	b, err := json.Marshal(parameters)
 	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		fatalf(t, "Failed to marshal parameters %v : %v", parameters, err)
 	}
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
@@ -882,28 +883,28 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	updateObject, ok := updatedInstance.(*v1alpha1.Instance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.Instance")
+		fatalf(t, "couldn't convert to *v1alpha1.Instance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
 	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
+		fatalf(t, "Parameters was unexpectedly empty")
 	}
 	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
+		fatalf(t, "Did not find the created Instance in fakeInstanceClient after creation")
 	} else {
 		if len(si.Parameters) == 0 {
-			t.Fatalf("Expected parameters but got none")
+			fatalf(t, "Expected parameters but got none")
 		}
 		if e, a := "test-param", si.Parameters["name"].(string); e != a {
-			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
+			fatalf(t, "Unexpected name for parameters: expected %v, got %v", e, a)
 		}
 		argsMap := si.Parameters["args"].(map[string]interface{})
 		if e, a := "first-arg", argsMap["first"].(string); e != a {
-			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
+			fatalf(t, "Unexpected value in parameter map: expected %v, got %v", e, a)
 		}
 		if e, a := "second-arg", argsMap["second"].(string); e != a {
-			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
+			fatalf(t, "Unexpected value in parameter map: expected %v, got %v", e, a)
 		}
 	}
 
@@ -912,7 +913,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -929,7 +930,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 
 	b, err := json.Marshal(parameters)
 	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		fatalf(t, "Failed to marshal parameters %v : %v", parameters, err)
 	}
 	// corrupt the byte slice to begin with a '!' instead of an opening JSON bracket '{'
 	b[0] = 0x21
@@ -948,7 +949,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	assertInstanceReadyFalse(t, updatedInstance)
 
 	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
-		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
+		fatalf(t, "Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
 	}
 
 	events := getRecordedEvents(testController)
@@ -956,7 +957,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to unmarshal Instance parameters"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -973,7 +974,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 
 	b, err := json.Marshal(parameters)
 	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		fatalf(t, "Failed to marshal parameters %v : %v", parameters, err)
 	}
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
@@ -993,7 +994,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	assertInstanceReadyFalse(t, updatedInstance)
 
 	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
-		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
+		fatalf(t, "Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
 	}
 
 	events := getRecordedEvents(testController)
@@ -1001,7 +1002,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorProvisionCalledReason + " " + "Error provisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": fake creation failure"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1037,18 +1038,18 @@ func TestReconcileInstance(t *testing.T) {
 	assertInstanceReadyTrue(t, updatedInstance)
 
 	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
+		fatalf(t, "Did not find the created Instance in fakeInstanceClient after creation")
 	} else {
 		if len(si.Parameters) > 0 {
-			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
+			fatalf(t, "Unexpected parameters, expected none, got %+v", si.Parameters)
 		}
 
 		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 		if string(ns.UID) != si.OrganizationGUID {
-			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
+			fatalf(t, "Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
 		}
 		if string(ns.UID) != si.SpaceGUID {
-			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
+			fatalf(t, "Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
 		}
 	}
 
@@ -1057,7 +1058,7 @@ func TestReconcileInstance(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1087,11 +1088,11 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[1]; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on actions[1]; expected %v, got %v", e, a)
 	}
 	updatedInstance := updateAction.GetObject().(*v1alpha1.Instance)
 	if e, a := instance.Name, updatedInstance.Name; e != a {
-		t.Fatalf("Unexpected name of instance: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected name of instance: expected %v, got %v", e, a)
 	}
 
 	events := getRecordedEvents(testController)
@@ -1099,7 +1100,7 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceInstanceReason + " " + "Failed to get namespace \"test-ns\" during instance create: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1142,7 +1143,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	assertEmptyFinalizers(t, updatedInstance)
 
 	if _, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; ok {
-		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
+		fatalf(t, "Found the deleted Instance in fakeInstanceClient after deletion")
 	}
 
 	events := getRecordedEvents(testController)
@@ -1150,7 +1151,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1278,7 +1279,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	// There should only be one action that says it failed because no such instance exists.
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyFalse(t, updatedBinding, errorNonexistentInstanceReason)
@@ -1288,7 +1289,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentInstanceReason + " " + "Binding \"/test-binding\" references a non-existent Instance \"/nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1331,7 +1332,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassMessage + " " + "Binding \"test-ns/test-binding\" references a non-existent ServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1365,7 +1366,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	parameters.Args = append(parameters.Args, "second-arg")
 	b, err := json.Marshal(parameters)
 	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		fatalf(t, "Failed to marshal parameters %v : %v", parameters, err)
 	}
 	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
@@ -1373,12 +1374,12 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace, metav1.GetOptions{})
 	if string(ns.UID) != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+		fatalf(t, "Unexpected broker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
 	}
 
 	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
 	if appGUID := bindResource["app_guid"]; string(ns.UID) != fmt.Sprintf("%v", appGUID) {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), appGUID)
+		fatalf(t, "Unexpected broker AppID: expected %q, got %q", string(ns.UID), appGUID)
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1390,25 +1391,25 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	updateObject, ok := updatedBinding.(*v1alpha1.Binding)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.Binding")
+		fatalf(t, "couldn't convert to *v1alpha1.Binding")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, array with two values in it.
 	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
+		fatalf(t, "Parameters was unexpectedly empty")
 	}
 	if b, ok := fakeBrokerClient.BindingClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; !ok {
-		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
+		fatalf(t, "Did not find the created Binding in fakeInstanceBinding after creation")
 	} else {
 		if len(b.Parameters) == 0 {
-			t.Fatalf("Expected parameters, but got none")
+			fatalf(t, "Expected parameters, but got none")
 		}
 		if e, a := "test-param", b.Parameters["name"].(string); e != a {
-			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
+			fatalf(t, "Unexpected name for parameters: expected %v, got %v", e, a)
 		}
 		argsArray := b.Parameters["args"].([]interface{})
 		if len(argsArray) != 2 {
-			t.Fatalf("Expected 2 elements in args array, but got %d", len(argsArray))
+			fatalf(t, "Expected 2 elements in args array, but got %d", len(argsArray))
 		}
 		foundFirst := false
 		foundSecond := false
@@ -1421,10 +1422,10 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 			}
 		}
 		if !foundFirst {
-			t.Fatalf("Failed to find 'first-arg' in array, was %v", argsArray)
+			fatalf(t, "Failed to find 'first-arg' in array, was %v", argsArray)
 		}
 		if !foundSecond {
-			t.Fatalf("Failed to find 'second-arg' in array, was %v", argsArray)
+			fatalf(t, "Failed to find 'second-arg' in array, was %v", argsArray)
 		}
 	}
 
@@ -1433,7 +1434,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1470,7 +1471,7 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceInstanceReason + " " + "Failed to get namespace \"test-ns\" during binding: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1513,20 +1514,20 @@ func TestReconcileBindingDelete(t *testing.T) {
 
 	getAction := kubeActions[0].(clientgotesting.GetActionImpl)
 	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[0]; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on kubeActions[0]; expected %v, got %v", e, a)
 	}
 
 	if e, a := binding.Spec.SecretName, getAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected name of secret: expected %v, got %v", e, a)
 	}
 
 	deleteAction := kubeActions[1].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
 	}
 
 	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected name of secret: expected %v, got %v", e, a)
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1545,7 +1546,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	assertEmptyFinalizers(t, updatedBinding)
 
 	if _, ok := fakeBrokerClient.BindingClient.Bindings[bindingsMapKey]; ok {
-		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
+		fatalf(t, "Found the deleted Binding in fakeBindingClient after deletion")
 	}
 
 	events := getRecordedEvents(testController)
@@ -1553,7 +1554,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		fatalf(t, "Received unexpected event: %v", a)
 	}
 }
 
@@ -1663,10 +1664,10 @@ func TestUpdateBindingCondition(t *testing.T) {
 func TestEmptyCatalogConversion(t *testing.T) {
 	serviceClasses, err := convertCatalog(&brokerapi.Catalog{})
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		fatalf(t, "Failed to convertCatalog: %v", err)
 	}
 	if len(serviceClasses) != 0 {
-		t.Fatalf("Expected 0 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
+		fatalf(t, "Expected 0 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
 	}
 }
 
@@ -1674,18 +1675,18 @@ func TestCatalogConversion(t *testing.T) {
 	catalog := &brokerapi.Catalog{}
 	err := json.Unmarshal([]byte(testCatalog), &catalog)
 	if err != nil {
-		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+		fatalf(t, "Failed to unmarshal test catalog: %v", err)
 	}
 	serviceClasses, err := convertCatalog(catalog)
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		fatalf(t, "Failed to convertCatalog: %v", err)
 	}
 	if len(serviceClasses) != 1 {
-		t.Fatalf("Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
+		fatalf(t, "Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
 	}
 	serviceClass := serviceClasses[0]
 	if len(serviceClass.Plans) != 2 {
-		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(serviceClass.Plans))
+		fatalf(t, "Expected 2 plans for testCatalog, but got: %d", len(serviceClass.Plans))
 	}
 
 	checkPlan(serviceClass, 0, "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
@@ -1695,10 +1696,10 @@ func TestCatalogConversion(t *testing.T) {
 func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDescription string, t *testing.T) {
 	plan := serviceClass.Plans[index]
 	if plan.Name != planName {
-		t.Fatalf("Expected plan %d's name to be \"%s\", but was: %s", index, planName, plan.Name)
+		fatalf(t, "Expected plan %d's name to be \"%s\", but was: %s", index, planName, plan.Name)
 	}
 	if *plan.Description != planDescription {
-		t.Fatalf("Expected plan %d's description to be \"%s\", but was: %s", index, planDescription, *plan.Description)
+		fatalf(t, "Expected plan %d's description to be \"%s\", but was: %s", index, planDescription, *plan.Description)
 	}
 }
 
@@ -1706,15 +1707,15 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 	catalog := &brokerapi.Catalog{}
 	err := json.Unmarshal([]byte(testCatalogWithMultipleServices), &catalog)
 	if err != nil {
-		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+		fatalf(t, "Failed to unmarshal test catalog: %v", err)
 	}
 
 	serviceClasses, err := convertCatalog(catalog)
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		fatalf(t, "Failed to convertCatalog: %v", err)
 	}
 	if len(serviceClasses) != 2 {
-		t.Fatalf("Expected 2 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
+		fatalf(t, "Expected 2 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
 	}
 	foundSvcMeta1 := false
 	foundSvcMeta2 := false
@@ -1724,7 +1725,7 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// and for service1 plan s1plan2 we have planmeta = planvalue as the blob.
 		if sc.Name == "service1" {
 			if *sc.Description != "service 1 description" {
-				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", sc.Description)
+				fatalf(t, "Expected service1's description to be \"service 1 description\", but was: %s", sc.Description)
 			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make(map[string]string)
@@ -1736,14 +1737,14 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 
 			}
 			if len(sc.Plans) != 2 {
-				t.Fatalf("Expected 2 plans for service1 but got: %d", len(sc.Plans))
+				fatalf(t, "Expected 2 plans for service1 but got: %d", len(sc.Plans))
 			}
 			for _, sp := range sc.Plans {
 				if sp.Name == "s1plan2" {
 					if sp.OSBMetadata != nil && len(sp.OSBMetadata.Raw) > 0 {
 						m := make(map[string]string)
 						if err := json.Unmarshal(sp.OSBMetadata.Raw, &m); err != nil {
-							t.Fatalf("Failed to unmarshal plan metadata: %s: %v", string(sp.OSBMetadata.Raw), err)
+							fatalf(t, "Failed to unmarshal plan metadata: %s: %v", string(sp.OSBMetadata.Raw), err)
 						}
 						if m["planmeta"] == "planvalue" {
 							foundPlanMeta = true
@@ -1756,15 +1757,15 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// "first", "second", and "third"
 		if sc.Name == "service2" {
 			if *sc.Description != "service 2 description" {
-				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", sc.Description)
+				fatalf(t, "Expected service2's description to be \"service 2 description\", but was: %s", sc.Description)
 			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make([]string, 0)
 				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err != nil {
-					t.Fatalf("Failed to unmarshal service metadata: %s: %v", string(sc.OSBMetadata.Raw), err)
+					fatalf(t, "Failed to unmarshal service metadata: %s: %v", string(sc.OSBMetadata.Raw), err)
 				}
 				if len(m) != 3 {
-					t.Fatalf("Expected 3 fields in metadata, but got %d", len(m))
+					fatalf(t, "Expected 3 fields in metadata, but got %d", len(m))
 				}
 				foundFirst := false
 				foundSecond := false
@@ -1781,26 +1782,26 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 					}
 				}
 				if !foundFirst {
-					t.Fatalf("Didn't find 'first' in plan metadata")
+					fatalf(t, "Didn't find 'first' in plan metadata")
 				}
 				if !foundSecond {
-					t.Fatalf("Didn't find 'second' in plan metadata")
+					fatalf(t, "Didn't find 'second' in plan metadata")
 				}
 				if !foundThird {
-					t.Fatalf("Didn't find 'third' in plan metadata")
+					fatalf(t, "Didn't find 'third' in plan metadata")
 				}
 				foundSvcMeta2 = true
 			}
 		}
 	}
 	if !foundSvcMeta1 {
-		t.Fatalf("Didn't find metadata in service1")
+		fatalf(t, "Didn't find metadata in service1")
 	}
 	if !foundSvcMeta2 {
-		t.Fatalf("Didn't find metadata in service2")
+		fatalf(t, "Didn't find metadata in service2")
 	}
 	if !foundPlanMeta {
-		t.Fatalf("Didn't find metadata '' in service1 plan2")
+		fatalf(t, "Didn't find metadata '' in service1 plan2")
 	}
 
 }
@@ -1860,7 +1861,7 @@ func newTestController(t *testing.T) (
 		fakeRecorder,
 	)
 	if err != nil {
-		t.Fatal(err)
+		fatal(t, err)
 	}
 
 	return fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController.(*controller), serviceCatalogSharedInformers
@@ -1883,14 +1884,14 @@ func getRecordedEvents(testController *controller) []string {
 
 func assertNumEvents(t *testing.T, strings []string, number int) {
 	if e, a := number, len(strings); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected number of events: expected %v, got %v", e, a)
 	}
 }
 
 func assertNumberOfActions(t *testing.T, actions []clientgotesting.Action, number int) {
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected number of actions: expected %v, got %v", e, a)
 	}
 }
 
@@ -1916,7 +1917,7 @@ func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) 
 
 func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) runtime.Object {
 	if e, a := verb, action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected verb: expected %v, got %v", e, a)
 	}
 
 	var resource string
@@ -1933,21 +1934,21 @@ func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresou
 	}
 
 	if e, a := resource, action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected resource; expected %v, got %v", e, a)
 	}
 
 	if e, a := subresource, action.GetSubresource(); e != a {
-		t.Fatalf("Unexpected subresource; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected subresource; expected %v, got %v", e, a)
 	}
 
 	rtObject, ok := obj.(runtime.Object)
 	if !ok {
-		t.Fatalf("Object %+v was not a runtime.Object", obj)
+		fatalf(t, "Object %+v was not a runtime.Object", obj)
 	}
 
 	paramAccessor, err := metav1.ObjectMetaFor(rtObject)
 	if err != nil {
-		t.Fatalf("Error creating ObjectMetaAccessor for param object %+v: %v", rtObject, err)
+		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", rtObject, err)
 	}
 
 	var (
@@ -1959,58 +1960,58 @@ func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresou
 	case "get":
 		getAction, ok := action.(clientgotesting.GetAction)
 		if !ok {
-			t.Fatalf("Unexpected type; failed to convert action %+v to DeleteAction", action)
+			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
 		}
 
 		if e, a := paramAccessor.GetName(), getAction.GetName(); e != a {
-			t.Fatalf("unexpected name: expected %v, got %v", e, a)
+			fatalf(t, "unexpected name: expected %v, got %v", e, a)
 		}
 
 		return nil
 	case "delete":
 		deleteAction, ok := action.(clientgotesting.DeleteAction)
 		if !ok {
-			t.Fatalf("Unexpected type; failed to convert action %+v to DeleteAction", action)
+			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
 		}
 
 		if e, a := paramAccessor.GetName(), deleteAction.GetName(); e != a {
-			t.Fatalf("unexpected name: expected %v, got %v", e, a)
+			fatalf(t, "unexpected name: expected %v, got %v", e, a)
 		}
 
 		return nil
 	case "create":
 		createAction, ok := action.(clientgotesting.CreateAction)
 		if !ok {
-			t.Fatalf("Unexpected type; failed to convert action %+v to CreateAction", action)
+			fatalf(t, "Unexpected type; failed to convert action %+v to CreateAction", action)
 		}
 
 		fakeRtObject = createAction.GetObject()
 		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
 		if err != nil {
-			t.Fatalf("Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+			fatalf(t, "Error creating ObjectMetaAccessor for %+v", fakeRtObject)
 		}
 	case "update":
 		updateAction, ok := action.(clientgotesting.UpdateAction)
 		if !ok {
-			t.Fatalf("Unexpected type; failed to convert action %+v to UpdateAction", action)
+			fatalf(t, "Unexpected type; failed to convert action %+v to UpdateAction", action)
 		}
 
 		fakeRtObject = updateAction.GetObject()
 		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
 		if err != nil {
-			t.Fatalf("Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+			fatalf(t, "Error creating ObjectMetaAccessor for %+v", fakeRtObject)
 		}
 	}
 
 	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
-		t.Fatalf("unexpected name: expected %v, got %v", e, a)
+		fatalf(t, "unexpected name: expected %v, got %v", e, a)
 	}
 
 	fakeValue := reflect.ValueOf(fakeRtObject)
 	paramValue := reflect.ValueOf(obj)
 
 	if e, a := paramValue.Type(), fakeValue.Type(); e != a {
-		t.Fatalf("Unexpected type of object passed to fake client; expected %v, got %v", e, a)
+		fatalf(t, "Unexpected type of object passed to fake client; expected %v, got %v", e, a)
 	}
 
 	return fakeRtObject
@@ -2027,12 +2028,12 @@ func assertBrokerReadyFalse(t *testing.T, obj runtime.Object) {
 func assertBrokerReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus) {
 	broker, ok := obj.(*v1alpha1.Broker)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Broker", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Broker", obj)
 	}
 
 	for _, condition := range broker.Status.Conditions {
 		if condition.Type == v1alpha1.BrokerConditionReady && condition.Status != status {
-			t.Fatalf("ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
 		}
 	}
 }
@@ -2048,15 +2049,15 @@ func assertInstanceReadyFalse(t *testing.T, obj runtime.Object, reason ...string
 func assertInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
 	instance, ok := obj.(*v1alpha1.Instance)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
 
 	for _, condition := range instance.Status.Conditions {
 		if condition.Type == v1alpha1.InstanceConditionReady && condition.Status != status {
-			t.Fatalf("ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
 		}
 		if len(reason) == 1 && condition.Reason != reason[0] {
-			t.Fatalf("unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+			fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
 		}
 	}
 }
@@ -2072,15 +2073,15 @@ func assertBindingReadyFalse(t *testing.T, obj runtime.Object, reason ...string)
 func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
 	binding, ok := obj.(*v1alpha1.Binding)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Binding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Binding", obj)
 	}
 
 	for _, condition := range binding.Status.Conditions {
 		if condition.Type == v1alpha1.BindingConditionReady && condition.Status != status {
-			t.Fatalf("ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
 		}
 		if len(reason) == 1 && condition.Reason != reason[0] {
-			t.Fatalf("unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+			fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
 		}
 	}
 }
@@ -2088,10 +2089,25 @@ func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alph
 func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 	accessor, err := metav1.ObjectMetaFor(obj)
 	if err != nil {
-		t.Fatalf("Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
+		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
 	}
 
 	if len(accessor.GetFinalizers()) != 0 {
-		t.Fatalf("Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
+		fatalf(t, "Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
 	}
+}
+
+func fatal(t *testing.T, args ...interface{}) {
+	t.Log(string(debug.Stack()))
+	fatal(t, args...)
+}
+
+func fatalf(t *testing.T, msg string, args ...interface{}) {
+	t.Log(string(debug.Stack()))
+	t.Fatalf(msg, args...)
+}
+
+func errorf(t *testing.T, msg string, args ...interface{}) {
+	t.Log(string(debug.Stack()))
+	t.Errorf(msg, args...)
 }
