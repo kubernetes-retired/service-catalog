@@ -127,11 +127,12 @@ To proceed, we must:
 - Download and install `kubectl` version 1.6 or newer.
 - Configure `kubectl` to communicate with the service catalog's API server.
 
-To install `kubectl` v1.6.0-beta.3, execute the following:
+To install `kubectl` follow the [standard instructions](https://kubernetes.io/docs/tasks/kubectl/install/).
 
+For example, on a mac,
 ```console
-curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.6.0-beta.3/bin/darwin/amd64/kubectl
-chmod +x kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
+chmod +x ./kubectl
 ```
 
 We'll assume hereafter that all `kubectl` commands are using this
