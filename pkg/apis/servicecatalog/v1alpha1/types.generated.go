@@ -5005,7 +5005,7 @@ func (x *InstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			} else {
 				if yyq2[2] {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("LastOperation"))
+					r.EncodeString(codecSelferC_UTF81234, string("lastOperation"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
 					yym11 := z.EncBinary()
 					_ = yym11
@@ -5100,7 +5100,7 @@ func (x *InstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*bool)(yyv6)) = r.DecodeBool()
 				}
 			}
-		case "LastOperation":
+		case "lastOperation":
 			if r.TryDecodeAsNil() {
 				x.LastOperation = ""
 			} else {
