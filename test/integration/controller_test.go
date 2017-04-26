@@ -51,7 +51,7 @@ const (
 	testSecretName       = "test-secret"
 	testOSBGUID          = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 	testOSBDashboardURL  = "http://test-dashboard.example.com"
-	testOSBLastOperation = "provisioned"
+	testLastOperation    = "provisioned"
 )
 
 // TestBasicFlows tests:
@@ -131,7 +131,6 @@ func TestBasicFlows(t *testing.T) {
 			PlanName:         testPlanName,
 			OSBGUID:          testOSBGUID,
 			OSBDashboardURL:  strPtr(testOSBDashboardURL),
-			OSBLastOperation: strPtr(testOSBLastOperation),
 		},
 	}
 
@@ -164,11 +163,11 @@ func TestBasicFlows(t *testing.T) {
 			*instance.Spec.OSBDashboardURL,
 		)
 	}
-	if *retInst.Spec.OSBLastOperation != *instance.Spec.OSBLastOperation {
+	if retInst.Status.LastOperation != testLastOperation {
 		t.Fatalf(
-			"returned OSB last operation '%s' doesn't match original '%s'",
-			*retInst.Spec.OSBLastOperation,
-			*instance.Spec.OSBLastOperation,
+			"returned last_operation '%s' doesn't match original '%s'",
+			retInst.Status.LastOperation,
+			testLastOperation,
 		)
 	}
 
