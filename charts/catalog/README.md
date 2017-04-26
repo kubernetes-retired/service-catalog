@@ -54,6 +54,7 @@ chart and their default values.
 | `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd | `http://localhost:2379` |
 | `apiserver.storage.tpr.globalNamespace` | If storage type is `tpr`: Some service catalog resources are not namespaced, but third party resources must be; setting this designates a namespace that will be treated as a container for such resources | `servicecatalog` |
 | `apiserver.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
+| `apiserver.auth.enabled` | Enable authentication and authorization | `false` |
 | `controllerManager.image` | controller-manager image to use | `quay.io/kubernetes-service-catalog/controller-manager:canary` |
 | `controllerManager.imagePullPolicy` | `imagePullPolicy` for the controller-manager | `Always` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |

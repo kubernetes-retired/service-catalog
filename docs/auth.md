@@ -7,6 +7,11 @@ your cluster.
 Additionally, it provides instructions for generating the serving
 certificates used to securely serve the service catalog API.
 
+**Note**: when launching from the service catalog API server from the Helm
+charts, authentication and authorization is disabled by default.  The
+`apiserver.auth.enabled` option can be set on the Helm chart to enable
+authentication and authorization.
+
 ## Certificates Overview
 
 CA (Certificate Authority) certificates are used to delegate trust.
@@ -61,12 +66,8 @@ In a full setup of the service catalog API server, there are three
 Options passed to the Helm chart take the base64-encoded contents of the
 files.
 
-If you wish to run without client certificate authentication or
-requestheader authentication, you can pass the
-`--authentication-skip-lookup` flag, and skip directly to step 4 below.
-
-Otherwise, the bare minimum for running a service catalog API server
-requires:
+In order to run the service catalog API server with a full authentication
+and authorization setup, refer to the following stesp:
 
 1. Ensure that you have a ConfigMap in the `kube-system` namespace named
    `extensions-apiserver-authentication`.  If not, simply follow the "if
@@ -89,10 +90,10 @@ requires:
    `apiserver.tls.requestHeaderCA` Helm chart option:
 
    ```shell
-   helm install charts/catalog --name catalog --namespace catalog --set apiserver.tls.requestHeaderCA=$(base64 --wrap 0 requestheader-client-ca.crt)
+   helm install charts/catalog --name catalog --namespace catalog --set apiserver.auth.enabled=true --set apiserver.tls.requestHeaderCA=$(base64 --wrap 0 requestheader-client-ca.crt)
    ```
 
-4. If running the service catalog API server outside of the correspond
+4. If running the service catalog API server outside of the corresponding
    Kubernetes cluster, ensure that you pass in a Kubeconfig file to
    authenticate with the main cluster using the
    `--authentication-kubeconfig` and `--authorization-kubeconfig` options
