@@ -576,12 +576,6 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbLastOperation": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
 						"checksum": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Checksum is the checksum of the InstanceSpec that was last successfully reconciled against the broker.",
@@ -617,6 +611,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							SchemaProps: spec.SchemaProps{
 								Description: "AsyncOpInProgress is set to true if there is an ongoing async operation against this Service Instance in progress.",
 								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"LastOperation": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param.",
+								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
