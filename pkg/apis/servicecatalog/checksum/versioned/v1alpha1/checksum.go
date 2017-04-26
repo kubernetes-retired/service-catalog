@@ -30,7 +30,6 @@ import (
 // - PlanName
 // - Parameters
 // - OSBGUID
-// - OSBLastOperation
 func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("serviceClassName: %v\n", spec.ServiceClassName)
@@ -41,9 +40,6 @@ func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	}
 
 	specString += fmt.Sprintf("osbGuid: %v\n", spec.OSBGUID)
-	if spec.OSBLastOperation != nil {
-		specString += fmt.Sprintf("osbLastOperation: %v\n", spec.OSBLastOperation)
-	}
 
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)
