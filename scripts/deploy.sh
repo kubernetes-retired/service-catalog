@@ -25,7 +25,7 @@ docker login -e="${QUAY_EMAIL}" -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay
 if [[ -n "${TRAVIS_TAG}" ]]; then
     echo "Pushing images with tag ${TRAVIS_TAG}."
     VERSION="${TRAVIS_TAG}" make push
-else
+elif [[ "${TRAVIS_PULL_REQUEST}" == "false" && "${TRAVIS_BRANCH}" == "master" ]]; then
     echo "Pushing images with sha tag."
     make push
 fi
