@@ -54,6 +54,9 @@ spec:
         {{- if .Values.apiserver.tls.requestHeaderCA }}
         - --requestheader-client-ca-file=/var/run/kubernetes-service-catalog/requestheader-ca.crt
         {{- end }}
+        {{- if not .Values.apiserver.auth.enabled }}
+        - --disable-auth
+        {{- end }}
         ports:
         {{- if .Values.apiserver.insecure }}
         - containerPort: 8080

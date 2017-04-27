@@ -44,6 +44,11 @@ apiserver:
       globalNamespace: servicecatalog
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
+  auth:
+    # Enable or disable authentication and authorization.  Disabling authentication
+    # and authorization can be useful for quickly getting the walkthrough up and running,
+    # but is not suitable for production.
+    enabled: false
 controllerManager:
   # controller-manager image to use
   image: quay.io/kubernetes-service-catalog/controller-manager:v0.0.4
