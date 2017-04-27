@@ -209,6 +209,10 @@ type InstanceSpec struct {
 // InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
 	Conditions []InstanceCondition `json:"conditions"`
+
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this Service Instance in progress.
+	AsyncOpInProgress bool `json:"asyncOpInProgress"`
 }
 
 // InstanceCondition contains condition information for an Instance.
@@ -232,21 +236,9 @@ type InstanceCondition struct {
 type InstanceConditionType string
 
 const (
-	// InstanceConditionProvisioning represents that a given instance condition is in
-	// provisioning state
-	InstanceConditionProvisioning InstanceConditionType = "Provisioning"
 	// InstanceConditionReady represents that a given instance condition is in
 	// ready state
 	InstanceConditionReady InstanceConditionType = "Ready"
-	// InstanceConditionProvisionFailed represents that a given instance condition is in
-	// failed state
-	InstanceConditionProvisionFailed InstanceConditionType = "ProvisionFailed"
-	// InstanceConditionDeprovisioning represents that a given instance condition is in
-	// deprovisioning state
-	InstanceConditionDeprovisioning InstanceConditionType = "Deprovisioning"
-	// InstanceConditionDeprovisionFailed represents that a given instance condition is in
-	// deprovision failed state
-	InstanceConditionDeprovisionFailed InstanceConditionType = "DeprovisioningFailed"
 )
 
 // BindingList is a list of Bindings

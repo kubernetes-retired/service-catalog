@@ -181,13 +181,32 @@ want - perhaps based on QoS type of variants.
 
 **TODO** Discuss the parameters that can be passed in
 
-**TODO** Add a discussion about the async flows
-
 Once an `Instance` resource is created, the Controller talks with the
 specified Service Broker to create a new Instance of the desired Service.
 
-At the completion of the message exchanges with the Service Broker, the
-Service Instance can now be used by Application.
+There are two modes for provisioning:
+[synchronous and asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#synchronous-and-asynchronous-operations)
+
+For synchronous operations, a request is made to the Service Broker and upon
+successful completion of the request (200 OK), Service Instance can now be used by
+Application.
+
+Some brokers support
+[asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#asynchronous-operations)
+flows. When a Controller makes a request to Service Broker to
+create/update/deprovision a Service Instance, the Service Broker responds with
+202 ACCEPTED, and will provide endpoint at
+GET /v2/service_instances/<service_instance_id>/last_operation
+where the Controller can poll the status of the request.
+
+Service Broker may return a last_operation field that then should be sent
+for each last_operation request. Controller will poll while the state of
+the poll request is 'in_progress'. Controller can also implement a max
+timeout that it will poll before considering the provision failed and will
+stop polling and mark the provisioning as failed.
+
+While a Service Instance has an asynchronous operation in progress, controller
+must ensure that there no other operations (provision,deprovision,update,bind,unbind).
 
 **TODO** test to see if we have checks to block people from using an Instance
 before its fully realized. We shouldn't let the SB be the one to detect this.

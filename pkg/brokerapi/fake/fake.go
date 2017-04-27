@@ -19,6 +19,7 @@ package fake
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	uuid "github.com/satori/go.uuid"
@@ -65,43 +66,53 @@ func (c *CatalogClient) GetCatalog() (*brokerapi.Catalog, error) {
 
 // InstanceClient implements a fake CF instance API client
 type InstanceClient struct {
-	Instances map[string]*brokerapi.ServiceInstance
-	CreateErr error
-	UpdateErr error
-	DeleteErr error
+	Instances                     map[string]*brokerapi.ServiceInstance
+	ResponseCode                  int
+	Operation                     string
+	LastOperationResponse         *brokerapi.LastOperationResponse
+	DeleteServiceInstanceResponse *brokerapi.DeleteServiceInstanceResponse
+	CreateErr                     error
+	UpdateErr                     error
+	DeleteErr                     error
+	PollErr                       error
 }
 
 // NewInstanceClient creates a new empty instance client ready for use
 func NewInstanceClient() *InstanceClient {
 	return &InstanceClient{
-		Instances: make(map[string]*brokerapi.ServiceInstance),
+		Instances:    make(map[string]*brokerapi.ServiceInstance),
+		ResponseCode: http.StatusOK,
 	}
 }
 
 // CreateServiceInstance returns i.CreateErr if non-nil. If it is nil, checks if id already exists
-// in i.Instances and returns ErrInstanceAlreadyExists if so. If not, converts req to a
-// ServiceInstance and adds it to i.Instances
+// in i.Instances and returns http.StatusConfict and ErrInstanceAlreadyExists if so. If not,
+// converts req to a ServiceInstance and adds it to i.Instances
 func (i *InstanceClient) CreateServiceInstance(
 	id string,
 	req *brokerapi.CreateServiceInstanceRequest,
-) (*brokerapi.CreateServiceInstanceResponse, error) {
+) (*brokerapi.CreateServiceInstanceResponse, int, error) {
 
 	if i.CreateErr != nil {
-		return nil, i.CreateErr
+		return nil, i.ResponseCode, i.CreateErr
 	}
 	if i.exists(id) {
-		return nil, ErrInstanceAlreadyExists
+		return nil, http.StatusConflict, ErrInstanceAlreadyExists
 	}
 	// context profile and contents should always (optionally) exist.
 	if req.ContextProfile.Platform != brokerapi.ContextProfilePlatformKubernetes {
-		return nil, errors.New("OSB context profile not set to " + brokerapi.ContextProfilePlatformKubernetes)
+		return nil, i.ResponseCode, errors.New("OSB context profile not set to " + brokerapi.ContextProfilePlatformKubernetes)
 	}
 	if req.ContextProfile.Namespace == "" {
-		return nil, errors.New("missing valid OSB context profile namespace")
+		return nil, i.ResponseCode, errors.New("missing valid OSB context profile namespace")
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return &brokerapi.CreateServiceInstanceResponse{}, nil
+	resp := &brokerapi.CreateServiceInstanceResponse{}
+	if i.Operation != "" {
+		resp.Operation = i.Operation
+	}
+	return resp, i.ResponseCode, nil
 }
 
 // UpdateServiceInstance returns i.UpdateErr if it was non-nil. Otherwise, returns
@@ -110,32 +121,48 @@ func (i *InstanceClient) CreateServiceInstance(
 func (i *InstanceClient) UpdateServiceInstance(
 	id string,
 	req *brokerapi.CreateServiceInstanceRequest,
-) (*brokerapi.ServiceInstance, error) {
+) (*brokerapi.ServiceInstance, int, error) {
 
 	if i.UpdateErr != nil {
-		return nil, i.UpdateErr
+		return nil, i.ResponseCode, i.UpdateErr
 	}
 	if !i.exists(id) {
-		return nil, ErrInstanceNotFound
+		return nil, i.ResponseCode, ErrInstanceNotFound
 	}
 
 	i.Instances[id] = convertInstanceRequest(req)
-	return i.Instances[id], nil
+	return i.Instances[id], i.ResponseCode, nil
 }
 
 // DeleteServiceInstance returns i.DeleteErr if it was non-nil. Otherwise returns
 // ErrInstanceNotFound if id didn't already exist in i.Instances. If it it did already exist,
 // removes i.Instances[id] from the map and returns nil
-func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteServiceInstanceRequest) error {
+func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteServiceInstanceRequest) (*brokerapi.DeleteServiceInstanceResponse, int, error) {
+	resp := &brokerapi.DeleteServiceInstanceResponse{}
+	if i.DeleteServiceInstanceResponse != nil {
+		resp = i.DeleteServiceInstanceResponse
+	}
 
 	if i.DeleteErr != nil {
-		return i.DeleteErr
+		return resp, i.ResponseCode, i.DeleteErr
 	}
 	if !i.exists(id) {
-		return ErrInstanceNotFound
+		return resp, i.ResponseCode, ErrInstanceNotFound
 	}
 	delete(i.Instances, id)
-	return nil
+	return resp, i.ResponseCode, nil
+}
+
+// PollServiceInstance returns i.PollErr if it was non-nil. Otherwise returns i.LastOperationResponse
+func (i *InstanceClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, int, error) {
+	if i.PollErr != nil {
+		return nil, i.ResponseCode, i.PollErr
+	}
+	resp := &brokerapi.LastOperationResponse{}
+	if i.LastOperationResponse != nil {
+		resp = i.LastOperationResponse
+	}
+	return resp, i.ResponseCode, nil
 }
 
 func (i *InstanceClient) exists(id string) bool {

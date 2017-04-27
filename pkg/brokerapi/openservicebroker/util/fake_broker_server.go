@@ -30,13 +30,16 @@ import (
 
 const asyncProvisionQueryParamKey = "accepts_incomplete"
 
+// LastOperationResponseTestDescription is returned as the description to
+// last_operation requests.
+const LastOperationResponseTestDescription = "test description for last operation"
+
 // FakeBrokerServer is a fake service broker server meant for testing that
 // allows for customizing the response behavior.  It does not support auth.
 type FakeBrokerServer struct {
 	responseStatus     int
-	pollsRemaining     int
-	shouldSucceedAsync bool
 	operation          string
+	lastOperationState string
 	server             *httptest.Server
 	// For inspecting on what was sent on the wire.
 	RequestObject interface{}
@@ -76,12 +79,14 @@ func (f *FakeBrokerServer) SetResponseStatus(status int) {
 	f.responseStatus = status
 }
 
-// SetAsynchronous sets the number of polls before finished, final state, and
-// operation for asynchronous operations.
-func (f *FakeBrokerServer) SetAsynchronous(numPolls int, shouldSucceed bool, operation string) {
-	f.pollsRemaining = numPolls
-	f.shouldSucceedAsync = shouldSucceed
+// SetOperation sets the operation to return for asynchronous operations.
+func (f *FakeBrokerServer) SetOperation(operation string) {
 	f.operation = operation
+}
+
+// SetLastOperationState sets the state to return for last_operation requests.
+func (f *FakeBrokerServer) SetLastOperationState(state string) {
+	f.lastOperationState = state
 }
 
 // HANDLERS
@@ -93,6 +98,7 @@ func (f *FakeBrokerServer) catalogHandler(w http.ResponseWriter, r *http.Request
 
 func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Info("fake lastOperation called")
+	f.Request = r
 	req := &brokerapi.LastOperationRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -100,21 +106,16 @@ func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.R
 	}
 	f.RequestObject = req
 
-	var state string
-	switch {
-	case f.pollsRemaining > 0:
-		f.pollsRemaining--
-		state = brokerapi.StateInProgress
-	case f.shouldSucceedAsync:
-		state = brokerapi.StateSucceeded
-	default:
-		state = brokerapi.StateFailed
+	state := "in progress"
+	if f.lastOperationState != "" {
+		state = f.lastOperationState
 	}
 
 	resp := brokerapi.LastOperationResponse{
-		State: state,
+		State:       state,
+		Description: LastOperationResponseTestDescription,
 	}
-	util.WriteResponse(w, http.StatusOK, &resp)
+	util.WriteResponse(w, f.responseStatus, &resp)
 }
 
 func (f *FakeBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Request) {

@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -53,6 +54,9 @@ const (
 	//
 	// 5ms, 10ms, 20ms, 40ms, 80ms, 160ms, 320ms, 640ms, 1.3s, 2.6s, 5.1s, 10.2s, 20.4s, 41s, 82s
 	maxRetries = 15
+	//
+	pollingStartInterval      = 1 * time.Second
+	pollingMaxBackoffDuration = 1 * time.Hour
 )
 
 // NewController returns a new Open Service Broker catalog controller.
@@ -79,6 +83,7 @@ func NewController(
 		serviceClassQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
 		instanceQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
 		bindingQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
+		pollingQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
 	}
 
 	brokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -137,6 +142,11 @@ type controller struct {
 	serviceClassQueue         workqueue.RateLimitingInterface
 	instanceQueue             workqueue.RateLimitingInterface
 	bindingQueue              workqueue.RateLimitingInterface
+	// pollingQueue is separate from instanceQueue because we want
+	// it to have different backoff / timeout characteristics from
+	//  a reconciling of an instance.
+	// TODO(vaikas): get rid of two queues per instance.
+	pollingQueue workqueue.RateLimitingInterface
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -146,10 +156,11 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	glog.Info("Starting service-catalog controller")
 
 	for i := 0; i < workers; i++ {
-		go wait.Until(worker(c.brokerQueue, "Broker", c.reconcileBrokerKey), time.Second, stopCh)
-		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", c.reconcileServiceClassKey), time.Second, stopCh)
-		go wait.Until(worker(c.instanceQueue, "Instance", c.reconcileInstanceKey), time.Second, stopCh)
-		go wait.Until(worker(c.bindingQueue, "Binding", c.reconcileBindingKey), time.Second, stopCh)
+		go wait.Until(worker(c.brokerQueue, "Broker", maxRetries, c.reconcileBrokerKey), time.Second, stopCh)
+		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, c.reconcileServiceClassKey), time.Second, stopCh)
+		go wait.Until(worker(c.instanceQueue, "Instance", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
+		go wait.Until(worker(c.bindingQueue, "Binding", maxRetries, c.reconcileBindingKey), time.Second, stopCh)
+		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
 	}
 
 	<-stopCh
@@ -159,11 +170,16 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.serviceClassQueue.ShutDown()
 	c.instanceQueue.ShutDown()
 	c.bindingQueue.ShutDown()
+	c.pollingQueue.ShutDown()
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
+// If reconciler returns an error, requeue the item up to maxRetries before giving up.
 // It enforces that the reconciler is never invoked concurrently with the same key.
-func worker(queue workqueue.RateLimitingInterface, resourceType string, reconciler func(key string) error) func() {
+// TODO: Consider allowing the reconciler to return an error that either specifies whether
+// this is recoverable or not, rather than always continuing on an error condition. Seems
+// like it should be possible to return an error, yet stop any further polling work.
+func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetries int, reconciler func(key string) error) func() {
 	return func() {
 		exit := false
 		for !exit {
@@ -227,29 +243,31 @@ func (c *controller) brokerDelete(obj interface{}) {
 // the Message strings have a terminating period and space so they can
 // be easily combined with a follow on specific message.
 const (
-	errorFetchingCatalogReason          string = "ErrorFetchingCatalog"
-	errorFetchingCatalogMessage         string = "Error fetching catalog. "
-	errorSyncingCatalogReason           string = "ErrorSyncingCatalog"
-	errorSyncingCatalogMessage          string = "Error syncing catalog from Broker. "
-	errorWithParameters                 string = "ErrorWithParameters"
-	errorListingServiceClassesReason    string = "ErrorListingServiceClasses"
-	errorListingServiceClassesMessage   string = "Error listing service classes."
-	errorDeletingServiceClassReason     string = "ErrorDeletingServiceClass"
-	errorDeletingServiceClassMessage    string = "Error deleting service class."
-	errorNonexistentServiceClassReason  string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServiceClassMessage string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServicePlanReason   string = "ReferencesNonexistentServicePlan"
-	errorNonexistentBrokerReason        string = "ReferencesNonexistentBroker"
-	errorNonexistentInstanceReason      string = "ReferencesNonexistentInstance"
-	errorAuthCredentialsReason          string = "ErrorGettingAuthCredentials"
-	errorFindingNamespaceInstanceReason string = "ErrorFindingNamespaceForInstance"
-	errorProvisionCalledReason          string = "ProvisionCallFailed"
-	errorDeprovisionCalledReason        string = "DeprovisionCallFailed"
-	errorBindCallReason                 string = "BindCallFailed"
-	errorInjectingBindResultReason      string = "ErrorInjectingBindResult"
-	errorEjectingBindReason             string = "ErrorEjectingBinding"
-	errorEjectingBindMessage            string = "Error ejecting binding."
-	errorUnbindCallReason               string = "UnbindCallFailed"
+	errorFetchingCatalogReason            string = "ErrorFetchingCatalog"
+	errorFetchingCatalogMessage           string = "Error fetching catalog. "
+	errorSyncingCatalogReason             string = "ErrorSyncingCatalog"
+	errorSyncingCatalogMessage            string = "Error syncing catalog from Broker. "
+	errorWithParameters                   string = "ErrorWithParameters"
+	errorListingServiceClassesReason      string = "ErrorListingServiceClasses"
+	errorListingServiceClassesMessage     string = "Error listing service classes."
+	errorDeletingServiceClassReason       string = "ErrorDeletingServiceClass"
+	errorDeletingServiceClassMessage      string = "Error deleting service class."
+	errorNonexistentServiceClassReason    string = "ReferencesNonexistentServiceClass"
+	errorNonexistentServiceClassMessage   string = "ReferencesNonexistentServiceClass"
+	errorNonexistentServicePlanReason     string = "ReferencesNonexistentServicePlan"
+	errorNonexistentBrokerReason          string = "ReferencesNonexistentBroker"
+	errorNonexistentInstanceReason        string = "ReferencesNonexistentInstance"
+	errorAuthCredentialsReason            string = "ErrorGettingAuthCredentials"
+	errorFindingNamespaceInstanceReason   string = "ErrorFindingNamespaceForInstance"
+	errorProvisionCalledReason            string = "ProvisionCallFailed"
+	errorDeprovisionCalledReason          string = "DeprovisionCallFailed"
+	errorBindCallReason                   string = "BindCallFailed"
+	errorInjectingBindResultReason        string = "ErrorInjectingBindResult"
+	errorEjectingBindReason               string = "ErrorEjectingBinding"
+	errorEjectingBindMessage              string = "Error ejecting binding."
+	errorUnbindCallReason                 string = "UnbindCallFailed"
+	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
+	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
 
 	successInjectedBindResultReason  string = "InjectedBindResult"
 	successInjectedBindResultMessage string = "Injected bind result"
@@ -262,6 +280,10 @@ const (
 	successBrokerDeletedReason       string = "DeletedSuccessfully"
 	successBrokerDeletedMessage      string = "The broker %v was deleted successfully."
 	successUnboundReason             string = "UnboundSuccessfully"
+	asyncProvisioningReason          string = "Provisioning"
+	asyncProvisioningMessage         string = "The instance is being provisioned asynchronously"
+	asyncDeprovisioningReason        string = "Derovisioning"
+	asyncDeprovisioningMessage       string = "The instance is being deprovisioned asynchronously"
 )
 
 // shouldReconcileBroker determines whether a broker should be reconciled; it
@@ -614,13 +636,15 @@ func (c *controller) serviceClassDelete(obj interface{}) {
 }
 
 // Instance handlers and control-loop
-
 func (c *controller) instanceAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
+	// TODO(vaikas): If the obj (which really is an Instance right?) has
+	// AsyncOpInProgress flag set, just add it directly to c.pollingQueue
+	// here? Why shouldn't we??
 	c.instanceQueue.Add(key)
 }
 
@@ -640,7 +664,6 @@ func (c *controller) reconcileInstanceKey(key string) error {
 		glog.Errorf("Unable to retrieve Instance %v from store: %v", key, err)
 		return err
 	}
-
 	return c.reconcileInstance(instance)
 }
 
@@ -650,85 +673,35 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 
 // reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
-	// Determine whether the checksum has been invalidated by a change to the
-	// object.  If the instance's checksum matches the calculated checksum,
-	// there is no work to do.
+
+	// If there's no async op in progress, determine whether the checksum
+	// has been invalidated by a change to the object. If the instance's
+	// checksum matches the calculated checksum, there is no work to do.
+	// If there's an async op in progress, we need to keep polling, hence
+	// do not bail if checksum hasn't changed.
 	//
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
 	// but does not affect the checksum.
-	if instance.Spec.Checksum != nil && instance.DeletionTimestamp == nil {
-		instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
-		if instanceChecksum == *instance.Spec.Checksum {
-			glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
-			return nil
+	if !instance.Status.AsyncOpInProgress {
+		if instance.Spec.Checksum != nil && instance.DeletionTimestamp == nil {
+			instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
+			if instanceChecksum == *instance.Spec.Checksum {
+				glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
+				return nil
+			}
 		}
 	}
-
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
 	if err != nil {
-		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ServiceClassName)
-		glog.Info(s)
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorNonexistentServiceClassReason,
-			"The instance references a ServiceClass that does not exist. "+s,
-		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
 		return err
 	}
 
-	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
-	if servicePlan == nil {
-		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
-		glog.Warning(s)
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServicePlan",
-			"The instance references a ServicePlan that does not exist. "+s,
-		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
-		return nil
+	if instance.Status.AsyncOpInProgress {
+		return c.pollInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
 	}
-
-	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
-	if err != nil {
-		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.BrokerName)
-		glog.Warning(s)
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorNonexistentBrokerReason,
-			"The instance references a Broker that does not exist. "+s,
-		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentBrokerReason, s)
-		return err
-	}
-
-	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
-	if err != nil {
-		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Info(s)
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorAuthCredentialsReason,
-			"Error getting auth credentials. "+s,
-		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorAuthCredentialsReason, s)
-		return err
-	}
-
-	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
-	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
 	if instance.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating Instance %v/%v", instance.Namespace, instance.Name)
@@ -781,12 +754,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			}
 		}
 
-		// TODO: handle async provisioning
-
-		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
-		response, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
+		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		response, respCode, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
 		if err != nil {
-			s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
 			c.updateInstanceCondition(
 				instance,
@@ -797,18 +768,51 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCalledReason, s)
 			return err
 		}
-		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, response)
 
-		// TODO: process response
+		// Broker can return either a synchronous or asynchronous
+		// response, if the response is StatusAccepted it's an async
+		// and we need to add it to the polling queue. Broker can
+		// optionally return 'Operation' that will then need to be
+		// passed back to the broker during polling of last_operation.
+		if respCode == http.StatusAccepted {
+			glog.V(5).Infof("Received asynchronous provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+			if response.Operation != "" {
+				instance.Spec.OSBLastOperation = &response.Operation
+			}
 
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionTrue,
-			successProvisionReason,
-			successProvisionMessage,
-		)
-		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
+			// Tag this instance as having an ongoing async operation so we can enforce
+			// no other operations against it can start.
+			instance.Status.AsyncOpInProgress = true
+
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				asyncProvisioningReason,
+				asyncProvisioningMessage,
+			)
+			c.recorder.Eventf(instance, api.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
+
+			// Actually, start polling this Service Instance by adding it into the polling queue
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+			if err != nil {
+				glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+				return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+			}
+			c.pollingQueue.Add(key)
+		} else {
+			glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+
+			// TODO: process response
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionTrue,
+				successProvisionReason,
+				successProvisionMessage,
+			)
+			c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
+		}
 		return nil
 	}
 
@@ -829,12 +833,11 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			AcceptsIncomplete: true,
 		}
 
-		// TODO: handle async deprovisioning
+		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		response, respCode, err := brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
 
-		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
-		err = brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
 		if err != nil {
-			s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
 			c.updateInstanceCondition(
 				instance,
@@ -846,6 +849,84 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			return err
 		}
 
+		if respCode == http.StatusAccepted {
+			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+			if response.Operation != "" {
+				instance.Spec.OSBLastOperation = &response.Operation
+			}
+
+			// Tag this instance as having an ongoing async operation so we can enforce
+			// no other operations against it can start.
+			instance.Status.AsyncOpInProgress = true
+
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				asyncDeprovisioningReason,
+				asyncDeprovisioningMessage,
+			)
+		} else {
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				successDeprovisionReason,
+				successDeprovisionMessage,
+			)
+			// Clear the finalizer
+			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		}
+	}
+
+	return nil
+}
+
+func (c *controller) pollInstanceInternal(instance *v1alpha1.Instance) error {
+	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
+
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
+	if err != nil {
+		return err
+	}
+	return c.pollInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
+}
+
+func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient brokerapi.BrokerClient, instance *v1alpha1.Instance) error {
+
+	// There are some conditions that are different if we're
+	// deleting, this is more readable than checking the
+	// timestamps in various places.
+	deleting := false
+	if instance.DeletionTimestamp != nil {
+		deleting = true
+	}
+
+	lastOperationRequest := &brokerapi.LastOperationRequest{
+		ServiceID: serviceClass.OSBGUID,
+		PlanID:    servicePlan.OSBGUID,
+	}
+	if instance.Spec.OSBLastOperation != nil {
+		lastOperationRequest.Operation = *instance.Spec.OSBLastOperation
+	}
+	resp, rc, err := brokerClient.PollServiceInstance(instance.Spec.OSBGUID, lastOperationRequest)
+	if err != nil {
+		glog.Warningf("Poll failed for %v/%v  : %s", instance.Namespace, instance.Name, err)
+		return err
+	}
+	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, resp.State, resp.Description)
+
+	// If the operation was for delete and we receive a http.StatusGone,
+	// this is considered a success as per the spec, so mark as deleted
+	// and remove any finalizers.
+	if rc == http.StatusGone && deleting {
+		instance.Status.AsyncOpInProgress = false
+		// Clear the finalizer
+		if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
+			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+		}
 		c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
@@ -853,13 +934,69 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			successDeprovisionReason,
 			successDeprovisionMessage,
 		)
-		// Clear the finalizer
-		c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
 		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-
-		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		return nil
 	}
 
+	switch resp.State {
+	case "in progress":
+		// The way the worker keeps on requeueing is by returning an error, so
+		// we need to keep on polling.
+		// TODO(vaikas): Update the instance condition with progress message here?
+		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
+	case "succeeded":
+		// this gets updated as a side effect in both cases below.
+		instance.Status.AsyncOpInProgress = false
+
+		// If we were asynchronously deleting a Service Instance, finish
+		// the finalizers.
+		if deleting {
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				successDeprovisionReason,
+				successDeprovisionMessage,
+			)
+			// Clear the finalizer
+			if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
+				c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			}
+			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		} else {
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionTrue,
+				successProvisionReason,
+				successProvisionMessage,
+			)
+		}
+	case "failed":
+		s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %q", instance.Namespace, instance.Name, serviceClass.Name, brokerName, resp.Description)
+		instance.Status.AsyncOpInProgress = false
+		cond := v1alpha1.ConditionFalse
+		reason := errorProvisionCalledReason
+		msg := "Provision call failed: " + s
+		if deleting {
+			cond = v1alpha1.ConditionUnknown
+			reason = errorDeprovisionCalledReason
+			msg = "Deprovision call failed:" + s
+		}
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			cond,
+			reason,
+			msg,
+		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+	default:
+		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
+		return fmt.Errorf("Got invalid state in LastOperationResponse: %q", resp.State)
+	}
 	return nil
 }
 
@@ -902,11 +1039,19 @@ func (c *controller) updateInstanceCondition(
 		toUpdate.Status.Conditions = []v1alpha1.InstanceCondition{newCondition}
 	} else {
 		for i, cond := range instance.Status.Conditions {
-			if cond.Type == conditionType && cond.Status != newCondition.Status {
-				glog.Infof(`Found status change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Status, status, t)
-				newCondition.LastTransitionTime = metav1.NewTime(t)
-				toUpdate.Status.Conditions[i] = newCondition
-				break
+			if cond.Type == conditionType {
+				if cond.Status != status {
+					glog.Infof(`Found status change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Status, status, t)
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+				}
+				if cond.Message != message {
+					glog.Infof(`Found message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+				}
 			}
 		}
 	}
@@ -1027,68 +1172,24 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		return err
 	}
 
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
-	if err != nil {
-		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
-		glog.Warning(s)
+	if instance.Status.AsyncOpInProgress {
+		s := fmt.Sprintf("Binding \"%s/%s\" trying to bind to Instance \"%s/%s\" that has ongoing asynchronous operation", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
+		glog.Info(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonexistentServiceClassReason,
-			"The binding references a ServiceClass that does not exist. "+s,
+			errorWithOngoingAsyncOperation,
+			errorWithOngoingAsyncOperationMessage,
 		)
-		c.recorder.Event(binding, api.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
+		c.recorder.Event(binding, api.EventTypeWarning, errorWithOngoingAsyncOperation, s)
+		return fmt.Errorf("Ongoing Asynchronous operation")
+	}
+
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBrokerForBinding(instance, binding)
+	if err != nil {
 		return err
 	}
-
-	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
-	if servicePlan == nil {
-		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
-		glog.Warning(s)
-		c.updateBindingCondition(
-			binding,
-			v1alpha1.BindingConditionReady,
-			v1alpha1.ConditionFalse,
-			errorNonexistentServicePlanReason,
-			"The Binding references an Instance which references ServicePlan that does not exist. "+s,
-		)
-		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
-		return fmt.Errorf("%s", s)
-	}
-
-	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
-	if err != nil {
-		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Broker %q", binding.Namespace, binding.Name, serviceClass.BrokerName)
-		glog.Warning(s)
-		c.updateBindingCondition(
-			binding,
-			v1alpha1.BindingConditionReady,
-			v1alpha1.ConditionFalse,
-			errorNonexistentBrokerReason,
-			"The binding references a Broker that does not exist. "+s,
-		)
-		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentBrokerReason, s)
-		return err
-	}
-
-	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
-	if err != nil {
-		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Warning(s)
-		c.updateBindingCondition(
-			binding,
-			v1alpha1.BindingConditionReady,
-			v1alpha1.ConditionFalse,
-			errorAuthCredentialsReason,
-			"Error getting auth credentials. "+s,
-		)
-		c.recorder.Event(binding, api.EventTypeWarning, errorAuthCredentialsReason, s)
-		return err
-	}
-
-	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
-	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
 
 	if binding.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating Binding %v/%v", binding.Namespace, binding.Name)
@@ -1135,7 +1236,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		}
 		response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
 		if err != nil {
-			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
@@ -1169,7 +1270,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		)
 		c.recorder.Event(binding, api.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
 
-		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 
 		return nil
 	}
@@ -1200,7 +1301,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		}
 		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, serviceClass.OSBGUID, servicePlan.OSBGUID)
 		if err != nil {
-			s := fmt.Sprintf("Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, broker.Name, err)
+			s := fmt.Sprintf("Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
@@ -1223,7 +1324,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		c.updateBindingFinalizers(binding, binding.Finalizers[1:])
 		c.recorder.Event(binding, api.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
 
-		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, broker.Name)
+		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	}
 
 	return nil
@@ -1309,18 +1410,26 @@ func (c *controller) updateBindingCondition(
 		toUpdate.Status.Conditions = []v1alpha1.BindingCondition{newCondition}
 	} else {
 		for i, cond := range binding.Status.Conditions {
-			if cond.Type == conditionType && cond.Status != newCondition.Status {
-				glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
-				newCondition.LastTransitionTime = metav1.NewTime(time.Now())
-				toUpdate.Status.Conditions[i] = newCondition
-				break
+			if cond.Type == conditionType {
+				if cond.Status != newCondition.Status {
+					glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
+					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+				}
+				if cond.Message != message {
+					glog.Infof(`Found message change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Message, message, t)
+					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+					toUpdate.Status.Conditions[i] = newCondition
+					break
+
+				}
 			}
 		}
 	}
 
 	logContext := fmt.Sprintf("%v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
 		conditionType, binding.Namespace, binding.Name, status, reason, message)
-
 	glog.V(4).Infof("Updating %v", logContext)
 	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
@@ -1368,6 +1477,144 @@ func (c *controller) bindingDelete(obj interface{}) {
 	}
 
 	glog.V(4).Infof("Received delete event for Binding %v/%v", binding.Namespace, binding.Name)
+}
+
+// getServiceClassPlanAndBroker is a sequence of operations that's done in couple of
+// places so this method fetches the Service Class, Service Plan and creates
+// a brokerClient to use for that method given an Instance.
+func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, brokerapi.BrokerClient, error) {
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
+	if err != nil {
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ServiceClassName)
+		glog.Info(s)
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentServiceClassReason,
+			"The instance references a ServiceClass that does not exist. "+s,
+		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
+	if servicePlan == nil {
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
+		glog.Warning(s)
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			"ReferencesNonexistentServicePlan",
+			"The instance references a ServicePlan that does not exist. "+s,
+		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		return nil, nil, "", nil, fmt.Errorf(s)
+	}
+
+	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
+	if err != nil {
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.BrokerName)
+		glog.Warning(s)
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentBrokerReason,
+			"The instance references a Broker that does not exist. "+s,
+		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentBrokerReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
+	if err != nil {
+		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+		glog.Info(s)
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorAuthCredentialsReason,
+			"Error getting auth credentials. "+s,
+		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
+	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
+	return serviceClass, servicePlan, broker.Name, brokerClient, nil
+}
+
+// getServiceClassPlanAndBrokerForBinding is a sequence of operations that's
+// done to validate service plan, service class exist, and handles creating
+// a brokerclient to use for a given Instance.
+func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.Instance, binding *v1alpha1.Binding) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, brokerapi.BrokerClient, error) {
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
+	if err != nil {
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentServiceClassReason,
+			"The binding references a ServiceClass that does not exist. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
+		return nil, nil, "", nil, err
+	}
+
+	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
+	if servicePlan == nil {
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentServicePlanReason,
+			"The Binding references an Instance which references ServicePlan that does not exist. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		return nil, nil, "", nil, fmt.Errorf(s)
+	}
+
+	broker, err := c.brokerLister.Get(serviceClass.BrokerName)
+	if err != nil {
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Broker %q", binding.Namespace, binding.Name, serviceClass.BrokerName)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonexistentBrokerReason,
+			"The binding references a Broker that does not exist. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentBrokerReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
+	if err != nil {
+		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorAuthCredentialsReason,
+			"Error getting auth credentials. "+s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		return nil, nil, "", nil, err
+	}
+
+	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
+	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
+	return serviceClass, servicePlan, broker.Name, brokerClient, nil
 }
 
 // Broker utility methods - move?
