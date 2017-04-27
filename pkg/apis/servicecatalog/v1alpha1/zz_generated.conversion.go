@@ -25,6 +25,7 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	v1 "k8s.io/client-go/pkg/api/v1"
+	settings_v1alpha1 "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 	unsafe "unsafe"
 )
 
@@ -155,6 +156,8 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 	out.InstanceRef = in.InstanceRef
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
+	out.AlphaPodPresetName = (*string)(unsafe.Pointer(in.AlphaPodPresetName))
+	out.AlphaPodPresetSpec = (*settings_v1alpha1.PodPresetSpec)(unsafe.Pointer(in.AlphaPodPresetSpec))
 	out.OSBGUID = in.OSBGUID
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
@@ -168,6 +171,8 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 	out.InstanceRef = in.InstanceRef
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
+	out.AlphaPodPresetName = (*string)(unsafe.Pointer(in.AlphaPodPresetName))
+	out.AlphaPodPresetSpec = (*settings_v1alpha1.PodPresetSpec)(unsafe.Pointer(in.AlphaPodPresetSpec))
 	out.OSBGUID = in.OSBGUID
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil

@@ -21,9 +21,25 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
+	settings "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
+
+func validBinding() *servicecatalog.Binding {
+	return &servicecatalog.Binding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-binding",
+			Namespace: "test-ns",
+		},
+		Spec: servicecatalog.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{
+				Name: "test-instance",
+			},
+			SecretName: "test-secret",
+		},
+	}
+}
 
 func TestValidateBinding(t *testing.T) {
 	cases := []struct {
@@ -32,20 +48,9 @@ func TestValidateBinding(t *testing.T) {
 		valid   bool
 	}{
 		{
-			name: "valid",
-			binding: &servicecatalog.Binding{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-binding",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.BindingSpec{
-					InstanceRef: v1.LocalObjectReference{
-						Name: "test-instance",
-					},
-					SecretName: "test-secret",
-				},
-			},
-			valid: true,
+			name:    "valid",
+			binding: validBinding(),
+			valid:   true,
 		},
 		{
 			name: "checksum set on create",
@@ -140,6 +145,47 @@ func TestValidateBinding(t *testing.T) {
 					SecretName: "T_T",
 				},
 			},
+			valid: false,
+		},
+		{
+			name: "valid + valid podPreset",
+			binding: func() *servicecatalog.Binding {
+				b := validBinding()
+				n := "test-podpreset"
+				b.Spec.AlphaPodPresetName = &n
+				b.Spec.AlphaPodPresetSpec = &settings.PodPresetSpec{}
+				return b
+			}(),
+			valid: true,
+		},
+		{
+			name: "missing podPresetSpec",
+			binding: func() *servicecatalog.Binding {
+				b := validBinding()
+				n := "test-podpreset"
+				b.Spec.AlphaPodPresetName = &n
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing podPresetName",
+			binding: func() *servicecatalog.Binding {
+				b := validBinding()
+				b.Spec.AlphaPodPresetSpec = &settings.PodPresetSpec{}
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid podPresetname",
+			binding: func() *servicecatalog.Binding {
+				b := validBinding()
+				n := "★"
+				b.Spec.AlphaPodPresetName = &n
+				b.Spec.AlphaPodPresetSpec = &settings.PodPresetSpec{}
+				return b
+			}(),
 			valid: false,
 		},
 	}
