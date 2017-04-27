@@ -286,11 +286,6 @@ func DeepCopy_servicecatalog_InstanceSpec(in interface{}, out interface{}, c *co
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.OSBDashboardURL != nil {
-			in, out := &in.OSBDashboardURL, &out.OSBDashboardURL
-			*out = new(string)
-			**out = **in
-		}
 		if in.Checksum != nil {
 			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
@@ -316,6 +311,11 @@ func DeepCopy_servicecatalog_InstanceStatus(in interface{}, out interface{}, c *
 		}
 		if in.LastOperation != nil {
 			in, out := &in.LastOperation, &out.LastOperation
+			*out = new(string)
+			**out = **in
+		}
+		if in.DashboardURL != nil {
+			in, out := &in.DashboardURL, &out.DashboardURL
 			*out = new(string)
 			**out = **in
 		}

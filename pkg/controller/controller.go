@@ -779,6 +779,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			return err
 		}
 
+		if response.DashboardURL != "" {
+			instance.Status.DashboardURL = &response.DashboardURL
+		}
+
 		// Broker can return either a synchronous or asynchronous
 		// response, if the response is StatusAccepted it's an async
 		// and we need to add it to the polling queue. Broker can
