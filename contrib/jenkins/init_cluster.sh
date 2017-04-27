@@ -45,7 +45,21 @@ gcloud auth activate-service-account \
   || { echo "Cannot activate GCloud service account from ${CREDENTIALS}"; exit 1; }
 
 echo "Creating cluster ${CLUSTERNAME}"
-gcloud container clusters create "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" --cluster-version 1.6.1 \
+
+# TODO: Currently, GKE's default master version is 1.5.6, but the catalog needs
+# >=1.6.0 to run. However, the patch version keeps changing. Until the default is
+# >=1.6.0, manually grab the latest GKE master version from the list of valid
+# versions, and use that.
+CLUSTER_VERSION="$(gcloud container get-server-config --zone "${ZONE}" \
+  | awk 'BEGIN {p=0}; /validMasterVersions:/ {p=1; next}; p {print $2; exit}')"
+
+[[ "${CLUSTER_VERSION}" == *1.6.* ]] \
+  || error_exit "Invalid cluster version. Expected 1.6.X, got: ${CLUSTER_VERSION}"
+
+echo "Using cluster version ${CLUSTER_VERSION}"
+
+gcloud container clusters create "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" \
+    --cluster-version "${CLUSTER_VERSION}" \
   || { echo 'Cannot create cluster.'; exit 1; }
 
 echo "Using cluster ${CLUSTERNAME}."
