@@ -197,8 +197,7 @@ type InstanceSpec struct {
 	OSBGUID string
 
 	// OSB-specific
-	OSBDashboardURL  *string
-	OSBLastOperation *string
+	OSBDashboardURL *string
 
 	// Checksum is the checksum of the InstanceSpec that was last successfully
 	// reconciled against the broker.
@@ -211,6 +210,11 @@ type InstanceStatus struct {
 	// AsyncOpInProgress is set to true if there is an ongoing async operation
 	// against this Service Instance in progress.
 	AsyncOpInProgress bool
+
+	// LastOperation is the string that the broker may have returned when
+	// an async operation started, it should be sent back to the broker
+	// on poll requests as a query param.
+	LastOperation string
 }
 
 // InstanceCondition contains condition information for an Instance.

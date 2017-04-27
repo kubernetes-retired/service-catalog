@@ -454,9 +454,8 @@ func TestInstanceClient(t *testing.T) {
 
 func testInstanceClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	const (
-		osbGUID          = "9737b6ed-ca95-4439-8219-c53fcad118ab"
-		osbDashboardURL  = "http://test-dashboard.example.com"
-		osbLastOperation = "provisioned"
+		osbGUID         = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+		osbDashboardURL = "http://test-dashboard.example.com"
 	)
 	instanceClient := client.Servicecatalog().Instances("test-namespace")
 
@@ -468,7 +467,6 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
 			OSBGUID:          osbGUID,
 			OSBDashboardURL:  strPtr(osbDashboardURL),
-			OSBLastOperation: strPtr(osbLastOperation),
 		},
 	}
 
@@ -516,8 +514,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	if instanceServer.Name != name &&
 		instanceServer.ResourceVersion == instance.ResourceVersion &&
 		instanceServer.Spec.OSBGUID != osbGUID &&
-		*instanceServer.Spec.OSBDashboardURL != osbDashboardURL &&
-		*instanceServer.Spec.OSBLastOperation != osbLastOperation {
+		*instanceServer.Spec.OSBDashboardURL != osbDashboardURL {
 		return fmt.Errorf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
 	}
 
