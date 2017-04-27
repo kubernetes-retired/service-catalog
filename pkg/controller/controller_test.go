@@ -721,11 +721,11 @@ func TestUpdateBrokerCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(tc.name, t, actions, 1); !ok {
+		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
 			continue
 		}
 
-		updatedBroker, ok := expectUpdateStatus(tc.name, t, actions[0], tc.input)
+		updatedBroker, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
 		if !ok {
 			continue
 		}
@@ -1729,11 +1729,11 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(tc.name, t, actions, 1); !ok {
+		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
 			continue
 		}
 
-		updatedInstance, ok := expectUpdateStatus(tc.name, t, actions[0], tc.input)
+		updatedInstance, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
 		if !ok {
 			continue
 		}
@@ -2200,11 +2200,11 @@ func TestUpdateBindingCondition(t *testing.T) {
 		}
 
 		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(tc.name, t, actions, 1); !ok {
+		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
 			continue
 		}
 
-		updatedBinding, ok := expectUpdateStatus(tc.name, t, actions[0], tc.input)
+		updatedBinding, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
 		if !ok {
 			continue
 		}
@@ -2480,14 +2480,14 @@ func errorf(t *testing.T, msg string, args ...interface{}) {
 //   in a table-type test
 
 func assertNumberOfActions(t *testing.T, actions []clientgotesting.Action, number int) {
-	testNumberOfActions("" /* name */, fatalf, t, actions, number)
+	testNumberOfActions(t, "" /* name */, fatalf, actions, number)
 }
 
-func expectNumberOfActions(name string, t *testing.T, actions []clientgotesting.Action, number int) bool {
-	return testNumberOfActions(name, errorf, t, actions, number)
+func expectNumberOfActions(t *testing.T, name string, actions []clientgotesting.Action, number int) bool {
+	return testNumberOfActions(t, name, errorf, actions, number)
 }
 
-func testNumberOfActions(name string, f failfFunc, t *testing.T, actions []clientgotesting.Action, number int) bool {
+func testNumberOfActions(t *testing.T, name string, f failfFunc, actions []clientgotesting.Action, number int) bool {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "
@@ -2518,8 +2518,8 @@ func assertUpdateStatus(t *testing.T, action clientgotesting.Action, obj interfa
 	return assertActionFor(t, action, "update", "status", obj)
 }
 
-func expectUpdateStatus(name string, t *testing.T, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
-	return testActionFor(name, errorf, t, action, "update", "status", obj)
+func expectUpdateStatus(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
+	return testActionFor(t, name, errorf, action, "update", "status", obj)
 }
 
 func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) {
@@ -2527,11 +2527,11 @@ func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) 
 }
 
 func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) runtime.Object {
-	r, _ := testActionFor("" /* name */, fatalf, t, action, verb, subresource, obj)
+	r, _ := testActionFor(t, "" /* name */, fatalf, action, verb, subresource, obj)
 	return r
 }
 
-func testActionFor(name string, f failfFunc, t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) (runtime.Object, bool) {
+func testActionFor(t *testing.T, name string, f failfFunc, action clientgotesting.Action, verb, subresource string, obj interface{}) (runtime.Object, bool) {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "
