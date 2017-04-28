@@ -548,9 +548,14 @@ func (c *controller) updateBrokerCondition(broker *v1alpha1.Broker, conditionTyp
 		toUpdate.Status.Conditions = []v1alpha1.BrokerCondition{newCondition}
 	} else {
 		for i, cond := range broker.Status.Conditions {
-			if cond.Type == conditionType && cond.Status != newCondition.Status {
-				glog.Infof("Found status change for Broker %q condition %q: %q -> %q; setting lastTransitionTime to %v", broker.Name, conditionType, cond.Status, status, t)
-				newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+			if cond.Type == conditionType {
+				if cond.Status != newCondition.Status {
+					glog.Infof("Found status change for Broker %q condition %q: %q -> %q; setting lastTransitionTime to %v", broker.Name, conditionType, cond.Status, status, t)
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+				} else {
+					newCondition.LastTransitionTime = cond.LastTransitionTime
+				}
+
 				toUpdate.Status.Conditions[i] = newCondition
 				break
 			}
@@ -636,6 +641,7 @@ func (c *controller) serviceClassDelete(obj interface{}) {
 }
 
 // Instance handlers and control-loop
+
 func (c *controller) instanceAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
@@ -664,6 +670,7 @@ func (c *controller) reconcileInstanceKey(key string) error {
 		glog.Errorf("Unable to retrieve Instance %v from store: %v", key, err)
 		return err
 	}
+
 	return c.reconcileInstance(instance)
 }
 
@@ -692,6 +699,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			}
 		}
 	}
+
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
@@ -1040,18 +1048,15 @@ func (c *controller) updateInstanceCondition(
 	} else {
 		for i, cond := range instance.Status.Conditions {
 			if cond.Type == conditionType {
-				if cond.Status != status {
+				if cond.Status != newCondition.Status {
 					glog.Infof(`Found status change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Status, status, t)
 					newCondition.LastTransitionTime = metav1.NewTime(t)
-					toUpdate.Status.Conditions[i] = newCondition
-					break
+				} else {
+					newCondition.LastTransitionTime = cond.LastTransitionTime
 				}
-				if cond.Message != message {
-					glog.Infof(`Found message change for Instance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, instance.Namespace, instance.Name, conditionType, cond.Message, message, t)
-					newCondition.LastTransitionTime = metav1.NewTime(t)
-					toUpdate.Status.Conditions[i] = newCondition
-					break
-				}
+
+				toUpdate.Status.Conditions[i] = newCondition
+				break
 			}
 		}
 	}
@@ -1414,16 +1419,12 @@ func (c *controller) updateBindingCondition(
 				if cond.Status != newCondition.Status {
 					glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
 					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
-					toUpdate.Status.Conditions[i] = newCondition
-					break
+				} else {
+					newCondition.LastTransitionTime = cond.LastTransitionTime
 				}
-				if cond.Message != message {
-					glog.Infof(`Found message change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Message, message, t)
-					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
-					toUpdate.Status.Conditions[i] = newCondition
-					break
 
-				}
+				toUpdate.Status.Conditions[i] = newCondition
+				break
 			}
 		}
 	}

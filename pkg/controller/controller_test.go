@@ -663,6 +663,8 @@ func TestUpdateBrokerCondition(t *testing.T) {
 		name                  string
 		input                 *v1alpha1.Broker
 		status                v1alpha1.ConditionStatus
+		reason                string
+		message               string
 		transitionTimeChanged bool
 	}{
 
@@ -676,6 +678,14 @@ func TestUpdateBrokerCondition(t *testing.T) {
 			name:                  "not ready -> not ready",
 			input:                 getTestBrokerWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionFalse,
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> not ready with reason and message change",
+			input:                 getTestBrokerWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			reason:                "foo",
+			message:               "bar",
 			transitionTimeChanged: false,
 		},
 		{
@@ -709,7 +719,7 @@ func TestUpdateBrokerCondition(t *testing.T) {
 
 		inputClone := clone.(*v1alpha1.Broker)
 
-		err = testController.updateBrokerCondition(tc.input, v1alpha1.BrokerConditionReady, tc.status, "reason", "message")
+		err = testController.updateBrokerCondition(tc.input, v1alpha1.BrokerConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
 			continue
@@ -741,7 +751,12 @@ func TestUpdateBrokerCondition(t *testing.T) {
 			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
 		}
 
-		newTs := updateActionObject.Status.Conditions[0].LastTransitionTime
+		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+			t.Errorf("%v: expected %v condition(s), got %v", tc.name, e, a)
+		}
+
+		outputCondition := updateActionObject.Status.Conditions[0]
+		newTs := outputCondition.LastTransitionTime
 
 		if tc.transitionTimeChanged && initialTs == newTs {
 			t.Errorf("%v: transition time didn't change when it should have", tc.name)
@@ -749,6 +764,13 @@ func TestUpdateBrokerCondition(t *testing.T) {
 		} else if !tc.transitionTimeChanged && initialTs != newTs {
 			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
 			continue
+		}
+		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			continue
+		}
+		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
 		}
 	}
 }
@@ -775,9 +797,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	assertInstanceReadyFalse(t, updatedInstance, errorNonexistentServiceClassReason)
 
 	events := getRecordedEvents(testController)
-	if e, a := 1, len(events); e != a {
-		t.Fatalf("Unexpected number of events: expected %v, got %v", e, a)
-	}
+	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "Instance \"/test-instance\" references a non-existent ServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
@@ -1064,10 +1084,12 @@ func TestReconcileInstance(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
+	testNsUID := "test_uid_foo"
+
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID("test_uid_foo"),
+				UID: types.UID(testNsUID),
 			},
 		}, nil
 	})
@@ -1102,12 +1124,11 @@ func TestReconcileInstance(t *testing.T) {
 			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
 		}
 
-		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
-		if string(ns.UID) != si.OrganizationGUID {
-			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
+		if testNsUID != si.OrganizationGUID {
+			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", testNsUID, si.OrganizationGUID)
 		}
-		if string(ns.UID) != si.SpaceGUID {
-			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
+		if testNsUID != si.SpaceGUID {
+			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", testNsUID, si.SpaceGUID)
 		}
 	}
 
@@ -1659,6 +1680,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		name                  string
 		input                 *v1alpha1.Instance
 		status                v1alpha1.ConditionStatus
+		reason                string
 		message               string
 		transitionTimeChanged bool
 	}{
@@ -1674,7 +1696,14 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			name:                  "not ready -> not ready",
 			input:                 getTestInstanceWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionFalse,
-			message:               "message",
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> not ready, reason and message change",
+			input:                 getTestInstanceWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			reason:                "foo",
+			message:               "bar",
 			transitionTimeChanged: false,
 		},
 		{
@@ -1717,7 +1746,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		}
 		inputClone := clone.(*v1alpha1.Instance)
 
-		err = testController.updateInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, "reason", tc.message)
+		err = testController.updateInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue
@@ -1749,7 +1778,12 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
 		}
 
-		newTs := updateActionObject.Status.Conditions[0].LastTransitionTime
+		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+			t.Errorf("%v: expected %v condition(s), got %v", tc.name, e, a)
+		}
+
+		outputCondition := updateActionObject.Status.Conditions[0]
+		newTs := outputCondition.LastTransitionTime
 
 		if tc.transitionTimeChanged && initialTs == newTs {
 			t.Errorf("%v: transition time didn't change when it should have", tc.name)
@@ -1757,6 +1791,13 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		} else if !tc.transitionTimeChanged && initialTs != newTs {
 			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
 			continue
+		}
+		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			continue
+		}
+		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
 		}
 	}
 }
@@ -1842,10 +1883,12 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
 
+	testNsUID := "test_ns_uid"
+
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID("test_ns_uid"),
+				UID: types.UID(testNsUID),
 			},
 		}, nil
 	})
@@ -1873,14 +1916,13 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	ns, _ := fakeKubeClient.Core().Namespaces().Get(binding.ObjectMeta.Namespace, metav1.GetOptions{})
-	if string(ns.UID) != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+	if testNsUID != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
 	}
 
 	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
-	if appGUID := bindResource["app_guid"]; string(ns.UID) != fmt.Sprintf("%v", appGUID) {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", string(ns.UID), appGUID)
+	if appGUID := bindResource["app_guid"]; testNsUID != fmt.Sprintf("%v", appGUID) {
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, appGUID)
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -2130,6 +2172,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 		name                  string
 		input                 *v1alpha1.Binding
 		status                v1alpha1.ConditionStatus
+		reason                string
 		message               string
 		transitionTimeChanged bool
 	}{
@@ -2138,42 +2181,38 @@ func TestUpdateBindingCondition(t *testing.T) {
 			name:                  "initially unset",
 			input:                 getTestBinding(),
 			status:                v1alpha1.ConditionFalse,
-			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "not ready -> not ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionFalse,
-			message:               "message",
+			transitionTimeChanged: false,
+		},
+		{
+			name:                  "not ready -> not ready, message and reason change",
+			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
+			status:                v1alpha1.ConditionFalse,
+			reason:                "foo",
+			message:               "bar",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionFalse),
 			status:                v1alpha1.ConditionTrue,
-			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "ready -> ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
 			status:                v1alpha1.ConditionTrue,
-			message:               "message",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "ready -> not ready",
 			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
 			status:                v1alpha1.ConditionFalse,
-			message:               "message",
-			transitionTimeChanged: true,
-		},
-		{
-			name:                  "message -> message2",
-			input:                 getTestBindingWithStatus(v1alpha1.ConditionTrue),
-			status:                v1alpha1.ConditionFalse,
-			message:               "message2",
 			transitionTimeChanged: true,
 		},
 	}
@@ -2188,7 +2227,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 		}
 		inputClone := clone.(*v1alpha1.Binding)
 
-		err = testController.updateBindingCondition(tc.input, v1alpha1.BindingConditionReady, tc.status, "reason", "message")
+		err = testController.updateBindingCondition(tc.input, v1alpha1.BindingConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
 			continue
@@ -2220,7 +2259,12 @@ func TestUpdateBindingCondition(t *testing.T) {
 			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
 		}
 
-		newTs := updateActionObject.Status.Conditions[0].LastTransitionTime
+		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+			t.Errorf("%v: expected %v condition(s), got %v", tc.name, e, a)
+		}
+
+		outputCondition := updateActionObject.Status.Conditions[0]
+		newTs := outputCondition.LastTransitionTime
 
 		if tc.transitionTimeChanged && initialTs == newTs {
 			t.Errorf("%v: transition time didn't change when it should have", tc.name)
@@ -2228,6 +2272,13 @@ func TestUpdateBindingCondition(t *testing.T) {
 		} else if !tc.transitionTimeChanged && initialTs != newTs {
 			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
 			continue
+		}
+		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			continue
+		}
+		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
 		}
 	}
 }
@@ -2434,7 +2485,7 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
 		24*time.Hour,
-		true,
+		true, /* enable OSB context profile */
 		fakeRecorder,
 	)
 	if err != nil {
