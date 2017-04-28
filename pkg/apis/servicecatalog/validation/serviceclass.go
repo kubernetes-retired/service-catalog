@@ -108,7 +108,7 @@ func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorLi
 	return allErrs
 }
 
-const servicePlanNameFmt string = `[-_a-z0-9]+`
+const servicePlanNameFmt string = `[-_a-zA-Z0-9]+`
 const servicePlanNameMaxLength int = 63
 
 var servicePlanNameRegexp = regexp.MustCompile("^" + servicePlanNameFmt + "$")

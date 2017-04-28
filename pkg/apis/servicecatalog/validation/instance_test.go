@@ -39,7 +39,7 @@ func TestValidateInstance(t *testing.T) {
 				},
 				Spec: servicecatalog.InstanceSpec{
 					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
+					PlanName:         "Test-Plan",
 				},
 			},
 			valid: true,
@@ -124,7 +124,7 @@ func TestValidateInstance(t *testing.T) {
 				},
 				Spec: servicecatalog.InstanceSpec{
 					ServiceClassName: "test-serviceclass",
-					PlanName:         "9651JVHbebe",
+					PlanName:         "9651.JVHbebe",
 				},
 			},
 			valid: false,
