@@ -1,20 +1,34 @@
 package: github.com/kubernetes-incubator/service-catalog
 import:
-- package: github.com/emicklei/go-restful/swagger
+- package: github.com/emicklei/go-restful
+  subpackages:
+  - swagger
 - package: github.com/PuerkitoBio/purell
 - package: github.com/spf13/pflag
 - package: github.com/golang/glog
-- package: github.com/davecgh/go-spew/spew
+- package: github.com/davecgh/go-spew
+  subpackages:
+  - spew
 - package: github.com/PuerkitoBio/urlesc
 - package: github.com/go-openapi/jsonreference
 - package: github.com/go-openapi/jsonpointer
 - package: github.com/go-openapi/spec
 - package: github.com/go-openapi/swag
-- package: github.com/mailru/easyjson/jlexer
-- package: golang.org/x/text/secure/precis
-- package: github.com/gogo/protobuf/proto
-- package: golang.org/x/net/http2
-- package: github.com/golang/protobuf/proto
+- package: github.com/mailru/easyjson
+  subpackages:
+  - jlexer
+- package: golang.org/x/text
+  subpackages:
+  - secure/precis
+- package: github.com/gogo/protobuf
+  subpackages:
+  - proto
+- package: golang.org/x/net
+  subpackages:
+  - http2
+- package: github.com/golang/protobuf
+  subpackages:
+  - proto
 - package: gopkg.in/natefinch/lumberjack.v2
 - package: github.com/pkg/errors
 - package: github.com/howeyc/gopass
@@ -47,3 +61,7 @@ import:
 - package: github.com/ugorji/go
   subpackages:
   - codec/codecgen
+- package: github.com/onsi/gomega
+  version: v1.1.0
+- package: github.com/onsi/ginkgo
+  version: v1.3.1

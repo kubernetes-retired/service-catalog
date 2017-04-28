@@ -135,6 +135,9 @@ $(BINDIR)/informer-gen: .init
 $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
+$(BINDIR)/e2e.test: .init
+	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
+
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
 	# Generate defaults
@@ -241,6 +244,9 @@ test-integration: .init $(scBuildImageTarget) build
 	contrib/hack/test-apiserver.sh
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
+
+test-e2e: .generate_files $(BINDIR)/e2e.test
+	$(BINDIR)/e2e.test
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
 
