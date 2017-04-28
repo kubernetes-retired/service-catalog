@@ -147,6 +147,12 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	go func() {
 		mux := http.NewServeMux()
 		healthz.InstallHandler(mux, healthz.PingHealthz)
+		apiAvailableChecker := checkAPIAvailableResources{
+			controller.SimpleClientBuilder{
+				ClientConfig: serviceCatalogKubeconfig,
+			},
+		}
+		healthz.InstallHandler(mux, apiAvailableChecker)
 		configz.InstallHandler(mux)
 
 		if controllerManagerOptions.EnableProfiling {
@@ -343,20 +349,26 @@ func StartControllers(s *options.ControllerManagerServer,
 	select {}
 }
 
-// PingAPIServer is a HealthzChecker that makes sure the
+var _ healthz.HealthzChecker = checkAPIAvailableResources{}
+
+// checkAPIAvailableResourcesServer is a HealthzChecker that makes sure the
 // Service-Catalog APIServer is contactable.
-var PingAPIServer healthz.HealthzChecker = pingAPI{}
-
-type pingAPI struct {
-	// service-catalog client
+type checkAPIAvailableResources struct {
+	serviceCatalogClientBuilder controller.ClientBuilder
 }
 
-func (pingAPI) Name() string {
-	return "pingAPIServer"
+func (c checkAPIAvailableResources) Name() string {
+	return "checkAPIAvailableResources"
 }
 
-func (pingAPI) Check(_ *http.Request) error {
-	// put logic here to call the service-catalog healthz using
-	// the field member that is a client
+func (c checkAPIAvailableResources) Check(_ *http.Request) error {
+	glog.Info("available resources health checker called")
+	availableResources, err := getAvailableResources(c.serviceCatalogClientBuilder)
+	if err != nil {
+		return err
+	}
+	if !availableResources[schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}] {
+		return fmt.Errorf("failed to get servicecatalog/v1alpha1, the apiserver does not seem to be ready")
+	}
 	return nil
 }
