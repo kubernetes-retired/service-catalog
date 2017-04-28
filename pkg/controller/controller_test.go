@@ -2296,7 +2296,7 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// and for service1 plan s1plan2 we have planmeta = planvalue as the blob.
 		if sc.Name == "service1" {
 			if *sc.Description != "service 1 description" {
-				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", sc.Description)
+				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", *sc.Description)
 			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make(map[string]string)
@@ -2328,7 +2328,7 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// "first", "second", and "third"
 		if sc.Name == "service2" {
 			if *sc.Description != "service 2 description" {
-				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", sc.Description)
+				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", *sc.Description)
 			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make([]string, 0)
