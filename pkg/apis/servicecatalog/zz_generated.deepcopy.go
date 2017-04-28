@@ -314,6 +314,11 @@ func DeepCopy_servicecatalog_InstanceStatus(in interface{}, out interface{}, c *
 				}
 			}
 		}
+		if in.LastOperation != nil {
+			in, out := &in.LastOperation, &out.LastOperation
+			*out = new(string)
+			**out = **in
+		}
 		return nil
 	}
 }
