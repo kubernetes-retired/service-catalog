@@ -46,19 +46,23 @@ import (
 )
 
 const (
-	serviceClassGUID = "SCGUID"
-	planGUID         = "PGUID"
-	instanceGUID     = "IGUID"
-	bindingGUID      = "BGUID"
+	serviceClassGUID            = "SCGUID"
+	planGUID                    = "PGUID"
+	nonbindableServiceClassGUID = "UNBINDABLE-SERVICE"
+	nonbindablePlanGUID         = "UNBINDABLE-PLAN"
+	instanceGUID                = "IGUID"
+	bindingGUID                 = "BGUID"
 
-	testBrokerName        = "test-broker"
-	testServiceClassName  = "test-serviceclass"
-	testPlanName          = "test-plan"
-	testInstanceName      = "test-instance"
-	testBindingName       = "test-binding"
-	testNamespace         = "test-ns"
-	testBindingSecretName = "test-secret"
-	testOperation         = "test-operation"
+	testBrokerName                  = "test-broker"
+	testServiceClassName            = "test-serviceclass"
+	testNonbindableServiceClassName = "test-unbindable-serviceclass"
+	testPlanName                    = "test-plan"
+	testNonbindablePlanName         = "test-unbindable-plan"
+	testInstanceName                = "test-instance"
+	testBindingName                 = "test-binding"
+	testNamespace                   = "test-ns"
+	testBindingSecretName           = "test-secret"
+	testOperation                   = "test-operation"
 )
 
 const testCatalog = `{
@@ -206,16 +210,32 @@ func getTestBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
 	return broker
 }
 
-// service class wired to the result of getTestBroker()
+// a bindable service class wired to the result of getTestBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
 		BrokerName: testBrokerName,
 		OSBGUID:    serviceClassGUID,
+		Bindable:   true,
 		Plans: []v1alpha1.ServicePlan{{
 			Name:    testPlanName,
 			OSBFree: true,
 			OSBGUID: planGUID,
+		}},
+	}
+}
+
+// an unbindable service class wired to the result of getTestBroker()
+func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
+	return &v1alpha1.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableServiceClassName},
+		BrokerName: testBrokerName,
+		OSBGUID:    nonbindableServiceClassGUID,
+		Bindable:   false,
+		Plans: []v1alpha1.ServicePlan{{
+			Name:    testNonbindablePlanName,
+			OSBFree: true,
+			OSBGUID: nonbindablePlanGUID,
 		}},
 	}
 }
@@ -229,6 +249,7 @@ func getTestCatalog() *brokerapi.Catalog {
 				Name:        testServiceClassName,
 				ID:          serviceClassGUID,
 				Description: "a test service",
+				Bindable:    true,
 				Plans: []brokerapi.ServicePlan{
 					{
 						Name:        testPlanName,
@@ -252,6 +273,15 @@ func getTestInstance() *v1alpha1.Instance {
 			OSBGUID:          instanceGUID,
 		},
 	}
+}
+
+// an isntance referencing the result of getTestNonbindableServiceClass
+func getTestNonbindableInstance() *v1alpha1.Instance {
+	i := getTestInstance()
+	i.Spec.ServiceClassName = testNonbindableServiceClassName
+	i.Spec.PlanName = testNonbindablePlanName
+
+	return i
 }
 
 // getTestInstanceAsync returns an instance in async mode
@@ -1976,6 +2006,41 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestNonbindableInstance())
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			OSBGUID:     bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding, errorNonbindableServiceClassReason)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonbindableServiceClassReason + ` Binding "test-ns/test-binding" references a non-bindable ServiceClass "test-unbindable-serviceclass"`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}

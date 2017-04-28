@@ -268,6 +268,7 @@ const (
 	errorUnbindCallReason                 string = "UnbindCallFailed"
 	errorWithOngoingAsyncOperation        string = "ErrorAsyncOperationInProgress"
 	errorWithOngoingAsyncOperationMessage string = "Another operation for this service instance is in progress. "
+	errorNonbindableServiceClassReason    string = "ErrorNonbindableServiceClass"
 
 	successInjectedBindResultReason  string = "InjectedBindResult"
 	successInjectedBindResultMessage string = "Injected bind result"
@@ -1193,6 +1194,20 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBrokerForBinding(instance, binding)
 	if err != nil {
+		return err
+	}
+
+	if !serviceClass.Bindable {
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-bindable ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
+		glog.Warning(s)
+		c.updateBindingCondition(
+			binding,
+			v1alpha1.BindingConditionReady,
+			v1alpha1.ConditionFalse,
+			errorNonbindableServiceClassReason,
+			s,
+		)
+		c.recorder.Event(binding, api.EventTypeWarning, errorNonbindableServiceClassReason, s)
 		return err
 	}
 

@@ -80,6 +80,7 @@ func TestBasicFlows(t *testing.T) {
 				Name:        testServiceClassName,
 				ID:          "12345",
 				Description: "a test service",
+				Bindable:    true,
 				Plans: []brokerapi.ServicePlan{
 					{
 						Name:        testPlanName,
