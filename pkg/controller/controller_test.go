@@ -258,7 +258,7 @@ func getTestInstance() *v1alpha1.Instance {
 func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 	instance := getTestInstance()
 	if operation != "" {
-		instance.Status.LastOperation = operation
+		instance.Status.LastOperation = &operation
 	}
 	instance.Status = v1alpha1.InstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{{
@@ -276,7 +276,7 @@ func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 func getTestInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
 	instance := getTestInstance()
 	if operation != "" {
-		instance.Status.LastOperation = operation
+		instance.Status.LastOperation = &operation
 	}
 	instance.Status = v1alpha1.InstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{{
@@ -2729,8 +2729,12 @@ func assertInstanceLastOperation(t *testing.T, obj runtime.Object, operation str
 	if !ok {
 		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
-	if instance.Status.LastOperation != operation {
-		t.Fatalf("Last Operation %q is not what was expected: %q", instance.Status.LastOperation, operation)
+	if instance.Status.LastOperation == nil {
+		if operation != "" {
+			t.Fatalf("Last Operation <nil> is not what was expected: %q", operation)
+		}
+	} else if *instance.Status.LastOperation != operation {
+		t.Fatalf("Last Operation %q is not what was expected: %q", *instance.Status.LastOperation, operation)
 	}
 }
 
