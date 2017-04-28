@@ -115,6 +115,10 @@ retry -n 10 \
 
 echo 'Deploying service catalog...'
 
+retry -n 10 \
+    kubectl --namespace kube-system get configmap extension-apiserver-authentication \
+  || error_exit 'Timed out waiting for extension-apiserver-authentication configmap to come up.'
+
 # The API server automatically provisions the configmap, but we need it to contain the requestheader CA as well,
 # which is only provisioned if you pass the appropriate flags to master.  GKE doesn't do this, so we work around it.
 if [[ -n "${FIX_CONFIGMAP:-}" ]] && [[ -z "$(kubectl --namespace kube-system get configmap extension-apiserver-authentication -o jsonpath="{ $.data['requestheader-client-ca-file'] }")" ]]; then
