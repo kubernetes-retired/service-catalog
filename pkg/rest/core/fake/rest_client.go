@@ -19,10 +19,12 @@ package fake
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -97,6 +99,7 @@ func (s NamespacedStorage) Delete(ns, tipe, name string) {
 // in-memory storage, and responds just as a core apiserver would.
 type RESTClient struct {
 	Storage  NamespacedStorage
+	Watcher  *Watcher
 	accessor meta.MetadataAccessor
 	*fakerestclient.RESTClient
 }
@@ -104,9 +107,11 @@ type RESTClient struct {
 // NewRESTClient returns a new FakeCoreRESTClient
 func NewRESTClient() *RESTClient {
 	storage := make(NamespacedStorage)
+	watcher := NewWatcher()
+
 	coreCl := &fakerestclient.RESTClient{
 		Client: fakerestclient.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
-			r := getRouter(storage)
+			r := getRouter(storage, watcher)
 			rw := newResponseWriter()
 			r.ServeHTTP(rw, request)
 			return rw.getResponse(), nil
@@ -118,6 +123,7 @@ func NewRESTClient() *RESTClient {
 	}
 	return &RESTClient{
 		Storage:    storage,
+		Watcher:    watcher,
 		accessor:   meta.NewAccessor(),
 		RESTClient: coreCl,
 	}
@@ -164,7 +170,7 @@ func (rw *responseWriter) getResponse() *http.Response {
 	}
 }
 
-func getRouter(storage NamespacedStorage) http.Handler {
+func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(
@@ -188,11 +194,108 @@ func getRouter(storage NamespacedStorage) http.Handler {
 		deleteItem(storage),
 	).Methods("DELETE")
 	r.HandleFunc(
+		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}/{name}",
+		watchItem(watcher),
+	)
+	r.HandleFunc(
+		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}",
+		watchList(watcher),
+	)
+	r.HandleFunc(
 		"/api/v1/namespaces",
 		listNamespaces(storage),
 	)
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
+}
+
+func watchItem(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ch := watcher.ReceiveChan()
+		for evt := range ch {
+			codec, err := testapi.GetCodecForObject(evt.Object)
+			if err != nil {
+				errStr := fmt.Sprintf("error getting codec (%s)", err)
+				log.Fatal(errStr)
+				http.Error(w, errStr, http.StatusInternalServerError)
+				return
+			}
+			objBytes, err := runtime.Encode(codec, evt.Object)
+			if err != nil {
+				errStr := fmt.Sprintf("error encoding item (%s)", err)
+				log.Fatal(errStr)
+				http.Error(w, errStr, http.StatusInternalServerError)
+				return
+			}
+
+			evt := metav1.WatchEvent{
+				Type: fmt.Sprintf("%s", evt.Type),
+				Object: runtime.RawExtension{
+					Object: evt.Object,
+					Raw:    objBytes,
+				},
+			}
+			b, err := json.Marshal(&evt)
+			if err != nil {
+				errStr := fmt.Sprintf("error encoding JSON (%s)", err)
+				log.Fatal(errStr)
+				http.Error(w, errStr, http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json, */*")
+			w.Write(b)
+		}
+	}
+}
+
+func watchList(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
+	const timeout = 1 * time.Second
+	return func(w http.ResponseWriter, r *http.Request) {
+		ch := watcher.ReceiveChan()
+		for {
+			select {
+			case <-time.After(timeout):
+				errStr := fmt.Sprintf("didn't receive within %s", timeout)
+				log.Fatal(errStr)
+				http.Error(w, errStr, http.StatusInternalServerError)
+			case evt, ok := <-ch:
+				if !ok {
+					return
+				}
+				codec, err := testapi.GetCodecForObject(evt.Object)
+				if err != nil {
+					errStr := fmt.Sprintf("error getting codec (%s)", err)
+					log.Print(errStr)
+					http.Error(w, errStr, http.StatusInternalServerError)
+					return
+				}
+				objBytes, err := runtime.Encode(codec, evt.Object)
+				if err != nil {
+					errStr := fmt.Sprintf("error encoding item (%s)", err)
+					log.Fatal(errStr)
+					http.Error(w, errStr, http.StatusInternalServerError)
+					return
+				}
+
+				watchEvent := metav1.WatchEvent{
+					Type: fmt.Sprintf("%s", evt.Type),
+					Object: runtime.RawExtension{
+						Object: evt.Object,
+						Raw:    objBytes,
+					},
+				}
+				b, err := json.Marshal(&watchEvent)
+				if err != nil {
+					errStr := fmt.Sprintf("error encoding JSON (%s)", err)
+					log.Fatal(errStr)
+					http.Error(w, errStr, http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json, */*")
+				w.Write(b)
+			}
+		}
+	}
 }
 
 func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {

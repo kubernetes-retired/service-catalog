@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/etcd"
@@ -892,6 +894,74 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 }
 
+func TestWatch(t *testing.T) {
+	keyer := getBrokerKeyer()
+	key, err := keyer.Key(request.NewContext(), name)
+	fakeCl := fake.NewRESTClient()
+	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
+	resourceVsn := "1234"
+	predicate := storage.SelectionPredicate{}
+	obj := &sc.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: globalNamespace,
+		},
+	}
+
+	go func() {
+		if err := fakeCl.Watcher.SendObject(watch.Added, obj, 1*time.Second); err != nil {
+			t.Fatalf("error sending object %#v to watcher (%s)", err)
+		}
+		fakeCl.Watcher.Close()
+	}()
+
+	watchIface, err := iface.Watch(context.Background(), key, resourceVsn, predicate)
+	if err != nil {
+		t.Fatalf("error watching (%s)", err)
+	}
+	if watchIface == nil {
+		t.Fatalf("expected non-nil watch interface")
+	}
+}
+
+func TestWatchList(t *testing.T) {
+	keyer := getBrokerKeyer()
+	key, err := keyer.Key(request.NewContext(), name)
+	fakeCl := fake.NewRESTClient()
+	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
+	resourceVsn := "1234"
+	predicate := storage.SelectionPredicate{}
+	obj := &sc.BrokerList{
+		Items: []sc.Broker{
+			sc.Broker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s1", name),
+					Namespace: globalNamespace,
+				},
+			},
+			sc.Broker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s2", name),
+					Namespace: globalNamespace,
+				},
+			},
+		},
+	}
+	go func() {
+		if err := fakeCl.Watcher.SendObject(watch.Added, obj, 1*time.Second); err != nil {
+			t.Fatalf("error sending object %#v to watcher (%s)", err)
+		}
+		defer fakeCl.Watcher.Close()
+	}()
+	watchIface, err := iface.WatchList(context.Background(), key, resourceVsn, predicate)
+	if err != nil {
+		t.Fatalf("error watching (%s)", err)
+	}
+	if watchIface == nil {
+		t.Fatalf("expected non-nil watch interface")
+	}
+}
+
 func TestRemoveNamespace(t *testing.T) {
 	obj := &servicecatalog.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
@@ -908,7 +978,6 @@ func TestRemoveNamespace(t *testing.T) {
 		)
 	}
 }
-
 func getBrokerKeyer() Keyer {
 	return Keyer{
 		DefaultNamespace: globalNamespace,
