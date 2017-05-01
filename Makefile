@@ -182,7 +182,6 @@ $(BINDIR)/e2e.test: .init
 .init: $(scBuildImageTarget)
 	touch $@
 
-
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
 	  docker build -t scbuildimage -
@@ -190,7 +189,7 @@ $(BINDIR)/e2e.test: .init
 
 # Util targets
 ##############
-.PHONY: verify verify-client-gen 
+.PHONY: verify verify-client-gen
 verify: .init .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
@@ -217,7 +216,7 @@ verify: .init .generate_files verify-client-gen
 	@rm .out
 	@#
 	@echo Running href checker:
-	@$(DOCKER_CMD) build/verify-links.sh
+	@$(DOCKER_CMD) verify-links.sh .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
