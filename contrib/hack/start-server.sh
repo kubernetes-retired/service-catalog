@@ -40,7 +40,7 @@ docker run -d --name apiserver \
 	-e KUBERNETES_SERVICE_PORT=6443 \
 	--privileged \
 	--net container:etcd-svc-cat \
-	scbuildimage \
+	quay.io/kubernetes-service-catalog/build-image:canary \
 	bin/apiserver -v 10 --etcd-servers http://localhost:2379 \
 		--insecure-bind-address=0.0.0.0 --insecure-port=8081 \
 		--storage-type=etcd --disable-auth
