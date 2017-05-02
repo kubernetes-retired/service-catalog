@@ -20,5 +20,5 @@ contrib/build/*/tmp/*
 .pkg
 .kube
 .var
-build-image
-push-build-image
+.build-image
+.push-build-image

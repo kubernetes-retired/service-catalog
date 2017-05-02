@@ -77,7 +77,7 @@ else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --rm -v $(PWD):/go/src/$(SC_PKG) \
 	  -v $(PWD)/.pkg:/go/pkg $(BUILD_IMAGE_MUTABLE)
-	scBuildImageTarget = build-image
+	scBuildImageTarget = .build-image
 endif
 
 NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
@@ -184,12 +184,14 @@ $(BINDIR)/e2e.test: .init
 	docker pull $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
-build-image: build/build-image/Dockerfile
+.PHONY: .build-image
+.build-image: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
 	  docker build -t $(BUILD_IMAGE_MUTABLE) -
 	touch $@
 
-push-build-image: build-image
+.PHONY: .push-build-image
+.push-build-image: .build-image
 	docker push $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
@@ -260,11 +262,11 @@ clean-bin:
 	rm -f .generate_exes
 
 clean-build-image:
-	rm -f build-image
+	rm -f .build-image
 	docker rmi -f $(BUILD_IMAGE_MUTABLE) > /dev/null 2>&1 || true
 
 clean-push-build-image:
-	rm -rf push-build-image
+	rm -rf .push-build-image
 
 clean-generated:
 	rm -f .generate_files
