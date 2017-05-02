@@ -181,6 +181,7 @@ $(BINDIR)/e2e.test: .init
 ###################
 
 .init: $(scBuildImageTarget)
+	docker pull $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
 build-image: build/build-image/Dockerfile
