@@ -59,7 +59,8 @@ CONTROLLER_MANAGER_IMAGE          = $(REGISTRY)controller-manager:$(VERSION)
 CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager:$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker:$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker:$(MUTABLE_TAG)
-BUILD_IMAGE_MUTABLE               = $(REGISTRY)build-image:$(MUTABLE_TAG)
+BUILD_IMAGE_REGISTRY             ?= quay.io/kubernetes-service-catalog/
+BUILD_IMAGE_MUTABLE               = $(BUILD_IMAGE_REGISTRY)build-image:$(MUTABLE_TAG)
 
 # precheck to avoid kubernetes-incubator/service-catalog#361
 $(if $(realpath vendor/k8s.io/kubernetes/vendor), \
