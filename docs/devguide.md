@@ -120,9 +120,6 @@ To deploy to Kubernetes, see the
 * The Makefile assumes you're running `make` from the root of the repo.
 * There are some source files that are generated during the build process.
   These will be prefixed with `zz`.
-* A Docker Image called "scbuildimage" will be used. The image isn't pre-built
-  and pulled from a public registry. Instead, it is built from source contained
-  within the service catalog repository.
 * While many people have utilities, such as editor hooks, that auto-format
   their go source files with `gofmt`, there is a Makefile target called
   `format` which can be used to do this task for you.
