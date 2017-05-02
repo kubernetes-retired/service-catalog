@@ -51,6 +51,7 @@ GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
+REGISTRY                         ?= quay.io/kubernetes-service-catalog/
 MUTABLE_TAG                      ?= canary
 APISERVER_IMAGE                   = $(REGISTRY)apiserver:$(VERSION)
 APISERVER_MUTABLE_IMAGE           = $(REGISTRY)apiserver:$(MUTABLE_TAG)
