@@ -58,6 +58,7 @@ CONTROLLER_MANAGER_IMAGE          = $(REGISTRY)controller-manager:$(VERSION)
 CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager:$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker:$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker:$(MUTABLE_TAG)
+BUILD_IMAGE_MUTABLE               = $(REGISTRY)build-image:$(MUTABLE_TAG)
 
 # precheck to avoid kubernetes-incubator/service-catalog#361
 $(if $(realpath vendor/k8s.io/kubernetes/vendor), \
@@ -75,8 +76,8 @@ ifdef NO_DOCKER
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --rm -v $(PWD):/go/src/$(SC_PKG) \
-	  -v $(PWD)/.pkg:/go/pkg scbuildimage
-	scBuildImageTarget = .scBuildImage
+	  -v $(PWD)/.pkg:/go/pkg $(BUILD_IMAGE_MUTABLE)
+	scBuildImageTarget = build-image
 endif
 
 NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
@@ -182,9 +183,13 @@ $(BINDIR)/e2e.test: .init
 .init: $(scBuildImageTarget)
 	touch $@
 
-.scBuildImage: build/build-image/Dockerfile
+build-image: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage -
+	  docker build -t $(BUILD_IMAGE_MUTABLE) -
+	touch $@
+
+push-build-image: build-image
+	docker push $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
 # Util targets
@@ -247,15 +252,18 @@ test-integration: .init $(scBuildImageTarget) build
 test-e2e: .generate_files $(BINDIR)/e2e.test
 	$(BINDIR)/e2e.test
 
-clean: clean-bin clean-build-image clean-generated clean-coverage
+clean: clean-bin clean-build-image clean-push-build-image clean-generated clean-coverage
 
 clean-bin:
 	rm -rf $(BINDIR)
 	rm -f .generate_exes
 
 clean-build-image:
-	rm -f .scBuildImage
-	docker rmi -f scbuildimage > /dev/null 2>&1 || true
+	rm -f build-image
+	docker rmi -f $(BUILD_IMAGE_MUTABLE) > /dev/null 2>&1 || true
+
+clean-push-build-image:
+	rm -rf push-build-image
 
 clean-generated:
 	rm -f .generate_files
