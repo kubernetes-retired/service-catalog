@@ -304,8 +304,10 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 	rm -rf build/controller-manager/tmp
 
 # Push our Docker Images to a registry
+# note: .push-build-image should be the first dependency, because all others rely on the build
+# image
 ######################################
-push: user-broker-push controller-manager-push apiserver-push .push-build-image
+push: .push-build-image user-broker-push controller-manager-push apiserver-push
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
