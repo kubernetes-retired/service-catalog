@@ -305,7 +305,7 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 
 # Push our Docker Images to a registry
 ######################################
-push: user-broker-push controller-manager-push apiserver-push push-build-image
+push: user-broker-push controller-manager-push apiserver-push .push-build-image
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
