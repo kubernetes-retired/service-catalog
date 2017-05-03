@@ -272,7 +272,7 @@ clean-coverage:
 # Building Docker Images for our executables
 ############################################
 images: user-broker-image \
-    controller-manager-image apiserver-image build-image
+    controller-manager-image apiserver-image .build-image
 
 .PHONY: .build-image
 .build-image: build/build-image/Dockerfile
