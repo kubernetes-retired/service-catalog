@@ -60,7 +60,8 @@ CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager:$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker:$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker:$(MUTABLE_TAG)
 BUILD_IMAGE_REGISTRY             ?= quay.io/kubernetes-service-catalog/
-BUILD_IMAGE_MUTABLE               = $(BUILD_IMAGE_REGISTRY)build-image:$(MUTABLE_TAG)
+BUILD_IMAGE                      ?= $(BUILD_IMAGE_REGISTRY)build-image:$(VERSION)
+BUILD_IMAGE_MUTABLE              ?= $(BUILD_IMAGE_REGISTRY)build-image:$(MUTABLE_TAG)
 
 # precheck to avoid kubernetes-incubator/service-catalog#361
 $(if $(realpath vendor/k8s.io/kubernetes/vendor), \
@@ -78,7 +79,7 @@ ifdef NO_DOCKER
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --rm -v $(PWD):/go/src/$(SC_PKG) \
-	  -v $(PWD)/.pkg:/go/pkg $(BUILD_IMAGE_MUTABLE)
+	  -v $(PWD)/.pkg:/go/pkg $(BUILD_IMAGE)
 	scBuildImageTarget = .build-image
 endif
 
@@ -183,17 +184,20 @@ $(BINDIR)/e2e.test: .init
 ###################
 
 .init: $(scBuildImageTarget)
+	docker pull $(BUILD_IMAGE)
 	docker pull $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
 .PHONY: .build-image
 .build-image: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t $(BUILD_IMAGE_MUTABLE) -
+	  docker build -t $(BUILD_IMAGE) -
+	docker tag $(BUILD_IMAGE) $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
 .PHONY: .push-build-image
 .push-build-image: .build-image
+	docker push $(BUILD_IMAGE)
 	docker push $(BUILD_IMAGE_MUTABLE)
 	touch $@
 
@@ -265,6 +269,7 @@ clean-bin:
 
 clean-build-image:
 	rm -f .build-image
+	docker rmi -f $(BUILD_IMAGE) > /dev/null 2>&1 || true
 	docker rmi -f $(BUILD_IMAGE_MUTABLE) > /dev/null 2>&1 || true
 
 clean-push-build-image:
