@@ -23,9 +23,9 @@ export REGISTRY=quay.io/kubernetes-service-catalog/
 docker login -e="${QUAY_EMAIL}" -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
 
 if [[ -n "${TRAVIS_TAG}" ]]; then
-    echo "Pushing images with tag ${TRAVIS_TAG}."
-    VERSION="${TRAVIS_TAG}" make push
+    echo "Pushing images with tags '${TRAVIS_TAG}' and 'latest'."
+    VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make push
 elif [[ "${TRAVIS_PULL_REQUEST}" == "false" && "${TRAVIS_BRANCH}" == "master" ]]; then
-    echo "Pushing images with sha tag."
+    echo "Pushing images with default tags (git sha and 'canary')."
     make push
 fi
