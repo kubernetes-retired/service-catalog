@@ -22,3 +22,4 @@ contrib/build/*/tmp/*
 .var
 .build-image
 .push-build-image
+.build-image-push
