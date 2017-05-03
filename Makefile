@@ -188,19 +188,6 @@ pull-build-image:
 	docker pull $(BUILD_IMAGE)
 	docker pull $(BUILD_IMAGE_MUTABLE)
 
-.PHONY: .build-image
-.build-image: build/build-image/Dockerfile
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t $(BUILD_IMAGE) -
-	docker tag $(BUILD_IMAGE) $(BUILD_IMAGE_MUTABLE)
-	touch $@
-
-.PHONY: .push-build-image
-.push-build-image: .build-image
-	docker push $(BUILD_IMAGE)
-	docker push $(BUILD_IMAGE_MUTABLE)
-	touch $@
-
 # Util targets
 ##############
 .PHONY: verify verify-client-gen
@@ -261,7 +248,7 @@ test-integration: $(scBuildImageTarget) build
 test-e2e: .generate_files $(BINDIR)/e2e.test
 	$(BINDIR)/e2e.test
 
-clean: clean-bin clean-build-image clean-push-build-image clean-generated clean-coverage
+clean: clean-bin clean-build-image clean-build-image-push clean-generated clean-coverage
 
 clean-bin:
 	rm -rf $(BINDIR)
@@ -272,8 +259,8 @@ clean-build-image:
 	docker rmi -f $(BUILD_IMAGE) > /dev/null 2>&1 || true
 	docker rmi -f $(BUILD_IMAGE_MUTABLE) > /dev/null 2>&1 || true
 
-clean-push-build-image:
-	rm -rf .push-build-image
+clean-build-image-push:
+	rm -rf .build-image-push
 
 clean-generated:
 	rm -f .generate_files
@@ -285,7 +272,14 @@ clean-coverage:
 # Building Docker Images for our executables
 ############################################
 images: user-broker-image \
-    controller-manager-image apiserver-image
+    controller-manager-image apiserver-image build-image
+
+.PHONY: .build-image
+.build-image: build/build-image/Dockerfile
+	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
+	  docker build -t $(BUILD_IMAGE) -
+	docker tag $(BUILD_IMAGE) $(BUILD_IMAGE_MUTABLE)
+	touch $@
 
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	mkdir -p contrib/build/user-broker/tmp
@@ -309,10 +303,16 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 	rm -rf build/controller-manager/tmp
 
 # Push our Docker Images to a registry
-# note: .push-build-image should be the first dependency, because all others rely on the build
+# note: .build-image-push should be the first dependency, because all others rely on the build
 # image
 ######################################
-push: .push-build-image user-broker-push controller-manager-push apiserver-push
+push: .build-image-push user-broker-push controller-manager-push apiserver-push
+
+.PHONY: .build-image-push
+.build-image-push: .build-image
+	docker push $(BUILD_IMAGE)
+	docker push $(BUILD_IMAGE_MUTABLE)
+	touch $@
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
