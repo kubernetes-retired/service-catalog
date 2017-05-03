@@ -414,10 +414,12 @@ func (t *store) List(
 		glog.Errorf("listing resources (%s)", err)
 		return err
 	}
-	for i, obj := range objs {
-		if err := removeNamespace(obj); err != nil {
-			glog.Errorf("removing namespace from obj %d (%s)", i, err)
-			return err
+	if !t.hasNamespace {
+		for i, obj := range objs {
+			if err := removeNamespace(obj); err != nil {
+				glog.Errorf("removing namespace from obj %d (%s)", i, err)
+				return err
+			}
 		}
 	}
 	if err := meta.SetList(listObj, objs); err != nil {
