@@ -183,6 +183,7 @@ $(BINDIR)/e2e.test:
 # Some prereq stuff
 ###################
 
+.PHONY: pull-build-image
 pull-build-image:
 	docker pull $(BUILD_IMAGE)
 	docker pull $(BUILD_IMAGE_MUTABLE)
