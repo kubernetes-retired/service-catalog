@@ -46,7 +46,7 @@ endif
 NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION     = 1.7.3
+GO_VERSION     = 1.8
 
 PLATFORM?=linux
 ARCH?=amd64
