@@ -146,6 +146,7 @@ func getRouter() http.Handler {
 	r.HandleFunc("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}", getItem).Methods("GET")
 	r.HandleFunc("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}", updateItem).Methods("PUT")
 	r.HandleFunc("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}", deleteItem).Methods("DELETE")
+	r.HandleFunc("/apis/servicecatalog.k8s.i0/v1alpha1/watch/namespaces/{namespace}/{type}/{name}", watchItem).Methods("GET")
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
 }
@@ -318,6 +319,10 @@ func deleteItem(rw http.ResponseWriter, r *http.Request) {
 	}
 	storage.delete(ns, tipe, name)
 	rw.WriteHeader(http.StatusOK)
+}
+
+func watchItem(rw http.ResponseWriter, r *http.Request) {
+
 }
 
 func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
