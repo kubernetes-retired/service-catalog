@@ -22,6 +22,7 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -56,7 +57,7 @@ func TestGetAllNamespaces(t *testing.T) {
 	const (
 		ns1Name = "ns1"
 	)
-	cl := newFakeCoreRESTClient()
+	cl := fake.NewRESTClient()
 	nsList, err := getAllNamespaces(cl)
 	if err != nil {
 		t.Fatalf("getting all namespaces (%s)", err)
@@ -64,7 +65,7 @@ func TestGetAllNamespaces(t *testing.T) {
 	if len(nsList.Items) != 0 {
 		t.Fatalf("expected 0 namespaces, got %d", len(nsList.Items))
 	}
-	cl.storage[ns1Name] = newTypedStorage()
+	cl.Storage[ns1Name] = fake.NewTypedStorage()
 	nsList, err = getAllNamespaces(cl)
 	if err != nil {
 		t.Fatalf("getting all namespaces (%s)", err)
@@ -83,7 +84,7 @@ func TestListResource(t *testing.T) {
 		kind = ServiceBrokerKind
 	)
 
-	cl := newFakeCoreRESTClient()
+	cl := fake.NewRESTClient()
 	listObj := sc.BrokerList{TypeMeta: newTypeMeta(kind)}
 	codec, err := testapi.GetCodecForObject(&sc.BrokerList{TypeMeta: newTypeMeta(kind)})
 	if err != nil {
@@ -96,11 +97,11 @@ func TestListResource(t *testing.T) {
 	if len(objs) != 0 {
 		t.Fatalf("expected 0 objects returned, got %d instead", len(objs))
 	}
-	cl.storage.set(ns, ServiceBrokerKind.URLName(), "broker1", &sc.Broker{
+	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker1", &sc.Broker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker1"},
 	})
-	cl.storage.set(ns, ServiceBrokerKind.URLName(), "broker2", &sc.Broker{
+	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker2", &sc.Broker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker2"},
 	})
@@ -108,10 +109,10 @@ func TestListResource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error listing resource (%s)", err)
 	}
-	if len(objs) != len(cl.storage[ns][ServiceBrokerKind.URLName()]) {
+	if len(objs) != len(cl.Storage[ns][ServiceBrokerKind.URLName()]) {
 		t.Fatalf(
 			"expected %d objects returned, got %d instead",
-			len(cl.storage[ns][ServiceBrokerKind.URLName()]),
+			len(cl.Storage[ns][ServiceBrokerKind.URLName()]),
 			len(objs),
 		)
 	}
