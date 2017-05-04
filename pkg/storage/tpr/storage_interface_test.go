@@ -909,7 +909,7 @@ func TestWatch(t *testing.T) {
 
 	go func() {
 		if err := fakeCl.Watcher.SendObject(watch.Added, obj, 1*time.Second); err != nil {
-			t.Fatalf("error sending object %#v to watcher (%s)", err)
+			t.Fatalf("error sending object %#v to watcher (%s)", *obj, err)
 		}
 		fakeCl.Watcher.Close()
 	}()
@@ -969,7 +969,7 @@ func TestWatchList(t *testing.T) {
 	}
 	go func() {
 		if err := fakeCl.Watcher.SendObject(watch.Added, obj, 1*time.Second); err != nil {
-			t.Fatalf("error sending object %#v to watcher (%s)", err)
+			t.Fatalf("error sending object %#v to watcher (%s)", *obj, err)
 		}
 		defer fakeCl.Watcher.Close()
 	}()
