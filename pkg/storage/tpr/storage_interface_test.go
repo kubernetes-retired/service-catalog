@@ -895,6 +895,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 }
 
 func TestWatch(t *testing.T) {
+	const timeout = 1 * time.Second
 	keyer := getBrokerKeyer()
 	key, err := keyer.Key(request.NewContext(), name)
 	fakeCl := fake.NewRESTClient()
@@ -902,10 +903,8 @@ func TestWatch(t *testing.T) {
 	resourceVsn := "1234"
 	predicate := storage.SelectionPredicate{}
 	obj := &sc.Broker{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: globalNamespace,
-		},
+		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
+		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
 
 	go func() {
@@ -921,6 +920,26 @@ func TestWatch(t *testing.T) {
 	}
 	if watchIface == nil {
 		t.Fatalf("expected non-nil watch interface")
+	}
+	defer watchIface.Stop()
+	ch := watchIface.ResultChan()
+	evt, ok := <-ch
+	if !ok {
+		t.Fatalf("watch channel was closed")
+	}
+	if evt.Type != watch.Added {
+		t.Fatalf("event type was not ADDED")
+	}
+	if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
+		t.Fatalf("received objects aren't the same (%s)", err)
+	}
+	select {
+	case _, ok := <-ch:
+		if ok {
+			t.Fatal("watch channel was not closed")
+		}
+	case <-time.After(timeout):
+		t.Fatalf("watch channel didn't receive after %s", timeout)
 	}
 }
 
