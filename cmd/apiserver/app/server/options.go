@@ -17,6 +17,8 @@ limitations under the License.
 package server
 
 import (
+	"os"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/spf13/pflag"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
@@ -44,6 +46,8 @@ type ServiceCatalogServerOptions struct {
 	// DisableAuth disables delegating authentication and authorization for testing scenarios
 	DisableAuth bool
 	StopCh      <-chan struct{}
+	// StandaloneMode if true asserts that we will not depend on a kube-apiserver
+	StandaloneMode bool
 }
 
 func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
@@ -74,4 +78,12 @@ func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
 // invalid storage type
 func (s *ServiceCatalogServerOptions) StorageType() (server.StorageType, error) {
 	return server.StorageTypeFromString(s.StorageTypeString)
+}
+
+// standaloneMode returns true if the env var SERVICE_CATALOG_STANALONE=true
+// If enabled, we will assume no integration with Kubernetes API server is performed.
+// It is intended for testing purposes only.
+func standaloneMode() bool {
+	val := os.Getenv("SERVICE_CATALOG_STANDALONE")
+	return val == "true"
 }

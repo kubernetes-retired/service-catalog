@@ -86,6 +86,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 			DisableAuth:           true,
 			StopCh:                stopCh,
+			StandaloneMode:        true, // this must be true because we have no kube server for integration.
 		}
 		options.InsecureServingOptions.BindPort = insecurePort
 		options.SecureServingOptions.ServingOptions.BindPort = securePort

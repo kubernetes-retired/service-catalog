@@ -32,6 +32,8 @@ spec:
             cpu: 100m
             memory: 30Mi
         args:
+        - --admission-control
+        - "KubernetesNamespaceLifecycle"
         - --secure-port
         - "8443"
         {{- if .Values.apiserver.insecure }}
