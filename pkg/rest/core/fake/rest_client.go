@@ -375,7 +375,7 @@ func deleteItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 			return
 		}
 		storage.Delete(ns, tipe, name)
-		rw.WriteHeader(http.StatusOK)
+		rw.WriteHeader(http.StatusAccepted)
 	}
 }
 
