@@ -933,13 +933,13 @@ func TestWatchList(t *testing.T) {
 	predicate := storage.SelectionPredicate{}
 	obj := &sc.BrokerList{
 		Items: []sc.Broker{
-			sc.Broker{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("%s1", name),
 					Namespace: globalNamespace,
 				},
 			},
-			sc.Broker{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("%s2", name),
 					Namespace: globalNamespace,
