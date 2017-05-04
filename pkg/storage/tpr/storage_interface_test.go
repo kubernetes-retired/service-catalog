@@ -844,6 +844,9 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 		outBroker,
 		nil, // TODO: Current impl ignores preconditions-- may be wrong
 	)
+	if err != nil {
+		t.Fatalf("unexpected error deleting object (%s)", err)
+	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
 	if obj != nil {
@@ -877,6 +880,9 @@ func TestDeleteWithNamespace(t *testing.T) {
 		outInstance,
 		nil, // TODO: Current impl ignores preconditions-- may be wrong
 	)
+	if err != nil {
+		t.Fatalf("unexpected error deleting object (%s)", err)
+	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(namespace, ServiceInstanceKind.URLName(), name)
 	if obj != nil {
