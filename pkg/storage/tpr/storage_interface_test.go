@@ -925,6 +925,7 @@ func TestWatch(t *testing.T) {
 }
 
 func TestWatchList(t *testing.T) {
+	const timeout = 1 * time.Second
 	keyer := getBrokerKeyer()
 	key, err := keyer.Key(request.NewContext(), name)
 	fakeCl := fake.NewRESTClient()
@@ -959,6 +960,26 @@ func TestWatchList(t *testing.T) {
 	}
 	if watchIface == nil {
 		t.Fatalf("expected non-nil watch interface")
+	}
+	defer watchIface.Stop()
+	ch := watchIface.ResultChan()
+	evt, ok := <-ch
+	if !ok {
+		t.Fatalf("watch channel was closed")
+	}
+	if evt.Type != watch.Added {
+		t.Fatalf("event type was not ADDED")
+	}
+	if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
+		t.Fatalf("received objects aren't the same (%s)", err)
+	}
+	select {
+	case _, ok := <-ch:
+		if ok {
+			t.Fatal("watch channel was not closed")
+		}
+	case <-time.After(timeout):
+		t.Fatalf("watch channel didn't receive after %s", timeout)
 	}
 }
 
@@ -1019,6 +1040,9 @@ func getBrokerTPRStorageIFace(
 				},
 			}
 		},
+		listShell: func() runtime.Object {
+			return &servicecatalog.BrokerList{}
+		},
 	}
 }
 
@@ -1048,6 +1072,9 @@ func getInstanceTPRStorageIFace(
 					Name:      name,
 				},
 			}
+		},
+		listShell: func() runtime.Object {
+			return &servicecatalog.InstanceList{}
 		},
 	}
 }

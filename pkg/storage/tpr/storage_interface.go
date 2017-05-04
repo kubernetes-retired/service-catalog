@@ -215,23 +215,29 @@ func (t *store) Watch(
 		glog.Errorf("initiating the raw watch (%s)", err)
 		return nil, err
 	}
-	filteredIFace := watch.Filter(watchIface, watchFilterer(t, ns))
+	filteredIFace := watch.Filter(watchIface, watchFilterer(t, ns, false))
 	return filteredIFace, nil
 }
 
-func watchFilterer(t *store, ns string) func(watch.Event) (watch.Event, bool) {
+// watchFilterer returns a function that can be used as an argument to watch.Filter
+func watchFilterer(t *store, ns string, list bool) func(watch.Event) (watch.Event, bool) {
 	return func(in watch.Event) (watch.Event, bool) {
 		encodedBytes, err := runtime.Encode(t.codec, in.Object)
 		if err != nil {
 			glog.Errorf("couldn't encode watch event object (%s)", err)
 			return watch.Event{}, false
 		}
-		finalObj := t.singularShell("", "")
+		var finalObj runtime.Object
+		if !list {
+			finalObj = t.singularShell("", "")
+		} else {
+			finalObj = t.listShell()
+		}
 		if err := decode(t.codec, encodedBytes, finalObj); err != nil {
 			glog.Errorf("couldn't decode watch event bytes (%s)", err)
 			return watch.Event{}, false
 		}
-		if !t.hasNamespace {
+		if !t.hasNamespace && !list {
 			if err := removeNamespace(finalObj); err != nil {
 				glog.Errorf("couldn't remove namespace from %#v (%s)", finalObj, err)
 				return watch.Event{}, false
@@ -242,6 +248,7 @@ func watchFilterer(t *store, ns string) func(watch.Event) (watch.Event, bool) {
 			Object: finalObj,
 		}, true
 	}
+
 }
 
 // WatchList begins watching the specified key's items. Items are decoded into API
@@ -277,7 +284,7 @@ func (t *store) WatchList(
 		glog.Errorf("initiating the raw watch (%s)", err)
 		return nil, err
 	}
-	return watch.Filter(watchIface, watchFilterer(t, ns)), nil
+	return watch.Filter(watchIface, watchFilterer(t, ns, true)), nil
 }
 
 // Get unmarshals json found at key into objPtr. On a not found error, will either
