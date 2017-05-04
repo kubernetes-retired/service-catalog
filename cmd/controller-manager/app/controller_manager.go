@@ -146,13 +146,12 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// Start http server and handlers
 	go func() {
 		mux := http.NewServeMux()
-		healthz.InstallHandler(mux, healthz.PingHealthz)
 		apiAvailableChecker := checkAPIAvailableResources{
 			controller.SimpleClientBuilder{
 				ClientConfig: serviceCatalogKubeconfig,
 			},
 		}
-		healthz.InstallHandler(mux, apiAvailableChecker)
+		healthz.InstallHandler(mux, healthz.PingHealthz, apiAvailableChecker)
 		configz.InstallHandler(mux)
 
 		if controllerManagerOptions.EnableProfiling {
