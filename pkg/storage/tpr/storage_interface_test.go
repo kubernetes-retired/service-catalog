@@ -923,15 +923,19 @@ func TestWatch(t *testing.T) {
 	}
 	defer watchIface.Stop()
 	ch := watchIface.ResultChan()
-	evt, ok := <-ch
-	if !ok {
-		t.Fatalf("watch channel was closed")
-	}
-	if evt.Type != watch.Added {
-		t.Fatalf("event type was not ADDED")
-	}
-	if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
-		t.Fatalf("received objects aren't the same (%s)", err)
+	select {
+	case evt, ok := <-ch:
+		if !ok {
+			t.Fatalf("watch channel was closed")
+		}
+		if evt.Type != watch.Added {
+			t.Fatalf("event type was not ADDED")
+		}
+		if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
+			t.Fatalf("received objects aren't the same (%s)", err)
+		}
+	case <-time.After(timeout):
+		t.Fatalf("didn't receive an event within %s", timeout)
 	}
 	select {
 	case _, ok := <-ch:
@@ -982,15 +986,19 @@ func TestWatchList(t *testing.T) {
 	}
 	defer watchIface.Stop()
 	ch := watchIface.ResultChan()
-	evt, ok := <-ch
-	if !ok {
-		t.Fatalf("watch channel was closed")
-	}
-	if evt.Type != watch.Added {
-		t.Fatalf("event type was not ADDED")
-	}
-	if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
-		t.Fatalf("received objects aren't the same (%s)", err)
+	select {
+	case evt, ok := <-ch:
+		if !ok {
+			t.Fatalf("watch channel was closed")
+		}
+		if evt.Type != watch.Added {
+			t.Fatalf("event type was not ADDED")
+		}
+		if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
+			t.Fatalf("received objects aren't the same (%s)", err)
+		}
+	case <-time.After(timeout):
+		t.Fatalf("didn't receive after %s", timeout)
 	}
 	select {
 	case _, ok := <-ch:
