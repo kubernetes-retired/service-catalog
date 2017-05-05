@@ -70,8 +70,7 @@ const (
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
-	// disabling TPR - this will be fixed in https://github.com/kubernetes-incubator/service-catalog/pull/612
-	//server.StorageTypeTPR,
+	server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters
@@ -218,14 +217,6 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 			"Didn't get the same instance from list and get: diff: %v",
 			diff.ObjectReflectDiff(brokerServer, brokerListed),
 		)
-	}
-
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
 	}
 
 	authSecret := &v1.ObjectReference{
@@ -399,14 +390,6 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
-	}
-
 	serviceClassAtServer.Bindable = false
 	_, err = serviceClassClient.Update(serviceClassAtServer)
 	if err != nil {
@@ -522,14 +505,6 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	instanceListed := &instances.Items[0]
 	if !reflect.DeepEqual(instanceListed, instanceServer) {
 		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
-	}
-
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
@@ -689,14 +664,6 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			"Didn't get the same binding from list and get: diff: %v",
 			diff.ObjectReflectDiff(bindingListed, bindingServer),
 		)
-	}
-
-	// TODO: Here be dragons. Tests fail beyond this point due to known issues
-	// with our TPR-based storage implementation. Bail early (until those issues)
-	// are fixed, because some tests are better than no tests. If storage isn't
-	// TPR-based, carry on.
-	if sType == server.StorageTypeTPR {
-		return nil
 	}
 
 	parameters := bpStruct{}
