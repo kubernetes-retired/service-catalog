@@ -24,8 +24,11 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-// Watcher is a completely in-memory watcher mechanism for use in the fake REST client.
-// This is not the same thing as a watch.Interface
+// Watcher is a completely in-memory watcher mechanism for use in the fake REST client. This
+// construct sends and receives on the same stream regardless of the type of object, its
+// namespace, or anything else.
+//
+// Also note that this is not the same thing as a watch.Interface.
 type Watcher struct {
 	ch chan watch.Event
 }
