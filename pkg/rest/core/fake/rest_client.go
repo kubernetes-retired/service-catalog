@@ -196,15 +196,15 @@ func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
 	r.HandleFunc(
 		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}/{name}",
 		watchItem(watcher),
-	)
+	).Methods("GET")
 	r.HandleFunc(
 		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}",
 		watchList(watcher),
-	)
+	).Methods("GET")
 	r.HandleFunc(
 		"/api/v1/namespaces",
 		listNamespaces(storage),
-	)
+	).Methods("GET")
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
 }
