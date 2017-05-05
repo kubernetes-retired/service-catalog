@@ -120,14 +120,26 @@ node {
             --fix-auth \
             --create-artifacts
       """
+
+      // Run the e2e test framework
+      sh """${env.ROOT}/contrib/jenkins/run_e2e.sh \
+            --registry gcr.io/${test_project}/catalog/ \
+	    --version ${version} \
+	    --cleanup \
+	    --create-artifacts
+      """
+
+      echo 'Run succeeded.'
     } catch (Exception e) {
+      echo 'Run failed.'
       currentBuild.result = 'FAILURE'
     } finally {
-      archiveArtifacts artifacts: 'etcd-backed*.txt', fingerprint: true
-      archiveArtifacts artifacts: 'tpr-backed*.txt', fingerprint: true
+      archiveArtifacts artifacts: 'walkthrough*.txt', fingerprint: true
+      archiveArtifacts artifacts: 'e2e*.txt', fingerprint: true
       try {
         sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
       } catch (Exception e) {
+        echo 'Exception caught during cleanup.'
         currentBuild.result = 'FAILURE'
       }
     }
