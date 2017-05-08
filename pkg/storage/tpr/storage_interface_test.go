@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -32,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/etcd"
@@ -894,56 +892,29 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 }
 
+func TestWatchWithNamespace(t *testing.T) {
+	keyer := getInstanceKeyer()
+	fakeCl := fake.NewRESTClient()
+	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
+	obj := &sc.Instance{
+		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+	}
+	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestWatchWithNoNamespace(t *testing.T) {
-	const timeout = 1 * time.Second
 	keyer := getBrokerKeyer()
-	key, err := keyer.Key(request.NewContext(), name)
 	fakeCl := fake.NewRESTClient()
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
-	resourceVsn := "1234"
-	predicate := storage.SelectionPredicate{}
 	obj := &sc.Broker{
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
-
-	go func() {
-		if err := fakeCl.Watcher.SendObject(watch.Added, obj, 1*time.Second); err != nil {
-			t.Fatalf("error sending object %#v to watcher (%s)", *obj, err)
-		}
-		fakeCl.Watcher.Close()
-	}()
-
-	watchIface, err := iface.Watch(context.Background(), key, resourceVsn, predicate)
-	if err != nil {
-		t.Fatalf("error watching (%s)", err)
-	}
-	if watchIface == nil {
-		t.Fatalf("expected non-nil watch interface")
-	}
-	defer watchIface.Stop()
-	ch := watchIface.ResultChan()
-	select {
-	case evt, ok := <-ch:
-		if !ok {
-			t.Fatalf("watch channel was closed")
-		}
-		if evt.Type != watch.Added {
-			t.Fatalf("event type was not ADDED")
-		}
-		if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
-			t.Fatalf("received objects aren't the same (%s)", err)
-		}
-	case <-time.After(timeout):
-		t.Fatalf("didn't receive an event within %s", timeout)
-	}
-	select {
-	case _, ok := <-ch:
-		if ok {
-			t.Fatal("watch channel was not closed")
-		}
-	case <-time.After(timeout):
-		t.Fatalf("watch channel didn't receive after %s", timeout)
+	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
 	}
 }
 
