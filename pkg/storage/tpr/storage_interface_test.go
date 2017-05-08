@@ -28,7 +28,6 @@ import (
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
-	"github.com/pborman/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
