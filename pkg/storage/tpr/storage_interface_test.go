@@ -28,6 +28,7 @@ import (
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
+	"github.com/pborman/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -933,12 +934,14 @@ func TestWatchListWithNamespace(t *testing.T) {
 					Name:      fmt.Sprintf("%s1", name),
 					Namespace: namespace,
 				},
+				Spec: sc.InstanceSpec{OSBGUID: "b13843f9-aea7-4ef6-b276-771a5ced2c65"},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("%s2", name),
 					Namespace: namespace,
 				},
+				Spec: sc.InstanceSpec{OSBGUID: "b23843f9-aea7-4ef6-b276-771a5ced2c65"},
 			},
 		},
 	}

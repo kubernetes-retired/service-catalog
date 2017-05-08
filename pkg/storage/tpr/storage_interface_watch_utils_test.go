@@ -17,6 +17,9 @@ const watchTimeout = 1 * time.Second
 
 func runWatchTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface, obj runtime.Object) error {
 	key, err := keyer.Key(request.NewContext(), name)
+	if err != nil {
+		return fmt.Errorf("error creating new key from Keyer (%s)", err)
+	}
 	resourceVsn := "1234"
 	predicate := storage.SelectionPredicate{}
 
@@ -67,7 +70,9 @@ func runWatchTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface,
 
 func runWatchListTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface, obj runtime.Object) error {
 	const timeout = 1 * time.Second
-	key, err := keyer.Key(request.NewContext(), name)
+	reqCtx := request.NewContext()
+	reqCtx = request.WithNamespace(reqCtx, namespace)
+	key := keyer.KeyRoot(reqCtx)
 	resourceVsn := "1234"
 	predicate := storage.SelectionPredicate{}
 	sendObjErrCh := make(chan error)
