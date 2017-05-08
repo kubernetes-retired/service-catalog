@@ -894,7 +894,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 }
 
-func TestWatch(t *testing.T) {
+func TestWatchWithNoNamespace(t *testing.T) {
 	const timeout = 1 * time.Second
 	keyer := getBrokerKeyer()
 	key, err := keyer.Key(request.NewContext(), name)
@@ -947,7 +947,7 @@ func TestWatch(t *testing.T) {
 	}
 }
 
-func TestWatchList(t *testing.T) {
+func TestWatchListWithNoNamespace(t *testing.T) {
 	const timeout = 1 * time.Second
 	keyer := getBrokerKeyer()
 	key, err := keyer.Key(request.NewContext(), name)
