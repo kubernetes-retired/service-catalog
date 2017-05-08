@@ -947,14 +947,36 @@ func TestWatchWithNoNamespace(t *testing.T) {
 	}
 }
 
+func TestWatchListWithNamespace(t *testing.T) {
+	keyer := getInstanceKeyer()
+	fakeCl := fake.NewRESTClient()
+	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
+
+	obj := &sc.InstanceList{
+		Items: []sc.Instance{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s1", name),
+					Namespace: namespace,
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s2", name),
+					Namespace: namespace,
+				},
+			},
+		},
+	}
+	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestWatchListWithNoNamespace(t *testing.T) {
-	const timeout = 1 * time.Second
 	keyer := getBrokerKeyer()
-	key, err := keyer.Key(request.NewContext(), name)
 	fakeCl := fake.NewRESTClient()
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
-	resourceVsn := "1234"
-	predicate := storage.SelectionPredicate{}
 	obj := &sc.BrokerList{
 		Items: []sc.Broker{
 			{
@@ -971,42 +993,8 @@ func TestWatchListWithNoNamespace(t *testing.T) {
 			},
 		},
 	}
-	go func() {
-		if err := fakeCl.Watcher.SendObject(watch.Added, obj, 1*time.Second); err != nil {
-			t.Fatalf("error sending object %#v to watcher (%s)", *obj, err)
-		}
-		defer fakeCl.Watcher.Close()
-	}()
-	watchIface, err := iface.WatchList(context.Background(), key, resourceVsn, predicate)
-	if err != nil {
-		t.Fatalf("error watching (%s)", err)
-	}
-	if watchIface == nil {
-		t.Fatalf("expected non-nil watch interface")
-	}
-	defer watchIface.Stop()
-	ch := watchIface.ResultChan()
-	select {
-	case evt, ok := <-ch:
-		if !ok {
-			t.Fatalf("watch channel was closed")
-		}
-		if evt.Type != watch.Added {
-			t.Fatalf("event type was not ADDED")
-		}
-		if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
-			t.Fatalf("received objects aren't the same (%s)", err)
-		}
-	case <-time.After(timeout):
-		t.Fatalf("didn't receive after %s", timeout)
-	}
-	select {
-	case _, ok := <-ch:
-		if ok {
-			t.Fatal("watch channel was not closed")
-		}
-	case <-time.After(timeout):
-		t.Fatalf("watch channel didn't receive after %s", timeout)
+	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
 	}
 }
 
