@@ -899,6 +899,9 @@ func TestWatchWithNamespace(t *testing.T) {
 	obj := &sc.Instance{
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: sc.InstanceSpec{
+			OSBGUID: "9ac07e7d-6c32-48f6-96ef-5a215f69df36",
+		},
 	}
 	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
 		t.Fatal(err)
