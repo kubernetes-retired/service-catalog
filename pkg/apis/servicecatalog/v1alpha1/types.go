@@ -216,7 +216,7 @@ type InstanceStatus struct {
 	// LastOperation is the string that the broker may have returned when
 	// an async operation started, it should be sent back to the broker
 	// on poll requests as a query param.
-	LastOperation string `json:"lastOperation,omitempty"`
+	LastOperation *string `json:"lastOperation,omitempty"`
 }
 
 // InstanceCondition contains condition information for an Instance.

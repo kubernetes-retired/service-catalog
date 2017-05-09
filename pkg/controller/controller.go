@@ -787,7 +787,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		if respCode == http.StatusAccepted {
 			glog.V(5).Infof("Received asynchronous provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 			if response.Operation != "" {
-				instance.Status.LastOperation = response.Operation
+				instance.Status.LastOperation = &response.Operation
 			}
 
 			// Tag this instance as having an ongoing async operation so we can enforce
@@ -862,7 +862,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		if respCode == http.StatusAccepted {
 			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 			if response.Operation != "" {
-				instance.Status.LastOperation = response.Operation
+				instance.Status.LastOperation = &response.Operation
 			}
 
 			// Tag this instance as having an ongoing async operation so we can enforce
@@ -918,8 +918,8 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 		ServiceID: serviceClass.OSBGUID,
 		PlanID:    servicePlan.OSBGUID,
 	}
-	if instance.Status.LastOperation != "" {
-		lastOperationRequest.Operation = instance.Status.LastOperation
+	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
+		lastOperationRequest.Operation = *instance.Status.LastOperation
 	}
 	resp, rc, err := brokerClient.PollServiceInstance(instance.Spec.OSBGUID, lastOperationRequest)
 	if err != nil {
