@@ -892,6 +892,107 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 }
 
+func TestWatchWithNamespace(t *testing.T) {
+	keyer := getInstanceKeyer()
+	fakeCl := fake.NewRESTClient()
+	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
+	obj := &sc.Instance{
+		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: sc.InstanceSpec{
+			OSBGUID: "9ac07e7d-6c32-48f6-96ef-5a215f69df36",
+		},
+	}
+	// send an unversioned object into the watch test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls singularShell to get the object to decode into, and singularShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it simply returns it back to the watch stream
+	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWatchWithNoNamespace(t *testing.T) {
+	keyer := getBrokerKeyer()
+	fakeCl := fake.NewRESTClient()
+	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
+	obj := &sc.Broker{
+		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	}
+	// send an unversioned object into the watch test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls singularShell to get the object to decode into, and singularShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it does the necessary processing to strip out the namespace and return the new
+	// object back into the watch stream
+	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWatchListWithNamespace(t *testing.T) {
+	keyer := getInstanceKeyer()
+	fakeCl := fake.NewRESTClient()
+	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
+
+	obj := &sc.InstanceList{
+		Items: []sc.Instance{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s1", name),
+					Namespace: namespace,
+				},
+				Spec: sc.InstanceSpec{OSBGUID: "b13843f9-aea7-4ef6-b276-771a5ced2c65"},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s2", name),
+					Namespace: namespace,
+				},
+				Spec: sc.InstanceSpec{OSBGUID: "b23843f9-aea7-4ef6-b276-771a5ced2c65"},
+			},
+		},
+	}
+	// send an unversioned object into the watchList test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls listShell to get the object to decode into, and listShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it simply returns it
+	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWatchListWithNoNamespace(t *testing.T) {
+	keyer := getBrokerKeyer()
+	fakeCl := fake.NewRESTClient()
+	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
+	obj := &sc.BrokerList{
+		Items: []sc.Broker{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s1", name)},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s2", name)},
+			},
+		},
+	}
+	// send an unversioned object into the watchList test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls listShell to get the object to decode into, and listShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it does necessary processing to strip the namespaces out of each object.
+	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRemoveNamespace(t *testing.T) {
 	obj := &servicecatalog.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
@@ -908,7 +1009,6 @@ func TestRemoveNamespace(t *testing.T) {
 		)
 	}
 }
-
 func getBrokerKeyer() Keyer {
 	return Keyer{
 		DefaultNamespace: globalNamespace,
@@ -950,6 +1050,9 @@ func getBrokerTPRStorageIFace(
 				},
 			}
 		},
+		listShell: func() runtime.Object {
+			return &servicecatalog.BrokerList{}
+		},
 	}
 }
 
@@ -979,6 +1082,9 @@ func getInstanceTPRStorageIFace(
 					Name:      name,
 				},
 			}
+		},
+		listShell: func() runtime.Object {
+			return &servicecatalog.InstanceList{}
 		},
 	}
 }

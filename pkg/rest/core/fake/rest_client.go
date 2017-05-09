@@ -23,6 +23,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -97,6 +98,7 @@ func (s NamespacedStorage) Delete(ns, tipe, name string) {
 // in-memory storage, and responds just as a core apiserver would.
 type RESTClient struct {
 	Storage  NamespacedStorage
+	Watcher  *Watcher
 	accessor meta.MetadataAccessor
 	*fakerestclient.RESTClient
 }
@@ -104,9 +106,11 @@ type RESTClient struct {
 // NewRESTClient returns a new FakeCoreRESTClient
 func NewRESTClient() *RESTClient {
 	storage := make(NamespacedStorage)
+	watcher := NewWatcher()
+
 	coreCl := &fakerestclient.RESTClient{
 		Client: fakerestclient.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
-			r := getRouter(storage)
+			r := getRouter(storage, watcher)
 			rw := newResponseWriter()
 			r.ServeHTTP(rw, request)
 			return rw.getResponse(), nil
@@ -118,6 +122,7 @@ func NewRESTClient() *RESTClient {
 	}
 	return &RESTClient{
 		Storage:    storage,
+		Watcher:    watcher,
 		accessor:   meta.NewAccessor(),
 		RESTClient: coreCl,
 	}
@@ -164,7 +169,7 @@ func (rw *responseWriter) getResponse() *http.Response {
 	}
 }
 
-func getRouter(storage NamespacedStorage) http.Handler {
+func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(
@@ -188,11 +193,34 @@ func getRouter(storage NamespacedStorage) http.Handler {
 		deleteItem(storage),
 	).Methods("DELETE")
 	r.HandleFunc(
+		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}/{name}",
+		watchItem(watcher),
+	).Methods("GET")
+	r.HandleFunc(
+		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}",
+		watchList(watcher),
+	).Methods("GET")
+	r.HandleFunc(
 		"/api/v1/namespaces",
 		listNamespaces(storage),
-	)
+	).Methods("GET")
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
+}
+
+func watchItem(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ch := watcher.ReceiveChan()
+		doWatch(ch, w)
+	}
+}
+
+func watchList(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
+	const timeout = 1 * time.Second
+	return func(w http.ResponseWriter, r *http.Request) {
+		ch := watcher.ReceiveChan()
+		doWatch(ch, w)
+	}
 }
 
 func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {
