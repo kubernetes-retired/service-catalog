@@ -227,17 +227,50 @@ func watchFilterer(t *store, ns string, list bool) func(watch.Event) (watch.Even
 			glog.Errorf("couldn't encode watch event object (%s)", err)
 			return watch.Event{}, false
 		}
-		var finalObj runtime.Object
-		if !list {
-			finalObj = t.singularShell("", "")
-		} else {
-			finalObj = t.listShell()
+		if list {
+			// if we're watching a list, extract to a list object
+			finalObj := t.listShell()
+			fmt.Printf("list object %#v\n", finalObj)
+			if err := decode(t.codec, encodedBytes, finalObj); err != nil {
+				glog.Errorf("couldn't decode watch event bytes (%s)", err)
+				return watch.Event{}, false
+			}
+			if !t.hasNamespace {
+				// if we're watching a list and not supposed to have a namespace, strip namespaces
+				objs, err := meta.ExtractList(in.Object)
+				fmt.Printf("extracted list %#v\n", objs)
+				if err != nil {
+					glog.Errorf("couldn't extract a list from %#v (%s)", in.Object, err)
+					return watch.Event{}, false
+				}
+				objList := make([]runtime.Object, len(objs))
+				for i, obj := range objs {
+					if err := removeNamespace(obj); err != nil {
+						glog.Errorf("couldn't remove namespace from %#v (%s)", obj, err)
+						return watch.Event{}, false
+					}
+					objList[i] = obj
+				}
+				if err := meta.SetList(finalObj, objList); err != nil {
+					glog.Errorf("setting list items (%s)", err)
+					return watch.Event{}, false
+				}
+				return watch.Event{
+					Type:   in.Type,
+					Object: finalObj,
+				}, true
+			}
+			return watch.Event{
+				Type:   in.Type,
+				Object: finalObj,
+			}, true
 		}
+		finalObj := t.singularShell("", "")
 		if err := decode(t.codec, encodedBytes, finalObj); err != nil {
 			glog.Errorf("couldn't decode watch event bytes (%s)", err)
 			return watch.Event{}, false
 		}
-		if !t.hasNamespace && !list {
+		if !t.hasNamespace {
 			if err := removeNamespace(finalObj); err != nil {
 				glog.Errorf("couldn't remove namespace from %#v (%s)", finalObj, err)
 				return watch.Event{}, false
