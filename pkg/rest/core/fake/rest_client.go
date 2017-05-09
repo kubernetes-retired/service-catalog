@@ -19,7 +19,6 @@ package fake
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -212,39 +211,7 @@ func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
 func watchItem(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ch := watcher.ReceiveChan()
-		for evt := range ch {
-			codec, err := testapi.GetCodecForObject(evt.Object)
-			if err != nil {
-				errStr := fmt.Sprintf("error getting codec (%s)", err)
-				log.Fatal(errStr)
-				http.Error(w, errStr, http.StatusInternalServerError)
-				return
-			}
-			objBytes, err := runtime.Encode(codec, evt.Object)
-			if err != nil {
-				errStr := fmt.Sprintf("error encoding item (%s)", err)
-				log.Fatal(errStr)
-				http.Error(w, errStr, http.StatusInternalServerError)
-				return
-			}
-
-			evt := metav1.WatchEvent{
-				Type: fmt.Sprintf("%s", evt.Type),
-				Object: runtime.RawExtension{
-					Object: evt.Object,
-					Raw:    objBytes,
-				},
-			}
-			b, err := json.Marshal(&evt)
-			if err != nil {
-				errStr := fmt.Sprintf("error encoding JSON (%s)", err)
-				log.Fatal(errStr)
-				http.Error(w, errStr, http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json, */*")
-			w.Write(b)
-		}
+		doWatch(ch, w)
 	}
 }
 
@@ -252,49 +219,7 @@ func watchList(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
 	const timeout = 1 * time.Second
 	return func(w http.ResponseWriter, r *http.Request) {
 		ch := watcher.ReceiveChan()
-		for {
-			select {
-			case <-time.After(timeout):
-				errStr := fmt.Sprintf("didn't receive within %s", timeout)
-				log.Fatal(errStr)
-				http.Error(w, errStr, http.StatusInternalServerError)
-			case evt, ok := <-ch:
-				if !ok {
-					return
-				}
-				codec, err := testapi.GetCodecForObject(evt.Object)
-				if err != nil {
-					errStr := fmt.Sprintf("error getting codec (%s)", err)
-					log.Print(errStr)
-					http.Error(w, errStr, http.StatusInternalServerError)
-					return
-				}
-				objBytes, err := runtime.Encode(codec, evt.Object)
-				if err != nil {
-					errStr := fmt.Sprintf("error encoding item (%s)", err)
-					log.Fatal(errStr)
-					http.Error(w, errStr, http.StatusInternalServerError)
-					return
-				}
-
-				watchEvent := metav1.WatchEvent{
-					Type: fmt.Sprintf("%s", evt.Type),
-					Object: runtime.RawExtension{
-						Object: evt.Object,
-						Raw:    objBytes,
-					},
-				}
-				b, err := json.Marshal(&watchEvent)
-				if err != nil {
-					errStr := fmt.Sprintf("error encoding JSON (%s)", err)
-					log.Fatal(errStr)
-					http.Error(w, errStr, http.StatusInternalServerError)
-					return
-				}
-				w.Header().Set("Content-Type", "application/json, */*")
-				w.Write(b)
-			}
-		}
+		doWatch(ch, w)
 	}
 }
 
