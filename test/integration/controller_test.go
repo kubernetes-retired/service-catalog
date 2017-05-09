@@ -50,7 +50,7 @@ const (
 	testBindingName      = "test-binding"
 	testSecretName       = "test-secret"
 	testOSBGUID          = "9737b6ed-ca95-4439-8219-c53fcad118ab"
-	testOSBDashboardURL  = "http://test-dashboard.example.com"
+	testDashboardURL     = "http://test-dashboard.example.com"
 )
 
 // TestBasicFlows tests:
@@ -130,7 +130,6 @@ func TestBasicFlows(t *testing.T) {
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
 			OSBGUID:          testOSBGUID,
-			OSBDashboardURL:  strPtr(testOSBDashboardURL),
 		},
 	}
 
@@ -154,13 +153,6 @@ func TestBasicFlows(t *testing.T) {
 			"returned OSB GUID '%s' doesn't match original '%s'",
 			retInst.Spec.OSBGUID,
 			instance.Spec.OSBGUID,
-		)
-	}
-	if *retInst.Spec.OSBDashboardURL != *instance.Spec.OSBDashboardURL {
-		t.Fatalf(
-			"returned OSB Dashboard URL '%s' doesn't match original '%s'",
-			*retInst.Spec.OSBDashboardURL,
-			*instance.Spec.OSBDashboardURL,
 		)
 	}
 

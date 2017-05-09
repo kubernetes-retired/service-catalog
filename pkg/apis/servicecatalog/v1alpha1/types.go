@@ -197,9 +197,6 @@ type InstanceSpec struct {
 	// Immutable.
 	OSBGUID string `json:"osbGuid"`
 
-	// OSB-specific
-	OSBDashboardURL *string `json:"osbDashboardURL,omitempty"`
-
 	// Checksum is the checksum of the InstanceSpec that was last successfully
 	// reconciled against the broker.
 	Checksum *string `json:"checksum,omitempty"`
@@ -217,6 +214,10 @@ type InstanceStatus struct {
 	// an async operation started, it should be sent back to the broker
 	// on poll requests as a query param.
 	LastOperation *string `json:"lastOperation,omitempty"`
+
+	// DashboardURL is the URL of a web-based management user interface for
+	// the service instance
+	DashboardURL *string `json:"dashboardURL,omitempty"`
 }
 
 // InstanceCondition contains condition information for an Instance.
