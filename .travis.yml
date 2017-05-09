@@ -12,8 +12,4 @@ deploy:
   script: scripts/deploy.sh
   on:
     repo: kubernetes-incubator/service-catalog
-    branches:
-      only:
-      - master
-      # this is for tags. see https://github.com/travis-ci/travis-ci/issues/3897#issuecomment-101623421
-      - /v\d+\.\d+.\d+[a-z]*/ # something like v1.2.1 or v1.2.1abc
+    all_branches: true
