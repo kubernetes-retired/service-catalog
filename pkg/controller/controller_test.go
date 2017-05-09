@@ -433,6 +433,102 @@ func TestCatalogConversion(t *testing.T) {
 	checkPlan(serviceClass, 1, "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
 
+const alphaParameterSchemaCatalogBytes = `{
+  "services": [{
+    "name": "fake-service",
+    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+    "description": "fake service",
+    "tags": ["tag1", "tag2"],
+    "requires": ["route_forwarding"],
+    "bindable": true,
+    "metadata": {
+    	"a": "b",
+    	"c": "d"
+    },
+    "dashboard_client": {
+      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
+      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
+      "redirect_uri": "http://localhost:1234"
+    },
+    "plan_updateable": true,
+    "plans": [{
+      "name": "fake-plan-1",
+      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+      "description": "description1",
+      "metadata": {
+      	"b": "c",
+      	"d": "e"
+      },
+      "schemas": {
+      	"service_instances": {
+	  	  "create": {
+	  		"foo": "bar"
+	  	  },
+	  	  "update": {
+	  		"baz": "zap"
+	  	  }
+      	},
+      	"service_bindings": {
+      	  "create": {
+      	 	"zoo": "blu"
+      	  }
+      	}
+      }
+    }]
+  }]
+}`
+
+func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
+	catalog := &brokerapi.Catalog{}
+	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+	}
+	serviceClasses, err := convertCatalog(catalog)
+	if err != nil {
+		t.Fatalf("Failed to convertCatalog: %v", err)
+	}
+	if len(serviceClasses) != 1 {
+		t.Fatalf("Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
+	}
+	serviceClass := serviceClasses[0]
+	if len(serviceClass.Plans) != 1 {
+		t.Fatalf("Expected 1 plan for testCatalog, but got: %d", len(serviceClass.Plans))
+	}
+
+	plan := serviceClass.Plans[0]
+	if plan.AlphaInstanceCreateParameterSchema == nil {
+		t.Fatalf("Expected plan.AlphaInstanceCreateParameterSchema to be set, but was nil")
+	}
+
+	m := make(map[string]string)
+	if err := json.Unmarshal(plan.AlphaInstanceCreateParameterSchema.Raw, &m); err == nil {
+		if e, a := "bar", m["foo"]; e != a {
+			t.Fatalf("Unexpected value of alphaInstanceCreateParameterSchema; expected %v, got %v", e, a)
+		}
+	}
+
+	if plan.AlphaInstanceUpdateParameterSchema == nil {
+		t.Fatalf("Expected plan.AlphaInstanceUpdateParameterSchema to be set, but was nil")
+	}
+	m = make(map[string]string)
+	if err := json.Unmarshal(plan.AlphaInstanceUpdateParameterSchema.Raw, &m); err == nil {
+		if e, a := "zap", m["baz"]; e != a {
+			t.Fatalf("Unexpected value of alphaInstanceUpdateParameterSchema; expected %v, got %v", e, a)
+		}
+	}
+
+	if plan.AlphaBindingCreateParameterSchema == nil {
+		t.Fatalf("Expected plan.AlphaBindingCreateParameterSchema to be set, but was nil")
+	}
+	m = make(map[string]string)
+	if err := json.Unmarshal(plan.AlphaBindingCreateParameterSchema.Raw, &m); err == nil {
+		if e, a := "blu", m["zoo"]; e != a {
+			t.Fatalf("Unexpected value of alphaBindingCreateParameterSchema; expected %v, got %v", e, a)
+		}
+	}
+}
+
 func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDescription string, t *testing.T) {
 	plan := serviceClass.Plans[index]
 	if plan.Name != planName {

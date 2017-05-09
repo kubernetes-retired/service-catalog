@@ -414,6 +414,7 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 			Free:        plans[i].Free,
 			Description: plans[i].Description,
 		}
+
 		if plans[i].Bindable != nil {
 			b := *plans[i].Bindable
 			ret[i].Bindable = &b
@@ -427,6 +428,40 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 				return nil, err
 			}
 			ret[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+		}
+
+		if schemas := plans[i].Schemas; schemas != nil {
+			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
+				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil {
+					schema, err := json.Marshal(instanceCreateSchema)
+					if err != nil {
+						err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema, err)
+						glog.Error(err)
+						return nil, err
+					}
+					ret[i].AlphaInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+				}
+				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil {
+					schema, err := json.Marshal(instanceUpdateSchema)
+					if err != nil {
+						err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema, err)
+						glog.Error(err)
+						return nil, err
+					}
+					ret[i].AlphaInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+				}
+			}
+			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
+				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil {
+					schema, err := json.Marshal(bindingCreateSchema)
+					if err != nil {
+						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema, err)
+						glog.Error(err)
+						return nil, err
+					}
+					ret[i].AlphaBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+				}
+			}
 		}
 
 	}
