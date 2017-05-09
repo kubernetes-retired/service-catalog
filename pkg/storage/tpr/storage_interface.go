@@ -237,10 +237,9 @@ func watchFilterer(t *store, ns string, list bool) func(watch.Event) (watch.Even
 			}
 			if !t.hasNamespace {
 				// if we're watching a list and not supposed to have a namespace, strip namespaces
-				objs, err := meta.ExtractList(in.Object)
-				fmt.Printf("extracted list %#v\n", objs)
+				objs, err := meta.ExtractList(finalObj)
 				if err != nil {
-					glog.Errorf("couldn't extract a list from %#v (%s)", in.Object, err)
+					glog.Errorf("couldn't extract a list from %#v (%s)", finalObj, err)
 					return watch.Event{}, false
 				}
 				objList := make([]runtime.Object, len(objs))
