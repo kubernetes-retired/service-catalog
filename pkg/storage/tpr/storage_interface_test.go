@@ -903,6 +903,12 @@ func TestWatchWithNamespace(t *testing.T) {
 			OSBGUID: "9ac07e7d-6c32-48f6-96ef-5a215f69df36",
 		},
 	}
+	// send an unversioned object into the watch test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls singularShell to get the object to decode into, and singularShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it simply returns it back to the watch stream
 	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
 		t.Fatal(err)
 	}
@@ -916,6 +922,13 @@ func TestWatchWithNoNamespace(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
+	// send an unversioned object into the watch test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls singularShell to get the object to decode into, and singularShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it does the necessary processing to strip out the namespace and return the new
+	// object back into the watch stream
 	if err := runWatchTest(keyer, fakeCl, iface, obj); err != nil {
 		t.Fatal(err)
 	}
@@ -944,6 +957,12 @@ func TestWatchListWithNamespace(t *testing.T) {
 			},
 		},
 	}
+	// send an unversioned object into the watchList test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls listShell to get the object to decode into, and listShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it simply returns it
 	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
 		t.Fatal(err)
 	}
@@ -963,6 +982,12 @@ func TestWatchListWithNoNamespace(t *testing.T) {
 			},
 		},
 	}
+	// send an unversioned object into the watchList test. it sends this object to the
+	// fake REST client, which encodes the unversioned object into bytes & sends them
+	// to the storage interface's client. The storage interface's watchFilterer
+	// function calls listShell to get the object to decode into, and listShell returns
+	// an unversioned object. After watchFilterer decodes into the unversioned object,
+	// it does necessary processing to strip the namespaces out of each object.
 	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
 		t.Fatal(err)
 	}
