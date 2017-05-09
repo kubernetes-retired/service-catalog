@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -34,9 +35,13 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/healthz"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
+	"k8s.io/kubernetes/pkg/client/leaderelection"
+	"k8s.io/kubernetes/pkg/client/leaderelection/resourcelock"
 	"k8s.io/kubernetes/pkg/util/configz"
 
 	// The API groups for our API must be installed before we can use the
@@ -114,6 +119,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	if err != nil {
 		return fmt.Errorf("invalid Kubernetes API configuration: %v", err)
 	}
+	leaderElectionClient := clientset.NewForConfigOrDie(rest.AddUserAgent(k8sKubeconfig, "leader-election"))
 
 	glog.V(4).Infof("Building service-catalog kubeconfig for url: %v\n", controllerManagerOptions.ServiceCatalogAPIServerURL)
 
@@ -180,40 +186,44 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		panic("unreachable")
 	}
 
-	// TODO: leader election for this controller-manager
-	// id, err := os.Hostname()
-	// if err != nil {
-	// 	return err
-	// }
-	// rl := resourcelock.EndpointsLock{
-	// 	EndpointsMeta: v1.ObjectMeta{
-	// 		Namespace: "kube-system",
-	// 		Name:      "kube-controller-manager",
-	// 	},
-	// 	Client: leaderElectionClient,
-	// 	LockConfig: resourcelock.ResourceLockConfig{
-	// 		Identity:      id,
-	// 		EventRecorder: recorder,
-	// 	},
-	// }
+	if !controllerManagerOptions.LeaderElection.LeaderElect {
+		run(make(<-chan (struct{})))
+		panic("unreachable")
+	}
 
-	// leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
-	// 	Lock:          &rl,
-	// 	LeaseDuration: controllerManagerOptions.LeaderElection.LeaseDuration.Duration,
-	// 	RenewDeadline: controllerManagerOptions.LeaderElection.RenewDeadline.Duration,
-	// 	RetryPeriod:   controllerManagerOptions.LeaderElection.RetryPeriod.Duration,
-	// 	Callbacks: leaderelection.LeaderCallbacks{
-	// 		OnStartedLeading: run,
-	// 		OnStoppedLeading: func() {
-	// 			glog.Fatalf("leaderelection lost")
-	// 		},
-	// 	},
-	// })
-	// panic("unreachable")
+	// Identity used to distinguish between multiple cloud controller manager instances
+	id, err := os.Hostname()
+	if err != nil {
+		return err
+	}
 
-	run(make(<-chan (struct{})))
+	// Lock required for leader election
+	rl := resourcelock.EndpointsLock{
+		EndpointsMeta: metav1.ObjectMeta{
+			Namespace: "kube-system",
+			Name:      "service-catalog-controller-manager",
+		},
+		Client: leaderElectionClient,
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity:      id + "-external-service-catalog-controller",
+			EventRecorder: recorder,
+		},
+	}
 
-	return nil
+	// Try and become the leader and start cloud controller manager loops
+	leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+		Lock:          &rl,
+		LeaseDuration: controllerManagerOptions.LeaderElection.LeaseDuration.Duration,
+		RenewDeadline: controllerManagerOptions.LeaderElection.RenewDeadline.Duration,
+		RetryPeriod:   controllerManagerOptions.LeaderElection.RetryPeriod.Duration,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: run,
+			OnStoppedLeading: func() {
+				glog.Fatalf("leaderelection lost")
+			},
+		},
+	})
+	panic("unreachable")
 }
 
 // getAvailableResources uses the discovery client to determine which API

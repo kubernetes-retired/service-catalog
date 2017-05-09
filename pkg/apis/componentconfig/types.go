@@ -22,6 +22,8 @@ package componentconfig
 
 import (
 	"time"
+
+	"k8s.io/kubernetes/pkg/apis/componentconfig"
 )
 
 // ControllerManagerConfiguration encapsulates configuration for the
@@ -69,4 +71,7 @@ type ControllerManagerConfiguration struct {
 	// that are allowed to sync concurrently. Larger number = more responsive
 	// SC operations, but more CPU (and network) load.
 	ConcurrentSyncs int
+
+	// leaderElection defines the configuration of leader election client.
+	LeaderElection componentconfig.LeaderElectionConfiguration
 }
