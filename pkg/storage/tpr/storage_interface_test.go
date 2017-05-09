@@ -956,16 +956,10 @@ func TestWatchListWithNoNamespace(t *testing.T) {
 	obj := &sc.BrokerList{
 		Items: []sc.Broker{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s1", name),
-					Namespace: globalNamespace,
-				},
+				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s1", name)},
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s2", name),
-					Namespace: globalNamespace,
-				},
+				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s2", name)},
 			},
 		},
 	}
