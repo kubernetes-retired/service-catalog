@@ -230,7 +230,6 @@ func watchFilterer(t *store, ns string, list bool) func(watch.Event) (watch.Even
 		if list {
 			// if we're watching a list, extract to a list object
 			finalObj := t.listShell()
-			fmt.Printf("list object %#v\n", finalObj)
 			if err := decode(t.codec, encodedBytes, finalObj); err != nil {
 				glog.Errorf("couldn't decode watch event bytes (%s)", err)
 				return watch.Event{}, false
