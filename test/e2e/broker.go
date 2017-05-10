@@ -51,7 +51,7 @@ func newTestBrokerPod(name string) *v1.Pod {
 			Containers: []v1.Container{
 				{
 					Name:  name,
-					Image: "quay.io/kubernetes-service-catalog/user-broker:v0.0.4",
+					Image: "quay.io/kubernetes-service-catalog/user-broker:v0.0.6",
 					Args: []string{
 						"--port",
 						"8080",
