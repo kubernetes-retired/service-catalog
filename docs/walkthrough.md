@@ -115,7 +115,7 @@ To install with defaults:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-## Step 4 - Installing and Configuring the Latest `kubectl`
+## Step 4 - Installing the Latest `kubectl`
 
 As with Kubernetes itself, interaction with the service catalog system is
 achieved through the `kubectl` command line interface. Chances are high that
