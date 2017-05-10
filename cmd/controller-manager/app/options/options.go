@@ -27,6 +27,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/componentconfig"
 	k8scomponentconfig "k8s.io/kubernetes/pkg/apis/componentconfig"
+	"k8s.io/kubernetes/pkg/client/leaderelection"
 )
 
 // ControllerManagerServer is the main context object for the controller
@@ -48,7 +49,7 @@ const defaultConcurrentSyncs = 5
 // NewControllerManagerServer creates a new ControllerManagerServer with a
 // default config.
 func NewControllerManagerServer() *ControllerManagerServer {
-	return &ControllerManagerServer{
+	s := ControllerManagerServer{
 		ControllerManagerConfiguration: componentconfig.ControllerManagerConfiguration{
 			Address:                      defaultBindAddress,
 			Port:                         defaultPort,
@@ -59,8 +60,11 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			BrokerRelistInterval:         defaultBrokerRelistInterval,
 			OSBAPIContextProfile:         defaultOSBAPIContextProfile,
 			ConcurrentSyncs:              defaultConcurrentSyncs,
+			LeaderElection:               leaderelection.DefaultLeaderElectionConfiguration(),
 		},
 	}
+	s.LeaderElection.LeaderElect = true
+	return &s
 }
 
 // AddFlags adds flags for a ControllerManagerServer to the specified FlagSet.
@@ -75,4 +79,5 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.DurationVar(&s.ResyncInterval, "resync-interval", s.ResyncInterval, "The interval on which the controller will resync its informers")
 	fs.DurationVar(&s.BrokerRelistInterval, "broker-relist-interval", s.BrokerRelistInterval, "The interval on which a broker's catalog is relisted after the broker becomes ready")
 	fs.BoolVar(&s.OSBAPIContextProfile, "enable-osb-api-context-profile", s.OSBAPIContextProfile, "Whether or not to send the proposed optional OpenServiceBroker API Context Profile field")
+	leaderelection.BindFlags(&s.LeaderElection, fs)
 }

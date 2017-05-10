@@ -390,7 +390,6 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.OSBGUID = in.OSBGUID
-	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
@@ -404,7 +403,6 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.OSBGUID = in.OSBGUID
-	out.OSBDashboardURL = (*string)(unsafe.Pointer(in.OSBDashboardURL))
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
@@ -416,7 +414,8 @@ func Convert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servicecat
 func autoConvert_v1alpha1_InstanceStatus_To_servicecatalog_InstanceStatus(in *InstanceStatus, out *servicecatalog.InstanceStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.InstanceCondition)(unsafe.Pointer(&in.Conditions))
 	out.AsyncOpInProgress = in.AsyncOpInProgress
-	out.LastOperation = in.LastOperation
+	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
+	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	return nil
 }
 
@@ -427,7 +426,8 @@ func Convert_v1alpha1_InstanceStatus_To_servicecatalog_InstanceStatus(in *Instan
 func autoConvert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus(in *servicecatalog.InstanceStatus, out *InstanceStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]InstanceCondition)(unsafe.Pointer(&in.Conditions))
 	out.AsyncOpInProgress = in.AsyncOpInProgress
-	out.LastOperation = in.LastOperation
+	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
+	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	return nil
 }
 

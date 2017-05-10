@@ -69,6 +69,7 @@ type InstanceClient struct {
 	Instances                     map[string]*brokerapi.ServiceInstance
 	ResponseCode                  int
 	Operation                     string
+	DashboardURL                  string
 	LastOperationResponse         *brokerapi.LastOperationResponse
 	DeleteServiceInstanceResponse *brokerapi.DeleteServiceInstanceResponse
 	CreateErr                     error
@@ -111,6 +112,9 @@ func (i *InstanceClient) CreateServiceInstance(
 	resp := &brokerapi.CreateServiceInstanceResponse{}
 	if i.Operation != "" {
 		resp.Operation = i.Operation
+	}
+	if i.DashboardURL != "" {
+		resp.DashboardURL = i.DashboardURL
 	}
 	return resp, i.ResponseCode, nil
 }

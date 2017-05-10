@@ -569,13 +569,6 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbDashboardURL": {
-							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
 						"checksum": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Checksum is the checksum of the InstanceSpec that was last successfully reconciled against the broker.",
@@ -617,6 +610,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						"lastOperation": {
 							SchemaProps: spec.SchemaProps{
 								Description: "LastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"dashboardURL": {
+							SchemaProps: spec.SchemaProps{
+								Description: "DashboardURL is the URL of a web-based management user interface for the service instance",
 								Type:        []string{"string"},
 								Format:      "",
 							},

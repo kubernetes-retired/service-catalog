@@ -196,9 +196,6 @@ type InstanceSpec struct {
 	// Immutable.
 	OSBGUID string
 
-	// OSB-specific
-	OSBDashboardURL *string
-
 	// Checksum is the checksum of the InstanceSpec that was last successfully
 	// reconciled against the broker.
 	Checksum *string
@@ -214,7 +211,11 @@ type InstanceStatus struct {
 	// LastOperation is the string that the broker may have returned when
 	// an async operation started, it should be sent back to the broker
 	// on poll requests as a query param.
-	LastOperation string
+	LastOperation *string
+
+	// DashboardURL is the URL of a web-based management user interface for
+	// the service instance
+	DashboardURL *string
 }
 
 // InstanceCondition contains condition information for an Instance.

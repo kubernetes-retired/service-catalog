@@ -73,6 +73,7 @@ func NewCommandServer(
 		EtcdOptions:             NewEtcdOptions(),
 		TPROptions:              NewTPROptions(),
 		StopCh:                  stopCh,
+		StandaloneMode:          standaloneMode(),
 	}
 	opts.addFlags(flags)
 	// Set generated SSL cert path correctly

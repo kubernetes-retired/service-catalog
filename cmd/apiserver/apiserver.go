@@ -32,6 +32,7 @@ import (
 	// Please do not remove.
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
+	_ "github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app"
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 )
 

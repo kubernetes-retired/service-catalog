@@ -27,21 +27,26 @@ BINDIR        ?= bin
 BUILD_DIR     ?= build
 COVERAGE      ?= $(CURDIR)/coverage.html
 SC_PKG         = github.com/kubernetes-incubator/service-catalog
-TOP_SRC_DIRS   = cmd contrib pkg
+TOP_SRC_DIRS   = cmd contrib pkg plugin
 SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
-ifeq ($(shell uname -s),Darwin)
+
+# Run stat against /dev/null and check if it has any stdout output.
+# If stdout is blank, we are detecting bsd-stat because stat it has
+# returned an error to stderr. If not bsd-stat, assume gnu-stat.
+ifeq ($(shell stat -c"%U" /dev/null 2> /dev/null),)
 STAT           = stat -f '%c %N'
 else
 STAT           = stat -c '%Y %n'
 endif
+
 NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION     = 1.7.3
+GO_VERSION     = 1.8
 
 PLATFORM?=linux
 ARCH?=amd64

@@ -63,6 +63,7 @@ const (
 	testNamespace                   = "test-ns"
 	testBindingSecretName           = "test-secret"
 	testOperation                   = "test-operation"
+	testDashboardURL                = "http://dashboard"
 )
 
 const testCatalog = `{
@@ -301,7 +302,7 @@ func getTestInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Instan
 func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 	instance := getTestInstance()
 	if operation != "" {
-		instance.Status.LastOperation = operation
+		instance.Status.LastOperation = &operation
 	}
 	instance.Status = v1alpha1.InstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{{
@@ -319,7 +320,7 @@ func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 func getTestInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
 	instance := getTestInstance()
 	if operation != "" {
-		instance.Status.LastOperation = operation
+		instance.Status.LastOperation = &operation
 	}
 	instance.Status = v1alpha1.InstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{{
@@ -1126,6 +1127,7 @@ func TestReconcileInstance(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeBrokerClient.InstanceClient.DashboardURL = testDashboardURL
 
 	testNsUID := "test_uid_foo"
 
@@ -1173,6 +1175,8 @@ func TestReconcileInstance(t *testing.T) {
 		if testNsUID != si.SpaceGUID {
 			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", testNsUID, si.SpaceGUID)
 		}
+
+		assertInstanceDashboardURL(t, instance, testDashboardURL)
 	}
 
 	events := getRecordedEvents(testController)
@@ -1188,6 +1192,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeBrokerClient.InstanceClient.DashboardURL = testDashboardURL
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
@@ -1256,6 +1261,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	}
 	assertAsyncOpInProgressTrue(t, updatedInstance)
 	assertInstanceLastOperation(t, updatedInstance, testOperation)
+	assertInstanceDashboardURL(t, updatedInstance, testDashboardURL)
 }
 
 func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
@@ -2935,8 +2941,24 @@ func assertInstanceLastOperation(t *testing.T, obj runtime.Object, operation str
 	if !ok {
 		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
-	if instance.Status.LastOperation != operation {
-		t.Fatalf("Last Operation %q is not what was expected: %q", instance.Status.LastOperation, operation)
+	if instance.Status.LastOperation == nil {
+		if operation != "" {
+			t.Fatalf("Last Operation <nil> is not what was expected: %q", operation)
+		}
+	} else if *instance.Status.LastOperation != operation {
+		t.Fatalf("Last Operation %q is not what was expected: %q", *instance.Status.LastOperation, operation)
+	}
+}
+
+func assertInstanceDashboardURL(t *testing.T, obj runtime.Object, dashboardURL string) {
+	instance, ok := obj.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+	}
+	if instance.Status.DashboardURL == nil {
+		t.Fatal("DashboardURL was nil")
+	} else if *instance.Status.DashboardURL != dashboardURL {
+		t.Fatalf("Unexpected DashboardURL: expected %q, got %q", dashboardURL, *instance.Status.DashboardURL)
 	}
 }
 

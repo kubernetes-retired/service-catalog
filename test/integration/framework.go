@@ -29,6 +29,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	fake "github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
 	"k8s.io/client-go/pkg/api"
 	restclient "k8s.io/client-go/rest"
 
@@ -67,7 +68,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 	go func() {
 
 		tprOptions := server.NewTPROptions()
-		tprOptions.RESTClient = getFakeCoreRESTClient()
+		tprOptions.RESTClient = fake.NewRESTClient()
 		tprOptions.InstallTPRsFunc = func() error {
 			return nil
 		}
@@ -85,6 +86,7 @@ func getFreshApiserverAndClient(t *testing.T, storageTypeStr string) (servicecat
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
 			DisableAuth:           true,
 			StopCh:                stopCh,
+			StandaloneMode:        true, // this must be true because we have no kube server for integration.
 		}
 		options.InsecureServingOptions.BindPort = insecurePort
 		options.SecureServingOptions.ServingOptions.BindPort = securePort
