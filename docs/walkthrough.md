@@ -141,7 +141,7 @@ newly-installed executable.
 ## Step 5 - Configuring `kubectl` to Talk to the API Server
 
 To configure `kubectl` to communicate with the service catalog API server, we'll have to
-get the IP address of the `Service` (and just the IP - no ports or `http://`, for example)
+get the IP address of the `Service` (and just the IP - no ports or `http://` prefixes)
 that sits in front of the API server pod(s). If you installed the catalog with one of the 
 `helm install` commands above, then this service will be called `catalog-catalog-apiserver`, 
 and be in the `catalog` namespace.
