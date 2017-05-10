@@ -146,7 +146,7 @@ To install with defaults:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-## Step 4 - Installing and Configuring `kubectl` 1.6
+## Step 4 - Installing the Latest `kubectl`
 
 As with Kubernetes itself, interaction with the service catalog system is
 achieved through the `kubectl` command line interface. Chances are high that
@@ -169,17 +169,31 @@ chmod +x ./kubectl
 We'll assume hereafter that all `kubectl` commands are using this
 newly-installed executable.
 
-To configure `kubectl` to communicate with the service catalog APU server:
+## Step 5 - Configuring `kubectl` to Talk to the API Server
+
+To configure `kubectl` to communicate with the service catalog API server, we'll have to
+get the IP address that points to the `Service` that sits in front of the API server pod(s).
+If you installed the catalog with one of the `helm install` commands above, then this service 
+will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace. 
+
+### Notes on Getting the IP Address
+
+How you get this IP address is highly dependent on your Kubernetes installation method. Regardless
+of how you do it, do not use the Cluster IP of the `Service`. The `Service` is created as a
+`NodePort` in this walkthrough, so you'll likely need to use the IP address of the node or one of
+the nodes in your cluster.
+
+### Setting up a New `kubectl` Context
+
+When you determine the IP address of this service, set its value into the `SVC_CAT_API_SERVER_IP`
+environment variable and then run the following commands:
 
 ```console
 kubectl config set-cluster service-catalog --server=http://$SVC_CAT_API_SERVER_IP:30080
 kubectl config set-context service-catalog --cluster=service-catalog
 ```
 
-Note that you'll need to determine the service IP of the service catalog API
-server, and substitute that for `$SVC_CAT_API_SERVER_IP`.
-
-## Step 5 - Creating a Broker Resource
+## Step 6 - Creating a Broker Resource
 
 Next, we'll register a broker server with the catalog by creating a new
 [`Broker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
@@ -241,7 +255,7 @@ Notice that the `status` field has been set to reflect that the broker server's
 catalog of service offerings has been successfully added to our cluster's
 service catalog.
 
-## Step 6 - Viewing ServiceClasses
+## Step 7 - Viewing ServiceClasses
 
 The controller created a `ServiceClass` for each service that the UPS broker
 provides. We can view the `ServiceClass` resources available in the cluster by
@@ -287,7 +301,7 @@ plans:
   osbGuid: 86064792-7ea2-467b-af93-ac9694d96d52
 ```
 
-## Step 7 - Provisioning a New Instance
+## Step 8 - Provisioning a New Instance
 
 Now that a `ServiceClass` named `user-provided-service` exists within our
 cluster's service catalog, we can provision an instance of that. We do so by
@@ -346,7 +360,7 @@ status:
     type: Ready
 ```
 
-## Step 8 - Binding to the Instance
+## Step 9 - Binding to the Instance
 
 Now that our `Instance` has been created, we can bind to it. To accomplish this,
 we will create a [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml)
@@ -412,7 +426,7 @@ my-secret             Opaque                                2         1m
 
 Notice that a new `Secret` named `my-secret` has been created.
 
-## Step 9 - Unbinding from the Instance
+## Step 10 - Unbinding from the Instance
 
 Now, let's unbind from the instance.  To do this, we simply *delete* the
 `Binding` resource that we previously created:
@@ -430,7 +444,7 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-## Step 10 - Deprovisioning the Instance
+## Step 11 - Deprovisioning the Instance
 
 Now, we can deprovision the instance.  To do this, we simply *delete* the
 `Instance` resource that we previously created:
@@ -439,7 +453,7 @@ Now, we can deprovision the instance.  To do this, we simply *delete* the
 kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
-## Step 11 - Deleting the Broker
+## Step 12 - Deleting the Broker
 
 Next, we should remove the broker server, and the services it offers, from the catalog. We can do
 so by simply deleting the broker:
@@ -456,7 +470,7 @@ kubectl --context=service-catalog get serviceclasses
 No resources found
 ```
 
-## Step 12 - Final Cleanup
+## Step 13 - Final Cleanup
 
 To clean up, delete all our helm deployments:
 
