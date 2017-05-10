@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"k8s.io/apiserver/pkg/util/logs"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 

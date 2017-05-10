@@ -57,9 +57,11 @@ echo '-------------------'
 function cleanup() {
   if [[ -n "${CREATE_ARTIFACTS:-}" ]]; then
     echo 'Creating artifacts...'
-    PREFIX='etcd-backed'
+    PREFIX='walkthrough_'
     if [[ -n "${WITH_TPR:-}" ]]; then
-      PREFIX='tpr-backed'
+      PREFIX+='tpr-backed'
+    else
+      PREFIX+='etcd-backed'
     fi
 
     KUBECONFIG="${K8S_KUBECONFIG}" "${ROOT}/contrib/hack/create_artifacts.sh" \
