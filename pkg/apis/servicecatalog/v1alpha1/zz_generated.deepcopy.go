@@ -25,6 +25,7 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	api_v1 "k8s.io/client-go/pkg/api/v1"
+	settings_v1alpha1 "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 	reflect "reflect"
 )
 
@@ -116,6 +117,19 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 				return err
 			} else {
 				*out = newVal.(*runtime.RawExtension)
+			}
+		}
+		if in.AlphaPodPresetName != nil {
+			in, out := &in.AlphaPodPresetName, &out.AlphaPodPresetName
+			*out = new(string)
+			**out = **in
+		}
+		if in.AlphaPodPresetSpec != nil {
+			in, out := &in.AlphaPodPresetSpec, &out.AlphaPodPresetSpec
+			if newVal, err := c.DeepCopy(*in); err != nil {
+				return err
+			} else {
+				*out = newVal.(*settings_v1alpha1.PodPresetSpec)
 			}
 		}
 		if in.Checksum != nil {

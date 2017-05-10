@@ -52,6 +52,20 @@ func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path, create bool)
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("secretName"), spec.SecretName, msg))
 	}
 
+	if spec.AlphaPodPresetName != nil {
+		for _, msg := range apivalidation.NameIsDNSSubdomain(*spec.AlphaPodPresetName, false /* prefix */) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("alphaPodPresetName"), spec.AlphaPodPresetName, msg))
+		}
+
+		if spec.AlphaPodPresetSpec == nil {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("alphaPodPresentName"), "alphaPodPresetName may not be specified with alphaPodPresetSpec"))
+		}
+	}
+
+	if spec.AlphaPodPresetSpec != nil && spec.AlphaPodPresetName == nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("alphaPodPresetSpec"), "alphaPodPresetSpec may not be specified with alphaPodPresetName"))
+	}
+
 	if create && spec.Checksum != nil {
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("checksum"), "checksum may not be set during creation"))
 	}

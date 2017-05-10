@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/pkg/api/v1"
+	settings "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 )
 
 // +genclient=true
@@ -278,6 +279,20 @@ type BindingSpec struct {
 
 	// Names of subordinate objects to create
 	SecretName string `json:"secretName"`
+
+	// TODO: replace with PodPresetTemplateSpec
+
+	// The name of a PodPreset to create.  Must be specified with
+	// AlphaPodPresentSpec.  Alpha features may contain bugs and will not be
+	// forward-migratable.
+	// Immutable.
+	AlphaPodPresetName *string `json:"alphaPodPresetName,omitempty"`
+
+	// The spec of the PodPreset to create.  Must be specified with
+	// AlphaPodPresentName.  Alpha features may contain bugs
+	// and will not be forward-migratable.
+	// Immutable.
+	AlphaPodPresetSpec *settings.PodPresetSpec `json:"alphaPodPresetSpec,omitempty"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.

@@ -182,6 +182,19 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
+						"alphaPodPresetName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The name of a PodPreset to create.  Must be specified with AlphaPodPresentSpec.  Alpha features may contain bugs and will not be forward-migratable. Immutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"alphaPodPresetSpec": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The spec of the PodPreset to create.  Must be specified with AlphaPodPresentName.  Alpha features may contain bugs and will not be forward-migratable. Immutable.",
+								Ref:         ref("k8s.io/client-go/pkg/apis/settings/v1alpha1.PodPresetSpec"),
+							},
+						},
 						"osbGuid": {
 							SchemaProps: spec.SchemaProps{
 								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
@@ -201,7 +214,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
+				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference", "k8s.io/client-go/pkg/apis/settings/v1alpha1.PodPresetSpec"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BindingStatus": {
 			Schema: spec.Schema{

@@ -1400,6 +1400,30 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 		_, err = c.kubeClient.Core().Secrets(binding.Namespace).Create(secret)
 	}
 
+	if err != nil {
+		return err
+	}
+
+	// PodPresets are immutable, so if a PodPreset already exists, it should
+	// be an error.
+	if binding.Spec.AlphaPodPresetName == nil {
+		return nil
+	}
+
+	_, err := c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Get(binding.Spec.AlphaPodPresetName)
+	if err == nil {
+		return fmt.Errorf(`PodPreset "%v/%v" already exists`, binding.Namespace, binding.Spec.AlphaPodPresetName)
+	}
+
+	podPreset := settings.PodPreset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: binding.Spec.AlphaPodPresetName,
+		},
+		Spec: binding.Spec.AlphaPodPresetSpec,
+	}
+
+	_, err := c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Create(podPreset)
+
 	return err
 }
 
