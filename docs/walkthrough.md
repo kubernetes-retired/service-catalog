@@ -154,9 +154,6 @@ kubectl config set-cluster service-catalog --server=http://$SVC_CAT_API_SERVER_I
 kubectl config set-context service-catalog --cluster=service-catalog
 ```
 
-Note that you'll need to determine the service IP of the service catalog API
-server, and substitute that for `$SVC_CAT_API_SERVER_IP`.
-
 ## Step 6 - Creating a Broker Resource
 
 Next, we'll register a broker server with the catalog by creating a new
