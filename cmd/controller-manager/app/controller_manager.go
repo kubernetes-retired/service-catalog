@@ -84,6 +84,8 @@ the core control loops shipped with the service catalog.`,
 const controllerManagerAgentName = "service-catalog-controller-manager"
 const controllerDiscoveryAgentName = "service-catalog-controller-discovery"
 
+var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}
+
 // Run runs the service-catalog controller-manager; should never exit.
 func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// TODO: what does this do
@@ -309,8 +311,9 @@ func StartControllers(s *options.ControllerManagerServer,
 	}
 
 	// Launch service-catalog controller
-	if availableResources[schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}] {
+	if availableResources[catalogGVR] {
 		glog.V(5).Infof("Creating shared informers; resync interval: %v", s.ResyncInterval)
+
 		// Build the informer factory for service-catalog resources
 		informerFactory := servicecataloginformers.NewSharedInformerFactory(
 			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
@@ -366,8 +369,8 @@ func (c checkAPIAvailableResources) Check(_ *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if !availableResources[schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}] {
-		return fmt.Errorf("failed to get servicecatalog/v1alpha1, the apiserver does not seem to be ready")
+	if !availableResources[catalogGVR] {
+		return fmt.Errorf("failed to get %q, the apiserver does not seem to be ready", catalogGVR)
 	}
 	return nil
 }
