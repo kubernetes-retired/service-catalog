@@ -142,9 +142,11 @@ newly-installed executable.
 
 To configure `kubectl` to communicate with the service catalog API server, we'll have to
 get the IP address of the `Service` (and just the IP - no ports or `http://` prefixes)
-that sits in front of the API server pod(s). If you installed the catalog with one of the 
-`helm install` commands above, then this service will be called `catalog-catalog-apiserver`, 
-and be in the `catalog` namespace.
+that sits in front of the API server pod(s).
+
+If you installed the catalog with one of the `helm install` commands above, then this service 
+will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace. 
+Note that how you get this IP address is highly dependent on your Kubernetes installation method.
 
 When you determine the IP address of this service, set its value into the `SVC_CAT_API_SERVER_IP`
 environment variable and then run the following commands:
