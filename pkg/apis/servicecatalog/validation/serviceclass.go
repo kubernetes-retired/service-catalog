@@ -71,6 +71,10 @@ func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 		allErrs = append(allErrs, field.Required(field.NewPath("osbGuid"), "osbGuid is required"))
 	}
 
+	if "" == serviceclass.Description {
+		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
+	}
+
 	for _, msg := range validateOSBGuid(serviceclass.OSBGUID) {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("osbGuid"), serviceclass.OSBGUID, msg))
 	}
@@ -99,6 +103,10 @@ func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorLi
 
 	if "" == plan.OSBGUID {
 		allErrs = append(allErrs, field.Required(fldPath.Child("osbGuid"), "osbGuid is required"))
+	}
+
+	if "" == plan.Description {
+		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
 	}
 
 	for _, msg := range validateOSBGuid(plan.OSBGUID) {

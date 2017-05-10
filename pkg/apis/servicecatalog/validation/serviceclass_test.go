@@ -24,6 +24,25 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
+func validServiceClass() *servicecatalog.ServiceClass {
+	return &servicecatalog.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-serviceclass",
+		},
+		Bindable:    true,
+		BrokerName:  "test-broker",
+		OSBGUID:     "1234-4354a-49b",
+		Description: "service description",
+		Plans: []servicecatalog.ServicePlan{
+			{
+				Name:        "test-plan",
+				OSBGUID:     "40d-0983-1b89",
+				Description: "plan description",
+			},
+		},
+	}
+}
+
 func TestValidateServiceClass(t *testing.T) {
 	cases := []struct {
 		name         string
@@ -31,164 +50,98 @@ func TestValidateServiceClass(t *testing.T) {
 		valid        bool
 	}{
 		{
-			name: "valid serviceClass",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan",
-						OSBGUID: "40d-0983-1b89",
-					},
-				},
-			},
-			valid: true,
+			name:         "valid serviceClass",
+			serviceClass: validServiceClass(),
+			valid:        true,
 		},
 		{
 			name: "valid serviceClass - plan with underscore in name",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test_plan",
-						OSBGUID: "40d-0983-1b89",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Plans[0].Name = "test_plan"
+				return s
+			}(),
 			valid: true,
 		},
 		{
 			name: "valid serviceClass - uppercase in GUID",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan",
-						OSBGUID: "40D-0983-1b89",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.OSBGUID = "40D-0983-1b89"
+				return s
+			}(),
 			valid: true,
 		},
 		{
 			name: "invalid serviceClass - has namespace",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-serviceclass",
-					Namespace: "test-ns",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan",
-						OSBGUID: "40d-0983-1b89",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Namespace = "test-ns"
+				return s
+			}(),
 			valid: false,
 		},
 		{
 			name: "invalid serviceClass - missing guid",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan",
-						OSBGUID: "40d-0983-1b89",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.OSBGUID = ""
+				return s
+			}(),
 			valid: false,
 		},
 		{
 			name: "invalid serviceClass - invalid guid",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a\\%-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan",
-						OSBGUID: "40d-0983-1b89",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.OSBGUID = "1234-4354a\\%-49b"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing description",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Description = ""
+				return s
+			}(),
 			valid: false,
 		},
 		{
 			name: "invalid serviceClass - invalid plan name",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan.oops",
-						OSBGUID: "40d-0983-1b89",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Plans[0].Name = "test-plan.oops"
+				return s
+			}(),
 			valid: false,
 		},
 		{
 			name: "invalid serviceClass - invalid plan guid",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name:    "test-plan",
-						OSBGUID: "40d-0983-1b89-★",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Plans[0].OSBGUID = "40d-0983-1b89-★"
+				return s
+			}(),
 			valid: false,
 		},
 		{
 			name: "invalid serviceClass - missing plan guid",
-			serviceClass: &servicecatalog.ServiceClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-serviceclass",
-				},
-				Bindable:   true,
-				BrokerName: "test-broker",
-				OSBGUID:    "1234-4354a-49b",
-				Plans: []servicecatalog.ServicePlan{
-					{
-						Name: "test-plan",
-					},
-				},
-			},
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Plans[0].OSBGUID = "40d-0983-1b89-★"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing plan description",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Plans[0].Description = ""
+				return s
+			}(),
 			valid: false,
 		},
 	}

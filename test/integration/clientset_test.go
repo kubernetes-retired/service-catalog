@@ -327,10 +327,11 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClassClient := client.Servicecatalog().ServiceClasses()
 
 	serviceClass := &v1alpha1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-		BrokerName: "test-broker",
-		Bindable:   true,
-		OSBGUID:    "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+		ObjectMeta:  metav1.ObjectMeta{Name: name},
+		BrokerName:  "test-broker",
+		Bindable:    true,
+		OSBGUID:     "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+		Description: "test description",
 	}
 
 	// start from scratch

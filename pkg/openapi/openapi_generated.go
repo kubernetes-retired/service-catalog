@@ -743,7 +743,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "A short description of the service",
+								Description: "Description is a short description of the service.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -755,7 +755,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid"},
+					Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid", "description"},
 				},
 			},
 			Dependencies: []string{
@@ -818,8 +818,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Description: "Description is a short description of the plan.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"osbGuid": {
@@ -842,7 +843,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"name", "osbGuid", "osbFree"},
+					Required: []string{"name", "description", "osbGuid", "osbFree"},
 				},
 			},
 			Dependencies: []string{

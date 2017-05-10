@@ -137,8 +137,8 @@ type ServiceClass struct {
 	OSBDashboardOAuth2ClientID *string  `json:"osbDashboardOAuth2ClientID,omitempty"`
 	OSBDashboardSecret         *string  `json:"osbDashboardSecret,omitempty"`
 	OSBDashboardRedirectURI    *string  `json:"osbDashboardRedirectURI,omitempty"`
-	// A short description of the service
-	Description *string `json:"description,omitempty"`
+	// Description is a short description of the service.
+	Description string `json:"description"`
 
 	// Metadata fields
 	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`
@@ -149,7 +149,8 @@ type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string `json:"name"`
 
-	Description *string `json:"description,omitempty"`
+	// Description is a short description of the plan.
+	Description string `json:"description"`
 
 	// OSB-specific
 	// OSBGUID is the identity of this object for use with the OSB API.
