@@ -1696,8 +1696,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 			OSBGUID:       svc.ID,
 			OSBTags:       svc.Tags,
 			OSBRequires:   svc.Requires,
-			Description:   &svc.Description,
-			// OSBMetadata:   svc.Metadata,
+			Description:   svc.Description,
 		}
 
 		if svc.Metadata != nil {
@@ -1718,13 +1717,11 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan, error) {
 	ret := make([]v1alpha1.ServicePlan, len(plans))
 	for i, plan := range plans {
-		descCopy := string(plan.Description)
 		ret[i] = v1alpha1.ServicePlan{
-			Name:    plan.Name,
-			OSBGUID: plan.ID,
-			// OSBMetadata: plan.Metadata,
+			Name:        plan.Name,
+			OSBGUID:     plan.ID,
 			OSBFree:     plan.Free,
-			Description: &descCopy,
+			Description: plan.Description,
 		}
 		if plan.Metadata != nil {
 			metadata, err := json.Marshal(plan.Metadata)

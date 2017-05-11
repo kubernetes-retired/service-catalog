@@ -458,7 +458,7 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
 	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
 	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
-	out.Description = (*string)(unsafe.Pointer(in.Description))
+	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }
@@ -490,7 +490,7 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
 	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
 	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
-	out.Description = (*string)(unsafe.Pointer(in.Description))
+	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }
@@ -541,7 +541,7 @@ func Convert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *se
 
 func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan, out *servicecatalog.ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
-	out.Description = (*string)(unsafe.Pointer(in.Description))
+	out.Description = in.Description
 	out.OSBGUID = in.OSBGUID
 	out.OSBFree = in.OSBFree
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
@@ -556,7 +556,7 @@ func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicec
 	out.Name = in.Name
 	out.OSBGUID = in.OSBGUID
 	out.OSBFree = in.OSBFree
-	out.Description = (*string)(unsafe.Pointer(in.Description))
+	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
 }

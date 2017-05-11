@@ -139,8 +139,8 @@ type ServiceClass struct {
 	OSBDashboardOAuth2ClientID *string
 	OSBDashboardSecret         *string
 	OSBDashboardRedirectURI    *string
-	// A short description of the service
-	Description *string
+	// Description is a short description of the service.
+	Description string
 	OSBMetadata *runtime.RawExtension
 }
 
@@ -155,8 +155,9 @@ type ServicePlan struct {
 	OSBGUID string
 
 	// OSB-specific
-	OSBFree     bool
-	Description *string
+	OSBFree bool
+	// Description is a short description of the plan.
+	Description string
 	OSBMetadata *runtime.RawExtension
 }
 

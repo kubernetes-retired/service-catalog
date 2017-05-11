@@ -2451,10 +2451,8 @@ func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDes
 	if plan.Name != planName {
 		t.Fatalf("Expected plan %d's name to be \"%s\", but was: %s", index, planName, plan.Name)
 	}
-	if plan.Description == nil {
-		t.Fatalf("Expected plan %d's description to be \"%s\", but was nil", index, planDescription)
-	} else if *plan.Description != planDescription {
-		t.Fatalf("Expected plan %d's description to be \"%s\", but was: %s", index, planDescription, *plan.Description)
+	if plan.Description != planDescription {
+		t.Fatalf("Expected plan %d's description to be \"%s\", but was: %s", index, planDescription, plan.Description)
 	}
 }
 
@@ -2479,10 +2477,8 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// For service1 make sure we have service level metadata with field1 = value1 as the blob
 		// and for service1 plan s1plan2 we have planmeta = planvalue as the blob.
 		if sc.Name == "service1" {
-			if sc.Description == nil {
-				t.Fatalf("Expected service1's description to be \"service 1 description\", but was nil")
-			} else if *sc.Description != "service 1 description" {
-				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", *sc.Description)
+			if sc.Description != "service 1 description" {
+				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", sc.Description)
 			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make(map[string]string)
@@ -2513,10 +2509,8 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 		// For service2 make sure we have service level metadata with three element array with elements
 		// "first", "second", and "third"
 		if sc.Name == "service2" {
-			if sc.Description == nil {
-				t.Fatalf("Expected service2's description to be \"service 2 description\", but was nil")
-			} else if *sc.Description != "service 2 description" {
-				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", *sc.Description)
+			if sc.Description != "service 2 description" {
+				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", sc.Description)
 			}
 			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
 				m := make([]string, 0)
