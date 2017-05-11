@@ -99,7 +99,7 @@ func TestGetFinalizers(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(finalizers) != 1 {
-		t.Fatalf("expected 1 finalizer, got %s", len(finalizers))
+		t.Fatalf("expected 1 finalizer, got %d", len(finalizers))
 	}
 	if finalizers[0] != tprFinalizer {
 		t.Fatalf("expected finalizer %s, got %s", tprFinalizer, finalizers[0])
