@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/diff"
 
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api"
@@ -218,11 +219,19 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 		BrokerName: testBrokerName,
 		ExternalID: serviceClassGUID,
 		Bindable:   true,
-		Plans: []v1alpha1.ServicePlan{{
-			Name:       testPlanName,
-			OSBFree:    true,
-			ExternalID: planGUID,
-		}},
+		Plans: []v1alpha1.ServicePlan{
+			{
+				Name:       testPlanName,
+				OSBFree:    true,
+				ExternalID: planGUID,
+			},
+			{
+				Name:       testNonbindablePlanName,
+				OSBFree:    true,
+				ExternalID: nonbindablePlanGUID,
+				Bindable:   falsePtr(),
+			},
+		},
 	}
 }
 
@@ -233,11 +242,19 @@ func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 		BrokerName: testBrokerName,
 		ExternalID: nonbindableServiceClassGUID,
 		Bindable:   false,
-		Plans: []v1alpha1.ServicePlan{{
-			Name:       testNonbindablePlanName,
-			OSBFree:    true,
-			ExternalID: nonbindablePlanGUID,
-		}},
+		Plans: []v1alpha1.ServicePlan{
+			{
+				Name:       testPlanName,
+				OSBFree:    true,
+				ExternalID: planGUID,
+				Bindable:   truePtr(),
+			},
+			{
+				Name:       testNonbindablePlanName,
+				OSBFree:    true,
+				ExternalID: nonbindablePlanGUID,
+			},
+		},
 	}
 }
 
@@ -276,10 +293,25 @@ func getTestInstance() *v1alpha1.Instance {
 	}
 }
 
-// an isntance referencing the result of getTestNonbindableServiceClass
+// an instance referencing the result of getTestNonbindableServiceClass, on the non-bindable plan.
 func getTestNonbindableInstance() *v1alpha1.Instance {
 	i := getTestInstance()
 	i.Spec.ServiceClassName = testNonbindableServiceClassName
+	i.Spec.PlanName = testNonbindablePlanName
+
+	return i
+}
+
+// an instance referencing the result of getTestNonbindableServiceClass, on the bindable plan.
+func getTestInstanceNonbindableServiceBindablePlan() *v1alpha1.Instance {
+	i := getTestNonbindableInstance()
+	i.Spec.PlanName = testPlanName
+
+	return i
+}
+
+func getTestInstanceBindableServiceNonbindablePlan() *v1alpha1.Instance {
+	i := getTestInstance()
 	i.Spec.PlanName = testNonbindablePlanName
 
 	return i
@@ -2031,9 +2063,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 }
 
 func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
-	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
@@ -2059,7 +2089,79 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorNonbindableServiceClassReason + ` Binding "test-ns/test-binding" references a non-bindable ServiceClass "test-unbindable-serviceclass"`
+	expectedEvent := api.EventTypeWarning + " " + errorNonbindableServiceClassReason + ` Binding "test-ns/test-binding" references a non-bindable ServiceClass ("test-unbindable-serviceclass") and Plan ("test-unbindable-plan") combination`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(func() *v1alpha1.Instance {
+		i := getTestInstanceNonbindableServiceBindablePlan()
+		i.Status = v1alpha1.InstanceStatus{
+			Conditions: []v1alpha1.InstanceCondition{
+				{
+					Type:   v1alpha1.InstanceConditionReady,
+					Status: v1alpha1.ConditionTrue,
+				},
+			},
+		}
+		return i
+	}())
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyTrue(t, updatedBinding)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+}
+
+func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceBindableServiceNonbindablePlan())
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding, errorNonbindableServiceClassReason)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonbindableServiceClassReason + ` Binding "test-ns/test-binding" references a non-bindable ServiceClass ("test-serviceclass") and Plan ("test-unbindable-plan") combination`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -2559,6 +2661,100 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 
 }
 
+const testCatalogForServicePlanBindableOverride = `{
+  "services": [
+    {
+      "name": "bindable",
+      "bindable": true,
+      "plans": [{
+        "name": "bindable-bindable",
+        "id": "s1_plan1_id"
+      },
+      {
+        "name": "bindable-unbindable",
+        "id": "s1_plan2_id",
+        "bindable": false
+      }]
+    },
+    {
+      "name": "unbindable",
+      "bindable": false,
+      "plans": [{
+        "name": "unbindable-unbindable",
+        "id": "s2_plan1_id"
+      },
+      {
+        "name": "unbindable-bindable",
+        "id": "s2_plan2_id",
+        "bindable": true
+      }]
+    }
+]}`
+
+func truePtr() *bool {
+	b := true
+	return &b
+}
+
+func falsePtr() *bool {
+	b := false
+	return &b
+}
+
+func TestCatalogConversionServicePlanBindable(t *testing.T) {
+	catalog := &brokerapi.Catalog{}
+	err := json.Unmarshal([]byte(testCatalogForServicePlanBindableOverride), &catalog)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+	}
+
+	actual, err := convertCatalog(catalog)
+	if err != nil {
+		t.Fatalf("Failed to convertCatalog: %v", err)
+	}
+
+	expected := []*v1alpha1.ServiceClass{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bindable",
+			},
+			Bindable: true,
+			Plans: []v1alpha1.ServicePlan{
+				{
+					Name:       "bindable-bindable",
+					ExternalID: "s1_plan1_id",
+				},
+				{
+					Name:       "bindable-unbindable",
+					ExternalID: "s1_plan2_id",
+					Bindable:   falsePtr(),
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "unbindable",
+			},
+			Bindable: false,
+			Plans: []v1alpha1.ServicePlan{
+				{
+					Name:       "unbindable-unbindable",
+					ExternalID: "s2_plan1_id",
+				},
+				{
+					Name:       "unbindable-bindable",
+					ExternalID: "s2_plan2_id",
+					Bindable:   truePtr(),
+				},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("Unexpected diff between expected and actual catalogs: %v", diff.ObjectReflectDiff(expected, actual))
+	}
+}
+
 func TestIsBrokerReady(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -2585,6 +2781,71 @@ func TestIsBrokerReady(t *testing.T) {
 	for _, tc := range cases {
 		if e, a := tc.ready, isInstanceReady(tc.input); e != a {
 			t.Errorf("%v: expected result %v, got %v", tc.name, e, a)
+		}
+	}
+}
+
+func TestIsPlanBindable(t *testing.T) {
+	serviceClass := func(bindable bool) *v1alpha1.ServiceClass {
+		serviceClass := getTestServiceClass()
+		serviceClass.Bindable = bindable
+		return serviceClass
+	}
+
+	servicePlan := func(bindable *bool) *v1alpha1.ServicePlan {
+		return &v1alpha1.ServicePlan{
+			Bindable: bindable,
+		}
+	}
+
+	cases := []struct {
+		name         string
+		serviceClass bool
+		servicePlan  *bool
+		bindable     bool
+	}{
+		{
+			name:         "service true, plan not set",
+			serviceClass: true,
+			bindable:     true,
+		},
+		{
+			name:         "service true, plan false",
+			serviceClass: true,
+			servicePlan:  falsePtr(),
+			bindable:     false,
+		},
+		{
+			name:         "service true, plan true",
+			serviceClass: true,
+			servicePlan:  truePtr(),
+			bindable:     true,
+		},
+		{
+			name:         "service false, plan not set",
+			serviceClass: false,
+			bindable:     false,
+		},
+		{
+			name:         "service false, plan false",
+			serviceClass: false,
+			servicePlan:  falsePtr(),
+			bindable:     false,
+		},
+		{
+			name:         "service false, plan true",
+			serviceClass: false,
+			servicePlan:  truePtr(),
+			bindable:     true,
+		},
+	}
+
+	for _, tc := range cases {
+		sc := serviceClass(tc.serviceClass)
+		plan := servicePlan(tc.servicePlan)
+
+		if e, a := tc.bindable, isPlanBindable(sc, plan); e != a {
+			t.Errorf("%v: unexpected result; expected %v, got %v", tc.name, e, a)
 		}
 	}
 }
@@ -2972,6 +3233,7 @@ func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alph
 
 	for _, condition := range binding.Status.Conditions {
 		if condition.Type == v1alpha1.BindingConditionReady && condition.Status != status {
+			t.Logf("ready condition: %+v", condition)
 			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
 		}
 		if len(reason) == 1 && condition.Reason != reason[0] {

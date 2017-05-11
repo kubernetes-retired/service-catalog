@@ -1202,8 +1202,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		return err
 	}
 
-	if !serviceClass.Bindable {
-		s := fmt.Sprintf("Binding \"%s/%s\" references a non-bindable ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
+	if !isPlanBindable(serviceClass, servicePlan) {
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-bindable ServiceClass (%q) and Plan (%q) combination", binding.Namespace, binding.Name, instance.Spec.ServiceClassName, instance.Spec.PlanName)
 		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
@@ -1367,6 +1367,21 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	}
 
 	return nil
+}
+
+// isPlanBindable returns whether the given ServiceClass and ServicePlan
+// combination is bindable.  Plans may override the service-level bindable
+// attribute, so if the plan provides a value, return that value.  Otherwise,
+// return the Bindable field of the ServiceClass.
+//
+// Note: enforcing that the plan belongs to the given service class is the
+// responsibility of the caller.
+func isPlanBindable(serviceClass *v1alpha1.ServiceClass, plan *v1alpha1.ServicePlan) bool {
+	if plan.Bindable != nil {
+		return *plan.Bindable
+	}
+
+	return serviceClass.Bindable
 }
 
 func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *brokerapi.Credential) error {
@@ -1604,7 +1619,7 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 
 	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
 	if servicePlan == nil {
-		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, servicePlan.Name, serviceClass.Name)
+		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
 		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
@@ -1716,17 +1731,22 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 
 func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan, error) {
 	ret := make([]v1alpha1.ServicePlan, len(plans))
-	for i, plan := range plans {
+	for i := range plans {
 		ret[i] = v1alpha1.ServicePlan{
-			Name:        plan.Name,
-			ExternalID:  plan.ID,
-			OSBFree:     plan.Free,
-			Description: plan.Description,
+			Name:        plans[i].Name,
+			ExternalID:  plans[i].ID,
+			OSBFree:     plans[i].Free,
+			Description: plans[i].Description,
 		}
-		if plan.Metadata != nil {
-			metadata, err := json.Marshal(plan.Metadata)
+		if plans[i].Bindable != nil {
+			b := *plans[i].Bindable
+			ret[i].Bindable = &b
+		}
+
+		if plans[i].Metadata != nil {
+			metadata, err := json.Marshal(plans[i].Metadata)
 			if err != nil {
-				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plans[i].Metadata, err)
 				glog.Error(err)
 				return nil, err
 			}
