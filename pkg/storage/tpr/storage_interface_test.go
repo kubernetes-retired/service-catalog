@@ -827,12 +827,15 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient()
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+	brokerNoFinalizers := &sc.Broker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
 		},
-	})
+	}
+	brokerWithFinalizers := *brokerNoFinalizers
+	brokerWithFinalizers.Finalizers = append(brokerWithFinalizers.Finalizers, tprFinalizer)
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &brokerWithFinalizers)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
@@ -849,10 +852,18 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
-	if obj != nil {
-		t.Fatalf(
-			"expected object to be removed from underlying sotrage, but it was not",
-		)
+	finalizers, err := getFinalizers(obj)
+	if err != nil {
+		t.Fatalf("error getting finalizers (%s)", err)
+	}
+	if len(finalizers) != 0 {
+		t.Fatalf("expected no finalizers, got %#v", finalizers)
+	}
+	// the delete call does a PUT, which increments the resource version. brokerNoFinalizers
+	// and obj should match exactly except for the resource version, so do the increment here
+	brokerNoFinalizers.ResourceVersion = fmt.Sprintf("%d", origRev+1)
+	if err := deepCompare("expected", brokerNoFinalizers, "actual", obj); err != nil {
+		t.Fatal(err)
 	}
 }
 
