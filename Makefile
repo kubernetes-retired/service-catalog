@@ -267,6 +267,7 @@ clean-generated:
 	rm -f .generate_files
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
 	rm -rf pkg/client/*_generated
+	rm -f pkg/openapi/openapi_generated.go
 
 clean-coverage:
 	rm -f $(COVERAGE)
