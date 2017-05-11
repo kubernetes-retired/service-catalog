@@ -35,6 +35,10 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
+const (
+	tprFinalizer = "tpr.servicecatalog.k8s.io"
+)
+
 var (
 	errNotImplemented = errors.New("not implemented for third party resources")
 )
@@ -92,6 +96,10 @@ func (t *store) Create(
 		return err
 	}
 
+	if err := addFinalizer(obj, tprFinalizer); err != nil {
+		glog.Errorf("adding finalizer to %s (%s)", key, err)
+		return err
+	}
 	data, err := runtime.Encode(t.codec, obj)
 	if err != nil {
 		return err
@@ -148,6 +156,20 @@ func (t *store) Delete(
 	ns, name, err := t.decodeKey(key)
 	if err != nil {
 		glog.Errorf("decoding key %s (%s)", key, err)
+		return err
+	}
+	if err := get(
+		t.cl,
+		t.codec,
+		t.singularKind,
+		key,
+		ns,
+		name,
+		out,
+		t.hasNamespace,
+		false,
+	); err != nil {
+		glog.Errorf("getting %s (%s)", key, err)
 		return err
 	}
 
@@ -477,6 +499,7 @@ func (t *store) GuaranteedUpdate(
 	userUpdate storage.UpdateFunc,
 	suggestion ...runtime.Object,
 ) error {
+	glog.Infof("guaranteed update of %s", key)
 	// If a suggestion was passed, use that as the initial object, otherwise
 	// use Get() to retrieve it
 	var initObj runtime.Object
@@ -507,12 +530,14 @@ func (t *store) GuaranteedUpdate(
 			glog.Errorf("applying user update: (%s)", err)
 			return err
 		}
+		glog.Infof("candidate: %#v", candidate)
 		// Get bytes from the candidate
 		candidateData, err := runtime.Encode(t.codec, candidate)
 		if err != nil {
 			glog.Errorf("encoding candidate obj (%s)", err)
 			return err
 		}
+		glog.Infof("candidateData: %#v", string(candidateData))
 		// If the candidate matches what we already have, then all we need to do is
 		// decode into the out object
 		if bytes.Equal(candidateData, curState.data) {
@@ -534,6 +559,8 @@ func (t *store) GuaranteedUpdate(
 			glog.Errorf("getting state from new current object (%s)", err)
 			return err
 		}
+		glog.Infof("current state: %#v", curState)
+		glog.Infof("new current state: %#v", newCurState)
 		// If the new current version of the object is the same as the old current
 		// then proceed with trying to PUT the candidate to the core apiserver
 		if newCurState.rev == curState.rev {
@@ -542,37 +569,30 @@ func (t *store) GuaranteedUpdate(
 				glog.Errorf("decoding key %s (%s)", key, err)
 				return err
 			}
-			putReq := t.cl.Put().AbsPath(
-				"apis",
-				groupName,
-				tprVersion,
-				"namespaces",
-				ns,
-				t.singularKind.URLName(),
-				name,
-			).Body(candidateData)
-			putRes := putReq.Do()
-			if putRes.Error() != nil {
-				glog.Errorf("executing PUT to %s/%s (%s)", ns, name, putRes.Error())
+			dtExists, err := deletionTimestampExists(newCurState.obj)
+			if err != nil {
+				glog.Errorf("determining whether the deletion timestamp exists (%s)", err)
 				return err
 			}
-			var statusCode int
-			putRes.StatusCode(&statusCode)
-			if statusCode != http.StatusOK {
-				return fmt.Errorf(
-					"executing PUT for %s/%s, received response code %d",
-					ns,
-					name,
-					statusCode,
-				)
-			}
-			var putUnknown runtime.Unknown
-			if err := putRes.Into(&putUnknown); err != nil {
-				glog.Errorf("reading response (%s)", err)
+			dgpExists, err := deletionGracePeriodExists(newCurState.obj)
+			if err != nil {
+				glog.Errorf("determining whether the deletion grace period exists (%s)", err)
 				return err
 			}
-			if err := decode(t.codec, putUnknown.Raw, out); err != nil {
-				glog.Errorf("decoding response (%s)", err)
+			if dtExists || dgpExists {
+				// if the deletion timestamp and/or deletion grace period exists, then we should just
+				// issue the delete. a finalizer on this TPR was added when it was created, so
+				// the DELETE REST call will be a soft-delete
+				if err := delete(t.cl, t.singularKind, key, ns, name); err != nil {
+					glog.Errorf("executing DELETE on %s (%s)", key, err)
+					return err
+				}
+				return nil
+			}
+			// otherwise, the deletion timestamp and deleteion grace period are not set, so
+			// do the actual update
+			if err := put(t.cl, t.codec, t.singularKind, ns, name, candidateData, out); err != nil {
+				glog.Errorf("PUTting object %s (%s)", key, err)
 				return err
 			}
 		} else {

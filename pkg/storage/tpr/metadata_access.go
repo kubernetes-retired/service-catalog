@@ -18,6 +18,7 @@ package tpr
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -36,4 +37,31 @@ func GetAccessor() meta.MetadataAccessor {
 // the empty string and a non-nil error
 func GetNamespace(obj runtime.Object) (string, error) {
 	return selfLinker.Namespace(obj)
+}
+
+func deletionTimestampExists(obj runtime.Object) (bool, error) {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return false, err
+	}
+	t := accessor.GetDeletionTimestamp()
+	return t != nil, nil
+}
+
+func deletionGracePeriodExists(obj runtime.Object) (bool, error) {
+	objMeta, err := metav1.ObjectMetaFor(obj)
+	if err != nil {
+		return false, err
+	}
+	return objMeta.DeletionGracePeriodSeconds != nil, nil
+}
+
+func addFinalizer(obj runtime.Object, value string) error {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	finalizers := append(accessor.GetFinalizers(), value)
+	accessor.SetFinalizers(finalizers)
+	return nil
 }
