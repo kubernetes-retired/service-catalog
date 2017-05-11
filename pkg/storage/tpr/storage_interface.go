@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,12 +36,9 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-const (
-	tprFinalizer = "tpr.servicecatalog.k8s.io"
-)
-
 var (
 	errNotImplemented = errors.New("not implemented for third party resources")
+	tprFinalizer      = fmt.Sprintf("%s/%s", servicecatalog.GroupName, tprVersion)
 )
 
 type store struct {
@@ -485,7 +483,6 @@ func (t *store) GuaranteedUpdate(
 	userUpdate storage.UpdateFunc,
 	suggestion ...runtime.Object,
 ) error {
-	glog.Infof("guaranteed update of %s", key)
 	// If a suggestion was passed, use that as the initial object, otherwise
 	// use Get() to retrieve it
 	var initObj runtime.Object
@@ -516,14 +513,22 @@ func (t *store) GuaranteedUpdate(
 			glog.Errorf("applying user update: (%s)", err)
 			return err
 		}
-		glog.Infof("candidate: %#v", candidate)
+		dtExists, err := deletionTimestampExists(candidate)
+		if err != nil {
+			glog.Errorf("determining whether the deletion timestamp exists (%s)", err)
+			return err
+		}
+		dgpExists, err := deletionGracePeriodExists(candidate)
+		if err != nil {
+			glog.Errorf("determining whether the deletion grace period exists (%s)", err)
+			return err
+		}
 		// Get bytes from the candidate
 		candidateData, err := runtime.Encode(t.codec, candidate)
 		if err != nil {
 			glog.Errorf("encoding candidate obj (%s)", err)
 			return err
 		}
-		glog.Infof("candidateData: %#v", string(candidateData))
 		// If the candidate matches what we already have, then all we need to do is
 		// decode into the out object
 		if bytes.Equal(candidateData, curState.data) {
@@ -545,8 +550,6 @@ func (t *store) GuaranteedUpdate(
 			glog.Errorf("getting state from new current object (%s)", err)
 			return err
 		}
-		glog.Infof("current state: %#v", curState)
-		glog.Infof("new current state: %#v", newCurState)
 		// If the new current version of the object is the same as the old current
 		// then proceed with trying to PUT the candidate to the core apiserver
 		if newCurState.rev == curState.rev {
@@ -555,21 +558,11 @@ func (t *store) GuaranteedUpdate(
 				glog.Errorf("decoding key %s (%s)", key, err)
 				return err
 			}
-			dtExists, err := deletionTimestampExists(newCurState.obj)
-			if err != nil {
-				glog.Errorf("determining whether the deletion timestamp exists (%s)", err)
-				return err
-			}
-			dgpExists, err := deletionGracePeriodExists(newCurState.obj)
-			if err != nil {
-				glog.Errorf("determining whether the deletion grace period exists (%s)", err)
-				return err
-			}
 			if dtExists || dgpExists {
 				// if the deletion timestamp and/or deletion grace period exists, then we should just
 				// issue the delete. a finalizer on this TPR was added when it was created, so
 				// the DELETE REST call will be a soft-delete
-				if err := delete(t.cl, t.singularKind, key, ns, name); err != nil {
+				if err := delete(t.cl, t.singularKind, key, ns, name, http.StatusOK); err != nil {
 					glog.Errorf("executing DELETE on %s (%s)", key, err)
 					return err
 				}

@@ -25,7 +25,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-func delete(cl restclient.Interface, kind Kind, key, ns, name string) error {
+func delete(cl restclient.Interface, kind Kind, key, ns, name string, expectedCode int) error {
 	req := cl.Delete().AbsPath(
 		"apis",
 		groupName,
@@ -44,7 +44,7 @@ func delete(cl restclient.Interface, kind Kind, key, ns, name string) error {
 	if statusCode == http.StatusNotFound {
 		return storage.NewKeyNotFoundError(key, 0)
 	}
-	if statusCode != http.StatusAccepted {
+	if statusCode != expectedCode {
 		return fmt.Errorf(
 			"executing DELETE for %s/%s, received response code %d",
 			ns,
