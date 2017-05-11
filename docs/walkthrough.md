@@ -65,7 +65,7 @@ helm install charts/catalog --name catalog --namespace catalog
 To install the service catalog system with TPRs as the backing database:
 
 ```console
-helm install charts/catalog --name catalog --namespace catalog --set apiserver.storage.type=tpr apiserver.storage.tpr.globalNamespace=catalog
+helm install charts/catalog --name catalog --namespace catalog --set apiserver.storage.type=tpr,apiserver.storage.tpr.globalNamespace=catalog
 ```
 
 Regardless of which database implementation you choose, the remainder of the steps in this
