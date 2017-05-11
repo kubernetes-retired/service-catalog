@@ -56,6 +56,14 @@ func deletionGracePeriodExists(obj runtime.Object) (bool, error) {
 	return objMeta.DeletionGracePeriodSeconds != nil, nil
 }
 
+func getFinalizers(obj runtime.Object) ([]string, error) {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return nil, err
+	}
+	return accessor.GetFinalizers(), nil
+}
+
 func addFinalizer(obj runtime.Object, value string) error {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
@@ -63,5 +71,22 @@ func addFinalizer(obj runtime.Object, value string) error {
 	}
 	finalizers := append(accessor.GetFinalizers(), value)
 	accessor.SetFinalizers(finalizers)
+	return nil
+}
+
+func removeFinalizer(obj runtime.Object, value string) error {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	finalizers := accessor.GetFinalizers()
+	newFinalizers := []string{}
+	for _, finalizer := range finalizers {
+		if finalizer == value {
+			continue
+		}
+		newFinalizers = append(newFinalizers, finalizer)
+	}
+	accessor.SetFinalizers(newFinalizers)
 	return nil
 }
