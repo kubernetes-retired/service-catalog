@@ -143,16 +143,17 @@ func (t *store) Create(
 	return nil
 }
 
-// Delete removes the specified key and returns the value that existed at that spot.
-// If key didn't exist, it will return NotFound storage error.
+// Delete fetches the resource at key, removes its finalizer, updates it, and returns the
+// resource before its finalizer was removed.
 //
-// In this implementation, Delete will not write the deleted object back to out
+// If key didn't exist, it will return NotFound storage error.
 func (t *store) Delete(
 	ctx context.Context,
 	key string,
 	out runtime.Object,
 	preconditions *storage.Preconditions,
 ) error {
+	// create adds the get the object remove its finalizer, and
 	ns, name, err := t.decodeKey(key)
 	if err != nil {
 		glog.Errorf("decoding key %s (%s)", key, err)
@@ -173,34 +174,19 @@ func (t *store) Delete(
 		return err
 	}
 
-	req := t.cl.Delete().AbsPath(
-		"apis",
-		groupName,
-		tprVersion,
-		"namespaces",
-		ns,
-		t.singularKind.URLName(),
-		name,
-	)
-
-	res := req.Do()
-	if res.Error() != nil {
-		glog.Errorf("executing DELETE for %s/%s (%s)", ns, name, res.Error())
+	if err := removeFinalizer(out, tprFinalizer); err != nil {
+		glog.Errorf("removing finalizer from %#v (%s)", out, err)
+		return err
 	}
-	var statusCode int
-	res.StatusCode(&statusCode)
-	if statusCode == http.StatusNotFound {
-		return storage.NewKeyNotFoundError(key, 0)
+	encoded, err := runtime.Encode(t.codec, out)
+	if err != nil {
+		glog.Errorf("encoding %#v (%s)", out, err)
+		return err
 	}
-	if statusCode != http.StatusAccepted {
-		return fmt.Errorf(
-			"executing DELETE for %s/%s, received response code %d",
-			ns,
-			name,
-			statusCode,
-		)
+	if err := put(t.cl, t.codec, t.singularKind, ns, name, encoded, out); err != nil {
+		glog.Errorf("putting %s (%s)", key, err)
+		return err
 	}
-
 	return nil
 }
 
