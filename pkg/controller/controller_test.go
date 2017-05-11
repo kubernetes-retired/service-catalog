@@ -216,12 +216,12 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
 		BrokerName: testBrokerName,
-		OSBGUID:    serviceClassGUID,
+		ExternalID: serviceClassGUID,
 		Bindable:   true,
 		Plans: []v1alpha1.ServicePlan{{
-			Name:    testPlanName,
-			OSBFree: true,
-			OSBGUID: planGUID,
+			Name:       testPlanName,
+			OSBFree:    true,
+			ExternalID: planGUID,
 		}},
 	}
 }
@@ -231,12 +231,12 @@ func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableServiceClassName},
 		BrokerName: testBrokerName,
-		OSBGUID:    nonbindableServiceClassGUID,
+		ExternalID: nonbindableServiceClassGUID,
 		Bindable:   false,
 		Plans: []v1alpha1.ServicePlan{{
-			Name:    testNonbindablePlanName,
-			OSBFree: true,
-			OSBGUID: nonbindablePlanGUID,
+			Name:       testNonbindablePlanName,
+			OSBFree:    true,
+			ExternalID: nonbindablePlanGUID,
 		}},
 	}
 }
@@ -271,7 +271,7 @@ func getTestInstance() *v1alpha1.Instance {
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
+			ExternalID:       instanceGUID,
 		},
 	}
 }
@@ -350,7 +350,7 @@ func getTestBinding() *v1alpha1.Binding {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -497,11 +497,11 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 }
 
-func TestReconcileBrokerExistingServiceClassDifferentOSBGUID(t *testing.T) {
+func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
 	testServiceClass := getTestServiceClass()
-	testServiceClass.OSBGUID = "notTheSame"
+	testServiceClass.ExternalID = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
@@ -827,7 +827,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         "nothere",
-			OSBGUID:          instanceGUID,
+			ExternalID:       instanceGUID,
 		},
 	}
 
@@ -943,7 +943,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         "nothere",
-			OSBGUID:          instanceGUID,
+			ExternalID:       instanceGUID,
 		},
 	}
 
@@ -1858,7 +1858,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: "nothere"},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -1896,7 +1896,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         testPlanName,
-			OSBGUID:          instanceGUID,
+			ExternalID:       instanceGUID,
 		},
 	}
 	sharedInformers.Instances().Informer().GetStore().Add(instance)
@@ -1905,7 +1905,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -1950,7 +1950,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -2043,7 +2043,7 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -2078,7 +2078,7 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -2138,7 +2138,7 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -2181,7 +2181,7 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 		},
 	}
 
@@ -2221,7 +2221,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
-			OSBGUID:     bindingGUID,
+			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
 		},
 	}

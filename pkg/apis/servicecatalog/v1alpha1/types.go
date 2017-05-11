@@ -125,10 +125,9 @@ type ServiceClass struct {
 	Plans         []ServicePlan `json:"plans"`
 	PlanUpdatable bool          `json:"planUpdatable"` // Do we support this?
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string `json:"osbGuid"`
+	ExternalID string `json:"externalID"`
 
 	// OSB-specific
 	OSBTags                    []string `json:"osbTags,omitempty"`
@@ -152,10 +151,9 @@ type ServicePlan struct {
 	// Description is a short description of the plan.
 	Description string `json:"description"`
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string `json:"osbGuid"`
+	ExternalID string `json:"externalID"`
 
 	// OSB-specific
 	OSBFree     bool                  `json:"osbFree"`
@@ -193,10 +191,9 @@ type InstanceSpec struct {
 	// passed to the underlying broker.
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB SB API.
+	// ExternalID is the identity of this object for use with the OSB SB API.
 	// Immutable.
-	OSBGUID string `json:"osbGuid"`
+	ExternalID string `json:"externalID"`
 
 	// Checksum is the checksum of the InstanceSpec that was last successfully
 	// reconciled against the broker.
@@ -280,10 +277,9 @@ type BindingSpec struct {
 	// Names of subordinate objects to create
 	SecretName string `json:"secretName"`
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string `json:"osbGuid"`
+	ExternalID string `json:"externalID"`
 
 	// Checksum is the checksum of the BindingSpec that was last successfully
 	// reconciled against the broker.

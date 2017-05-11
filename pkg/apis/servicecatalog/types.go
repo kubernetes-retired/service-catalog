@@ -127,10 +127,9 @@ type ServiceClass struct {
 	Plans         []ServicePlan
 	PlanUpdatable bool // Do we support this?
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	ExternalID string
 
 	// OSB-specific
 	OSBTags                    []string
@@ -149,10 +148,9 @@ type ServicePlan struct {
 	// CLI-friendly name of this plan
 	Name string
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	ExternalID string
 
 	// OSB-specific
 	OSBFree bool
@@ -192,10 +190,9 @@ type InstanceSpec struct {
 	// passed to the underlying broker.
 	Parameters *runtime.RawExtension
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	ExternalID string
 
 	// Checksum is the checksum of the InstanceSpec that was last successfully
 	// reconciled against the broker.
@@ -278,10 +275,9 @@ type BindingSpec struct {
 	// Names of subordinate objects to create
 	SecretName string
 
-	// OSB-specific
-	// OSBGUID is the identity of this object for use with the OSB API.
+	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
-	OSBGUID string
+	ExternalID string
 
 	// Checksum is the checksum of the BindingSpec that was last successfully
 	// reconciled against the broker.

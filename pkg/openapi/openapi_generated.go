@@ -184,7 +184,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"osbGuid": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "OSB-specific ExternalID is the identity of this object for use with the OSB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -564,7 +564,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"osbGuid": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB SB API. Immutable.",
+								Description: "OSB-specific ExternalID is the identity of this object for use with the OSB SB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -685,7 +685,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"osbGuid": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "OSB-specific ExternalID is the identity of this object for use with the OSB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -825,7 +825,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"osbGuid": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "OSB-specific ExternalID is the identity of this object for use with the OSB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},

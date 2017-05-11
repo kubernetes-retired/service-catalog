@@ -30,18 +30,20 @@ import (
 // validateServiceClassName is the validation function for ServiceClass names.
 var validateServiceClassName = apivalidation.NameIsDNSSubdomain
 
-// validateOSBGuid is the validation function for OSB GUIDs.  We generate
-// GUIDs for Instances and Bindings, but for ServiceClass and ServicePlan,
-// they are part of the payload returned from the Broker.
-
 const guidFmt string = "[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?"
 const guidMaxLength int = 63
 
+// guidRegexp is a loosened validation for
+// DNS1123 labels that allows uppercase characters.
 var guidRegexp = regexp.MustCompile("^" + guidFmt + "$")
 
-// validateOSBGGUID is a loosened validation for DNS1123 labels that allows
-// uppercase characters.
-func validateOSBGuid(value string) []string {
+// validateExternalID is the validation function for External IDs that
+// have been passed in. External IDs used to be OpenServiceBrokerAPI
+// GUIDs, so we will retain that form until there is another provider
+// that desires a different form.  In the case of the OSBAPI we
+// generate GUIDs for Instances and Bindings, but for ServiceClass and
+// ServicePlan, they are part of the payload returned from the Broker.
+func validateExternalID(value string) []string {
 	var errs []string
 	if len(value) > guidMaxLength {
 		errs = append(errs, utilvalidation.MaxLenError(guidMaxLength))
@@ -67,16 +69,16 @@ func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 		allErrs = append(allErrs, field.Required(field.NewPath("brokerName"), "brokerName is required"))
 	}
 
-	if "" == serviceclass.OSBGUID {
-		allErrs = append(allErrs, field.Required(field.NewPath("osbGuid"), "osbGuid is required"))
+	if "" == serviceclass.ExternalID {
+		allErrs = append(allErrs, field.Required(field.NewPath("externalID"), "externalID is required"))
 	}
 
 	if "" == serviceclass.Description {
 		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
 	}
 
-	for _, msg := range validateOSBGuid(serviceclass.OSBGUID) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("osbGuid"), serviceclass.OSBGUID, msg))
+	for _, msg := range validateExternalID(serviceclass.ExternalID) {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("externalID"), serviceclass.ExternalID, msg))
 	}
 
 	planNames := sets.NewString()
@@ -101,16 +103,16 @@ func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorLi
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), plan.Name, msg))
 	}
 
-	if "" == plan.OSBGUID {
-		allErrs = append(allErrs, field.Required(fldPath.Child("osbGuid"), "osbGuid is required"))
+	if "" == plan.ExternalID {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalID"), "externalID is required"))
 	}
 
 	if "" == plan.Description {
 		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
 	}
 
-	for _, msg := range validateOSBGuid(plan.OSBGUID) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("osbGuid"), plan.OSBGUID, msg))
+	for _, msg := range validateExternalID(plan.ExternalID) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), plan.ExternalID, msg))
 	}
 
 	return allErrs

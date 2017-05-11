@@ -194,7 +194,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		},
 		func(is *servicecatalog.InstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
-			is.OSBGUID = uuid.NewV4().String()
+			is.ExternalID = uuid.NewV4().String()
 			parameters, err := createParameter(c)
 			if err != nil {
 				t.Errorf("Failed to create parameter object: %v", err)
@@ -204,7 +204,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		},
 		func(bs *servicecatalog.BindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
-			bs.OSBGUID = uuid.NewV4().String()
+			bs.ExternalID = uuid.NewV4().String()
 			parameters, err := createParameter(c)
 			if err != nil {
 				t.Errorf("Failed to create parameter object: %v", err)

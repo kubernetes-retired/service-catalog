@@ -492,8 +492,8 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 		return fmt.Errorf(errMsg)
 	}
 
-	if existingServiceClass.OSBGUID != serviceClass.OSBGUID {
-		errMsg := fmt.Sprintf("ServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Name, existingServiceClass.OSBGUID, serviceClass.OSBGUID)
+	if existingServiceClass.ExternalID != serviceClass.ExternalID {
+		errMsg := fmt.Sprintf("ServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Name, existingServiceClass.ExternalID, serviceClass.ExternalID)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -750,8 +750,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		}
 
 		request := &brokerapi.CreateServiceInstanceRequest{
-			ServiceID:         serviceClass.OSBGUID,
-			PlanID:            servicePlan.OSBGUID,
+			ServiceID:         serviceClass.ExternalID,
+			PlanID:            servicePlan.ExternalID,
 			Parameters:        parameters,
 			OrgID:             string(ns.UID),
 			SpaceID:           string(ns.UID),
@@ -765,7 +765,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		}
 
 		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
-		response, respCode, err := brokerClient.CreateServiceInstance(instance.Spec.OSBGUID, request)
+		response, respCode, err := brokerClient.CreateServiceInstance(instance.Spec.ExternalID, request)
 		if err != nil {
 			s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
@@ -842,13 +842,13 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		glog.V(4).Infof("Finalizing Instance %v/%v", instance.Namespace, instance.Name)
 
 		request := &brokerapi.DeleteServiceInstanceRequest{
-			ServiceID:         serviceClass.OSBGUID,
-			PlanID:            servicePlan.OSBGUID,
+			ServiceID:         serviceClass.ExternalID,
+			PlanID:            servicePlan.ExternalID,
 			AcceptsIncomplete: true,
 		}
 
 		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
-		response, respCode, err := brokerClient.DeleteServiceInstance(instance.Spec.OSBGUID, request)
+		response, respCode, err := brokerClient.DeleteServiceInstance(instance.Spec.ExternalID, request)
 
 		if err != nil {
 			s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
@@ -919,13 +919,13 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 	}
 
 	lastOperationRequest := &brokerapi.LastOperationRequest{
-		ServiceID: serviceClass.OSBGUID,
-		PlanID:    servicePlan.OSBGUID,
+		ServiceID: serviceClass.ExternalID,
+		PlanID:    servicePlan.ExternalID,
 	}
 	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
 		lastOperationRequest.Operation = *instance.Status.LastOperation
 	}
-	resp, rc, err := brokerClient.PollServiceInstance(instance.Spec.OSBGUID, lastOperationRequest)
+	resp, rc, err := brokerClient.PollServiceInstance(instance.Spec.ExternalID, lastOperationRequest)
 	if err != nil {
 		glog.Warningf("Poll failed for %v/%v  : %s", instance.Namespace, instance.Name, err)
 		return err
@@ -1267,13 +1267,13 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		}
 
 		request := &brokerapi.BindingRequest{
-			ServiceID:    serviceClass.OSBGUID,
-			PlanID:       servicePlan.OSBGUID,
+			ServiceID:    serviceClass.ExternalID,
+			PlanID:       servicePlan.ExternalID,
 			Parameters:   parameters,
 			AppGUID:      string(ns.UID),
 			BindResource: map[string]interface{}{"app_guid": string(ns.UID)},
 		}
-		response, err := brokerClient.CreateServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, request)
+		response, err := brokerClient.CreateServiceBinding(instance.Spec.ExternalID, binding.Spec.ExternalID, request)
 		if err != nil {
 			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
@@ -1338,7 +1338,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
 			return err
 		}
-		err = brokerClient.DeleteServiceBinding(instance.Spec.OSBGUID, binding.Spec.OSBGUID, serviceClass.OSBGUID, servicePlan.OSBGUID)
+		err = brokerClient.DeleteServiceBinding(instance.Spec.ExternalID, binding.Spec.ExternalID, serviceClass.ExternalID, servicePlan.ExternalID)
 		if err != nil {
 			s := fmt.Sprintf("Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
@@ -1693,7 +1693,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 			Bindable:      svc.Bindable,
 			Plans:         plans,
 			PlanUpdatable: svc.PlanUpdateable,
-			OSBGUID:       svc.ID,
+			ExternalID:    svc.ID,
 			OSBTags:       svc.Tags,
 			OSBRequires:   svc.Requires,
 			Description:   svc.Description,
@@ -1719,7 +1719,7 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 	for i, plan := range plans {
 		ret[i] = v1alpha1.ServicePlan{
 			Name:        plan.Name,
-			OSBGUID:     plan.ID,
+			ExternalID:  plan.ID,
 			OSBFree:     plan.Free,
 			Description: plan.Description,
 		}

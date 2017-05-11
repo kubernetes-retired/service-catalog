@@ -49,7 +49,7 @@ const (
 	testInstanceName     = "test-instance"
 	testBindingName      = "test-binding"
 	testSecretName       = "test-secret"
-	testOSBGUID          = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+	testExternalID       = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 	testDashboardURL     = "http://test-dashboard.example.com"
 )
 
@@ -129,7 +129,7 @@ func TestBasicFlows(t *testing.T) {
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
-			OSBGUID:          testOSBGUID,
+			ExternalID:       testExternalID,
 		},
 	}
 
@@ -148,11 +148,11 @@ func TestBasicFlows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
 	}
-	if retInst.Spec.OSBGUID != instance.Spec.OSBGUID {
+	if retInst.Spec.ExternalID != instance.Spec.ExternalID {
 		t.Fatalf(
 			"returned OSB GUID '%s' doesn't match original '%s'",
-			retInst.Spec.OSBGUID,
-			instance.Spec.OSBGUID,
+			retInst.Spec.ExternalID,
+			instance.Spec.ExternalID,
 		)
 	}
 
