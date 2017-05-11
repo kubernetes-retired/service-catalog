@@ -259,6 +259,7 @@ clean-bin:
 	rm -f .generate_exes
 
 clean-build-image:
+	rm -rf .pkg
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
