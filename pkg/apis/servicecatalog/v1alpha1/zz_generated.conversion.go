@@ -155,7 +155,7 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 	out.InstanceRef = in.InstanceRef
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
@@ -168,7 +168,7 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 	out.InstanceRef = in.InstanceRef
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
@@ -389,7 +389,7 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
@@ -402,7 +402,7 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
@@ -451,7 +451,7 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 		out.Plans = nil
 	}
 	out.PlanUpdatable = in.PlanUpdatable
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
 	out.OSBMaxDBPerNode = (*string)(unsafe.Pointer(in.OSBMaxDBPerNode))
@@ -483,7 +483,7 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 		out.Plans = nil
 	}
 	out.PlanUpdatable = in.PlanUpdatable
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
 	out.OSBMaxDBPerNode = (*string)(unsafe.Pointer(in.OSBMaxDBPerNode))
@@ -542,7 +542,7 @@ func Convert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *se
 func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan, out *servicecatalog.ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Description = in.Description
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.OSBFree = in.OSBFree
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
@@ -554,7 +554,7 @@ func Convert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan,
 
 func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicecatalog.ServicePlan, out *ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
-	out.OSBGUID = in.OSBGUID
+	out.ExternalID = in.ExternalID
 	out.OSBFree = in.OSBFree
 	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
