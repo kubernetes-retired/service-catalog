@@ -265,6 +265,7 @@ clean-build-image:
 clean-generated:
 	rm -f .generate_files
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+	rm -rf pkg/client/*_generated
 
 clean-coverage:
 	rm -f $(COVERAGE)
