@@ -511,8 +511,8 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	toUpdate.Bindable = serviceClass.Bindable
 	toUpdate.Plans = serviceClass.Plans
 	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
-	toUpdate.OSBTags = serviceClass.OSBTags
-	toUpdate.OSBRequires = serviceClass.OSBRequires
+	toUpdate.Tags = serviceClass.Tags
+	toUpdate.Requires = serviceClass.Requires
 	toUpdate.Description = serviceClass.Description
 
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
@@ -1705,8 +1705,8 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 			Plans:         plans,
 			PlanUpdatable: svc.PlanUpdateable,
 			ExternalID:    svc.ID,
-			OSBTags:       svc.Tags,
-			OSBRequires:   svc.Requires,
+			Tags:          svc.Tags,
+			Requires:      svc.Requires,
 			Description:   svc.Description,
 		}
 
@@ -1717,7 +1717,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 				glog.Error(err)
 				return nil, err
 			}
-			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
+			ret[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
 		ret[i].SetName(svc.Name)
@@ -1731,7 +1731,7 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 		ret[i] = v1alpha1.ServicePlan{
 			Name:        plans[i].Name,
 			ExternalID:  plans[i].ID,
-			OSBFree:     plans[i].Free,
+			Free:        plans[i].Free,
 			Description: plans[i].Description,
 		}
 		if plans[i].Bindable != nil {
@@ -1746,7 +1746,7 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 				glog.Error(err)
 				return nil, err
 			}
-			ret[i].OSBMetadata = &runtime.RawExtension{Raw: metadata}
+			ret[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
 	}

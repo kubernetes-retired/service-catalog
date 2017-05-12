@@ -452,10 +452,10 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	}
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalID = in.ExternalID
-	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
-	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
+	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
+	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	out.Description = in.Description
-	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
+	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	return nil
 }
 
@@ -480,10 +480,10 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	}
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalID = in.ExternalID
-	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
-	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
+	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
+	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	out.Description = in.Description
-	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
+	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	return nil
 }
 
@@ -536,8 +536,8 @@ func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServiceP
 	out.Description = in.Description
 	out.ExternalID = in.ExternalID
 	out.Bindable = (*bool)(unsafe.Pointer(in.Bindable))
-	out.OSBFree = in.OSBFree
-	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
+	out.Free = in.Free
+	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	return nil
 }
 
@@ -549,9 +549,9 @@ func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicec
 	out.Name = in.Name
 	out.ExternalID = in.ExternalID
 	out.Bindable = (*bool)(unsafe.Pointer(in.Bindable))
-	out.OSBFree = in.OSBFree
+	out.Free = in.Free
 	out.Description = in.Description
-	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
+	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	return nil
 }
 

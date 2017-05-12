@@ -133,14 +133,13 @@ type ServiceClass struct {
 	ExternalID string `json:"externalID"`
 
 	// OSB-specific
-	OSBTags     []string `json:"osbTags,omitempty"`
-	OSBRequires []string `json:"osbRequires,omitempty"`
-
+	Tags     []string `json:"tags,omitempty"`
+	Requires []string `json:"requires,omitempty"`
 	// Description is a short description of the service.
 	Description string `json:"description"`
 
-	// Metadata fields
-	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`
+	// ExternalMetadata fields
+	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -158,9 +157,9 @@ type ServicePlan struct {
 	// Bindable indicates whether this users can create bindings to an
 	// Instance using this plan.  If set, overrides the value of the
 	// ServiceClass.Bindable field.
-	Bindable    *bool                 `json:"bindable,omitempty"`
-	OSBFree     bool                  `json:"osbFree"`
-	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`
+	Bindable         *bool                 `json:"bindable,omitempty"`
+	Free             bool                  `json:"free"`
+	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
 }
 
 // InstanceList is a list of instances

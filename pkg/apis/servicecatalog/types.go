@@ -135,12 +135,11 @@ type ServiceClass struct {
 	ExternalID string
 
 	// OSB-specific
-	OSBTags     []string
-	OSBRequires []string
-
+	Tags     []string
+	Requires []string
 	// Description is a short description of the service.
-	Description string
-	OSBMetadata *runtime.RawExtension
+	Description      string
+	ExternalMetadata *runtime.RawExtension
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -156,10 +155,10 @@ type ServicePlan struct {
 	// Instance using this plan.  If set, overrides the value of the
 	// ServiceClass.Bindable field.
 	Bindable *bool
-	OSBFree  bool
+	Free     bool
 	// Description is a short description of the plan.
-	Description string
-	OSBMetadata *runtime.RawExtension
+	Description      string
+	ExternalMetadata *runtime.RawExtension
 }
 
 // InstanceList is a list of instances.

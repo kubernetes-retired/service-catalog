@@ -222,12 +222,12 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 		Plans: []v1alpha1.ServicePlan{
 			{
 				Name:       testPlanName,
-				OSBFree:    true,
+				Free:       true,
 				ExternalID: planGUID,
 			},
 			{
 				Name:       testNonbindablePlanName,
-				OSBFree:    true,
+				Free:       true,
 				ExternalID: nonbindablePlanGUID,
 				Bindable:   falsePtr(),
 			},
@@ -245,13 +245,13 @@ func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 		Plans: []v1alpha1.ServicePlan{
 			{
 				Name:       testPlanName,
-				OSBFree:    true,
+				Free:       true,
 				ExternalID: planGUID,
 				Bindable:   truePtr(),
 			},
 			{
 				Name:       testNonbindablePlanName,
-				OSBFree:    true,
+				Free:       true,
 				ExternalID: nonbindablePlanGUID,
 			},
 		},
@@ -2582,9 +2582,9 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 			if sc.Description != "service 1 description" {
 				t.Fatalf("Expected service1's description to be \"service 1 description\", but was: %s", sc.Description)
 			}
-			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
+			if sc.ExternalMetadata != nil && len(sc.ExternalMetadata.Raw) > 0 {
 				m := make(map[string]string)
-				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err == nil {
+				if err := json.Unmarshal(sc.ExternalMetadata.Raw, &m); err == nil {
 					if m["field1"] == "value1" {
 						foundSvcMeta1 = true
 					}
@@ -2596,10 +2596,10 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 			}
 			for _, sp := range sc.Plans {
 				if sp.Name == "s1plan2" {
-					if sp.OSBMetadata != nil && len(sp.OSBMetadata.Raw) > 0 {
+					if sp.ExternalMetadata != nil && len(sp.ExternalMetadata.Raw) > 0 {
 						m := make(map[string]string)
-						if err := json.Unmarshal(sp.OSBMetadata.Raw, &m); err != nil {
-							t.Fatalf("Failed to unmarshal plan metadata: %s: %v", string(sp.OSBMetadata.Raw), err)
+						if err := json.Unmarshal(sp.ExternalMetadata.Raw, &m); err != nil {
+							t.Fatalf("Failed to unmarshal plan metadata: %s: %v", string(sp.ExternalMetadata.Raw), err)
 						}
 						if m["planmeta"] == "planvalue" {
 							foundPlanMeta = true
@@ -2614,10 +2614,10 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 			if sc.Description != "service 2 description" {
 				t.Fatalf("Expected service2's description to be \"service 2 description\", but was: %s", sc.Description)
 			}
-			if sc.OSBMetadata != nil && len(sc.OSBMetadata.Raw) > 0 {
+			if sc.ExternalMetadata != nil && len(sc.ExternalMetadata.Raw) > 0 {
 				m := make([]string, 0)
-				if err := json.Unmarshal(sc.OSBMetadata.Raw, &m); err != nil {
-					t.Fatalf("Failed to unmarshal service metadata: %s: %v", string(sc.OSBMetadata.Raw), err)
+				if err := json.Unmarshal(sc.ExternalMetadata.Raw, &m); err != nil {
+					t.Fatalf("Failed to unmarshal service metadata: %s: %v", string(sc.ExternalMetadata.Raw), err)
 				}
 				if len(m) != 3 {
 					t.Fatalf("Expected 3 fields in metadata, but got %d", len(m))
