@@ -182,8 +182,8 @@ func TestCreateWithNamespace(t *testing.T) {
 			Name:      name,
 		},
 		Spec: sc.InstanceSpec{
-			OSBGUID:  "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
-			PlanName: "some-awesome-plan",
+			ExternalID: "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
+			PlanName:   "some-awesome-plan",
 		},
 	}
 	ctx := request.NewContext()
@@ -357,8 +357,8 @@ func TestGetWithNamespace(t *testing.T) {
 			Name:      name,
 		},
 		Spec: sc.InstanceSpec{
-			OSBGUID:  "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
-			PlanName: "some-awesome-plan",
+			ExternalID: "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
+			PlanName:   "some-awesome-plan",
 		},
 	})
 	ctx := request.NewContext()
@@ -525,8 +525,8 @@ func TestGetListWithNamespace(t *testing.T) {
 			Name:      name,
 		},
 		Spec: sc.InstanceSpec{
-			OSBGUID:  "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
-			PlanName: "some-awesome-plan",
+			ExternalID: "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
+			PlanName:   "some-awesome-plan",
 		},
 	})
 	list := &sc.InstanceList{}
@@ -900,7 +900,7 @@ func TestWatchWithNamespace(t *testing.T) {
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: sc.InstanceSpec{
-			OSBGUID: "9ac07e7d-6c32-48f6-96ef-5a215f69df36",
+			ExternalID: "9ac07e7d-6c32-48f6-96ef-5a215f69df36",
 		},
 	}
 	// send an unversioned object into the watch test. it sends this object to the
@@ -946,14 +946,14 @@ func TestWatchListWithNamespace(t *testing.T) {
 					Name:      fmt.Sprintf("%s1", name),
 					Namespace: namespace,
 				},
-				Spec: sc.InstanceSpec{OSBGUID: "b13843f9-aea7-4ef6-b276-771a5ced2c65"},
+				Spec: sc.InstanceSpec{ExternalID: "b13843f9-aea7-4ef6-b276-771a5ced2c65"},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("%s2", name),
 					Namespace: namespace,
 				},
-				Spec: sc.InstanceSpec{OSBGUID: "b23843f9-aea7-4ef6-b276-771a5ced2c65"},
+				Spec: sc.InstanceSpec{ExternalID: "b23843f9-aea7-4ef6-b276-771a5ced2c65"},
 			},
 		},
 	}

@@ -29,7 +29,7 @@ import (
 // - ServiceClassName
 // - PlanName
 // - Parameters
-// - OSBGUID
+// - ExternalID
 func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("serviceClassName: %v\n", spec.ServiceClassName)
@@ -39,7 +39,7 @@ func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
 	}
 
-	specString += fmt.Sprintf("osbGuid: %v\n", spec.OSBGUID)
+	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
 
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)
@@ -50,7 +50,7 @@ func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 //
 // - InstanceRef.Name
 // - Parameters
-// - OSBGUID
+// - ExternalID
 func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
@@ -59,7 +59,7 @@ func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
 		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
 	}
 
-	specString += fmt.Sprintf("osbGuid: %v\n", spec.OSBGUID)
+	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
 
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)

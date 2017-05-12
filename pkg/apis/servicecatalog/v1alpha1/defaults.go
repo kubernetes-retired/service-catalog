@@ -30,13 +30,13 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 }
 
 func SetDefaults_InstanceSpec(spec *InstanceSpec) {
-	if spec.OSBGUID == "" {
-		spec.OSBGUID = uuid.NewV4().String()
+	if spec.ExternalID == "" {
+		spec.ExternalID = uuid.NewV4().String()
 	}
 }
 
 func SetDefaults_BindingSpec(spec *BindingSpec) {
-	if spec.OSBGUID == "" {
-		spec.OSBGUID = uuid.NewV4().String()
+	if spec.ExternalID == "" {
+		spec.ExternalID = uuid.NewV4().String()
 	}
 }

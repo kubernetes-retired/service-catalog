@@ -32,7 +32,7 @@ func TestInstanceSpecChecksum(t *testing.T) {
 	spec := servicecatalog.InstanceSpec{
 		ServiceClassName: "blorb",
 		PlanName:         "plumbus",
-		OSBGUID:          "ea6d2fc8-0bb8-11e7-af5d-0242ac110005",
+		ExternalID:       "ea6d2fc8-0bb8-11e7-af5d-0242ac110005",
 	}
 
 	unversionedChecksum := unversioned.InstanceSpecChecksum(spec)
@@ -51,7 +51,7 @@ func TestBindingSpecChecksum(t *testing.T) {
 	spec := servicecatalog.BindingSpec{
 		InstanceRef: v1.LocalObjectReference{Name: "test-instance"},
 		SecretName:  "test-secret",
-		OSBGUID:     "1995a7e6-d078-4ce6-9057-bcefd793634e",
+		ExternalID:  "1995a7e6-d078-4ce6-9057-bcefd793634e",
 	}
 
 	unversionedChecksum := unversioned.BindingSpecChecksum(spec)

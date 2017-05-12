@@ -73,8 +73,8 @@ func TestSetDefaultInstance(t *testing.T) {
 	obj2 := roundTrip(t, runtime.Object(i))
 	i2 := obj2.(*versioned.Instance)
 
-	if i2.Spec.OSBGUID == "" {
-		t.Error("Expected a default OSBGUID, but got none")
+	if i2.Spec.ExternalID == "" {
+		t.Error("Expected a default ExternalID, but got none")
 	}
 }
 
@@ -83,7 +83,7 @@ func TestSetDefaultBinding(t *testing.T) {
 	obj2 := roundTrip(t, runtime.Object(b))
 	b2 := obj2.(*versioned.Binding)
 
-	if b2.Spec.OSBGUID == "" {
-		t.Error("Expected a default OSBGUID, but got none")
+	if b2.Spec.ExternalID == "" {
+		t.Error("Expected a default ExternalID, but got none")
 	}
 }

@@ -330,7 +330,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		ObjectMeta:  metav1.ObjectMeta{Name: name},
 		BrokerName:  "test-broker",
 		Bindable:    true,
-		OSBGUID:     "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+		ExternalID:  "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 		Description: "test description",
 	}
 
@@ -449,7 +449,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
 			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
-			OSBGUID:          osbGUID,
+			ExternalID:       osbGUID,
 		},
 	}
 
@@ -496,7 +496,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 	if instanceServer.Name != name &&
 		instanceServer.ResourceVersion == instance.ResourceVersion &&
-		instanceServer.Spec.OSBGUID != osbGUID {
+		instanceServer.Spec.ExternalID != osbGUID {
 		return fmt.Errorf("didn't get the same instance back from the server \n%+v\n%+v", instance, instanceServer)
 	}
 
@@ -609,7 +609,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			},
 			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
 			SecretName: "secret-name",
-			OSBGUID:    "UUID-string",
+			ExternalID: "UUID-string",
 		},
 	}
 

@@ -2226,17 +2226,17 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym27
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbGuid"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym28 := z.EncBinary()
 				_ = yym28
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -2643,11 +2643,11 @@ func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*bool)(yyv16)) = r.DecodeBool()
 				}
 			}
-		case "osbGuid":
+		case "externalID":
 			if r.TryDecodeAsNil() {
-				x.OSBGUID = ""
+				x.ExternalID = ""
 			} else {
-				yyv18 := &x.OSBGUID
+				yyv18 := &x.ExternalID
 				yym19 := z.DecBinary()
 				_ = yym19
 				if false {
@@ -2955,9 +2955,9 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBGUID = ""
+		x.ExternalID = ""
 	} else {
-		yyv51 := &x.OSBGUID
+		yyv51 := &x.ExternalID
 		yym52 := z.DecBinary()
 		_ = yym52
 		if false {
@@ -3254,17 +3254,17 @@ func (x *ServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym10
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbGuid"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym11 := z.EncBinary()
 				_ = yym11
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -3404,11 +3404,11 @@ func (x *ServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv6)) = r.DecodeString()
 				}
 			}
-		case "osbGuid":
+		case "externalID":
 			if r.TryDecodeAsNil() {
-				x.OSBGUID = ""
+				x.ExternalID = ""
 			} else {
-				yyv8 := &x.OSBGUID
+				yyv8 := &x.ExternalID
 				yym9 := z.DecBinary()
 				_ = yym9
 				if false {
@@ -3517,9 +3517,9 @@ func (x *ServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBGUID = ""
+		x.ExternalID = ""
 	} else {
-		yyv19 := &x.OSBGUID
+		yyv19 := &x.ExternalID
 		yym20 := z.DecBinary()
 		_ = yym20
 		if false {
@@ -4454,17 +4454,17 @@ func (x *InstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym13
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbGuid"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym14 := z.EncBinary()
 				_ = yym14
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -4606,11 +4606,11 @@ func (x *InstanceSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					z.DecFallback(x.Parameters, false)
 				}
 			}
-		case "osbGuid":
+		case "externalID":
 			if r.TryDecodeAsNil() {
-				x.OSBGUID = ""
+				x.ExternalID = ""
 			} else {
-				yyv10 := &x.OSBGUID
+				yyv10 := &x.ExternalID
 				yym11 := z.DecBinary()
 				_ = yym11
 				if false {
@@ -4733,9 +4733,9 @@ func (x *InstanceSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBGUID = ""
+		x.ExternalID = ""
 	} else {
-		yyv21 := &x.OSBGUID
+		yyv21 := &x.ExternalID
 		yym22 := z.DecBinary()
 		_ = yym22
 		if false {
@@ -6422,17 +6422,17 @@ func (x *BindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym15
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbGuid"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym16 := z.EncBinary()
 				_ = yym16
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.OSBGUID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -6569,11 +6569,11 @@ func (x *BindingSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv7)) = r.DecodeString()
 				}
 			}
-		case "osbGuid":
+		case "externalID":
 			if r.TryDecodeAsNil() {
-				x.OSBGUID = ""
+				x.ExternalID = ""
 			} else {
-				yyv9 := &x.OSBGUID
+				yyv9 := &x.ExternalID
 				yym10 := z.DecBinary()
 				_ = yym10
 				if false {
@@ -6691,9 +6691,9 @@ func (x *BindingSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBGUID = ""
+		x.ExternalID = ""
 	} else {
-		yyv19 := &x.OSBGUID
+		yyv19 := &x.ExternalID
 		yym20 := z.DecBinary()
 		_ = yym20
 		if false {

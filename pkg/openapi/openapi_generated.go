@@ -182,9 +182,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbGuid": {
+						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -197,7 +197,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"instanceRef", "secretName", "osbGuid"},
+					Required: []string{"instanceRef", "secretName", "externalID"},
 				},
 			},
 			Dependencies: []string{
@@ -562,9 +562,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
-						"osbGuid": {
+						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB SB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB SB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -577,7 +577,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"serviceClassName", "planName", "osbGuid"},
+					Required: []string{"serviceClassName", "planName", "externalID"},
 				},
 			},
 			Dependencies: []string{
@@ -683,9 +683,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format: "",
 							},
 						},
-						"osbGuid": {
+						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -755,7 +755,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "osbGuid", "description"},
+					Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "externalID", "description"},
 				},
 			},
 			Dependencies: []string{
@@ -823,9 +823,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbGuid": {
+						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific OSBGUID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB API. Immutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -843,7 +843,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"name", "description", "osbGuid", "osbFree"},
+					Required: []string{"name", "description", "externalID", "osbFree"},
 				},
 			},
 			Dependencies: []string{

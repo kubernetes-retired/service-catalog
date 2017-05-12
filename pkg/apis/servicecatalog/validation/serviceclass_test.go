@@ -31,12 +31,12 @@ func validServiceClass() *servicecatalog.ServiceClass {
 		},
 		Bindable:    true,
 		BrokerName:  "test-broker",
-		OSBGUID:     "1234-4354a-49b",
+		ExternalID:  "1234-4354a-49b",
 		Description: "service description",
 		Plans: []servicecatalog.ServicePlan{
 			{
 				Name:        "test-plan",
-				OSBGUID:     "40d-0983-1b89",
+				ExternalID:  "40d-0983-1b89",
 				Description: "plan description",
 			},
 		},
@@ -67,7 +67,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "valid serviceClass - uppercase in GUID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.OSBGUID = "40D-0983-1b89"
+				s.ExternalID = "40D-0983-1b89"
 				return s
 			}(),
 			valid: true,
@@ -85,7 +85,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - missing guid",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.OSBGUID = ""
+				s.ExternalID = ""
 				return s
 			}(),
 			valid: false,
@@ -94,7 +94,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - invalid guid",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.OSBGUID = "1234-4354a\\%-49b"
+				s.ExternalID = "1234-4354a\\%-49b"
 				return s
 			}(),
 			valid: false,
@@ -121,7 +121,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - invalid plan guid",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.Plans[0].OSBGUID = "40d-0983-1b89-★"
+				s.Plans[0].ExternalID = "40d-0983-1b89-★"
 				return s
 			}(),
 			valid: false,
@@ -130,7 +130,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - missing plan guid",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.Plans[0].OSBGUID = "40d-0983-1b89-★"
+				s.Plans[0].ExternalID = "40d-0983-1b89-★"
 				return s
 			}(),
 			valid: false,

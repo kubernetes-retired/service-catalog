@@ -292,13 +292,13 @@ metadata:
   selfLink: /apis/servicecatalog.k8s.io/v1alpha1/serviceclassesuser-provided-service
   uid: 72fef5ce-ffc7-11e6-b111-0242ac110005
 brokerName: ups-broker
-osbGuid: 4F6E6CF6-FFDD-425F-A2C7-3C9258AD2468
+externalID: 4F6E6CF6-FFDD-425F-A2C7-3C9258AD2468
 bindable: false
 planUpdatable: false
 plans:
 - name: default
   osbFree: true
-  osbGuid: 86064792-7ea2-467b-af93-ac9694d96d52
+  externalID: 86064792-7ea2-467b-af93-ac9694d96d52
 ```
 
 ## Step 8 - Provisioning a New Instance
@@ -349,7 +349,7 @@ metadata:
   selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/instances/ups-instance
   uid: 8654e626-ffc9-11e6-b111-0242ac110005
 spec:
-  osbGuid: 34c984e1-4626-4574-8a95-9e500d0d48d3
+  externalID: 34c984e1-4626-4574-8a95-9e500d0d48d3
   planName: default
   serviceClassName: user-provided-service
 status:
@@ -403,7 +403,7 @@ metadata:
 spec:
   instanceRef:
     name: ups-instance
-  osbGuid: b041db94-a5a0-41a2-87ae-1025ba760918
+  externalID: b041db94-a5a0-41a2-87ae-1025ba760918
   secretName: my-secret
 status:
   conditions:
