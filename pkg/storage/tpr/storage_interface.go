@@ -569,7 +569,7 @@ func (t *store) GuaranteedUpdate(
 				}
 				return nil
 			}
-			// otherwise, the deletion timestamp and deleteion grace period are not set, so
+			// otherwise, the deletion timestamp and deletion grace period are not set, so
 			// do the actual update
 			if err := put(t.cl, t.codec, t.singularKind, ns, name, candidateData, out); err != nil {
 				glog.Errorf("PUTting object %s (%s)", key, err)
