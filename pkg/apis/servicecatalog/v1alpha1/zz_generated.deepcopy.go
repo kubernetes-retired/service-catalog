@@ -407,6 +407,11 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 		in := in.(*ServicePlan)
 		out := out.(*ServicePlan)
 		*out = *in
+		if in.Bindable != nil {
+			in, out := &in.Bindable, &out.Bindable
+			*out = new(bool)
+			**out = **in
+		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
 			if newVal, err := c.DeepCopy(*in); err != nil {

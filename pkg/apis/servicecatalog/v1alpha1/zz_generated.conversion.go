@@ -543,6 +543,7 @@ func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServiceP
 	out.Name = in.Name
 	out.Description = in.Description
 	out.ExternalID = in.ExternalID
+	out.Bindable = (*bool)(unsafe.Pointer(in.Bindable))
 	out.OSBFree = in.OSBFree
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
@@ -555,6 +556,7 @@ func Convert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServicePlan,
 func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicecatalog.ServicePlan, out *ServicePlan, s conversion.Scope) error {
 	out.Name = in.Name
 	out.ExternalID = in.ExternalID
+	out.Bindable = (*bool)(unsafe.Pointer(in.Bindable))
 	out.OSBFree = in.OSBFree
 	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))

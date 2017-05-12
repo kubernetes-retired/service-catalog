@@ -661,8 +661,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"boolean"},
-								Format: "",
+								Description: "Bindable indicates whether a user can create bindings to an instance of this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+								Type:        []string{"boolean"},
+								Format:      "",
 							},
 						},
 						"plans": {
@@ -830,11 +831,17 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbFree": {
+						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific",
+								Description: "Bindable indicates whether this users can create bindings to an Instance using this plan.  If set, overrides the value of the ServiceClass.Bindable field.",
 								Type:        []string{"boolean"},
 								Format:      "",
+							},
+						},
+						"osbFree": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"boolean"},
+								Format: "",
 							},
 						},
 						"osbMetadata": {
