@@ -132,12 +132,9 @@ type ServiceClass struct {
 	ExternalID string
 
 	// OSB-specific
-	OSBTags                    []string
-	OSBRequires                []string
-	OSBMaxDBPerNode            *string
-	OSBDashboardOAuth2ClientID *string
-	OSBDashboardSecret         *string
-	OSBDashboardRedirectURI    *string
+	OSBTags     []string
+	OSBRequires []string
+
 	// Description is a short description of the service.
 	Description string
 	OSBMetadata *runtime.RawExtension
