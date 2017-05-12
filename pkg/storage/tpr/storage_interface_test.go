@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"testing"
 
+	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
@@ -852,7 +853,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
-	finalizers, err := getFinalizers(obj)
+	finalizers, err := scmeta.GetFinalizers(obj)
 	if err != nil {
 		t.Fatalf("error getting finalizers (%s)", err)
 	}
@@ -902,7 +903,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(namespace, ServiceInstanceKind.URLName(), name)
-	finalizers, err := getFinalizers(obj)
+	finalizers, err := scmeta.GetFinalizers(obj)
 	if err != nil {
 		t.Fatalf("error getting finalizers (%s)", err)
 	}

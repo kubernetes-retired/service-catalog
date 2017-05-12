@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
+	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -94,7 +95,7 @@ func (t *store) Create(
 		return err
 	}
 
-	if err := addFinalizer(obj, tprFinalizer); err != nil {
+	if err := scmeta.AddFinalizer(obj, tprFinalizer); err != nil {
 		glog.Errorf("adding finalizer to %s (%s)", key, err)
 		return err
 	}
@@ -172,7 +173,7 @@ func (t *store) Delete(
 		return err
 	}
 
-	if err := removeFinalizer(out, tprFinalizer); err != nil {
+	if _, err := scmeta.RemoveFinalizer(out, tprFinalizer); err != nil {
 		glog.Errorf("removing finalizer from %#v (%s)", out, err)
 		return err
 	}
@@ -513,12 +514,12 @@ func (t *store) GuaranteedUpdate(
 			glog.Errorf("applying user update: (%s)", err)
 			return err
 		}
-		dtExists, err := deletionTimestampExists(candidate)
+		dtExists, err := scmeta.DeletionTimestampExists(candidate)
 		if err != nil {
 			glog.Errorf("determining whether the deletion timestamp exists (%s)", err)
 			return err
 		}
-		dgpExists, err := deletionGracePeriodExists(candidate)
+		dgpExists, err := scmeta.DeletionGracePeriodExists(candidate)
 		if err != nil {
 			glog.Errorf("determining whether the deletion grace period exists (%s)", err)
 			return err
@@ -602,7 +603,7 @@ func decode(
 }
 
 func removeNamespace(obj runtime.Object) error {
-	if err := accessor.SetNamespace(obj, ""); err != nil {
+	if err := scmeta.GetAccessor().SetNamespace(obj, ""); err != nil {
 		glog.Errorf("removing namespace from %#v (%s)", obj, err)
 		return err
 	}

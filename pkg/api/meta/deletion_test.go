@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tpr
+package meta
 
 import (
 	"testing"
@@ -50,7 +50,7 @@ func TestDeletionTimestampExists(t *testing.T) {
 	obj := &sc.Instance{
 		ObjectMeta: metav1.ObjectMeta{},
 	}
-	exists, err := deletionTimestampExists(obj)
+	exists, err := DeletionTimestampExists(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestDeletionTimestampExists(t *testing.T) {
 	}
 	tme := metav1.NewTime(time.Now())
 	obj.DeletionTimestamp = &tme
-	exists, err = deletionTimestampExists(obj)
+	exists, err = DeletionTimestampExists(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestDeletionGracePeriodExists(t *testing.T) {
 	obj := &sc.Instance{
 		ObjectMeta: metav1.ObjectMeta{},
 	}
-	exists, err := deletionGracePeriodExists(obj)
+	exists, err := DeletionGracePeriodExists(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,63 +81,11 @@ func TestDeletionGracePeriodExists(t *testing.T) {
 	}
 	sec := int64(1)
 	obj.DeletionGracePeriodSeconds = &sec
-	exists, err = deletionGracePeriodExists(obj)
+	exists, err = DeletionGracePeriodExists(obj)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !exists {
 		t.Fatalf("deletion grace period reported as missing when it isn't")
-	}
-}
-
-func TestGetFinalizers(t *testing.T) {
-	obj := &sc.Instance{
-		ObjectMeta: metav1.ObjectMeta{Finalizers: []string{tprFinalizer}},
-	}
-	finalizers, err := getFinalizers(obj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(finalizers) != 1 {
-		t.Fatalf("expected 1 finalizer, got %d", len(finalizers))
-	}
-	if finalizers[0] != tprFinalizer {
-		t.Fatalf("expected finalizer %s, got %s", tprFinalizer, finalizers[0])
-	}
-}
-
-func TestAddFinalizer(t *testing.T) {
-	obj := &sc.Instance{
-		ObjectMeta: metav1.ObjectMeta{},
-	}
-	if err := addFinalizer(obj, tprFinalizer); err != nil {
-		t.Fatal(err)
-	}
-	if len(obj.Finalizers) != 1 {
-		t.Fatalf("expected 1 finalizer, got %d", len(obj.Finalizers))
-	}
-	if obj.Finalizers[0] != tprFinalizer {
-		t.Fatalf("expected finalizer %s, got %s", tprFinalizer, obj.Finalizers[0])
-	}
-}
-
-func TestRemoveFinalizer(t *testing.T) {
-	obj := &sc.Instance{
-		ObjectMeta: metav1.ObjectMeta{Finalizers: []string{tprFinalizer}},
-	}
-	if err := removeFinalizer(obj, tprFinalizer+"-noexist"); err != nil {
-		t.Fatalf("error removing non-existent finalizer (%s)", err)
-	}
-	if len(obj.Finalizers) != 1 {
-		t.Fatalf("finalizer was removed when it shouldn't have been")
-	}
-	if obj.Finalizers[0] != tprFinalizer {
-		t.Fatalf("expected finalizer %s, got %s", tprFinalizer, obj.Finalizers[0])
-	}
-	if err := removeFinalizer(obj, tprFinalizer); err != nil {
-		t.Fatalf("error removing existent finalizer (%s)", err)
-	}
-	if len(obj.Finalizers) != 0 {
-		t.Fatalf("expected no finalizers, got %d", len(obj.Finalizers))
 	}
 }

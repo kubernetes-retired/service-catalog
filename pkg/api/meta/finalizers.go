@@ -14,49 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tpr
+package meta
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var (
-	accessor   = meta.NewAccessor()
-	selfLinker = runtime.SelfLinker(accessor)
-)
-
-// GetAccessor returns a MetadataAccessor to fetch general information on metadata of
-// runtime.Object types
-func GetAccessor() meta.MetadataAccessor {
-	return accessor
-}
-
-// GetNamespace returns the namespace for the given object, if there is one. If not, returns
-// the empty string and a non-nil error
-func GetNamespace(obj runtime.Object) (string, error) {
-	return selfLinker.Namespace(obj)
-}
-
-func deletionTimestampExists(obj runtime.Object) (bool, error) {
-	accessor, err := meta.Accessor(obj)
-	if err != nil {
-		return false, err
-	}
-	t := accessor.GetDeletionTimestamp()
-	return t != nil, nil
-}
-
-func deletionGracePeriodExists(obj runtime.Object) (bool, error) {
-	objMeta, err := metav1.ObjectMetaFor(obj)
-	if err != nil {
-		return false, err
-	}
-	return objMeta.DeletionGracePeriodSeconds != nil, nil
-}
-
-func getFinalizers(obj runtime.Object) ([]string, error) {
+// GetFinalizers gets the list of finalizers on obj
+func GetFinalizers(obj runtime.Object) ([]string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, err
@@ -64,7 +30,8 @@ func getFinalizers(obj runtime.Object) ([]string, error) {
 	return accessor.GetFinalizers(), nil
 }
 
-func addFinalizer(obj runtime.Object, value string) error {
+// AddFinalizer adds value to the list of finalizers on obj
+func AddFinalizer(obj runtime.Object, value string) error {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return err
@@ -74,10 +41,12 @@ func addFinalizer(obj runtime.Object, value string) error {
 	return nil
 }
 
-func removeFinalizer(obj runtime.Object, value string) error {
+// RemoveFinalizer removes the given value from the list of finalizers in obj, then returns the list
+// of finalizers after value has been removed
+func RemoveFinalizer(obj runtime.Object, value string) ([]string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	finalizers := accessor.GetFinalizers()
 	newFinalizers := []string{}
@@ -88,5 +57,5 @@ func removeFinalizer(obj runtime.Object, value string) error {
 		newFinalizers = append(newFinalizers, finalizer)
 	}
 	accessor.SetFinalizers(newFinalizers)
-	return nil
+	return newFinalizers, nil
 }
