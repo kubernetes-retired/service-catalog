@@ -159,7 +159,7 @@ metadata:
   uid: 4f88bd75-e349-11e6-8096-fa163e9a471d
 spec:
   osbCredentials: ""
-  osbGuid: ""
+  externalID: ""
   osbInternalID: ""
   osbLastOperation: ""
   osbPlanID: ""
