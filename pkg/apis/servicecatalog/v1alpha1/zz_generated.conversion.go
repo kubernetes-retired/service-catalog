@@ -454,10 +454,6 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	out.ExternalID = in.ExternalID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
-	out.OSBMaxDBPerNode = (*string)(unsafe.Pointer(in.OSBMaxDBPerNode))
-	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
-	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
-	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
 	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
@@ -486,10 +482,6 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	out.ExternalID = in.ExternalID
 	out.OSBTags = *(*[]string)(unsafe.Pointer(&in.OSBTags))
 	out.OSBRequires = *(*[]string)(unsafe.Pointer(&in.OSBRequires))
-	out.OSBMaxDBPerNode = (*string)(unsafe.Pointer(in.OSBMaxDBPerNode))
-	out.OSBDashboardOAuth2ClientID = (*string)(unsafe.Pointer(in.OSBDashboardOAuth2ClientID))
-	out.OSBDashboardSecret = (*string)(unsafe.Pointer(in.OSBDashboardSecret))
-	out.OSBDashboardRedirectURI = (*string)(unsafe.Pointer(in.OSBDashboardRedirectURI))
 	out.Description = in.Description
 	out.OSBMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.OSBMetadata))
 	return nil
