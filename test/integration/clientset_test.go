@@ -717,23 +717,24 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	}
 
 	if err = bindingClient.Delete(name, &metav1.DeleteOptions{}); nil != err {
-		return fmt.Errorf("broker should be deleted (%v)", err)
+		return fmt.Errorf("binding delete failed (%s)", err)
 	}
 
 	bindingDeleted, err := bindingClient.Get(name, metav1.GetOptions{})
 	if nil != err {
-		return fmt.Errorf("binding should still exist (%v): %v", bindingDeleted, err)
+		return fmt.Errorf("binding should still exist on initial get (%s)", err)
 	}
 
 	bindingDeleted.ObjectMeta.Finalizers = nil
-	_, err = bindingClient.UpdateStatus(bindingDeleted)
-	if nil != err {
-		return fmt.Errorf("error updating status (%v): %v", bindingDeleted, err)
+	if _, err := bindingClient.UpdateStatus(bindingDeleted); err != nil {
+		return fmt.Errorf("error updating binding status (%s)", err)
 	}
 
-	bindingDeleted, err = bindingClient.Get(name, metav1.GetOptions{})
-	if nil == err {
-		return fmt.Errorf("binding should be deleted (%#v)", bindingDeleted)
+	if bindingDeleted, err := bindingClient.Get(name, metav1.GetOptions{}); err == nil {
+		return fmt.Errorf(
+			"binding should be deleted after finalizers cleared. got binding %#v",
+			*bindingDeleted,
+		)
 	}
 	return nil
 }
