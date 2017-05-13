@@ -56,6 +56,7 @@ GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
+REGISTRY                         ?= quay.io/kubernetes-service-catalog/
 MUTABLE_TAG                      ?= canary
 APISERVER_IMAGE                   = $(REGISTRY)apiserver:$(VERSION)
 APISERVER_MUTABLE_IMAGE           = $(REGISTRY)apiserver:$(MUTABLE_TAG)
@@ -63,6 +64,9 @@ CONTROLLER_MANAGER_IMAGE          = $(REGISTRY)controller-manager:$(VERSION)
 CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager:$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker:$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker:$(MUTABLE_TAG)
+BUILD_IMAGE_REGISTRY             ?= $(REGISTRY)
+BUILD_IMAGE                      ?= $(BUILD_IMAGE_REGISTRY)build-image:$(VERSION)
+BUILD_IMAGE_MUTABLE              ?= $(BUILD_IMAGE_REGISTRY)build-image:$(MUTABLE_TAG)
 
 # precheck to avoid kubernetes-incubator/service-catalog#361
 $(if $(realpath vendor/k8s.io/kubernetes/vendor), \
@@ -80,8 +84,8 @@ ifdef NO_DOCKER
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --rm -v $(PWD):/go/src/$(SC_PKG) \
-	  -v $(PWD)/.pkg:/go/pkg scbuildimage
-	scBuildImageTarget = .scBuildImage
+	  -v $(PWD)/.pkg:/go/pkg $(BUILD_IMAGE)
+	scBuildImageTarget = .build-image
 endif
 
 NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
@@ -90,21 +94,21 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 # Some will have dedicated targets to make it easier to type, for example
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
-build: .init .generate_files \
+build: .generate_files \
        $(BINDIR)/controller-manager $(BINDIR)/apiserver \
        $(BINDIR)/user-broker
 
-user-broker: .init $(BINDIR)/user-broker
+user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
-apiserver: .init $(BINDIR)/apiserver
+apiserver: $(BINDIR)/apiserver
 $(BINDIR)/apiserver: .generate_files cmd/apiserver $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/apiserver
 
-controller-manager: .init $(BINDIR)/controller-manager
+controller-manager: $(BINDIR)/controller-manager
 $(BINDIR)/controller-manager: .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
 
@@ -119,32 +123,32 @@ $(BINDIR)/controller-manager: .generate_files cmd/controller-manager $(NEWEST_GO
                 $(BINDIR)/openapi-gen
 	touch $@
 
-$(BINDIR)/defaulter-gen: .init
+$(BINDIR)/defaulter-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/defaulter-gen
 
-$(BINDIR)/deepcopy-gen: .init
+$(BINDIR)/deepcopy-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/deepcopy-gen
 
-$(BINDIR)/conversion-gen: .init
+$(BINDIR)/conversion-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/conversion-gen
 
-$(BINDIR)/client-gen: .init
+$(BINDIR)/client-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/client-gen
 
-$(BINDIR)/lister-gen: .init
+$(BINDIR)/lister-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/lister-gen
 
-$(BINDIR)/informer-gen: .init
+$(BINDIR)/informer-gen:
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/informer-gen
 
 $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
-$(BINDIR)/e2e.test: .init
+$(BINDIR)/e2e.test:
 	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
-.generate_files: .init .generate_exes $(TYPES_FILES)
+.generate_files: .generate_exes $(TYPES_FILES)
 	# Generate defaults
 	$(DOCKER_CMD) $(BINDIR)/defaulter-gen \
 		--v 1 --logtostderr \
@@ -184,18 +188,15 @@ $(BINDIR)/e2e.test: .init
 # Some prereq stuff
 ###################
 
-.init: $(scBuildImageTarget)
-	touch $@
-
-.scBuildImage: build/build-image/Dockerfile
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage -
-	touch $@
+.PHONY: pull-build-image
+pull-build-image:
+	docker pull $(BUILD_IMAGE)
+	docker pull $(BUILD_IMAGE_MUTABLE)
 
 # Util targets
 ##############
 .PHONY: verify verify-client-gen
-verify: .init .generate_files verify-client-gen
+verify: .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_SRC_DIRS) > .out 2>&1 || true
 	@bash -c '[ "`cat .out`" == "" ] || \
@@ -225,24 +226,24 @@ verify: .init .generate_files verify-client-gen
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
-verify-client-gen: .init .generate_files
+verify-client-gen: .generate_files
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
 
-format: .init
+format:
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
 
-coverage: .init
+coverage:
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init build test-unit test-integration
+test: build test-unit test-integration
 
-test-unit: .init build
+test-unit: build
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
 
-test-integration: .init $(scBuildImageTarget) build
+test-integration: $(scBuildImageTarget) build
 	# test kubectl
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
@@ -252,15 +253,19 @@ test-integration: .init $(scBuildImageTarget) build
 test-e2e: .generate_files $(BINDIR)/e2e.test
 	$(BINDIR)/e2e.test
 
-clean: clean-bin clean-build-image clean-generated clean-coverage
+clean: clean-bin clean-build-image clean-build-image-push clean-generated clean-coverage
 
 clean-bin:
 	rm -rf $(BINDIR)
 	rm -f .generate_exes
 
 clean-build-image:
-	rm -f .scBuildImage
-	docker rmi -f scbuildimage > /dev/null 2>&1 || true
+	rm -f .build-image
+	docker rmi -f $(BUILD_IMAGE) > /dev/null 2>&1 || true
+	docker rmi -f $(BUILD_IMAGE_MUTABLE) > /dev/null 2>&1 || true
+
+clean-build-image-push:
+	rm -rf .build-image-push
 
 clean-generated:
 	rm -f .generate_files
@@ -272,7 +277,14 @@ clean-coverage:
 # Building Docker Images for our executables
 ############################################
 images: user-broker-image \
-    controller-manager-image apiserver-image
+    controller-manager-image apiserver-image .build-image
+
+.PHONY: .build-image
+.build-image: build/build-image/Dockerfile
+	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
+	  docker build -t $(BUILD_IMAGE) -
+	docker tag $(BUILD_IMAGE) $(BUILD_IMAGE_MUTABLE)
+	touch $@
 
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 	mkdir -p contrib/build/user-broker/tmp
@@ -296,8 +308,16 @@ controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controll
 	rm -rf build/controller-manager/tmp
 
 # Push our Docker Images to a registry
+# note: .build-image-push should be the first dependency, because all others rely on the build
+# image
 ######################################
-push: user-broker-push controller-manager-push apiserver-push
+push: .build-image-push user-broker-push controller-manager-push apiserver-push
+
+.PHONY: .build-image-push
+.build-image-push: .build-image
+	docker push $(BUILD_IMAGE)
+	docker push $(BUILD_IMAGE_MUTABLE)
+	touch $@
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
