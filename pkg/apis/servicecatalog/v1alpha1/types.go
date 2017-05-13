@@ -121,6 +121,9 @@ type ServiceClass struct {
 	// Immutable.
 	BrokerName string `json:"brokerName"`
 
+	// Bindable indicates whether a user can create bindings to an instance of
+	// this service. ServicePlan has an optional field called Bindable which
+	// overrides the value of this field.
 	Bindable      bool          `json:"bindable"`
 	Plans         []ServicePlan `json:"plans"`
 	PlanUpdatable bool          `json:"planUpdatable"` // Do we support this?
@@ -155,7 +158,10 @@ type ServicePlan struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// OSB-specific
+	// Bindable indicates whether this users can create bindings to an
+	// Instance using this plan.  If set, overrides the value of the
+	// ServiceClass.Bindable field.
+	Bindable    *bool                 `json:"bindable,omitempty"`
 	OSBFree     bool                  `json:"osbFree"`
 	OSBMetadata *runtime.RawExtension `json:"osbMetadata, omitempty"`
 }

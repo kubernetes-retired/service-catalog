@@ -123,6 +123,9 @@ type ServiceClass struct {
 	// Immutable.
 	BrokerName string
 
+	// Bindable indicates whether a user can create bindings to an instance of
+	// this service. ServicePlan has an optional field called Bindable which
+	// overrides the value of this field.
 	Bindable      bool
 	Plans         []ServicePlan
 	PlanUpdatable bool // Do we support this?
@@ -152,8 +155,11 @@ type ServicePlan struct {
 	// Immutable.
 	ExternalID string
 
-	// OSB-specific
-	OSBFree bool
+	// Bindable indicates whether this users can create bindings to an
+	// Instance using this plan.  If set, overrides the value of the
+	// ServiceClass.Bindable field.
+	Bindable *bool
+	OSBFree  bool
 	// Description is a short description of the plan.
 	Description string
 	OSBMetadata *runtime.RawExtension
