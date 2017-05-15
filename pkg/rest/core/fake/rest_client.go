@@ -19,6 +19,7 @@ package fake
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -26,6 +27,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -365,7 +367,7 @@ func updateItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 		if err != nil {
 			log.Fatalf("error decoding body bytes: %s", err)
 		}
-		origResourceVersionStr, err := accessor.ResourceVersion(origItem)
+		origResourceVersionStr, err := accessor.ResourceVersion(item)
 		if err != nil {
 			log.Fatalf("error getting resource version")
 		}
@@ -383,7 +385,43 @@ func updateItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 		resourceVersion, err := strconv.Atoi(origResourceVersionStr)
 		resourceVersion++
 		accessor.SetResourceVersion(item, strconv.Itoa(resourceVersion))
-		storage.Set(ns, tipe, name, item)
+
+		// if the deletion timestamp is set and there are 0 finalizers, then we should delete
+		finalizers, err := scmeta.GetFinalizers(item)
+		if err != nil {
+			errStr := fmt.Sprintf("error getting finalizers (%s)", err)
+			http.Error(rw, errStr, http.StatusInternalServerError)
+			return
+		}
+		oldDT, err := scmeta.GetDeletionTimestamp(origItem)
+		if err != nil && err != scmeta.ErrNoDeletionTimestamp {
+			errStr := fmt.Sprintf("error getting deletion timestamp on existing obj (%s)", err)
+			http.Error(rw, errStr, http.StatusInternalServerError)
+			return
+		}
+		newDT, err := scmeta.GetDeletionTimestamp(item)
+		if err != nil && err != scmeta.ErrNoDeletionTimestamp {
+			errStr := fmt.Sprintf("error getting deletion timestamp on new obj (%s)", err)
+			http.Error(rw, errStr, http.StatusInternalServerError)
+			return
+		}
+		if !newDT.Equal(*oldDT) {
+			errStr := fmt.Sprintf(
+				"you cannot update the deletion timestamp (old: %#v, new: %#v)",
+				*oldDT,
+				*newDT,
+			)
+			http.Error(rw, errStr, http.StatusBadRequest)
+			return
+		}
+
+		if len(finalizers) == 0 && newDT != nil {
+			// if there are no finalizers and the deletion timestamp is set, delete
+			storage.Delete(ns, tipe, name)
+		} else {
+			// otherwise, just update as normal
+			storage.Set(ns, tipe, name, item)
+		}
 		bytes, err := runtime.Encode(codec, item)
 		if err != nil {
 			log.Fatalf("error encoding item: %s", err)
@@ -402,7 +440,30 @@ func deleteItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 			rw.WriteHeader(http.StatusNotFound)
 			return
 		}
-		storage.Delete(ns, tipe, name)
+		finalizers, err := scmeta.GetFinalizers(item)
+		if err != nil {
+			http.Error(
+				rw,
+				fmt.Sprintf("error getting finalizers (%s)", err),
+				http.StatusInternalServerError,
+			)
+			return
+		}
+		if len(finalizers) == 0 {
+			// delete if there are no finalizers
+			storage.Delete(ns, tipe, name)
+		} else {
+			// set a deletion timestamp on the item if there are finalizers
+			if err := scmeta.SetDeletionTimestamp(item, time.Now()); err != nil {
+				http.Error(
+					rw,
+					fmt.Sprintf("error setting deletion timestamp (%s)", err),
+					http.StatusInternalServerError,
+				)
+				return
+			}
+			storage.Set(ns, tipe, name, item)
+		}
 		rw.WriteHeader(http.StatusOK)
 	}
 }
