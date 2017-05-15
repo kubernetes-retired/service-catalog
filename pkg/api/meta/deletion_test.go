@@ -68,24 +68,12 @@ func TestDeletionTimestampExists(t *testing.T) {
 	}
 }
 
-func TestDeletionGracePeriodExists(t *testing.T) {
-	obj := &sc.Instance{
-		ObjectMeta: metav1.ObjectMeta{},
-	}
-	exists, err := DeletionGracePeriodExists(obj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if exists {
-		t.Fatal("deletion grace period reported as exists when it didn't")
-	}
-	sec := int64(1)
-	obj.DeletionGracePeriodSeconds = &sec
-	exists, err = DeletionGracePeriodExists(obj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !exists {
-		t.Fatalf("deletion grace period reported as missing when it isn't")
-	}
+func TestGetDeletionTimestamp(t *testing.T) {
+	// TODO: implement
+	t.Skip("TODO")
+}
+
+func TestSetDeletionTimestamp(t *testing.T) {
+	// TODO: implement
+	t.Skip("TODO")
 }

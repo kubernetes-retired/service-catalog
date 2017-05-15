@@ -17,9 +17,16 @@ limitations under the License.
 package meta
 
 import (
+	"errors"
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+)
+
+var (
+	ErrNoDeletionTimestamp = errors.New("no deletion timestamp set")
 )
 
 // GetAccessor returns a MetadataAccessor to fetch general information on metadata of
@@ -37,20 +44,40 @@ func GetNamespace(obj runtime.Object) (string, error) {
 // DeletionTimestampExists returns true if a deletion timestamp exists on obj, or a non-nil
 // error if that couldn't be reliably determined
 func DeletionTimestampExists(obj runtime.Object) (bool, error) {
-	accessor, err := meta.Accessor(obj)
+	_, err := GetDeletionTimestamp(obj)
+	if err == ErrNoDeletionTimestamp {
+		// if GetDeletionTimestamp reported that no deletion timestamp exists, return false
+		// and no error
+		return false, nil
+	}
 	if err != nil {
+		// otherwise, if GetDeletionTimestamp returned an unknown error, return the error
 		return false, err
 	}
-	t := accessor.GetDeletionTimestamp()
-	return t != nil, nil
+	return true, nil
 }
 
-// DeletionGracePeriodExists returns true if a deletion grace period exists on obj, or a non-nil
-// error if that couldn't be reliably determined
-func DeletionGracePeriodExists(obj runtime.Object) (bool, error) {
-	objMeta, err := metav1.ObjectMetaFor(obj)
+// GetDeletionTimestamp returns the deletion timestamp on obj, or a non-nil error if there was
+// an error getting it or it isn't set. Returns ErrNoDeletionTimestamp if there was none set
+func GetDeletionTimestamp(obj runtime.Object) (*metav1.Time, error) {
+	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return objMeta.DeletionGracePeriodSeconds != nil, nil
+	t := accessor.GetDeletionTimestamp()
+	if t == nil {
+		return nil, ErrNoDeletionTimestamp
+	}
+	return t, nil
+}
+
+// SetDeletionTimestamp sets the deletion timestamp on obj to t
+func SetDeletionTimestamp(obj runtime.Object, t time.Time) error {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	metaTime := metav1.NewTime(t)
+	accessor.SetDeletionTimestamp(&metaTime)
+	return nil
 }
