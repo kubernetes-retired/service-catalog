@@ -122,6 +122,9 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 		glog.Fatal("received a non-instance object to update from")
 	}
 
+	// TODO: ensure that checksum is carried forward when we allow updates to the spec.
+	// TODO(vaikas): This seems like it would mean an object can't be updated, but seems
+	// like the PrepareForUpdate below always overrides this method.
 	newInstance.Spec = oldInstance.Spec
 	newInstance.Status = oldInstance.Status
 }

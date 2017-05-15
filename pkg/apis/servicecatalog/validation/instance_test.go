@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -120,6 +121,127 @@ func TestValidateInstance(t *testing.T) {
 			continue
 		} else if len(errs) == 0 && !tc.valid {
 			t.Errorf("%v: unexpected success", tc.name)
+		}
+	}
+}
+
+func TestValidateInstanceUpdate(t *testing.T) {
+	cases := []struct {
+		name  string
+		old   *servicecatalog.Instance
+		new   *servicecatalog.Instance
+		valid bool
+		err   string // Error string to match against if error expected
+	}{
+		{
+			name: "no update with async op in progress",
+			old: &servicecatalog.Instance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.InstanceSpec{
+					ServiceClassName: "test-serviceclass",
+					PlanName:         "Test-Plan",
+				},
+				Status: servicecatalog.InstanceStatus{
+					AsyncOpInProgress: true,
+				},
+			},
+			new: &servicecatalog.Instance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.InstanceSpec{
+					ServiceClassName: "test-serviceclass",
+					PlanName:         "Test-Plan",
+				},
+				Status: servicecatalog.InstanceStatus{
+					AsyncOpInProgress: true,
+				},
+			},
+			valid: false,
+			err:   "Another operation for this service instance is in progress",
+		},
+		{
+			name: "allow async op completion",
+			old: &servicecatalog.Instance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.InstanceSpec{
+					ServiceClassName: "test-serviceclass",
+					PlanName:         "Test-Plan",
+				},
+				Status: servicecatalog.InstanceStatus{
+					AsyncOpInProgress: true,
+				},
+			},
+			new: &servicecatalog.Instance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.InstanceSpec{
+					ServiceClassName: "test-serviceclass",
+					PlanName:         "Test-Plan",
+				},
+				Status: servicecatalog.InstanceStatus{
+					AsyncOpInProgress: false,
+				},
+			},
+			valid: true,
+			err:   "",
+		},
+		{
+			name: "allow async op start",
+			old: &servicecatalog.Instance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.InstanceSpec{
+					ServiceClassName: "test-serviceclass",
+					PlanName:         "Test-Plan",
+				},
+				Status: servicecatalog.InstanceStatus{
+					AsyncOpInProgress: false,
+				},
+			},
+			new: &servicecatalog.Instance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.InstanceSpec{
+					ServiceClassName: "test-serviceclass",
+					PlanName:         "Test-Plan",
+				},
+				Status: servicecatalog.InstanceStatus{
+					AsyncOpInProgress: true,
+				},
+			},
+			valid: true,
+			err:   "",
+		},
+	}
+
+	for _, tc := range cases {
+		errs := ValidateInstanceUpdate(tc.old, tc.new)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
+		if !tc.valid {
+			for _, err := range errs {
+				if !strings.Contains(err.Detail, tc.err) {
+					t.Errorf("Error %q did not contain expected message %q", err.Detail, tc.err)
+				}
+			}
 		}
 	}
 }

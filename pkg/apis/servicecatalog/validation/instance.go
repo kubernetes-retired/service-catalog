@@ -62,9 +62,22 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 	return allErrs
 }
 
+// internalValidateInstanceUpdateAllowed makes sure there's not an asynchronous operation
+// ongoing with the instance. This includes changing the spec or trying to delete it.
+func internalValidateInstanceUpdateAllowed(new *sc.Instance, old *sc.Instance) field.ErrorList {
+	errors := field.ErrorList{}
+	if old.Status.AsyncOpInProgress && new.Status.AsyncOpInProgress {
+		errors = append(errors, field.Forbidden(field.NewPath("Spec"), "Another operation for this service instance is in progress"))
+	}
+	return errors
+}
+
 // ValidateInstanceUpdate validates a change to the Instance's spec.
 func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
-	return internalValidateInstance(new, false)
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, internalValidateInstanceUpdateAllowed(new, old)...)
+	allErrs = append(allErrs, internalValidateInstance(new, false)...)
+	return allErrs
 }
 
 // ValidateInstanceStatusUpdate checks that when changing from an older
