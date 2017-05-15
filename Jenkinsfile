@@ -121,13 +121,15 @@ node {
             --create-artifacts
       """
 
-      // Run the e2e test framework
-      sh """${env.ROOT}/contrib/jenkins/run_e2e.sh \
-            --registry gcr.io/${test_project}/catalog/ \
-	    --version ${version} \
-	    --cleanup \
-	    --create-artifacts
-      """
+      ansiColor('xterm-darker-gray') {
+        // Run the e2e test framework
+        sh """${env.ROOT}/contrib/jenkins/run_e2e.sh \
+              --registry gcr.io/${test_project}/catalog/ \
+              --version ${version} \
+              --cleanup \
+              --create-artifacts
+        """
+      }
 
       echo 'Run succeeded.'
     } catch (Exception e) {
