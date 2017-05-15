@@ -20,11 +20,6 @@ import (
 	"net/http"
 )
 
-const (
-	contentTypeHeaderKey     = "Content-Type"
-	applicationJSONHeaderVal = "application/json, */*"
-)
-
 func setContentType(w http.ResponseWriter) {
-	w.Header().Set(contentTypeHeaderKey, applicationJSONHeaderVal)
+	w.Header().Set("Content-Type", "application/json")
 }
