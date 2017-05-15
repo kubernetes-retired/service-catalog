@@ -189,13 +189,6 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"checksum": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Checksum is the checksum of the BindingSpec that was last successfully reconciled against the broker.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
 					},
 					Required: []string{"instanceRef", "secretName", "externalID"},
 				},
@@ -218,6 +211,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 										},
 									},
 								},
+							},
+						},
+						"checksum": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Checksum is the checksum of the BindingSpec that was last successfully reconciled against the broker.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 					},
@@ -569,13 +569,6 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"checksum": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Checksum is the checksum of the InstanceSpec that was last successfully reconciled against the broker.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
 					},
 					Required: []string{"serviceClassName", "planName", "externalID"},
 				},
@@ -617,6 +610,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						"dashboardURL": {
 							SchemaProps: spec.SchemaProps{
 								Description: "DashboardURL is the URL of a web-based management user interface for the service instance",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"checksum": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Checksum is the checksum of the InstanceSpec that was last successfully reconciled against the broker.",
 								Type:        []string{"string"},
 								Format:      "",
 							},

@@ -118,11 +118,6 @@ func DeepCopy_servicecatalog_BindingSpec(in interface{}, out interface{}, c *con
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }
@@ -140,6 +135,11 @@ func DeepCopy_servicecatalog_BindingStatus(in interface{}, out interface{}, c *c
 					return err
 				}
 			}
+		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
 		}
 		return nil
 	}
@@ -286,11 +286,6 @@ func DeepCopy_servicecatalog_InstanceSpec(in interface{}, out interface{}, c *co
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }
@@ -316,6 +311,11 @@ func DeepCopy_servicecatalog_InstanceStatus(in interface{}, out interface{}, c *
 		}
 		if in.DashboardURL != nil {
 			in, out := &in.DashboardURL, &out.DashboardURL
+			*out = new(string)
+			**out = **in
+		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
 		}
