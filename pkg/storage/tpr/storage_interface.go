@@ -114,7 +114,9 @@ func (t *store) Create(
 
 	res := req.Do()
 	if res.Error() != nil {
-		glog.Errorf("executing POST for %s/%s (%s)", ns, name, res.Error())
+		errStr := fmt.Sprintf("executing POST for %s/%s (%s)", ns, name, res.Error())
+		glog.Errorf(errStr)
+		return errors.New(errStr)
 	}
 	var statusCode int
 	res.StatusCode(&statusCode)
@@ -122,12 +124,14 @@ func (t *store) Create(
 		return storage.NewKeyExistsError(key, 0)
 	}
 	if statusCode != http.StatusCreated {
-		return fmt.Errorf(
+		errStr := fmt.Sprintf(
 			"executing POST for %s/%s, received response code %d",
 			ns,
 			name,
 			statusCode,
 		)
+		glog.Errorf(errStr)
+		return errors.New(errStr)
 	}
 
 	var unknown runtime.Unknown
