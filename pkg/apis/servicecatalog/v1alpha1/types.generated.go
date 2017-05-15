@@ -2038,7 +2038,7 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[0] = x.Kind != ""
 			yyq2[1] = x.APIVersion != ""
 			yyq2[2] = true
-			yyq2[8] = len(x.Tags) != 0
+			yyq2[8] = len(x.AlphaTags) != 0
 			yyq2[9] = len(x.Requires) != 0
 			var yynn2 int
 			if yyr2 || yy2arr2 {
@@ -2238,14 +2238,14 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
 				if yyq2[8] {
-					if x.Tags == nil {
+					if x.AlphaTags == nil {
 						r.EncodeNil()
 					} else {
 						yym30 := z.EncBinary()
 						_ = yym30
 						if false {
 						} else {
-							z.F.EncSliceStringV(x.Tags, false, e)
+							z.F.EncSliceStringV(x.AlphaTags, false, e)
 						}
 					}
 				} else {
@@ -2254,16 +2254,16 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			} else {
 				if yyq2[8] {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("tags"))
+					r.EncodeString(codecSelferC_UTF81234, string("alphaTags"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.Tags == nil {
+					if x.AlphaTags == nil {
 						r.EncodeNil()
 					} else {
 						yym31 := z.EncBinary()
 						_ = yym31
 						if false {
 						} else {
-							z.F.EncSliceStringV(x.Tags, false, e)
+							z.F.EncSliceStringV(x.AlphaTags, false, e)
 						}
 					}
 				}
@@ -2511,11 +2511,11 @@ func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv18)) = r.DecodeString()
 				}
 			}
-		case "tags":
+		case "alphaTags":
 			if r.TryDecodeAsNil() {
-				x.Tags = nil
+				x.AlphaTags = nil
 			} else {
-				yyv20 := &x.Tags
+				yyv20 := &x.AlphaTags
 				yym21 := z.DecBinary()
 				_ = yym21
 				if false {
@@ -2769,9 +2769,9 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Tags = nil
+		x.AlphaTags = nil
 	} else {
-		yyv45 := &x.Tags
+		yyv45 := &x.AlphaTags
 		yym46 := z.DecBinary()
 		_ = yym46
 		if false {

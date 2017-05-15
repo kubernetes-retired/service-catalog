@@ -691,7 +691,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"tags": {
+						"alphaTags": {
 							SchemaProps: spec.SchemaProps{
 								Description: "OSB-specific",
 								Type:        []string{"array"},

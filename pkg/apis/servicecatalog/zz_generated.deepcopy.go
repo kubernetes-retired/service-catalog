@@ -342,8 +342,8 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 				}
 			}
 		}
-		if in.Tags != nil {
-			in, out := &in.Tags, &out.Tags
+		if in.AlphaTags != nil {
+			in, out := &in.AlphaTags, &out.AlphaTags
 			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}

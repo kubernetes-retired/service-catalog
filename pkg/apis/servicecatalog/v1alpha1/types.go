@@ -133,8 +133,8 @@ type ServiceClass struct {
 	ExternalID string `json:"externalID"`
 
 	// OSB-specific
-	Tags     []string `json:"tags,omitempty"`
-	Requires []string `json:"requires,omitempty"`
+	AlphaTags []string `json:"alphaTags,omitempty"`
+	Requires  []string `json:"requires,omitempty"`
 	// Description is a short description of the service.
 	Description string `json:"description"`
 

@@ -511,7 +511,7 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	toUpdate.Bindable = serviceClass.Bindable
 	toUpdate.Plans = serviceClass.Plans
 	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
-	toUpdate.Tags = serviceClass.Tags
+	toUpdate.AlphaTags = serviceClass.AlphaTags
 	toUpdate.Requires = serviceClass.Requires
 	toUpdate.Description = serviceClass.Description
 
@@ -1705,7 +1705,7 @@ func convertCatalog(in *brokerapi.Catalog) ([]*v1alpha1.ServiceClass, error) {
 			Plans:         plans,
 			PlanUpdatable: svc.PlanUpdateable,
 			ExternalID:    svc.ID,
-			Tags:          svc.Tags,
+			AlphaTags:     svc.Tags,
 			Requires:      svc.Requires,
 			Description:   svc.Description,
 		}
