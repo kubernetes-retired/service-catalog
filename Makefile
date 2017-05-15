@@ -259,12 +259,15 @@ clean-bin:
 	rm -f .generate_exes
 
 clean-build-image:
+	rm -rf .pkg
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
 clean-generated:
 	rm -f .generate_files
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+	rm -rf pkg/client/*_generated
+	rm -f pkg/openapi/openapi_generated.go
 
 clean-coverage:
 	rm -f $(COVERAGE)
