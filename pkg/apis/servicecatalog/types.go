@@ -62,14 +62,18 @@ type BrokerStatus struct {
 type BrokerCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type BrokerConditionType
+
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
+
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
 	LastTransitionTime metav1.Time
+
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string
+
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
 	Message string
@@ -95,8 +99,10 @@ type ConditionStatus string
 const (
 	// ConditionTrue represents the fact that a given condition is true
 	ConditionTrue ConditionStatus = "True"
+
 	// ConditionFalse represents the fact that a given condition is false
 	ConditionFalse ConditionStatus = "False"
+
 	// ConditionUnknown represents the fact that a given condition is unknown
 	ConditionUnknown ConditionStatus = "Unknown"
 )
@@ -264,14 +270,18 @@ type InstanceStatus struct {
 type InstanceCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type InstanceConditionType
+
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
+
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
 	LastTransitionTime metav1.Time
+
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string
+
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
 	Message string
@@ -340,14 +350,18 @@ type BindingStatus struct {
 type BindingCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type BindingConditionType
+
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
+
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
 	LastTransitionTime metav1.Time
+
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string
+
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
 	Message string
