@@ -409,14 +409,16 @@ func updateItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) fu
 			http.Error(rw, errStr, http.StatusInternalServerError)
 			return
 		}
-		if !newDT.Equal(*oldDT) {
-			errStr := fmt.Sprintf(
-				"you cannot update the deletion timestamp (old: %#v, new: %#v)",
-				*oldDT,
-				*newDT,
-			)
-			http.Error(rw, errStr, http.StatusBadRequest)
-			return
+		if newDT != nil && oldDT != nil {
+			if !newDT.Equal(*oldDT) {
+				errStr := fmt.Sprintf(
+					"you cannot update the deletion timestamp (old: %#v, new: %#v)",
+					*oldDT,
+					*newDT,
+				)
+				http.Error(rw, errStr, http.StatusBadRequest)
+				return
+			}
 		}
 
 		if len(finalizers) == 0 && newDT != nil {
