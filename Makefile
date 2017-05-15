@@ -277,6 +277,13 @@ clean-generated:
 	# rollback openapi changes
 	git checkout -- pkg/openapi/openapi_generated.go
 
+# purge-generated removes generated files from the filesystem.
+purge-generated:
+	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+	find $(TOP_SRC_DIRS) -type d -name *_generated -exec rm -rf {} \;
+	rm -f pkg/openapi/openapi_generated.go
+	echo 'package v1alpha1' > pkg/apis/servicecatalog/v1alpha1/types.generated.go
+
 clean-coverage:
 	rm -f $(COVERAGE)
 
