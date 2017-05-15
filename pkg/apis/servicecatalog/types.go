@@ -135,8 +135,8 @@ type ServiceClass struct {
 	ExternalID string
 
 	// OSB-specific
-	Tags     []string
-	Requires []string
+	AlphaTags []string
+	Requires  []string
 	// Description is a short description of the service.
 	Description      string
 	ExternalMetadata *runtime.RawExtension
