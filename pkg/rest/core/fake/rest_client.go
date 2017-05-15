@@ -452,11 +452,15 @@ func updateItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) fu
 			return
 		}
 		if newDT != nil && oldDT != nil {
-			if !newDT.Equal(*oldDT) {
+			// only measure the deletion timestamp based on seconds (.Unix()) rather than nanos
+			// (.UnixNano()), because nanoseconds are stored in memory but do not come over
+			// the wire. Thus, the new deletion timestamp will not be equal to the old
+			// because the new will have nanos missing
+			if newDT.Unix() != oldDT.Unix() {
 				errStr := fmt.Sprintf(
 					"you cannot update the deletion timestamp (old: %#v, new: %#v)",
-					*oldDT,
-					*newDT,
+					oldDT.String(),
+					newDT.String(),
 				)
 				http.Error(rw, errStr, http.StatusBadRequest)
 				return
