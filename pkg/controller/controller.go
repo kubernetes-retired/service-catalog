@@ -689,9 +689,9 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	// timestamp changes the object's state in a way that we must reconcile,
 	// but does not affect the checksum.
 	if !instance.Status.AsyncOpInProgress {
-		if instance.Spec.Checksum != nil && instance.DeletionTimestamp == nil {
+		if instance.Status.Checksum != nil && instance.DeletionTimestamp == nil {
 			instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
-			if instanceChecksum == *instance.Spec.Checksum {
+			if instanceChecksum == *instance.Status.Checksum {
 				glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
 				return nil
 			}
@@ -1154,9 +1154,9 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
 	// but does not affect the checksum.
-	if binding.Spec.Checksum != nil && binding.DeletionTimestamp == nil {
+	if binding.Status.Checksum != nil && binding.DeletionTimestamp == nil {
 		bindingChecksum := checksum.BindingSpecChecksum(binding.Spec)
-		if bindingChecksum == *binding.Spec.Checksum {
+		if bindingChecksum == *binding.Status.Checksum {
 			glog.V(4).Infof("Not processing event for Binding %v/%v because checksum showed there is no work to do", binding.Namespace, binding.Name)
 			return nil
 		}

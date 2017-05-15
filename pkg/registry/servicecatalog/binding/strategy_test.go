@@ -81,7 +81,7 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 			old: func() *servicecatalog.Binding {
 				b := bindingWithFalseReadyCondition()
 				cs := "22081-9471-471"
-				b.Spec.Checksum = &cs
+				b.Status.Checksum = &cs
 				return b
 			}(),
 			newer:               bindingWithFalseReadyCondition(),
@@ -101,16 +101,16 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 		strategy.PrepareForUpdate(nil /* api context */, tc.newer, tc.old)
 
 		if tc.shouldChecksum {
-			if tc.newer.Spec.Checksum == nil {
+			if tc.newer.Status.Checksum == nil {
 				t.Errorf("%v: Checksum should have been set", tc.name)
 				continue
 			}
 
-			if e, a := checksum.BindingSpecChecksum(tc.newer.Spec), *tc.newer.Spec.Checksum; e != a {
+			if e, a := checksum.BindingSpecChecksum(tc.newer.Spec), *tc.newer.Status.Checksum; e != a {
 				t.Errorf("%v: Checksum was incorrect; expected %v got %v", tc.name, e, a)
 			}
-		} else if tc.checksumShouldBeSet != (tc.newer.Spec.Checksum != nil) {
-			t.Errorf("%v: expected checksum to be nil, but was populated", tc.name)
+		} else if tc.checksumShouldBeSet != (tc.newer.Status.Checksum != nil) {
+			t.Errorf("%v: expected checksum to be populated, but was nil", tc.name)
 		}
 	}
 }

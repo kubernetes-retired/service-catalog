@@ -196,10 +196,6 @@ type InstanceSpec struct {
 	// ExternalID is the identity of this object for use with the OSB SB API.
 	// Immutable.
 	ExternalID string `json:"externalID"`
-
-	// Checksum is the checksum of the InstanceSpec that was last successfully
-	// reconciled against the broker.
-	Checksum *string `json:"checksum,omitempty"`
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -218,6 +214,10 @@ type InstanceStatus struct {
 	// DashboardURL is the URL of a web-based management user interface for
 	// the service instance
 	DashboardURL *string `json:"dashboardURL,omitempty"`
+
+	// Checksum is the checksum of the InstanceSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string `json:"checksum,omitempty"`
 }
 
 // InstanceCondition contains condition information for an Instance.
@@ -282,15 +282,15 @@ type BindingSpec struct {
 	// ExternalID is the identity of this object for use with the OSB API.
 	// Immutable.
 	ExternalID string `json:"externalID"`
-
-	// Checksum is the checksum of the BindingSpec that was last successfully
-	// reconciled against the broker.
-	Checksum *string `json:"checksum,omitempty"`
 }
 
 // BindingStatus represents the current status of a Binding.
 type BindingStatus struct {
 	Conditions []BindingCondition `json:"conditions"`
+
+	// Checksum is the checksum of the BindingSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string `json:"checksum,omitempty"`
 }
 
 // BindingCondition condition information for a Binding.

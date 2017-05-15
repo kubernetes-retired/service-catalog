@@ -48,26 +48,6 @@ func TestValidateBinding(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "checksum set on create",
-			binding: &servicecatalog.Binding{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-binding",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.BindingSpec{
-					InstanceRef: v1.LocalObjectReference{
-						Name: "test-instance",
-					},
-					SecretName: "test-secret",
-					Checksum: func() *string {
-						s := "boo"
-						return &s
-					}(),
-				},
-			},
-			valid: false,
-		},
-		{
 			name: "missing namespace",
 			binding: &servicecatalog.Binding{
 				ObjectMeta: metav1.ObjectMeta{

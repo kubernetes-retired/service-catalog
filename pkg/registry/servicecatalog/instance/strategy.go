@@ -122,7 +122,6 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 		glog.Fatal("received a non-instance object to update from")
 	}
 
-	// TODO: ensure that checksum is carried forward when we allow updates to the spec.
 	newInstance.Spec = oldInstance.Spec
 	newInstance.Status = oldInstance.Status
 }
@@ -152,8 +151,6 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context
 	// status changes are not allowed to update spec
 	newInstance.Spec = oldInstance.Spec
 
-	// TODO: unit test
-
 	foundReadyConditionTrue := false
 	for _, condition := range newInstance.Status.Conditions {
 		if condition.Type == sc.InstanceConditionReady && condition.Status == sc.ConditionTrue {
@@ -164,12 +161,18 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context
 
 	if foundReadyConditionTrue {
 		glog.Infof("Found true ready condition for Instance %v/%v; updating checksum", newInstance.Namespace, newInstance.Name)
-		// This status update has a true ready condition; update the checksum if necessary
-		newInstance.Spec.Checksum = func() *string {
+		// This status update has a true ready condition; update the checksum
+		// if necessary
+		newInstance.Status.Checksum = func() *string {
 			s := checksum.InstanceSpecChecksum(newInstance.Spec)
 			return &s
 		}()
+		return
 	}
+
+	// if the ready condition is not true, the value of the checksum should
+	// not change.
+	newInstance.Status.Checksum = oldInstance.Status.Checksum
 }
 
 func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

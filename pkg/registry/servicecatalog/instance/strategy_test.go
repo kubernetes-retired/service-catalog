@@ -75,10 +75,10 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 		{
 			name: "not ready -> not ready, checksum already set",
 			old: func() *servicecatalog.Instance {
-				b := instanceWithFalseReadyCondition()
+				i := instanceWithFalseReadyCondition()
 				cs := "22081-9471-471"
-				b.Spec.Checksum = &cs
-				return b
+				i.Status.Checksum = &cs
+				return i
 			}(),
 			newer:               instanceWithFalseReadyCondition(),
 			shouldChecksum:      false,
@@ -97,16 +97,16 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 		strategy.PrepareForUpdate(nil /* api context */, tc.newer, tc.old)
 
 		if tc.shouldChecksum {
-			if tc.newer.Spec.Checksum == nil {
+			if tc.newer.Status.Checksum == nil {
 				t.Errorf("%v: Checksum should have been set", tc.name)
 				continue
 			}
 
-			if e, a := checksum.InstanceSpecChecksum(tc.newer.Spec), *tc.newer.Spec.Checksum; e != a {
+			if e, a := checksum.InstanceSpecChecksum(tc.newer.Spec), *tc.newer.Status.Checksum; e != a {
 				t.Errorf("%v: Checksum was incorrect; expected %v got %v", tc.name, e, a)
 			}
-		} else if tc.checksumShouldBeSet != (tc.newer.Spec.Checksum != nil) {
-			t.Errorf("%v: expected checksum to be nil, but was populated", tc.name)
+		} else if tc.checksumShouldBeSet != (tc.newer.Status.Checksum != nil) {
+			t.Errorf("%v: expected checksum to be populated, but was nil", tc.name)
 		}
 	}
 }

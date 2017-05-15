@@ -45,24 +45,6 @@ func TestValidateInstance(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "populated checksum",
-			instance: &servicecatalog.Instance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.InstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
-					Checksum: func() *string {
-						a := "12345"
-						return &a
-					}(),
-				},
-			},
-			valid: false,
-		},
-		{
 			name: "missing namespace",
 			instance: &servicecatalog.Instance{
 				ObjectMeta: metav1.ObjectMeta{
