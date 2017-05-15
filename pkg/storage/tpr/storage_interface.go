@@ -508,61 +508,73 @@ func (t *store) GuaranteedUpdate(
 			glog.Errorf("checking preconditions (%s)", err)
 			return err
 		}
-		// Create a candidate for the new object by applying the userUpdate func
-		candidate, _, err := userUpdate(curState.obj, *curState.meta)
+		// update the object by applying the userUpdate func & encode it
+		updated, _, err := userUpdate(curState.obj, *curState.meta)
 		if err != nil {
 			glog.Errorf("applying user update: (%s)", err)
 			return err
 		}
-		dtExists, err := scmeta.DeletionTimestampExists(candidate)
-		if err != nil {
-			glog.Errorf("determining whether the deletion timestamp exists (%s)", err)
-			return err
-		}
-		dgpExists, err := scmeta.DeletionGracePeriodExists(candidate)
-		if err != nil {
-			glog.Errorf("determining whether the deletion grace period exists (%s)", err)
-			return err
-		}
-		// Get bytes from the candidate
-		candidateData, err := runtime.Encode(t.codec, candidate)
+		updatedData, err := runtime.Encode(t.codec, updated)
 		if err != nil {
 			glog.Errorf("encoding candidate obj (%s)", err)
 			return err
 		}
-		// If the candidate matches what we already have, then all we need to do is
-		// decode into the out object
-		if bytes.Equal(candidateData, curState.data) {
-			err := decode(t.codec, candidateData, out)
+
+		// figure out what the new "current state" of the object is for this loop iteration
+		var newCurState *objState
+		if bytes.Equal(updatedData, curState.data) {
+			// If the candidate matches what we already have, then all we need to do is
+			// decode into the out object
+			err := decode(t.codec, updatedData, out)
 			if err != nil {
 				glog.Errorf("decoding to output object (%s)", err)
 			}
 			return err
+			newCurState = curState
+		} else {
+			// If the candidate doesn't match what we already have, then get an up-to-date copy
+			// of the resource we're trying to update
+			// (because it may have changed if we're looping and in a race)
+			newCurObj := t.singularShell("", "")
+			if err := t.Get(ctx, key, "", newCurObj, ignoreNotFound); err != nil {
+				glog.Errorf("getting new current object (%s)", err)
+				return err
+			}
+			updatedObj, _, err := userUpdate(newCurObj, *curState.meta)
+			ncs, err := t.getStateFromObject(updatedObj)
+			if err != nil {
+				glog.Errorf("getting state from new current object (%s)", err)
+				return err
+			}
+			newCurState = ncs
 		}
-		// Otherwise, get an up-to-date copy of the resource we're trying to update
-		// (because it may have changed if we're looping and in a race)
-		newCurObj := t.singularShell("", "")
-		if err := t.Get(ctx, key, "", newCurObj, ignoreNotFound); err != nil {
-			glog.Errorf("getting new current object (%s)", err)
-			return err
-		}
-		newCurState, err := t.getStateFromObject(newCurObj)
+		newCurObjData, err := runtime.Encode(t.codec, newCurState.obj)
 		if err != nil {
-			glog.Errorf("getting state from new current object (%s)", err)
+			glog.Errorf("encoding new obj (%s)", err)
 			return err
 		}
-		// If the new current version of the object is the same as the old current
-		// then proceed with trying to PUT the candidate to the core apiserver
+		// If the new current revision of the object is the same as the last loop iteration,
+		// proceed with trying to update the object on the core API server
 		if newCurState.rev == curState.rev {
 			ns, name, err := t.decodeKey(key)
 			if err != nil {
 				glog.Errorf("decoding key %s (%s)", key, err)
 				return err
 			}
-			if dtExists || dgpExists {
-				// if the deletion timestamp and/or deletion grace period exists, then we should just
-				// issue the delete. a finalizer on this TPR was added when it was created, so
-				// the DELETE REST call will be a soft-delete
+			newStateDTExists, err := getDeletionInfo(newCurState.obj)
+			if err != nil {
+				glog.Errorf("getting deletion info (%s)", err)
+				return err
+			}
+			finalizers, err := scmeta.GetFinalizers(newCurState.obj)
+			if err != nil {
+				glog.Errorf("getting finalizers (%s)", err)
+				return err
+			}
+			if newStateDTExists && len(finalizers) > 0 {
+				// if the deletion timestamp is set but there are still finalizers, then send
+				// a DELETE to the upstream server.
+				// The upstream server will do a soft delete and set the deletion timestamp
 				if err := delete(t.cl, t.singularKind, key, ns, name, http.StatusOK); err != nil {
 					glog.Errorf("executing DELETE on %s (%s)", key, err)
 					return err
@@ -571,7 +583,7 @@ func (t *store) GuaranteedUpdate(
 			}
 			// otherwise, the deletion timestamp and deletion grace period are not set, so
 			// do the actual update
-			if err := put(t.cl, t.codec, t.singularKind, ns, name, candidateData, out); err != nil {
+			if err := put(t.cl, t.codec, t.singularKind, ns, name, newCurObjData, out); err != nil {
 				glog.Errorf("PUTting object %s (%s)", key, err)
 				return err
 			}
@@ -633,4 +645,15 @@ func checkPreconditions(
 		return storage.NewInvalidObjError(key, errMsg)
 	}
 	return nil
+}
+
+// getDeletionInfo returns whether the deletion timestsamp exists on obj
+// if there was an error determining whether it exists, returns a non-nil error
+func getDeletionInfo(obj runtime.Object) (bool, error) {
+	dtExists, err := scmeta.DeletionTimestampExists(obj)
+	if err != nil {
+		glog.Errorf("determining whether the deletion timestamp exists (%s)", err)
+		return false, err
+	}
+	return dtExists, nil
 }
