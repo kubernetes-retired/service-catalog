@@ -195,7 +195,6 @@ func TestBasicFlows(t *testing.T) {
 			InstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
 			},
-			SecretName: testSecretName,
 		},
 	}
 

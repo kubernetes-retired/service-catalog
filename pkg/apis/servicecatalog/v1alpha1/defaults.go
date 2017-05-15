@@ -26,6 +26,7 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return scheme.AddDefaultingFuncs(
 		SetDefaults_InstanceSpec,
 		SetDefaults_BindingSpec,
+		SetDefaults_Binding,
 	)
 }
 
@@ -38,5 +39,12 @@ func SetDefaults_InstanceSpec(spec *InstanceSpec) {
 func SetDefaults_BindingSpec(spec *BindingSpec) {
 	if spec.ExternalID == "" {
 		spec.ExternalID = uuid.NewV4().String()
+	}
+}
+
+func SetDefaults_Binding(binding *Binding) {
+	// If not specified, make the SecretName default to the binding name
+	if binding.Spec.SecretName == "" {
+		binding.Spec.SecretName = binding.Name
 	}
 }

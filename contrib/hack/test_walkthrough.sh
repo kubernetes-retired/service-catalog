@@ -76,7 +76,7 @@ function cleanup() {
     helm delete --purge "${BROKER_RELEASE}" || true
     helm delete --purge "${CATALOG_RELEASE}" || true
     rm -f "${SC_KUBECONFIG}"
-    kubectl delete secret -n test-ns my-secret || true
+    kubectl delete secret -n test-ns ups-binding || true
     kubectl delete namespace test-ns || true
 
     wait_for_expected_output -x -e 'test-ns' -n 10 \
@@ -279,8 +279,8 @@ wait_for_expected_output -e 'InjectedBindResult' -n 10 \
     error_exit 'Failure status reported when attempting to inject ups-binding.'
   }
 
-[[ "$(KUBECONFIG="${K8S_KUBECONFIG}" kubectl get secrets -n test-ns)" == *my-secret* ]] \
-  || error_exit '"my-secret" not present when listing secrets.'
+[[ "$(KUBECONFIG="${K8S_KUBECONFIG}" kubectl get secrets -n test-ns)" == *ups-binding* ]] \
+  || error_exit '"ups-binding" not present when listing secrets.'
 
 
 # TODO: Cannot currently test TPR deletion; only delete if using an etcd-backed
@@ -294,9 +294,9 @@ if [[ -z "${WITH_TPR:-}" ]]; then
     || error_exit 'Error when deleting ups-binding.'
 
   export KUBECONFIG="${K8S_KUBECONFIG}"
-  wait_for_expected_output -x -e "my-secret" -n 10 \
+  wait_for_expected_output -x -e "ups-binding" -n 10 \
       kubectl get secrets -n test-ns \
-    || error_exit '"my-secret" not removed upon deleting ups-binding.'
+    || error_exit '"ups-binding" not removed upon deleting ups-binding.'
   export KUBECONFIG="${SC_KUBECONFIG}"
 
   # Deprovision the instance
