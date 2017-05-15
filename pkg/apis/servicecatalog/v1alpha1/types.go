@@ -133,12 +133,9 @@ type ServiceClass struct {
 	ExternalID string `json:"externalID"`
 
 	// OSB-specific
-	OSBTags                    []string `json:"osbTags,omitempty"`
-	OSBRequires                []string `json:"osbRequires,omitempty"`
-	OSBMaxDBPerNode            *string  `json:"osbMaxDBPerNode,omitempty"`
-	OSBDashboardOAuth2ClientID *string  `json:"osbDashboardOAuth2ClientID,omitempty"`
-	OSBDashboardSecret         *string  `json:"osbDashboardSecret,omitempty"`
-	OSBDashboardRedirectURI    *string  `json:"osbDashboardRedirectURI,omitempty"`
+	OSBTags     []string `json:"osbTags,omitempty"`
+	OSBRequires []string `json:"osbRequires,omitempty"`
+
 	// Description is a short description of the service.
 	Description string `json:"description"`
 

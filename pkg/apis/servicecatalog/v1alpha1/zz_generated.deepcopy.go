@@ -352,26 +352,6 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}
-		if in.OSBMaxDBPerNode != nil {
-			in, out := &in.OSBMaxDBPerNode, &out.OSBMaxDBPerNode
-			*out = new(string)
-			**out = **in
-		}
-		if in.OSBDashboardOAuth2ClientID != nil {
-			in, out := &in.OSBDashboardOAuth2ClientID, &out.OSBDashboardOAuth2ClientID
-			*out = new(string)
-			**out = **in
-		}
-		if in.OSBDashboardSecret != nil {
-			in, out := &in.OSBDashboardSecret, &out.OSBDashboardSecret
-			*out = new(string)
-			**out = **in
-		}
-		if in.OSBDashboardRedirectURI != nil {
-			in, out := &in.OSBDashboardRedirectURI, &out.OSBDashboardRedirectURI
-			*out = new(string)
-			**out = **in
-		}
 		if in.OSBMetadata != nil {
 			in, out := &in.OSBMetadata, &out.OSBMetadata
 			if newVal, err := c.DeepCopy(*in); err != nil {

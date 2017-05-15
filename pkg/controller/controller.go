@@ -513,10 +513,6 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
 	toUpdate.OSBTags = serviceClass.OSBTags
 	toUpdate.OSBRequires = serviceClass.OSBRequires
-	toUpdate.OSBMaxDBPerNode = serviceClass.OSBMaxDBPerNode
-	toUpdate.OSBDashboardOAuth2ClientID = serviceClass.OSBDashboardOAuth2ClientID
-	toUpdate.OSBDashboardSecret = serviceClass.OSBDashboardSecret
-	toUpdate.OSBDashboardRedirectURI = serviceClass.OSBDashboardRedirectURI
 	toUpdate.Description = serviceClass.Description
 
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
