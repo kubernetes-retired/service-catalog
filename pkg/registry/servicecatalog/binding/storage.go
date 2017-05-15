@@ -134,7 +134,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 		CreateStrategy:          bindingRESTStrategies,
 		UpdateStrategy:          bindingRESTStrategies,
 		DeleteStrategy:          bindingRESTStrategies,
-		EnableGarbageCollection: true,
+		EnableGarbageCollection: false,
 
 		Storage:     storageInterface,
 		DestroyFunc: dFunc,
