@@ -119,7 +119,18 @@ To deploy to Kubernetes, see the
 
 * The Makefile assumes you're running `make` from the root of the repo.
 * There are some source files that are generated during the build process.
-  These will be prefixed with `zz`.
+  These are:
+
+    * `pkg/client/*_generated`
+    * `pkg/apis/servicecatalog/zz_*`
+    * `pkg/apis/servicecatalog/v1alpha1/zz_*`
+    * `pkg/apis/servicecatalog/v1alpha1/types.generated.go`
+    * `pkg/openapi/openapi_generated.go`
+
+* Running `make clean` or `make clean-generated` will roll back (via
+  `git checkout --`) the state of any generated files in the repo.
+* Running `make purge-generated` will _remove_ those generated files from the
+  repo.
 * A Docker Image called "scbuildimage" will be used. The image isn't pre-built
   and pulled from a public registry. Instead, it is built from source contained
   within the service catalog repository.
