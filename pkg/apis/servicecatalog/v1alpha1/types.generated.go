@@ -2038,8 +2038,8 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[0] = x.Kind != ""
 			yyq2[1] = x.APIVersion != ""
 			yyq2[2] = true
-			yyq2[8] = len(x.OSBTags) != 0
-			yyq2[9] = len(x.OSBRequires) != 0
+			yyq2[8] = len(x.Tags) != 0
+			yyq2[9] = len(x.Requires) != 0
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(12)
@@ -2238,14 +2238,14 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
 				if yyq2[8] {
-					if x.OSBTags == nil {
+					if x.Tags == nil {
 						r.EncodeNil()
 					} else {
 						yym30 := z.EncBinary()
 						_ = yym30
 						if false {
 						} else {
-							z.F.EncSliceStringV(x.OSBTags, false, e)
+							z.F.EncSliceStringV(x.Tags, false, e)
 						}
 					}
 				} else {
@@ -2254,16 +2254,16 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			} else {
 				if yyq2[8] {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("osbTags"))
+					r.EncodeString(codecSelferC_UTF81234, string("tags"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.OSBTags == nil {
+					if x.Tags == nil {
 						r.EncodeNil()
 					} else {
 						yym31 := z.EncBinary()
 						_ = yym31
 						if false {
 						} else {
-							z.F.EncSliceStringV(x.OSBTags, false, e)
+							z.F.EncSliceStringV(x.Tags, false, e)
 						}
 					}
 				}
@@ -2271,14 +2271,14 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
 				if yyq2[9] {
-					if x.OSBRequires == nil {
+					if x.Requires == nil {
 						r.EncodeNil()
 					} else {
 						yym33 := z.EncBinary()
 						_ = yym33
 						if false {
 						} else {
-							z.F.EncSliceStringV(x.OSBRequires, false, e)
+							z.F.EncSliceStringV(x.Requires, false, e)
 						}
 					}
 				} else {
@@ -2287,16 +2287,16 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			} else {
 				if yyq2[9] {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("osbRequires"))
+					r.EncodeString(codecSelferC_UTF81234, string("requires"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.OSBRequires == nil {
+					if x.Requires == nil {
 						r.EncodeNil()
 					} else {
 						yym34 := z.EncBinary()
 						_ = yym34
 						if false {
 						} else {
-							z.F.EncSliceStringV(x.OSBRequires, false, e)
+							z.F.EncSliceStringV(x.Requires, false, e)
 						}
 					}
 				}
@@ -2322,34 +2322,34 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.OSBMetadata == nil {
+				if x.ExternalMetadata == nil {
 					r.EncodeNil()
 				} else {
 					yym39 := z.EncBinary()
 					_ = yym39
 					if false {
-					} else if z.HasExtensions() && z.EncExt(x.OSBMetadata) {
+					} else if z.HasExtensions() && z.EncExt(x.ExternalMetadata) {
 					} else if !yym39 && z.IsJSONHandle() {
-						z.EncJSONMarshal(x.OSBMetadata)
+						z.EncJSONMarshal(x.ExternalMetadata)
 					} else {
-						z.EncFallback(x.OSBMetadata)
+						z.EncFallback(x.ExternalMetadata)
 					}
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbMetadata"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalMetadata"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.OSBMetadata == nil {
+				if x.ExternalMetadata == nil {
 					r.EncodeNil()
 				} else {
 					yym40 := z.EncBinary()
 					_ = yym40
 					if false {
-					} else if z.HasExtensions() && z.EncExt(x.OSBMetadata) {
+					} else if z.HasExtensions() && z.EncExt(x.ExternalMetadata) {
 					} else if !yym40 && z.IsJSONHandle() {
-						z.EncJSONMarshal(x.OSBMetadata)
+						z.EncJSONMarshal(x.ExternalMetadata)
 					} else {
-						z.EncFallback(x.OSBMetadata)
+						z.EncFallback(x.ExternalMetadata)
 					}
 				}
 			}
@@ -2511,11 +2511,11 @@ func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv18)) = r.DecodeString()
 				}
 			}
-		case "osbTags":
+		case "tags":
 			if r.TryDecodeAsNil() {
-				x.OSBTags = nil
+				x.Tags = nil
 			} else {
-				yyv20 := &x.OSBTags
+				yyv20 := &x.Tags
 				yym21 := z.DecBinary()
 				_ = yym21
 				if false {
@@ -2523,11 +2523,11 @@ func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					z.F.DecSliceStringX(yyv20, false, d)
 				}
 			}
-		case "osbRequires":
+		case "requires":
 			if r.TryDecodeAsNil() {
-				x.OSBRequires = nil
+				x.Requires = nil
 			} else {
-				yyv22 := &x.OSBRequires
+				yyv22 := &x.Requires
 				yym23 := z.DecBinary()
 				_ = yym23
 				if false {
@@ -2547,23 +2547,23 @@ func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv24)) = r.DecodeString()
 				}
 			}
-		case "osbMetadata":
+		case "externalMetadata":
 			if r.TryDecodeAsNil() {
-				if x.OSBMetadata != nil {
-					x.OSBMetadata = nil
+				if x.ExternalMetadata != nil {
+					x.ExternalMetadata = nil
 				}
 			} else {
-				if x.OSBMetadata == nil {
-					x.OSBMetadata = new(pkg4_runtime.RawExtension)
+				if x.ExternalMetadata == nil {
+					x.ExternalMetadata = new(pkg4_runtime.RawExtension)
 				}
 				yym27 := z.DecBinary()
 				_ = yym27
 				if false {
-				} else if z.HasExtensions() && z.DecExt(x.OSBMetadata) {
+				} else if z.HasExtensions() && z.DecExt(x.ExternalMetadata) {
 				} else if !yym27 && z.IsJSONHandle() {
-					z.DecJSONUnmarshal(x.OSBMetadata)
+					z.DecJSONUnmarshal(x.ExternalMetadata)
 				} else {
-					z.DecFallback(x.OSBMetadata, false)
+					z.DecFallback(x.ExternalMetadata, false)
 				}
 			}
 		default:
@@ -2769,9 +2769,9 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBTags = nil
+		x.Tags = nil
 	} else {
-		yyv45 := &x.OSBTags
+		yyv45 := &x.Tags
 		yym46 := z.DecBinary()
 		_ = yym46
 		if false {
@@ -2791,9 +2791,9 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBRequires = nil
+		x.Requires = nil
 	} else {
-		yyv47 := &x.OSBRequires
+		yyv47 := &x.Requires
 		yym48 := z.DecBinary()
 		_ = yym48
 		if false {
@@ -2835,21 +2835,21 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.OSBMetadata != nil {
-			x.OSBMetadata = nil
+		if x.ExternalMetadata != nil {
+			x.ExternalMetadata = nil
 		}
 	} else {
-		if x.OSBMetadata == nil {
-			x.OSBMetadata = new(pkg4_runtime.RawExtension)
+		if x.ExternalMetadata == nil {
+			x.ExternalMetadata = new(pkg4_runtime.RawExtension)
 		}
 		yym52 := z.DecBinary()
 		_ = yym52
 		if false {
-		} else if z.HasExtensions() && z.DecExt(x.OSBMetadata) {
+		} else if z.HasExtensions() && z.DecExt(x.ExternalMetadata) {
 		} else if !yym52 && z.IsJSONHandle() {
-			z.DecJSONUnmarshal(x.OSBMetadata)
+			z.DecJSONUnmarshal(x.ExternalMetadata)
 		} else {
-			z.DecFallback(x.OSBMetadata, false)
+			z.DecFallback(x.ExternalMetadata, false)
 		}
 	}
 	for {
@@ -2997,49 +2997,49 @@ func (x *ServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym18
 				if false {
 				} else {
-					r.EncodeBool(bool(x.OSBFree))
+					r.EncodeBool(bool(x.Free))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbFree"))
+				r.EncodeString(codecSelferC_UTF81234, string("free"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym19 := z.EncBinary()
 				_ = yym19
 				if false {
 				} else {
-					r.EncodeBool(bool(x.OSBFree))
+					r.EncodeBool(bool(x.Free))
 				}
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.OSBMetadata == nil {
+				if x.ExternalMetadata == nil {
 					r.EncodeNil()
 				} else {
 					yym21 := z.EncBinary()
 					_ = yym21
 					if false {
-					} else if z.HasExtensions() && z.EncExt(x.OSBMetadata) {
+					} else if z.HasExtensions() && z.EncExt(x.ExternalMetadata) {
 					} else if !yym21 && z.IsJSONHandle() {
-						z.EncJSONMarshal(x.OSBMetadata)
+						z.EncJSONMarshal(x.ExternalMetadata)
 					} else {
-						z.EncFallback(x.OSBMetadata)
+						z.EncFallback(x.ExternalMetadata)
 					}
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("osbMetadata"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalMetadata"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.OSBMetadata == nil {
+				if x.ExternalMetadata == nil {
 					r.EncodeNil()
 				} else {
 					yym22 := z.EncBinary()
 					_ = yym22
 					if false {
-					} else if z.HasExtensions() && z.EncExt(x.OSBMetadata) {
+					} else if z.HasExtensions() && z.EncExt(x.ExternalMetadata) {
 					} else if !yym22 && z.IsJSONHandle() {
-						z.EncJSONMarshal(x.OSBMetadata)
+						z.EncJSONMarshal(x.ExternalMetadata)
 					} else {
-						z.EncFallback(x.OSBMetadata)
+						z.EncFallback(x.ExternalMetadata)
 					}
 				}
 			}
@@ -3156,11 +3156,11 @@ func (x *ServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*bool)(x.Bindable)) = r.DecodeBool()
 				}
 			}
-		case "osbFree":
+		case "free":
 			if r.TryDecodeAsNil() {
-				x.OSBFree = false
+				x.Free = false
 			} else {
-				yyv12 := &x.OSBFree
+				yyv12 := &x.Free
 				yym13 := z.DecBinary()
 				_ = yym13
 				if false {
@@ -3168,23 +3168,23 @@ func (x *ServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*bool)(yyv12)) = r.DecodeBool()
 				}
 			}
-		case "osbMetadata":
+		case "externalMetadata":
 			if r.TryDecodeAsNil() {
-				if x.OSBMetadata != nil {
-					x.OSBMetadata = nil
+				if x.ExternalMetadata != nil {
+					x.ExternalMetadata = nil
 				}
 			} else {
-				if x.OSBMetadata == nil {
-					x.OSBMetadata = new(pkg4_runtime.RawExtension)
+				if x.ExternalMetadata == nil {
+					x.ExternalMetadata = new(pkg4_runtime.RawExtension)
 				}
 				yym15 := z.DecBinary()
 				_ = yym15
 				if false {
-				} else if z.HasExtensions() && z.DecExt(x.OSBMetadata) {
+				} else if z.HasExtensions() && z.DecExt(x.ExternalMetadata) {
 				} else if !yym15 && z.IsJSONHandle() {
-					z.DecJSONUnmarshal(x.OSBMetadata)
+					z.DecJSONUnmarshal(x.ExternalMetadata)
 				} else {
-					z.DecFallback(x.OSBMetadata, false)
+					z.DecFallback(x.ExternalMetadata, false)
 				}
 			}
 		default:
@@ -3305,9 +3305,9 @@ func (x *ServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.OSBFree = false
+		x.Free = false
 	} else {
-		yyv25 := &x.OSBFree
+		yyv25 := &x.Free
 		yym26 := z.DecBinary()
 		_ = yym26
 		if false {
@@ -3327,21 +3327,21 @@ func (x *ServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.OSBMetadata != nil {
-			x.OSBMetadata = nil
+		if x.ExternalMetadata != nil {
+			x.ExternalMetadata = nil
 		}
 	} else {
-		if x.OSBMetadata == nil {
-			x.OSBMetadata = new(pkg4_runtime.RawExtension)
+		if x.ExternalMetadata == nil {
+			x.ExternalMetadata = new(pkg4_runtime.RawExtension)
 		}
 		yym28 := z.DecBinary()
 		_ = yym28
 		if false {
-		} else if z.HasExtensions() && z.DecExt(x.OSBMetadata) {
+		} else if z.HasExtensions() && z.DecExt(x.ExternalMetadata) {
 		} else if !yym28 && z.IsJSONHandle() {
-			z.DecJSONUnmarshal(x.OSBMetadata)
+			z.DecJSONUnmarshal(x.ExternalMetadata)
 		} else {
-			z.DecFallback(x.OSBMetadata, false)
+			z.DecFallback(x.ExternalMetadata, false)
 		}
 	}
 	for {

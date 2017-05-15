@@ -342,18 +342,18 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 				}
 			}
 		}
-		if in.OSBTags != nil {
-			in, out := &in.OSBTags, &out.OSBTags
+		if in.Tags != nil {
+			in, out := &in.Tags, &out.Tags
 			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}
-		if in.OSBRequires != nil {
-			in, out := &in.OSBRequires, &out.OSBRequires
+		if in.Requires != nil {
+			in, out := &in.Requires, &out.Requires
 			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}
-		if in.OSBMetadata != nil {
-			in, out := &in.OSBMetadata, &out.OSBMetadata
+		if in.ExternalMetadata != nil {
+			in, out := &in.ExternalMetadata, &out.ExternalMetadata
 			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
 			} else {
@@ -392,8 +392,8 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 			*out = new(bool)
 			**out = **in
 		}
-		if in.OSBMetadata != nil {
-			in, out := &in.OSBMetadata, &out.OSBMetadata
+		if in.ExternalMetadata != nil {
+			in, out := &in.ExternalMetadata, &out.ExternalMetadata
 			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
 			} else {

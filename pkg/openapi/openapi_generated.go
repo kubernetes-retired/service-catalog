@@ -691,7 +691,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbTags": {
+						"tags": {
 							SchemaProps: spec.SchemaProps{
 								Description: "OSB-specific",
 								Type:        []string{"array"},
@@ -705,7 +705,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
-						"osbRequires": {
+						"requires": {
 							SchemaProps: spec.SchemaProps{
 								Type: []string{"array"},
 								Items: &spec.SchemaOrArray{
@@ -725,9 +725,9 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbMetadata": {
+						"externalMetadata": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Metadata fields",
+								Description: "ExternalMetadata fields",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -814,19 +814,19 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"osbFree": {
+						"free": {
 							SchemaProps: spec.SchemaProps{
 								Type:   []string{"boolean"},
 								Format: "",
 							},
 						},
-						"osbMetadata": {
+						"externalMetadata": {
 							SchemaProps: spec.SchemaProps{
 								Ref: ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
 					},
-					Required: []string{"name", "description", "externalID", "osbFree"},
+					Required: []string{"name", "description", "externalID", "free"},
 				},
 			},
 			Dependencies: []string{

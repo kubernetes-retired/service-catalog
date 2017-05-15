@@ -219,7 +219,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 				t.Errorf("Failed to create metadata object: %v", err)
 				return
 			}
-			sc.OSBMetadata = metadata
+			sc.ExternalMetadata = metadata
 		},
 		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
 			c.FuzzNoCustom(sp)
@@ -228,7 +228,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 				t.Errorf("Failed to create metadata object: %v", err)
 				return
 			}
-			sp.OSBMetadata = metadata
+			sp.ExternalMetadata = metadata
 		},
 	)
 	return f
