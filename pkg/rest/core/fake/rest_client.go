@@ -106,13 +106,13 @@ type RESTClient struct {
 }
 
 // NewRESTClient returns a new FakeCoreRESTClient
-func NewRESTClient() *RESTClient {
+func NewRESTClient(newEmptyObj func() runtime.Object) *RESTClient {
 	storage := make(NamespacedStorage)
 	watcher := NewWatcher()
 
 	coreCl := &fakerestclient.RESTClient{
 		Client: fakerestclient.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
-			r := getRouter(storage, watcher)
+			r := getRouter(storage, watcher, newEmptyObj)
 			rw := newResponseWriter()
 			r.ServeHTTP(rw, request)
 			return rw.getResponse(), nil
@@ -171,7 +171,11 @@ func (rw *responseWriter) getResponse() *http.Response {
 	}
 }
 
-func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
+func getRouter(
+	storage NamespacedStorage,
+	watcher *Watcher,
+	newEmptyObj func() runtime.Object,
+) http.Handler {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(
@@ -180,7 +184,7 @@ func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
 	).Methods("GET")
 	r.HandleFunc(
 		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}",
-		createItem(storage),
+		createItem(storage, newEmptyObj),
 	).Methods("POST")
 	r.HandleFunc(
 		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
@@ -188,7 +192,7 @@ func getRouter(storage NamespacedStorage, watcher *Watcher) http.Handler {
 	).Methods("GET")
 	r.HandleFunc(
 		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
-		updateItem(storage),
+		updateItem(storage, newEmptyObj),
 	).Methods("PUT")
 	r.HandleFunc(
 		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
@@ -286,12 +290,11 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 	}
 }
 
-func createItem(storage NamespacedStorage) func(rw http.ResponseWriter, r *http.Request) {
+func createItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
-		// TODO: Is there some type-agnostic way to get the codec?
-		codec, err := testapi.GetCodecForObject(&sc.Broker{})
+		codec, err := testapi.GetCodecForObject(newEmptyObj())
 		if err != nil {
 			log.Fatalf("error getting codec: %s", err)
 		}
@@ -346,7 +349,7 @@ func getItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Request)
 	}
 }
 
-func updateItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {
+func updateItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
@@ -356,8 +359,7 @@ func updateItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 			rw.WriteHeader(http.StatusNotFound)
 			return
 		}
-		// TODO: Is there some type-agnostic way to get the codec?
-		codec, err := testapi.GetCodecForObject(&sc.Broker{})
+		codec, err := testapi.GetCodecForObject(newEmptyObj())
 		if err != nil {
 			log.Fatalf("error getting codec: %s", err)
 		}
