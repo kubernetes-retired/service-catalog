@@ -313,6 +313,7 @@ func createItem(storage NamespacedStorage) func(rw http.ResponseWriter, r *http.
 		}
 		accessor.SetResourceVersion(item, "1")
 		storage.Set(ns, tipe, name, item)
+		setContentType(rw)
 		rw.WriteHeader(http.StatusCreated)
 		bytes, err := runtime.Encode(codec, item)
 		if err != nil {
@@ -340,6 +341,7 @@ func getItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Request)
 		if err != nil {
 			log.Fatalf("error encoding item: %s", err)
 		}
+		setContentType(rw)
 		rw.Write(bytes)
 	}
 }
@@ -426,6 +428,7 @@ func updateItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 		if err != nil {
 			log.Fatalf("error encoding item: %s", err)
 		}
+		setContentType(rw)
 		rw.Write(bytes)
 	}
 }
@@ -476,6 +479,7 @@ func listNamespaces(storage NamespacedStorage) func(http.ResponseWriter, *http.R
 				ObjectMeta: metav1.ObjectMeta{Name: ns},
 			})
 		}
+		setContentType(rw)
 		if err := json.NewEncoder(rw).Encode(&nsList); err != nil {
 			log.Printf("Error encoding namespace list (%s)", err)
 			rw.WriteHeader(http.StatusInternalServerError)
