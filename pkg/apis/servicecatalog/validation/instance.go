@@ -59,10 +59,6 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
 	}
 
-	if create && spec.Checksum != nil {
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("checksum"), "checksum may not be set during creation"))
-	}
-
 	return allErrs
 }
 

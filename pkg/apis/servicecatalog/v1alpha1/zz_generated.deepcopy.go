@@ -118,11 +118,6 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }
@@ -140,6 +135,11 @@ func DeepCopy_v1alpha1_BindingStatus(in interface{}, out interface{}, c *convers
 					return err
 				}
 			}
+		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
 		}
 		return nil
 	}
@@ -286,11 +286,6 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }
@@ -316,6 +311,11 @@ func DeepCopy_v1alpha1_InstanceStatus(in interface{}, out interface{}, c *conver
 		}
 		if in.DashboardURL != nil {
 			in, out := &in.DashboardURL, &out.DashboardURL
+			*out = new(string)
+			**out = **in
+		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
 		}

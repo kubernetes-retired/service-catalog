@@ -52,10 +52,6 @@ func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path, create bool)
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("secretName"), spec.SecretName, msg))
 	}
 
-	if create && spec.Checksum != nil {
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("checksum"), "checksum may not be set during creation"))
-	}
-
 	return allErrs
 }
 

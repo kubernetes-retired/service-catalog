@@ -151,8 +151,6 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context,
 	// status changes are not allowed to update spec
 	newBinding.Spec = oldBinding.Spec
 
-	// TODO: unit test
-
 	foundReadyConditionTrue := false
 	for _, condition := range newBinding.Status.Conditions {
 		if condition.Type == sc.BindingConditionReady && condition.Status == sc.ConditionTrue {
@@ -164,11 +162,16 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context,
 	if foundReadyConditionTrue {
 		glog.Infof("Found true ready condition for Binding %v/%v; updating checksum", newBinding.Namespace, newBinding.Name)
 		// This status update has a true ready condition; update the checksum if necessary
-		newBinding.Spec.Checksum = func() *string {
+		newBinding.Status.Checksum = func() *string {
 			s := checksum.BindingSpecChecksum(newBinding.Spec)
 			return &s
 		}()
+		return
 	}
+
+	// if the ready condition is not true, the value of the checksum should
+	// not change.
+	newBinding.Status.Checksum = oldBinding.Status.Checksum
 }
 
 func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

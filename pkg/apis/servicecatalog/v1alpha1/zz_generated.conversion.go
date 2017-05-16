@@ -156,7 +156,6 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -169,7 +168,6 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -179,6 +177,7 @@ func Convert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicecatal
 
 func autoConvert_v1alpha1_BindingStatus_To_servicecatalog_BindingStatus(in *BindingStatus, out *servicecatalog.BindingStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.BindingCondition)(unsafe.Pointer(&in.Conditions))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -188,6 +187,7 @@ func Convert_v1alpha1_BindingStatus_To_servicecatalog_BindingStatus(in *BindingS
 
 func autoConvert_servicecatalog_BindingStatus_To_v1alpha1_BindingStatus(in *servicecatalog.BindingStatus, out *BindingStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]BindingCondition)(unsafe.Pointer(&in.Conditions))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -390,7 +390,6 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ExternalID = in.ExternalID
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -403,7 +402,6 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ExternalID = in.ExternalID
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -416,6 +414,7 @@ func autoConvert_v1alpha1_InstanceStatus_To_servicecatalog_InstanceStatus(in *In
 	out.AsyncOpInProgress = in.AsyncOpInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -428,6 +427,7 @@ func autoConvert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus(in *se
 	out.AsyncOpInProgress = in.AsyncOpInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
