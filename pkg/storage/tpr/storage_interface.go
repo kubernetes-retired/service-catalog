@@ -546,7 +546,6 @@ func (t *store) GuaranteedUpdate(
 			if err != nil {
 				glog.Errorf("decoding to output object (%s)", err)
 			}
-			return err
 			newCurState = curState
 		} else {
 			// If the candidate doesn't match what we already have, then get an up-to-date copy
