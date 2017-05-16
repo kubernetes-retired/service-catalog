@@ -314,7 +314,7 @@ func createItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) fu
 		tipe := mux.Vars(r)["type"]
 		codec, err := testapi.GetCodecForObject(newEmptyObj())
 		if err != nil {
-			errStr := fmt.Sprintf("error getting a codec for %#v (%s)", newEmptyObj, err)
+			errStr := fmt.Sprintf("error getting a codec for %#v (%s)", newEmptyObj(), err)
 			http.Error(rw, errStr, http.StatusInternalServerError)
 			return
 		}
