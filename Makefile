@@ -245,7 +245,6 @@ test-unit: .init build
 test-integration: .init $(scBuildImageTarget) build
 	# test kubectl
 	contrib/hack/setup-kubectl.sh
-	contrib/hack/test-apiserver.sh
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
 
