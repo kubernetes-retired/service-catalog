@@ -26,6 +26,8 @@ import (
 )
 
 var (
+	// ErrNoDeletionTimestamp is the error returned by GetDeletionTimestamp when there is no
+	// deletion timestamp set on the object
 	ErrNoDeletionTimestamp = errors.New("no deletion timestamp set")
 )
 
