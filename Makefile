@@ -263,11 +263,19 @@ clean-build-image:
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
+# clean-generated does a `git checkout --` on all generated files and
+# directories.  May not work correctly if you have staged some of these files
+# or have multiple commits.
 clean-generated:
 	rm -f .generate_files
-	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
-	rm -rf pkg/client/*_generated
-	rm -f pkg/openapi/openapi_generated.go
+	# rollback changes to generated defaults/conversions/deepcopies
+	find $(TOP_SRC_DIRS) -name zz_generated* | xargs git checkout --
+	# rollback changes to types.generated.go
+	find $(TOP_SRC_DIRS) -name types.generated* | xargs git checkout --
+	# rollback changes to the generated clientset directories
+	find $(TOP_SRC_DIRS) -type d -name *_generated | xargs git checkout --
+	# rollback openapi changes
+	git checkout -- pkg/openapi/openapi_generated.go
 
 clean-coverage:
 	rm -f $(COVERAGE)
