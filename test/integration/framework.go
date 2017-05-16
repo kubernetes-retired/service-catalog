@@ -55,6 +55,7 @@ func init() {
 func getFreshApiserverAndClient(
 	t *testing.T,
 	storageTypeStr string,
+	hardDelete bool,
 	newEmptyObj func() runtime.Object,
 ) (servicecatalogclient.Interface, func()) {
 	securePort := rand.Intn(31743) + 1024

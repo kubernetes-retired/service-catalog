@@ -54,6 +54,7 @@ type store struct {
 	checkObject      func(runtime.Object) error
 	decodeKey        func(string) (string, string, error)
 	versioner        storage.Versioner
+	hardDelete       bool
 }
 
 // NewStorage creates a new TPR-based storage.Interface implementation
@@ -70,6 +71,7 @@ func NewStorage(opts Options) (storage.Interface, factory.DestroyFunc) {
 		checkObject:      opts.CheckObjectFunc,
 		decodeKey:        opts.Keyer.NamespaceAndNameFromKey,
 		versioner:        etcd.APIObjectVersioner{},
+		hardDelete:       opts.HardDelete,
 	}, opts.DestroyFunc
 }
 
@@ -161,6 +163,16 @@ func (t *store) Delete(
 	if err != nil {
 		glog.Errorf("decoding key %s (%s)", key, err)
 		return err
+	}
+	if t.hardDelete {
+		// if we are hard-deleting this item, then propagate this delete to the core API server.
+		// after the core API server gets the DELETE call, it will set the deletion timestamp
+		// as we expect, so we should proceed to remove the deletion timestamp & update as usual
+		// (below), so that the object is removed completely
+		if err := delete(t.cl, t.singularKind, key, ns, name, http.StatusOK); err != nil {
+			glog.Errorf("hard-deleting %s (%s)", key, err)
+			return err
+		}
 	}
 	if err := get(
 		t.cl,

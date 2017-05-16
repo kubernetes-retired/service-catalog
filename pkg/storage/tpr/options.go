@@ -35,4 +35,5 @@ type Options struct {
 	CheckObjectFunc  func(runtime.Object) error
 	DestroyFunc      func()
 	Keyer            Keyer
+	HardDelete       bool
 }

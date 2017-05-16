@@ -240,7 +240,7 @@ func newTestController(t *testing.T) (
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
 	// create an sc client and running server
-	catalogClient, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
+	catalogClient, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), false, func() runtime.Object {
 		return &servicecatalog.Broker{}
 	})
 
