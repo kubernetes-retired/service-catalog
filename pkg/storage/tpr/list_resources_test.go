@@ -87,7 +87,9 @@ func TestListResource(t *testing.T) {
 		kind = ServiceBrokerKind
 	)
 
-	cl := fake.NewRESTClient()
+	cl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	listObj := sc.BrokerList{TypeMeta: newTypeMeta(kind)}
 	codec, err := testapi.GetCodecForObject(&sc.BrokerList{TypeMeta: newTypeMeta(kind)})
 	if err != nil {
