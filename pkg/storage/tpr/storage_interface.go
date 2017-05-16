@@ -118,7 +118,8 @@ func (t *store) Create(
 	if res.Error() != nil {
 		errStr := fmt.Sprintf("executing POST for %s/%s (%s)", ns, name, res.Error())
 		glog.Errorf(errStr)
-		return errors.New(errStr)
+		// Don't return an error here so that, in case there was a 409 (conflict), we go and
+		// return the key exists error
 	}
 	var statusCode int
 	res.StatusCode(&statusCode)
