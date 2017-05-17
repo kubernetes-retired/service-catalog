@@ -342,16 +342,6 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 				}
 			}
 		}
-		if in.AlphaTags != nil {
-			in, out := &in.AlphaTags, &out.AlphaTags
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		}
-		if in.Requires != nil {
-			in, out := &in.Requires, &out.Requires
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		}
 		if in.ExternalMetadata != nil {
 			in, out := &in.ExternalMetadata, &out.ExternalMetadata
 			if newVal, err := c.DeepCopy(*in); err != nil {
@@ -359,6 +349,16 @@ func DeepCopy_servicecatalog_ServiceClass(in interface{}, out interface{}, c *co
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
+		}
+		if in.AlphaTags != nil {
+			in, out := &in.AlphaTags, &out.AlphaTags
+			*out = make([]string, len(*in))
+			copy(*out, *in)
+		}
+		if in.AlphaRequires != nil {
+			in, out := &in.AlphaRequires, &out.AlphaRequires
+			*out = make([]string, len(*in))
+			copy(*out, *in)
 		}
 		return nil
 	}

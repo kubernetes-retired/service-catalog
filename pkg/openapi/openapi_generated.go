@@ -691,21 +691,20 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"alphaTags": {
+						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OSB-specific",
-								Type:        []string{"array"},
-								Items: &spec.SchemaOrArray{
-									Schema: &spec.Schema{
-										SchemaProps: spec.SchemaProps{
-											Type:   []string{"string"},
-											Format: "",
-										},
-									},
-								},
+								Description: "Description is a short description of the service.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
-						"requires": {
+						"externalMetadata": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalMetadata fields",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"alphaTags": {
 							SchemaProps: spec.SchemaProps{
 								Type: []string{"array"},
 								Items: &spec.SchemaOrArray{
@@ -718,17 +717,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
-						"description": {
+						"alphaRequires": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of the service.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"externalMetadata": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ExternalMetadata fields",
-								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nAlphaRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an Instance provisioned from this ServiceClass will not work correctly.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
 							},
 						},
 					},

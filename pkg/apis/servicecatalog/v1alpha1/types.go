@@ -132,14 +132,22 @@ type ServiceClass struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// OSB-specific
-	AlphaTags []string `json:"alphaTags,omitempty"`
-	Requires  []string `json:"requires,omitempty"`
 	// Description is a short description of the service.
 	Description string `json:"description"`
 
 	// ExternalMetadata fields
 	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
+
+	AlphaTags []string `json:"alphaTags,omitempty"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AlphaRequires exposes a list of Cloud Foundry-specific 'permissions'
+	// that must be granted to an instance of this service within Cloud
+	// Foundry.  These 'permissions' have no meaning within Kubernetes and an
+	// Instance provisioned from this ServiceClass will not work correctly.
+	AlphaRequires []string `json:"alphaRequires,omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
