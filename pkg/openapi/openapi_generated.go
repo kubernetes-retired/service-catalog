@@ -118,7 +118,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BindingList": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BindingList is a list of Bindings",
+					Description: "BindingList is a list of Bindings.",
 					Properties: map[string]spec.Schema{
 						"kind": {
 							SchemaProps: spec.SchemaProps{
@@ -161,11 +161,11 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BindingSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BindingSpec represents a description of a Binding.",
+					Description: "BindingSpec represents the desired state of a Binding.",
 					Properties: map[string]spec.Schema{
 						"instanceRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "InstanceRef is the reference to the Instance this binding is to. Immutable.",
+								Description: "InstanceRef is the reference to the Instance this Binding is to.\n\nImmutable.",
 								Ref:         ref("k8s.io/client-go/pkg/api/v1.LocalObjectReference"),
 							},
 						},
@@ -177,14 +177,14 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"secretName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Names of subordinate objects to create",
+								Description: "SecretName is the name of the secret to create in the Binding's namespace that will hold the credentials associated with the Binding.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -365,7 +365,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 					Properties: map[string]spec.Schema{
 						"url": {
 							SchemaProps: spec.SchemaProps{
-								Description: "The URL to communicate with the Broker via..",
+								Description: "URL is the address used to communicate with the Broker.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -451,7 +451,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceCondition": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "InstanceCondition contains condition information for an Instance.",
+					Description: "InstanceCondition contains condition information about an Instance.",
 					Properties: map[string]spec.Schema{
 						"type": {
 							SchemaProps: spec.SchemaProps{
@@ -497,7 +497,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceList": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "InstanceList is a list of instances",
+					Description: "InstanceList is a list of instances.",
 					Properties: map[string]spec.Schema{
 						"kind": {
 							SchemaProps: spec.SchemaProps{
@@ -540,18 +540,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "InstanceSpec represents a description of an Instance.",
+					Description: "InstanceSpec represents the desired state of an Instance.",
 					Properties: map[string]spec.Schema{
 						"serviceClassName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ServiceClassName is the reference to the ServiceClass this is an instance of.  Immutable.",
+								Description: "ServiceClassName is the reference to the ServiceClass this Instance should be provisioned from.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"planName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ServicePlanName is the reference to the ServicePlan for this instance.",
+								Description: "PlanName is the name of the ServicePlan this Instance should be provisioned from.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -564,7 +564,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalID is the identity of this object for use with the OSB SB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB SB API.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -583,7 +583,8 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 					Properties: map[string]spec.Schema{
 						"conditions": {
 							SchemaProps: spec.SchemaProps{
-								Type: []string{"array"},
+								Description: "Conditions is an array of InstanceConditions capturing aspects of an Instance's status.",
+								Type:        []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
 										SchemaProps: spec.SchemaProps{
@@ -609,7 +610,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"dashboardURL": {
 							SchemaProps: spec.SchemaProps{
-								Description: "DashboardURL is the URL of a web-based management user interface for the service instance",
+								Description: "DashboardURL is the URL of a web-based management user interface for the service instance.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -654,21 +655,29 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"brokerName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "BrokerName is the reference to the Broker that provides this service. Immutable.",
+								Description: "BrokerName is the reference to the Broker that provides this ServiceClass.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"description": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Description is a short description of this ServiceClass.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an instance of this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+								Description: "Bindable indicates whether a user can create bindings to an Instance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
 						"plans": {
 							SchemaProps: spec.SchemaProps{
-								Type: []string{"array"},
+								Description: "Plans is the list of ServicePlans for this ServiceClass.  All ServiceClasses have at least one ServicePlan.",
+								Type:        []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
 										SchemaProps: spec.SchemaProps{
@@ -680,33 +689,28 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"planUpdatable": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"boolean"},
-								Format: "",
+								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
+								Type:        []string{"boolean"},
+								Format:      "",
 							},
 						},
 						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalID is the identity of this object for use with the OSB API. Immutable.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"description": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of the service.",
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"externalMetadata": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalMetadata fields",
+								Description: "ExternalMetadata is a blob of information about the ServiceClass, meant to be user-facing content and display instructions.  This field may contain platform-specific conventional values.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
 						"alphaTags": {
 							SchemaProps: spec.SchemaProps{
-								Type: []string{"array"},
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
+								Type:        []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
 										SchemaProps: spec.SchemaProps{
@@ -732,7 +736,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"brokerName", "bindable", "plans", "planUpdatable", "externalID", "description"},
+					Required: []string{"brokerName", "description", "bindable", "plans", "planUpdatable", "externalID"},
 				},
 			},
 			Dependencies: []string{
@@ -741,7 +745,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassList": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ServiceClassList is a list of ServiceClasses",
+					Description: "ServiceClassList is a list of ServiceClasses.",
 					Properties: map[string]spec.Schema{
 						"kind": {
 							SchemaProps: spec.SchemaProps{
@@ -788,45 +792,47 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 					Properties: map[string]spec.Schema{
 						"name": {
 							SchemaProps: spec.SchemaProps{
-								Description: "CLI-friendly name of this plan",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"description": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of the plan.",
+								Description: "Name is the CLI-friendly name of this ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"externalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalID is the identity of this object for use with the OSB API. Immutable.",
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"description": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Description is a short description of this ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether this users can create bindings to an Instance using this plan.  If set, overrides the value of the ServiceClass.Bindable field.",
+								Description: "Bindable indicates whether a user can create bindings to an Instance using this ServicePlan.  If set, overrides the value of the ServiceClass.Bindable field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
 						"free": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"boolean"},
-								Format: "",
+								Description: "Free indicates whether this plan is available at no cost.",
+								Type:        []string{"boolean"},
+								Format:      "",
 							},
 						},
 						"externalMetadata": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+								Description: "ExternalMetadata is a blob of information about the plan, meant to be user-facing content and display instructions.  This field may contain platform-specific conventional values.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
 					},
-					Required: []string{"name", "description", "externalID", "free"},
+					Required: []string{"name", "externalID", "description", "free"},
 				},
 			},
 			Dependencies: []string{

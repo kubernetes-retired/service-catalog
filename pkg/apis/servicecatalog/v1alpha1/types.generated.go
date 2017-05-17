@@ -2157,14 +2157,33 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym18
 				if false {
 				} else {
+					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
+				}
+			} else {
+				z.EncSendContainerState(codecSelfer_containerMapKey1234)
+				r.EncodeString(codecSelferC_UTF81234, string("description"))
+				z.EncSendContainerState(codecSelfer_containerMapValue1234)
+				yym19 := z.EncBinary()
+				_ = yym19
+				if false {
+				} else {
+					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
+				}
+			}
+			if yyr2 || yy2arr2 {
+				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
+				yym21 := z.EncBinary()
+				_ = yym21
+				if false {
+				} else {
 					r.EncodeBool(bool(x.Bindable))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
 				r.EncodeString(codecSelferC_UTF81234, string("bindable"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym19 := z.EncBinary()
-				_ = yym19
+				yym22 := z.EncBinary()
+				_ = yym22
 				if false {
 				} else {
 					r.EncodeBool(bool(x.Bindable))
@@ -2175,8 +2194,8 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 				if x.Plans == nil {
 					r.EncodeNil()
 				} else {
-					yym21 := z.EncBinary()
-					_ = yym21
+					yym24 := z.EncBinary()
+					_ = yym24
 					if false {
 					} else {
 						h.encSliceServicePlan(([]ServicePlan)(x.Plans), e)
@@ -2189,8 +2208,8 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 				if x.Plans == nil {
 					r.EncodeNil()
 				} else {
-					yym22 := z.EncBinary()
-					_ = yym22
+					yym25 := z.EncBinary()
+					_ = yym25
 					if false {
 					} else {
 						h.encSliceServicePlan(([]ServicePlan)(x.Plans), e)
@@ -2199,8 +2218,8 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym24 := z.EncBinary()
-				_ = yym24
+				yym27 := z.EncBinary()
+				_ = yym27
 				if false {
 				} else {
 					r.EncodeBool(bool(x.PlanUpdatable))
@@ -2209,30 +2228,11 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
 				r.EncodeString(codecSelferC_UTF81234, string("planUpdatable"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym25 := z.EncBinary()
-				_ = yym25
-				if false {
-				} else {
-					r.EncodeBool(bool(x.PlanUpdatable))
-				}
-			}
-			if yyr2 || yy2arr2 {
-				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym27 := z.EncBinary()
-				_ = yym27
-				if false {
-				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
-				}
-			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym28 := z.EncBinary()
 				_ = yym28
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
+					r.EncodeBool(bool(x.PlanUpdatable))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -2241,17 +2241,17 @@ func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym30
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("description"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym31 := z.EncBinary()
 				_ = yym31
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -2463,59 +2463,59 @@ func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv10)) = r.DecodeString()
 				}
 			}
-		case "bindable":
+		case "description":
 			if r.TryDecodeAsNil() {
-				x.Bindable = false
+				x.Description = ""
 			} else {
-				yyv12 := &x.Bindable
+				yyv12 := &x.Description
 				yym13 := z.DecBinary()
 				_ = yym13
 				if false {
 				} else {
-					*((*bool)(yyv12)) = r.DecodeBool()
+					*((*string)(yyv12)) = r.DecodeString()
+				}
+			}
+		case "bindable":
+			if r.TryDecodeAsNil() {
+				x.Bindable = false
+			} else {
+				yyv14 := &x.Bindable
+				yym15 := z.DecBinary()
+				_ = yym15
+				if false {
+				} else {
+					*((*bool)(yyv14)) = r.DecodeBool()
 				}
 			}
 		case "plans":
 			if r.TryDecodeAsNil() {
 				x.Plans = nil
 			} else {
-				yyv14 := &x.Plans
-				yym15 := z.DecBinary()
-				_ = yym15
+				yyv16 := &x.Plans
+				yym17 := z.DecBinary()
+				_ = yym17
 				if false {
 				} else {
-					h.decSliceServicePlan((*[]ServicePlan)(yyv14), d)
+					h.decSliceServicePlan((*[]ServicePlan)(yyv16), d)
 				}
 			}
 		case "planUpdatable":
 			if r.TryDecodeAsNil() {
 				x.PlanUpdatable = false
 			} else {
-				yyv16 := &x.PlanUpdatable
-				yym17 := z.DecBinary()
-				_ = yym17
+				yyv18 := &x.PlanUpdatable
+				yym19 := z.DecBinary()
+				_ = yym19
 				if false {
 				} else {
-					*((*bool)(yyv16)) = r.DecodeBool()
+					*((*bool)(yyv18)) = r.DecodeBool()
 				}
 			}
 		case "externalID":
 			if r.TryDecodeAsNil() {
 				x.ExternalID = ""
 			} else {
-				yyv18 := &x.ExternalID
-				yym19 := z.DecBinary()
-				_ = yym19
-				if false {
-				} else {
-					*((*string)(yyv18)) = r.DecodeString()
-				}
-			}
-		case "description":
-			if r.TryDecodeAsNil() {
-				x.Description = ""
-			} else {
-				yyv20 := &x.Description
+				yyv20 := &x.ExternalID
 				yym21 := z.DecBinary()
 				_ = yym21
 				if false {
@@ -2681,14 +2681,36 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Bindable = false
+		x.Description = ""
 	} else {
-		yyv37 := &x.Bindable
+		yyv37 := &x.Description
 		yym38 := z.DecBinary()
 		_ = yym38
 		if false {
 		} else {
-			*((*bool)(yyv37)) = r.DecodeBool()
+			*((*string)(yyv37)) = r.DecodeString()
+		}
+	}
+	yyj28++
+	if yyhl28 {
+		yyb28 = yyj28 > l
+	} else {
+		yyb28 = r.CheckBreak()
+	}
+	if yyb28 {
+		z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
+		return
+	}
+	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
+	if r.TryDecodeAsNil() {
+		x.Bindable = false
+	} else {
+		yyv39 := &x.Bindable
+		yym40 := z.DecBinary()
+		_ = yym40
+		if false {
+		} else {
+			*((*bool)(yyv39)) = r.DecodeBool()
 		}
 	}
 	yyj28++
@@ -2705,12 +2727,12 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	if r.TryDecodeAsNil() {
 		x.Plans = nil
 	} else {
-		yyv39 := &x.Plans
-		yym40 := z.DecBinary()
-		_ = yym40
+		yyv41 := &x.Plans
+		yym42 := z.DecBinary()
+		_ = yym42
 		if false {
 		} else {
-			h.decSliceServicePlan((*[]ServicePlan)(yyv39), d)
+			h.decSliceServicePlan((*[]ServicePlan)(yyv41), d)
 		}
 	}
 	yyj28++
@@ -2727,12 +2749,12 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	if r.TryDecodeAsNil() {
 		x.PlanUpdatable = false
 	} else {
-		yyv41 := &x.PlanUpdatable
-		yym42 := z.DecBinary()
-		_ = yym42
+		yyv43 := &x.PlanUpdatable
+		yym44 := z.DecBinary()
+		_ = yym44
 		if false {
 		} else {
-			*((*bool)(yyv41)) = r.DecodeBool()
+			*((*bool)(yyv43)) = r.DecodeBool()
 		}
 	}
 	yyj28++
@@ -2749,29 +2771,7 @@ func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	if r.TryDecodeAsNil() {
 		x.ExternalID = ""
 	} else {
-		yyv43 := &x.ExternalID
-		yym44 := z.DecBinary()
-		_ = yym44
-		if false {
-		} else {
-			*((*string)(yyv43)) = r.DecodeString()
-		}
-	}
-	yyj28++
-	if yyhl28 {
-		yyb28 = yyj28 > l
-	} else {
-		yyb28 = r.CheckBreak()
-	}
-	if yyb28 {
-		z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
-		return
-	}
-	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
-	if r.TryDecodeAsNil() {
-		x.Description = ""
-	} else {
-		yyv45 := &x.Description
+		yyv45 := &x.ExternalID
 		yym46 := z.DecBinary()
 		_ = yym46
 		if false {
@@ -2924,17 +2924,17 @@ func (x *ServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym7
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("description"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym8 := z.EncBinary()
 				_ = yym8
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -2943,17 +2943,17 @@ func (x *ServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym10
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
+				r.EncodeString(codecSelferC_UTF81234, string("description"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym11 := z.EncBinary()
 				_ = yym11
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
+					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -3116,11 +3116,11 @@ func (x *ServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv4)) = r.DecodeString()
 				}
 			}
-		case "description":
+		case "externalID":
 			if r.TryDecodeAsNil() {
-				x.Description = ""
+				x.ExternalID = ""
 			} else {
-				yyv6 := &x.Description
+				yyv6 := &x.ExternalID
 				yym7 := z.DecBinary()
 				_ = yym7
 				if false {
@@ -3128,11 +3128,11 @@ func (x *ServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv6)) = r.DecodeString()
 				}
 			}
-		case "externalID":
+		case "description":
 			if r.TryDecodeAsNil() {
-				x.ExternalID = ""
+				x.Description = ""
 			} else {
-				yyv8 := &x.ExternalID
+				yyv8 := &x.Description
 				yym9 := z.DecBinary()
 				_ = yym9
 				if false {
@@ -3235,9 +3235,9 @@ func (x *ServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Description = ""
+		x.ExternalID = ""
 	} else {
-		yyv19 := &x.Description
+		yyv19 := &x.ExternalID
 		yym20 := z.DecBinary()
 		_ = yym20
 		if false {
@@ -3257,9 +3257,9 @@ func (x *ServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.ExternalID = ""
+		x.Description = ""
 	} else {
-		yyv21 := &x.ExternalID
+		yyv21 := &x.Description
 		yym22 := z.DecBinary()
 		_ = yym22
 		if false {
