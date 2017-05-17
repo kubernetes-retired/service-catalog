@@ -48,7 +48,7 @@ type BrokerList struct {
 
 // BrokerSpec represents a description of a Broker.
 type BrokerSpec struct {
-	// The URL to communicate with the Broker via..
+	// URL is the address used to communicate with the Broker.
 	URL string
 
 	// AuthSecret is a reference to a Secret containing auth information the
@@ -78,15 +78,16 @@ type BrokerCondition struct {
 	Message string
 }
 
-// BrokerConditionType represents a broker condition value
+// BrokerConditionType represents a broker condition value.
 type BrokerConditionType string
 
 const (
-	// BrokerConditionReady represents the fact that a given broker condition is in ready state
+	// BrokerConditionReady represents the fact that a given broker condition
+	// is in ready state.
 	BrokerConditionReady BrokerConditionType = "Ready"
 )
 
-// ConditionStatus represents a condition's status
+// ConditionStatus represents a condition's status.
 type ConditionStatus string
 
 // These are valid condition statuses. "ConditionTrue" means a resource is in
@@ -103,7 +104,7 @@ const (
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
-// ServiceClassList is a list of ServiceClasses
+// ServiceClassList is a list of ServiceClasses.
 type ServiceClassList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
@@ -119,25 +120,45 @@ type ServiceClass struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	// BrokerName is the reference to the Broker that provides this service.
+	// BrokerName is the reference to the Broker that provides this
+	// ServiceClass.
+	//
 	// Immutable.
 	BrokerName string
 
-	// Bindable indicates whether a user can create bindings to an instance of
-	// this service. ServicePlan has an optional field called Bindable which
-	// overrides the value of this field.
-	Bindable      bool
-	Plans         []ServicePlan
-	PlanUpdatable bool // Do we support this?
+	// Description is a short description of this ServiceClass.
+	Description string
+
+	// Bindable indicates whether a user can create bindings to an Instance
+	// provisioned from this service. ServicePlan has an optional field called
+	// Bindable which overrides the value of this field.
+	Bindable bool
+
+	// Plans is the list of ServicePlans for this ServiceClass.  All
+	// ServiceClasses have at least one ServicePlan.
+	Plans []ServicePlan
+
+	// PlanUpdatable indicates whether instances provisioned from this
+	// ServiceClass may change ServicePlans after being provisioned.
+	PlanUpdatable bool
 
 	// ExternalID is the identity of this object for use with the OSB API.
+	//
 	// Immutable.
 	ExternalID string
 
-	// Description is a short description of the service.
-	Description      string
+	// ExternalMetadata is a blob of information about the ServiceClass, meant
+	// to be user-facing content and display instructions.  This field may
+	// contain platform-specific conventional values.
 	ExternalMetadata *runtime.RawExtension
 
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// Tags is a list of strings that represent different classification
+	// attributes of the ServiceClass.  These are used in Cloud Foundry in a
+	// way similar to Kubernetes labels, but they currently have no special
+	// meaning in Kubernetes.
 	AlphaTags []string
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -152,20 +173,28 @@ type ServiceClass struct {
 
 // ServicePlan represents a tier of a ServiceClass.
 type ServicePlan struct {
-	// CLI-friendly name of this plan
+	// Name is the CLI-friendly name of this ServicePlan.
 	Name string
 
 	// ExternalID is the identity of this object for use with the OSB API.
+	//
 	// Immutable.
 	ExternalID string
 
-	// Bindable indicates whether this users can create bindings to an
-	// Instance using this plan.  If set, overrides the value of the
+	// Description is a short description of this ServicePlan.
+	Description string
+
+	// Bindable indicates whether a user can create bindings to an Instance
+	// using this ServicePlan.  If set, overrides the value of the
 	// ServiceClass.Bindable field.
 	Bindable *bool
-	Free     bool
-	// Description is a short description of the plan.
-	Description      string
+
+	// Free indicates whether this ServicePlan is available at no cost.
+	Free bool
+
+	// ExternalMetadata is a blob of information about the plan, meant to be
+	// user-facing content and display instructions.  This field may contain
+	// platform-specific conventional values.
 	ExternalMetadata *runtime.RawExtension
 }
 
@@ -188,12 +217,16 @@ type Instance struct {
 	Status InstanceStatus
 }
 
-// InstanceSpec represents a description of an Instance.
+// InstanceSpec represents the desired state of an Instance.
 type InstanceSpec struct {
-	// ServiceClassName is the reference to the ServiceClass this is an
-	// instance of.  Immutable.
+	// ServiceClassName is the name of the ServiceClass this Instance
+	// should be provisioned from.
+	//
+	// Immutable.
 	ServiceClassName string
-	// ServicePlanName is the reference to the ServicePlan for this instance.
+
+	// PlanName is the name of the ServicePlan this Instance should be
+	// provisioned from.
 	PlanName string
 
 	// Parameters is a YAML representation of the properties to be
@@ -201,15 +234,19 @@ type InstanceSpec struct {
 	Parameters *runtime.RawExtension
 
 	// ExternalID is the identity of this object for use with the OSB API.
+	//
 	// Immutable.
 	ExternalID string
 }
 
 // InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
+	// Conditions is an array of InstanceConditions capturing aspects of an
+	// Instance's status.
 	Conditions []InstanceCondition
+
 	// AsyncOpInProgress is set to true if there is an ongoing async operation
-	// against this Service Instance in progress.
+	// against this Instance in progress.
 	AsyncOpInProgress bool
 
 	// LastOperation is the string that the broker may have returned when
@@ -218,7 +255,7 @@ type InstanceStatus struct {
 	LastOperation *string
 
 	// DashboardURL is the URL of a web-based management user interface for
-	// the service instance
+	// the service instance.
 	DashboardURL *string
 
 	// Checksum is the checksum of the InstanceSpec that was last successfully
@@ -226,7 +263,7 @@ type InstanceStatus struct {
 	Checksum *string
 }
 
-// InstanceCondition contains condition information for an Instance.
+// InstanceCondition contains condition information about an Instance.
 type InstanceCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type InstanceConditionType
@@ -243,16 +280,16 @@ type InstanceCondition struct {
 	Message string
 }
 
-// InstanceConditionType represents a instance condition value
+// InstanceConditionType represents a instance condition value.
 type InstanceConditionType string
 
 const (
-	// InstanceConditionReady represents that a given instance condition is in
-	// ready state
+	// InstanceConditionReady represents that a given InstanceCondition is in
+	// ready state.
 	InstanceConditionReady InstanceConditionType = "Ready"
 )
 
-// BindingList is a list of Bindings
+// BindingList is a list of Bindings.
 type BindingList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
@@ -272,9 +309,10 @@ type Binding struct {
 	Status BindingStatus
 }
 
-// BindingSpec represents a description of a Binding.
+// BindingSpec represents the desired state of a Binding.
 type BindingSpec struct {
-	// InstanceRef is the reference to the Instance this binding is to.
+	// InstanceRef is the reference to the Instance this Binding is to.
+	//
 	// Immutable.
 	InstanceRef v1.LocalObjectReference
 
@@ -282,10 +320,12 @@ type BindingSpec struct {
 	// passed to the underlying broker.
 	Parameters *runtime.RawExtension
 
-	// Names of subordinate objects to create
+	// SecretName is the name of the secret to create in the Binding's
+	// namespace that will hold the credentials associated with the Binding.
 	SecretName string
 
 	// ExternalID is the identity of this object for use with the OSB API.
+	//
 	// Immutable.
 	ExternalID string
 }
@@ -316,10 +356,10 @@ type BindingCondition struct {
 	Message string
 }
 
-// BindingConditionType represents a binding condition value
+// BindingConditionType represents a BindingCondition value.
 type BindingConditionType string
 
 const (
-	// BindingConditionReady represents a binding condition is in ready state
+	// BindingConditionReady represents a BindingCondition is in ready state.
 	BindingConditionReady BindingConditionType = "Ready"
 )
