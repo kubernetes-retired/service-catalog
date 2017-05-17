@@ -17,17 +17,11 @@ limitations under the License.
 package meta
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
+	"testing"
 )
 
-var (
-	accessor   = meta.NewAccessor()
-	selfLinker = runtime.SelfLinker(accessor)
-)
-
-// GetAccessor returns a MetadataAccessor to fetch general information on metadata of
-// runtime.Object types
-func GetAccessor() meta.MetadataAccessor {
-	return accessor
+func TestGetAccessor(t *testing.T) {
+	if GetAccessor() != accessor {
+		t.Fatalf("GetAccessor didn't return the pre-initialized accessor")
+	}
 }

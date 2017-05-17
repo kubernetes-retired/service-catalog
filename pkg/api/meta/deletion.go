@@ -31,18 +31,6 @@ var (
 	ErrNoDeletionTimestamp = errors.New("no deletion timestamp set")
 )
 
-// GetAccessor returns a MetadataAccessor to fetch general information on metadata of
-// runtime.Object types
-func GetAccessor() meta.MetadataAccessor {
-	return accessor
-}
-
-// GetNamespace returns the namespace for the given object, if there is one. If not, returns
-// the empty string and a non-nil error
-func GetNamespace(obj runtime.Object) (string, error) {
-	return selfLinker.Namespace(obj)
-}
-
 // DeletionTimestampExists returns true if a deletion timestamp exists on obj, or a non-nil
 // error if that couldn't be reliably determined
 func DeletionTimestampExists(obj runtime.Object) (bool, error) {

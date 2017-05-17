@@ -17,17 +17,24 @@ limitations under the License.
 package meta
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
+	"testing"
+
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	accessor   = meta.NewAccessor()
-	selfLinker = runtime.SelfLinker(accessor)
-)
-
-// GetAccessor returns a MetadataAccessor to fetch general information on metadata of
-// runtime.Object types
-func GetAccessor() meta.MetadataAccessor {
-	return accessor
+func TestGetNamespace(t *testing.T) {
+	const namespace = "testns"
+	obj := &sc.Instance{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+		},
+	}
+	ns, err := GetNamespace(obj)
+	if err != nil {
+		t.Fatalf("error getting namespace (%s)", err)
+	}
+	if ns != namespace {
+		t.Fatalf("actual namespace (%s) wasn't expected (%s)", ns, namespace)
+	}
 }

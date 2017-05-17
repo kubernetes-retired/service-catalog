@@ -17,17 +17,11 @@ limitations under the License.
 package meta
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var (
-	accessor   = meta.NewAccessor()
-	selfLinker = runtime.SelfLinker(accessor)
-)
-
-// GetAccessor returns a MetadataAccessor to fetch general information on metadata of
-// runtime.Object types
-func GetAccessor() meta.MetadataAccessor {
-	return accessor
+// GetNamespace returns the namespace for the given object, if there is one. If not, returns
+// the empty string and a non-nil error
+func GetNamespace(obj runtime.Object) (string, error) {
+	return selfLinker.Namespace(obj)
 }

@@ -24,28 +24,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetAccessor(t *testing.T) {
-	if GetAccessor() != accessor {
-		t.Fatalf("GetAccessor didn't return the pre-initialized accessor")
-	}
-}
-
-func TestGetNamespace(t *testing.T) {
-	const namespace = "testns"
-	obj := &sc.Instance{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-		},
-	}
-	ns, err := GetNamespace(obj)
-	if err != nil {
-		t.Fatalf("error getting namespace (%s)", err)
-	}
-	if ns != namespace {
-		t.Fatalf("actual namespace (%s) wasn't expected (%s)", ns, namespace)
-	}
-}
-
 func TestDeletionTimestampExists(t *testing.T) {
 	obj := &sc.Instance{
 		ObjectMeta: metav1.ObjectMeta{},
