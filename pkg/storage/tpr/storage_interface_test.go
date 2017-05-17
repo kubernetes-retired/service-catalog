@@ -919,7 +919,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 			ResourceVersion: fmt.Sprintf("%d", origRev),
 		},
 		Spec: sc.InstanceSpec{
-			OSBGUID: "76026cec-f601-487f-b6bd-6d6f8240d620",
+			ExternalID: "76026cec-f601-487f-b6bd-6d6f8240d620",
 		},
 	}
 	instanceWithFinalizers := *instanceNoFinalizers
