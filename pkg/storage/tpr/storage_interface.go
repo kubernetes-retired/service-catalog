@@ -48,13 +48,17 @@ type store struct {
 	defaultNamespace string
 	cl               restclient.Interface
 	singularKind     Kind
-	singularShell    func(string, string) runtime.Object
-	listKind         Kind
-	listShell        func() runtime.Object
-	checkObject      func(runtime.Object) error
-	decodeKey        func(string) (string, string, error)
-	versioner        storage.Versioner
-	hardDelete       bool
+	// singularShell is a function that returns a new object of the appropriate type,
+	// with the namespace (first param) and name (second param) pre-filled
+	singularShell func(string, string) runtime.Object
+	listKind      Kind
+	// listShell is a function that returns a new, empty list object of the appropriate
+	// type. The list object should hold elements that are returned by singularShell
+	listShell   func() runtime.Object
+	checkObject func(runtime.Object) error
+	decodeKey   func(string) (string, string, error)
+	versioner   storage.Versioner
+	hardDelete  bool
 }
 
 // NewStorage creates a new TPR-based storage.Interface implementation
