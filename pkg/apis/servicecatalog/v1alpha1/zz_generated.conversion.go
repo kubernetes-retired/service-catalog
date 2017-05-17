@@ -452,10 +452,10 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	}
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalID = in.ExternalID
-	out.AlphaTags = *(*[]string)(unsafe.Pointer(&in.AlphaTags))
-	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	out.Description = in.Description
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
+	out.AlphaTags = *(*[]string)(unsafe.Pointer(&in.AlphaTags))
+	out.AlphaRequires = *(*[]string)(unsafe.Pointer(&in.AlphaRequires))
 	return nil
 }
 
@@ -480,10 +480,10 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	}
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalID = in.ExternalID
-	out.AlphaTags = *(*[]string)(unsafe.Pointer(&in.AlphaTags))
-	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	out.Description = in.Description
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
+	out.AlphaTags = *(*[]string)(unsafe.Pointer(&in.AlphaTags))
+	out.AlphaRequires = *(*[]string)(unsafe.Pointer(&in.AlphaRequires))
 	return nil
 }
 
