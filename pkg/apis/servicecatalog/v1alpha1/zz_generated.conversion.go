@@ -48,6 +48,8 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_servicecatalog_BindingStatus_To_v1alpha1_BindingStatus,
 		Convert_v1alpha1_Broker_To_servicecatalog_Broker,
 		Convert_servicecatalog_Broker_To_v1alpha1_Broker,
+		Convert_v1alpha1_BrokerAuthInfo_To_servicecatalog_BrokerAuthInfo,
+		Convert_servicecatalog_BrokerAuthInfo_To_v1alpha1_BrokerAuthInfo,
 		Convert_v1alpha1_BrokerCondition_To_servicecatalog_BrokerCondition,
 		Convert_servicecatalog_BrokerCondition_To_v1alpha1_BrokerCondition,
 		Convert_v1alpha1_BrokerList_To_servicecatalog_BrokerList,
@@ -225,6 +227,24 @@ func Convert_servicecatalog_Broker_To_v1alpha1_Broker(in *servicecatalog.Broker,
 	return autoConvert_servicecatalog_Broker_To_v1alpha1_Broker(in, out, s)
 }
 
+func autoConvert_v1alpha1_BrokerAuthInfo_To_servicecatalog_BrokerAuthInfo(in *BrokerAuthInfo, out *servicecatalog.BrokerAuthInfo, s conversion.Scope) error {
+	out.BasicAuthSecret = (*v1.ObjectReference)(unsafe.Pointer(in.BasicAuthSecret))
+	return nil
+}
+
+func Convert_v1alpha1_BrokerAuthInfo_To_servicecatalog_BrokerAuthInfo(in *BrokerAuthInfo, out *servicecatalog.BrokerAuthInfo, s conversion.Scope) error {
+	return autoConvert_v1alpha1_BrokerAuthInfo_To_servicecatalog_BrokerAuthInfo(in, out, s)
+}
+
+func autoConvert_servicecatalog_BrokerAuthInfo_To_v1alpha1_BrokerAuthInfo(in *servicecatalog.BrokerAuthInfo, out *BrokerAuthInfo, s conversion.Scope) error {
+	out.BasicAuthSecret = (*v1.ObjectReference)(unsafe.Pointer(in.BasicAuthSecret))
+	return nil
+}
+
+func Convert_servicecatalog_BrokerAuthInfo_To_v1alpha1_BrokerAuthInfo(in *servicecatalog.BrokerAuthInfo, out *BrokerAuthInfo, s conversion.Scope) error {
+	return autoConvert_servicecatalog_BrokerAuthInfo_To_v1alpha1_BrokerAuthInfo(in, out, s)
+}
+
 func autoConvert_v1alpha1_BrokerCondition_To_servicecatalog_BrokerCondition(in *BrokerCondition, out *servicecatalog.BrokerCondition, s conversion.Scope) error {
 	out.Type = servicecatalog.BrokerConditionType(in.Type)
 	out.Status = servicecatalog.ConditionStatus(in.Status)
@@ -273,7 +293,7 @@ func Convert_servicecatalog_BrokerList_To_v1alpha1_BrokerList(in *servicecatalog
 
 func autoConvert_v1alpha1_BrokerSpec_To_servicecatalog_BrokerSpec(in *BrokerSpec, out *servicecatalog.BrokerSpec, s conversion.Scope) error {
 	out.URL = in.URL
-	out.AuthSecret = (*v1.ObjectReference)(unsafe.Pointer(in.AuthSecret))
+	out.AuthInfo = (*servicecatalog.BrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
 	return nil
 }
 
@@ -283,7 +303,7 @@ func Convert_v1alpha1_BrokerSpec_To_servicecatalog_BrokerSpec(in *BrokerSpec, ou
 
 func autoConvert_servicecatalog_BrokerSpec_To_v1alpha1_BrokerSpec(in *servicecatalog.BrokerSpec, out *BrokerSpec, s conversion.Scope) error {
 	out.URL = in.URL
-	out.AuthSecret = (*v1.ObjectReference)(unsafe.Pointer(in.AuthSecret))
+	out.AuthInfo = (*BrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
 	return nil
 }
 

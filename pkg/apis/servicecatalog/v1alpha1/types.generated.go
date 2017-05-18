@@ -835,7 +835,7 @@ func (x *BrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			var yyq2 [2]bool
 			_, _, _ = yysep2, yyq2, yy2arr2
 			const yyr2 bool = false
-			yyq2[1] = x.AuthSecret != nil
+			yyq2[1] = x.AuthInfo != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(2)
@@ -871,10 +871,10 @@ func (x *BrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
 				if yyq2[1] {
-					if x.AuthSecret == nil {
+					if x.AuthInfo == nil {
 						r.EncodeNil()
 					} else {
-						x.AuthSecret.CodecEncodeSelf(e)
+						x.AuthInfo.CodecEncodeSelf(e)
 					}
 				} else {
 					r.EncodeNil()
@@ -882,12 +882,12 @@ func (x *BrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			} else {
 				if yyq2[1] {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("authSecret"))
+					r.EncodeString(codecSelferC_UTF81234, string("authInfo"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.AuthSecret == nil {
+					if x.AuthInfo == nil {
 						r.EncodeNil()
 					} else {
-						x.AuthSecret.CodecEncodeSelf(e)
+						x.AuthInfo.CodecEncodeSelf(e)
 					}
 				}
 			}
@@ -964,16 +964,16 @@ func (x *BrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 					*((*string)(yyv4)) = r.DecodeString()
 				}
 			}
-		case "authSecret":
+		case "authInfo":
 			if r.TryDecodeAsNil() {
-				if x.AuthSecret != nil {
-					x.AuthSecret = nil
+				if x.AuthInfo != nil {
+					x.AuthInfo = nil
 				}
 			} else {
-				if x.AuthSecret == nil {
-					x.AuthSecret = new(pkg3_v1.ObjectReference)
+				if x.AuthInfo == nil {
+					x.AuthInfo = new(BrokerAuthInfo)
 				}
-				x.AuthSecret.CodecDecodeSelf(d)
+				x.AuthInfo.CodecDecodeSelf(d)
 			}
 		default:
 			z.DecStructFieldNotFound(-1, yys3)
@@ -1023,14 +1023,14 @@ func (x *BrokerSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.AuthSecret != nil {
-			x.AuthSecret = nil
+		if x.AuthInfo != nil {
+			x.AuthInfo = nil
 		}
 	} else {
-		if x.AuthSecret == nil {
-			x.AuthSecret = new(pkg3_v1.ObjectReference)
+		if x.AuthInfo == nil {
+			x.AuthInfo = new(BrokerAuthInfo)
 		}
-		x.AuthSecret.CodecDecodeSelf(d)
+		x.AuthInfo.CodecDecodeSelf(d)
 	}
 	for {
 		yyj7++
@@ -1044,6 +1044,183 @@ func (x *BrokerSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 		}
 		z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 		z.DecStructFieldNotFound(yyj7-1, "")
+	}
+	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
+}
+
+func (x *BrokerAuthInfo) CodecEncodeSelf(e *codec1978.Encoder) {
+	var h codecSelfer1234
+	z, r := codec1978.GenHelperEncoder(e)
+	_, _, _ = h, z, r
+	if x == nil {
+		r.EncodeNil()
+	} else {
+		yym1 := z.EncBinary()
+		_ = yym1
+		if false {
+		} else if z.HasExtensions() && z.EncExt(x) {
+		} else {
+			yysep2 := !z.EncBinary()
+			yy2arr2 := z.EncBasicHandle().StructToArray
+			var yyq2 [1]bool
+			_, _, _ = yysep2, yyq2, yy2arr2
+			const yyr2 bool = false
+			yyq2[0] = x.BasicAuthSecret != nil
+			var yynn2 int
+			if yyr2 || yy2arr2 {
+				r.EncodeArrayStart(1)
+			} else {
+				yynn2 = 0
+				for _, b := range yyq2 {
+					if b {
+						yynn2++
+					}
+				}
+				r.EncodeMapStart(yynn2)
+				yynn2 = 0
+			}
+			if yyr2 || yy2arr2 {
+				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
+				if yyq2[0] {
+					if x.BasicAuthSecret == nil {
+						r.EncodeNil()
+					} else {
+						x.BasicAuthSecret.CodecEncodeSelf(e)
+					}
+				} else {
+					r.EncodeNil()
+				}
+			} else {
+				if yyq2[0] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("basicAuthSecret"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.BasicAuthSecret == nil {
+						r.EncodeNil()
+					} else {
+						x.BasicAuthSecret.CodecEncodeSelf(e)
+					}
+				}
+			}
+			if yyr2 || yy2arr2 {
+				z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
+			} else {
+				z.EncSendContainerState(codecSelfer_containerMapEnd1234)
+			}
+		}
+	}
+}
+
+func (x *BrokerAuthInfo) CodecDecodeSelf(d *codec1978.Decoder) {
+	var h codecSelfer1234
+	z, r := codec1978.GenHelperDecoder(d)
+	_, _, _ = h, z, r
+	yym1 := z.DecBinary()
+	_ = yym1
+	if false {
+	} else if z.HasExtensions() && z.DecExt(x) {
+	} else {
+		yyct2 := r.ContainerType()
+		if yyct2 == codecSelferValueTypeMap1234 {
+			yyl2 := r.ReadMapStart()
+			if yyl2 == 0 {
+				z.DecSendContainerState(codecSelfer_containerMapEnd1234)
+			} else {
+				x.codecDecodeSelfFromMap(yyl2, d)
+			}
+		} else if yyct2 == codecSelferValueTypeArray1234 {
+			yyl2 := r.ReadArrayStart()
+			if yyl2 == 0 {
+				z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
+			} else {
+				x.codecDecodeSelfFromArray(yyl2, d)
+			}
+		} else {
+			panic(codecSelferOnlyMapOrArrayEncodeToStructErr1234)
+		}
+	}
+}
+
+func (x *BrokerAuthInfo) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+	var h codecSelfer1234
+	z, r := codec1978.GenHelperDecoder(d)
+	_, _, _ = h, z, r
+	var yys3Slc = z.DecScratchBuffer() // default slice to decode into
+	_ = yys3Slc
+	var yyhl3 bool = l >= 0
+	for yyj3 := 0; ; yyj3++ {
+		if yyhl3 {
+			if yyj3 >= l {
+				break
+			}
+		} else {
+			if r.CheckBreak() {
+				break
+			}
+		}
+		z.DecSendContainerState(codecSelfer_containerMapKey1234)
+		yys3Slc = r.DecodeBytes(yys3Slc, true, true)
+		yys3 := string(yys3Slc)
+		z.DecSendContainerState(codecSelfer_containerMapValue1234)
+		switch yys3 {
+		case "basicAuthSecret":
+			if r.TryDecodeAsNil() {
+				if x.BasicAuthSecret != nil {
+					x.BasicAuthSecret = nil
+				}
+			} else {
+				if x.BasicAuthSecret == nil {
+					x.BasicAuthSecret = new(pkg3_v1.ObjectReference)
+				}
+				x.BasicAuthSecret.CodecDecodeSelf(d)
+			}
+		default:
+			z.DecStructFieldNotFound(-1, yys3)
+		} // end switch yys3
+	} // end for yyj3
+	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
+}
+
+func (x *BrokerAuthInfo) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+	var h codecSelfer1234
+	z, r := codec1978.GenHelperDecoder(d)
+	_, _, _ = h, z, r
+	var yyj5 int
+	var yyb5 bool
+	var yyhl5 bool = l >= 0
+	yyj5++
+	if yyhl5 {
+		yyb5 = yyj5 > l
+	} else {
+		yyb5 = r.CheckBreak()
+	}
+	if yyb5 {
+		z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
+		return
+	}
+	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
+	if r.TryDecodeAsNil() {
+		if x.BasicAuthSecret != nil {
+			x.BasicAuthSecret = nil
+		}
+	} else {
+		if x.BasicAuthSecret == nil {
+			x.BasicAuthSecret = new(pkg3_v1.ObjectReference)
+		}
+		x.BasicAuthSecret.CodecDecodeSelf(d)
+	}
+	for {
+		yyj5++
+		if yyhl5 {
+			yyb5 = yyj5 > l
+		} else {
+			yyb5 = r.CheckBreak()
+		}
+		if yyb5 {
+			break
+		}
+		z.DecSendContainerState(codecSelfer_containerArrayElem1234)
+		z.DecStructFieldNotFound(yyj5-1, "")
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }

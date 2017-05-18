@@ -269,6 +269,23 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerAuthInfo": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "BrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).\n\nNote that we currently restrict a single broker to have only one of these fields set on it.",
+					Properties: map[string]spec.Schema{
+						"basicAuthSecret": {
+							SchemaProps: spec.SchemaProps{
+								Description: "BasicAuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this Broker using basic auth.",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerCondition": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -370,10 +387,10 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"authSecret": {
+						"authInfo": {
 							SchemaProps: spec.SchemaProps{
-								Description: "AuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this Broker.",
-								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
+								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the Broker",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerAuthInfo"),
 							},
 						},
 					},
@@ -381,7 +398,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerAuthInfo"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerStatus": {
 			Schema: spec.Schema{
