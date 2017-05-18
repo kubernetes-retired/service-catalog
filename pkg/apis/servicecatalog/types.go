@@ -22,9 +22,6 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 )
 
-// TODO: all metadata and parametersfields need to be refactored to real
-// types; skipping for now to get very large generation PR in.
-
 // +genclient=true
 // +nonNamespaced=true
 
