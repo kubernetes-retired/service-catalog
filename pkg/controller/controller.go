@@ -1195,15 +1195,15 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 
 	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
-		s := fmt.Sprintf(
-			"Binding \"%s/%s\" references a non-existent Instance \"%s/%s\" (error %s)",
+		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Instance \"%s/%s\"", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
+		glog.Warningf(
+			"Binding %s/%s references a non-existent instance %s/%s (%s)",
 			binding.Namespace,
 			binding.Name,
 			binding.Namespace,
 			binding.Spec.InstanceRef.Name,
 			err,
 		)
-		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
