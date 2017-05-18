@@ -51,12 +51,22 @@ For more details about the design and features of this project see the
 
 ### Overall Status
 
-We are currently working toward an MVP release to be used in conjunction with
+We are currently working toward a beta-quality release to be used in conjunction with
 Kubernetes 1.6. See the
 [milestones list](https://github.com/kubernetes-incubator/service-catalog/milestones?direction=desc&sort=due_date&state=open) 
-for information about current and future milestones.  
+for information about the issues and PRs in current and future milestones.
+
+The project [roadmap](https://github.com/kubernetes-incubator/service-catalog/wiki/Roadmap)
+contains information about our high-level goals for
+future milestones.
+
+We are currently making weekly releases; see the
+[release process](https://github.com/kubernetes-incubator/service-catalog/wiki/Release-Process)
+for more information.
 
 ### Documentation
+
+Our goal is to have extensive use-case and functional documentation.
 
 See [here](./docs/v1) for [documentation](./docs/v1).
 
