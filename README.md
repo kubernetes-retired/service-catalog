@@ -56,9 +56,15 @@ Kubernetes 1.6. See the
 [milestones list](https://github.com/kubernetes-incubator/service-catalog/milestones?direction=desc&sort=due_date&state=open) 
 for information about the issues and PRs in current and future milestones.
 
+**NOTE**: Some fields in our API will still be considered **ALPHA** after the
+API graduates to **BETA**.  These fields are prefixed with `alpha` in
+JSON/YAML.  Alpha fields are provided for use at your own risk, may not work
+correctly, may be subject to change or removal at any time, and will not have
+data migration provided for them when they graduate past alpha.  When an alpha
+field graduates past alpha, the `alpha` prefix will be removed.
+
 The project [roadmap](https://github.com/kubernetes-incubator/service-catalog/wiki/Roadmap)
-contains information about our high-level goals for
-future milestones.
+contains information about our high-level goals for future milestones.
 
 We are currently making weekly releases; see the
 [release process](https://github.com/kubernetes-incubator/service-catalog/wiki/Release-Process)
