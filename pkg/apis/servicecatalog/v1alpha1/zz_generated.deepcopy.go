@@ -51,6 +51,8 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_InstanceList, InType: reflect.TypeOf(&InstanceList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_InstanceSpec, InType: reflect.TypeOf(&InstanceSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_InstanceStatus, InType: reflect.TypeOf(&InstanceStatus{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_Parameter, InType: reflect.TypeOf(&Parameter{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_ParameterSource, InType: reflect.TypeOf(&ParameterSource{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_ServiceClass, InType: reflect.TypeOf(&ServiceClass{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_ServiceClassList, InType: reflect.TypeOf(&ServiceClassList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_ServicePlan, InType: reflect.TypeOf(&ServicePlan{})},
@@ -112,10 +114,11 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 		*out = *in
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			if newVal, err := c.DeepCopy(*in); err != nil {
-				return err
-			} else {
-				*out = newVal.(*runtime.RawExtension)
+			*out = make([]Parameter, len(*in))
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_Parameter(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
@@ -280,10 +283,11 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 		*out = *in
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			if newVal, err := c.DeepCopy(*in); err != nil {
-				return err
-			} else {
-				*out = newVal.(*runtime.RawExtension)
+			*out = make([]Parameter, len(*in))
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_Parameter(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
@@ -318,6 +322,55 @@ func DeepCopy_v1alpha1_InstanceStatus(in interface{}, out interface{}, c *conver
 			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
+		}
+		return nil
+	}
+}
+
+func DeepCopy_v1alpha1_Parameter(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*Parameter)
+		out := out.(*Parameter)
+		*out = *in
+		if in.ValueFrom != nil {
+			in, out := &in.ValueFrom, &out.ValueFrom
+			*out = new(ParameterSource)
+			if err := DeepCopy_v1alpha1_ParameterSource(*in, *out, c); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func DeepCopy_v1alpha1_ParameterSource(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*ParameterSource)
+		out := out.(*ParameterSource)
+		*out = *in
+		if in.ConfigMapKeyRef != nil {
+			in, out := &in.ConfigMapKeyRef, &out.ConfigMapKeyRef
+			if newVal, err := c.DeepCopy(*in); err != nil {
+				return err
+			} else {
+				*out = newVal.(*api_v1.ConfigMapKeySelector)
+			}
+		}
+		if in.SecretKeyRef != nil {
+			in, out := &in.SecretKeyRef, &out.SecretKeyRef
+			if newVal, err := c.DeepCopy(*in); err != nil {
+				return err
+			} else {
+				*out = newVal.(*api_v1.SecretKeySelector)
+			}
+		}
+		if in.Raw != nil {
+			in, out := &in.Raw, &out.Raw
+			if newVal, err := c.DeepCopy(*in); err != nil {
+				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
+			}
 		}
 		return nil
 	}

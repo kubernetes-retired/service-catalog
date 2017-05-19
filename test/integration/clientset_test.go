@@ -17,7 +17,6 @@ limitations under the License.
 package integration
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 
 	// TODO: fix this upstream
@@ -39,7 +39,6 @@ import (
 	// our versioned client
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 )
 
@@ -448,8 +447,21 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
-			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
-			ExternalID:       osbGUID,
+			Parameters: []v1alpha1.Parameter{
+				{
+					Name:  "bar",
+					Value: "barvalue",
+				},
+				{
+					Name:  "first",
+					Value: "firstvalue",
+				},
+				{
+					Name:  "second",
+					Value: "secondvalue",
+				},
+			},
+			ExternalID: osbGUID,
 		},
 	}
 
@@ -507,22 +519,8 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
-	parameters := ipStruct{}
-	err = json.Unmarshal(instanceServer.Spec.Parameters.Raw, &parameters)
-	if err != nil {
-		return fmt.Errorf("Couldn't unmarshal returned instance parameters: %v", err)
-	}
-	if parameters.Bar != "barvalue" {
-		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
-	}
-	if len(parameters.Values) != 2 {
-		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
-	}
-	if parameters.Values["first"] != "firstvalue" {
-		return fmt.Errorf("Didn't get back 'firstvalue' value for key 'first' in Values map was %+v", parameters)
-	}
-	if parameters.Values["second"] != "secondvalue" {
-		return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
+	if !api.Semantic.DeepEqual(instance.Spec.Parameters, instanceServer.Spec.Parameters) {
+		return fmt.Errorf("encode altered the object, diff: %v", diff.ObjectReflectDiff(instance.Spec.Parameters, instanceServer.Spec.Parameters))
 	}
 
 	// update the instance's conditions
@@ -607,7 +605,16 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			InstanceRef: v1.LocalObjectReference{
 				Name: "bar",
 			},
-			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
+			Parameters: []v1alpha1.Parameter{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+				{
+					Name:  "first",
+					Value: "second",
+				},
+			},
 			SecretName: "secret-name",
 			ExternalID: "UUID-string",
 		},
@@ -665,34 +672,9 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		)
 	}
 
-	parameters := bpStruct{}
-	err = json.Unmarshal(bindingServer.Spec.Parameters.Raw, &parameters)
-	if err != nil {
-		return fmt.Errorf("Couldn't unmarshal returned parameters: %v", err)
+	if !api.Semantic.DeepEqual(binding.Spec.Parameters, bindingServer.Spec.Parameters) {
+		return fmt.Errorf("encode altered the object, diff: %v", diff.ObjectReflectDiff(binding.Spec.Parameters, bindingServer.Spec.Parameters))
 	}
-	if parameters.Foo != "bar" {
-		return fmt.Errorf("Didn't get back 'bar' value for key 'foo' was %+v", parameters)
-	}
-	if len(parameters.Baz) != 2 {
-		return fmt.Errorf("Didn't get back two values for 'baz' array in parameters was %+v", parameters)
-	}
-	foundFirst := false
-	foundSecond := false
-	for _, val := range parameters.Baz {
-		if val == "first" {
-			foundFirst = true
-		}
-		if val == "second" {
-			foundSecond = true
-		}
-	}
-	if !foundFirst {
-		return fmt.Errorf("Didn't find first value in parameters.baz was %+v", parameters)
-	}
-	if !foundSecond {
-		return fmt.Errorf("Didn't find second value in parameters.baz was %+v", parameters)
-	}
-
 	readyConditionTrue := v1alpha1.BindingCondition{
 		Type:    v1alpha1.BindingConditionReady,
 		Status:  v1alpha1.ConditionTrue,

@@ -35,9 +35,10 @@ func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	specString += fmt.Sprintf("serviceClassName: %v\n", spec.ServiceClassName)
 	specString += fmt.Sprintf("planName: %v\n", spec.PlanName)
 
-	if spec.Parameters != nil {
-		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
-	}
+	// TODO: DEREK COME BACK TO THIS
+	// if spec.Parameters != nil {
+	// 	specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
+	// }
 
 	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
 
@@ -55,9 +56,10 @@ func BindingSpecChecksum(spec v1alpha1.BindingSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
 
-	if spec.Parameters != nil {
-		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
-	}
+	// 	// TODO: DEREK COME BACK TO THIS
+	// if spec.Parameters != nil {
+	// 	specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
+	// }
 
 	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
 
