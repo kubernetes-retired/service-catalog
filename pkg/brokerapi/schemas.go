@@ -23,6 +23,8 @@ type Schemas struct {
 	ServiceBindings  *Schema `json:"service_bindings,omitempty"`
 }
 
+// Schema represents a plan's schemas for a create and update of an API
+// resource.
 type Schema struct {
 	Create interface{} `json:"create,omitempty"`
 	Update interface{} `json:"update,omitempty"`
