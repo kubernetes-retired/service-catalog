@@ -64,6 +64,8 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 
 // internalValidateInstanceUpdateAllowed makes sure there's not an asynchronous operation
 // ongoing with the instance. This includes changing the spec or trying to delete it.
+// Care must be taken however to allow updates to the Status field (for example to complete
+// the asynchronous operation), or to update a condition to signify progress updates.
 func internalValidateInstanceUpdateAllowed(new *sc.Instance, old *sc.Instance) field.ErrorList {
 	errors := field.ErrorList{}
 	if old.Status.AsyncOpInProgress && new.Status.AsyncOpInProgress {
