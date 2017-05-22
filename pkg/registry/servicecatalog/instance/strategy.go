@@ -39,12 +39,14 @@ func NewScopeStrategy() rest.NamespaceScopedStrategy {
 
 // implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
 // NamespaceScopedStrategy
+// The implementation disallows any modifications to the instance.Status fields.
 type instanceRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
-// implements interface RESTUpdateStrategy
+// implements interface RESTUpdateStrategy. This implementation validates updates to
+// instance.Status updates only and disallows any modifications to the instance.Spec.
 type instanceStatusRESTStrategy struct {
 	instanceRESTStrategy
 }
@@ -122,10 +124,13 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 		glog.Fatal("received a non-instance object to update from")
 	}
 
-	// TODO: ensure that checksum is carried forward when we allow updates to the spec.
-	// TODO(vaikas): This seems like it would mean an object can't be updated, but seems
-	// like the PrepareForUpdate below always overrides this method.
+	// TODO: We currently don't handle any changes to the spec in the
+	// reconciler. Once we do that, this check needs to be removed and
+	// proper validation of allowed changes needs to be implemented in
+	// ValidateUpdate
 	newInstance.Spec = oldInstance.Spec
+
+	// Do not allow any updates to the Status field while updating the Spec
 	newInstance.Status = oldInstance.Status
 }
 
@@ -151,7 +156,7 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context
 	if !ok {
 		glog.Fatal("received a non-instance object to update from")
 	}
-	// status changes are not allowed to update spec
+	// Status changes are not allowed to update spec
 	newInstance.Spec = oldInstance.Spec
 
 	foundReadyConditionTrue := false

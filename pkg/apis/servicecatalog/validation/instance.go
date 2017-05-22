@@ -37,6 +37,7 @@ func internalValidateInstance(instance *sc.Instance, create bool) field.ErrorLis
 		validateInstanceName,
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateInstanceSpec(&instance.Spec, field.NewPath("Spec"), create)...)
+	allErrs = append(allErrs, validateInstanceStatus(&instance.Status, field.NewPath("Status"), create)...)
 	return allErrs
 }
 
@@ -62,13 +63,18 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 	return allErrs
 }
 
-// internalValidateInstanceUpdateAllowed makes sure there's not an asynchronous operation
-// ongoing with the instance. This includes changing the spec or trying to delete it.
-// Care must be taken however to allow updates to the Status field (for example to complete
-// the asynchronous operation), or to update a condition to signify progress updates.
+func validateInstanceStatus(spec *sc.InstanceStatus, fldPath *field.Path, create bool) field.ErrorList {
+	allErrs := field.ErrorList{}
+	// TODO(vaikas): Implement Status validation.
+	// https://github.com/kubernetes-incubator/service-catalog/issues/882
+	return allErrs
+}
+
+// internalValidateInstanceUpdateAllowed ensures there is not an asynchronous
+// operation ongoing with the instance before allowing an update to go through.
 func internalValidateInstanceUpdateAllowed(new *sc.Instance, old *sc.Instance) field.ErrorList {
 	errors := field.ErrorList{}
-	if old.Status.AsyncOpInProgress && new.Status.AsyncOpInProgress {
+	if old.Status.AsyncOpInProgress {
 		errors = append(errors, field.Forbidden(field.NewPath("Spec"), "Another operation for this service instance is in progress"))
 	}
 	return errors
@@ -82,10 +88,18 @@ func ValidateInstanceUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList 
 	return allErrs
 }
 
+func internalValidateInstanceStatusUpdateAllowed(new *sc.Instance, old *sc.Instance) field.ErrorList {
+	errors := field.ErrorList{}
+	// TODO(vaikas): Are there any cases where we do not allow updates to
+	// Status during Async updates in progress?
+	return errors
+}
+
 // ValidateInstanceStatusUpdate checks that when changing from an older
-// instance to a newer instance is okay.
+// instance to a newer instance is okay. This only checks the instance.Status field.
 func ValidateInstanceStatusUpdate(new *sc.Instance, old *sc.Instance) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateInstanceUpdate(new, old)...)
+	allErrs = append(allErrs, internalValidateInstanceStatusUpdateAllowed(new, old)...)
+	allErrs = append(allErrs, internalValidateInstance(new, false)...)
 	return allErrs
 }
