@@ -35,15 +35,10 @@ import (
 )
 
 const (
-	catalogFormatString                    = "%s/v2/catalog"
-	serviceInstanceFormatString            = "%s/v2/service_instances/%s"
-	serviceInstanceAsyncFormatString       = "%s/v2/service_instances/%s?accepts_incomplete=true"
-	serviceInstanceDeleteFormatString      = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s"
-	serviceInstanceDeleteAsyncFormatString = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s&accepts_incomplete=true"
-	pollingFormatString                    = "%s/v2/service_instances/%s/last_operation?%s"
-	bindingFormatString                    = "%s/v2/service_instances/%s/service_bindings/%s"
-	bindingDeleteFormatString              = "%s/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s"
-	queryParamFormatString                 = "%s=%s"
+	catalogFormatString         = "%s/v2/catalog"
+	serviceInstanceFormatString = "%s/v2/service_instances/%s"
+	pollingFormatString         = "%s/v2/service_instances/%s/last_operation"
+	bindingFormatString         = "%s/v2/service_instances/%s/service_bindings/%s"
 
 	httpTimeoutSeconds     = 15
 	pollingIntervalSeconds = 1
@@ -118,7 +113,7 @@ func NewClient(name, url, username, password string) brokerapi.BrokerClient {
 func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 	catalogURL := fmt.Sprintf(catalogFormatString, c.url)
 
-	req, err := c.newOSBRequest(http.MethodGet, catalogURL, nil)
+	req, err := c.newOSBRequest(http.MethodGet, catalogURL, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -140,16 +135,17 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 }
 
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, int, error) {
-	var serviceInstanceURL string
+	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 
-	if req.AcceptsIncomplete {
-		serviceInstanceURL = fmt.Sprintf(serviceInstanceAsyncFormatString, c.url, ID)
-	} else {
-		serviceInstanceURL = fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
-	}
-
-	// TODO: Handle the auth
-	resp, err := sendOSBRequest(c, http.MethodPut, serviceInstanceURL, req)
+	resp, err := sendOSBRequest(
+		c,
+		http.MethodPut,
+		serviceInstanceURL,
+		map[string]string{
+			"accepts_incomplete": fmt.Sprintf("%t", req.AcceptsIncomplete),
+		},
+		req,
+	)
 	if err != nil {
 		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		return nil, resp.StatusCode, errRequest{message: err.Error()}
@@ -185,26 +181,22 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerap
 }
 
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) (*brokerapi.DeleteServiceInstanceResponse, int, error) {
-	var serviceInstanceURL string
+	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 
-	if req.AcceptsIncomplete {
-		serviceInstanceURL = fmt.Sprintf(serviceInstanceDeleteAsyncFormatString, c.url, ID, req.ServiceID, req.PlanID)
-	} else {
-		serviceInstanceURL = fmt.Sprintf(serviceInstanceDeleteFormatString, c.url, ID, req.ServiceID, req.PlanID)
-	}
-
-	// TODO: Handle the auth
-	httpReq, err := c.newOSBRequest(http.MethodDelete, serviceInstanceURL, nil)
+	resp, err := sendOSBRequest(
+		c,
+		http.MethodDelete,
+		serviceInstanceURL,
+		map[string]string{
+			"service_id":         req.ServiceID,
+			"plan_id":            req.PlanID,
+			"accepts_incomplete": fmt.Sprintf("%t", req.AcceptsIncomplete),
+		},
+		req,
+	)
 	if err != nil {
-		glog.Errorf("Error creating delete service instance request to broker %q at %v (%#v)", c.name, serviceInstanceURL, err)
-		return nil, 0, errRequest{message: err.Error()}
-	}
-	httpReq.Header.Set("service_id", req.ServiceID)
-	httpReq.Header.Set("plan_id", req.PlanID)
-	httpReq.Header.Set("accepts_incomplete", fmt.Sprintf("%t", req.AcceptsIncomplete))
-	resp, err := c.Client.Do(httpReq)
-	if err != nil {
-		return nil, 0, err
+		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
+		return nil, resp.StatusCode, errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
 
@@ -238,8 +230,12 @@ func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID str
 
 	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
 
-	// TODO: Handle the auth
-	createHTTPReq, err := c.newOSBRequest("PUT", serviceBindingURL, bytes.NewReader(jsonBytes))
+	createHTTPReq, err := c.newOSBRequest(
+		http.MethodPut,
+		serviceBindingURL,
+		nil,
+		bytes.NewReader(jsonBytes),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -271,10 +267,17 @@ func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID str
 }
 
 func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, serviceID, planID string) error {
-	serviceBindingURL := fmt.Sprintf(bindingDeleteFormatString, c.url, instanceID, bindingID, serviceID, planID)
+	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
 
-	// TODO: Handle the auth
-	deleteHTTPReq, err := c.newOSBRequest("DELETE", serviceBindingURL, nil)
+	deleteHTTPReq, err := c.newOSBRequest(
+		http.MethodDelete,
+		serviceBindingURL,
+		map[string]string{
+			"service_id": serviceID,
+			"plan_id":    planID,
+		},
+		nil,
+	)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
@@ -300,14 +303,24 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, se
 }
 
 func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, int, error) {
-	q, err := createPollParameters(req)
-	if err != nil {
-		glog.Errorf("Failed to create query parameters for poll last operation: %v", err)
-		return nil, 0, err
+	if req.ServiceID == "" {
+		return nil, 0, fmt.Errorf("LastOperationRequest is missing service_id")
 	}
-	url := fmt.Sprintf(pollingFormatString, c.url, ID, q)
-	pollReq := brokerapi.LastOperationRequest{}
-	resp, err := sendOSBRequest(c, http.MethodGet, url, pollReq)
+	if req.PlanID == "" {
+		return nil, 0, fmt.Errorf("LastOperationRequest is missing plan_id")
+	}
+	url := fmt.Sprintf(pollingFormatString, c.url, ID)
+	resp, err := sendOSBRequest(
+		c,
+		http.MethodGet,
+		url,
+		map[string]string{
+			"service_id": req.ServiceID,
+			"plan_id":    req.PlanID,
+			"operation":  req.Operation,
+		},
+		nil,
+	)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return nil, 0, err
@@ -325,58 +338,21 @@ func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.
 	return &lo, resp.StatusCode, nil
 }
 
-// createPollParameters creates the query parameter string from the LastOperationRequest
-// According to the spec, ServiceID and PlanID should be included, so fail requests
-// without them as it indicates programming error on our part.
-func createPollParameters(req *brokerapi.LastOperationRequest) (string, error) {
-	if req.ServiceID == "" {
-		return "", fmt.Errorf("LastOperationRequest is missing service_id")
-	}
-	if req.PlanID == "" {
-		return "", fmt.Errorf("LastOperationRequest is missing plan_id")
-	}
-
-	var buffer bytes.Buffer
-	err := appendQueryParam(&buffer, "service_id", req.ServiceID)
-	if err != nil {
-		return "", err
-	}
-	err = appendQueryParam(&buffer, "plan_id", req.PlanID)
-	if err != nil {
-		return "", err
-	}
-	err = appendQueryParam(&buffer, "operation", req.Operation)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
-}
-
-// appendQueryParam appends key=value to buffer if value is non-null.
-// If buffer is non-empty appends &key=value
-func appendQueryParam(buffer *bytes.Buffer, key, value string) error {
-	if value == "" {
-		return nil
-	}
-	if buffer.Len() > 0 {
-		_, err := buffer.WriteString("&")
-		if err != nil {
-			return err
-		}
-	}
-	_, err := buffer.WriteString(fmt.Sprintf(queryParamFormatString, key, value))
-	return err
-}
-
 // SendRequest will serialize 'object' and send it using the given method to
 // the given URL, through the provided client
-func sendOSBRequest(c *openServiceBrokerClient, method string, url string, object interface{}) (*http.Response, error) {
+func sendOSBRequest(
+	c *openServiceBrokerClient,
+	method string,
+	url string,
+	queryParams map[string]string,
+	object interface{},
+) (*http.Response, error) {
 	data, err := json.Marshal(object)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to marshal request: %s", err.Error())
 	}
 
-	req, err := c.newOSBRequest(method, url, bytes.NewReader(data))
+	req, err := c.newOSBRequest(method, url, queryParams, bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create request object: %s", err.Error())
 	}
@@ -389,7 +365,12 @@ func sendOSBRequest(c *openServiceBrokerClient, method string, url string, objec
 	return resp, nil
 }
 
-func (c *openServiceBrokerClient) newOSBRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
+func (c *openServiceBrokerClient) newOSBRequest(
+	method string,
+	urlStr string,
+	queryParams map[string]string,
+	body io.Reader,
+) (*http.Request, error) {
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
@@ -399,5 +380,12 @@ func (c *openServiceBrokerClient) newOSBRequest(method, urlStr string, body io.R
 	}
 	req.Header.Add(constants.APIVersionHeader, constants.APIVersion)
 	req.SetBasicAuth(c.username, c.password)
+	if queryParams != nil {
+		q := req.URL.Query()
+		for k, v := range queryParams {
+			q.Set(k, v)
+		}
+		req.URL.RawQuery = q.Encode()
+	}
 	return req, nil
 }
