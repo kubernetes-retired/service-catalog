@@ -42,7 +42,13 @@ func AddFinalizer(obj runtime.Object, value string) error {
 }
 
 // RemoveFinalizer removes the given value from the list of finalizers in obj, then returns the list
-// of finalizers after value has been removed
+// of finalizers after value has been removed. The returned slice will have the same ordering as
+// the list of finalizers that was in obj.
+//
+// If value doesn't exist in the finalizers in obj, the returned slice is the same as the finalizers
+// that were in obj.
+//
+// All of the finalizers that match value will be removed from the list in obj.
 func RemoveFinalizer(obj runtime.Object, value string) ([]string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
