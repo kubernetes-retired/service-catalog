@@ -194,11 +194,15 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	}
 
 	// TODO: Handle the auth
-	resp, err := sendOSBRequest(c, http.MethodDelete, serviceInstanceURL, req)
+	httpReq, err := c.newOSBRequest(http.MethodDelete, serviceInstanceURL, nil)
 	if err != nil {
-		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
-		return nil, resp.StatusCode, errRequest{message: err.Error()}
+		glog.Errorf("Error creating delete service instance request to broker %q at %v (%#v)", c.name, serviceInstanceURL, err)
+		return nil, 0, errRequest{message: err.Error()}
 	}
+	httpReq.Header.Set("service_id", req.ServiceID)
+	httpReq.Header.Set("plan_id", req.PlanID)
+	httpReq.Header.Set("accepts_incomplete", fmt.Sprintf("%t", req.AcceptsIncomplete))
+	resp, err := c.Client.Do(httpReq)
 	defer resp.Body.Close()
 
 	deleteServiceInstanceResponse := brokerapi.DeleteServiceInstanceResponse{}
