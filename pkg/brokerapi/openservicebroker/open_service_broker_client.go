@@ -203,6 +203,9 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	httpReq.Header.Set("plan_id", req.PlanID)
 	httpReq.Header.Set("accepts_incomplete", fmt.Sprintf("%t", req.AcceptsIncomplete))
 	resp, err := c.Client.Do(httpReq)
+	if err != nil {
+		return nil, 0, err
+	}
 	defer resp.Body.Close()
 
 	deleteServiceInstanceResponse := brokerapi.DeleteServiceInstanceResponse{}
