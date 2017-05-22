@@ -266,12 +266,13 @@ func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID str
 func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, serviceID, planID string) error {
 	serviceBindingURL := fmt.Sprintf(bindingDeleteFormatString, c.url, instanceID, bindingID, serviceID, planID)
 
-	// TODO: Handle the auth
 	deleteHTTPReq, err := c.newOSBRequest("DELETE", serviceBindingURL, nil)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
+	deleteHTTPReq.URL.Query().Set("service_id", serviceID)
+	deleteHTTPReq.URL.Query().Set("plan_id", planID)
 
 	glog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.Do(deleteHTTPReq)
