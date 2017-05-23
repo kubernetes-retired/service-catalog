@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -40,10 +41,9 @@ const (
 	serviceInstanceAsyncFormatString       = "%s/v2/service_instances/%s?accepts_incomplete=true"
 	serviceInstanceDeleteFormatString      = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s"
 	serviceInstanceDeleteAsyncFormatString = "%s/v2/service_instances/%s?service_id=%s&plan_id=%s&accepts_incomplete=true"
-	pollingFormatString                    = "%s/v2/service_instances/%s/last_operation?%s"
+	pollingFormatString                    = "%s/v2/service_instances/%s/last_operation"
 	bindingFormatString                    = "%s/v2/service_instances/%s/service_bindings/%s"
 	bindingDeleteFormatString              = "%s/v2/service_instances/%s/service_bindings/%s?service_id=%s&plan_id=%s"
-	queryParamFormatString                 = "%s=%s"
 
 	httpTimeoutSeconds     = 15
 	pollingIntervalSeconds = 1
@@ -293,18 +293,26 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, se
 }
 
 func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.LastOperationRequest) (*brokerapi.LastOperationResponse, int, error) {
-	q, err := createPollParameters(req)
-	if err != nil {
-		glog.Errorf("Failed to create query parameters for poll last operation: %v", err)
-		return nil, 0, err
-	}
-	url := fmt.Sprintf(pollingFormatString, c.url, ID, q)
-	pollReq := brokerapi.LastOperationRequest{}
-	resp, err := sendOSBRequest(c, http.MethodGet, url, pollReq)
+	url := fmt.Sprintf(pollingFormatString, c.url, ID)
+
+	pollHTTPReq, err := c.newOSBRequest(http.MethodGet, url, nil)
 	if err != nil {
 		glog.Errorf("Failed to create new HTTP request: %v", err)
 		return nil, 0, err
 	}
+
+	err = createPollParameters(pollHTTPReq.URL, req)
+	if err != nil {
+		glog.Errorf("Failed to create query parameters for poll last operation: %v", err)
+		return nil, 0, err
+	}
+
+	resp, err := c.Do(pollHTTPReq)
+	if err != nil {
+		glog.Errorf("Failed to GET last operation request %v: %v", pollHTTPReq, err)
+		return nil, 0, err
+	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -318,47 +326,25 @@ func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.
 	return &lo, resp.StatusCode, nil
 }
 
-// createPollParameters creates the query parameter string from the LastOperationRequest
+// createPollParameters adds the query parameters necessary for the poll operation.
 // According to the spec, ServiceID and PlanID should be included, so fail requests
 // without them as it indicates programming error on our part.
-func createPollParameters(req *brokerapi.LastOperationRequest) (string, error) {
+func createPollParameters(URL *url.URL, req *brokerapi.LastOperationRequest) error {
 	if req.ServiceID == "" {
-		return "", fmt.Errorf("LastOperationRequest is missing service_id")
+		return fmt.Errorf("LastOperationRequest is missing service_id")
 	}
 	if req.PlanID == "" {
-		return "", fmt.Errorf("LastOperationRequest is missing plan_id")
+		return fmt.Errorf("LastOperationRequest is missing plan_id")
 	}
 
-	var buffer bytes.Buffer
-	err := appendQueryParam(&buffer, "service_id", req.ServiceID)
-	if err != nil {
-		return "", err
+	q := URL.Query()
+	q.Set("service_id", req.ServiceID)
+	q.Set("plan_id", req.PlanID)
+	if req.Operation != "" {
+		q.Set("operation", req.Operation)
 	}
-	err = appendQueryParam(&buffer, "plan_id", req.PlanID)
-	if err != nil {
-		return "", err
-	}
-	err = appendQueryParam(&buffer, "operation", req.Operation)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
-}
-
-// appendQueryParam appends key=value to buffer if value is non-null.
-// If buffer is non-empty appends &key=value
-func appendQueryParam(buffer *bytes.Buffer, key, value string) error {
-	if value == "" {
-		return nil
-	}
-	if buffer.Len() > 0 {
-		_, err := buffer.WriteString("&")
-		if err != nil {
-			return err
-		}
-	}
-	_, err := buffer.WriteString(fmt.Sprintf(queryParamFormatString, key, value))
-	return err
+	URL.RawQuery = q.Encode()
+	return nil
 }
 
 // SendRequest will serialize 'object' and send it using the given method to

@@ -19,6 +19,7 @@ package openservicebroker
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -358,9 +359,18 @@ func TestUnbindGone(t *testing.T) {
 	verifyBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 }
 
+func getPollURL(t *testing.T) *url.URL {
+	u, err := url.Parse("http://example.com/v2/service_instances/1/last_operation")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	return u
+}
+
 func TestCreatePollParametersMissingServiceID(t *testing.T) {
+	u := getPollURL(t)
 	r := &brokerapi.LastOperationRequest{PlanID: testPlanID}
-	_, err := createPollParameters(r)
+	err := createPollParameters(u, r)
 	if err == nil {
 		t.Fatalf("createPollParameters did not fail with missing ServiceID")
 	}
@@ -371,8 +381,9 @@ func TestCreatePollParametersMissingServiceID(t *testing.T) {
 }
 
 func TestCreatePollParametersMissingPlanID(t *testing.T) {
+	u := getPollURL(t)
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID}
-	_, err := createPollParameters(r)
+	err := createPollParameters(u, r)
 	if err == nil {
 		t.Fatalf("createPollParameters did not fail with missing PlanID")
 	}
@@ -382,26 +393,44 @@ func TestCreatePollParametersMissingPlanID(t *testing.T) {
 }
 
 func TestCreatePollParametersNoOperation(t *testing.T) {
+	u := getPollURL(t)
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID}
-	q, err := createPollParameters(r)
+	err := createPollParameters(u, r)
 	if err != nil {
 		t.Fatalf("createPollParameters failed when expected to succeed: %s", err)
 	}
-	exp := "service_id=" + testServiceID + "&plan_id=" + testPlanID
-	if q != exp {
-		t.Fatalf("expected query parameters %q got %q\n", exp, q)
+	recv := u.Query().Get("service_id")
+	if recv != testServiceID {
+		t.Fatalf("expected service_id %q got %q\n", testServiceID, recv)
+	}
+	recv = u.Query().Get("plan_id")
+	if recv != testPlanID {
+		t.Fatalf("expected service_id %q got %q\n", testPlanID, recv)
+	}
+	recv = u.Query().Get("operation")
+	if recv != "" {
+		t.Fatalf("expected service_id %q got %q\n", "", recv)
 	}
 }
 
 func TestCreatePollParametersWithOperation(t *testing.T) {
+	u := getPollURL(t)
 	r := &brokerapi.LastOperationRequest{ServiceID: testServiceID, PlanID: testPlanID, Operation: testOperation}
-	q, err := createPollParameters(r)
+	err := createPollParameters(u, r)
 	if err != nil {
 		t.Fatalf("createPollParameters failed when expected to succeed: %s", err)
 	}
-	exp := "service_id=" + testServiceID + "&plan_id=" + testPlanID + "&operation=" + testOperation
-	if q != exp {
-		t.Fatalf("expected query parameters %q got %q\n", exp, q)
+	recv := u.Query().Get("service_id")
+	if recv != testServiceID {
+		t.Fatalf("expected service_id %q got %q\n", testServiceID, recv)
+	}
+	recv = u.Query().Get("plan_id")
+	if recv != testPlanID {
+		t.Fatalf("expected service_id %q got %q\n", testPlanID, recv)
+	}
+	recv = u.Query().Get("operation")
+	if recv != testOperation {
+		t.Fatalf("expected service_id %q got %q\n", testOperation, recv)
 	}
 }
 
