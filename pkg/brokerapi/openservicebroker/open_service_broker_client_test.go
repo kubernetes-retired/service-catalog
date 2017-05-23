@@ -482,6 +482,10 @@ func TestPollServiceInstanceWithGone(t *testing.T) {
 	if rc != http.StatusGone {
 		t.Fatalf("Expected http status %d but got %d", http.StatusOK, rc)
 	}
+	// Make sure the query parameters were sent correctly
+	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
+	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
+	verifyRequestParameter("operation", testOperation, fbs.Request, t)
 }
 
 func TestPollServiceInstanceWithSuccess(t *testing.T) {
