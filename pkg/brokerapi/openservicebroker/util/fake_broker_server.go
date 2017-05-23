@@ -99,12 +99,6 @@ func (f *FakeBrokerServer) catalogHandler(w http.ResponseWriter, r *http.Request
 func (f *FakeBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Info("fake lastOperation called")
 	f.Request = r
-	req := &brokerapi.LastOperationRequest{}
-	if err := util.BodyToObject(r, req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	f.RequestObject = req
 
 	state := "in progress"
 	if f.lastOperationState != "" {
