@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 
@@ -605,6 +606,10 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	instance := getTestInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	// we only invoke the broker client to deprovision if we have a checksum set
+	// as that implies a previous success.
+	checksum := checksum.InstanceSpecChecksum(instance.Spec)
+	instance.Status.Checksum = &checksum
 
 	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -641,6 +646,52 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
+}
+
+// TestReconcileInstanceDeleteDoesNotInvokeBroker verfies that if an instance is created that is never
+// actually provisioned the instance is able to be deleted and is not blocked by any interaction with
+// a broker (since its very likely that a broker never actually existed).
+func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.InstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
+		instanceGUID: {},
+	}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := getTestInstance()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+
+	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	testController.reconcileInstance(instance)
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The three actions should be:
+	// 0. Get against the instance
+	// 1. Removing the finalizer
+	assertNumberOfActions(t, actions, 2)
+
+	assertGet(t, actions[0], instance)
+	updatedInstance := assertUpdateStatus(t, actions[1], instance)
+	assertEmptyFinalizers(t, updatedInstance)
+
+	if _, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
+		t.Fatalf("The broker should never have been invoked as service was never provisioned prior.")
+	}
+
+	// no events because no external deprovision was needed
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
 }
 
 func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
