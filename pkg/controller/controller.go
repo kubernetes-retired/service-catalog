@@ -344,7 +344,10 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 	// If the broker's ready condition is true and the relist interval has not
 	// elapsed, do not reconcile it.
 	if !shouldReconcileBroker(broker, time.Now(), c.brokerRelistInterval) {
-		glog.V(10).Infof("Not processing Broker %v because relist interval has not elapsed since the broker became ready", broker.Name)
+		glog.V(10).Infof(
+			"Not processing Broker %v because relist interval has not elapsed since the broker became ready",
+			broker.Name,
+		)
 		return nil
 	}
 
@@ -387,7 +390,12 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 		for _, serviceClass := range catalog {
 			glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 			if err := c.reconcileServiceClassFromBrokerCatalog(broker, serviceClass); err != nil {
-				s := fmt.Sprintf("Error reconciling serviceClass %q (broker %q): %s", serviceClass.Name, broker.Name, err)
+				s := fmt.Sprintf(
+					"Error reconciling serviceClass %q (broker %q): %s",
+					serviceClass.Name,
+					broker.Name,
+					err,
+				)
 				glog.Warning(s)
 				c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
 				c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
@@ -433,7 +441,12 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 			if svcClass.BrokerName == broker.Name {
 				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 				if err != nil && !errors.IsNotFound(err) {
-					s := fmt.Sprintf("Error deleting ServiceClass %q (Broker %q): %s", svcClass.Name, broker.Name, err)
+					s := fmt.Sprintf(
+						"Error deleting ServiceClass %q (Broker %q): %s",
+						svcClass.Name,
+						broker.Name,
+						err,
+					)
 					glog.Warning(s)
 					c.updateBrokerCondition(
 						broker,
@@ -692,7 +705,11 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		if instance.Status.Checksum != nil && instance.DeletionTimestamp == nil {
 			instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
 			if instanceChecksum == *instance.Status.Checksum {
-				glog.V(4).Infof("Not processing event for Instance %v/%v because checksum showed there is no work to do", instance.Namespace, instance.Name)
+				glog.V(4).Infof(
+					"Not processing event for Instance %v/%v because checksum showed there is no work to do",
+					instance.Namespace,
+					instance.Name,
+				)
 				return nil
 			}
 		}
@@ -847,7 +864,15 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		response, respCode, err := brokerClient.DeleteServiceInstance(instance.Spec.ExternalID, request)
 
 		if err != nil {
-			s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
+			s := fmt.Sprintf(
+				"Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q with status code %d: %s",
+				instance.Namespace,
+				instance.Name,
+				serviceClass.Name,
+				brokerName,
+				respCode,
+				err,
+			)
 			glog.Warning(s)
 			c.updateInstanceCondition(
 				instance,
@@ -1157,7 +1182,11 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	if binding.Status.Checksum != nil && binding.DeletionTimestamp == nil {
 		bindingChecksum := checksum.BindingSpecChecksum(binding.Spec)
 		if bindingChecksum == *binding.Status.Checksum {
-			glog.V(4).Infof("Not processing event for Binding %v/%v because checksum showed there is no work to do", binding.Namespace, binding.Name)
+			glog.V(4).Infof(
+				"Not processing event for Binding %v/%v because checksum showed there is no work to do",
+				binding.Namespace,
+				binding.Name,
+			)
 			return nil
 		}
 	}
@@ -1167,7 +1196,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Instance \"%s/%s\"", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
-		glog.Warning(s)
+		glog.Warningf(
+			"Binding %s/%s references a non-existent instance %s/%s (%s)",
+			binding.Namespace,
+			binding.Name,
+			binding.Namespace,
+			binding.Spec.InstanceRef.Name,
+			err,
+		)
 		c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
@@ -1180,7 +1216,13 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	}
 
 	if instance.Status.AsyncOpInProgress {
-		s := fmt.Sprintf("Binding \"%s/%s\" trying to bind to Instance \"%s/%s\" that has ongoing asynchronous operation", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
+		s := fmt.Sprintf(
+			"Binding \"%s/%s\" trying to bind to Instance \"%s/%s\" that has ongoing asynchronous operation",
+			binding.Namespace,
+			binding.Name,
+			binding.Namespace,
+			binding.Spec.InstanceRef.Name,
+		)
 		glog.Info(s)
 		c.updateBindingCondition(
 			binding,
@@ -1199,7 +1241,13 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	}
 
 	if !isPlanBindable(serviceClass, servicePlan) {
-		s := fmt.Sprintf("Binding \"%s/%s\" references a non-bindable ServiceClass (%q) and Plan (%q) combination", binding.Namespace, binding.Name, instance.Spec.ServiceClassName, instance.Spec.PlanName)
+		s := fmt.Sprintf(
+			"Binding \"%s/%s\" references a non-bindable ServiceClass (%q) and Plan (%q) combination",
+			binding.Namespace,
+			binding.Name,
+			instance.Spec.ServiceClassName,
+			instance.Spec.PlanName,
+		)
 		glog.Warning(s)
 		c.updateBindingCondition(
 			binding,
@@ -1336,7 +1384,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		}
 		err = brokerClient.DeleteServiceBinding(instance.Spec.ExternalID, binding.Spec.ExternalID, serviceClass.ExternalID, servicePlan.ExternalID)
 		if err != nil {
-			s := fmt.Sprintf("Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
+			s := fmt.Sprintf(
+				"Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s",
+				binding.Name,
+				binding.Namespace,
+				instance.Namespace,
+				instance.Name,
+				serviceClass.Name,
+				brokerName,
+				err,
+			)
 			glog.Warning(s)
 			c.updateBindingCondition(
 				binding,
