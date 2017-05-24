@@ -83,7 +83,9 @@ type bpStruct struct {
 func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.Broker{}
+			})
 			defer shutdownServer()
 			if err := testGroupVersion(client); err != nil {
 				t.Fatal(err)
@@ -110,7 +112,9 @@ func testGroupVersion(client servicecatalogclient.Interface) error {
 func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.Broker{}
+			})
 			defer shutdownServer()
 			if err := testNoName(client); err != nil {
 				t.Fatal(err)
@@ -150,7 +154,9 @@ func TestBrokerClient(t *testing.T) {
 	const name = "test-broker"
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.Broker{}
+			})
 			defer shutdownServer()
 			if err := testBrokerClient(sType, client, name); err != nil {
 				t.Fatal(err)
@@ -308,7 +314,9 @@ func TestServiceClassClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.ServiceClass{}
+			})
 			defer shutdownServer()
 
 			if err := testServiceClassClient(sType, client, name); err != nil {
@@ -422,7 +430,9 @@ func TestInstanceClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-instance"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.Instance{}
+			})
 			defer shutdownServer()
 			if err := testInstanceClient(sType, client, name); err != nil {
 				t.Fatal(err)
@@ -582,7 +592,9 @@ func TestBindingClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String())
+			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.Binding{}
+			})
 			defer shutdownServer()
 
 			if err := testBindingClient(sType, client, name); err != nil {
@@ -717,23 +729,25 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	}
 
 	if err = bindingClient.Delete(name, &metav1.DeleteOptions{}); nil != err {
-		return fmt.Errorf("broker should be deleted (%v)", err)
+		return fmt.Errorf("binding delete failed (%s)", err)
 	}
 
 	bindingDeleted, err := bindingClient.Get(name, metav1.GetOptions{})
 	if nil != err {
-		return fmt.Errorf("binding should still exist (%v): %v", bindingDeleted, err)
+		return fmt.Errorf("binding should still exist on initial get (%s)", err)
 	}
 
+	fmt.Printf("-----\nclientset_test\n\nbinding deleted: %#v\n\n", *bindingDeleted)
 	bindingDeleted.ObjectMeta.Finalizers = nil
-	_, err = bindingClient.UpdateStatus(bindingDeleted)
-	if nil != err {
-		return fmt.Errorf("error updating status (%v): %v", bindingDeleted, err)
+	if _, err := bindingClient.UpdateStatus(bindingDeleted); err != nil {
+		return fmt.Errorf("error updating binding status (%s)", err)
 	}
 
-	bindingDeleted, err = bindingClient.Get(name, metav1.GetOptions{})
-	if nil == err {
-		return fmt.Errorf("binding should be deleted (%#v)", bindingDeleted)
+	if bindingDeleted, err := bindingClient.Get(name, metav1.GetOptions{}); err == nil {
+		return fmt.Errorf(
+			"binding should be deleted after finalizers cleared. got binding %#v",
+			*bindingDeleted,
+		)
 	}
 	return nil
 }

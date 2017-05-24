@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"testing"
 
+	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
@@ -44,7 +45,9 @@ const (
 
 func TestCreateExistingWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
 	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
@@ -81,7 +84,9 @@ func TestCreateExistingWithNoNamespace(t *testing.T) {
 
 func TestCreateExistingWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
 	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
@@ -126,7 +131,9 @@ func TestCreateExistingWithNamespace(t *testing.T) {
 
 func TestCreateWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	inputBroker := &sc.Broker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -174,7 +181,9 @@ func TestCreateWithNoNamespace(t *testing.T) {
 
 func TestCreateWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	inputInstance := &sc.Instance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -228,7 +237,9 @@ func TestCreateWithNamespace(t *testing.T) {
 
 func TestGetNonExistentWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
@@ -270,7 +281,9 @@ func TestGetNonExistentWithNoNamespace(t *testing.T) {
 
 func TestGetNonExistentWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
@@ -314,7 +327,9 @@ func TestGetNonExistentWithNamespace(t *testing.T) {
 
 func TestGetWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
 	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
@@ -348,7 +363,9 @@ func TestGetWithNoNamespace(t *testing.T) {
 
 func TestGetWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
 	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
@@ -391,7 +408,9 @@ func TestGetWithNamespace(t *testing.T) {
 
 func TestGetEmptyListWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.BrokerList{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	key := keyer.KeyRoot(request.NewContext())
 	outBrokerList := &sc.BrokerList{}
@@ -432,7 +451,9 @@ func TestGetEmptyListWithNoNamespace(t *testing.T) {
 
 func TestGetEmptyListWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.InstanceList{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
@@ -475,7 +496,9 @@ func TestGetEmptyListWithNamespace(t *testing.T) {
 
 func TestGetListWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.BrokerList{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
 	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
@@ -516,7 +539,9 @@ func TestGetListWithNoNamespace(t *testing.T) {
 
 func TestGetListWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.InstanceList{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
 	fakeCl.Storage.Set(globalNamespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
@@ -564,7 +589,9 @@ func TestGetListWithNamespace(t *testing.T) {
 
 func TestUpdateNonExistentWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	key, err := keyer.Key(request.NewContext(), name)
 	newURL := "http://your-incredible-broker.io"
@@ -615,7 +642,9 @@ func TestUpdateNonExistentWithNoNamespace(t *testing.T) {
 
 func TestUpdateNonExistentWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
@@ -668,7 +697,9 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 
 func TestUpdateWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	newURL := "http://your-incredible-broker.io"
@@ -719,7 +750,9 @@ func TestUpdateWithNoNamespace(t *testing.T) {
 
 func TestUpdateWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	newPlanName := "my-really-awesome-plan"
@@ -772,7 +805,9 @@ func TestUpdateWithNamespace(t *testing.T) {
 
 func TestDeleteNonExistentWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
@@ -797,7 +832,9 @@ func TestDeleteNonExistentWithNoNamespace(t *testing.T) {
 
 func TestDeleteNonExistentWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
@@ -824,15 +861,20 @@ func TestDeleteNonExistentWithNamespace(t *testing.T) {
 
 func TestDeleteWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+	brokerNoFinalizers := &sc.Broker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
 		},
-	})
+	}
+	brokerWithFinalizers := *brokerNoFinalizers
+	brokerWithFinalizers.Finalizers = append(brokerWithFinalizers.Finalizers, tprFinalizer)
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &brokerWithFinalizers)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
@@ -849,24 +891,40 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
-	if obj != nil {
-		t.Fatalf(
-			"expected object to be removed from underlying sotrage, but it was not",
-		)
+	finalizers, err := scmeta.GetFinalizers(obj)
+	if err != nil {
+		t.Fatalf("error getting finalizers (%s)", err)
+	}
+	if len(finalizers) != 0 {
+		t.Fatalf("expected no finalizers, got %#v", finalizers)
+	}
+	// the delete call does a PUT, which increments the resource version. brokerNoFinalizers
+	// and obj should match exactly except for the resource version, so do the increment here
+	brokerNoFinalizers.ResourceVersion = fmt.Sprintf("%d", origRev+1)
+	if err := deepCompare("expected", brokerNoFinalizers, "actual", obj); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestDeleteWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
+	instanceNoFinalizers := &sc.Instance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
 		},
-	})
+		Spec: sc.InstanceSpec{
+			ExternalID: "76026cec-f601-487f-b6bd-6d6f8240d620",
+		},
+	}
+	instanceWithFinalizers := *instanceNoFinalizers
+	instanceWithFinalizers.Finalizers = append(instanceWithFinalizers.Finalizers, tprFinalizer)
+	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &instanceWithFinalizers)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key, err := keyer.Key(ctx, name)
@@ -885,16 +943,26 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 	// Object should be removed from underlying storage
 	obj := fakeCl.Storage.Get(namespace, ServiceInstanceKind.URLName(), name)
-	if obj != nil {
-		t.Fatalf(
-			"expected object to be removed from underlying sotrage, but it was not",
-		)
+	finalizers, err := scmeta.GetFinalizers(obj)
+	if err != nil {
+		t.Fatalf("error getting finalizers (%s)", err)
+	}
+	if len(finalizers) != 0 {
+		t.Fatalf("expected no finalizers, got %#v", finalizers)
+	}
+	// the delete call does a PUT, which increments the resource version. brokerNoFinalizers
+	// and obj should match exactly except for the resource version, so do the increment here
+	instanceNoFinalizers.ResourceVersion = fmt.Sprintf("%d", origRev+1)
+	if err := deepCompare("expected", instanceNoFinalizers, "actual", obj); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestWatchWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Instance{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 	obj := &sc.Instance{
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
@@ -916,7 +984,9 @@ func TestWatchWithNamespace(t *testing.T) {
 
 func TestWatchWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.Broker{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	obj := &sc.Broker{
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
@@ -936,7 +1006,9 @@ func TestWatchWithNoNamespace(t *testing.T) {
 
 func TestWatchListWithNamespace(t *testing.T) {
 	keyer := getInstanceKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.InstanceList{}
+	})
 	iface := getInstanceTPRStorageIFace(t, keyer, fakeCl)
 
 	obj := &sc.InstanceList{
@@ -970,7 +1042,9 @@ func TestWatchListWithNamespace(t *testing.T) {
 
 func TestWatchListWithNoNamespace(t *testing.T) {
 	keyer := getBrokerKeyer()
-	fakeCl := fake.NewRESTClient()
+	fakeCl := fake.NewRESTClient(func() runtime.Object {
+		return &sc.BrokerList{}
+	})
 	iface := getBrokerTPRStorageIFace(t, keyer, fakeCl)
 	obj := &sc.BrokerList{
 		Items: []sc.Broker{
