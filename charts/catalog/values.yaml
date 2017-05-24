@@ -1,7 +1,7 @@
 # Default values for Service Catalog
 apiserver:
   # apiserver image to use
-  image: quay.io/kubernetes-service-catalog/apiserver:v0.0.7
+  image: quay.io/kubernetes-service-catalog/apiserver:v0.0.8
   # imagePullPolicy for the apiserver; valid values are "IfNotPresent",
   # "Never", and "Always"
   imagePullPolicy: Always
@@ -51,7 +51,7 @@ apiserver:
     enabled: false
 controllerManager:
   # controller-manager image to use
-  image: quay.io/kubernetes-service-catalog/controller-manager:v0.0.7
+  image: quay.io/kubernetes-service-catalog/controller-manager:v0.0.8
   # imagePullPolicy for the controller-manager; valid values are
   # "IfNotPresent", "Never", and "Always"
   imagePullPolicy: Always
