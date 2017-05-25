@@ -63,14 +63,18 @@ type BrokerStatus struct {
 type BrokerCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type BrokerConditionType `json:"type"`
+
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus `json:"status"`
+
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string `json:"reason"`
+
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
 	Message string `json:"message"`
@@ -96,8 +100,10 @@ type ConditionStatus string
 const (
 	// ConditionTrue represents the fact that a given condition is true
 	ConditionTrue ConditionStatus = "True"
+
 	// ConditionFalse represents the fact that a given condition is false
 	ConditionFalse ConditionStatus = "False"
+
 	// ConditionUnknown represents the fact that a given condition is unknown
 	ConditionUnknown ConditionStatus = "Unknown"
 )
@@ -265,14 +271,18 @@ type InstanceStatus struct {
 type InstanceCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type InstanceConditionType `json:"type"`
+
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus `json:"status"`
+
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string `json:"reason"`
+
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
 	Message string `json:"message"`
@@ -341,14 +351,18 @@ type BindingStatus struct {
 type BindingCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type BindingConditionType `json:"type"`
+
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus `json:"status"`
+
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
 	Reason string `json:"reason"`
+
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
 	Message string `json:"message"`
