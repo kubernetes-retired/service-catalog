@@ -340,6 +340,13 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		Bindable:    true,
 		ExternalID:  "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 		Description: "test description",
+		Plans: []v1alpha1.ServicePlan{
+			{
+				Name:        "test-service-plan",
+				ExternalID:  "test-service-plan-external-id",
+				Description: "test-description",
+			},
+		},
 	}
 
 	// start from scratch
