@@ -89,6 +89,7 @@ func getFreshApiserverAndClient(
 			TPROptions:            tprOptions,
 			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
+			AuditOptions:          genericserveroptions.NewAuditLogOptions(),
 			DisableAuth:           true,
 			StopCh:                stopCh,
 			StandaloneMode:        true, // this must be true because we have no kube server for integration.
