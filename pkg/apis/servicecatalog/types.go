@@ -396,3 +396,8 @@ const (
 	// BindingConditionReady represents a BindingCondition is in ready state.
 	BindingConditionReady BindingConditionType = "Ready"
 )
+
+// These are internal finalizer values to service catalog, must be qualified name.
+const (
+	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
+)

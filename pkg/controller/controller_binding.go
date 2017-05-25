@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
@@ -258,8 +259,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	// since those most be cleared in order, we proceed with the soft delete
 	// only if it's "our turn--" i.e. only if the finalizer we care about is at
 	// the head of the finalizers list.
-	// TODO: Should we use a more specific string here?
-	if len(binding.Finalizers) > 0 && binding.Finalizers[0] == "kubernetes" {
+	if finalizers := sets.NewString(binding.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("Finalizing Binding %v/%v", binding.Namespace, binding.Name)
 		err = c.ejectBinding(binding)
 		if err != nil {
@@ -306,7 +306,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			"The binding was deleted successfully",
 		)
 		// Clear the finalizer
-		c.updateBindingFinalizers(binding, binding.Finalizers[1:])
+		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+		c.updateBindingFinalizers(binding, finalizers.List())
 		c.recorder.Event(binding, api.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
 
 		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)

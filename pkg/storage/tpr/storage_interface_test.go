@@ -28,6 +28,7 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -873,7 +874,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 		},
 	}
 	brokerWithFinalizers := *brokerNoFinalizers
-	brokerWithFinalizers.Finalizers = append(brokerWithFinalizers.Finalizers, tprFinalizer)
+	brokerWithFinalizers.Finalizers = append(brokerWithFinalizers.Finalizers, v1alpha1.FinalizerServiceCatalog)
 	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &brokerWithFinalizers)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
@@ -923,7 +924,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 		},
 	}
 	instanceWithFinalizers := *instanceNoFinalizers
-	instanceWithFinalizers.Finalizers = append(instanceWithFinalizers.Finalizers, tprFinalizer)
+	instanceWithFinalizers.Finalizers = append(instanceWithFinalizers.Finalizers, v1alpha1.FinalizerServiceCatalog)
 	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &instanceWithFinalizers)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
