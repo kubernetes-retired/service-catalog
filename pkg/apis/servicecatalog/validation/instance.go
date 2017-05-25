@@ -64,10 +64,21 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 }
 
 func validateInstanceStatus(spec *sc.InstanceStatus, fldPath *field.Path, create bool) field.ErrorList {
-	allErrs := field.ErrorList{}
-	// TODO(vaikas): Implement Status validation.
+	errors := field.ErrorList{}
+	// TODO(vaikas): Implement more comprehensive status validation.
 	// https://github.com/kubernetes-incubator/service-catalog/issues/882
-	return allErrs
+
+	// Do not allow the instance to be ready if an async operation is ongoing
+	// ongoing
+	if spec.AsyncOpInProgress {
+		for _, c := range spec.Conditions {
+			if c.Type == sc.InstanceConditionReady && c.Status == sc.ConditionTrue {
+				errors = append(errors, field.Forbidden(fldPath.Child("Conditions"), "Can not set InstanceConditionReady to true when an async operation is in progress"))
+			}
+		}
+	}
+
+	return errors
 }
 
 // internalValidateInstanceUpdateAllowed ensures there is not an asynchronous

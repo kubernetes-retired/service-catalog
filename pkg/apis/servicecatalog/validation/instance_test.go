@@ -248,6 +248,44 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 			err:   "",
 		},
 		{
+			name: "InstanceConditionReady can not be true if async is ongoing",
+			old: &servicecatalog.InstanceStatus{
+				AsyncOpInProgress: true,
+				Conditions: []servicecatalog.InstanceCondition{{
+					Type:   servicecatalog.InstanceConditionReady,
+					Status: servicecatalog.ConditionFalse,
+				}},
+			},
+			new: &servicecatalog.InstanceStatus{
+				AsyncOpInProgress: true,
+				Conditions: []servicecatalog.InstanceCondition{{
+					Type:   servicecatalog.InstanceConditionReady,
+					Status: servicecatalog.ConditionTrue,
+				}},
+			},
+			valid: false,
+			err:   "async operation is in progress",
+		},
+		{
+			name: "InstanceConditionReady can be true if async is completed",
+			old: &servicecatalog.InstanceStatus{
+				AsyncOpInProgress: true,
+				Conditions: []servicecatalog.InstanceCondition{{
+					Type:   servicecatalog.InstanceConditionReady,
+					Status: servicecatalog.ConditionFalse,
+				}},
+			},
+			new: &servicecatalog.InstanceStatus{
+				AsyncOpInProgress: false,
+				Conditions: []servicecatalog.InstanceCondition{{
+					Type:   servicecatalog.InstanceConditionReady,
+					Status: servicecatalog.ConditionTrue,
+				}},
+			},
+			valid: true,
+			err:   "",
+		},
+		{
 			name: "Update instance condition ready status during async",
 			old: &servicecatalog.InstanceStatus{
 				AsyncOpInProgress: true,
@@ -312,7 +350,7 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 			Status: *tc.new,
 		}
 
-		errs := ValidateInstanceStatusUpdate(old, new)
+		errs := ValidateInstanceStatusUpdate(new, old)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
