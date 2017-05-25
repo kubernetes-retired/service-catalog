@@ -49,6 +49,9 @@ apiserver:
     # and authorization can be useful for quickly getting the walkthrough up and running,
     # but is not suitable for production.
     enabled: false
+  audit:
+    # If specified, audit log goes to specified path.
+    logPath: "/tmp/service-catalog-apiserver-audit.log"
 controllerManager:
   # controller-manager image to use
   image: quay.io/kubernetes-service-catalog/controller-manager:v0.0.8
