@@ -74,4 +74,10 @@ type ControllerManagerConfiguration struct {
 
 	// leaderElection defines the configuration of leader election client.
 	LeaderElection componentconfig.LeaderElectionConfiguration
+
+	// enableProfiling enables profiling via web interface host:port/debug/pprof/
+	EnableProfiling bool
+
+	// enableContentionProfiling enables lock contention profiling, if enableProfiling is true.
+	EnableContentionProfiling bool
 }

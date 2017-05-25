@@ -61,6 +61,8 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			OSBAPIContextProfile:         defaultOSBAPIContextProfile,
 			ConcurrentSyncs:              defaultConcurrentSyncs,
 			LeaderElection:               leaderelection.DefaultLeaderElectionConfiguration(),
+			EnableProfiling:              true,
+			EnableContentionProfiling:    false,
 		},
 	}
 	s.LeaderElection.LeaderElect = true
@@ -79,5 +81,7 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.DurationVar(&s.ResyncInterval, "resync-interval", s.ResyncInterval, "The interval on which the controller will resync its informers")
 	fs.DurationVar(&s.BrokerRelistInterval, "broker-relist-interval", s.BrokerRelistInterval, "The interval on which a broker's catalog is relisted after the broker becomes ready")
 	fs.BoolVar(&s.OSBAPIContextProfile, "enable-osb-api-context-profile", s.OSBAPIContextProfile, "Whether or not to send the proposed optional OpenServiceBroker API Context Profile field")
+	fs.BoolVar(&s.EnableProfiling, "profiling", s.EnableProfiling, "Enable profiling via web interface host:port/debug/pprof/")
+	fs.BoolVar(&s.EnableContentionProfiling, "contention-profiling", s.EnableContentionProfiling, "Enable lock contention profiling, if profiling is enabled")
 	leaderelection.BindFlags(&s.LeaderElection, fs)
 }
