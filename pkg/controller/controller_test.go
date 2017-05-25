@@ -1006,16 +1006,16 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
-
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	instance.Spec.Parameters = []v1alpha1.Parameter{
+		{
+			Name:  "first",
+			Value: "first-value",
+		},
+		{
+			Name:  "second",
+			Value: "second-value",
+		},
 	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	testController.reconcileInstance(instance)
 
@@ -1036,7 +1036,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
+	if len(updateObject.Spec.Parameters) == 0 {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
 	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
@@ -1045,14 +1045,10 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		if len(si.Parameters) == 0 {
 			t.Fatalf("Expected parameters but got none")
 		}
-		if e, a := "test-param", si.Parameters["name"].(string); e != a {
-			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
-		}
-		argsMap := si.Parameters["args"].(map[string]interface{})
-		if e, a := "first-arg", argsMap["first"].(string); e != a {
+		if e, a := "first-value", si.Parameters["first"].(string); e != a {
 			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
 		}
-		if e, a := "second-arg", argsMap["second"].(string); e != a {
+		if e, a := "second-value", si.Parameters["second"].(string); e != a {
 			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
 		}
 	}
@@ -1073,17 +1069,26 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
 
-	b, err := json.Marshal(parameters)
+	args := map[string]string{
+		"first":  "first-arg",
+		"second": "second-arg",
+	}
+
+	b, err := json.Marshal(args)
 	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		t.Fatalf("Failed to marshal parameters %v : %v", args, err)
 	}
 	// corrupt the byte slice to begin with a '!' instead of an opening JSON bracket '{'
 	b[0] = 0x21
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+	instance.Spec.Parameters = []v1alpha1.Parameter{
+		{
+			Name: "test-param",
+			ValueFrom: &v1alpha1.ParameterSource{
+				Raw: &runtime.RawExtension{Raw: b},
+			},
+		},
+	}
 
 	testController.reconcileInstance(instance)
 
@@ -1104,7 +1109,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to unmarshal Instance parameters"
+	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Error resolving parameters: failed to unmarshal parameter"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -1117,15 +1122,24 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	args := map[string]string{
+		"first":  "first-arg",
+		"second": "second-arg",
 	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+	b, err := json.Marshal(args)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters %v : %v", args, err)
+	}
+
+	instance.Spec.Parameters = []v1alpha1.Parameter{
+		{
+			Name: "test-param",
+			ValueFrom: &v1alpha1.ParameterSource{
+				Raw: &runtime.RawExtension{Raw: b},
+			},
+		},
+	}
 
 	fakeBrokerClient.InstanceClient.CreateErr = errors.New("fake creation failure")
 
@@ -1986,14 +2000,16 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		},
 	}
 
-	parameters := bindingParameters{Name: "test-param"}
-	parameters.Args = append(parameters.Args, "first-arg")
-	parameters.Args = append(parameters.Args, "second-arg")
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	binding.Spec.Parameters = []v1alpha1.Parameter{
+		{
+			Name:  "first",
+			Value: "first-value",
+		},
+		{
+			Name:  "second",
+			Value: "second-value",
+		},
 	}
-	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	testController.reconcileBinding(binding)
 
@@ -2019,7 +2035,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, array with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
+	if len(updateObject.Spec.Parameters) == 0 {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
 	if b, ok := fakeBrokerClient.BindingClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; !ok {
@@ -2028,28 +2044,11 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		if len(b.Parameters) == 0 {
 			t.Fatalf("Expected parameters, but got none")
 		}
-		if e, a := "test-param", b.Parameters["name"].(string); e != a {
+		if e, a := "first-value", b.Parameters["first"].(string); e != a {
 			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
 		}
-		argsArray := b.Parameters["args"].([]interface{})
-		if len(argsArray) != 2 {
-			t.Fatalf("Expected 2 elements in args array, but got %d", len(argsArray))
-		}
-		foundFirst := false
-		foundSecond := false
-		for _, el := range argsArray {
-			if el.(string) == "first-arg" {
-				foundFirst = true
-			}
-			if el.(string) == "second-arg" {
-				foundSecond = true
-			}
-		}
-		if !foundFirst {
-			t.Fatalf("Failed to find 'first-arg' in array, was %v", argsArray)
-		}
-		if !foundSecond {
-			t.Fatalf("Failed to find 'second-arg' in array, was %v", argsArray)
+		if e, a := "second-value", b.Parameters["second"].(string); e != a {
+			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
 		}
 	}
 

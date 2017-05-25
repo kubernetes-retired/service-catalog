@@ -729,22 +729,18 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	if instance.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating Instance %v/%v", instance.Namespace, instance.Name)
 
-		var parameters map[string]interface{}
-		if instance.Spec.Parameters != nil {
-			parameters, err = unmarshalParameters(instance.Spec.Parameters.Raw)
-			if err != nil {
-				s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
-				glog.Warning(s)
-				c.updateInstanceCondition(
-					instance,
-					v1alpha1.InstanceConditionReady,
-					v1alpha1.ConditionFalse,
-					errorWithParameters,
-					"Error unmarshaling instance parameters. "+s,
-				)
-				c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
-				return err
-			}
+		parameters, err := makeParameters(c.kubeClient, instance.Namespace, instance.Spec.Parameters)
+		if err != nil {
+			s := fmt.Sprintf("Error resolving parameters: %s", err)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				s,
+			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+			return err
 		}
 
 		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
@@ -1263,22 +1259,18 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	if binding.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating Binding %v/%v", binding.Namespace, binding.Name)
 
-		var parameters map[string]interface{}
-		if binding.Spec.Parameters != nil {
-			parameters, err = unmarshalParameters(binding.Spec.Parameters.Raw)
-			if err != nil {
-				s := fmt.Sprintf("Failed to unmarshal Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
-				glog.Warning(s)
-				c.updateBindingCondition(
-					binding,
-					v1alpha1.BindingConditionReady,
-					v1alpha1.ConditionFalse,
-					errorWithParameters,
-					"Error unmarshaling binding parameters. "+s,
-				)
-				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
-				return err
-			}
+		parameters, err := makeParameters(c.kubeClient, binding.Namespace, binding.Spec.Parameters)
+		if err != nil {
+			s := fmt.Sprintf("Error resolving parameters: %s", err)
+			c.updateBindingCondition(
+				binding,
+				v1alpha1.BindingConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				s,
+			)
+			c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
+			return err
 		}
 
 		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
@@ -1830,4 +1822,77 @@ func isInstanceReady(instance *v1alpha1.Instance) bool {
 	}
 
 	return false
+}
+
+// makeParameters resolves and transforms input parameters into map
+func makeParameters(client kubernetes.Interface, namespace string, params []v1alpha1.Parameter) (map[string]interface{}, error) {
+	var (
+		result     = make(map[string]interface{})
+		configMaps = make(map[string]*v1.ConfigMap)
+		secrets    = make(map[string]*v1.Secret)
+	)
+
+	for _, param := range params {
+		// literal value takes precedence
+		if param.Value != "" {
+			result[param.Name] = param.Value
+			continue
+		}
+
+		// ignore if there is no other value source (would have failed validation)
+		if param.ValueFrom == nil {
+			continue
+		}
+
+		// handle each value from discretely
+		switch {
+		case param.ValueFrom.ConfigMapKeyRef != nil:
+			cm := param.ValueFrom.ConfigMapKeyRef
+			name := cm.Name
+			key := cm.Key
+			configMap, ok := configMaps[name]
+			if !ok {
+				if client == nil {
+					return result, fmt.Errorf("could not get ConfigMap %v/%v, no kubeClient defined", namespace, name)
+				}
+				configMap, err := client.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
+				if err != nil {
+					return result, err
+				}
+				configMaps[name] = configMap
+			}
+			runtimeVal, ok := configMap.Data[key]
+			if !ok {
+				return result, fmt.Errorf("could not find key %v in ConfigMap %v/%v", key, namespace, name)
+			}
+			result[param.Name] = runtimeVal
+		case param.ValueFrom.SecretKeyRef != nil:
+			s := param.ValueFrom.SecretKeyRef
+			name := s.Name
+			key := s.Key
+			secret, ok := secrets[name]
+			if !ok {
+				if client == nil {
+					return result, fmt.Errorf("could not get Secret %v/%v, no kubeClient defined", namespace, name)
+				}
+				secret, err := client.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+				if err != nil {
+					return result, err
+				}
+				secrets[name] = secret
+			}
+			runtimeVal, ok := secret.Data[key]
+			if !ok {
+				return result, fmt.Errorf("could not find key %v in Secret %v/%v", key, namespace, name)
+			}
+			result[param.Name] = runtimeVal
+		case param.ValueFrom.Raw != nil:
+			rawValue, err := unmarshalParameters(param.ValueFrom.Raw.Raw)
+			if err != nil {
+				return result, fmt.Errorf("failed to unmarshal parameter\n%s\n %s", param.ValueFrom.Raw.Raw, err)
+			}
+			result[param.Name] = rawValue
+		}
+	}
+	return result, nil
 }

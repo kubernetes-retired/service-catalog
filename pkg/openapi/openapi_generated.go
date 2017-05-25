@@ -171,8 +171,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Parameters is a YAML representation of the properties to be passed to the underlying broker.",
-								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+								Description: "Parameters is set of properties to be passed to the underlying broker.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Parameter"),
+										},
+									},
+								},
 							},
 						},
 						"secretName": {
@@ -194,7 +201,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Parameter", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BindingStatus": {
 			Schema: spec.Schema{
@@ -558,8 +565,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Parameters is a YAML representation of the properties to be passed to the underlying broker.",
-								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+								Description: "Parameters is set of properties to be passed to the underlying broker.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Parameter"),
+										},
+									},
+								},
 							},
 						},
 						"externalID": {
@@ -574,7 +588,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Parameter"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceStatus": {
 			Schema: spec.Schema{
@@ -628,6 +642,67 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			},
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceCondition"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Parameter": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "Parameter represents a key:value pair.",
+					Properties: map[string]spec.Schema{
+						"name": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Name is the name of the key, it must be a valid JSON object key",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"value": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Optional: no more than one of the following may be specified. Optional: Defaults to \"\"; if specified, it is the value mapped to specified name.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"valueFrom": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Optional: Specifies a source the value of this parameter should come from.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParameterSource"),
+							},
+						},
+					},
+					Required: []string{"name"},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParameterSource"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParameterSource": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ParameterSource represents a source for the value of a Parameter. Only one of its fields may be set.",
+					Properties: map[string]spec.Schema{
+						"configMapKeyRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Selects a key of a ConfigMap.",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ConfigMapKeySelector"),
+							},
+						},
+						"secretKeyRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Selects a key of a secret in the object's namespace.",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.SecretKeySelector"),
+							},
+						},
+						"raw": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Raw is a YAML representation of the property values.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.ConfigMapKeySelector", "k8s.io/client-go/pkg/api/v1.SecretKeySelector"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClass": {
 			Schema: spec.Schema{

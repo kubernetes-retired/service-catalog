@@ -66,6 +66,10 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec,
 		Convert_v1alpha1_InstanceStatus_To_servicecatalog_InstanceStatus,
 		Convert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus,
+		Convert_v1alpha1_Parameter_To_servicecatalog_Parameter,
+		Convert_servicecatalog_Parameter_To_v1alpha1_Parameter,
+		Convert_v1alpha1_ParameterSource_To_servicecatalog_ParameterSource,
+		Convert_servicecatalog_ParameterSource_To_v1alpha1_ParameterSource,
 		Convert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass,
 		Convert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass,
 		Convert_v1alpha1_ServiceClassList_To_servicecatalog_ServiceClassList,
@@ -153,7 +157,7 @@ func Convert_servicecatalog_BindingList_To_v1alpha1_BindingList(in *servicecatal
 
 func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingSpec, out *servicecatalog.BindingSpec, s conversion.Scope) error {
 	out.InstanceRef = in.InstanceRef
-	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.Parameters = *(*[]servicecatalog.Parameter)(unsafe.Pointer(&in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
 	return nil
@@ -165,7 +169,7 @@ func Convert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingSpec,
 
 func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicecatalog.BindingSpec, out *BindingSpec, s conversion.Scope) error {
 	out.InstanceRef = in.InstanceRef
-	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.Parameters = *(*[]Parameter)(unsafe.Pointer(&in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
 	return nil
@@ -388,7 +392,7 @@ func Convert_servicecatalog_InstanceList_To_v1alpha1_InstanceList(in *servicecat
 func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *InstanceSpec, out *servicecatalog.InstanceSpec, s conversion.Scope) error {
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
-	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.Parameters = *(*[]servicecatalog.Parameter)(unsafe.Pointer(&in.Parameters))
 	out.ExternalID = in.ExternalID
 	return nil
 }
@@ -400,7 +404,7 @@ func Convert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *InstanceSp
 func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servicecatalog.InstanceSpec, out *InstanceSpec, s conversion.Scope) error {
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
-	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.Parameters = *(*[]Parameter)(unsafe.Pointer(&in.Parameters))
 	out.ExternalID = in.ExternalID
 	return nil
 }
@@ -433,6 +437,50 @@ func autoConvert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus(in *se
 
 func Convert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus(in *servicecatalog.InstanceStatus, out *InstanceStatus, s conversion.Scope) error {
 	return autoConvert_servicecatalog_InstanceStatus_To_v1alpha1_InstanceStatus(in, out, s)
+}
+
+func autoConvert_v1alpha1_Parameter_To_servicecatalog_Parameter(in *Parameter, out *servicecatalog.Parameter, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Value = in.Value
+	out.ValueFrom = (*servicecatalog.ParameterSource)(unsafe.Pointer(in.ValueFrom))
+	return nil
+}
+
+func Convert_v1alpha1_Parameter_To_servicecatalog_Parameter(in *Parameter, out *servicecatalog.Parameter, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Parameter_To_servicecatalog_Parameter(in, out, s)
+}
+
+func autoConvert_servicecatalog_Parameter_To_v1alpha1_Parameter(in *servicecatalog.Parameter, out *Parameter, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Value = in.Value
+	out.ValueFrom = (*ParameterSource)(unsafe.Pointer(in.ValueFrom))
+	return nil
+}
+
+func Convert_servicecatalog_Parameter_To_v1alpha1_Parameter(in *servicecatalog.Parameter, out *Parameter, s conversion.Scope) error {
+	return autoConvert_servicecatalog_Parameter_To_v1alpha1_Parameter(in, out, s)
+}
+
+func autoConvert_v1alpha1_ParameterSource_To_servicecatalog_ParameterSource(in *ParameterSource, out *servicecatalog.ParameterSource, s conversion.Scope) error {
+	out.ConfigMapKeyRef = (*v1.ConfigMapKeySelector)(unsafe.Pointer(in.ConfigMapKeyRef))
+	out.SecretKeyRef = (*v1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
+	out.Raw = (*runtime.RawExtension)(unsafe.Pointer(in.Raw))
+	return nil
+}
+
+func Convert_v1alpha1_ParameterSource_To_servicecatalog_ParameterSource(in *ParameterSource, out *servicecatalog.ParameterSource, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ParameterSource_To_servicecatalog_ParameterSource(in, out, s)
+}
+
+func autoConvert_servicecatalog_ParameterSource_To_v1alpha1_ParameterSource(in *servicecatalog.ParameterSource, out *ParameterSource, s conversion.Scope) error {
+	out.ConfigMapKeyRef = (*v1.ConfigMapKeySelector)(unsafe.Pointer(in.ConfigMapKeyRef))
+	out.SecretKeyRef = (*v1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
+	out.Raw = (*runtime.RawExtension)(unsafe.Pointer(in.Raw))
+	return nil
+}
+
+func Convert_servicecatalog_ParameterSource_To_v1alpha1_ParameterSource(in *servicecatalog.ParameterSource, out *ParameterSource, s conversion.Scope) error {
+	return autoConvert_servicecatalog_ParameterSource_To_v1alpha1_ParameterSource(in, out, s)
 }
 
 func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *ServiceClass, out *servicecatalog.ServiceClass, s conversion.Scope) error {

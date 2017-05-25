@@ -202,6 +202,32 @@ type ServicePlan struct {
 	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
 }
 
+// Parameter represents a key:value pair.
+type Parameter struct {
+	// Name is the name of the key, it must be a valid JSON object key
+	Name string `json:"name"`
+	// Optional: no more than one of the following may be specified.
+	// Optional: Defaults to ""; if specified, it is the value mapped to specified name.
+	// +optional
+	Value string `json:"value,omitempty"`
+	// Optional: Specifies a source the value of this parameter should come from.
+	// +optional
+	ValueFrom *ParameterSource `json:"valueFrom,omitempty"`
+}
+
+// ParameterSource represents a source for the value of a Parameter.
+// Only one of its fields may be set.
+type ParameterSource struct {
+	// Selects a key of a ConfigMap.
+	// +optional
+	ConfigMapKeyRef *v1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Selects a key of a secret in the object's namespace.
+	// +optional
+	SecretKeyRef *v1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// Raw is a YAML representation of the property values.
+	Raw *runtime.RawExtension `json:"raw,omitempty"`
+}
+
 // InstanceList is a list of instances.
 type InstanceList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -233,9 +259,9 @@ type InstanceSpec struct {
 	// provisioned from.
 	PlanName string `json:"planName"`
 
-	// Parameters is a YAML representation of the properties to be
+	// Parameters is set of properties to be
 	// passed to the underlying broker.
-	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+	Parameters []Parameter `json:"parameters,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// ExternalID is the identity of this object for use with the OSB SB API.
 	//
@@ -324,9 +350,9 @@ type BindingSpec struct {
 	// Immutable.
 	InstanceRef v1.LocalObjectReference `json:"instanceRef"`
 
-	// Parameters is a YAML representation of the properties to be
+	// Parameters is set of properties to be
 	// passed to the underlying broker.
-	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+	Parameters []Parameter `json:"parameters,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
 	// SecretName is the name of the secret to create in the Binding's
 	// namespace that will hold the credentials associated with the Binding.

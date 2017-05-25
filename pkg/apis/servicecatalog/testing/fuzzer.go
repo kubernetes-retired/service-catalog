@@ -51,18 +51,10 @@ type parameter struct {
 	Map   map[string]string `json:"map"`
 }
 
-func createParameter(c fuzz.Continue) (*runtime.RawExtension, error) {
-	p := parameter{Value: c.RandString()}
-	p.Map = make(map[string]string)
-	for i := 0; i < c.Rand.Intn(10); i++ {
-		p.Map[c.RandString()] = c.RandString()
-	}
-
-	b, err := json.Marshal(p)
-	if err != nil {
-		return nil, err
-	}
-	return &runtime.RawExtension{Raw: b}, nil
+func createParameter(c fuzz.Continue) servicecatalog.Parameter {
+	p := servicecatalog.Parameter{}
+	c.Fuzz(&p)
+	return p
 }
 
 func createServiceMetadata(c fuzz.Continue) (*runtime.RawExtension, error) {
@@ -192,25 +184,45 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			// Set the bytes field on the RawExtension
 			r.Raw = bytes
 		},
+		func(param *servicecatalog.Parameter, c fuzz.Continue) {
+			param.Name = c.RandString()
+			if c.RandBool() {
+				param.Value = c.RandString()
+			} else {
+				param.ValueFrom = &servicecatalog.ParameterSource{}
+			}
+		},
+		func(pv *servicecatalog.ParameterSource, c fuzz.Continue) {
+			if c.RandBool() {
+				c.Fuzz(&pv.ConfigMapKeyRef)
+			} else {
+				if c.RandBool() {
+					c.Fuzz(&pv.SecretKeyRef)
+				} else {
+					c.Fuzz(&pv.Raw)
+				}
+			}
+		},
 		func(is *servicecatalog.InstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.ExternalID = uuid.NewV4().String()
-			parameters, err := createParameter(c)
-			if err != nil {
-				t.Errorf("Failed to create parameter object: %v", err)
-				return
+			// fuzz a set of parameters
+			is.Parameters = []servicecatalog.Parameter{
+				createParameter(c),
+				createParameter(c),
+				createParameter(c),
+				createParameter(c),
 			}
-			is.Parameters = parameters
 		},
 		func(bs *servicecatalog.BindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			bs.ExternalID = uuid.NewV4().String()
-			parameters, err := createParameter(c)
-			if err != nil {
-				t.Errorf("Failed to create parameter object: %v", err)
-				return
+			bs.Parameters = []servicecatalog.Parameter{
+				createParameter(c),
+				createParameter(c),
+				createParameter(c),
+				createParameter(c),
 			}
-			bs.Parameters = parameters
 		},
 		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
 			c.FuzzNoCustom(sc)
