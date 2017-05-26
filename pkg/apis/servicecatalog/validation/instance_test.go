@@ -200,7 +200,7 @@ func TestValidateInstanceUpdate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := ValidateInstanceUpdate(tc.old, tc.new)
+		errs := ValidateInstanceUpdate(tc.new, tc.old)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
