@@ -597,7 +597,6 @@ func TestReconcileBrokerDelete(t *testing.T) {
 
 	broker := getTestBroker()
 	broker.DeletionTimestamp = &metav1.Time{}
-	broker.Finalizers = []string{"kubernetes"}
 
 	testController.reconcileBroker(broker)
 

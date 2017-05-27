@@ -97,9 +97,6 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	instance.Status = sc.InstanceStatus{}
 	// Fill in the first entry set to "creating"?
 	instance.Status.Conditions = []sc.InstanceCondition{}
-
-	// TODO: Should we use a more specific string here?
-	instance.Finalizers = []string{"kubernetes"}
 }
 
 func (instanceRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
