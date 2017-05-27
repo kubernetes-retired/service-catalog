@@ -32,6 +32,8 @@ spec:
             cpu: 100m
             memory: 30Mi
         args:
+        - --audit-log-path
+        - {{ .Values.apiserver.audit.logPath }}
         - --admission-control
         - "KubernetesNamespaceLifecycle"
         - --secure-port
