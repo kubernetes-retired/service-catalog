@@ -34,6 +34,12 @@ spec:
         args:
         - --port
         - "8080"
+        {{ if .Values.controllerManager.profiling.disabled -}}
+        - "--profiling=false"
+        {{- end}}
+        {{ if .Values.controllerManager.profiling.contentionProfiling -}}
+        - "--contention-profiling=true"
+        {{- end}}
         {{- if not .Values.useAggregator }}
         - --service-catalog-api-server-url
         {{- if .Values.apiserver.insecure }}
