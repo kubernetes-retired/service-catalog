@@ -148,7 +148,11 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 	)
 	if err != nil {
 		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
-		return nil, resp.StatusCode, errRequest{message: err.Error()}
+		errReq := errRequest{message: err.Error()}
+		if resp == nil {
+			return nil, 0, errReq
+		}
+		return nil, resp.StatusCode, errReq
 	}
 	defer resp.Body.Close()
 
