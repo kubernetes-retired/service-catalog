@@ -199,6 +199,28 @@ type ServicePlan struct {
 	// user-facing content and display instructions.  This field may contain
 	// platform-specific conventional values.
 	ExternalMetadata *runtime.RawExtension
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AlphaInstanceCreateParameterSchema is the schema for the parameters
+	// that may be supplied when provisioning a new Instance on this plan.
+	AlphaInstanceCreateParameterSchema *runtime.RawExtension
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AlphaInstanceUpdateParameterSchema is the schema for the parameters
+	// that may be updated once an Instance has been provisioned on this plan.
+	// This field only has meaning if the ServiceClass is PlanUpdatable.
+	AlphaInstanceUpdateParameterSchema *runtime.RawExtension
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AlphaBindingCreateParameterSchema is the schema for the parameters that
+	// may be supplied binding to an Instance on this plan.
+	AlphaBindingCreateParameterSchema *runtime.RawExtension
 }
 
 // InstanceList is a list of instances.

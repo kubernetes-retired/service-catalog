@@ -831,6 +831,24 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
+						"alphaInstanceCreateParameterSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nAlphaInstanceCreateParameterSchema is the schema for the parameters that may be supplied when provisioning a new Instance on this plan.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"alphaInstanceUpdateParameterSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nAlphaInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an Instance has been provisioned on this plan. This field only has meaning if the ServiceClass is PlanUpdatable.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"alphaBindingCreateParameterSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nAlphaBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to an Instance on this plan.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
 					},
 					Required: []string{"name", "externalID", "description", "free"},
 				},
