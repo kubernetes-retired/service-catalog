@@ -460,17 +460,23 @@ const alphaParameterSchemaCatalogBytes = `{
       	"d": "e"
       },
       "schemas": {
-      	"service_instances": {
+      	"service_instance": {
 	  	  "create": {
-	  		"foo": "bar"
+	  	  	"parameters": {
+	  		  "foo": "bar"	
+	  	  	}
 	  	  },
 	  	  "update": {
-	  		"baz": "zap"
+	  	  	"parameters": {
+	  		  "baz": "zap"
+	  	    }
 	  	  }
       	},
-      	"service_bindings": {
+      	"service_binding": {
       	  "create": {
-      	 	"zoo": "blu"
+	  	  	"parameters": {
+      	  	  "zoo": "blu"
+      	    }
       	  }
       	}
       }

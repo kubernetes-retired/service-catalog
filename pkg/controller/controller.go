@@ -432,19 +432,19 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 
 		if schemas := plans[i].Schemas; schemas != nil {
 			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
-				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil {
-					schema, err := json.Marshal(instanceCreateSchema)
+				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil && instanceCreateSchema.Parameters != nil {
+					schema, err := json.Marshal(instanceCreateSchema.Parameters)
 					if err != nil {
-						err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema, err)
+						err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema.Parameters, err)
 						glog.Error(err)
 						return nil, err
 					}
 					ret[i].AlphaInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
-				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil {
-					schema, err := json.Marshal(instanceUpdateSchema)
+				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
+					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
 					if err != nil {
-						err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema, err)
+						err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema.Parameters, err)
 						glog.Error(err)
 						return nil, err
 					}
@@ -452,10 +452,10 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 				}
 			}
 			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
-				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil {
-					schema, err := json.Marshal(bindingCreateSchema)
+				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil && bindingCreateSchema.Parameters != nil {
+					schema, err := json.Marshal(bindingCreateSchema.Parameters)
 					if err != nil {
-						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema, err)
+						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
 						glog.Error(err)
 						return nil, err
 					}
