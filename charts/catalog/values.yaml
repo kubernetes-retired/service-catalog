@@ -69,4 +69,10 @@ controllerManager:
   # Whether or not the controller supports a --broker-relist-interval flag. If this is 
   # set to true, brokerRelistInterval will be used as the value for that flag
   brokerRelistIntervalActivated: true
+  # enables profiling via web interface host:port/debug/pprof/
+  profiling:
+    # Disable profiling via web interface host:port/debug/pprof/
+    disabled: false
+    # Enables lock contention profiling, if profiling is enabled.
+    contentionProfiling: false
 useAggregator: false
