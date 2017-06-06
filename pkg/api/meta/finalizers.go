@@ -19,6 +19,7 @@ package meta
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // GetFinalizers gets the list of finalizers on obj
@@ -36,32 +37,22 @@ func AddFinalizer(obj runtime.Object, value string) error {
 	if err != nil {
 		return err
 	}
-	finalizers := append(accessor.GetFinalizers(), value)
-	accessor.SetFinalizers(finalizers)
+	finalizers := sets.NewString(accessor.GetFinalizers()...)
+	finalizers.Insert(value)
+	accessor.SetFinalizers(finalizers.List())
 	return nil
 }
 
-// RemoveFinalizer removes the given value from the list of finalizers in obj, then returns the list
-// of finalizers after value has been removed. The returned slice will have the same ordering as
-// the list of finalizers that was in obj.
-//
-// If value doesn't exist in the finalizers in obj, the returned slice is the same as the finalizers
-// that were in obj.
-//
-// All of the finalizers that match value will be removed from the list in obj.
+// RemoveFinalizer removes the given value from the list of finalizers in obj, then returns a new list
+// of finalizers after value has been removed.
 func RemoveFinalizer(obj runtime.Object, value string) ([]string, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, err
 	}
-	finalizers := accessor.GetFinalizers()
-	newFinalizers := []string{}
-	for _, finalizer := range finalizers {
-		if finalizer == value {
-			continue
-		}
-		newFinalizers = append(newFinalizers, finalizer)
-	}
+	finalizers := sets.NewString(accessor.GetFinalizers()...)
+	finalizers.Delete(value)
+	newFinalizers := finalizers.List()
 	accessor.SetFinalizers(newFinalizers)
 	return newFinalizers, nil
 }

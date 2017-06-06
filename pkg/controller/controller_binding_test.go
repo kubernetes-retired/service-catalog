@@ -474,7 +474,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 			Name:              testBindingName,
 			Namespace:         testNamespace,
 			DeletionTimestamp: &metav1.Time{},
-			Finalizers:        []string{"kubernetes"},
+			Finalizers:        []string{v1alpha1.FinalizerServiceCatalog},
 		},
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},

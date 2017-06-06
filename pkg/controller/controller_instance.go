@@ -27,6 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/tools/cache"
 )
@@ -230,8 +231,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	// since those most be cleared in order, we proceed with the soft delete
 	// only if it's "our turn--" i.e. only if the finalizer we care about is at
 	// the head of the finalizers list.
-	// TODO: Should we use a more specific string here?
-	if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
+	if finalizers := sets.NewString(instance.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("Finalizing Instance %v/%v", instance.Namespace, instance.Name)
 
 		request := &brokerapi.DeleteServiceInstanceRequest{
@@ -290,7 +290,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 				successDeprovisionMessage,
 			)
 			// Clear the finalizer
-			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+			c.updateInstanceFinalizers(instance, finalizers.List())
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		}
@@ -339,8 +340,9 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 	if rc == http.StatusGone && deleting {
 		instance.Status.AsyncOpInProgress = false
 		// Clear the finalizer
-		if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
-			c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+		if finalizers := sets.NewString(instance.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
+			finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+			c.updateInstanceFinalizers(instance, finalizers.List())
 		}
 		c.updateInstanceCondition(
 			instance,
@@ -375,8 +377,9 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 				successDeprovisionMessage,
 			)
 			// Clear the finalizer
-			if len(instance.Finalizers) > 0 && instance.Finalizers[0] == "kubernetes" {
-				c.updateInstanceFinalizers(instance, instance.Finalizers[1:])
+			if finalizers := sets.NewString(instance.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
+				finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+				c.updateInstanceFinalizers(instance, finalizers.List())
 			}
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)

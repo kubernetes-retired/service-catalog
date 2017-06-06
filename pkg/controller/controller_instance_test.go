@@ -602,7 +602,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 
 	instance := getTestInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{"kubernetes"}
+	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 
 	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil

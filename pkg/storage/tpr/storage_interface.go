@@ -24,7 +24,7 @@ import (
 
 	"github.com/golang/glog"
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +39,6 @@ import (
 
 var (
 	errNotImplemented = errors.New("not implemented for third party resources")
-	tprFinalizer      = fmt.Sprintf("%s/%s", servicecatalog.GroupName, tprVersion)
 )
 
 type store struct {
@@ -101,7 +100,7 @@ func (t *store) Create(
 		return err
 	}
 
-	if err := scmeta.AddFinalizer(obj, tprFinalizer); err != nil {
+	if err := scmeta.AddFinalizer(obj, v1alpha1.FinalizerServiceCatalog); err != nil {
 		glog.Errorf("adding finalizer to %s (%s)", key, err)
 		return err
 	}
@@ -194,7 +193,7 @@ func (t *store) Delete(
 		return err
 	}
 
-	if _, err := scmeta.RemoveFinalizer(out, tprFinalizer); err != nil {
+	if _, err := scmeta.RemoveFinalizer(out, v1alpha1.FinalizerServiceCatalog); err != nil {
 		glog.Errorf("removing finalizer from %#v (%s)", out, err)
 		return err
 	}

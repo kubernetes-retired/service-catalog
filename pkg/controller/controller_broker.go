@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/tools/cache"
 )
@@ -235,8 +236,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 	// since those most be cleared in order, we proceed with the soft delete
 	// only if it's "our turn--" i.e. only if the finalizer we care about is at
 	// the head of the finalizers list.
-	// TODO: Should we use a more specific string here?
-	if len(broker.Finalizers) > 0 && broker.Finalizers[0] == "kubernetes" {
+	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("Finalizing Broker %v", broker.Name)
 
 		// Get ALL ServiceClasses. Remove those that reference this Broker.
@@ -286,7 +286,8 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 			"The broker was deleted successfully",
 		)
 		// Clear the finalizer
-		c.updateBrokerFinalizers(broker, broker.Finalizers[1:])
+		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+		c.updateBrokerFinalizers(broker, finalizers.List())
 
 		c.recorder.Eventf(broker, api.EventTypeNormal, successBrokerDeletedReason, successBrokerDeletedMessage, broker.Name)
 		glog.V(5).Infof("Successfully deleted Broker %v", broker.Name)

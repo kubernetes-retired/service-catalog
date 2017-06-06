@@ -376,7 +376,7 @@ func getTestInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
 
 func getTestInstanceAsyncDeprovisioningWithFinalizer(operation string) *v1alpha1.Instance {
 	instance := getTestInstanceAsyncDeprovisioning(operation)
-	instance.ObjectMeta.Finalizers = []string{"kubernetes"}
+	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	return instance
 }
 
