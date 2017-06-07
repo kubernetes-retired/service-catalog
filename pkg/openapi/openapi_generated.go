@@ -389,7 +389,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"authInfo": {
 							SchemaProps: spec.SchemaProps{
-								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the Broker",
+								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the Broker.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerAuthInfo"),
 							},
 						},
