@@ -193,6 +193,131 @@ const testCatalogWithMultipleServices = `{
     }
 ]}`
 
+const alphaParameterSchemaCatalogBytes = `{
+  "services": [{
+    "name": "fake-service",
+    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+    "description": "fake service",
+    "tags": ["tag1", "tag2"],
+    "requires": ["route_forwarding"],
+    "bindable": true,
+    "metadata": {
+    	"a": "b",
+    	"c": "d"
+    },
+    "dashboard_client": {
+      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
+      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
+      "redirect_uri": "http://localhost:1234"
+    },
+    "plan_updateable": true,
+    "plans": [{
+      "name": "fake-plan-1",
+      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+      "description": "description1",
+      "metadata": {
+      	"b": "c",
+      	"d": "e"
+      },
+      "schemas": {
+      	"service_instance": {
+	  	  "create": {
+	  	  	"parameters": {
+	          "$schema": "http://json-schema.org/draft-04/schema",
+	          "type": "object",
+	          "title": "Parameters",
+	          "properties": {
+	            "name": {
+	              "title": "Queue Name",
+	              "type": "string",
+	              "maxLength": 63,
+	              "default": "My Queue"
+	            },
+	            "email": {
+	              "title": "Email",
+	              "type": "string",
+	              "pattern": "^\\S+@\\S+$",
+	              "description": "Email address for alerts."
+	            },
+	            "protocol": {
+	              "title": "Protocol",
+	              "type": "string",
+	              "default": "Java Message Service (JMS) 1.1",
+	              "enum": [
+	                "Java Message Service (JMS) 1.1",
+	                "Transmission Control Protocol (TCP)",
+	                "Advanced Message Queuing Protocol (AMQP) 1.0"
+	              ]
+	            },
+	            "secure": {
+	              "title": "Enable security",
+	              "type": "boolean",
+	              "default": true
+	            }
+	          },
+	          "required": [
+	            "name",
+	            "protocol"
+	          ]
+	  	  	}
+	  	  },
+	  	  "update": {
+	  	  	"parameters": {
+	  		  "baz": "zap"
+	  	    }
+	  	  }
+      	},
+      	"service_binding": {
+      	  "create": {
+	  	  	"parameters": {
+      	  	  "zoo": "blu"
+      	    }
+      	  }
+      	}
+      }
+    }]
+  }]
+}`
+
+const instanceParameterSchemaBytes = `{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "type": "object",
+  "title": "Parameters",
+  "properties": {
+    "name": {
+      "title": "Queue Name",
+      "type": "string",
+      "maxLength": 63,
+      "default": "My Queue"
+    },
+    "email": {
+      "title": "Email",
+      "type": "string",
+      "pattern": "^\\S+@\\S+$",
+      "description": "Email address for alerts."
+    },
+    "protocol": {
+      "title": "Protocol",
+      "type": "string",
+      "default": "Java Message Service (JMS) 1.1",
+      "enum": [
+        "Java Message Service (JMS) 1.1",
+        "Transmission Control Protocol (TCP)",
+        "Advanced Message Queuing Protocol (AMQP) 1.0"
+      ]
+    },
+    "secure": {
+      "title": "Enable security",
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "protocol"
+  ]
+}`
+
 // broker used in most of the tests that need a broker
 func getTestBroker() *v1alpha1.Broker {
 	return &v1alpha1.Broker{
@@ -432,131 +557,6 @@ func TestCatalogConversion(t *testing.T) {
 	checkPlan(serviceClass, 0, "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
 	checkPlan(serviceClass, 1, "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
-
-const alphaParameterSchemaCatalogBytes = `{
-  "services": [{
-    "name": "fake-service",
-    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
-    "description": "fake service",
-    "tags": ["tag1", "tag2"],
-    "requires": ["route_forwarding"],
-    "bindable": true,
-    "metadata": {
-    	"a": "b",
-    	"c": "d"
-    },
-    "dashboard_client": {
-      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
-      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
-      "redirect_uri": "http://localhost:1234"
-    },
-    "plan_updateable": true,
-    "plans": [{
-      "name": "fake-plan-1",
-      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
-      "description": "description1",
-      "metadata": {
-      	"b": "c",
-      	"d": "e"
-      },
-      "schemas": {
-      	"service_instance": {
-	  	  "create": {
-	  	  	"parameters": {
-	          "$schema": "http://json-schema.org/draft-04/schema",
-	          "type": "object",
-	          "title": "Parameters",
-	          "properties": {
-	            "name": {
-	              "title": "Queue Name",
-	              "type": "string",
-	              "maxLength": 63,
-	              "default": "My Queue"
-	            },
-	            "email": {
-	              "title": "Email",
-	              "type": "string",
-	              "pattern": "^\\S+@\\S+$",
-	              "description": "Email address for alerts."
-	            },
-	            "protocol": {
-	              "title": "Protocol",
-	              "type": "string",
-	              "default": "Java Message Service (JMS) 1.1",
-	              "enum": [
-	                "Java Message Service (JMS) 1.1",
-	                "Transmission Control Protocol (TCP)",
-	                "Advanced Message Queuing Protocol (AMQP) 1.0"
-	              ]
-	            },
-	            "secure": {
-	              "title": "Enable security",
-	              "type": "boolean",
-	              "default": true
-	            }
-	          },
-	          "required": [
-	            "name",
-	            "protocol"
-	          ]
-	  	  	}
-	  	  },
-	  	  "update": {
-	  	  	"parameters": {
-	  		  "baz": "zap"
-	  	    }
-	  	  }
-      	},
-      	"service_binding": {
-      	  "create": {
-	  	  	"parameters": {
-      	  	  "zoo": "blu"
-      	    }
-      	  }
-      	}
-      }
-    }]
-  }]
-}`
-
-const instanceParameterSchemaBytes = `{
-  "$schema": "http://json-schema.org/draft-04/schema",
-  "type": "object",
-  "title": "Parameters",
-  "properties": {
-    "name": {
-      "title": "Queue Name",
-      "type": "string",
-      "maxLength": 63,
-      "default": "My Queue"
-    },
-    "email": {
-      "title": "Email",
-      "type": "string",
-      "pattern": "^\\S+@\\S+$",
-      "description": "Email address for alerts."
-    },
-    "protocol": {
-      "title": "Protocol",
-      "type": "string",
-      "default": "Java Message Service (JMS) 1.1",
-      "enum": [
-        "Java Message Service (JMS) 1.1",
-        "Transmission Control Protocol (TCP)",
-        "Advanced Message Queuing Protocol (AMQP) 1.0"
-      ]
-    },
-    "secure": {
-      "title": "Enable security",
-      "type": "boolean",
-      "default": true
-    }
-  },
-  "required": [
-    "name",
-    "protocol"
-  ]
-}`
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	catalog := &brokerapi.Catalog{}

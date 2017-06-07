@@ -350,11 +350,19 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 // returns an error. If the AuthSecret field is nil, empty values are
 // returned.
 func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (username, password string, err error) {
-	if broker.Spec.AuthSecret == nil {
+	// TODO: when we start supporting additional auth schemes, this code will have to accommodate
+	// the new schemes
+	if broker.Spec.AuthInfo == nil {
 		return "", "", nil
 	}
 
-	authSecret, err := client.Core().Secrets(broker.Spec.AuthSecret.Namespace).Get(broker.Spec.AuthSecret.Name, metav1.GetOptions{})
+	basicAuthSecret := broker.Spec.AuthInfo.BasicAuthSecret
+
+	if basicAuthSecret == nil {
+		return "", "", nil
+	}
+
+	authSecret, err := client.Core().Secrets(basicAuthSecret.Namespace).Get(basicAuthSecret.Name, metav1.GetOptions{})
 	if err != nil {
 		return "", "", err
 	}

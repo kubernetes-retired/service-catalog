@@ -293,9 +293,11 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t)
 
 	broker := getTestBroker()
-	broker.Spec.AuthSecret = &v1.ObjectReference{
-		Namespace: "does_not_exist",
-		Name:      "auth-name",
+	broker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
+		BasicAuthSecret: &v1.ObjectReference{
+			Namespace: "does_not_exist",
+			Name:      "auth-name",
+		},
 	}
 
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
@@ -335,9 +337,11 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t)
 
 	broker := getTestBroker()
-	broker.Spec.AuthSecret = &v1.ObjectReference{
-		Namespace: "does_not_exist",
-		Name:      "auth-name",
+	broker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
+		BasicAuthSecret: &v1.ObjectReference{
+			Namespace: "does_not_exist",
+			Name:      "auth-name",
+		},
 	}
 
 	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {

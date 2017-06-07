@@ -42,6 +42,7 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BindingSpec, InType: reflect.TypeOf(&BindingSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BindingStatus, InType: reflect.TypeOf(&BindingStatus{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_Broker, InType: reflect.TypeOf(&Broker{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BrokerAuthInfo, InType: reflect.TypeOf(&BrokerAuthInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BrokerCondition, InType: reflect.TypeOf(&BrokerCondition{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BrokerList, InType: reflect.TypeOf(&BrokerList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BrokerSpec, InType: reflect.TypeOf(&BrokerSpec{})},
@@ -165,6 +166,20 @@ func DeepCopy_v1alpha1_Broker(in interface{}, out interface{}, c *conversion.Clo
 	}
 }
 
+func DeepCopy_v1alpha1_BrokerAuthInfo(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BrokerAuthInfo)
+		out := out.(*BrokerAuthInfo)
+		*out = *in
+		if in.BasicAuthSecret != nil {
+			in, out := &in.BasicAuthSecret, &out.BasicAuthSecret
+			*out = new(api_v1.ObjectReference)
+			**out = **in
+		}
+		return nil
+	}
+}
+
 func DeepCopy_v1alpha1_BrokerCondition(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*BrokerCondition)
@@ -198,10 +213,12 @@ func DeepCopy_v1alpha1_BrokerSpec(in interface{}, out interface{}, c *conversion
 		in := in.(*BrokerSpec)
 		out := out.(*BrokerSpec)
 		*out = *in
-		if in.AuthSecret != nil {
-			in, out := &in.AuthSecret, &out.AuthSecret
-			*out = new(api_v1.ObjectReference)
-			**out = **in
+		if in.AuthInfo != nil {
+			in, out := &in.AuthInfo, &out.AuthInfo
+			*out = new(BrokerAuthInfo)
+			if err := DeepCopy_v1alpha1_BrokerAuthInfo(*in, *out, c); err != nil {
+				return err
+			}
 		}
 		return nil
 	}

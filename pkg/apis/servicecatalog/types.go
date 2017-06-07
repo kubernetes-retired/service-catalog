@@ -48,9 +48,21 @@ type BrokerSpec struct {
 	// URL is the address used to communicate with the Broker.
 	URL string
 
-	// AuthSecret is a reference to a Secret containing auth information the
-	// catalog should use to authenticate to this Broker.
-	AuthSecret *v1.ObjectReference
+	// AuthInfo contains the data that the service catalog should use to authenticate
+	// with the Broker.
+	AuthInfo *BrokerAuthInfo
+}
+
+// BrokerAuthInfo is a union type that contains information on one of the authentication methods
+// the the service catalog and brokers may support, according to the OpenServiceBroker API
+// specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
+//
+// Note that we currently restrict a single broker to have only one of these fields
+// set on it.
+type BrokerAuthInfo struct {
+	// BasicAuthSecret is a reference to a Secret containing auth information the
+	// catalog should use to authenticate to this Broker using basic auth.
+	BasicAuthSecret *v1.ObjectReference
 }
 
 // BrokerStatus represents the current status of a Broker.
