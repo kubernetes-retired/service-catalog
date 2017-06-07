@@ -75,6 +75,10 @@ type ControllerManagerConfiguration struct {
 	// leaderElection defines the configuration of leader election client.
 	LeaderElection componentconfig.LeaderElectionConfiguration
 
+	// LeaderElectionNamespace is the namespace to use for the leader election
+	// lock.
+	LeaderElectionNamespace string
+
 	// enableProfiling enables profiling via web interface host:port/debug/pprof/
 	EnableProfiling bool
 
