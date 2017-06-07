@@ -35,6 +35,7 @@ import (
 
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
+	settingsv1alpha1 "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 	clientgotesting "k8s.io/client-go/testing"
 )
 
@@ -491,20 +492,10 @@ func TestReconcileBindingDelete(t *testing.T) {
 
 	kubeActions := fakeKubeClient.Actions()
 	// The two actions should be:
-	// 0. Getting the secret
-	// 1. Deleting the secret
-	assertNumberOfActions(t, kubeActions, 2)
+	// 0. Deleting the secret
+	assertNumberOfActions(t, kubeActions, 1)
 
-	getAction := kubeActions[0].(clientgotesting.GetActionImpl)
-	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[0]; expected %v, got %v", e, a)
-	}
-
-	if e, a := binding.Spec.SecretName, getAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
-	}
-
-	deleteAction := kubeActions[1].(clientgotesting.DeleteActionImpl)
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
 	}
@@ -536,6 +527,112 @@ func TestReconcileBindingDelete(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+const testPodPresetName = "test-pod-preset"
+
+func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	testNsUID := "test_ns_uid"
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID(testNsUID),
+			},
+		}, nil
+	})
+
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("not found")
+	})
+
+	fakeKubeClient.AddReactor("create", "podpresets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, nil
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+			AlphaPodPresetTemplate: &v1alpha1.AlphaPodPresetTemplate{
+				Name: testPodPresetName,
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"foo": "bar",
+					},
+				},
+			},
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	if testNsUID != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+	}
+
+	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
+	if appGUID := bindResource["app_guid"]; testNsUID != fmt.Sprintf("%v", appGUID) {
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, appGUID)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyTrue(t, updatedBinding)
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 4)
+
+	action := kubeActions[2].(clientgotesting.CreateAction)
+	if e, a := "create", action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	if e, a := "secrets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+	actionSecret, ok := action.GetObject().(*v1.Secret)
+	if !ok {
+		t.Fatal("couldn't convert secret into a v1.Secret")
+	}
+	if e, a := testBindingSecretName, actionSecret.Name; e != a {
+		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)
+	}
+
+	action = kubeActions[3].(clientgotesting.CreateAction)
+	if e, a := "create", action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	if e, a := "podpresets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+	actionPodPreset, ok := action.GetObject().(*settingsv1alpha1.PodPreset)
+	if !ok {
+		t.Fatal("couldn't convert PodPreset into a settingsv1alpha1.PodPreset")
+	}
+	if e, a := testPodPresetName, actionPodPreset.Name; e != a {
+		t.Fatalf("Unexpected name of PodPreset; expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
