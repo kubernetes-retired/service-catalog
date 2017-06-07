@@ -463,7 +463,42 @@ const alphaParameterSchemaCatalogBytes = `{
       	"service_instance": {
 	  	  "create": {
 	  	  	"parameters": {
-	  		  "foo": "bar"	
+	          "$schema": "http://json-schema.org/draft-04/schema",
+	          "type": "object",
+	          "title": "Parameters",
+	          "properties": {
+	            "name": {
+	              "title": "Queue Name",
+	              "type": "string",
+	              "maxLength": 63,
+	              "default": "My Queue"
+	            },
+	            "email": {
+	              "title": "Email",
+	              "type": "string",
+	              "pattern": "^\\S+@\\S+$",
+	              "description": "Email address for alerts."
+	            },
+	            "protocol": {
+	              "title": "Protocol",
+	              "type": "string",
+	              "default": "Java Message Service (JMS) 1.1",
+	              "enum": [
+	                "Java Message Service (JMS) 1.1",
+	                "Transmission Control Protocol (TCP)",
+	                "Advanced Message Queuing Protocol (AMQP) 1.0"
+	              ]
+	            },
+	            "secure": {
+	              "title": "Enable security",
+	              "type": "boolean",
+	              "default": true
+	            }
+	          },
+	          "required": [
+	            "name",
+	            "protocol"
+	          ]
 	  	  	}
 	  	  },
 	  	  "update": {
@@ -482,6 +517,45 @@ const alphaParameterSchemaCatalogBytes = `{
       }
     }]
   }]
+}`
+
+const instanceParameterSchemaBytes = `{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "type": "object",
+  "title": "Parameters",
+  "properties": {
+    "name": {
+      "title": "Queue Name",
+      "type": "string",
+      "maxLength": 63,
+      "default": "My Queue"
+    },
+    "email": {
+      "title": "Email",
+      "type": "string",
+      "pattern": "^\\S+@\\S+$",
+      "description": "Email address for alerts."
+    },
+    "protocol": {
+      "title": "Protocol",
+      "type": "string",
+      "default": "Java Message Service (JMS) 1.1",
+      "enum": [
+        "Java Message Service (JMS) 1.1",
+        "Transmission Control Protocol (TCP)",
+        "Advanced Message Queuing Protocol (AMQP) 1.0"
+      ]
+    },
+    "secure": {
+      "title": "Enable security",
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "protocol"
+  ]
 }`
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
@@ -507,9 +581,14 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 		t.Fatalf("Expected plan.AlphaInstanceCreateParameterSchema to be set, but was nil")
 	}
 
-	m := make(map[string]string)
-	if err := json.Unmarshal(plan.AlphaInstanceCreateParameterSchema.Raw, &m); err == nil {
-		if e, a := "bar", m["foo"]; e != a {
+	cSchema := make(map[string]interface{})
+	if err := json.Unmarshal(plan.AlphaInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
+		schema := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(instanceParameterSchemaBytes), &schema); err != nil {
+			t.Fatalf("Error unmarshalling schema bytes: %v", err)
+		}
+
+		if e, a := schema, cSchema; !reflect.DeepEqual(e, a) {
 			t.Fatalf("Unexpected value of alphaInstanceCreateParameterSchema; expected %v, got %v", e, a)
 		}
 	}
@@ -517,7 +596,7 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	if plan.AlphaInstanceUpdateParameterSchema == nil {
 		t.Fatalf("Expected plan.AlphaInstanceUpdateParameterSchema to be set, but was nil")
 	}
-	m = make(map[string]string)
+	m := make(map[string]string)
 	if err := json.Unmarshal(plan.AlphaInstanceUpdateParameterSchema.Raw, &m); err == nil {
 		if e, a := "zap", m["baz"]; e != a {
 			t.Fatalf("Unexpected value of alphaInstanceUpdateParameterSchema; expected %v, got %v", e, a)
