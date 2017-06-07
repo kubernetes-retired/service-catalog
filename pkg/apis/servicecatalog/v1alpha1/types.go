@@ -50,7 +50,7 @@ type BrokerSpec struct {
 	URL string `json:"url"`
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
-	// with the Broker
+	// with the Broker.
 	AuthInfo *BrokerAuthInfo `json:"authInfo,omitempty"`
 }
 

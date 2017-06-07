@@ -49,7 +49,7 @@ type BrokerSpec struct {
 	URL string
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
-	// with the Broker
+	// with the Broker.
 	AuthInfo *BrokerAuthInfo
 }
 
