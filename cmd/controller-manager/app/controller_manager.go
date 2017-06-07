@@ -208,10 +208,12 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		return err
 	}
 
+	glog.V(5).Infof("Using namespace %v for leader election lock", controllerManagerOptions.LeaderElectionNamespace)
+
 	// Lock required for leader election
 	rl := resourcelock.EndpointsLock{
 		EndpointsMeta: metav1.ObjectMeta{
-			Namespace: "kube-system",
+			Namespace: controllerManagerOptions.LeaderElectionNamespace,
 			Name:      "service-catalog-controller-manager",
 		},
 		Client: leaderElectionClient,
