@@ -97,9 +97,11 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
 
 	broker := getTestBroker()
-	broker.Spec.AuthSecret = &v1.ObjectReference{
-		Namespace: "does_not_exist",
-		Name:      "auth-name",
+	broker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
+		BasicAuthSecret: &v1.ObjectReference{
+			Namespace: "does_not_exist",
+			Name:      "auth-name",
+		},
 	}
 	sharedInformers.Brokers().Informer().GetStore().Add(broker)
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
