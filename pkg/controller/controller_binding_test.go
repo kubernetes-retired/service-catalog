@@ -59,7 +59,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such instance exists.
 	updateAction := actions[0].(clientgotesting.UpdateAction)
@@ -110,7 +110,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such service class.
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
@@ -188,12 +188,12 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyTrue(t, updatedBinding)
 
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 3)
+	AssertNumberOfActions(t, kubeActions, 3)
 
 	// first action is a get on the namespace
 	// second action is a get on the secret
@@ -260,7 +260,7 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
@@ -333,12 +333,12 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyTrue(t, updatedBinding)
 
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 3)
+	AssertNumberOfActions(t, kubeActions, 3)
 
 	// first action is a get on the namespace
 	// second action is a get on the secret
@@ -400,7 +400,7 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
@@ -445,10 +445,10 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
@@ -494,7 +494,7 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
@@ -537,7 +537,7 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyFalse(t, updatedBinding)
 
@@ -594,7 +594,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	kubeActions := fakeKubeClient.Actions()
 	// The two actions should be:
 	// 0. Deleting the secret
-	assertNumberOfActions(t, kubeActions, 1)
+	AssertNumberOfActions(t, kubeActions, 1)
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
@@ -610,7 +610,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	// 0. Updating the ready condition
 	// 1. Get against the binding in question
 	// 2. Removing the finalizer
-	assertNumberOfActions(t, actions, 3)
+	AssertNumberOfActions(t, actions, 3)
 
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyFalse(t, updatedBinding)
@@ -690,14 +690,14 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyTrue(t, updatedBinding)
 
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 4)
+	AssertNumberOfActions(t, kubeActions, 4)
 
 	action := kubeActions[2].(clientgotesting.CreateAction)
 	if e, a := "create", action.GetVerb(); e != a {

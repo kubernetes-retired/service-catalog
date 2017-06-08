@@ -119,6 +119,10 @@ type Controller interface {
 	// workers specifies the number of goroutines, per resource, processing work
 	// from the resource workqueues
 	Run(workers int, stopCh <-chan struct{})
+	// PollingQueueLen returns the length of pending asynchronous instances to be polled
+	PollingQueueLen() int
+	// ReconcileInstance reconciles the given instance to its desired state
+	ReconcileInstance(*v1alpha1.Instance) error
 }
 
 // controller is a concrete Controller.
@@ -142,6 +146,10 @@ type controller struct {
 	//  a reconciling of an instance.
 	// TODO(vaikas): get rid of two queues per instance.
 	pollingQueue workqueue.RateLimitingInterface
+}
+
+func (c *controller) PollingQueueLen() int {
+	return c.pollingQueue.Len()
 }
 
 // Run runs the controller until the given stop channel can be read from.
