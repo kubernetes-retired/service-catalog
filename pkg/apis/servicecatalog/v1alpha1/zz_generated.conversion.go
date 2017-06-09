@@ -36,6 +36,8 @@ func init() {
 // Public to allow building arbitrary schemes.
 func RegisterConversions(scheme *runtime.Scheme) error {
 	return scheme.AddGeneratedConversionFuncs(
+		Convert_v1alpha1_AlphaPodPresetTemplate_To_servicecatalog_AlphaPodPresetTemplate,
+		Convert_servicecatalog_AlphaPodPresetTemplate_To_v1alpha1_AlphaPodPresetTemplate,
 		Convert_v1alpha1_Binding_To_servicecatalog_Binding,
 		Convert_servicecatalog_Binding_To_v1alpha1_Binding,
 		Convert_v1alpha1_BindingCondition_To_servicecatalog_BindingCondition,
@@ -75,6 +77,26 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan,
 		Convert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan,
 	)
+}
+
+func autoConvert_v1alpha1_AlphaPodPresetTemplate_To_servicecatalog_AlphaPodPresetTemplate(in *AlphaPodPresetTemplate, out *servicecatalog.AlphaPodPresetTemplate, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Selector = in.Selector
+	return nil
+}
+
+func Convert_v1alpha1_AlphaPodPresetTemplate_To_servicecatalog_AlphaPodPresetTemplate(in *AlphaPodPresetTemplate, out *servicecatalog.AlphaPodPresetTemplate, s conversion.Scope) error {
+	return autoConvert_v1alpha1_AlphaPodPresetTemplate_To_servicecatalog_AlphaPodPresetTemplate(in, out, s)
+}
+
+func autoConvert_servicecatalog_AlphaPodPresetTemplate_To_v1alpha1_AlphaPodPresetTemplate(in *servicecatalog.AlphaPodPresetTemplate, out *AlphaPodPresetTemplate, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Selector = in.Selector
+	return nil
+}
+
+func Convert_servicecatalog_AlphaPodPresetTemplate_To_v1alpha1_AlphaPodPresetTemplate(in *servicecatalog.AlphaPodPresetTemplate, out *AlphaPodPresetTemplate, s conversion.Scope) error {
+	return autoConvert_servicecatalog_AlphaPodPresetTemplate_To_v1alpha1_AlphaPodPresetTemplate(in, out, s)
 }
 
 func autoConvert_v1alpha1_Binding_To_servicecatalog_Binding(in *Binding, out *servicecatalog.Binding, s conversion.Scope) error {
@@ -158,6 +180,7 @@ func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingS
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
+	out.AlphaPodPresetTemplate = (*servicecatalog.AlphaPodPresetTemplate)(unsafe.Pointer(in.AlphaPodPresetTemplate))
 	return nil
 }
 
@@ -170,6 +193,7 @@ func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicec
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
+	out.AlphaPodPresetTemplate = (*AlphaPodPresetTemplate)(unsafe.Pointer(in.AlphaPodPresetTemplate))
 	return nil
 }
 

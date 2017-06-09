@@ -36,6 +36,7 @@ func init() {
 // to allow building arbitrary schemes.
 func RegisterDeepCopies(scheme *runtime.Scheme) error {
 	return scheme.AddGeneratedDeepCopyFuncs(
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_AlphaPodPresetTemplate, InType: reflect.TypeOf(&AlphaPodPresetTemplate{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_Binding, InType: reflect.TypeOf(&Binding{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BindingCondition, InType: reflect.TypeOf(&BindingCondition{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_BindingList, InType: reflect.TypeOf(&BindingList{})},
@@ -56,6 +57,20 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_ServiceClassList, InType: reflect.TypeOf(&ServiceClassList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1alpha1_ServicePlan, InType: reflect.TypeOf(&ServicePlan{})},
 	)
+}
+
+func DeepCopy_v1alpha1_AlphaPodPresetTemplate(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*AlphaPodPresetTemplate)
+		out := out.(*AlphaPodPresetTemplate)
+		*out = *in
+		if newVal, err := c.DeepCopy(&in.Selector); err != nil {
+			return err
+		} else {
+			out.Selector = *newVal.(*v1.LabelSelector)
+		}
+		return nil
+	}
 }
 
 func DeepCopy_v1alpha1_Binding(in interface{}, out interface{}, c *conversion.Cloner) error {
@@ -117,6 +132,13 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 				return err
 			} else {
 				*out = newVal.(*runtime.RawExtension)
+			}
+		}
+		if in.AlphaPodPresetTemplate != nil {
+			in, out := &in.AlphaPodPresetTemplate, &out.AlphaPodPresetTemplate
+			*out = new(AlphaPodPresetTemplate)
+			if err := DeepCopy_v1alpha1_AlphaPodPresetTemplate(*in, *out, c); err != nil {
+				return err
 			}
 		}
 		return nil
