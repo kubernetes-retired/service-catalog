@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	stderrors "errors"
 	"fmt"
 	"time"
 
@@ -204,6 +205,14 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 			return err
 		}
 		glog.V(5).Infof("Successfully converted catalog payload from Broker %v to service-catalog API", broker.Name)
+
+		if len(catalog) == 0 {
+			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
+			glog.Warning(s)
+			c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s)
+			return stderrors.New(s)
+		}
 
 		for _, serviceClass := range catalog {
 			glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
