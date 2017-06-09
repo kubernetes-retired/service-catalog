@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -286,6 +287,33 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 	expectedEvent := api.EventTypeWarning + " " + errorFetchingCatalogReason + " " + "Error getting broker catalog for broker \"test-broker\": instance not found"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestReconcileBrokerZeroServices(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = &brokerapi.Catalog{
+		Services: []*brokerapi.Service{},
+	}
+	broker := getTestBroker()
+
+	testController.reconcileBroker(broker)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedBroker := assertUpdateStatus(t, actions[0], broker)
+	assertBrokerReadyFalse(t, updatedBroker)
+
+	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error getting catalog payload for broker "test-broker"; received zero services; at least one service is required`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event; \nexpected: %v\ngot:     %v", e, a)
 	}
 }
 
