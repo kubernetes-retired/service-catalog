@@ -102,13 +102,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			binding.Spec.InstanceRef.Name,
 			err,
 		)
-		c.updateBindingCondition(
+		if err := c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonexistentInstanceReason,
 			"The binding references an Instance that does not exist. "+s,
-		)
+		); err != nil {
+			glog.Errorf("updating binding condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentInstanceReason, s)
 		return err
 	}
@@ -122,13 +125,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			binding.Spec.InstanceRef.Name,
 		)
 		glog.Info(s)
-		c.updateBindingCondition(
+		if err := c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorWithOngoingAsyncOperation,
 			errorWithOngoingAsyncOperationMessage,
-		)
+		); err != nil {
+			glog.Errorf("updating binding condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(binding, api.EventTypeWarning, errorWithOngoingAsyncOperation, s)
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
@@ -147,13 +153,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			instance.Spec.PlanName,
 		)
 		glog.Warning(s)
-		c.updateBindingCondition(
+		if err := c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonbindableServiceClassReason,
 			s,
-		)
+		); err != nil {
+			glog.Errorf("updating binding condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonbindableServiceClassReason, s)
 		return nil
 	}
@@ -167,13 +176,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			if err != nil {
 				s := fmt.Sprintf("Failed to unmarshal Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
 				glog.Warning(s)
-				c.updateBindingCondition(
+				if err := c.updateBindingCondition(
 					binding,
 					v1alpha1.BindingConditionReady,
 					v1alpha1.ConditionFalse,
 					errorWithParameters,
 					"Error unmarshaling binding parameters. "+s,
-				)
+				); err != nil {
+					glog.Errorf("updating binding condition (%s)", err)
+					return err
+				}
 				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
 				return err
 			}
@@ -183,13 +195,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if err != nil {
 			s := fmt.Sprintf("Failed to get namespace %q during binding: %s", instance.Namespace, err)
 			glog.Info(s)
-			c.updateBindingCondition(
+			if err := c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorFindingNamespaceInstanceReason,
 				"Error finding namespace for instance. "+s,
-			)
+			); err != nil {
+				glog.Errorf("updating binding condition (%s)", err)
+				return err
+			}
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
 			return err
 		}
@@ -197,13 +212,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if !isInstanceReady(instance) {
 			s := fmt.Sprintf(`Binding cannot begin because referenced instance "%v/%v" is not ready`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.updateBindingCondition(
+			if err := c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorInstanceNotReadyReason,
 				s,
-			)
+			); err != nil {
+				glog.Errorf("updating binding condition (%s)", err)
+				return err
+			}
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorInstanceNotReadyReason, s)
 			return nil
 		}
@@ -245,12 +263,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 
 			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
-			c.updateBindingCondition(
+			if err := c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorBindCallReason,
-				"Bind call failed. "+s)
+				"Bind call failed. "+s,
+			); err != nil {
+				glog.Errorf("updating binding condition (%s)", err)
+				return err
+			}
 			c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
 			return err
 		}
@@ -259,23 +281,29 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if err != nil {
 			s := fmt.Sprintf("Error injecting binding results for Binding \"%s/%s\": %s", binding.Namespace, binding.Name, err)
 			glog.Warning(s)
-			c.updateBindingCondition(
+			if err := c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorInjectingBindResultReason,
 				"Error injecting bind result "+s,
-			)
+			); err != nil {
+				glog.Errorf("updating binding condition (%s)", err)
+				return err
+			}
 			c.recorder.Event(binding, api.EventTypeWarning, errorInjectingBindResultReason, s)
 			return err
 		}
-		c.updateBindingCondition(
+		if err := c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionTrue,
 			successInjectedBindResultReason,
 			successInjectedBindResultMessage,
-		)
+		); err != nil {
+			glog.Errorf("updating binding condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(binding, api.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
 
 		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
@@ -296,13 +324,16 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if err != nil {
 			s := fmt.Sprintf("Error deleting secret: %s", err)
 			glog.Warning(s)
-			c.updateBindingCondition(
+			if err := c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionUnknown,
 				errorEjectingBindReason,
 				errorEjectingBindMessage+s,
-			)
+			); err != nil {
+				glog.Errorf("updating binding condition (%s)", err)
+				return err
+			}
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
 			return err
 		}
@@ -347,26 +378,36 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 				err,
 			)
 			glog.Warning(s)
-			c.updateBindingCondition(
+			if err := c.updateBindingCondition(
 				binding,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorUnbindCallReason,
-				"Unbind call failed. "+s)
+				"Unbind call failed. "+s,
+			); err != nil {
+				glog.Errorf("updating binding condition (%s)", err)
+				return err
+			}
 			c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
 			return err
 		}
 
-		c.updateBindingCondition(
+		if err := c.updateBindingCondition(
 			binding,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			successUnboundReason,
 			"The binding was deleted successfully",
-		)
+		); err != nil {
+			glog.Errorf("updating binding condition (%s)", err)
+			return err
+		}
 		// Clear the finalizer
 		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
-		c.updateBindingFinalizers(binding, finalizers.List())
+		if err := c.updateBindingFinalizers(binding, finalizers.List()); err != nil {
+			glog.Errorf("updating binding finalizers (%s)", err)
+			return err
+		}
 		c.recorder.Event(binding, api.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
 
 		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)

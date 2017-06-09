@@ -256,13 +256,16 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		if err != nil {
 			s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
 			glog.Warning(s)
-			c.updateInstanceCondition(
+			if err := c.updateInstanceCondition(
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				errorWithParameters,
 				"Error unmarshaling instance parameters. "+s,
-			)
+			); err != nil {
+				glog.Errorf("updating instance condition (%s)", err)
+				return err
+			}
 			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
 			return err
 		}
@@ -272,13 +275,16 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	if err != nil {
 		s := fmt.Sprintf("Failed to get namespace %q during instance create: %s", instance.Namespace, err)
 		glog.Info(s)
-		c.updateInstanceCondition(
+		if err := c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			errorFindingNamespaceInstanceReason,
 			"Error finding namespace for instance. "+s,
-		)
+		); err != nil {
+			glog.Errorf("updating instance condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(instance, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
 		return err
 	}
@@ -304,12 +310,15 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	if err != nil {
 		s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 		glog.Warning(s)
-		c.updateInstanceCondition(
+		if err := c.updateInstanceCondition(
 			instance,
 			v1alpha1.InstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			errorProvisionCalledReason,
-			"Provision call failed. "+s)
+			"Provision call failed. "+s); err != nil {
+			glog.Errorf("updating instance condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCalledReason, s)
 		return err
 	}
@@ -416,13 +425,16 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 			toUpdate := clone.(*v1alpha1.Instance)
 
 			toUpdate.Status.AsyncOpInProgress = false
-			c.updateInstanceCondition(
+			if err := c.updateInstanceCondition(
 				toUpdate,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				successDeprovisionReason,
 				successDeprovisionMessage,
-			)
+			); err != nil {
+				glog.Errorf("updating instance condition (%s)", err)
+				return err
+			}
 
 			// Clear the finalizer
 			if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
@@ -477,32 +489,38 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 		// If we were asynchronously deleting a Service Instance, finish
 		// the finalizers.
 		if deleting {
-			err := c.updateInstanceCondition(
+			if err := c.updateInstanceCondition(
 				toUpdate,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				successDeprovisionReason,
 				successDeprovisionMessage,
-			)
-			if err != nil {
+			); err != nil {
+				glog.Errorf("updating instance condition (%s)", err)
 				return err
 			}
 
 			// Clear the finalizer
 			if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 				finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
-				c.updateInstanceFinalizers(toUpdate, finalizers.List())
+				if err := c.updateInstanceFinalizers(instance, finalizers.List()); err != nil {
+					glog.Errorf("updating instance finalizers (%s)", err)
+					return err
+				}
 			}
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		} else {
-			c.updateInstanceCondition(
+			if err := c.updateInstanceCondition(
 				toUpdate,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionTrue,
 				successProvisionReason,
 				successProvisionMessage,
-			)
+			); err != nil {
+				glog.Errorf("updating instance condition (%s)", err)
+				return err
+			}
 		}
 	case osb.StateFailed:
 		description := ""
@@ -526,13 +544,17 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 			reason = errorDeprovisionCalledReason
 			msg = "Deprovision call failed:" + s
 		}
-		c.updateInstanceCondition(
-			toUpdate,
+
+		if err := c.updateInstanceCondition(
+			toUpdae,
 			v1alpha1.InstanceConditionReady,
 			cond,
 			reason,
 			msg,
-		)
+		); err != nil {
+			glog.Errorf("updating instance condition (%s)", err)
+			return err
+		}
 		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 	default:
 		glog.Warningf("Got invalid state in LastOperationResponse: %q", response.State)
