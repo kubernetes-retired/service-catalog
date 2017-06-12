@@ -24,7 +24,9 @@ import (
 
 // Handler is a fake implementation oif a brokerapi.ServiceBroker
 type Handler struct {
-	Catalog         []brokerapi.Service
+	Catalog []brokerapi.Service
+	// Since there are no data passed to catalog calls, this is just the number of calls
+	// that were made to the catalog endpoint
 	CatalogRequests int
 
 	ProvisionResp      brokerapi.ProvisionedServiceSpec
