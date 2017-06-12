@@ -20,6 +20,7 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
     spec:
+      serviceAccountName: "{{ .Values.controllerManager.serviceAccount }}"
       containers:
       - name: controller-manager
         image: {{ .Values.controllerManager.image }}

@@ -20,6 +20,7 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
     spec:
+      serviceAccountName: "{{ .Values.apiserver.serviceAccount }}"
       containers:
       - name: apiserver
         image: {{ .Values.apiserver.image }}
