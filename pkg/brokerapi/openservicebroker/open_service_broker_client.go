@@ -134,8 +134,26 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 	return &catalog, nil
 }
 
+type createServiceInstanceRequestBody struct {
+	ServiceID      string                   `json:"service_id,omitempty"`
+	PlanID         string                   `json:"plan_id,omitempty"`
+	OrgID          string                   `json:"organization_guid,omitempty"`
+	SpaceID        string                   `json:"space_guid,omitempty"`
+	Parameters     map[string]interface{}   `json:"parameters,omitempty"`
+	ContextProfile brokerapi.ContextProfile `json:"context,omitempty"`
+}
+
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, int, error) {
 	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
+
+	requestBody := &createServiceInstanceRequestBody{
+		ServiceID:      req.ServiceID,
+		PlanID:         req.PlanID,
+		OrgID:          req.OrgID,
+		SpaceID:        req.SpaceID,
+		Parameters:     req.Parameters,
+		ContextProfile: req.ContextProfile,
+	}
 
 	resp, err := sendOSBRequest(
 		c,
@@ -144,7 +162,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 		map[string]string{
 			"accepts_incomplete": fmt.Sprintf("%t", req.AcceptsIncomplete),
 		},
-		req,
+		requestBody,
 	)
 	if err != nil {
 		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
