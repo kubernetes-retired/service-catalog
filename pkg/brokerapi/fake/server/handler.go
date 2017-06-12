@@ -22,7 +22,9 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 )
 
-// Handler is a fake implementation oif a brokerapi.ServiceBroker
+// Handler is a fake implementation oif a brokerapi.ServiceBroker. It's useful as a mock
+// because it has pre-canned response values for use in testing, and also keeps track of calls
+// made to it. Handler is not concurrency-safe
 type Handler struct {
 	Catalog []brokerapi.Service
 	// Since there are no data passed to catalog calls, this is just the number of calls
@@ -58,13 +60,14 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
-// Services is the interface implementation of brokerapi.ServiceBroker
+// Services increments h.CatalogRequests and returns h.Catalog
 func (h *Handler) Services(ctx context.Context) []brokerapi.Service {
 	h.CatalogRequests++
 	return h.Catalog
 }
 
-// Provision is the interface implementation of brokerapi.ServiceBroker
+// Provision adds an element to h.ProvisionRequests and returns
+// h.ProvisionResp, h.ProvisionRespError
 func (h *Handler) Provision(
 	ctx context.Context,
 	instanceID string,
@@ -79,7 +82,8 @@ func (h *Handler) Provision(
 	return h.ProvisionResp, h.ProvisionRespError
 }
 
-// Deprovision is the interface implementation of brokerapi.ServiceBroker
+// Deprovision adds an element to h.DeprovisionRequests and returns
+// h.DeprovisionResp, h.DeprovisionRespErr
 func (h *Handler) Deprovision(context context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (brokerapi.DeprovisionServiceSpec, error) {
 	h.DeprovisionRequests = append(h.DeprovisionRequests, DeprovisionRequest{
 		InstanceID: instanceID,
@@ -88,7 +92,7 @@ func (h *Handler) Deprovision(context context.Context, instanceID string, detail
 	return h.DeprovisionResp, h.DeprovisonRespErr
 }
 
-// Bind is the interface implementation of brokerapi.ServiceBroker
+// Bind adds an element to h.BindRequqests and returns h.BindResp, h.BindRespErr
 func (h *Handler) Bind(context context.Context, instanceID, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, error) {
 	h.BindRequests = append(h.BindRequests, BindRequest{
 		InstanceID: instanceID,
@@ -98,7 +102,7 @@ func (h *Handler) Bind(context context.Context, instanceID, bindingID string, de
 	return h.BindResp, h.BindRespErr
 }
 
-// Unbind is the interface implementation of brokerapi.ServiceBroker
+// Unbind adds an element to h.UnbindRequests and returns h.UnbindRespErr
 func (h *Handler) Unbind(context context.Context, instanceID, bindingID string, details brokerapi.UnbindDetails) error {
 	h.UnbindRequests = append(h.UnbindRequests, UnbindRequest{
 		InstanceID: instanceID,
@@ -108,7 +112,7 @@ func (h *Handler) Unbind(context context.Context, instanceID, bindingID string, 
 	return h.UnbindRespErr
 }
 
-// Update is the interface implementation of brokerapi.ServiceBroker
+// Update adds an element to h.UpdateRequests and returns h.UpdateResp, h.UpdateRespErr
 func (h *Handler) Update(context context.Context, instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
 	h.UpdateRequests = append(h.UpdateRequests, UpdateRequest{
 		InstanceID:   instanceID,
@@ -118,7 +122,8 @@ func (h *Handler) Update(context context.Context, instanceID string, details bro
 	return h.UpdateResp, h.UpdateRespErr
 }
 
-// LastOperation is the interface implementation of brokerapi.ServiceBroker
+// LastOperation adds an element to h.LastOperationRequests and returns
+// h.LastOperationResp, h.LastOperationRespErr
 func (h *Handler) LastOperation(context context.Context, instanceID, operationData string) (brokerapi.LastOperation, error) {
 	h.LastOperationRequests = append(h.LastOperationRequests, LastOperationRequest{
 		InstanceID:    instanceID,
