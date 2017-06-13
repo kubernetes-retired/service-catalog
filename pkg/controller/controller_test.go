@@ -225,44 +225,7 @@ const alphaParameterSchemaCatalogBytes = `{
       "schemas": {
       	"service_instance": {
 	  	  "create": {
-	  	  	"parameters": {
-	          "$schema": "http://json-schema.org/draft-04/schema",
-	          "type": "object",
-	          "title": "Parameters",
-	          "properties": {
-	            "name": {
-	              "title": "Queue Name",
-	              "type": "string",
-	              "maxLength": 63,
-	              "default": "My Queue"
-	            },
-	            "email": {
-	              "title": "Email",
-	              "type": "string",
-	              "pattern": "^\\S+@\\S+$",
-	              "description": "Email address for alerts."
-	            },
-	            "protocol": {
-	              "title": "Protocol",
-	              "type": "string",
-	              "default": "Java Message Service (JMS) 1.1",
-	              "enum": [
-	                "Java Message Service (JMS) 1.1",
-	                "Transmission Control Protocol (TCP)",
-	                "Advanced Message Queuing Protocol (AMQP) 1.0"
-	              ]
-	            },
-	            "secure": {
-	              "title": "Enable security",
-	              "type": "boolean",
-	              "default": true
-	            }
-	          },
-	          "required": [
-	            "name",
-	            "protocol"
-	          ]
-	  	  	}
+	  	  	"parameters": ` + instanceParameterSchemaBytes + `
 	  	  },
 	  	  "update": {
 	  	  	"parameters": {
