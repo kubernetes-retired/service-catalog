@@ -25,6 +25,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	fakebrokerserver "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake/server"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -112,13 +113,20 @@ func TestShouldReconcileBroker(t *testing.T) {
 }
 
 func TestReconcileBroker(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t)
+	const (
+		brokerUsername = "testuser"
+		brokerPassword = "testpassword"
+	)
+	controllerParams, err := newTestControllerWithBrokerServer(brokerUsername, brokerPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer controllerParams.Close()
 
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	controllerParams.BrokerServerHandler.Catalog = fakebrokerserver.ConvertCatalog(getTestCatalog())
+	controllerParams.Controller.reconcileBroker(getTestBroker())
 
-	testController.reconcileBroker(getTestBroker())
-
-	actions := fakeCatalogClient.Actions()
+	actions := controllerParams.FakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 2)
 
 	// first action should be a create action for a service class
@@ -129,14 +137,21 @@ func TestReconcileBroker(t *testing.T) {
 	assertBrokerReadyTrue(t, updatedBroker)
 
 	// verify no kube resources created
-	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+	assertNumberOfActions(t, controllerParams.FakeKubeClient.Actions(), 0)
 
-	events := getRecordedEvents(testController)
+	events := getRecordedEvents(controllerParams.Controller)
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
+	}
+
+	if controllerParams.BrokerServerHandler.CatalogRequests != 1 {
+		t.Fatalf(
+			"expected 1 catalog request, got %d",
+			controllerParams.BrokerServerHandler.CatalogRequests,
+		)
 	}
 }
 
