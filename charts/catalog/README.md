@@ -39,7 +39,7 @@ chart and their default values.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `apiserver.image` | apiserver image to use | `quay.io/kubernetes-service-catalog/apiserver:canary` |
+| `apiserver.image` | apiserver image to use | `quay.io/kubernetes-service-catalog/apiserver:v0.0.10` |
 | `apiserver.imagePullPolicy` | `imagePullPolicy` for the apiserver | `Always` |
 | `apiserver.insecure`  | Whether to expose an insecure endpoint; keep this enabled because there are some outstanding problems with the TLS-secured endpoint | `true` |
 | `apiserver.tls.cert` | Base64-encoded x509 certificate | A self-signed certificate |
@@ -55,7 +55,7 @@ chart and their default values.
 | `apiserver.storage.tpr.globalNamespace` | If storage type is `tpr`: Some service catalog resources are not namespaced, but third party resources must be; setting this designates a namespace that will be treated as a container for such resources | `servicecatalog` |
 | `apiserver.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `apiserver.auth.enabled` | Enable authentication and authorization | `false` |
-| `controllerManager.image` | controller-manager image to use | `quay.io/kubernetes-service-catalog/controller-manager:canary` |
+| `controllerManager.image` | controller-manager image to use | `quay.io/kubernetes-service-catalog/controller-manager:v0.0.10` |
 | `controllerManager.imagePullPolicy` | `imagePullPolicy` for the controller-manager | `Always` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
