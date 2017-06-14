@@ -24,9 +24,10 @@ import (
 	"testing"
 	"time"
 
+	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+	fakeosbclient "github.com/pmorie/go-open-service-broker-client/v2/fake"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 
@@ -391,18 +392,18 @@ func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 
 // broker catalog that provides the service class named in of
 // getTestServiceClass()
-func getTestCatalog() *brokerapi.Catalog {
-	return &brokerapi.Catalog{
-		Services: []*brokerapi.Service{
+func getTestCatalog() *osbclient.CatalogResponse {
+	return &osbclient.CatalogResponse{
+		Services: []osbclient.Service{
 			{
 				Name:        testServiceClassName,
 				ID:          serviceClassGUID,
 				Description: "a test service",
 				Bindable:    true,
-				Plans: []brokerapi.ServicePlan{
+				Plans: []osbclient.Plan{
 					{
 						Name:        testPlanName,
-						Free:        true,
+						Free:        truePtr(),
 						ID:          planGUID,
 						Description: "a test plan",
 					},
@@ -529,7 +530,7 @@ type bindingParameters struct {
 }
 
 func TestEmptyCatalogConversion(t *testing.T) {
-	serviceClasses, err := convertCatalog(&brokerapi.Catalog{})
+	serviceClasses, err := convertCatalog(&osbclient.CatalogResponse{})
 	if err != nil {
 		t.Fatalf("Failed to convertCatalog: %v", err)
 	}
@@ -539,7 +540,7 @@ func TestEmptyCatalogConversion(t *testing.T) {
 }
 
 func TestCatalogConversion(t *testing.T) {
-	catalog := &brokerapi.Catalog{}
+	catalog := &osbclient.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalog), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -561,7 +562,7 @@ func TestCatalogConversion(t *testing.T) {
 }
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
-	catalog := &brokerapi.Catalog{}
+	catalog := &osbclient.CatalogResponse{}
 	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -627,7 +628,7 @@ func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDes
 }
 
 func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
-	catalog := &brokerapi.Catalog{}
+	catalog := &osbclient.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalogWithMultipleServices), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -770,7 +771,7 @@ func falsePtr() *bool {
 }
 
 func TestCatalogConversionServicePlanBindable(t *testing.T) {
-	catalog := &brokerapi.Catalog{}
+	catalog := &osbclient.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalogForServicePlanBindableOverride), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -931,10 +932,10 @@ func TestIsPlanBindable(t *testing.T) {
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
-func newTestController(t *testing.T) (
+func newTestController(t *testing.T, config fakeosbclient.FakeClientConfiguration) (
 	*clientgofake.Clientset,
 	*servicecatalogclientset.Clientset,
-	*fakebrokerapi.Client,
+	*fakeosbclient.FakeClient,
 	*controller,
 	v1alpha1informers.Interface) {
 	// create a fake kube client
@@ -951,7 +952,7 @@ func newTestController(t *testing.T) (
 		BindingClient:  bindingCl,
 	}
 
-	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
+	brokerClFunc := fakeosbclient.NewClientFunc(config)
 
 	// create informers
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)

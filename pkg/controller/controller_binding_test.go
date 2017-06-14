@@ -27,7 +27,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,6 +73,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 }
 
 func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
+
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
 
 	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
