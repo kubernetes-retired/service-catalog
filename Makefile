@@ -249,6 +249,9 @@ test-integration: .init $(scBuildImageTarget) build
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh
 
+clean-e2e:
+	rm -f $(BINDIR)/e2e.test
+
 test-e2e: .generate_files $(BINDIR)/e2e.test
 	$(BINDIR)/e2e.test
 
