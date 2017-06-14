@@ -71,8 +71,9 @@ const (
 	testNamespace                   = "test-ns"
 	testBindingSecretName           = "test-secret"
 	testOperation                   = "test-operation"
-	testDashboardURL                = "http://dashboard"
 )
+
+var testDashboardURL = "http://dashboard"
 
 const testCatalog = `{
   "services": [{
@@ -347,21 +348,24 @@ func getTestBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
 // a bindable service class wired to the result of getTestBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
-		BrokerName: testBrokerName,
-		ExternalID: serviceClassGUID,
-		Bindable:   true,
+		ObjectMeta:  metav1.ObjectMeta{Name: testServiceClassName},
+		BrokerName:  testBrokerName,
+		Description: "a test service",
+		ExternalID:  serviceClassGUID,
+		Bindable:    true,
 		Plans: []v1alpha1.ServicePlan{
 			{
-				Name:       testPlanName,
-				Free:       true,
-				ExternalID: planGUID,
+				Name:        testPlanName,
+				Description: "a test plan",
+				Free:        true,
+				ExternalID:  planGUID,
 			},
 			{
-				Name:       testNonbindablePlanName,
-				Free:       true,
-				ExternalID: nonbindablePlanGUID,
-				Bindable:   falsePtr(),
+				Name:        testNonbindablePlanName,
+				Description: "a test plan",
+				Free:        true,
+				ExternalID:  nonbindablePlanGUID,
+				Bindable:    falsePtr(),
 			},
 		},
 	}
@@ -385,6 +389,7 @@ func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 				Name:       testNonbindablePlanName,
 				Free:       true,
 				ExternalID: nonbindablePlanGUID,
+				Bindable:   falsePtr(),
 			},
 		},
 	}
@@ -406,6 +411,13 @@ func getTestCatalog() *osb.CatalogResponse {
 						Free:        truePtr(),
 						ID:          planGUID,
 						Description: "a test plan",
+					},
+					{
+						Name:        testNonbindablePlanName,
+						Free:        truePtr(),
+						ID:          nonbindablePlanGUID,
+						Description: "a test plan",
+						Bindable:    falsePtr(),
 					},
 				},
 			},
@@ -941,8 +953,8 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	// create a fake sc client
 	fakeCatalogClient := &servicecatalogclientset.Clientset{}
 
-	// PAUL need to just pass in an object constructed from the config (new factory method)
-	brokerClFunc := fakeosb.NewClientFunc(config)
+	fakeOSBClient := fakeosb.NewFakeClient(config) // error should always be nil
+	brokerClFunc := fakeosb.ReturnFakeClientFunc(fakeOSBClient)
 
 	// create informers
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
@@ -967,7 +979,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		t.Fatal(err)
 	}
 
-	return fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController.(*controller), serviceCatalogSharedInformers
+	return fakeKubeClient, fakeCatalogClient, fakeOSBClient, testController.(*controller), serviceCatalogSharedInformers
 }
 
 type testControllerWithBrokerServer struct {
@@ -983,51 +995,51 @@ func (t *testControllerWithBrokerServer) Close() {
 	t.BrokerServer.Close()
 }
 
-func newTestControllerWithBrokerServer(
-	brokerUsername,
-	brokerPassword string,
-) (*testControllerWithBrokerServer, error) {
-	// create a fake kube client
-	fakeKubeClient := &clientgofake.Clientset{}
-	// create a fake sc client
-	fakeCatalogClient := &servicecatalogclientset.Clientset{}
+// func newTestControllerWithBrokerServer(
+// 	brokerUsername,
+// 	brokerPassword string,
+// ) (*testControllerWithBrokerServer, error) {
+// 	// create a fake kube client
+// 	fakeKubeClient := &clientgofake.Clientset{}
+// 	// create a fake sc client
+// 	fakeCatalogClient := &servicecatalogclientset.Clientset{}
 
-	brokerHandler := fakebrokerserver.NewHandler()
-	brokerServer := fakebrokerserver.Run(brokerHandler, brokerUsername, brokerPassword)
-	brokerClFunc := fakebrokerserver.NewCreateFunc(brokerServer, brokerUsername, brokerPassword)
+// 	brokerHandler := fakebrokerserver.NewHandler()
+// 	brokerServer := fakebrokerserver.Run(brokerHandler, brokerUsername, brokerPassword)
+// 	brokerClFunc := fakebrokerserver.NewCreateFunc(brokerServer, brokerUsername, brokerPassword)
 
-	// create informers
-	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
-	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
+// 	// create informers
+// 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
+// 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
-	fakeRecorder := record.NewFakeRecorder(5)
+// 	fakeRecorder := record.NewFakeRecorder(5)
 
-	// create a test controller
-	testController, err := NewController(
-		fakeKubeClient,
-		fakeCatalogClient.ServicecatalogV1alpha1(),
-		serviceCatalogSharedInformers.Brokers(),
-		serviceCatalogSharedInformers.ServiceClasses(),
-		serviceCatalogSharedInformers.Instances(),
-		serviceCatalogSharedInformers.Bindings(),
-		brokerClFunc,
-		24*time.Hour,
-		true, /* enable OSB context profile */
-		fakeRecorder,
-	)
-	if err != nil {
-		return nil, err
-	}
+// 	// create a test controller
+// 	testController, err := NewController(
+// 		fakeKubeClient,
+// 		fakeCatalogClient.ServicecatalogV1alpha1(),
+// 		serviceCatalogSharedInformers.Brokers(),
+// 		serviceCatalogSharedInformers.ServiceClasses(),
+// 		serviceCatalogSharedInformers.Instances(),
+// 		serviceCatalogSharedInformers.Bindings(),
+// 		brokerClFunc,
+// 		24*time.Hour,
+// 		true, /* enable OSB context profile */
+// 		fakeRecorder,
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return &testControllerWithBrokerServer{
-		FakeKubeClient:      fakeKubeClient,
-		FakeCatalogClient:   fakeCatalogClient,
-		Controller:          testController.(*controller),
-		Informers:           serviceCatalogSharedInformers,
-		BrokerServerHandler: brokerHandler,
-		BrokerServer:        brokerServer,
-	}, nil
-}
+// 	return &testControllerWithBrokerServer{
+// 		FakeKubeClient:      fakeKubeClient,
+// 		FakeCatalogClient:   fakeCatalogClient,
+// 		Controller:          testController.(*controller),
+// 		Informers:           serviceCatalogSharedInformers,
+// 		BrokerServerHandler: brokerHandler,
+// 		BrokerServer:        brokerServer,
+// 	}, nil
+// }
 
 func getRecordedEvents(testController *controller) []string {
 	source := testController.recorder.(*record.FakeRecorder).Events
@@ -1046,7 +1058,7 @@ func getRecordedEvents(testController *controller) []string {
 
 func assertNumEvents(t *testing.T, strings []string, number int) {
 	if e, a := number, len(strings); e != a {
-		fatalf(t, "Unexpected number of events: expected %v, got %v", e, a)
+		fatalf(t, "Unexpected number of events: expected %v, got %v;\nevents: %+v", e, a, strings)
 	}
 }
 
@@ -1086,7 +1098,7 @@ func testNumberOfActions(t *testing.T, name string, f failfFunc, actions []clien
 
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		f(t, "%vUnexpected number of actions: expected %v, got %v", logContext, e, a)
+		f(t, "%vUnexpected number of actions: expected %v, got %v;\nactions: %+v", logContext, e, a, actions)
 		return false
 	}
 
@@ -1368,5 +1380,42 @@ func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 
 	if len(accessor.GetFinalizers()) != 0 {
 		fatalf(t, "Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
+	}
+}
+
+func assertNumberOfBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
+	testNumberOfBrokerActions(t, "" /* name */, fatalf, actions, number)
+}
+
+func expectNumberOfBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {
+	return testNumberOfBrokerActions(t, name, errorf, actions, number)
+}
+
+func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
+	logContext := ""
+	if len(name) > 0 {
+		logContext = name + ": "
+	}
+
+	if e, a := number, len(actions); e != a {
+		t.Logf("%+v\n", actions)
+		f(t, "%vUnexpected number of actions: expected %v, got %v", logContext, e, a)
+		return false
+	}
+
+	return true
+}
+
+func assertGetCatalogAction(t *testing.T, action fakeosb.Action) {
+	if e, a := fakeosb.GetCatalog, action.Type; e != a {
+		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+	}
+}
+
+func getTestCatalogConfig() fakeosb.FakeClientConfiguration {
+	return fakeosb.FakeClientConfiguration{
+		CatalogReaction: &fakeosb.CatalogReaction{
+			Response: getTestCatalog(),
+		},
 	}
 }
