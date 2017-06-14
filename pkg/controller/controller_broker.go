@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -170,7 +172,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 		return nil
 	}
 
-	username, password, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
+	authConfig, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Info(s)
@@ -179,8 +181,21 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 		return err
 	}
 
+	clientConfig := &osbclient.ClientConfiguration{
+		Name:       broker.Name,
+		URL:        broker.Spec.URL,
+		AuthConfig: authConfig,
+	}
+
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
-	brokerClient := c.brokerClientCreateFunc(broker.Name, broker.Spec.URL, username, password)
+	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
+	if err != nil {
+		s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
+		glog.Info(s)
+		c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
+		return err
+	}
 
 	if broker.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating Broker %v", broker.Name)

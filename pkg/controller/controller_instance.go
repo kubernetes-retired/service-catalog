@@ -18,10 +18,11 @@ package controller
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/golang/glog"
+	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
@@ -143,23 +144,24 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			return err
 		}
 
-		request := &brokerapi.CreateServiceInstanceRequest{
+		request := &osbclient.ProvisionRequest{
+			AcceptsIncomplete: true,
+			InstanceID:        instance.Spec.ExternalID,
 			ServiceID:         serviceClass.ExternalID,
 			PlanID:            servicePlan.ExternalID,
 			Parameters:        parameters,
-			OrgID:             string(ns.UID),
-			SpaceID:           string(ns.UID),
-			AcceptsIncomplete: true,
+			OrganizationGUID:  string(ns.UID),
+			SpaceGUID:         string(ns.UID),
 		}
 		if c.enableOSBAPIContextProfle {
-			request.ContextProfile = brokerapi.ContextProfile{
-				Platform:  brokerapi.ContextProfilePlatformKubernetes,
-				Namespace: instance.Namespace,
+			request.AlphaContext = map[string]interface{}{
+				"platform":  brokerapi.ContextProfilePlatformKubernetes,
+				"namespace": instance.Namespace,
 			}
 		}
 
 		glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
-		response, respCode, err := brokerClient.CreateServiceInstance(instance.Spec.ExternalID, request)
+		response, err := brokerClient.ProvisionInstance(request)
 		if err != nil {
 			s := fmt.Sprintf("Error provisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
@@ -173,8 +175,8 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			return err
 		}
 
-		if response.DashboardURL != "" {
-			instance.Status.DashboardURL = &response.DashboardURL
+		if response.DashboardURL != nil && *response.DashboardURL != "" {
+			instance.Status.DashboardURL = response.DashboardURL
 		}
 
 		// Broker can return either a synchronous or asynchronous
@@ -182,10 +184,11 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		// and we need to add it to the polling queue. Broker can
 		// optionally return 'Operation' that will then need to be
 		// passed back to the broker during polling of last_operation.
-		if respCode == http.StatusAccepted {
+		if response.Async {
 			glog.V(5).Infof("Received asynchronous provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
-			if response.Operation != "" {
-				instance.Status.LastOperation = &response.Operation
+			if response.OperationKey != nil && *response.OperationKey != "" {
+				key := string(*response.OperationKey)
+				instance.Status.LastOperation = &key
 			}
 
 			// Tag this instance as having an ongoing async operation so we can enforce
@@ -234,16 +237,19 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	if finalizers := sets.NewString(instance.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("Finalizing Instance %v/%v", instance.Namespace, instance.Name)
 
-		request := &brokerapi.DeleteServiceInstanceRequest{
+		request := &osbclient.DeprovisionRequest{
+			InstanceID:        instance.Spec.ExternalID,
 			ServiceID:         serviceClass.ExternalID,
 			PlanID:            servicePlan.ExternalID,
 			AcceptsIncomplete: true,
 		}
 
 		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
-		response, respCode, err := brokerClient.DeleteServiceInstance(instance.Spec.ExternalID, request)
+		response, err := brokerClient.DeprovisionInstance(request)
 
 		if err != nil {
+			// TODO fix
+			respCode := ""
 			s := fmt.Sprintf(
 				"Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q with status code %d: %s",
 				instance.Namespace,
@@ -264,10 +270,11 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 			return err
 		}
 
-		if respCode == http.StatusAccepted {
+		if response.Async {
 			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
-			if response.Operation != "" {
-				instance.Status.LastOperation = &response.Operation
+			if response.OperationKey != nil && *response.OperationKey != "" {
+				key := string(*response.OperationKey)
+				instance.Status.LastOperation = &key
 			}
 
 			// Tag this instance as having an ongoing async operation so we can enforce
@@ -310,7 +317,7 @@ func (c *controller) pollInstanceInternal(instance *v1alpha1.Instance) error {
 	return c.pollInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
 }
 
-func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient brokerapi.BrokerClient, instance *v1alpha1.Instance) error {
+func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient osbclient.Client, instance *v1alpha1.Instance) error {
 
 	// There are some conditions that are different if we're
 	// deleting, this is more readable than checking the
@@ -320,49 +327,57 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 		deleting = true
 	}
 
-	lastOperationRequest := &brokerapi.LastOperationRequest{
-		ServiceID: serviceClass.ExternalID,
-		PlanID:    servicePlan.ExternalID,
+	request := &osbclient.LastOperationRequest{
+		InstanceID: instance.Spec.ExternalID,
+		ServiceID:  &serviceClass.ExternalID,
+		PlanID:     &servicePlan.ExternalID,
 	}
 	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
-		lastOperationRequest.Operation = *instance.Status.LastOperation
+		key := osbclient.OperationKey(*instance.Status.LastOperation)
+		request.OperationKey = &key
 	}
-	resp, rc, err := brokerClient.PollServiceInstance(instance.Spec.ExternalID, lastOperationRequest)
+
+	response, err := brokerClient.PollLastOperation(request)
 	if err != nil {
+		// If the operation was for delete and we receive a http.StatusGone,
+		// this is considered a success as per the spec, so mark as deleted
+		// and remove any finalizers.
+		if osbclient.IsGoneError(err) && deleting {
+			instance.Status.AsyncOpInProgress = false
+			// Clear the finalizer
+			if finalizers := sets.NewString(instance.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
+				finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+				c.updateInstanceFinalizers(instance, finalizers.List())
+			}
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				successDeprovisionReason,
+				successDeprovisionMessage,
+			)
+			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+			glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+			return nil
+		}
+
 		glog.Warningf("Poll failed for %v/%v  : %s", instance.Namespace, instance.Name, err)
 		return err
 	}
-	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, resp.State, resp.Description)
 
-	// If the operation was for delete and we receive a http.StatusGone,
-	// this is considered a success as per the spec, so mark as deleted
-	// and remove any finalizers.
-	if rc == http.StatusGone && deleting {
-		instance.Status.AsyncOpInProgress = false
-		// Clear the finalizer
-		if finalizers := sets.NewString(instance.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
-			finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
-			c.updateInstanceFinalizers(instance, finalizers.List())
-		}
-		c.updateInstanceCondition(
-			instance,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			successDeprovisionReason,
-			successDeprovisionMessage,
-		)
-		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
-		return nil
+	description := ""
+	if response.Description != nil {
+		description = *response.Description
 	}
+	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, response.State, description)
 
-	switch resp.State {
-	case "in progress":
+	switch response.State {
+	case osbclient.StateInProgress:
 		// The way the worker keeps on requeueing is by returning an error, so
 		// we need to keep on polling.
 		// TODO(vaikas): Update the instance condition with progress message here?
 		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
-	case "succeeded":
+	case osbclient.StateSucceeded:
 		// this gets updated as a side effect in both cases below.
 		instance.Status.AsyncOpInProgress = false
 
@@ -392,8 +407,12 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 				successProvisionMessage,
 			)
 		}
-	case "failed":
-		s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %q", instance.Namespace, instance.Name, serviceClass.Name, brokerName, resp.Description)
+	case osbclient.StateFailed:
+		description := ""
+		if response.Description != nil {
+			description = *response.Description
+		}
+		s := fmt.Sprintf("Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %q", instance.Namespace, instance.Name, serviceClass.Name, brokerName, description)
 		instance.Status.AsyncOpInProgress = false
 		cond := v1alpha1.ConditionFalse
 		reason := errorProvisionCalledReason
@@ -412,8 +431,8 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 	default:
-		glog.Warningf("Got invalid state in LastOperationResponse: %q", resp.State)
-		return fmt.Errorf("Got invalid state in LastOperationResponse: %q", resp.State)
+		glog.Warningf("Got invalid state in LastOperationResponse: %q", response.State)
+		return fmt.Errorf("Got invalid state in LastOperationResponse: %q", response.State)
 	}
 	return nil
 }

@@ -56,11 +56,11 @@ import (
 	_ "k8s.io/client-go/pkg/api/install"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
 	"github.com/golang/glog"
+	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -141,8 +141,6 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// TODO: disambiguate API errors
 		return fmt.Errorf("failed to get Service Catalog client configuration: %v", err)
 	}
-
-	// due to using both k8s.io/kubernetes and k8s.io/client-go, we need to convert this object over
 
 	glog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers
@@ -324,7 +322,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogSharedInformers.ServiceClasses(),
 			serviceCatalogSharedInformers.Instances(),
 			serviceCatalogSharedInformers.Bindings(),
-			openservicebroker.NewClient,
+			osbclient.NewClient,
 			s.BrokerRelistInterval,
 			s.OSBAPIContextProfile,
 			recorder,
