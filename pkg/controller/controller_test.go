@@ -946,12 +946,6 @@ func newTestController(t *testing.T, config fakeosbclient.FakeClientConfiguratio
 	catalogCl := &fakebrokerapi.CatalogClient{}
 	instanceCl := fakebrokerapi.NewInstanceClient()
 	bindingCl := fakebrokerapi.NewBindingClient()
-	fakeBrokerClient := &fakebrokerapi.Client{
-		CatalogClient:  catalogCl,
-		InstanceClient: instanceCl,
-		BindingClient:  bindingCl,
-	}
-
 	brokerClFunc := fakeosbclient.NewClientFunc(config)
 
 	// create informers
