@@ -23,7 +23,7 @@ import (
 	"github.com/golang/glog"
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -206,14 +206,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		}
 
 		appGuid := string(ns.UID)
-		request := &osbclient.BindRequest{
+		request := &osb.BindRequest{
 			BindingID:    binding.Spec.ExternalID,
 			InstanceID:   instance.Spec.ExternalID,
 			ServiceID:    serviceClass.ExternalID,
 			PlanID:       servicePlan.ExternalID,
 			AppGUID:      &appGuid,
 			Parameters:   parameters,
-			BindResource: &osbclient.BindResource{AppGUID: &appGuid},
+			BindResource: &osb.BindResource{AppGUID: &appGuid},
 		}
 
 		response, err := brokerClient.Bind(request)
@@ -282,7 +282,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			return err
 		}
 
-		unbindRequest := &osbclient.UnbindRequest{
+		unbindRequest := &osb.UnbindRequest{
 			BindingID:  binding.Spec.ExternalID,
 			InstanceID: instance.Spec.ExternalID,
 			ServiceID:  serviceClass.ExternalID,

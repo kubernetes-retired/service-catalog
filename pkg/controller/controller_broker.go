@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -181,7 +181,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 		return err
 	}
 
-	clientConfig := &osbclient.ClientConfiguration{
+	clientConfig := &osb.ClientConfiguration{
 		Name:       broker.Name,
 		URL:        broker.Spec.URL,
 		AuthConfig: authConfig,

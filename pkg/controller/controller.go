@@ -23,7 +23,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
-	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,7 +62,7 @@ func NewController(
 	serviceClassInformer informers.ServiceClassInformer,
 	instanceInformer informers.InstanceInformer,
 	bindingInformer informers.BindingInformer,
-	brokerClientCreateFunc osbclient.CreateFunc,
+	brokerClientCreateFunc osb.CreateFunc,
 	brokerRelistInterval time.Duration,
 	osbAPIContextProfile bool,
 	recorder record.EventRecorder,
@@ -125,7 +125,7 @@ type Controller interface {
 type controller struct {
 	kubeClient                kubernetes.Interface
 	serviceCatalogClient      servicecatalogclientset.ServicecatalogV1alpha1Interface
-	brokerClientCreateFunc    osbclient.CreateFunc
+	brokerClientCreateFunc    osb.CreateFunc
 	brokerLister              listers.BrokerLister
 	serviceClassLister        listers.ServiceClassLister
 	instanceLister            listers.InstanceLister
@@ -208,7 +208,7 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // getServiceClassPlanAndBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an Instance.
-func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osbclient.Client, error) {
+func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
 		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ServiceClassName)
@@ -269,7 +269,7 @@ func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (
 		return nil, nil, "", nil, err
 	}
 
-	clientConfig := osbclient.ClientConfiguration{
+	clientConfig := osb.ClientConfiguration{
 		Name:       broker.Name,
 		URL:        broker.Spec.URL,
 		AuthConfig: authConfig,
@@ -287,7 +287,7 @@ func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (
 // getServiceClassPlanAndBrokerForBinding is a sequence of operations that's
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given Instance.
-func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.Instance, binding *v1alpha1.Binding) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osbclient.Client, error) {
+func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.Instance, binding *v1alpha1.Binding) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
 		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
@@ -348,7 +348,7 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 		return nil, nil, "", nil, err
 	}
 
-	clientConfig := osbclient.ClientConfiguration{
+	clientConfig := osb.ClientConfiguration{
 		Name:       broker.Name,
 		URL:        broker.Spec.URL,
 		AuthConfig: authConfig,
@@ -369,7 +369,7 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 // contained in the secret referenced in the Broker's AuthSecret field, or
 // returns an error. If the AuthSecret field is nil, empty values are
 // returned.
-func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (*osbclient.AuthConfig, error) {
+func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (*osb.AuthConfig, error) {
 	// TODO: when we start supporting additional auth schemes, this code will have to accommodate
 	// the new schemes
 	if broker.Spec.AuthInfo == nil {
@@ -393,8 +393,8 @@ func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.
 		return nil, fmt.Errorf("auth secret didn't contain password")
 	}
 
-	authConfig := &osbclient.AuthConfig{
-		BasicAuthConfig: &osbclient.BasicAuthConfig{
+	authConfig := &osb.AuthConfig{
+		BasicAuthConfig: &osb.BasicAuthConfig{
 			Username: string(usernameBytes),
 			Password: string(passwordBytes),
 		},
@@ -404,7 +404,7 @@ func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.
 }
 
 // convertCatalog converts a service broker catalog into an array of ServiceClasses
-func convertCatalog(in *osbclient.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
+func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
 	ret := make([]*v1alpha1.ServiceClass, len(in.Services))
 	for i, svc := range in.Services {
 		plans, err := convertServicePlans(svc.Plans)
@@ -436,7 +436,7 @@ func convertCatalog(in *osbclient.CatalogResponse) ([]*v1alpha1.ServiceClass, er
 	return ret, nil
 }
 
-func convertServicePlans(plans []osbclient.Plan) ([]v1alpha1.ServicePlan, error) {
+func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 	ret := make([]v1alpha1.ServicePlan, len(plans))
 	for i := range plans {
 		ret[i] = v1alpha1.ServicePlan{

@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
-	fakeosbclient "github.com/pmorie/go-open-service-broker-client/v2/fake"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
@@ -392,15 +392,15 @@ func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 
 // broker catalog that provides the service class named in of
 // getTestServiceClass()
-func getTestCatalog() *osbclient.CatalogResponse {
-	return &osbclient.CatalogResponse{
-		Services: []osbclient.Service{
+func getTestCatalog() *osb.CatalogResponse {
+	return &osb.CatalogResponse{
+		Services: []osb.Service{
 			{
 				Name:        testServiceClassName,
 				ID:          serviceClassGUID,
 				Description: "a test service",
 				Bindable:    true,
-				Plans: []osbclient.Plan{
+				Plans: []osb.Plan{
 					{
 						Name:        testPlanName,
 						Free:        truePtr(),
@@ -530,7 +530,7 @@ type bindingParameters struct {
 }
 
 func TestEmptyCatalogConversion(t *testing.T) {
-	serviceClasses, err := convertCatalog(&osbclient.CatalogResponse{})
+	serviceClasses, err := convertCatalog(&osb.CatalogResponse{})
 	if err != nil {
 		t.Fatalf("Failed to convertCatalog: %v", err)
 	}
@@ -540,7 +540,7 @@ func TestEmptyCatalogConversion(t *testing.T) {
 }
 
 func TestCatalogConversion(t *testing.T) {
-	catalog := &osbclient.CatalogResponse{}
+	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalog), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -562,7 +562,7 @@ func TestCatalogConversion(t *testing.T) {
 }
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
-	catalog := &osbclient.CatalogResponse{}
+	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -628,7 +628,7 @@ func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDes
 }
 
 func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
-	catalog := &osbclient.CatalogResponse{}
+	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalogWithMultipleServices), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -771,7 +771,7 @@ func falsePtr() *bool {
 }
 
 func TestCatalogConversionServicePlanBindable(t *testing.T) {
-	catalog := &osbclient.CatalogResponse{}
+	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalogForServicePlanBindableOverride), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
@@ -924,18 +924,16 @@ func TestIsPlanBindable(t *testing.T) {
 //
 // - a fake kubernetes core api client
 // - a fake service catalog api client
-// - a fake broker catalog client
-// - a fake broker instance client
-// - a fake broker binding client
+// - a fake osb client
 // - a test controller
 // - the shared informers for the service catalog v1alpha1 api
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
-func newTestController(t *testing.T, config fakeosbclient.FakeClientConfiguration) (
+func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	*clientgofake.Clientset,
 	*servicecatalogclientset.Clientset,
-	*fakeosbclient.FakeClient,
+	*fakeosb.FakeClient,
 	*controller,
 	v1alpha1informers.Interface) {
 	// create a fake kube client
@@ -943,10 +941,8 @@ func newTestController(t *testing.T, config fakeosbclient.FakeClientConfiguratio
 	// create a fake sc client
 	fakeCatalogClient := &servicecatalogclientset.Clientset{}
 
-	catalogCl := &fakebrokerapi.CatalogClient{}
-	instanceCl := fakebrokerapi.NewInstanceClient()
-	bindingCl := fakebrokerapi.NewBindingClient()
-	brokerClFunc := fakeosbclient.NewClientFunc(config)
+	// PAUL need to just pass in an object constructed from the config (new factory method)
+	brokerClFunc := fakeosb.NewClientFunc(config)
 
 	// create informers
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
