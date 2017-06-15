@@ -303,7 +303,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	testController.reconcileInstance(instance)
 
 	brokerActions := fakeBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -332,7 +332,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
-			Error: errors.New("provision failed"),
+			Error: errors.New("fake creation failure"),
 		},
 	})
 
@@ -365,11 +365,6 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
-
-	// PAUL fix
-	// if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
-	// 	t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
-	// }
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
