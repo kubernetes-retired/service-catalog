@@ -16,6 +16,8 @@
 set -o nounset
 set -o errexit
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 while [[ $# -ne 0 ]]; do
   case "$1" in
     --project)     PROJECT="$2"; shift ;;
@@ -53,6 +55,13 @@ echo "Using cluster ${CLUSTERNAME}."
 
 gcloud container clusters get-credentials "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" \
   || { echo 'Cannot get credentials for cluster.'; exit 1; }
+
+# On GKE you need to give your user proper permissions in order to create new
+# cluster roles. Needed for RBAC setup.
+ACCOUNT_NAME="$(gcloud info | grep Account | sed 's/.*\[\(.*\)\]/\1/')"
+kubectl create clusterrolebinding jenkins-cluster-admin-binding \
+    --clusterrole=cluster-admin --user="${ACCOUNT_NAME}" \
+  || { echo 'Cannot not create cluster-admin role for service account.'; exit 1; }
 
 helm init \
   || { echo 'Cannot initialize Helm.'; exit 1; }
