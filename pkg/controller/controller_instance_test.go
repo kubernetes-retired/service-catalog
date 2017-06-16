@@ -205,7 +205,6 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 }
 
 func TestReconcileInstanceWithParameters(t *testing.T) {
-	// PAUL fix
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{},
@@ -231,6 +230,23 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvisionAction(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+		Parameters: map[string]interface{}{
+			"args": map[string]interface{}{
+				"first":  "first-arg",
+				"second": "second-arg",
+			},
+			"name": "test-param",
+		},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -239,6 +255,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 1)
+	// TODO: assertProvisionAction will probably break here
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
@@ -252,25 +269,6 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	if len(updateObject.Spec.Parameters.Raw) == 0 {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
-	// PAUL fix
-
-	// if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-	// 	t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
-	// } else {
-	// 	if len(si.Parameters) == 0 {
-	// 		t.Fatalf("Expected parameters but got none")
-	// 	}
-	// 	if e, a := "test-param", si.Parameters["name"].(string); e != a {
-	// 		t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
-	// 	}
-	// 	argsMap := si.Parameters["args"].(map[string]interface{})
-	// 	if e, a := "first-arg", argsMap["first"].(string); e != a {
-	// 		t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
-	// 	}
-	// 	if e, a := "second-arg", argsMap["second"].(string); e != a {
-	// 		t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
-	// 	}
-	// }
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -315,11 +313,6 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
 
-	// PAUL fix
-	// if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
-	// 	t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
-	// }
-
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -340,15 +333,6 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
-	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	testController.reconcileInstance(instance)
 
@@ -376,7 +360,6 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 }
 
 func TestReconcileInstance(t *testing.T) {
-	// PAUL fix
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{
@@ -404,6 +387,18 @@ func TestReconcileInstance(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvisionAction(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		OrganizationGUID:  testNsUID,
+		SpaceGUID:         testNsUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
 
 	// Since synchronous operation, must not make it into the polling queue.
 	if testController.pollingQueue.Len() != 0 {
