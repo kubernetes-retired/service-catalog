@@ -441,15 +441,15 @@ func convertServicePlans(plans []brokerapi.ServicePlan) ([]v1alpha1.ServicePlan,
 		if schemas := plans[i].Schemas; schemas != nil {
 			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
 				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil {
-					ret[i].AlphaInstanceCreateParameterSchema = instanceCreateSchema.Parameters
+					ret[i].AlphaInstanceCreateParameterSchema = &runtime.RawExtension{Raw: instanceCreateSchema.Parameters}
 				}
 				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil {
-					ret[i].AlphaInstanceUpdateParameterSchema = instanceUpdateSchema.Parameters
+					ret[i].AlphaInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: instanceUpdateSchema.Parameters}
 				}
 			}
 			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
 				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil {
-					ret[i].AlphaBindingCreateParameterSchema = bindingCreateSchema.Parameters
+					ret[i].AlphaBindingCreateParameterSchema = &runtime.RawExtension{Raw: bindingCreateSchema.Parameters}
 				}
 			}
 		}
