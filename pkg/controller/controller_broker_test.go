@@ -177,7 +177,7 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertGetCatalogAction(t, brokerActions[0])
+	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 2)
@@ -205,7 +205,7 @@ func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertGetCatalogAction(t, brokerActions[0])
+	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -237,7 +237,7 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertGetCatalogAction(t, brokerActions[0])
+	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -314,7 +314,7 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertGetCatalogAction(t, brokerActions[0])
+	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -346,7 +346,7 @@ func TestReconcileBrokerZeroServices(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertGetCatalogAction(t, brokerActions[0])
+	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -425,7 +425,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertGetCatalogAction(t, brokerActions[0])
+	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 2)

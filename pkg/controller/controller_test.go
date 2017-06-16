@@ -1406,19 +1406,39 @@ func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions [
 	return true
 }
 
-func assertGetCatalogAction(t *testing.T, action fakeosb.Action) {
+func assertGetCatalog(t *testing.T, action fakeosb.Action) {
 	if e, a := fakeosb.GetCatalog, action.Type; e != a {
 		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 }
 
-func assertProvisionAction(t *testing.T, action fakeosb.Action, request *osb.ProvisionRequest) {
+func assertProvision(t *testing.T, action fakeosb.Action, request *osb.ProvisionRequest) {
 	if e, a := fakeosb.ProvisionInstance, action.Type; e != a {
 		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
 		fatalf(t, "unexpected diff in provision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+	}
+}
+
+func assertDeprovision(t *testing.T, action fakeosb.Action, request *osb.DeprovisionRequest) {
+	if e, a := fakeosb.DeprovisionInstance, action.Type; e != a {
+		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+	}
+
+	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
+		fatalf(t, "unexpected diff in deprovision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+	}
+}
+
+func assertPollLastOperation(t *testing.T, action fakeosb.Action, request *osb.LastOperationRequest) {
+	if e, a := fakeosb.PollLastOperation, action.Type; e != a {
+		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+	}
+
+	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
+		fatalf(t, "unexpected diff in last operation request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 

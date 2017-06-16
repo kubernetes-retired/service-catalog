@@ -318,7 +318,6 @@ func (c *controller) pollInstanceInternal(instance *v1alpha1.Instance) error {
 }
 
 func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient osbclient.Client, instance *v1alpha1.Instance) error {
-
 	// There are some conditions that are different if we're
 	// deleting, this is more readable than checking the
 	// timestamps in various places.
