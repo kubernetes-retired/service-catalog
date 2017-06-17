@@ -336,6 +336,8 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 		request.OperationKey = &key
 	}
 
+	glog.V(5).Infof("Polling last operation on Instance %v/%v", instance.Namespace, instance.Name)
+
 	response, err := brokerClient.PollLastOperation(request)
 	if err != nil {
 		// If the operation was for delete and we receive a http.StatusGone,

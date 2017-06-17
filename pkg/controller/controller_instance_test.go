@@ -916,7 +916,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
-			Error: &osb.HTTPStatusCodeError{
+			Error: osb.HTTPStatusCodeError{
 				StatusCode: http.StatusGone,
 			},
 		},
