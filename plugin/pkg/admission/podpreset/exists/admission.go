@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"time"
 
 	"github.com/golang/glog"
 
@@ -39,13 +38,6 @@ const (
 	// SupportedPodPresetVersion is the GroupVersion for what we require for
 	// creating PodPresetTemplates in bindings.
 	SupportedPodPresetVersion = "settings.k8s.io/v1alpha1"
-
-	// how long to wait for a missing namespace before re-checking the cache (and then doing a live lookup)
-	// this accomplishes two things:
-	// 1. It allows a watch-fed cache time to observe a namespace creation event
-	// 2. It allows time for a namespace creation to distribute to members of a storage cluster,
-	//    so the live lookup has a better chance of succeeding even if it isn't performed against the leader.
-	missingNamespaceWait = 50 * time.Millisecond
 )
 
 func init() {
@@ -60,77 +52,55 @@ func init() {
 type exists struct {
 	*admission.Handler
 	discovery         discovery.DiscoveryInterface
-	sync.Mutex        // protects next two fields
+	sync.Mutex        // protects podPresetsChecked and podPresetsExists
 	podPresetsChecked bool
 	podPresetsExists  bool
 }
 
 var _ = scadmission.WantsKubeClientSet(&exists{})
 
-func (l *exists) hasSupportForPodPresets() (bool, error) {
-	// If we've previously checked the cluster, use that information.
-	l.Lock()
-	if l.podPresetsChecked {
-		l.Unlock()
-		return l.podPresetsExists, nil
-	}
-	l.Unlock()
-
-	// This is the first time or we couldn't tell previously for sure
-	//(error?), so check the cluster. Since this does IO, note we release
-	// the lock above.
-	exists, err := l.checkClusterForPodPresets()
-
-	// Grab the lock again, check to make sure that somebody else hasn't
-	// checked the cluster in the meantime. In theory this shouldn't matter,
-	// but if they succeeded and we got an error, we should just use their
-	// result.
-	l.Lock()
-	if l.podPresetsChecked {
-		l.Unlock()
-		return l.podPresetsExists, nil
-	}
-	// No errors, so we know  if the cluster supports PodPreset or not
-	if err == nil {
-		l.podPresetsExists = exists
-		l.podPresetsChecked = true
-	}
-	l.Unlock()
-	return exists, err
+func (e *exists) supportsPodPresets() bool {
+	e.Lock()
+	defer e.Unlock()
+	return e.podPresetsExists
 }
 
 // checkClusterForPodPresets uses discovery to find if the cluster has the
-// right version of settings that supports PodPresets
-// This is a separate function from above since it does IO and we don't
-// want to hang on to a lock while doing this.
-func (l *exists) checkClusterForPodPresets() (bool, error) {
-	if resourceList, err := l.discovery.ServerResourcesForGroupVersion(SupportedPodPresetVersion); err != nil {
-		if errors.IsNotFound(err) {
-			glog.V(4).Infof("No PodPreset support in the cluster, not allowing PodPresetTemplates in Bindings")
-			// No such resource, which means the cluster does not support PodPresets
-			return false, nil
-		} else {
-			// Some other kind of error, so just return it
-			glog.V(4).Infof("ServerResourcesForGroupVersion failed: %s", err)
-			return false, err
-		}
-	} else {
-		for _, resource := range resourceList.APIResources {
-			if resource.Name == "podpresets" {
-				glog.V(4).Infof("PodPreset support found, allowing PodPresetTemplates in Bindings")
-				return true, nil
-			}
+// right version of settings that supports PodPresets. It will return true
+// if we have successfully queried the Discovery API and hence we know
+// for sure if the cluster supports PodPresets or not.
+// In that case, it also sets podPresetsChecked to true and podPresetsExists
+// to true if the cluster supports PodPresets.
+func (e *exists) checkClusterForPodPresets() bool {
+	resourceList, err := e.discovery.ServerResourcesForGroupVersion(SupportedPodPresetVersion)
+
+	if err != nil && !errors.IsNotFound(err) {
+		// We don't know if the cluster supports PodPresets or not
+		glog.V(4).Infof("ServerResourcesForGroupVersion failed: %s", err)
+		return false
+
+	}
+
+	e.Lock()
+	defer e.Unlock()
+	e.podPresetsChecked = true
+
+	if err != nil && errors.IsNotFound(err) {
+		// No such resource, which means the cluster does not support PodPresets
+		glog.V(4).Infof("No PodPreset support in the cluster, not allowing PodPresetTemplates in Bindings")
+		return true
+	}
+
+	for _, resource := range resourceList.APIResources {
+		if resource.Name == "podpresets" {
+			glog.V(4).Infof("PodPreset support found, allowing PodPresetTemplates in Bindings")
+			e.podPresetsExists = true
 		}
 	}
-	return false, nil
+	return true
 }
 
-func (l *exists) Admit(a admission.Attributes) error {
-	// We only care about updates / creates
-	if a.GetOperation() != admission.Create && a.GetOperation() != admission.Update {
-		return nil
-	}
-
+func (e *exists) Admit(a admission.Attributes) error {
 	// We only care about bindings
 	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("bindings") {
 		return nil
@@ -143,13 +113,14 @@ func (l *exists) Admit(a admission.Attributes) error {
 		return nil
 	}
 
-	// Request is for creating a binding with pod preset, check to see if the cluster supports it
-	ppExists, err := l.hasSupportForPodPresets()
-	if err != nil {
-		return errors.NewInternalError(err)
+	// we need to wait until we have successfully talked to the cluster and
+	// determined if the cluster supports PodPresets or not.
+	if !e.WaitForReady() {
+		return admission.NewForbidden(a, fmt.Errorf("%s is not yet ready to handle request", PluginName))
 	}
 
-	if ppExists {
+	// Request is for creating a binding with pod preset, check to see if the cluster supports it
+	if e.supportsPodPresets() {
 		return nil
 	} else {
 		return admission.NewForbidden(a, fmt.Errorf("Unable to create a binding with PodPresetTemplate because the cluster does not support PodPreset. Need support for %s resource", SupportedPodPresetVersion))
@@ -164,12 +135,13 @@ func NewExists() (admission.Interface, error) {
 	}, nil
 }
 
-func (l *exists) SetKubeClientSet(client kubeclientset.Interface) {
-	l.discovery = client.Discovery()
+func (e *exists) SetKubeClientSet(client kubeclientset.Interface) {
+	e.discovery = client.Discovery()
+	e.SetReadyFunc(e.checkClusterForPodPresets)
 }
 
-func (l *exists) Validate() error {
-	if l.discovery == nil {
+func (e *exists) Validate() error {
+	if e.discovery == nil {
 		return fmt.Errorf("missing discovery")
 	}
 	return nil
