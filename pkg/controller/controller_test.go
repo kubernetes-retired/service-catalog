@@ -1442,6 +1442,16 @@ func assertPollLastOperation(t *testing.T, action fakeosb.Action, request *osb.L
 	}
 }
 
+func assertBind(t *testing.T, action fakeosb.Action, request *osb.BindRequest) {
+	if e, a := fakeosb.Bind, action.Type; e != a {
+		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+	}
+
+	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
+		fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+	}
+}
+
 func getTestCatalogConfig() fakeosb.FakeClientConfiguration {
 	return fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
