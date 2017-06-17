@@ -130,9 +130,8 @@ func (e *exists) Admit(a admission.Attributes) error {
 	// Request is for creating a binding with pod preset, check to see if the cluster supports it
 	if e.supportsPodPresets() {
 		return nil
-	} else {
-		return admission.NewForbidden(a, fmt.Errorf("Unable to create a binding with PodPresetTemplate because the cluster does not support PodPreset. Need support for %s resource", SupportedPodPresetVersion))
 	}
+	return admission.NewForbidden(a, fmt.Errorf("Unable to create a binding with PodPresetTemplate because the cluster does not support PodPreset. Need support for %s resource", SupportedPodPresetVersion))
 }
 
 // NewExists creates a new admission control handler that checks for existence of PodPresets
