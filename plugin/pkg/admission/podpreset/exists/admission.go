@@ -72,6 +72,14 @@ func (e *exists) supportsPodPresets() bool {
 // In that case, it also sets podPresetsChecked to true and podPresetsExists
 // to true if the cluster supports PodPresets.
 func (e *exists) checkClusterForPodPresets() bool {
+	synced := false
+	e.Lock()
+	synced = e.podPresetsChecked
+	e.Unlock()
+	if synced {
+		return true
+	}
+
 	resourceList, err := e.discovery.ServerResourcesForGroupVersion(SupportedPodPresetVersion)
 
 	if err != nil && !errors.IsNotFound(err) {
