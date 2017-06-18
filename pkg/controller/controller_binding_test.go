@@ -384,7 +384,7 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 }
 
 func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
-	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -500,11 +500,6 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
-	// PAUL fix
-	// if _, ok := fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; ok {
-	// 	t.Fatalf("Unexpected broker binding call")
-	// }
-
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
@@ -560,7 +555,9 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 }
 
 func TestReconcileBindingDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -635,7 +632,16 @@ func TestReconcileBindingDelete(t *testing.T) {
 const testPodPresetName = "test-pod-preset"
 
 func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
 
 	testNsUID := "test_ns_uid"
 
@@ -680,16 +686,6 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
-
-	// PAUL fix
-	// if testNsUID != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
-	// 	t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
-	// }
-
-	// bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
-	// if appGUID := bindResource["app_guid"]; testNsUID != fmt.Sprintf("%v", appGUID) {
-	// 	t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, appGUID)
-	// }
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -805,7 +801,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t, getTestCatalogConfig())
+		_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
 		clone, err := api.Scheme.DeepCopy(tc.input)
 		if err != nil {
