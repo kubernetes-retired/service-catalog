@@ -431,6 +431,14 @@ func (c *controller) updateBrokerFinalizers(
 	broker *v1alpha1.Broker,
 	finalizers []string) error {
 
+	// Get the latest version of the binding so that we can avoid conflicts
+	// (since we have probably just updated the status of the binding and are
+	// now removing the last finalizer).
+	broker, err := c.serviceCatalogClient.Brokers().Get(broker.Name, metav1.GetOptions{})
+	if err != nil {
+		glog.Errorf("Error getting Broker %v to finalize: %v", broker.Name, err)
+	}
+
 	clone, err := api.Scheme.DeepCopy(broker)
 	if err != nil {
 		return err

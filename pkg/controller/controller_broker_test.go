@@ -267,6 +267,9 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	broker := getTestBroker()
 	broker.DeletionTimestamp = &metav1.Time{}
 	broker.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	fakeCatalogClient.AddReactor("get", "brokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, broker, nil
+	})
 
 	testController.reconcileBroker(broker)
 
@@ -282,14 +285,16 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	// 0. Deleting the associated ServiceClass
 	// 1. Updating the ready condition
 	// 2. Removing the finalizer
-	assertNumberOfActions(t, actions, 3)
+	assertNumberOfActions(t, actions, 4)
 
 	assertDelete(t, actions[0], testServiceClass)
 
 	updatedBroker := assertUpdateStatus(t, actions[1], broker)
 	assertBrokerReadyFalse(t, updatedBroker)
 
-	updatedBroker = assertUpdateStatus(t, actions[2], broker)
+	assertGet(t, actions[2], broker)
+
+	updatedBroker = assertUpdateStatus(t, actions[3], broker)
 	assertEmptyFinalizers(t, updatedBroker)
 
 	events := getRecordedEvents(testController)
