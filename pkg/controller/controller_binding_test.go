@@ -131,8 +131,6 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		},
 	})
 
-	testNsUID := "test_ns_uid"
-
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -176,7 +174,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		InstanceID: instanceGUID,
 		ServiceID:  serviceClassGUID,
 		PlanID:     planGUID,
-		AppGUID:    &testNsUID,
+		AppGUID:    strPtr(testNsUID),
 		Parameters: map[string]interface{}{
 			"args": []interface{}{
 				"first-arg",
@@ -185,7 +183,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 			"name": "test-param",
 		},
 		BindResource: &osb.BindResource{
-			AppGUID: &testNsUID,
+			AppGUID: strPtr(testNsUID),
 		},
 	})
 
@@ -285,8 +283,6 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 			},
 		},
 	})
-
-	testNsUID := "test_ns_uid"
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
@@ -478,7 +474,7 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID("test_ns_uid"),
+				UID: types.UID(testNsUID),
 			},
 		}, nil
 	})
@@ -642,8 +638,6 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 			},
 		},
 	})
-
-	testNsUID := "test_ns_uid"
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{

@@ -71,6 +71,7 @@ const (
 	testNamespace                   = "test-ns"
 	testBindingSecretName           = "test-secret"
 	testOperation                   = "test-operation"
+	testNsUID                       = "test-ns-uid"
 )
 
 var testDashboardURL = "http://dashboard"
@@ -778,6 +779,10 @@ func falsePtr() *bool {
 	return &b
 }
 
+func strPtr(s string) *string {
+	return &s
+}
+
 func TestCatalogConversionServicePlanBindable(t *testing.T) {
 	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(testCatalogForServicePlanBindableOverride), &catalog)
@@ -1400,6 +1405,10 @@ func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions [
 	}
 
 	return true
+}
+
+func noFakeActions() fakeosb.FakeClientConfiguration {
+	return fakeosb.FakeClientConfiguration{}
 }
 
 func assertGetCatalog(t *testing.T, action fakeosb.Action) {

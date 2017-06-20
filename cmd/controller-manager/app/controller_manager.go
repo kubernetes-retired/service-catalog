@@ -60,7 +60,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
 	"github.com/golang/glog"
-	osbclient "github.com/pmorie/go-open-service-broker-client/v2"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -322,7 +322,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogSharedInformers.ServiceClasses(),
 			serviceCatalogSharedInformers.Instances(),
 			serviceCatalogSharedInformers.Bindings(),
-			osbclient.NewClient,
+			osb.NewClient,
 			s.BrokerRelistInterval,
 			s.OSBAPIContextProfile,
 			recorder,

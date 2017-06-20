@@ -40,10 +40,6 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 )
 
-func noFakeActions() fakeosb.FakeClientConfiguration {
-	return fakeosb.FakeClientConfiguration{}
-}
-
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
@@ -369,8 +365,6 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	}
 }
 
-const testNsUID = "test-ns-uid"
-
 func TestReconcileInstance(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -478,7 +472,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 		SpaceGUID:         testNsUID,
 		AlphaContext: map[string]interface{}{
 			"platform":  "kubernetes",
-			"namespace": "test-ns",
+			"namespace": testNamespace,
 		},
 	})
 
@@ -677,10 +671,6 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
-}
-
-func strPtr(s string) *string {
-	return &s
 }
 
 func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
