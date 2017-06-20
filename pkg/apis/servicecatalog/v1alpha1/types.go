@@ -51,7 +51,7 @@ type BrokerSpec struct {
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
 	// with the Broker.
-	AuthInfo *BrokerAuthInfo `json:"authInfo,omitempty"`
+	AuthInfo *BrokerAuthInfo `json:"authInfo"`
 }
 
 // BrokerAuthInfo is a union type that contains information on one of the authentication methods
