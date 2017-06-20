@@ -67,3 +67,5 @@ import:
   version: v1.3.1
 - package: github.com/pivotal-cf/brokerapi
 - package: code.cloudfoundry.org/lager
+- package: github.com/pmorie/go-open-service-broker-client
+  version: 2da30f3feb6e22a9e32786f57f64102967d58f40 
