@@ -28,6 +28,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -110,6 +111,74 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassMessage + " " + "Binding \"test-ns/test-binding\" references a non-existent ServiceClass \"nothere\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestReconcileBindingBasic(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+
+	testNsUID := "test_ns_uid"
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID(testNsUID),
+			},
+		}, nil
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+		},
+	}
+
+	testController.reconcileBinding(binding)
+
+	if testNsUID != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
+	}
+
+	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
+	if appGUID := bindResource["app_guid"]; testNsUID != fmt.Sprintf("%v", appGUID) {
+		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, appGUID)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// There should only be one action that says binding was created
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyTrue(t, updatedBinding)
+
+	//updateObject
+	_, ok := updatedBinding.(*v1alpha1.Binding)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.Binding")
+	}
+
+	if b, ok := fakeBrokerClient.BindingClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; !ok {
+		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
+	} else {
+		if len(b.Parameters) == 0 {
+			t.Logf("Expected none")
+		}
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -465,6 +534,84 @@ func TestReconcileBindingDelete(t *testing.T) {
 	bindingsMapKey := fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)
 
 	fakeBrokerClient.BindingClient.Bindings = map[string]*brokerapi.ServiceBinding{bindingsMapKey: {}}
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{v1alpha1.FinalizerServiceCatalog},
+		},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+		},
+	}
+
+	fakeCatalogClient.AddReactor("get", "bindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
+	testController.reconcileBinding(binding)
+
+	kubeActions := fakeKubeClient.Actions()
+	// The two actions should be:
+	// 0. Deleting the secret
+	assertNumberOfActions(t, kubeActions, 1)
+
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	// The three actions should be:
+	// 0. Updating the ready condition
+	// 1. Get against the binding in question
+	// 2. Removing the finalizer
+	assertNumberOfActions(t, actions, 3)
+
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding)
+
+	assertGet(t, actions[1], binding)
+
+	updatedBinding = assertUpdateStatus(t, actions[2], binding)
+	assertEmptyFinalizers(t, updatedBinding)
+
+	if _, ok := fakeBrokerClient.BindingClient.Bindings[bindingsMapKey]; ok {
+		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+// TestReconcileBindingDeleteNonExistent checks whether a binding that
+// wasn't made can be deleted.
+//
+// Fix for kubernetes-incubator/service-catalog#953
+func TestReconcileBindingDeleteNonExistent(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+
+	bindingsMapKey := fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)
+
+	fakeBrokerClient.BindingClient.Bindings = map[string]*brokerapi.ServiceBinding{}
+	fakeBrokerClient.BindingClient.DeleteErr = openservicebroker.ErrBindingGone
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
