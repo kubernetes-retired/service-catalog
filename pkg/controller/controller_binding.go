@@ -21,9 +21,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -205,14 +206,18 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			return err
 		}
 
-		request := &brokerapi.BindingRequest{
+		appGUID := string(ns.UID)
+		request := &osb.BindRequest{
+			BindingID:    binding.Spec.ExternalID,
+			InstanceID:   instance.Spec.ExternalID,
 			ServiceID:    serviceClass.ExternalID,
 			PlanID:       servicePlan.ExternalID,
+			AppGUID:      &appGUID,
 			Parameters:   parameters,
-			AppGUID:      string(ns.UID),
-			BindResource: map[string]interface{}{"app_guid": string(ns.UID)},
+			BindResource: &osb.BindResource{AppGUID: &appGUID},
 		}
-		response, err := brokerClient.CreateServiceBinding(instance.Spec.ExternalID, binding.Spec.ExternalID, request)
+
+		response, err := brokerClient.Bind(request)
 		if err != nil {
 			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
@@ -225,7 +230,8 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
 			return err
 		}
-		err = c.injectBinding(binding, &response.Credentials)
+
+		err = c.injectBinding(binding, response.Credentials)
 		if err != nil {
 			s := fmt.Sprintf("Error injecting binding results for Binding \"%s/%s\": %s", binding.Namespace, binding.Name, err)
 			glog.Warning(s)
@@ -276,7 +282,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
 			return err
 		}
-		err = brokerClient.DeleteServiceBinding(instance.Spec.ExternalID, binding.Spec.ExternalID, serviceClass.ExternalID, servicePlan.ExternalID)
+
+		unbindRequest := &osb.UnbindRequest{
+			BindingID:  binding.Spec.ExternalID,
+			InstanceID: instance.Spec.ExternalID,
+			ServiceID:  serviceClass.ExternalID,
+			PlanID:     servicePlan.ExternalID,
+		}
+		_, err = brokerClient.Unbind(unbindRequest)
 		if err != nil {
 			s := fmt.Sprintf(
 				"Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s",
@@ -332,7 +345,7 @@ func isPlanBindable(serviceClass *v1alpha1.ServiceClass, plan *v1alpha1.ServiceP
 	return serviceClass.Bindable
 }
 
-func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *brokerapi.Credential) error {
+func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[string]interface{}) error {
 	glog.V(5).Infof("Creating Secret %v/%v", binding.Namespace, binding.Spec.SecretName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -342,7 +355,7 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials *broke
 		Data: make(map[string][]byte),
 	}
 
-	for k, v := range *credentials {
+	for k, v := range credentials {
 		var err error
 		secret.Data[k], err = serialize(v)
 		if err != nil {

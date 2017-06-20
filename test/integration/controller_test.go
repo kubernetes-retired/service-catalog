@@ -30,10 +30,11 @@ import (
 	// avoid error `no kind is registered for the type metav1.ListOptions`
 	_ "k8s.io/client-go/pkg/api/install"
 
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	scinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
@@ -47,13 +48,19 @@ const (
 	testNamespace        = "test-namespace"
 	testBrokerName       = "test-broker"
 	testServiceClassName = "test-service"
-	planName             = "test-plan"
+	testPlanName         = "test-plan"
 	testInstanceName     = "test-instance"
 	testBindingName      = "test-binding"
 	testSecretName       = "test-secret"
+	testBrokerURL        = "https://example.com"
 	testExternalID       = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 	testDashboardURL     = "http://test-dashboard.example.com"
 )
+
+func truePtr() *bool {
+	b := true
+	return &b
+}
 
 // TestBasicFlows tests:
 //
@@ -65,39 +72,60 @@ const (
 // - deprovision
 // - delete broker
 func TestBasicFlows(t *testing.T) {
-	_, catalogClient, fakeBrokerCatalog, _, _, _, _, shutdownServer := newTestController(t)
-	defer shutdownServer()
-
-	client := catalogClient.ServicecatalogV1alpha1()
-
-	const (
-		testBrokerName       = "test-broker"
-		testServiceClassName = "test-service"
-		testPlanName         = "test-plan"
-	)
-
-	fakeBrokerCatalog.RetCatalog = &brokerapi.Catalog{
-		Services: []*brokerapi.Service{
-			{
-				Name:        testServiceClassName,
-				ID:          "12345",
-				Description: "a test service",
-				Bindable:    true,
-				Plans: []brokerapi.ServicePlan{
+	_, catalogClient, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+		CatalogReaction: &fakeosb.CatalogReaction{
+			Response: &osb.CatalogResponse{
+				Services: []osb.Service{
 					{
-						Name:        testPlanName,
-						Free:        true,
-						ID:          "34567",
-						Description: "a test plan",
+						Name:        testServiceClassName,
+						ID:          "12345",
+						Description: "a test service",
+						Bindable:    true,
+						Plans: []osb.Plan{
+							{
+								Name:        testPlanName,
+								Free:        truePtr(),
+								ID:          "34567",
+								Description: "a test plan",
+							},
+						},
 					},
 				},
 			},
 		},
-	}
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				Async: true,
+			},
+		},
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"foo": "bar",
+					"baz": "zap",
+				},
+			},
+		},
+		UnbindReaction: &fakeosb.UnbindReaction{},
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{
+				Async: false,
+			},
+		},
+	})
+	defer shutdownServer()
+
+	client := catalogClient.ServicecatalogV1alpha1()
+
 	broker := &v1alpha1.Broker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
 		Spec: v1alpha1.BrokerSpec{
-			URL: "https://example.com",
+			URL: testBrokerURL,
 		},
 	}
 
@@ -227,16 +255,25 @@ func TestBasicFlows(t *testing.T) {
 	}
 }
 
-func newTestController(t *testing.T) (
+// newTestController creates a new test controller injected with fake clients
+// and returns:
+//
+// - a fake kubernetes core api client
+// - a fake service catalog api client
+// - a fake osb client
+// - a test controller
+// - the shared informers for the service catalog v1alpha1 api
+//
+// If there is an error, newTestController calls 'Fatal' on the injected
+// testing.T.
+func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	*fake.Clientset,
 	clientset.Interface,
-	*fakebrokerapi.CatalogClient,
-	*fakebrokerapi.InstanceClient,
-	*fakebrokerapi.BindingClient,
+	*fakeosb.FakeClient,
 	controller.Controller,
 	informers.Interface,
-	func(),
-) {
+	func()) {
+
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
 	// create an sc client and running server
@@ -244,16 +281,14 @@ func newTestController(t *testing.T) (
 		return &servicecatalog.Broker{}
 	})
 
-	catalogCl := &fakebrokerapi.CatalogClient{}
-	instanceCl := fakebrokerapi.NewInstanceClient()
-	bindingCl := fakebrokerapi.NewBindingClient()
-	brokerClFunc := fakebrokerapi.NewClientFunc(catalogCl, instanceCl, bindingCl)
+	fakeOSBClient := fakeosb.NewFakeClient(config) // error should always be nil
+	brokerClFunc := fakeosb.ReturnFakeClientFunc(fakeOSBClient)
 
 	// create informers
-	resync := 1 * time.Minute
-
-	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, resync)
+	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
+
+	fakeRecorder := record.NewFakeRecorder(5)
 
 	// create a test controller
 	testController, err := controller.NewController(
@@ -265,8 +300,8 @@ func newTestController(t *testing.T) (
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
 		24*time.Hour,
-		true,
-		&record.FakeRecorder{},
+		true, /* enable OSB context profile */
+		fakeRecorder,
 	)
 	t.Log("controller start")
 	if err != nil {
@@ -277,6 +312,5 @@ func newTestController(t *testing.T) (
 	go testController.Run(1, stopCh)
 	informerFactory.Start(stopCh)
 	t.Log("informers start")
-	return fakeKubeClient, catalogClient, catalogCl, instanceCl, bindingCl,
-		testController, serviceCatalogSharedInformers, shutdownServer
+	return fakeKubeClient, catalogClient, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer
 }

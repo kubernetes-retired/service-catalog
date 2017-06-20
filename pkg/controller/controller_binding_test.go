@@ -19,15 +19,14 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	fakebrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +39,7 @@ import (
 )
 
 func TestReconcileBindingNonExistingInstance(t *testing.T) {
-	_, fakeCatalogClient, _, testController, _ := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
 	binding := &v1alpha1.Binding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName},
@@ -51,6 +50,9 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	}
 
 	testController.reconcileBinding(binding)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -73,9 +75,7 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 }
 
 func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
-	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -99,6 +99,9 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
@@ -116,11 +119,16 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 }
 
 func TestReconcileBindingWithParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
-
-	testNsUID := "test_ns_uid"
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
@@ -128,6 +136,10 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 				UID: types.UID(testNsUID),
 			},
 		}, nil
+	})
+
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("not found")
 	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
@@ -139,6 +151,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
 		},
 	}
 
@@ -153,60 +166,64 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	if testNsUID != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
-	}
-
-	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
-	if appGUID := bindResource["app_guid"]; testNsUID != fmt.Sprintf("%v", appGUID) {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, appGUID)
-	}
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
+		Parameters: map[string]interface{}{
+			"args": []interface{}{
+				"first-arg",
+				"second-arg",
+			},
+			"name": "test-param",
+		},
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNsUID),
+		},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyTrue(t, updatedBinding)
 
-	updateObject, ok := updatedBinding.(*v1alpha1.Binding)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.Binding")
-	}
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 3)
 
-	// Verify parameters are what we'd expect them to be, basically name, array with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
+	// first action is a get on the namespace
+	// second action is a get on the secret
+
+	action := kubeActions[2].(clientgotesting.CreateAction)
+	if e, a := "create", action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
 	}
-	if b, ok := fakeBrokerClient.BindingClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; !ok {
-		t.Fatalf("Did not find the created Binding in fakeInstanceBinding after creation")
-	} else {
-		if len(b.Parameters) == 0 {
-			t.Fatalf("Expected parameters, but got none")
-		}
-		if e, a := "test-param", b.Parameters["name"].(string); e != a {
-			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
-		}
-		argsArray := b.Parameters["args"].([]interface{})
-		if len(argsArray) != 2 {
-			t.Fatalf("Expected 2 elements in args array, but got %d", len(argsArray))
-		}
-		foundFirst := false
-		foundSecond := false
-		for _, el := range argsArray {
-			if el.(string) == "first-arg" {
-				foundFirst = true
-			}
-			if el.(string) == "second-arg" {
-				foundSecond = true
-			}
-		}
-		if !foundFirst {
-			t.Fatalf("Failed to find 'first-arg' in array, was %v", argsArray)
-		}
-		if !foundSecond {
-			t.Fatalf("Failed to find 'second-arg' in array, was %v", argsArray)
-		}
+	if e, a := "secrets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+	actionSecret, ok := action.GetObject().(*v1.Secret)
+	if !ok {
+		t.Fatal("couldn't convert secret into a v1.Secret")
+	}
+	if e, a := testBindingSecretName, actionSecret.Name; e != a {
+		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)
+	}
+	value, ok := actionSecret.Data["a"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'a' in created secret")
+	}
+	if e, a := "b", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'a' in created secret; expected %v got %v", e, a)
+	}
+	value, ok = actionSecret.Data["c"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'a' in created secret")
+	}
+	if e, a := "d", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'c' in created secret; expected %v got %v", e, a)
 	}
 
 	events := getRecordedEvents(testController)
@@ -219,7 +236,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 }
 
 func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
@@ -234,6 +251,9 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	}
 
 	testController.reconcileBinding(binding)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -252,7 +272,28 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 }
 
 func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID(testNsUID),
+			},
+		}, nil
+	})
+
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("not found")
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
@@ -274,24 +315,71 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
 		},
 	}
 
 	testController.reconcileBinding(binding)
 
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  nonbindableServiceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNsUID),
+		},
+	})
+
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	// There should only be one action that says binding was created
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyTrue(t, updatedBinding)
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 3)
+
+	// first action is a get on the namespace
+	// second action is a get on the secret
+
+	action := kubeActions[2].(clientgotesting.CreateAction)
+	if e, a := "create", action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	if e, a := "secrets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+	actionSecret, ok := action.GetObject().(*v1.Secret)
+	if !ok {
+		t.Fatal("couldn't convert secret into a v1.Secret")
+	}
+	if e, a := testBindingSecretName, actionSecret.Name; e != a {
+		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)
+	}
+	value, ok := actionSecret.Data["a"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'a' in created secret")
+	}
+	if e, a := "b", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'a' in created secret; expected %v got %v", e, a)
+	}
+	value, ok = actionSecret.Data["c"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'a' in created secret")
+	}
+	if e, a := "d", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'c' in created secret; expected %v got %v", e, a)
+	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 }
 
 func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -306,6 +394,9 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 	}
 
 	testController.reconcileBinding(binding)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -324,9 +415,7 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 }
 
 func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -348,6 +437,9 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 	if !strings.Contains(err.Error(), "Ongoing Asynchronous") {
 		t.Fatalf("Did not get the expected error %q : got %q", "Ongoing Asynchronous", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	// verify no kube resources created.
 	// No actions
@@ -376,14 +468,12 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 }
 
 func TestReconcileBindingInstanceNotReady(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID("test_ns_uid"),
+				UID: types.UID(testNsUID),
 			},
 		}, nil
 	})
@@ -402,9 +492,8 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	if _, ok := fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)]; ok {
-		t.Fatalf("Unexpected broker binding call")
-	}
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -423,9 +512,7 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 }
 
 func TestReconcileBindingNamespaceError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{}, errors.New("No namespace")
@@ -445,6 +532,9 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
@@ -460,11 +550,9 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 }
 
 func TestReconcileBindingDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	bindingsMapKey := fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)
-
-	fakeBrokerClient.BindingClient.Bindings = map[string]*brokerapi.ServiceBinding{bindingsMapKey: {}}
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -489,6 +577,15 @@ func TestReconcileBindingDelete(t *testing.T) {
 	})
 
 	testController.reconcileBinding(binding)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+	})
 
 	kubeActions := fakeKubeClient.Actions()
 	// The two actions should be:
@@ -519,10 +616,6 @@ func TestReconcileBindingDelete(t *testing.T) {
 	updatedBinding = assertUpdateStatus(t, actions[2], binding)
 	assertEmptyFinalizers(t, updatedBinding)
 
-	if _, ok := fakeBrokerClient.BindingClient.Bindings[bindingsMapKey]; ok {
-		t.Fatalf("Found the deleted Binding in fakeBindingClient after deletion")
-	}
-
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -535,11 +628,16 @@ func TestReconcileBindingDelete(t *testing.T) {
 const testPodPresetName = "test-pod-preset"
 
 func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
-
-	testNsUID := "test_ns_uid"
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
@@ -580,14 +678,18 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 
 	testController.reconcileBinding(binding)
 
-	if testNsUID != fakeBrokerClient.Bindings[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].AppID {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, fakeBrokerClient.Bindings[instanceGUID+":"+bindingGUID].AppID)
-	}
-
-	bindResource := fakeBrokerClient.BindingRequests[fakebrokerapi.BindingsMapKey(instanceGUID, bindingGUID)].BindResource
-	if appGUID := bindResource["app_guid"]; testNsUID != fmt.Sprintf("%v", appGUID) {
-		t.Fatalf("Unexpected broker AppID: expected %q, got %q", testNsUID, appGUID)
-	}
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNsUID),
+		},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -703,7 +805,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+		_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
 		clone, err := api.Scheme.DeepCopy(tc.input)
 		if err != nil {
