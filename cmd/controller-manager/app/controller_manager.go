@@ -351,8 +351,6 @@ func StartControllers(s *options.ControllerManagerServer,
 	select {}
 }
 
-var _ healthz.HealthzChecker = checkAPIAvailableResources{}
-
 // checkAPIAvailableResourcesServer is a HealthzChecker that makes sure the
 // Service-Catalog APIServer is contactable.
 type checkAPIAvailableResources struct {
