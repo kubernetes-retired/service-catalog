@@ -442,13 +442,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 		},
 	})
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID(testNsUID),
-			},
-		}, nil
-	})
+	addGetNamespaceReaction(fakeKubeClient)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -517,13 +511,7 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 		},
 	})
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID(testNsUID),
-			},
-		}, nil
-	})
+	addGetNamespaceReaction(fakeKubeClient)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
