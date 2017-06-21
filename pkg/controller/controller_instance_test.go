@@ -123,45 +123,38 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
+	// vefify that no broker actions occurred
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
+	// verify that one catalog client action occurred
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
-	}
-	updateActionObject := updateAction.GetObject().(*v1alpha1.Instance)
-	if e, a := testInstanceName, updateActionObject.Name; e != a {
-		t.Fatalf("Unexpected name of instance created: expected %v, got %v", e, a)
-	}
-	if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-		t.Fatalf("Unexpected number of conditions: expected %v, got %v", e, a)
-	}
-	if e, a := "ErrorGettingAuthCredentials", updateActionObject.Status.Conditions[0].Reason; e != a {
-		t.Fatalf("Unexpected condition reason: expected %v, got %v", e, a)
+	if err := checkCatalogClientActions(actions, []catalogClientAction{
+		{
+			verb: "update",
+			checkObject: checkInstance(instanceDescription{
+				name:       testInstanceName,
+				conditions: []string{"ErrorGettingAuthCredentials"},
+			}),
+			getRuntimeObject: getRuntimeObjectFromUpdateAction,
+		},
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-
-	getAction := kubeActions[0].(clientgotesting.GetAction)
-	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
-	}
-	if e, a := "secrets", getAction.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "secrets", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
 	}
 
+	// verify that one event was emitted
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
-
 	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -186,18 +179,23 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	// There should only be one action that says it failed because no such class exists.
-	updatedInstance := assertUpdateStatus(t, actions[0], instance)
-	assertInstanceReadyFalse(t, updatedInstance, errorNonexistentServicePlanReason)
+	if err := checkCatalogClientActions(actions, []catalogClientAction{
+		{
+			verb:             "update",
+			getRuntimeObject: getRuntimeObjectFromUpdateAction,
+			checkObject: checkInstance(instanceDescription{
+				name:       testInstanceName,
+				conditions: []string{errorNonexistentServicePlanReason},
+			}),
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
-
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "Instance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\""
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
