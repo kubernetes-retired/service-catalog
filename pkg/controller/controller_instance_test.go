@@ -26,9 +26,11 @@ import (
 	"testing"
 	"time"
 
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +42,7 @@ import (
 )
 
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
-	_, fakeCatalogClient, _, testController, _ := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
 	instance := &v1alpha1.Instance{
 		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
@@ -52,6 +54,9 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	}
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -70,13 +75,16 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 }
 
 func TestReconcileInstanceNonExistentBroker(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -95,7 +103,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 }
 
 func TestReconcileInstanceWithAuthError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	broker := getTestBroker()
 	broker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
@@ -114,6 +122,9 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 	})
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -155,7 +166,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 }
 
 func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
-	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t)
+	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -170,6 +181,9 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	}
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -188,9 +202,11 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 }
 
 func TestReconcileInstanceWithParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -208,6 +224,26 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+		Parameters: map[string]interface{}{
+			"args": map[string]interface{}{
+				"first":  "first-arg",
+				"second": "second-arg",
+			},
+			"name": "test-param",
+		},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -229,23 +265,6 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	if len(updateObject.Spec.Parameters.Raw) == 0 {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
-	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
-	} else {
-		if len(si.Parameters) == 0 {
-			t.Fatalf("Expected parameters but got none")
-		}
-		if e, a := "test-param", si.Parameters["name"].(string); e != a {
-			t.Fatalf("Unexpected name for parameters: expected %v, got %v", e, a)
-		}
-		argsMap := si.Parameters["args"].(map[string]interface{})
-		if e, a := "first-arg", argsMap["first"].(string); e != a {
-			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
-		}
-		if e, a := "second-arg", argsMap["second"].(string); e != a {
-			t.Fatalf("Unexpected value in parameter map: expected %v, got %v", e, a)
-		}
-	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -257,7 +276,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 }
 
 func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -277,6 +296,9 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
@@ -286,10 +308,6 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
-
-	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
-		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
-	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -301,25 +319,31 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 }
 
 func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Error: errors.New("fake creation failure"),
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
-	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
-
-	fakeBrokerClient.InstanceClient.CreateErr = errors.New("fake creation failure")
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -332,10 +356,6 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
 
-	if si, notOK := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; notOK {
-		t.Fatalf("Unexpectedly found created Instance: %+v in fakeInstanceClient after creation", si)
-	}
-
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -346,12 +366,13 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 }
 
 func TestReconcileInstance(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
-	fakeBrokerClient.InstanceClient.DashboardURL = testDashboardURL
-
-	testNsUID := "test_uid_foo"
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				DashboardURL: &testDashboardURL,
+			},
+		},
+	})
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
@@ -368,6 +389,21 @@ func TestReconcileInstance(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		OrganizationGUID:  testNsUID,
+		SpaceGUID:         testNsUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
+
 	// Since synchronous operation, must not make it into the polling queue.
 	if testController.pollingQueue.Len() != 0 {
 		t.Fatalf("Expected the polling queue to be empty")
@@ -383,23 +419,7 @@ func TestReconcileInstance(t *testing.T) {
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
-
-	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
-	} else {
-		if len(si.Parameters) > 0 {
-			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
-		}
-
-		if testNsUID != si.OrganizationGUID {
-			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", testNsUID, si.OrganizationGUID)
-		}
-		if testNsUID != si.SpaceGUID {
-			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", testNsUID, si.SpaceGUID)
-		}
-
-		assertInstanceDashboardURL(t, instance, testDashboardURL)
-	}
+	assertInstanceDashboardURL(t, instance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -411,15 +431,21 @@ func TestReconcileInstance(t *testing.T) {
 }
 
 func TestReconcileInstanceAsynchronous(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
-	fakeBrokerClient.InstanceClient.DashboardURL = testDashboardURL
+	key := osb.OperationKey(testOperation)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				Async:        true,
+				DashboardURL: &testDashboardURL,
+				OperationKey: &key,
+			},
+		},
+	})
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID("test_uid_foo"),
+				UID: types.UID(testNsUID),
 			},
 		}, nil
 	})
@@ -427,10 +453,6 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusAccepted
-	// And specify that we want broker to return an operation
-	fakeBrokerClient.InstanceClient.Operation = testOperation
 	instance := getTestInstance()
 
 	if testController.pollingQueue.Len() != 0 {
@@ -438,6 +460,21 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	}
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		OrganizationGUID:  testNsUID,
+		SpaceGUID:         testNsUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": testNamespace,
+		},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -451,22 +488,6 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
-
-	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
-	} else {
-		if len(si.Parameters) > 0 {
-			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
-		}
-
-		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
-		if string(ns.UID) != si.OrganizationGUID {
-			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
-		}
-		if string(ns.UID) != si.SpaceGUID {
-			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
-		}
-	}
 
 	// The item should've been added to the pollingQueue for later processing
 	if testController.pollingQueue.Len() != 1 {
@@ -476,10 +497,10 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	if item == nil {
 		t.Fatalf("Did not get back a key from polling queue")
 	}
-	key := item.(string)
+	actualKey := item.(string)
 	expectedKey := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
-	if key != expectedKey {
-		t.Fatalf("got key as %q expected %q", key, expectedKey)
+	if actualKey != expectedKey {
+		t.Fatalf("got key as %q expected %q", actualKey, expectedKey)
 	}
 	assertAsyncOpInProgressTrue(t, updatedInstance)
 	assertInstanceLastOperation(t, updatedInstance, testOperation)
@@ -487,14 +508,19 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 }
 
 func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				Async:        true,
+				DashboardURL: &testDashboardURL,
+			},
+		},
+	})
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID("test_uid_foo"),
+				UID: types.UID(testNsUID),
 			},
 		}, nil
 	})
@@ -502,8 +528,6 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusAccepted
 	instance := getTestInstance()
 
 	if testController.pollingQueue.Len() != 0 {
@@ -511,6 +535,21 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	}
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		OrganizationGUID:  testNsUID,
+		SpaceGUID:         testNsUID,
+		AlphaContext: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -524,22 +563,6 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
-
-	if si, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("Did not find the created Instance in fakeInstanceClient after creation")
-	} else {
-		if len(si.Parameters) > 0 {
-			t.Fatalf("Unexpected parameters, expected none, got %+v", si.Parameters)
-		}
-
-		ns, _ := fakeKubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
-		if string(ns.UID) != si.OrganizationGUID {
-			t.Fatalf("Unexpected OrganizationGUID: expected %q, got %q", string(ns.UID), si.OrganizationGUID)
-		}
-		if string(ns.UID) != si.SpaceGUID {
-			t.Fatalf("Unexpected SpaceGUID: expected %q, got %q", string(ns.UID), si.SpaceGUID)
-		}
-	}
 
 	// The item should've been added to the pollingQueue for later processing
 	if testController.pollingQueue.Len() != 1 {
@@ -559,9 +582,7 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 }
 
 func TestReconcileInstanceNamespaceError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{}, errors.New("No namespace")
@@ -573,6 +594,9 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	instance := getTestInstance()
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -594,11 +618,11 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 }
 
 func TestReconcileInstanceDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.InstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
-		instanceGUID: {},
-	}
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -616,6 +640,15 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	})
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+	})
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -635,10 +668,6 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	updatedInstance = assertUpdateStatus(t, actions[2], instance)
 	assertEmptyFinalizers(t, updatedInstance)
 
-	if _, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; ok {
-		t.Fatalf("Found the deleted Instance in fakeInstanceClient after deletion")
-	}
-
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -652,11 +681,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 // actually provisioned the instance is able to be deleted and is not blocked by any interaction with
 // a broker (since its very likely that a broker never actually existed).
 func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.InstanceClient.Instances = map[string]*brokerapi.ServiceInstance{
-		instanceGUID: {},
-	}
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -670,6 +695,9 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 	})
 
 	testController.reconcileInstance(instance)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -685,26 +713,22 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 	updatedInstance := assertUpdateStatus(t, actions[1], instance)
 	assertEmptyFinalizers(t, updatedInstance)
 
-	if _, ok := fakeBrokerClient.InstanceClient.Instances[instanceGUID]; !ok {
-		t.Fatalf("The broker should never have been invoked as service was never provisioned prior.")
-	}
-
 	// no events because no external deprovision was needed
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
 }
 
 func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateInProgress,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "in progress"}
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
@@ -712,6 +736,15 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected pollInstanceInternal to fail while in progress")
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
+
 	// Make sure we get an error which means it will get requeued.
 	if !strings.Contains(err.Error(), "still in progress") {
 		t.Fatalf("pollInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
@@ -727,16 +760,16 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 }
 
 func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
@@ -744,6 +777,14 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
 
 	// verify no kube resources created.
 	// No actions
@@ -761,16 +802,16 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 }
 
 func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateFailed,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "failed"}
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
@@ -778,6 +819,14 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
 
 	// verify no kube resources created.
 	// No actions
@@ -795,16 +844,16 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 }
 
 func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateInProgress,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "in progress"}
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -812,6 +861,15 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	if err == nil {
 		t.Fatalf("Expected pollInstanceInternal to fail while in progress")
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
+
 	// Make sure we get an error which means it will get requeued.
 	if !strings.Contains(err.Error(), "still in progress") {
 		t.Fatalf("pollInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
@@ -827,16 +885,16 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 }
 
 func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -844,6 +902,14 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	if err != nil {
 		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
 
 	// verify no kube resources created.
 	// No actions
@@ -863,16 +929,16 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 }
 
 func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateFailed,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "failed"}
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -880,6 +946,14 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
 
 	// verify no kube resources created.
 	// No actions
@@ -900,16 +974,16 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 }
 
 func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode: http.StatusGone,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusGone
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -917,6 +991,14 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	if err != nil {
 		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
 
 	// verify no kube resources created.
 	// No actions
@@ -935,17 +1017,56 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	assertNumEvents(t, events, 1)
 }
 
-func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t)
-
-	fakeBrokerClient.CatalogClient.RetCatalog = getTestCatalog()
+func TestPollServiceInstanceBrokerError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode: http.StatusForbidden,
+			},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	// Specify we want asynchronous provisioning...
-	fakeBrokerClient.InstanceClient.ResponseCode = http.StatusOK
-	fakeBrokerClient.InstanceClient.LastOperationResponse = &brokerapi.LastOperationResponse{State: "succeeded"}
+	instance := getTestInstanceAsyncDeprovisioning(testOperation)
+
+	err := testController.pollInstanceInternal(instance)
+	if err == nil {
+		t.Fatal("expected pollInstanceInternal to return an error")
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+}
+
+func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioningWithFinalizer(testOperation)
 	// updateInstanceFinalizers fetches the latest object.
@@ -957,6 +1078,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	if err != nil {
 		t.Fatalf("pollInstanceInternal failed: %s", err)
 	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 
 	// verify no kube resources created.
 	// No actions
@@ -1058,7 +1182,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t)
+		_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
 		clone, err := api.Scheme.DeepCopy(tc.input)
 		if err != nil {
@@ -1072,6 +1196,9 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue
 		}
+
+		brokerActions := fakeBrokerClient.Actions()
+		assertNumberOfBrokerActions(t, brokerActions, 0)
 
 		if !reflect.DeepEqual(tc.input, inputClone) {
 			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
