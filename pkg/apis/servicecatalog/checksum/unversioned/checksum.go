@@ -29,6 +29,7 @@ import (
 // - ServiceClassName
 // - PlanName
 // - Parameters
+// - AlphaSecretParameters
 // - ExternalID
 func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 	specString := ""
@@ -37,6 +38,10 @@ func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 
 	if spec.Parameters != nil {
 		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
+	}
+	if spec.AlphaSecretParameters != nil {
+		// TODO: calc checksum of secret contents instead?
+		specString += fmt.Sprintf("alphaSecretParameters:\n\n%v\n\n", string(spec.AlphaSecretParameters.Name))
 	}
 
 	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)

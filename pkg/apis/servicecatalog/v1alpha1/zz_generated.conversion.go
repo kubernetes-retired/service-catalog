@@ -433,6 +433,7 @@ func autoConvert_v1alpha1_InstanceSpec_To_servicecatalog_InstanceSpec(in *Instan
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.AlphaSecretParameters = (*v1.LocalObjectReference)(unsafe.Pointer(in.AlphaSecretParameters))
 	out.ExternalID = in.ExternalID
 	return nil
 }
@@ -445,6 +446,7 @@ func autoConvert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(in *servic
 	out.ServiceClassName = in.ServiceClassName
 	out.PlanName = in.PlanName
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.AlphaSecretParameters = (*v1.LocalObjectReference)(unsafe.Pointer(in.AlphaSecretParameters))
 	out.ExternalID = in.ExternalID
 	return nil
 }

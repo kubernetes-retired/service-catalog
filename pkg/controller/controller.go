@@ -511,6 +511,26 @@ func unmarshalParameters(in []byte) (map[string]interface{}, error) {
 	return parameters, nil
 }
 
+func fetchSecretParameters(kubeClient kubernetes.Interface, namespace string, name string) (map[string]interface{}, error) {
+	if kubeClient == nil {
+		return nil, fmt.Errorf("could not get Secret %v/%v, kubeClient is not defined", namespace, name)
+	}
+	secret, err := kubeClient.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]interface{})
+	for k, v := range secret.Data {
+		var parameters interface{}
+		err := json.Unmarshal(v, &parameters)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal parameters: %v", err)
+		}
+		result[k] = parameters
+	}
+	return result, nil
+}
+
 // isInstanceReady returns whether the given instance has a ready condition
 // with status true.
 func isInstanceReady(instance *v1alpha1.Instance) bool {

@@ -325,6 +325,11 @@ func DeepCopy_servicecatalog_InstanceSpec(in interface{}, out interface{}, c *co
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
+		if in.AlphaSecretParameters != nil {
+			in, out := &in.AlphaSecretParameters, &out.AlphaSecretParameters
+			*out = new(api_v1.LocalObjectReference)
+			**out = **in
+		}
 		return nil
 	}
 }
