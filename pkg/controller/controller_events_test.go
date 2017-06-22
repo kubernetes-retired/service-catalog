@@ -25,8 +25,7 @@ func checkEvents(actual, expected []string) error {
 		return fmt.Errorf("expected %d events, got %d", len(expected), len(actual))
 	}
 	for i, actualEvt := range actual {
-		expectedEvt := expected[i]
-		if actualEvt != expectedEvt {
+		if expectedEvt := expected[i]; actualEvt != expectedEvt {
 			return fmt.Errorf("event %d: expected '%s', got '%s'", i, expectedEvt, actualEvt)
 		}
 	}
