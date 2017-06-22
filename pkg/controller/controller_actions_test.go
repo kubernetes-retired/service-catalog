@@ -55,7 +55,7 @@ type catalogClientAction struct {
 	checkObject      func(runtime.Object) error
 }
 
-// getObjectFromUpdate asserts that t is a testing.UpdateAction, then returns the return value
+// getRuntimeObjectFromUpdate asserts that t is a testing.UpdateAction, then returns the return value
 // of calling GetObject on the UpdateAction
 func getRuntimeObjectFromUpdateAction(t testing.Action) (runtime.Object, error) {
 	up, ok := t.(testing.UpdateAction)
