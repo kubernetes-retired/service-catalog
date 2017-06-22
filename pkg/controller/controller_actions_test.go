@@ -67,6 +67,10 @@ func getRuntimeObjectFromUpdateAction(t testing.Action) (runtime.Object, error) 
 
 // checkInstance can be used as a param to catalogClientAction.checkObject. It's intended
 // to check that a runtime.Object is an instance, and to check some properties of that instance
+// including:
+//
+// - the Name
+// - the conditions
 func checkInstance(descr instanceDescription) func(runtime.Object) error {
 	return func(obj runtime.Object) error {
 		inst, ok := obj.(*v1alpha1.Instance)
