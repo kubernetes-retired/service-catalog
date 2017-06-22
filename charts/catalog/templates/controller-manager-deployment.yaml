@@ -41,6 +41,8 @@ spec:
         - "8080"
         {{ if .Values.controllerManager.leaderElectionNamespace.activated -}}
         - "--leader-election-namespace=$(K8S_NAMESPACE)"
+        {{- else }}
+        - "--leader-elect=false"
         {{- end }}
         {{ if .Values.controllerManager.profiling.disabled -}}
         - "--profiling=false"
