@@ -157,7 +157,8 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.controller.UnBind(instanceID, bindingID); err == nil {
 		w.WriteHeader(http.StatusOK)
-		fmt.Print(w, "{}") //id)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, "{}") //id)
 	} else {
 		util.WriteResponse(w, http.StatusBadRequest, err)
 	}
