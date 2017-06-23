@@ -178,6 +178,8 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
+	// ensure that the only action made on the catalog client was to set the condition on the
+	// instance to indicate that the service plan doesn't exist
 	actions := fakeCatalogClient.Actions()
 	if err := checkCatalogClientActions(actions, []catalogClientAction{
 		{
@@ -192,6 +194,8 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// check to make sure the only event sent indicated that the instance references a non-existent
+	// service plan
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "Instance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\""
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
