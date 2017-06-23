@@ -24,7 +24,7 @@ func (c *client) Unbind(r *UnbindRequest) (*UnbindResponse, error) {
 	case http.StatusOK, http.StatusGone:
 		userResponse := &UnbindResponse{}
 		if err := c.unmarshalResponse(response, userResponse); err != nil {
-			return nil, err
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
 		return userResponse, nil

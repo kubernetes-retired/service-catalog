@@ -57,11 +57,14 @@ func successProvisionResponseAsync() *ProvisionResponse {
 	return r
 }
 
-const alphaContextProvisionRequestBody = `{"service_id":"test-service-id","plan_id":"test-plan-id","organization_guid":"test-organization-guid","space_guid":"test-space-guid","context":{"foo":"bar"}}`
+const contextProvisionRequestBody = `{"service_id":"test-service-id","plan_id":"test-plan-id","organization_guid":"test-organization-guid","space_guid":"test-space-guid","context":{"foo":"bar"}}`
 
 func TestProvisionInstance(t *testing.T) {
+	v2_12 := Version2_12()
+
 	cases := []struct {
 		name               string
+		version            *APIVersion
 		enableAlpha        bool
 		request            *ProvisionRequest
 		httpChecks         httpChecks
@@ -122,7 +125,7 @@ func TestProvisionInstance(t *testing.T) {
 				status: http.StatusOK,
 				body:   malformedResponse,
 			},
-			expectedErrMessage: "unexpected end of JSON input",
+			expectedErrMessage: "Status: 200; ErrorMessage: <nil>; Description: <nil>; ResponseError: unexpected end of JSON input",
 		},
 		{
 			name: "500 with malformed response",
@@ -130,7 +133,7 @@ func TestProvisionInstance(t *testing.T) {
 				status: http.StatusInternalServerError,
 				body:   malformedResponse,
 			},
-			expectedErrMessage: "unexpected end of JSON input",
+			expectedErrMessage: "Status: 500; ErrorMessage: <nil>; Description: <nil>; ResponseError: unexpected end of JSON input",
 		},
 		{
 			name: "500 with conventional failure response",
@@ -141,17 +144,35 @@ func TestProvisionInstance(t *testing.T) {
 			expectedErr: testHttpStatusCodeError(),
 		},
 		{
-			name:        "alpha - context",
-			enableAlpha: true,
+			name:    "context - 2.12",
+			version: &v2_12,
 			request: func() *ProvisionRequest {
 				r := defaultProvisionRequest()
-				r.AlphaContext = map[string]interface{}{
+				r.Context = map[string]interface{}{
 					"foo": "bar",
 				}
 				return r
 			}(),
 			httpChecks: httpChecks{
-				body: alphaContextProvisionRequestBody,
+				body: contextProvisionRequestBody,
+			},
+			httpReaction: httpReaction{
+				status: http.StatusCreated,
+				body:   successProvisionResponseBody,
+			},
+			expectedResponse: successProvisionResponse(),
+		},
+		{
+			name: "context - 2.11",
+			request: func() *ProvisionRequest {
+				r := defaultProvisionRequest()
+				r.Context = map[string]interface{}{
+					"foo": "bar",
+				}
+				return r
+			}(),
+			httpChecks: httpChecks{
+				body: successProvisionRequestBody,
 			},
 			httpReaction: httpReaction{
 				status: http.StatusCreated,
@@ -174,7 +195,13 @@ func TestProvisionInstance(t *testing.T) {
 			tc.httpChecks.body = successProvisionRequestBody
 		}
 
-		klient := newTestClient(t, tc.name, tc.enableAlpha, tc.httpChecks, tc.httpReaction)
+		defaultVersion := Version2_11()
+		version := &defaultVersion
+		if tc.version != nil {
+			version = tc.version
+		}
+
+		klient := newTestClient(t, tc.name, *version, tc.enableAlpha, tc.httpChecks, tc.httpReaction)
 
 		response, err := klient.ProvisionInstance(tc.request)
 

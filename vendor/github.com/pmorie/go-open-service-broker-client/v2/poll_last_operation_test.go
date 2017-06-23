@@ -91,7 +91,7 @@ func TestPollLastOperation(t *testing.T) {
 				status: http.StatusOK,
 				body:   malformedResponse,
 			},
-			expectedErrMessage: "unexpected end of JSON input",
+			expectedErrMessage: "Status: 200; ErrorMessage: <nil>; Description: <nil>; ResponseError: unexpected end of JSON input",
 		},
 		{
 			name: "500 with malformed response",
@@ -99,10 +99,10 @@ func TestPollLastOperation(t *testing.T) {
 				status: http.StatusInternalServerError,
 				body:   malformedResponse,
 			},
-			expectedErrMessage: "unexpected end of JSON input",
+			expectedErrMessage: "Status: 500; ErrorMessage: <nil>; Description: <nil>; ResponseError: unexpected end of JSON input",
 		},
 		{
-			name: "500 with malformed response",
+			name: "500 with convential response",
 			httpReaction: httpReaction{
 				status: http.StatusInternalServerError,
 				body:   conventionalFailureResponseBody,
@@ -126,7 +126,8 @@ func TestPollLastOperation(t *testing.T) {
 			tc.httpChecks.params[planIDKey] = testPlanID
 		}
 
-		klient := newTestClient(t, tc.name, tc.enableAlpha, tc.httpChecks, tc.httpReaction)
+		version := Version2_11()
+		klient := newTestClient(t, tc.name, version, tc.enableAlpha, tc.httpChecks, tc.httpReaction)
 
 		response, err := klient.PollLastOperation(tc.request)
 

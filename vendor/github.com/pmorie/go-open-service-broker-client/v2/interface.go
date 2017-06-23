@@ -4,20 +4,6 @@ import (
 	"crypto/tls"
 )
 
-type APIVersion string
-
-const (
-	// APIVersion2_11 represents the 2.11 version of the Open Service Broker
-	// API.
-	APIVersion2_11 APIVersion = "2.11"
-)
-
-// LatestAPIVersion returns the latest supported API version in the current
-// release of this library.
-func LatestAPIVersion() APIVersion {
-	return APIVersion2_11
-}
-
 // AuthConfig is a union-type representing the possible auth configurations a
 // client may use to authenticate to a broker.  Currently, only basic auth is
 // supported.

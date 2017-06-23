@@ -40,11 +40,15 @@ func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceRespon
 
 	switch response.StatusCode {
 	case http.StatusOK:
+		if err := c.unmarshalResponse(response, &struct{}{}); err != nil {
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
+		}
+
 		return &UpdateInstanceResponse{}, nil
 	case http.StatusAccepted:
 		responseBodyObj := &asyncSuccessResponseBody{}
 		if err := c.unmarshalResponse(response, responseBodyObj); err != nil {
-			return nil, err
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
 		var opPtr *OperationKey

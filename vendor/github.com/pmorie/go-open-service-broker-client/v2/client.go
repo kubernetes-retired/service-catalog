@@ -17,7 +17,7 @@ import (
 const (
 	// XBrokerAPIVersion is the header for the Open Service Broker API
 	// version.
-	XBrokerAPIVersion = "X-Broker-Api-Version"
+	XBrokerAPIVersion = "X-Broker-API-Version"
 
 	catalogURL            = "%s/v2/catalog"
 	serviceInstanceURLFmt = "%s/v2/service_instances/%s"
@@ -119,7 +119,7 @@ func (c *client) prepareAndDo(method, URL string, params map[string]string, body
 		return nil, err
 	}
 
-	request.Header.Set(XBrokerAPIVersion, string(c.APIVersion))
+	request.Header.Set(XBrokerAPIVersion, c.APIVersion.HeaderValue())
 	if bodyReader != nil {
 		request.Header.Set(contentType, jsonType)
 	}
@@ -173,7 +173,7 @@ func (c *client) handleFailureResponse(response *http.Response) error {
 	glog.Info("handling failure responses")
 	brokerResponse := &failureResponseBody{}
 	if err := c.unmarshalResponse(response, brokerResponse); err != nil {
-		return err
+		return HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 	}
 
 	return HTTPStatusCodeError{

@@ -17,7 +17,7 @@ func (c *client) GetCatalog() (*CatalogResponse, error) {
 	case http.StatusOK:
 		catalogResponse := &CatalogResponse{}
 		if err := c.unmarshalResponse(response, catalogResponse); err != nil {
-			return nil, err
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
 		if !c.EnableAlphaFeatures {

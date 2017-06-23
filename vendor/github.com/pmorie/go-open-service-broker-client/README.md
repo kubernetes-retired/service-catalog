@@ -33,8 +33,15 @@ func GetBrokerCatalog(URL string) (*osb.CatalogResponse, error) {
 
 ## Documentation
 
-This client library supports the current version (v2.11) of the
-[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
+This client library supports the following versions of the
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker):
+
+- [v2.12](https://github.com/openservicebrokerapi/servicebroker/tree/v2.12)
+- [v2.11](https://github.com/openservicebrokerapi/servicebroker/tree/v2.11)
+
+Only fields supported by the version configured for a client are
+sent/returned.
+
 Check out the
 [API specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
 
@@ -70,9 +77,9 @@ This project does not aim to provide:
 
 ## Current status
 
-I'm currently just sketching around in my free time, but would love to
-eventually donate this repo to an organization if people decide that it is
-useful.
+This repository is used in the 
+[Kubernetes `service-catalog`](https://github.com/kubernetes-incubator/service-catalog)
+incubator repo.
 
 ## Why?
 

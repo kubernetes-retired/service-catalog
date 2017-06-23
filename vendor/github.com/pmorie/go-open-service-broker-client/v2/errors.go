@@ -7,41 +7,43 @@ import (
 
 // HTTPStatusCodeError is an error type that provides additional information
 // based on the Open Service Broker API conventions for returning information
-// about errors.
+// about errors.  If the response body provided by the broker to any client
+// operation is malformed, an error of this type will be returned with the
+// ResponseError field set to the unmarshalling error.
 //
 // These errors may optionally provide a machine-readable error message and
 // human-readable description.
 //
+// The IsHTTPError method checks whether an error is of this type.
+//
 // Checks for important errors in the API specification are implemented as
 // utility methods:
 //
+// - IsGoneError
 // - IsConflictError
 // - IsAsyncRequiredError
 // - IsAppGUIDRequiredError
 type HTTPStatusCodeError struct {
-	StatusCode   int
+	// StatusCode is the HTTP status code returned by the broker.
+	StatusCode int
+	// ErrorMessage is a machine-readable error string that may be returned by
+	// the broker.
 	ErrorMessage *string
-	Description  *string
+	// Description is a human-readable description of the error that may be
+	// returned by the broker.
+	Description *string
+	// ResponseError is set to the error that occured when unmarshalling a
+	// response body from the broker.
+	ResponseError error
 }
 
 func (e HTTPStatusCodeError) Error() string {
-	var (
-		errorMessage string = "nil"
-		description  string = "nil"
-	)
-	if e.ErrorMessage != nil {
-		errorMessage = *e.ErrorMessage
-	}
-	if e.Description != nil {
-		description = *e.Description
-	}
-
-	return fmt.Sprintf("Status: %v; ErrorMessage: %v; Description: %v", e.StatusCode, errorMessage, description)
+	return fmt.Sprintf("Status: %v; ErrorMessage: %v; Description: %v; ResponseError: %v", e.StatusCode, e.ErrorMessage, e.Description, e.ResponseError)
 }
 
-// IsHTTPError returns whether the error represents an HTTP error.  A client
-// method returning an HTTP error indicates that the broker returned an error
-// code and a correctly formed response body.
+// IsHTTPError returns whether the error represents an HTTPStatusCodeError.  A
+// client method returning an HTTP error indicates that the broker returned an
+// error code and a correctly formed response body.
 func IsHTTPError(err error) bool {
 	_, ok := err.(HTTPStatusCodeError)
 	return ok
