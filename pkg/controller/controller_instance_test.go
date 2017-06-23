@@ -232,7 +232,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
-		AlphaContext: map[string]interface{}{
+		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
 		},
@@ -339,7 +339,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
-		AlphaContext: map[string]interface{}{
+		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
 		},
@@ -398,7 +398,7 @@ func TestReconcileInstance(t *testing.T) {
 		PlanID:            planGUID,
 		OrganizationGUID:  testNsUID,
 		SpaceGUID:         testNsUID,
-		AlphaContext: map[string]interface{}{
+		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
 		},
@@ -470,7 +470,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 		PlanID:            planGUID,
 		OrganizationGUID:  testNsUID,
 		SpaceGUID:         testNsUID,
-		AlphaContext: map[string]interface{}{
+		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": testNamespace,
 		},
@@ -545,7 +545,7 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 		PlanID:            planGUID,
 		OrganizationGUID:  testNsUID,
 		SpaceGUID:         testNsUID,
-		AlphaContext: map[string]interface{}{
+		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
 		},
