@@ -155,7 +155,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			s,
 		)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonbindableServiceClassReason, s)
-		return err
+		return nil
 	}
 
 	if binding.DeletionTimestamp == nil { // Add or update
@@ -205,7 +205,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 				s,
 			)
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorInstanceNotReadyReason, s)
-			return err
+			return nil
 		}
 
 		appGUID := string(ns.UID)

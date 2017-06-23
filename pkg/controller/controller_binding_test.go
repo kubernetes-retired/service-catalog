@@ -260,8 +260,7 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	}
 
 	err := testController.reconcileBinding(binding)
-	if err == nil {
-		// maybe fail
+	if err != nil {
 		t.Fatalf("binding should fail against a non-bindable ServiceClass")
 	}
 
@@ -410,7 +409,7 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 	}
 
 	err := testController.reconcileBinding(binding)
-	if err == nil {
+	if err != nil {
 		t.Fatalf("binding against a nonbindable plan should fail")
 	}
 
@@ -510,7 +509,7 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 	}
 
 	err := testController.reconcileBinding(binding)
-	if err == nil {
+	if err != nil {
 		t.Fatalf("a binding cannot be created against an instance that is not prepared")
 	}
 
