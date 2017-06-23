@@ -53,7 +53,9 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 		},
 	}
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatal("nothere is a service class that cannot be referenced by the service instance as it does not exist.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -81,7 +83,9 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 
 	instance := getTestInstance()
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatal("The broker referenced by the instance exists when it should not.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -121,7 +125,9 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 		return true, nil, errors.New("no secret defined")
 	})
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatal("There was no secret to be found, but does_not_exist/auth-name was found.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -180,7 +186,9 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 		},
 	}
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatal("The service plan nothere should not exist to be referenced.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -223,7 +231,9 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	testController.reconcileInstance(instance)
+	if err = testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -294,7 +304,9 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	b[0] = 0x21
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	testController.reconcileInstance(instance)
+	if err = testController.reconcileInstance(instance); err == nil {
+		t.Fatalf("this should fail due to a parse error")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -330,7 +342,9 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 
 	instance := getTestInstance()
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatalf("Should not be able to make the Instance.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -387,7 +401,9 @@ func TestReconcileInstance(t *testing.T) {
 
 	instance := getTestInstance()
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -459,7 +475,9 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("Expected the polling queue to be empty")
 	}
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -534,7 +552,9 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 		t.Fatalf("Expected the polling queue to be empty")
 	}
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -593,7 +613,9 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 
 	instance := getTestInstance()
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatalf("There should not be a namespace for the Instance to be created in.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -639,7 +661,10 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		return true, instance, nil
 	})
 
-	testController.reconcileInstance(instance)
+	err := testController.reconcileInstance(instance)
+	if err != nil {
+		t.Fatalf("This should not fail")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -694,7 +719,9 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 		return true, instance, nil
 	})
 
-	testController.reconcileInstance(instance)
+	if err := testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
