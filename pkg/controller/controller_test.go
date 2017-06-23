@@ -18,6 +18,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http/httptest"
 	"reflect"
 	"runtime/debug"
@@ -34,6 +35,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	fakebrokerserver "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake/server"
@@ -1472,4 +1474,20 @@ func getTestCatalogConfig() fakeosb.FakeClientConfiguration {
 			Response: getTestCatalog(),
 		},
 	}
+}
+
+func addGetNamespaceReaction(fakeKubeClient *clientgofake.Clientset) {
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				UID: types.UID(testNsUID),
+			},
+		}, nil
+	})
+}
+
+func addGetSecretNotFoundReaction(fakeKubeClient *clientgofake.Clientset) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("not found")
+	})
 }
