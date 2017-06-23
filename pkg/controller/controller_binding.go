@@ -67,6 +67,8 @@ func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
 	c.bindingAdd(newObj)
 }
 
+// an error is returned to indicate that the binding has not been
+// fully processed and should be resubmitted at a later time.
 func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 	// Determine whether the checksum has been invalidated by a change to the
 	// object.  If the binding's checksum matches the calculated checksum,
