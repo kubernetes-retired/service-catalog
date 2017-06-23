@@ -80,20 +80,20 @@ func checkInstance(descr instanceDescription) func(runtime.Object) error {
 		if inst.Name != descr.name {
 			return fmt.Errorf("expected instance name %s, got %s", descr.name, inst.Name)
 		}
-		if len(descr.conditions) != len(inst.Status.Conditions) {
+		if len(descr.conditionReasons) != len(inst.Status.Conditions) {
 			return fmt.Errorf(
 				"expected %d conditions, got %d",
-				len(descr.conditions),
+				len(descr.conditionReasons),
 				len(inst.Status.Conditions),
 			)
 		}
-		for i, expectedCondition := range descr.conditions {
+		for i, expectedConditionReason := range descr.conditionReasons {
 			actualCondition := inst.Status.Conditions[i]
-			if expectedCondition != actualCondition.Reason {
+			if expectedConditionReason != actualCondition.Reason {
 				return fmt.Errorf(
 					"condition %d: expected condition reason %s, got %s",
 					i,
-					expectedCondition,
+					expectedConditionReason,
 					actualCondition.Reason,
 				)
 			}
@@ -105,8 +105,8 @@ func checkInstance(descr instanceDescription) func(runtime.Object) error {
 // instanceDescription is the description of an instance that will be checked in the function
 // returned by checkInstance
 type instanceDescription struct {
-	name       string
-	conditions []string
+	name             string
+	conditionReasons []string
 }
 
 // checkKubeClientActions is the utility function for checking actions returned by the generic

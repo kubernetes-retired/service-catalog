@@ -133,8 +133,8 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 		{
 			verb: "update",
 			checkObject: checkInstance(instanceDescription{
-				name:       testInstanceName,
-				conditions: []string{"ErrorGettingAuthCredentials"},
+				name:             testInstanceName,
+				conditionReasons: []string{"ErrorGettingAuthCredentials"},
 			}),
 			getRuntimeObject: getRuntimeObjectFromUpdateAction,
 		},
@@ -186,8 +186,8 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 			verb:             "update",
 			getRuntimeObject: getRuntimeObjectFromUpdateAction,
 			checkObject: checkInstance(instanceDescription{
-				name:       testInstanceName,
-				conditions: []string{errorNonexistentServicePlanReason},
+				name:             testInstanceName,
+				conditionReasons: []string{errorNonexistentServicePlanReason},
 			}),
 		},
 	}); err != nil {
