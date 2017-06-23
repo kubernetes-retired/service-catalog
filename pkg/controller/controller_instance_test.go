@@ -123,7 +123,7 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	testController.reconcileInstance(instance)
 
-	// vefify that no broker actions occurred
+	// verify that no broker actions occurred
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
