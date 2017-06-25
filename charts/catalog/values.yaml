@@ -7,7 +7,7 @@ apiserver:
   imagePullPolicy: Always
   # Whether to expose an insecure endpoint; keep this enabled because there
   # are some outstanding problems with the TLS-secured endpoint
-  insecure: true
+  insecure: false
   tls:
     # Base64-encoded certificate authority for the APIService object to register
     # the Service Catalog API with the apiregistration
@@ -21,7 +21,7 @@ apiserver:
     # Type of service; valid values are "LoadBalancer" and "NodePort"
     # NodePort is useful if deploying on bare metal or hacking locally on
     # minikube
-    type: NodePort
+    type: ClusterIP
     # Further configuration for services of type NodePort
     nodePort:
       # Available port in allowable range (e.g. 30000 - 32767 on minikube)
@@ -51,7 +51,7 @@ apiserver:
     # Enable or disable authentication and authorization.  Disabling authentication
     # and authorization can be useful for quickly getting the walkthrough up and running,
     # but is not suitable for production.
-    enabled: false
+    enabled: true
   audit:
     # If true, enables the use of audit features via this chart.
     activated: false
@@ -81,4 +81,4 @@ controllerManager:
   leaderElectionNamespace:
     # Whether the controller has option to set leader election namespace.
     activated: false
-useAggregator: false
+useAggregator: true
