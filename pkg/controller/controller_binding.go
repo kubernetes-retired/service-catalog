@@ -365,13 +365,13 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[st
 	}
 
 	found := false
-
 	_, err := c.kubeClient.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err == nil {
 		found = true
 	}
 
 	if found {
+		// TODO: Check ownerReferences first?
 		_, err = c.kubeClient.Core().Secrets(binding.Namespace).Update(secret)
 	} else {
 		_, err = c.kubeClient.Core().Secrets(binding.Namespace).Create(secret)
@@ -400,7 +400,19 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[st
 		},
 	}
 
-	_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Create(podPreset)
+	found = false
+	_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Get(podPreset.ObjectMeta.Name, metav1.GetOptions{})
+	if err == nil {
+		found = true
+	}
+
+	if found {
+		// TODO: Check ownerReferences first?
+		_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Update(podPreset)
+
+	} else {
+		_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Create(podPreset)
+	}
 
 	return err
 }
