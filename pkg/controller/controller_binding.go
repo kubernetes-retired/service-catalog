@@ -408,7 +408,12 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[st
 
 	if found {
 		// TODO: Check ownerReferences first?
-		_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Update(podPreset)
+		// NOTE: PodPresets don't support Update requests
+		err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Delete(podPreset.ObjectMeta.Name, &metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Create(podPreset)
 
 	} else {
 		_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Create(podPreset)
