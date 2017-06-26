@@ -173,33 +173,33 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 		return nil
 	}
 
-	authConfig, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
-	if err != nil {
-		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Info(s)
-		c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
-		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
-		return err
-	}
-
-	clientConfig := osb.DefaultClientConfiguration()
-	clientConfig.Name = broker.Name
-	clientConfig.URL = broker.Spec.URL
-	clientConfig.AuthConfig = authConfig
-	clientConfig.EnableAlphaFeatures = true
-	clientConfig.Insecure = true
-
-	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
-	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
-	if err != nil {
-		s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
-		glog.Info(s)
-		c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
-		c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
-		return err
-	}
-
 	if broker.DeletionTimestamp == nil { // Add or update
+		authConfig, err := getAuthCredentialsFromBroker(c.kubeClient, broker)
+		if err != nil {
+			s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+			glog.Info(s)
+			c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
+			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
+			return err
+		}
+
+		clientConfig := osb.DefaultClientConfiguration()
+		clientConfig.Name = broker.Name
+		clientConfig.URL = broker.Spec.URL
+		clientConfig.AuthConfig = authConfig
+		clientConfig.EnableAlphaFeatures = true
+		clientConfig.Insecure = true
+
+		glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
+		brokerClient, err := c.brokerClientCreateFunc(clientConfig)
+		if err != nil {
+			s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
+			glog.Info(s)
+			c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
+			c.updateBrokerCondition(broker, v1alpha1.BrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s)
+			return err
+		}
+
 		glog.V(4).Infof("Adding/Updating Broker %v", broker.Name)
 		brokerCatalog, err := brokerClient.GetCatalog()
 		if err != nil {
