@@ -40,7 +40,7 @@ func (c *client) PollLastOperation(r *LastOperationRequest) (*LastOperationRespo
 	case http.StatusOK:
 		userResponse := &LastOperationResponse{}
 		if err := c.unmarshalResponse(response, userResponse); err != nil {
-			return nil, err
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
 		return userResponse, nil

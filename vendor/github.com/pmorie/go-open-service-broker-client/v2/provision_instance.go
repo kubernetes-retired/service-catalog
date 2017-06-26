@@ -15,7 +15,7 @@ type provisionRequestBody struct {
 	OrganizationGUID string                 `json:"organization_guid"`
 	SpaceGUID        string                 `json:"space_guid"`
 	Parameters       map[string]interface{} `json:"parameters,omitempty"`
-	AlphaContext     map[string]interface{} `json:"context,omitempty"`
+	Context          map[string]interface{} `json:"context,omitempty"`
 }
 
 type provisionSuccessResponseBody struct {
@@ -43,8 +43,8 @@ func (c *client) ProvisionInstance(r *ProvisionRequest) (*ProvisionResponse, err
 		Parameters:       r.Parameters,
 	}
 
-	if c.EnableAlphaFeatures {
-		requestBody.AlphaContext = r.AlphaContext
+	if c.APIVersion.AtLeast(Version2_12()) {
+		requestBody.Context = r.Context
 	}
 
 	response, err := c.prepareAndDo(http.MethodPut, fullURL, params, requestBody)
@@ -56,7 +56,7 @@ func (c *client) ProvisionInstance(r *ProvisionRequest) (*ProvisionResponse, err
 	case http.StatusCreated, http.StatusOK, http.StatusAccepted:
 		responseBodyObj := &provisionSuccessResponseBody{}
 		if err := c.unmarshalResponse(response, responseBodyObj); err != nil {
-			return nil, err
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
 		var opPtr *OperationKey

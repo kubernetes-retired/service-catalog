@@ -291,7 +291,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		SpaceGUID:         string(ns.UID),
 	}
 	if c.enableOSBAPIContextProfle {
-		request.AlphaContext = map[string]interface{}{
+		request.Context = map[string]interface{}{
 			"platform":  brokerapi.ContextProfilePlatformKubernetes,
 			"namespace": instance.Namespace,
 		}

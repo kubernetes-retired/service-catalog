@@ -119,7 +119,7 @@ func TestBind(t *testing.T) {
 				status: http.StatusOK,
 				body:   malformedResponse,
 			},
-			expectedErrMessage: "unexpected end of JSON input",
+			expectedErrMessage: "Status: 200; ErrorMessage: <nil>; Description: <nil>; ResponseError: unexpected end of JSON input",
 		},
 		{
 			name: "500 with malformed response",
@@ -127,7 +127,7 @@ func TestBind(t *testing.T) {
 				status: http.StatusInternalServerError,
 				body:   malformedResponse,
 			},
-			expectedErrMessage: "unexpected end of JSON input",
+			expectedErrMessage: "Status: 500; ErrorMessage: <nil>; Description: <nil>; ResponseError: unexpected end of JSON input",
 		},
 		{
 			name: "500 with conventional failure response",
@@ -152,7 +152,8 @@ func TestBind(t *testing.T) {
 			tc.httpChecks.body = defaultBindRequestBody
 		}
 
-		klient := newTestClient(t, tc.name, tc.enableAlpha, tc.httpChecks, tc.httpReaction)
+		version := Version2_11()
+		klient := newTestClient(t, tc.name, version, tc.enableAlpha, tc.httpChecks, tc.httpReaction)
 
 		response, err := klient.Bind(tc.request)
 

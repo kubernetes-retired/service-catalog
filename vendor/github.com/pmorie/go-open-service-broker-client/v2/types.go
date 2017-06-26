@@ -149,15 +149,10 @@ type ProvisionRequest struct {
 	// Parameters is a set of configuration options for the service instance.
 	// Optional.
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
-	// AlphaContext is an ALPHA field and may change or disappear at any time.
-	// AlphaContext will only be sent if alpha features are enabled in the
-	// client.
-	//
-	// AlphaContext is platform-specific contextual information under which
-	// the service instance is to be provisioned.
-	//
-	// For more information, see: https://github.com/openservicebrokerapi/servicebroker/issues/115
-	AlphaContext map[string]interface{} `json:"context,omitempty"`
+	// Context is platform-specific contextual information under which the
+	// service instance is to be provisioned.  Context was added in version
+	// 2.12 of the OSB API and is only sent for versions 2.12 or later.
+	Context map[string]interface{} `json:"context,omitempty"`
 }
 
 // ProvisionResponse is sent in response to a provision call

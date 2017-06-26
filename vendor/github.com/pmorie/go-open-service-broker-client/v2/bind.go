@@ -51,7 +51,7 @@ func (c *client) Bind(r *BindRequest) (*BindResponse, error) {
 	case http.StatusOK, http.StatusCreated:
 		userResponse := &BindResponse{}
 		if err := c.unmarshalResponse(response, userResponse); err != nil {
-			return nil, err
+			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
 		return userResponse, nil
