@@ -736,6 +736,82 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 	}
 }
 
+func TestReconcileBindingWithBrokerError(t *testing.T) {
+	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+			Error: fakeosb.UnexpectedActionError(),
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+		},
+	}
+
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatal("reconcileBinding should have returned an error")
+	}
+
+	events := getRecordedEvents(testController)
+	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating Binding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker": Unexpected action`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
+	}
+}
+
+func TestReconcileBindingWithBrokerHTTPError(t *testing.T) {
+	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+			Error: fakeosb.AsyncRequiredError(),
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+		},
+	}
+
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatal("reconcileBinding should have returned an error")
+	}
+
+	events := getRecordedEvents(testController)
+	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating Binding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker", Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: '%v', expecting: '%v'", a, e)
+	}
+}
+
 func TestUpdateBindingCondition(t *testing.T) {
 	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Binding {
 		instance := getTestBinding()

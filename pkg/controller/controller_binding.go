@@ -221,6 +221,28 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 
 		response, err := brokerClient.Bind(request)
 		if err != nil {
+			if osb.IsHTTPError(err) {
+				httpErr := err.(osb.HTTPStatusCodeError)
+				s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q, %v",
+					binding.Name,
+					binding.Namespace,
+					instance.Namespace,
+					instance.Name,
+					serviceClass.Name,
+					brokerName,
+					httpErr.Error(),
+				)
+				glog.Warning(s)
+				c.updateBindingCondition(
+					binding,
+					v1alpha1.BindingConditionReady,
+					v1alpha1.ConditionFalse,
+					errorBindCallReason,
+					"Bind call failed. "+s)
+				c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
+				return err
+			}
+
 			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
 			c.updateBindingCondition(
