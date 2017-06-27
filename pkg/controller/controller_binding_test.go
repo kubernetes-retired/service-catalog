@@ -48,7 +48,10 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatal("binding nothere was found and it should not be found")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -96,7 +99,10 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatal("serviceclass nothere was found and it should not be found")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -154,7 +160,10 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	}
 	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	testController.reconcileBinding(binding)
+	err = testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -240,7 +249,10 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("binding should fail against a non-bindable ServiceClass")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -300,7 +312,10 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("A bindable plan overrides the bindability of a service class: %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -374,7 +389,10 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("binding against a nonbindable plan should fail")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -465,7 +483,10 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("a binding cannot be created against an instance that is not prepared")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -505,7 +526,10 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatalf("Bindings are namespaced. If we cannot get the namespace we cannot find the binding")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -551,7 +575,10 @@ func TestReconcileBindingDelete(t *testing.T) {
 		return true, binding, nil
 	})
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -642,7 +669,10 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 		},
 	}
 
-	testController.reconcileBinding(binding)
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
