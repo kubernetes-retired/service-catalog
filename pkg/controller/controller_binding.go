@@ -293,6 +293,27 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		}
 		_, err = brokerClient.Unbind(unbindRequest)
 		if err != nil {
+			if osb.IsHTTPError(err) {
+				httpErr := err.(osb.HTTPStatusCodeError)
+				s := fmt.Sprintf("Error creating Unbinding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q, %v",
+					binding.Name,
+					binding.Namespace,
+					instance.Namespace,
+					instance.Name,
+					serviceClass.Name,
+					brokerName,
+					httpErr.Error(),
+				)
+				glog.Warning(s)
+				c.updateBindingCondition(
+					binding,
+					v1alpha1.BindingConditionReady,
+					v1alpha1.ConditionFalse,
+					errorUnbindCallReason,
+					"Unbind call failed. "+s)
+				c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
+				return err
+			}
 			s := fmt.Sprintf(
 				"Error unbinding Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s",
 				binding.Name,
