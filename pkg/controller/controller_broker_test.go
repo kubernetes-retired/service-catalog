@@ -119,7 +119,9 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 	testServiceClass := getTestServiceClass()
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
-	testController.reconcileBroker(getTestBroker())
+	if err := testController.reconcileBroker(getTestBroker()); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -147,7 +149,9 @@ func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 	testServiceClass.ExternalID = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
-	testController.reconcileBroker(getTestBroker())
+	if err := testController.reconcileBroker(getTestBroker()); err == nil {
+		t.Fatal("The same service class should not be allowed with a different ID")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -179,7 +183,9 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 	testServiceClass.BrokerName = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
-	testController.reconcileBroker(getTestBroker())
+	if err := testController.reconcileBroker(getTestBroker()); err == nil {
+		t.Fatal("The same service class should not belong to two different brokers.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -217,7 +223,10 @@ func TestReconcileBrokerDelete(t *testing.T) {
 		return true, broker, nil
 	})
 
-	testController.reconcileBroker(broker)
+	err := testController.reconcileBroker(broker)
+	if err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -262,7 +271,9 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 
 	broker := getTestBroker()
 
-	testController.reconcileBroker(broker)
+	if err := testController.reconcileBroker(broker); err == nil {
+		t.Fatal("Should have failed to get the catalog.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -294,7 +305,9 @@ func TestReconcileBrokerZeroServices(t *testing.T) {
 
 	broker := getTestBroker()
 
-	testController.reconcileBroker(broker)
+	if err := testController.reconcileBroker(broker); err == nil {
+		t.Fatal("Broker should not have had any Service Classes.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -332,7 +345,9 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 		return true, nil, errors.New("no secret defined")
 	})
 
-	testController.reconcileBroker(broker)
+	if err := testController.reconcileBroker(broker); err == nil {
+		t.Fatal("Should have failed to get the auth for the broker.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
@@ -373,7 +388,9 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 		return true, nil, errors.New("error creating serviceclass")
 	})
 
-	testController.reconcileBroker(broker)
+	if err := testController.reconcileBroker(broker); err == nil {
+		t.Fatal("There should have been an error.")
+	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)

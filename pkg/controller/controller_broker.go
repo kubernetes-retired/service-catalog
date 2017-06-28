@@ -159,7 +159,9 @@ func (c *controller) reconcileBrokerKey(key string) error {
 	return c.reconcileBroker(broker)
 }
 
-// reconcileBroker is the control-loop that reconciles a Broker.
+// reconcileBroker is the control-loop that reconciles a Broker. An
+// error is returned to indicate that the binding has not been fully
+// processed and should be resubmitted at a later time.
 func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 	glog.V(4).Infof("Processing Broker %v", broker.Name)
 
