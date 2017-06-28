@@ -11,7 +11,8 @@ For more information, [visit the project on github]
 
 ## Prerequisites
 
-- Kubernetes 1.6+ with Beta APIs enabled
+- Kubernetes 1.6+ with Alpha APIs enabled (at least the `apiregistration.k8s.io/v1alpha1` API Group)
+- Kubernetes 1.7+ with Beta APIs enabled
 
 ## Installing the Chart
 
@@ -41,12 +42,12 @@ chart and their default values.
 |-----------|-------------|---------|
 | `apiserver.image` | apiserver image to use | `quay.io/kubernetes-service-catalog/apiserver:v0.0.11` |
 | `apiserver.imagePullPolicy` | `imagePullPolicy` for the apiserver | `Always` |
-| `apiserver.insecure`  | Whether to expose an insecure endpoint; keep this enabled because there are some outstanding problems with the TLS-secured endpoint | `true` |
+| `apiserver.insecure`  | Whether to expose an insecure endpoint; keep this enabled because there are some outstanding problems with the TLS-secured endpoint | `false` |
 | `apiserver.tls.cert` | Base64-encoded x509 certificate | A self-signed certificate |
 | `apiserver.tls.key` | Base64-encoded private key | The private key for the certificate above |
 | `apiserver.tls.ca` | Base64-encoded CA certificate used to sign the above certificate | |
 | `apiserver.tls.requestHeaderCA` | Base64-encoded CA used to validate request-header authentication, when receiving delegated authentication from an aggregator | *none (will disable requestheader authentication)* |
-| `apiserver.service.type` | Type of service; valid values are `LoadBalancer` and `NodePort` | `NodePort` |
+| `apiserver.service.type` | Type of service; valid values are `ClusterIP` (the most secure), `LoadBalancer` and `NodePort` | `ClusterIP` |
 | `apiserver.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30443` |
 | `apiserver.service.nodePort.insecurePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The insecure endpoint, if enabled, will be exposed here | `30080` |
 | `apiserver.storage.type` | The storage backend to use; valid values are `etcd` and `tpr` | `etcd` |
@@ -54,13 +55,13 @@ chart and their default values.
 | `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd | `http://localhost:2379` |
 | `apiserver.storage.tpr.globalNamespace` | If storage type is `tpr`: Some service catalog resources are not namespaced, but third party resources must be; setting this designates a namespace that will be treated as a container for such resources | `servicecatalog` |
 | `apiserver.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
-| `apiserver.auth.enabled` | Enable authentication and authorization | `false` |
+| `apiserver.auth.enabled` | Enable authentication and authorization | `true` |
 | `controllerManager.image` | controller-manager image to use | `quay.io/kubernetes-service-catalog/controller-manager:v0.0.11` |
 | `controllerManager.imagePullPolicy` | `imagePullPolicy` for the controller-manager | `Always` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
-| `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator (requires setting `apiserver.tls.ca` to work) | `false` |
+| `useAggregator` | whether or not to make the core API Server discover, provide and proxy the Service Catalog API Groups to the aggregated API Server | `true` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

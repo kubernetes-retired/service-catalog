@@ -13,6 +13,12 @@ spec:
   service:
     namespace: {{ .Release.Namespace }}
     name: {{ template "fullname" . }}-apiserver
+  {{- if eq .Values.apiserver.tls.ca "" }}
+  insecureSkipTLSVerify: true
+  {{- else }}
   caBundle: {{ .Values.apiserver.tls.ca }}
-  priority: 100
+  {{- end }}
+  # Extension API Servers should have a priority value higher than the core API groups that have 100
+  # The lower value here the higher priority
+  priority: 150
 {{ end }}
