@@ -2,6 +2,7 @@ package fake
 
 import (
 	"errors"
+	"net/http"
 	"sync"
 
 	"github.com/pmorie/go-open-service-broker-client/v2"
@@ -223,4 +224,27 @@ type BindReaction struct {
 type UnbindReaction struct {
 	Response *v2.UnbindResponse
 	Error    error
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+// AsyncRequiredError returns error for required asynchronous operations.
+func AsyncRequiredError() error {
+	return v2.HTTPStatusCodeError{
+		StatusCode:   http.StatusUnprocessableEntity,
+		ErrorMessage: strPtr(v2.AsyncErrorMessage),
+		Description:  strPtr(v2.AsyncErrorDescription),
+	}
+}
+
+// AppGUIDRequiredError returns error for when app GUID is missing from bind
+// request.
+func AppGUIDRequiredError() error {
+	return v2.HTTPStatusCodeError{
+		StatusCode:   http.StatusUnprocessableEntity,
+		ErrorMessage: strPtr(v2.AppGUIDRequiredErrorMessage),
+		Description:  strPtr(v2.AppGUIDRequiredErrorDescription),
+	}
 }

@@ -456,3 +456,53 @@ func TestUnbind(t *testing.T) {
 		}
 	}
 }
+
+func TestFakeAsyncRequiredError(t *testing.T) {
+	cases := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "async required error",
+			err:      fake.AsyncRequiredError(),
+			expected: true,
+		},
+		{
+			name:     "app guid required error",
+			err:      fake.AppGUIDRequiredError(),
+			expected: false,
+		},
+	}
+
+	for _, tc := range cases {
+		if e, a := tc.expected, v2.IsAsyncRequiredError(tc.err); e != a {
+			t.Errorf("%v: expected %v, got %v", tc.name, e, a)
+		}
+	}
+}
+
+func TestFakeAppGUIDRequiredError(t *testing.T) {
+	cases := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "async required error",
+			err:      fake.AsyncRequiredError(),
+			expected: false,
+		},
+		{
+			name:     "app guid required error",
+			err:      fake.AppGUIDRequiredError(),
+			expected: true,
+		},
+	}
+
+	for _, tc := range cases {
+		if e, a := tc.expected, v2.IsAppGUIDRequiredError(tc.err); e != a {
+			t.Errorf("%v: expected %v, got %v", tc.name, e, a)
+		}
+	}
+}
