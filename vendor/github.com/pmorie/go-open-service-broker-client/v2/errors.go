@@ -38,7 +38,16 @@ type HTTPStatusCodeError struct {
 }
 
 func (e HTTPStatusCodeError) Error() string {
-	return fmt.Sprintf("Status: %v; ErrorMessage: %v; Description: %v; ResponseError: %v", e.StatusCode, e.ErrorMessage, e.Description, e.ResponseError)
+	errorMessage := "<nil>"
+	description := "<nil>"
+
+	if e.ErrorMessage != nil {
+		errorMessage = *e.ErrorMessage
+	}
+	if e.Description != nil {
+		description = *e.Description
+	}
+	return fmt.Sprintf("Status: %v; ErrorMessage: %v; Description: %v; ResponseError: %v", e.StatusCode, errorMessage, description, e.ResponseError)
 }
 
 // IsHTTPError returns whether the error represents an HTTPStatusCodeError.  A
@@ -70,11 +79,11 @@ func IsConflictError(err error) bool {
 }
 
 const (
-	asyncErrorMessage     = "AsyncRequired"
-	asyncErrorDescription = "This service plan requires client support for asynchronous service operations."
+	AsyncErrorMessage     = "AsyncRequired"
+	AsyncErrorDescription = "This service plan requires client support for asynchronous service operations."
 
-	appGUIDRequiredErrorMessage     = "RequiresApp"
-	appGUIDRequiredErrorDescription = "This service supports generation of credentials through binding an application only."
+	AppGUIDRequiredErrorMessage     = "RequiresApp"
+	AppGUIDRequiredErrorDescription = "This service supports generation of credentials through binding an application only."
 )
 
 // IsAsyncRequiredError returns whether the error corresponds to the
@@ -90,11 +99,11 @@ func IsAsyncRequiredError(err error) bool {
 		return false
 	}
 
-	if *statusCodeError.ErrorMessage != asyncErrorMessage {
+	if *statusCodeError.ErrorMessage != AsyncErrorMessage {
 		return false
 	}
 
-	return *statusCodeError.Description == asyncErrorDescription
+	return *statusCodeError.Description == AsyncErrorDescription
 }
 
 // IsAppGUIDRequiredError returns whether the error corresponds to the
@@ -110,9 +119,9 @@ func IsAppGUIDRequiredError(err error) bool {
 		return false
 	}
 
-	if *statusCodeError.ErrorMessage != appGUIDRequiredErrorMessage {
+	if *statusCodeError.ErrorMessage != AppGUIDRequiredErrorMessage {
 		return false
 	}
 
-	return *statusCodeError.Description == appGUIDRequiredErrorDescription
+	return *statusCodeError.Description == AppGUIDRequiredErrorDescription
 }

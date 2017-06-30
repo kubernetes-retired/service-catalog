@@ -1,5 +1,5 @@
-hash: 0da417eb8f27a15c12e088e8841e7005691815a042e3481afd6382790bd972e2
-updated: 2017-06-23T12:36:40.079115175-04:00
+hash: 743640e2229c7533b2c37b9f439be498794c1f386c278f0c762059f991037b36
+updated: 2017-06-30T12:32:06.107921026-04:00
 imports:
 - name: code.cloudfoundry.org/lager
   version: 62951a8009ab331bb21dc418074fa54e66eb9b6a
@@ -58,7 +58,7 @@ imports:
 - name: github.com/pkg/errors
   version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/pmorie/go-open-service-broker-client
-  version: 8d5b522ee2fe5ebc914b56dbb6cc4591eded469d
+  version: bc5d4ac17be7f9af33683fe4ee3cb44ee89ac667
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc

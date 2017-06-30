@@ -68,4 +68,4 @@ import:
 - package: github.com/pivotal-cf/brokerapi
 - package: code.cloudfoundry.org/lager
 - package: github.com/pmorie/go-open-service-broker-client
-  version: 8d5b522ee2fe5ebc914b56dbb6cc4591eded469d 
+  version: bc5d4ac17be7f9af33683fe4ee3cb44ee89ac667
