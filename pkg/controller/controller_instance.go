@@ -460,31 +460,31 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 
 	switch response.State {
 	case osb.StateInProgress:
-		// The way the worker keeps on requeueing is by returning an error, so
-		// we need to keep on polling.
-		clone, err := api.Scheme.DeepCopy(instance)
-		if err != nil {
-			return err
-		}
-		toUpdate := clone.(*v1alpha1.Instance)
-		toUpdate.Status.AsyncOpInProgress = true
-
-		reason := asyncProvisioningReason
-		message := asyncProvisioningMessage
-		if deleting {
-			reason = asyncDeprovisioningReason
-			message = asyncProvisioningMessage
-		}
+		// if the description is non-nil, then update the instance condition with it
 		if response.Description != nil {
-			message = fmt.Sprintf("%s (%s)", message, *response.Description)
+			// The way the worker keeps on requeueing is by returning an error, so
+			// we need to keep on polling.
+			clone, err := api.Scheme.DeepCopy(instance)
+			if err != nil {
+				return err
+			}
+			toUpdate := clone.(*v1alpha1.Instance)
+			toUpdate.Status.AsyncOpInProgress = true
+
+			reason := asyncProvisioningReason
+			message := fmt.Sprintf("%s (%s)", asyncProvisioningMessage, *response.Description)
+			if deleting {
+				reason = asyncDeprovisioningReason
+				message = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, *response.Description)
+			}
+			c.updateInstanceCondition(
+				toUpdate,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				reason,
+				message,
+			)
 		}
-		c.updateInstanceCondition(
-			toUpdate,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			reason,
-			message,
-		)
 		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
 	case osb.StateSucceeded:
 		// Update the instance to reflect that an async operation is no longer
