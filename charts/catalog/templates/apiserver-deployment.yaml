@@ -59,6 +59,8 @@ spec:
         - "{{ .Values.apiserver.verbosity }}"
         {{- if .Values.apiserver.tls.requestHeaderCA }}
         - --requestheader-client-ca-file=/var/run/kubernetes-service-catalog/requestheader-ca.crt
+        {{ else }}
+        - --authentication-skip-lookup=true
         {{- end }}
         {{- if not .Values.apiserver.auth.enabled }}
         - --disable-auth

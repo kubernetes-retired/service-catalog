@@ -1,4 +1,4 @@
-#!/bin/sh --
+#!/bin/bash
 
 # Copyright 2017 The Kubernetes Authors.
 #
@@ -13,6 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+CUR=$(pwd)
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo "Entering $DIR"
+cd $DIR
 
 export HELM_NAME=catalog
 export SVCCAT_NAMESPACE=catalog
@@ -44,7 +49,7 @@ EOF
 
 
 cfssl genkey --initca ${SVCCAT_CA_SETUP} | cfssljson -bare ${CA_NAME}
-# now the files 'ca.csr  ca-key.pem  ca.pem' exist
+# now the files 'ca.csr, ca-key.pem, and ca.pem' exist
 
 export SVCCAT_CA_CERT=${CA_NAME}.pem
 export SVCCAT_CA_KEY=${CA_NAME}-key.pem
