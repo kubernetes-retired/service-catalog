@@ -19,11 +19,13 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
@@ -939,5 +941,85 @@ func TestUpdateBindingCondition(t *testing.T) {
 		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
 			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
 		}
+	}
+}
+
+func TestReconcileUnbindingWithBrokerError(t *testing.T) {
+	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{},
+			Error:    fakeosb.UnexpectedActionError(),
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	t1 := metav1.NewTime(time.Now())
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &t1,
+		},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+		},
+	}
+	if err := scmeta.AddFinalizer(binding, v1alpha1.FinalizerServiceCatalog); err != nil {
+		t.Fatalf("Finalizer error: %v", err)
+	}
+	if err := testController.reconcileBinding(binding); err == nil {
+		t.Fatal("reconcileBinding should have returned an error")
+	}
+
+	events := getRecordedEvents(testController)
+	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding Binding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker": Unexpected action`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
+	}
+}
+
+func TestReconcileUnbindingWithBrokerHTTPError(t *testing.T) {
+	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{},
+			Error: osb.HTTPStatusCodeError{
+				StatusCode: http.StatusGone,
+			},
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	t1 := metav1.NewTime(time.Now())
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &t1,
+		},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+		},
+	}
+	if err := scmeta.AddFinalizer(binding, v1alpha1.FinalizerServiceCatalog); err != nil {
+		t.Fatalf("Finalizer error: %v", err)
+	}
+	if err := testController.reconcileBinding(binding); err == nil {
+		t.Fatal("reconcileBinding should have returned an error")
+	}
+
+	events := getRecordedEvents(testController)
+	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error creating Unbinding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker", Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
 	}
 }
