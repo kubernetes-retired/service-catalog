@@ -78,7 +78,7 @@ controllerManager:
     disabled: false
     # Enables lock contention profiling, if profiling is enabled.
     contentionProfiling: false
-  leaderElectionNamespace:
+  leaderElection:
     # Whether the controller has option to set leader election namespace.
     activated: false
 useAggregator: false
