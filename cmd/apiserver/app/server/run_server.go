@@ -151,6 +151,10 @@ func runEtcdServer(opts *ServiceCatalogServerOptions) error {
 	}
 	addPostStartHooks(server.GenericAPIServer, scConfig, opts.StopCh)
 
+	// Install healthz checks before calling PrepareRun.
+	// This is an example. PingHealtz is installed by the default config.
+	// server.GenericAPIServer.AddHealthzChecks(healthz.PingHealthz)
+
 	// do we need to do any post api installation setup? We should have set up the api already?
 	glog.Infoln("Running the API server")
 	server.PrepareRun().Run(opts.StopCh)
