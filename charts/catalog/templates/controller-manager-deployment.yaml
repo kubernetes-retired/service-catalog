@@ -39,7 +39,7 @@ spec:
         args:
         - --port
         - "8080"
-        {{ if .Values.controllerManager.leaderElectionNamespace.activated -}}
+        {{ if .Values.controllerManager.leaderElection.activated -}}
         - "--leader-election-namespace=$(K8S_NAMESPACE)"
         {{- else }}
         - "--leader-elect=false"
