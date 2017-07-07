@@ -8,6 +8,22 @@ apiserver:
   # Whether to expose an insecure endpoint; keep this enabled because there
   # are some outstanding problems with the TLS-secured endpoint
   insecure: true
+  aggregator:
+    # priority is the priority of the APIService. Please see
+    # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
+    # for more information on proper values of this field.
+    #
+    # This field is only applicable on clusters that expose APIService as a v1alpha1 field,
+    # which is generally 1.6.x clusters
+    priority: 100
+    # groupPriorityMinimum is the minimum priority the group should have. Please see
+    # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
+    # for more information on proper values of this field.
+    groupPriorityMinimum: 10000
+    # versionPriority is the ordering of this API inside of the group. Please see
+    # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
+    # for more information on proper values of this field
+    versionPriority: 20
   tls:
     # Base64-encoded certificate authority for the APIService object to register
     # the Service Catalog API with the apiregistration
