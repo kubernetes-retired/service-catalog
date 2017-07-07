@@ -150,11 +150,11 @@ retry -n 10 \
 
 echo 'Waiting on pods to come up...'
 
-wait_for_expected_output -x -e 'Pending' -n 10 \
+wait_for_expected_output -e 'ups-broker-ups-broker' \
     kubectl get pods --namespace ups-broker \
-  || error_exit 'Timed out waiting for user-provided-service broker pod to come up.'
-
-wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
+  && wait_for_expected_output -x -e 'Pending' \
+    kubectl get pods --namespace ups-broker \
+  && wait_for_expected_output -x -e 'ContainerCreating' \
     kubectl get pods --namespace ups-broker \
   || error_exit 'Timed out waiting for user-provided-service broker pod to come up.'
 
@@ -166,11 +166,13 @@ wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
     error_exit 'User provided service broker pod did not come up successfully.'
   }
 
-wait_for_expected_output -x -e 'Pending' -n 10 \
+wait_for_expected_output -e 'catalog-catalog-controller-manager' \
     kubectl get pods --namespace catalog \
-  || error_exit 'Timed out waiting for service catalog pods to come up.'
-
-wait_for_expected_output -x -e 'ContainerCreating' -n 10 \
+  && wait_for_expected_output -e 'catalog-catalog-apiserver' \
+    kubectl get pods --namespace catalog \
+  && wait_for_expected_output -x -e 'Pending' \
+    kubectl get pods --namespace catalog \
+  && wait_for_expected_output -x -e 'ContainerCreating' \
     kubectl get pods --namespace catalog \
   || error_exit 'Timed out waiting for service catalog pods to come up.'
 
