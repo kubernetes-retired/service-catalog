@@ -14,5 +14,10 @@ spec:
     namespace: {{ .Release.Namespace }}
     name: {{ template "fullname" . }}-apiserver
   caBundle: {{ .Values.apiserver.tls.ca }}
+  {{ if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1alpha1" -}}
   priority: 100
+  {{ else if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1beta1" -}}
+  groupPriorityMinimum: 10000
+  versionPriority: 20
+  {{- end }}
 {{ end }}
