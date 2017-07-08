@@ -64,21 +64,21 @@ func NewController(
 	bindingInformer informers.BindingInformer,
 	brokerClientCreateFunc osb.CreateFunc,
 	brokerRelistInterval time.Duration,
-	osbAPIContextProfile bool,
+	osbAPIPreferredVersion string,
 	recorder record.EventRecorder,
 ) (Controller, error) {
 	controller := &controller{
-		kubeClient:                kubeClient,
-		serviceCatalogClient:      serviceCatalogClient,
-		brokerClientCreateFunc:    brokerClientCreateFunc,
-		brokerRelistInterval:      brokerRelistInterval,
-		enableOSBAPIContextProfle: osbAPIContextProfile,
-		recorder:                  recorder,
-		brokerQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "broker"),
-		serviceClassQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
-		instanceQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
-		bindingQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
-		pollingQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
+		kubeClient:             kubeClient,
+		serviceCatalogClient:   serviceCatalogClient,
+		brokerClientCreateFunc: brokerClientCreateFunc,
+		brokerRelistInterval:   brokerRelistInterval,
+		OSBAPIPreferredVersion: osbAPIPreferredVersion,
+		recorder:               recorder,
+		brokerQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "broker"),
+		serviceClassQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
+		instanceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
+		bindingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
+		pollingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
 	}
 
 	brokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -123,20 +123,20 @@ type Controller interface {
 
 // controller is a concrete Controller.
 type controller struct {
-	kubeClient                kubernetes.Interface
-	serviceCatalogClient      servicecatalogclientset.ServicecatalogV1alpha1Interface
-	brokerClientCreateFunc    osb.CreateFunc
-	brokerLister              listers.BrokerLister
-	serviceClassLister        listers.ServiceClassLister
-	instanceLister            listers.InstanceLister
-	bindingLister             listers.BindingLister
-	brokerRelistInterval      time.Duration
-	enableOSBAPIContextProfle bool
-	recorder                  record.EventRecorder
-	brokerQueue               workqueue.RateLimitingInterface
-	serviceClassQueue         workqueue.RateLimitingInterface
-	instanceQueue             workqueue.RateLimitingInterface
-	bindingQueue              workqueue.RateLimitingInterface
+	kubeClient             kubernetes.Interface
+	serviceCatalogClient   servicecatalogclientset.ServicecatalogV1alpha1Interface
+	brokerClientCreateFunc osb.CreateFunc
+	brokerLister           listers.BrokerLister
+	serviceClassLister     listers.ServiceClassLister
+	instanceLister         listers.InstanceLister
+	bindingLister          listers.BindingLister
+	brokerRelistInterval   time.Duration
+	OSBAPIPreferredVersion string
+	recorder               record.EventRecorder
+	brokerQueue            workqueue.RateLimitingInterface
+	serviceClassQueue      workqueue.RateLimitingInterface
+	instanceQueue          workqueue.RateLimitingInterface
+	bindingQueue           workqueue.RateLimitingInterface
 	// pollingQueue is separate from instanceQueue because we want
 	// it to have different backoff / timeout characteristics from
 	//  a reconciling of an instance.

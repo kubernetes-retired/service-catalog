@@ -292,11 +292,12 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		OrganizationGUID:  string(ns.UID),
 		SpaceGUID:         string(ns.UID),
 	}
-	if c.enableOSBAPIContextProfle {
-		request.Context = map[string]interface{}{
-			"platform":  brokerapi.ContextProfilePlatformKubernetes,
-			"namespace": instance.Namespace,
-		}
+
+	// osb client handles whether or not to really send this based
+	// on the version of the client.
+	request.Context = map[string]interface{}{
+		"platform":  brokerapi.ContextProfilePlatformKubernetes,
+		"namespace": instance.Namespace,
 	}
 
 	glog.V(4).Infof("Provisioning a new Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)

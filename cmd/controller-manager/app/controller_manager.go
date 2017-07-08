@@ -332,7 +332,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogSharedInformers.Bindings(),
 			osb.NewClient,
 			s.BrokerRelistInterval,
-			s.OSBAPIContextProfile,
+			s.OSBAPIPreferredVersion,
 			recorder,
 		)
 		if err != nil {
