@@ -471,11 +471,17 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 			toUpdate := clone.(*v1alpha1.Instance)
 			toUpdate.Status.AsyncOpInProgress = true
 
-			reason := asyncProvisioningReason
-			message := fmt.Sprintf("%s (%s)", asyncProvisioningMessage, *response.Description)
+			var message string
+			var reason string
 			if deleting {
-				reason = asyncDeprovisioningReason
+				reason = asyncDeprovisioningMessage
+			} else {
+				reason = asyncProvisioningReason
+			}
+			if response.Description != nil {
 				message = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, *response.Description)
+			} else {
+				message = asyncProvisioningMessage
 			}
 			c.updateInstanceCondition(
 				toUpdate,
