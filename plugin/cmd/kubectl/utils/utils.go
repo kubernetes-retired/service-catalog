@@ -1,3 +1,19 @@
+/*
+Copyright 2016 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package utils
 
 import (
@@ -18,6 +34,8 @@ type metadata struct {
 	Name string `json:"name"`
 }
 
+// CheckNamespaceExists will query our kube apiserver to see if the
+// specified namespace exists - if not it returns an error
 func CheckNamespaceExists(name string) error {
 	proxyURL := "http://127.0.0.1"
 	proxyPort := "8881"
@@ -36,10 +54,14 @@ func CheckNamespaceExists(name string) error {
 
 	resp, err := http.Get(fmt.Sprintf("%s:%s/api/v1/namespaces/%s", proxyURL, proxyPort, name))
 	if err != nil {
-		fmt.Errorf("Error looking up namespace from core api server (%s)", err)
+		return fmt.Errorf("Error looking up namespace from core api server (%s)", err)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
+	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("Error retrieving core api server response body during namespace lookup (%s)", err)
@@ -58,6 +80,7 @@ func CheckNamespaceExists(name string) error {
 	return nil
 }
 
+// SCUrlEnv will return the value of the SERVICE_CATALOG_URL env var
 func SCUrlEnv() string {
 	url := os.Getenv("SERVICE_CATALOG_URL")
 	if url == "" {
@@ -66,6 +89,8 @@ func SCUrlEnv() string {
 	return url
 }
 
+// Exit1 will print the specified error string to the screen and
+// then stop the program, with an exit code of 1
 func Exit1(errStr string) {
 	Error(errStr)
 	os.Exit(1)
