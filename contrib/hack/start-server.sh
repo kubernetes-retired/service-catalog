@@ -57,7 +57,7 @@ while ! curl --cacert ${ROOT}/.var/run/kubernetes-service-catalog/apiserver.crt 
 	(( count++ )) || true
 	if [ "${count}" == "30" ]; then
 		echo "Timed-out waiting for API Server"
-		(set -x ; curl http://${D_HOST}:${PORT})
+		(set -x ; curl --cacert ${ROOT}/.var/run/kubernetes-service-catalog/apiserver.crt https://${D_HOST}:${PORT})
 		(set -x ; docker ps)
 		(set -x ; docker logs apiserver)
 		exit 1
