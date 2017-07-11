@@ -112,7 +112,8 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 #########################################################################
 build: .init .generate_files \
 	$(BINDIR)/service-catalog \
-	$(BINDIR)/user-broker
+	$(BINDIR)/user-broker \
+	   plugins
 
 user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
@@ -291,6 +292,7 @@ clean: clean-bin clean-build-image clean-generated clean-coverage
 clean-bin:
 	$(DOCKER_CMD) rm -rf $(BINDIR)
 	rm -f .generate_exes
+	rm -f $(PLUGINS)
 
 clean-build-image:
 	$(DOCKER_CMD) rm -rf .pkg
@@ -386,3 +388,39 @@ release-push-%:
 	$(MAKE) clean-bin
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* push
+
+
+# kubectl plugin stuff
+######################
+PLUGIN_EXES=bind-service create-service-broker create-service-instance
+
+plugins: $(BINDIR)/bind-service/bind-service \
+			$(BINDIR)/create-service-broker/create-service-broker \
+			$(BINDIR)/create-service-instance/create-service-instance
+
+$(BINDIR)/bind-service/bind-service: \
+		plugin/cmd/kubectl/bind-service/bind-service.go \
+		plugin/cmd/kubectl/bind-service/plugin.yaml
+	rm -rf $(BINDIR)/bind-service
+	mkdir $(BINDIR)/bind-service
+	$(DOCKER_CMD) go build -o $@ $<
+	cp plugin/cmd/kubectl/bind-service/*yaml $(BINDIR)/bind-service/
+
+$(BINDIR)/create-service-broker/create-service-broker: \
+		plugin/cmd/kubectl/create-service-broker/create-service-broker.go \
+		plugin/cmd/kubectl/create-service-broker/plugin.yaml
+	rm -rf $(BINDIR)/create-service-broker
+	mkdir $(BINDIR)/create-service-broker
+	$(DOCKER_CMD) go build -o $@ $<
+	cp plugin/cmd/kubectl/create-service-broker/*yaml \
+		$(BINDIR)/create-service-broker/
+
+$(BINDIR)/create-service-instance/create-service-instance: \
+		plugin/cmd/kubectl/create-service-instance/create-service-instance.go \
+		plugin/cmd/kubectl/create-service-instance/plugin.yaml
+	rm -rf $(BINDIR)/create-service-instance
+	mkdir $(BINDIR)/create-service-instance
+	$(DOCKER_CMD) go build -o $@ $<
+	cp plugin/cmd/kubectl/create-service-instance/*yaml \
+		$(BINDIR)/create-service-instance/
+
