@@ -6,22 +6,23 @@ import (
 	"text/tabwriter"
 )
 
-type table struct {
+type Table struct {
 	headers []string
 	rows    [][]string
 }
 
-func NewTable(headers ...string) *table {
-	return &table{
+// NewTable creates a new table based on the passed in header names
+func NewTable(headers ...string) *Table {
+	return &Table{
 		headers: headers,
 	}
 }
 
-func (t *table) AddRow(row ...string) {
+func (t *Table) AddRow(row ...string) {
 	t.rows = append(t.rows, row)
 }
 
-func (t *table) Print() error {
+func (t *Table) Print() error {
 	padding := 3
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
