@@ -904,6 +904,9 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	// description
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
+	action := actions[0]
+	updatedInstance := assertUpdateStatus(t, action, instance)
+	assertInstanceReadyFalse(t, updatedInstance, asyncDeprovisioningMessage)
 
 	// verify no kube resources created.
 	// No actions
