@@ -237,6 +237,19 @@ coverage: .init
 
 test: .init build test-unit test-integration
 
+# this target checks to see if the go binary is installed on the host
+.PHONY: check-go
+check-go:
+	@if [ -z $$(which go) ]; then \
+	  echo "Missing \`go\` binary which is required for development"; \
+	  exit 1; \
+	fi
+
+# this target uses the host-local go installation to test 
+.PHONY: test-unit-native
+test-unit-native: check-go
+	go test $(addprefix ${SC_PKG}/,${TEST_DIRS})
+
 test-unit: .init build
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
