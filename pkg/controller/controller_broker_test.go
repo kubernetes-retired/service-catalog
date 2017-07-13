@@ -37,6 +37,25 @@ import (
 )
 
 func TestShouldReconcileBroker(t *testing.T) {
+	// The test cases here are testing shouldReconcileBroker to ensure that
+	// with the expected conditions the reconciler is reported as needing
+	// to run.
+	// The test cases are proving:
+	// - broker without ready condition will reconcile
+	// - broker with deletion timestamp set will reconcile
+	// - broker without ready condition, with status will reconcile
+	// - broker without ready condition, without status will reconcile
+	// - broker with status/ready, past relist interval will reconcile
+	// - broker with status/ready, within relist interval will NOT reconcile
+	// - broker with status/ready/checksum, will reconcile
+	//
+	// Anonymous struct fields:
+	// name: short description of the test
+	// broker: broker object to test
+	// now: what time the interval is calculated with respect to interval
+	// internal: the time that has elapsed since now
+	// reconcile: whether or not the reconciler should run, the return of
+	// shouldReconcileBroker
 	cases := []struct {
 		name      string
 		broker    *v1alpha1.Broker
@@ -49,6 +68,17 @@ func TestShouldReconcileBroker(t *testing.T) {
 			broker:    getTestBroker(),
 			now:       time.Now(),
 			interval:  3 * time.Minute,
+			reconcile: true,
+		},
+		{
+			name: "deletionTimestamp set",
+			broker: func() *v1alpha1.Broker {
+				b := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
+				b.DeletionTimestamp = &metav1.Time{}
+				return b
+			}(),
+			now:       time.Now(),
+			interval:  3 * time.Hour,
 			reconcile: true,
 		},
 		{
@@ -95,6 +125,18 @@ func TestShouldReconcileBroker(t *testing.T) {
 			now:       time.Now(),
 			interval:  3 * time.Hour,
 			reconcile: false,
+		},
+		{
+			name: "ready, interval not elapsed, checksum changed",
+			broker: func() *v1alpha1.Broker {
+				broker := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
+				cs := "22081-9471-471"
+				broker.Status.Checksum = &cs
+				return broker
+			}(),
+			now:       time.Now(),
+			interval:  3 * time.Hour,
+			reconcile: true,
 		},
 	}
 
