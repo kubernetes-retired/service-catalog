@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"reflect"
 	"runtime/debug"
@@ -74,6 +75,7 @@ const (
 	testBindingSecretName           = "test-secret"
 	testOperation                   = "test-operation"
 	testNsUID                       = "test-ns-uid"
+	testSecretName                  = "test-secret"
 )
 
 var testDashboardURL = "http://dashboard"
@@ -282,6 +284,25 @@ const instanceParameterSchemaBytes = `{
     "protocol"
   ]
 }`
+
+// broker used in most of the tests that need a broker
+func getTestSecretParameters(params *instanceParameters) (*v1.Secret, error) {
+	data := make(map[string][]byte)
+	b, err := json.Marshal(params.Name)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal parameters %v : %v", params.Name, err)
+	}
+	data["name"] = b
+	b, err = json.Marshal(params.Args)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal parameters %v : %v", params.Args, err)
+	}
+	data["args"] = b
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
+		Data:       data,
+	}, nil
+}
 
 // broker used in most of the tests that need a broker
 func getTestBroker() *v1alpha1.Broker {
@@ -1102,6 +1123,31 @@ func testNumberOfActions(t *testing.T, name string, f failfFunc, actions []clien
 		t.Logf("%+v\n", actions)
 		f(t, "%vUnexpected number of actions: expected %v, got %v;\nactions: %+v", logContext, e, a, actions)
 		return false
+	}
+
+	return true
+}
+
+func assertActionsVerb(t *testing.T, actions []clientgotesting.Action, verb string) {
+	testActionsVerb(t, "" /* name */, fatalf, actions, verb)
+}
+
+func expectActionsVerb(t *testing.T, name string, actions []clientgotesting.Action, verb string) bool {
+	return testActionsVerb(t, name, errorf, actions, verb)
+}
+
+func testActionsVerb(t *testing.T, name string, f failfFunc, actions []clientgotesting.Action, verb string) bool {
+	logContext := ""
+	if len(name) > 0 {
+		logContext = name + ": "
+	}
+
+	for _, action := range actions {
+		if action.GetVerb() != verb {
+			t.Logf("%+v\n", action)
+			f(t, "%vUnexpected action verb: expected %v, got %v", logContext, verb, action.GetVerb())
+			return false
+		}
 	}
 
 	return true

@@ -325,6 +325,11 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
+		if in.AlphaSecretParameters != nil {
+			in, out := &in.AlphaSecretParameters, &out.AlphaSecretParameters
+			*out = new(api_v1.LocalObjectReference)
+			**out = **in
+		}
 		return nil
 	}
 }

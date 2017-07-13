@@ -38,6 +38,10 @@ func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	if spec.Parameters != nil {
 		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
 	}
+	if spec.AlphaSecretParameters != nil {
+		// TODO: calc checksum of secret contents instead?
+		specString += fmt.Sprintf("alphaSecretParameters:\n\n%v\n\n", string(spec.AlphaSecretParameters.Name))
+	}
 
 	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
 

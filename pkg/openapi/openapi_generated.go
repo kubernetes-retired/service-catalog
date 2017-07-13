@@ -606,8 +606,14 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Parameters is a YAML representation of the properties to be passed to the underlying broker.",
+								Description: "Parameters is set of properties to be passed to the underlying broker.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"alphaSecretParameters": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Optional: AlphaSecretParameters is reference to the secret object containing sensitive information to pass to the underlying broker. This may be empty if no secret object is specified.",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.LocalObjectReference"),
 							},
 						},
 						"externalID": {
@@ -622,7 +628,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.InstanceStatus": {
 			Schema: spec.Schema{

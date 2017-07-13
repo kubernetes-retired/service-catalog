@@ -466,6 +466,9 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
 			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
+			AlphaSecretParameters: &v1.LocalObjectReference{
+				Name: "secret-name",
+			},
 			ExternalID:       osbGUID,
 		},
 	}
@@ -540,6 +543,14 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 	if parameters.Values["second"] != "secondvalue" {
 		return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
+	}
+
+	// check the reference to secret containing parameters is present
+	if instanceServer.Spec.AlphaSecretParameters == nil {
+		return errors.New("AlphaSecretParameters is missing")
+	}
+	if instanceServer.Spec.AlphaSecretParameters.Name != "secret-name" {
+		return fmt.Errorf("Didn't get back 'secret-name' value for secret name, was %+v", instanceServer.Spec.AlphaSecretParameters.Name)
 	}
 
 	// update the instance's conditions

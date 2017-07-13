@@ -251,7 +251,20 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	glog.V(4).Infof("Adding/Updating Instance %v/%v", instance.Namespace, instance.Name)
 
 	var parameters map[string]interface{}
-	if instance.Spec.Parameters != nil {
+	if instance.Spec.Parameters != nil && instance.Spec.AlphaSecretParameters != nil {
+		// We don't support merging of plain and secret parameters, thus only one of them could be set
+		s := "At least one of 'Parameters' and 'AlphaSecretParameters' fields must be null"
+		glog.Warning(s)
+		c.updateInstanceCondition(
+			instance,
+			v1alpha1.InstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorWithParameters,
+			"Error preparing instance parameters. "+s,
+		)
+		c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+		return err
+	} else if instance.Spec.Parameters != nil {
 		parameters, err = unmarshalParameters(instance.Spec.Parameters.Raw)
 		if err != nil {
 			s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
@@ -262,6 +275,21 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 				v1alpha1.ConditionFalse,
 				errorWithParameters,
 				"Error unmarshaling instance parameters. "+s,
+			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+			return err
+		}
+	} else if instance.Spec.AlphaSecretParameters != nil {
+		parameters, err = fetchSecretParameters(c.kubeClient, instance.Namespace, instance.Spec.AlphaSecretParameters.Name)
+		if err != nil {
+			s := fmt.Sprintf("Failed to fetch Instance secret parameters\n%s\n %s", instance.Spec.Parameters, err)
+			glog.Warning(s)
+			c.updateInstanceCondition(
+				instance,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				"Error fetching instance secret parameters. "+s,
 			)
 			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
 			return err

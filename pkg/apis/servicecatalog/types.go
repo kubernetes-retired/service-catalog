@@ -266,9 +266,15 @@ type InstanceSpec struct {
 	// provisioned from.
 	PlanName string
 
-	// Parameters is a YAML representation of the properties to be
+	// Parameters is set of properties to be
 	// passed to the underlying broker.
 	Parameters *runtime.RawExtension
+
+	// Optional: AlphaSecretParameters is reference to the secret object containing
+	// sensitive information to pass to the underlying broker. This may be
+	// empty if no secret object is specified.
+	// +optional
+	AlphaSecretParameters *v1.LocalObjectReference
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
