@@ -300,7 +300,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
 		24*time.Hour,
-		true, /* enable OSB context profile */
+		osb.Version2_12().HeaderValue(),
 		fakeRecorder,
 	)
 	t.Log("controller start")
