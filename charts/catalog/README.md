@@ -41,14 +41,12 @@ chart and their default values.
 |-----------|-------------|---------|
 | `apiserver.image` | apiserver image to use | `quay.io/kubernetes-service-catalog/apiserver:v0.0.13` |
 | `apiserver.imagePullPolicy` | `imagePullPolicy` for the apiserver | `Always` |
-| `apiserver.insecure`  | Whether to expose an insecure endpoint; keep this enabled because there are some outstanding problems with the TLS-secured endpoint | `true` |
 | `apiserver.tls.cert` | Base64-encoded x509 certificate | A self-signed certificate |
 | `apiserver.tls.key` | Base64-encoded private key | The private key for the certificate above |
 | `apiserver.tls.ca` | Base64-encoded CA certificate used to sign the above certificate | |
 | `apiserver.tls.requestHeaderCA` | Base64-encoded CA used to validate request-header authentication, when receiving delegated authentication from an aggregator | *none (will disable requestheader authentication)* |
 | `apiserver.service.type` | Type of service; valid values are `LoadBalancer` and `NodePort` | `NodePort` |
 | `apiserver.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30443` |
-| `apiserver.service.nodePort.insecurePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The insecure endpoint, if enabled, will be exposed here | `30080` |
 | `apiserver.storage.type` | The storage backend to use; valid values are `etcd` and `tpr` | `etcd` |
 | `apiserver.storage.etcd.useEmbedded` | If storage type is `etcd`: Whether to embed an etcd container in the apiserver pod; THIS IS INADEQUATE FOR PRODUCTION USE! | `true` |
 | `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd | `http://localhost:2379` |

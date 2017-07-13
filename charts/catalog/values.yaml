@@ -5,9 +5,6 @@ apiserver:
   # imagePullPolicy for the apiserver; valid values are "IfNotPresent",
   # "Never", and "Always"
   imagePullPolicy: Always
-  # Whether to expose an insecure endpoint; keep this enabled because there
-  # are some outstanding problems with the TLS-secured endpoint
-  insecure: true
   aggregator:
     # priority is the priority of the APIService. Please see
     # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
@@ -43,9 +40,6 @@ apiserver:
       # Available port in allowable range (e.g. 30000 - 32767 on minikube)
       # The TLS-enabled endpoint will be exposed here
       securePort: 30443
-      # Available port in allowable range (e.g. 30000 - 32767 on minikube)
-      # The insecure endpoint, if enabled, will be exposed here
-      insecurePort: 30080
   storage:
     # The storage backend to use; valid values are "etcd" and "tpr"
     type: etcd

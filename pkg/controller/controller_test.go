@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	fakebrokerserver "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake/server"
+	"k8s.io/apimachinery/pkg/api/meta"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
@@ -1176,7 +1177,7 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 		return nil, false
 	}
 
-	paramAccessor, err := metav1.ObjectMetaFor(rtObject)
+	paramAccessor, err := meta.Accessor(rtObject)
 	if err != nil {
 		f(t, "%vError creating ObjectMetaAccessor for param object %+v: %v", logContext, rtObject, err)
 		return nil, false
@@ -1222,7 +1223,7 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 		}
 
 		fakeRtObject = createAction.GetObject()
-		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
+		objectMeta, err = meta.Accessor(fakeRtObject)
 		if err != nil {
 			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
 			return nil, false
@@ -1235,7 +1236,7 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 		}
 
 		fakeRtObject = updateAction.GetObject()
-		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
+		objectMeta, err = meta.Accessor(fakeRtObject)
 		if err != nil {
 			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
 			return nil, false
@@ -1375,7 +1376,7 @@ func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alph
 }
 
 func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
-	accessor, err := metav1.ObjectMetaFor(obj)
+	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
 	}
