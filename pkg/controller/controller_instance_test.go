@@ -31,6 +31,7 @@ import (
 
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	fakebrokerserver "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake/server"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,7 +62,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such class exists.
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
@@ -91,7 +92,7 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such broker exists.
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
@@ -258,12 +259,12 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	AssertNumberOfActions(t, kubeActions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
@@ -314,11 +315,11 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
@@ -364,10 +365,10 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	AssertNumberOfActions(t, kubeActions, 1)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
@@ -428,12 +429,12 @@ func TestReconcileInstance(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	AssertNumberOfActions(t, kubeActions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
@@ -491,7 +492,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -516,7 +517,7 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	if actualKey != expectedKey {
 		t.Fatalf("got key as %q expected %q", actualKey, expectedKey)
 	}
-	assertAsyncOpInProgressTrue(t, updatedInstance)
+	AssertAsyncOpInProgressTrue(t, updatedInstance)
 	assertInstanceLastOperation(t, updatedInstance, testOperation)
 	assertInstanceDashboardURL(t, updatedInstance, testDashboardURL)
 }
@@ -562,7 +563,7 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -587,8 +588,113 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	if key != expectedKey {
 		t.Fatalf("got key as %q expected %q", key, expectedKey)
 	}
-	assertAsyncOpInProgressTrue(t, updatedInstance)
+	AssertAsyncOpInProgressTrue(t, updatedInstance)
 	assertInstanceLastOperation(t, updatedInstance, "")
+}
+
+// TestReconcileInstanceAsynchronousUnsupportedBrokerError tests to ensure that, on an asynchronous
+// provision, an Instance's conditions get set with a Broker failure that is not one of the
+// "expected" response codes in the OSB API spec for provision.
+// See https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#response-2 for
+// the list of expected codes and a description of what we should do if another code is returned
+func TestReconcileInstanceAsynchronousUnsupportedBrokerError(t *testing.T) {
+	const (
+		brokerUsername = "testbrokeruser"
+		brokerPassword = "testbrokerpass"
+	)
+	controllerItems, err := newTestControllerWithBrokerServer(brokerUsername, brokerPassword)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer controllerItems.Close()
+
+	fakeKubeClient := controllerItems.FakeKubeClient
+	fakeCatalogClient := controllerItems.FakeCatalogClient
+	fakeBrokerServerHandler := controllerItems.BrokerServerHandler
+	testController := controllerItems.Controller
+	sharedInformers := controllerItems.Informers
+
+	fakeBrokerServerHandler.Catalog = fakebrokerserver.ConvertCatalog(getTestCatalog())
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	// create the secret that the Broker resource will use for auth to the fake broker server
+	fakeKubeClient.AddReactor("get", "secrets", func(clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1.Secret{
+			Data: map[string][]byte{
+				"username": []byte(brokerUsername),
+				"password": []byte(brokerPassword),
+			},
+		}, nil
+	})
+
+	// build the chain from Instance -> ServiceClass -> Broker
+	testBroker := getTestBroker()
+	testBroker.Spec.URL = controllerItems.BrokerServer.URL
+	testBroker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
+		BasicAuthSecret: &v1.ObjectReference{
+			Namespace: "test",
+			Name:      "test",
+		},
+	}
+	testServiceClass := getTestServiceClass()
+	testInstance := getTestInstance()
+
+	sharedInformers.Brokers().Informer().GetStore().Add(testBroker)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	fakeCatalogClient.AddReactor("get", "serviceclasses", func(clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, testServiceClass, nil
+	})
+	fakeCatalogClient.AddReactor("get", "brokers", func(clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, testBroker, nil
+	})
+
+	// Make the provision return an error that is "unexpected"
+	fakeBrokerServerHandler.ProvisionRespError = errors.New("test provision error")
+
+	// there should be nothing that is polling since no instances have been reconciled yet
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected the polling queue to be empty")
+	}
+
+	reconcileErr := testController.reconcileInstance(testInstance)
+	if reconcileErr == nil {
+		t.Fatalf("expected an error from reconcileInstance")
+	}
+	statusCodeErr, ok := reconcileErr.(osb.HTTPStatusCodeError)
+	if !ok {
+		t.Fatalf("expected an OSB client HTTPStatusCodeError")
+	}
+	if statusCodeErr.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("expected an internal server error, got %d", statusCodeErr.StatusCode)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	AssertNumberOfActions(t, actions, 1)
+
+	// verify that 2 kubernetes actions occurred - a GET to the ServiceClass, then a GET to the
+	// Broker
+	kubeActions := fakeKubeClient.Actions()
+	AssertNumberOfActions(t, kubeActions, 2)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], testInstance)
+	assertInstanceReadyFalse(t, updatedInstance)
+
+	// there should be 1 request to the provision endpoint
+	numProvReqs := len(fakeBrokerServerHandler.ProvisionRequests)
+	if numProvReqs != 1 {
+		t.Fatalf("%d provision requests were made, expected 1", numProvReqs)
+	}
+
+	// The item should not have been added to the polling queue for later processing
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected polling queue to be empty")
+	}
+	AssertAsyncOpInProgressFalse(t, updatedInstance)
+	assertInstanceReadyFalse(t, updatedInstance)
+	AssertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse)
 }
 
 func TestReconcileInstanceNamespaceError(t *testing.T) {
@@ -613,10 +719,10 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	AssertNumberOfActions(t, kubeActions, 1)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	assertUpdateStatus(t, actions[0], instance)
 
@@ -667,14 +773,14 @@ func TestReconcileInstanceDelete(t *testing.T) {
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Updating the ready condition
 	// 1. Get against the instance
 	// 2. Removing the finalizer
-	assertNumberOfActions(t, actions, 3)
+	AssertNumberOfActions(t, actions, 3)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyFalse(t, updatedInstance)
@@ -718,13 +824,13 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Get against the instance
 	// 1. Removing the finalizer
-	assertNumberOfActions(t, actions, 2)
+	AssertNumberOfActions(t, actions, 2)
 
 	assertGet(t, actions[0], instance)
 	updatedInstance := assertUpdateStatus(t, actions[1], instance)
@@ -768,12 +874,12 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	AssertNumberOfActions(t, actions, 0)
 
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 }
 
 func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
@@ -806,16 +912,16 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	// Instance should be ready and there no longer is an async operation
 	// in place.
 	assertInstanceReadyTrue(t, updatedInstance)
-	assertAsyncOpInProgressFalse(t, updatedInstance)
+	AssertAsyncOpInProgressFalse(t, updatedInstance)
 }
 
 func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
@@ -848,16 +954,16 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	// Instance should be not ready and there no longer is an async operation
 	// in place.
 	assertInstanceReadyFalse(t, updatedInstance)
-	assertAsyncOpInProgressFalse(t, updatedInstance)
+	AssertAsyncOpInProgressFalse(t, updatedInstance)
 }
 
 func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *testing.T) {
@@ -893,12 +999,12 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	AssertNumberOfActions(t, actions, 0)
 
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 }
 
 func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *testing.T) {
@@ -931,15 +1037,15 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	// Instance should have been deprovisioned
-	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
-	assertAsyncOpInProgressFalse(t, updatedInstance)
+	AssertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	AssertAsyncOpInProgressFalse(t, updatedInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -975,16 +1081,16 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	// Instance should be set to unknown since the operation on the broker
 	// failed.
-	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionUnknown, errorDeprovisionCalledReason)
-	assertAsyncOpInProgressFalse(t, updatedInstance)
+	AssertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionUnknown, errorDeprovisionCalledReason)
+	AssertAsyncOpInProgressFalse(t, updatedInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1020,15 +1126,15 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	// Instance should have been deprovisioned
-	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
-	assertAsyncOpInProgressFalse(t, updatedInstance)
+	AssertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	AssertAsyncOpInProgressFalse(t, updatedInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1064,10 +1170,10 @@ func TestPollServiceInstanceBrokerError(t *testing.T) {
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	AssertNumberOfActions(t, actions, 0)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1102,17 +1208,17 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	// verify no kube resources created.
 	// No actions
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
 	// 0. Updating the ready condition
 	// 1. Get against the instance (updateFinalizers calls)
 	// 2. Removing the finalizer
-	assertNumberOfActions(t, actions, 3)
+	AssertNumberOfActions(t, actions, 3)
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
-	assertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	AssertInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
 
 	// Instance should have been deprovisioned
 	assertGet(t, actions[1], instance)

@@ -21,18 +21,17 @@ import (
 	"errors"
 	"net/http/httptest"
 	"reflect"
-	"runtime/debug"
 	"testing"
 	"time"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
+	faketypes "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
-
-	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,24 +55,24 @@ import (
 // loops for the different catalog API resources.
 
 const (
-	serviceClassGUID            = "SCGUID"
-	planGUID                    = "PGUID"
+	serviceClassGUID            = faketypes.ServiceClassGUID
+	planGUID                    = faketypes.PlanGUID
 	nonbindableServiceClassGUID = "UNBINDABLE-SERVICE"
-	nonbindablePlanGUID         = "UNBINDABLE-PLAN"
-	instanceGUID                = "IGUID"
+	nonbindablePlanGUID         = faketypes.NonBindablePlanGUID
+	instanceGUID                = faketypes.InstanceGUID
 	bindingGUID                 = "BGUID"
 
-	testBrokerName                  = "test-broker"
-	testServiceClassName            = "test-serviceclass"
+	testBrokerName                  = faketypes.BrokerName
+	testServiceClassName            = faketypes.ServiceClassName
 	testNonbindableServiceClassName = "test-unbindable-serviceclass"
-	testPlanName                    = "test-plan"
-	testNonbindablePlanName         = "test-unbindable-plan"
-	testInstanceName                = "test-instance"
+	testPlanName                    = faketypes.PlanName
+	testNonbindablePlanName         = faketypes.NonBindablePlanName
+	testInstanceName                = faketypes.InstanceName
 	testBindingName                 = "test-binding"
-	testNamespace                   = "test-ns"
+	testNamespace                   = faketypes.Namespace
 	testBindingSecretName           = "test-secret"
 	testOperation                   = "test-operation"
-	testNsUID                       = "test-ns-uid"
+	testNsUID                       = faketypes.NamespaceUID
 )
 
 var testDashboardURL = "http://dashboard"
@@ -285,12 +284,7 @@ const instanceParameterSchemaBytes = `{
 
 // broker used in most of the tests that need a broker
 func getTestBroker() *v1alpha1.Broker {
-	return &v1alpha1.Broker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.BrokerSpec{
-			URL: "https://example.com",
-		},
-	}
+	return faketypes.GetBroker()
 }
 
 func getTestBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
@@ -308,28 +302,7 @@ func getTestBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
 
 // a bindable service class wired to the result of getTestBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
-	return &v1alpha1.ServiceClass{
-		ObjectMeta:  metav1.ObjectMeta{Name: testServiceClassName},
-		BrokerName:  testBrokerName,
-		Description: "a test service",
-		ExternalID:  serviceClassGUID,
-		Bindable:    true,
-		Plans: []v1alpha1.ServicePlan{
-			{
-				Name:        testPlanName,
-				Description: "a test plan",
-				Free:        true,
-				ExternalID:  planGUID,
-			},
-			{
-				Name:        testNonbindablePlanName,
-				Description: "a test plan",
-				Free:        true,
-				ExternalID:  nonbindablePlanGUID,
-				Bindable:    falsePtr(),
-			},
-		},
-	}
+	return faketypes.GetServiceClass()
 }
 
 // an unbindable service class wired to the result of getTestBroker()
@@ -1060,22 +1033,8 @@ func getRecordedEvents(testController *controller) []string {
 
 func assertNumEvents(t *testing.T, strings []string, number int) {
 	if e, a := number, len(strings); e != a {
-		fatalf(t, "Unexpected number of events: expected %v, got %v;\nevents: %+v", e, a, strings)
+		Fatalf(t, "Unexpected number of events: expected %v, got %v;\nevents: %+v", e, a, strings)
 	}
-}
-
-// failfFunc is a type that defines the common signatures of T.Fatalf and
-// T.Errorf.
-type failfFunc func(t *testing.T, msg string, args ...interface{})
-
-func fatalf(t *testing.T, msg string, args ...interface{}) {
-	t.Log(string(debug.Stack()))
-	t.Fatalf(msg, args...)
-}
-
-func errorf(t *testing.T, msg string, args ...interface{}) {
-	t.Log(string(debug.Stack()))
-	t.Errorf(msg, args...)
 }
 
 // assertion and expectation methods:
@@ -1084,15 +1043,11 @@ func errorf(t *testing.T, msg string, args ...interface{}) {
 // - expectX will call t.Errorf and return a boolean, allowing you to drive a 'continue'
 //   in a table-type test
 
-func assertNumberOfActions(t *testing.T, actions []clientgotesting.Action, number int) {
-	testNumberOfActions(t, "" /* name */, fatalf, actions, number)
-}
-
 func expectNumberOfActions(t *testing.T, name string, actions []clientgotesting.Action, number int) bool {
-	return testNumberOfActions(t, name, errorf, actions, number)
+	return testNumberOfActions(t, name, Errorf, actions, number)
 }
 
-func testNumberOfActions(t *testing.T, name string, f failfFunc, actions []clientgotesting.Action, number int) bool {
+func testNumberOfActions(t *testing.T, name string, f FailfFunc, actions []clientgotesting.Action, number int) bool {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "
@@ -1124,7 +1079,7 @@ func assertUpdateStatus(t *testing.T, action clientgotesting.Action, obj interfa
 }
 
 func expectUpdateStatus(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
-	return testActionFor(t, name, errorf, action, "update", "status", obj)
+	return TestActionFor(t, name, Errorf, action, "update", "status", obj)
 }
 
 func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) {
@@ -1132,130 +1087,8 @@ func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) 
 }
 
 func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) runtime.Object {
-	r, _ := testActionFor(t, "" /* name */, fatalf, action, verb, subresource, obj)
+	r, _ := TestActionFor(t, "" /* name */, Fatalf, action, verb, subresource, obj)
 	return r
-}
-
-func testActionFor(t *testing.T, name string, f failfFunc, action clientgotesting.Action, verb, subresource string, obj interface{}) (runtime.Object, bool) {
-	logContext := ""
-	if len(name) > 0 {
-		logContext = name + ": "
-	}
-
-	if e, a := verb, action.GetVerb(); e != a {
-		f(t, "%vUnexpected verb: expected %v, got %v", logContext, e, a)
-		return nil, false
-	}
-
-	var resource string
-
-	switch obj.(type) {
-	case *v1alpha1.Broker:
-		resource = "brokers"
-	case *v1alpha1.ServiceClass:
-		resource = "serviceclasses"
-	case *v1alpha1.Instance:
-		resource = "instances"
-	case *v1alpha1.Binding:
-		resource = "bindings"
-	}
-
-	if e, a := resource, action.GetResource().Resource; e != a {
-		f(t, "%vUnexpected resource; expected %v, got %v", logContext, e, a)
-		return nil, false
-	}
-
-	if e, a := subresource, action.GetSubresource(); e != a {
-		f(t, "%vUnexpected subresource; expected %v, got %v", logContext, e, a)
-		return nil, false
-	}
-
-	rtObject, ok := obj.(runtime.Object)
-	if !ok {
-		f(t, "%vObject %+v was not a runtime.Object", logContext, obj)
-		return nil, false
-	}
-
-	paramAccessor, err := metav1.ObjectMetaFor(rtObject)
-	if err != nil {
-		f(t, "%vError creating ObjectMetaAccessor for param object %+v: %v", logContext, rtObject, err)
-		return nil, false
-	}
-
-	var (
-		objectMeta   metav1.Object
-		fakeRtObject runtime.Object
-	)
-
-	switch verb {
-	case "get":
-		getAction, ok := action.(clientgotesting.GetAction)
-		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to DeleteAction", logContext, action)
-			return nil, false
-		}
-
-		if e, a := paramAccessor.GetName(), getAction.GetName(); e != a {
-			f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
-			return nil, false
-		}
-
-		return nil, true
-	case "delete":
-		deleteAction, ok := action.(clientgotesting.DeleteAction)
-		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to DeleteAction", logContext, action)
-			return nil, false
-		}
-
-		if e, a := paramAccessor.GetName(), deleteAction.GetName(); e != a {
-			f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
-			return nil, false
-		}
-
-		return nil, true
-	case "create":
-		createAction, ok := action.(clientgotesting.CreateAction)
-		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to CreateAction", logContext, action)
-			return nil, false
-		}
-
-		fakeRtObject = createAction.GetObject()
-		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
-		if err != nil {
-			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
-			return nil, false
-		}
-	case "update":
-		updateAction, ok := action.(clientgotesting.UpdateAction)
-		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to UpdateAction", logContext, action)
-			return nil, false
-		}
-
-		fakeRtObject = updateAction.GetObject()
-		objectMeta, err = metav1.ObjectMetaFor(fakeRtObject)
-		if err != nil {
-			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
-			return nil, false
-		}
-	}
-
-	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
-		f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
-		return nil, false
-	}
-
-	fakeValue := reflect.ValueOf(fakeRtObject)
-	paramValue := reflect.ValueOf(obj)
-
-	if e, a := paramValue.Type(), fakeValue.Type(); e != a {
-		f(t, "%vUnexpected type of object passed to fake client; expected %v, got %v", logContext, e, a)
-		return nil, false
-	}
-
-	return fakeRtObject, true
 }
 
 func assertBrokerReadyTrue(t *testing.T, obj runtime.Object) {
@@ -1269,57 +1102,13 @@ func assertBrokerReadyFalse(t *testing.T, obj runtime.Object) {
 func assertBrokerReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus) {
 	broker, ok := obj.(*v1alpha1.Broker)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Broker", obj)
+		Fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Broker", obj)
 	}
 
 	for _, condition := range broker.Status.Conditions {
 		if condition.Type == v1alpha1.BrokerConditionReady && condition.Status != status {
-			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+			Fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
 		}
-	}
-}
-
-func assertInstanceReadyTrue(t *testing.T, obj runtime.Object) {
-	assertInstanceReadyCondition(t, obj, v1alpha1.ConditionTrue)
-}
-
-func assertInstanceReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
-	assertInstanceReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
-}
-
-func assertInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
-	instance, ok := obj.(*v1alpha1.Instance)
-	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Instance", obj)
-	}
-
-	for _, condition := range instance.Status.Conditions {
-		if condition.Type == v1alpha1.InstanceConditionReady && condition.Status != status {
-			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
-		}
-		if len(reason) == 1 && condition.Reason != reason[0] {
-			fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
-		}
-	}
-}
-
-func assertAsyncOpInProgressTrue(t *testing.T, obj runtime.Object) {
-	instance, ok := obj.(*v1alpha1.Instance)
-	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
-	}
-	if !instance.Status.AsyncOpInProgress {
-		t.Fatalf("expected AsyncOpInProgress to be true but was %v", instance.Status.AsyncOpInProgress)
-	}
-}
-
-func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
-	instance, ok := obj.(*v1alpha1.Instance)
-	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
-	}
-	if instance.Status.AsyncOpInProgress {
-		t.Fatalf("expected AsyncOpInProgress to be false but was %v", instance.Status.AsyncOpInProgress)
 	}
 }
 
@@ -1360,16 +1149,16 @@ func assertBindingReadyFalse(t *testing.T, obj runtime.Object, reason ...string)
 func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
 	binding, ok := obj.(*v1alpha1.Binding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Binding", obj)
+		Fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Binding", obj)
 	}
 
 	for _, condition := range binding.Status.Conditions {
 		if condition.Type == v1alpha1.BindingConditionReady && condition.Status != status {
 			t.Logf("ready condition: %+v", condition)
-			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+			Fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
 		}
 		if len(reason) == 1 && condition.Reason != reason[0] {
-			fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+			Fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
 		}
 	}
 }
@@ -1377,23 +1166,23 @@ func assertBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alph
 func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 	accessor, err := metav1.ObjectMetaFor(obj)
 	if err != nil {
-		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
+		Fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
 	}
 
 	if len(accessor.GetFinalizers()) != 0 {
-		fatalf(t, "Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
+		Fatalf(t, "Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
 	}
 }
 
 func assertNumberOfBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
-	testNumberOfBrokerActions(t, "" /* name */, fatalf, actions, number)
+	testNumberOfBrokerActions(t, "" /* name */, Fatalf, actions, number)
 }
 
 func expectNumberOfBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {
-	return testNumberOfBrokerActions(t, name, errorf, actions, number)
+	return testNumberOfBrokerActions(t, name, Errorf, actions, number)
 }
 
-func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
+func testNumberOfBrokerActions(t *testing.T, name string, f FailfFunc, actions []fakeosb.Action, number int) bool {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "
@@ -1414,57 +1203,57 @@ func noFakeActions() fakeosb.FakeClientConfiguration {
 
 func assertGetCatalog(t *testing.T, action fakeosb.Action) {
 	if e, a := fakeosb.GetCatalog, action.Type; e != a {
-		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+		Fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 }
 
 func assertProvision(t *testing.T, action fakeosb.Action, request *osb.ProvisionRequest) {
 	if e, a := fakeosb.ProvisionInstance, action.Type; e != a {
-		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+		Fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
-		fatalf(t, "unexpected diff in provision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+		Fatalf(t, "unexpected diff in provision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 
 func assertDeprovision(t *testing.T, action fakeosb.Action, request *osb.DeprovisionRequest) {
 	if e, a := fakeosb.DeprovisionInstance, action.Type; e != a {
-		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+		Fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
-		fatalf(t, "unexpected diff in deprovision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+		Fatalf(t, "unexpected diff in deprovision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 
 func assertPollLastOperation(t *testing.T, action fakeosb.Action, request *osb.LastOperationRequest) {
 	if e, a := fakeosb.PollLastOperation, action.Type; e != a {
-		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+		Fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
-		fatalf(t, "unexpected diff in last operation request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+		Fatalf(t, "unexpected diff in last operation request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 
 func assertBind(t *testing.T, action fakeosb.Action, request *osb.BindRequest) {
 	if e, a := fakeosb.Bind, action.Type; e != a {
-		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+		Fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
-		fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+		Fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 
 func assertUnbind(t *testing.T, action fakeosb.Action, request *osb.UnbindRequest) {
 	if e, a := fakeosb.Unbind, action.Type; e != a {
-		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+		Fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
-		fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+		Fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 

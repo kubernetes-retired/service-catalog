@@ -203,9 +203,14 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 	return nil
 }
 
-// reconcileInstance is the control-loop for reconciling Instances. An
-// error is returned to indicate that the binding has not been fully
+// ReconcileInstance is the Controller interface implementation. It is the control-loop for
+// reconciling Instances. An error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
+func (c *controller) ReconcileInstance(i *v1alpha1.Instance) error {
+	return c.reconcileInstance(i)
+}
+
+// reconcileInstance is the control-loop for reconciling Instances.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 
 	// If there's no async op in progress, determine whether the checksum

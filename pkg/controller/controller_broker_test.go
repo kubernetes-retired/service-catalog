@@ -128,7 +128,7 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	AssertNumberOfActions(t, actions, 2)
 
 	// first action should be an update action for a service class
 	assertUpdate(t, actions[0], testServiceClass)
@@ -139,7 +139,7 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 }
 
 func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
@@ -158,14 +158,14 @@ func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedBroker := assertUpdateStatus(t, actions[0], getTestBroker())
 	assertBrokerReadyFalse(t, updatedBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -192,14 +192,14 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedBroker := assertUpdateStatus(t, actions[0], getTestBroker())
 	assertBrokerReadyFalse(t, updatedBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -233,7 +233,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	// The three actions should be:
@@ -241,7 +241,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	// 1. Updating the ready condition
 	// 2. Getting the broker
 	// 3. Removing the finalizer
-	assertNumberOfActions(t, actions, 4)
+	AssertNumberOfActions(t, actions, 4)
 
 	assertDelete(t, actions[0], testServiceClass)
 
@@ -280,12 +280,12 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedBroker := assertUpdateStatus(t, actions[0], broker)
 	assertBrokerReadyFalse(t, updatedBroker)
 
-	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+	AssertNumberOfActions(t, fakeKubeClient.Actions(), 0)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -314,12 +314,12 @@ func TestReconcileBrokerZeroServices(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedBroker := assertUpdateStatus(t, actions[0], broker)
 	assertBrokerReadyFalse(t, updatedBroker)
 
-	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+	AssertNumberOfActions(t, fakeKubeClient.Actions(), 0)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -353,14 +353,14 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	AssertNumberOfActions(t, actions, 1)
 
 	updatedBroker := assertUpdateStatus(t, actions[0], broker)
 	assertBrokerReadyFalse(t, updatedBroker)
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	AssertNumberOfActions(t, kubeActions, 1)
 
 	getAction := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "get", getAction.GetVerb(); e != a {
@@ -397,7 +397,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	AssertNumberOfActions(t, actions, 2)
 
 	createSCAction := actions[0].(clientgotesting.CreateAction)
 	createdSC, ok := createSCAction.GetObject().(*v1alpha1.ServiceClass)
@@ -411,7 +411,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	assertBrokerReadyFalse(t, updatedBroker)
 
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	AssertNumberOfActions(t, kubeActions, 0)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)

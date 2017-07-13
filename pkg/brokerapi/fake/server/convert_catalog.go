@@ -17,13 +17,13 @@ limitations under the License.
 package server
 
 import (
-	pkgbrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	pivbrokerapi "github.com/pivotal-cf/brokerapi"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 // ConvertCatalog converts a (github.com/kubernetes-incubator/service-catalog/pkg/brokerapi).Catalog
 // to an array of brokerapi.Services
-func ConvertCatalog(cat *pkgbrokerapi.Catalog) []pivbrokerapi.Service {
+func ConvertCatalog(cat *osb.CatalogResponse) []pivbrokerapi.Service {
 	ret := make([]pivbrokerapi.Service, len(cat.Services))
 	for i, svc := range cat.Services {
 		ret[i] = convertService(svc)
@@ -31,27 +31,32 @@ func ConvertCatalog(cat *pkgbrokerapi.Catalog) []pivbrokerapi.Service {
 	return ret
 }
 
-func convertService(svc *pkgbrokerapi.Service) pivbrokerapi.Service {
+func convertService(svc osb.Service) pivbrokerapi.Service {
+	updateable := false
+	if svc.PlanUpdatable != nil {
+		updateable = *svc.PlanUpdatable
+	}
 	return pivbrokerapi.Service{
 		ID:            svc.ID,
 		Name:          svc.Name,
 		Description:   svc.Description,
 		Bindable:      svc.Bindable,
 		Tags:          svc.Tags,
-		PlanUpdatable: svc.PlanUpdateable,
+		PlanUpdatable: updateable,
 		Plans:         convertPlans(svc.Plans),
 		// TODO: convert Requires, Metadata, DashboardClient
 	}
 }
 
-func convertPlans(plans []pkgbrokerapi.ServicePlan) []pivbrokerapi.ServicePlan {
+func convertPlans(plans []osb.Plan) []pivbrokerapi.ServicePlan {
 	ret := make([]pivbrokerapi.ServicePlan, len(plans))
 	for i, plan := range plans {
+
 		ret[i] = pivbrokerapi.ServicePlan{
 			ID:          plan.ID,
 			Name:        plan.Name,
 			Description: plan.Description,
-			Free:        &plan.Free,
+			Free:        plan.Free,
 			Bindable:    plan.Bindable,
 			// TODO: convert Metadata
 		}
