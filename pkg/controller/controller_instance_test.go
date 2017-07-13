@@ -41,6 +41,10 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 )
 
+const (
+	lastOperationDescription = "testdescr"
+)
+
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
@@ -739,7 +743,8 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
 			Response: &osb.LastOperationResponse{
-				State: osb.StateInProgress,
+				State:       osb.StateInProgress,
+				Description: strPtr(lastOperationDescription),
 			},
 		},
 	})
@@ -767,8 +772,9 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
 	}
 
+	// there should have been 1 action to update the status with the last operation description
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	assertNumberOfActions(t, actions, 1)
 
 	// verify no kube resources created.
 	// No actions
@@ -780,7 +786,8 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
 			Response: &osb.LastOperationResponse{
-				State: osb.StateSucceeded,
+				State:       osb.StateSucceeded,
+				Description: strPtr(lastOperationDescription),
 			},
 		},
 	})
@@ -864,7 +871,8 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
 			Response: &osb.LastOperationResponse{
-				State: osb.StateInProgress,
+				State:       osb.StateInProgress,
+				Description: strPtr(lastOperationDescription),
 			},
 		},
 	})
@@ -892,8 +900,13 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 		t.Fatalf("pollInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
 	}
 
+	// there should have been 1 action to update the instance status with the last operation
+	// description
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	assertNumberOfActions(t, actions, 1)
+	action := actions[0]
+	updatedInstance := assertUpdateStatus(t, action, instance)
+	assertInstanceReadyFalse(t, updatedInstance, asyncDeprovisioningMessage)
 
 	// verify no kube resources created.
 	// No actions

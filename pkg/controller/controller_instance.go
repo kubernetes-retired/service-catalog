@@ -460,9 +460,37 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 
 	switch response.State {
 	case osb.StateInProgress:
-		// The way the worker keeps on requeueing is by returning an error, so
-		// we need to keep on polling.
-		// TODO(vaikas): Update the instance condition with progress message here?
+		// if the description is non-nil, then update the instance condition with it
+		if response.Description != nil {
+			// The way the worker keeps on requeueing is by returning an error, so
+			// we need to keep on polling.
+			clone, err := api.Scheme.DeepCopy(instance)
+			if err != nil {
+				return err
+			}
+			toUpdate := clone.(*v1alpha1.Instance)
+			toUpdate.Status.AsyncOpInProgress = true
+
+			var message string
+			var reason string
+			if deleting {
+				reason = asyncDeprovisioningMessage
+			} else {
+				reason = asyncProvisioningReason
+			}
+			if response.Description != nil {
+				message = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, *response.Description)
+			} else {
+				message = asyncProvisioningMessage
+			}
+			c.updateInstanceCondition(
+				toUpdate,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				reason,
+				message,
+			)
+		}
 		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
 	case osb.StateSucceeded:
 		// Update the instance to reflect that an async operation is no longer
