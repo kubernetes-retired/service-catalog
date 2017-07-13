@@ -91,6 +91,12 @@ Interested in contributing?  Check out the [documentation](./CONTRIBUTING.md).
 Also see the [developer's guide](./docs/devguide.md) for information on how to
 build and test the code.
 
+We have weekly meetings - see
+[Kubernetes SIGs](https://github.com/kubernetes/community/blob/master/sig-list.md)
+(search for "Service Catalog") for the exact date and time. Our agenda/notes
+doc can be found
+[here](https://docs.google.com/document/d/10VsJjstYfnqeQKCgXGgI43kQWnWFSx8JTH7wFh8CmPA/edit).
+
 ### Kubernetes Incubator
 
 This is a [Kubernetes Incubator project](https://github.com/kubernetes/community/blob/master/incubator.md).
