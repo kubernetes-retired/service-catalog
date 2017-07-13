@@ -448,6 +448,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
+						"checksum": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Checksum is the sha hash of the BrokerSpec that was last successfully reconciled against the broker.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 					},
 					Required: []string{"conditions"},
 				},

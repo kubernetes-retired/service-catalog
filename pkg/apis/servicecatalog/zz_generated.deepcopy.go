@@ -260,6 +260,11 @@ func DeepCopy_servicecatalog_BrokerStatus(in interface{}, out interface{}, c *co
 				}
 			}
 		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
+		}
 		return nil
 	}
 }
