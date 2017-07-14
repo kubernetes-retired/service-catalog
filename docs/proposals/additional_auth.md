@@ -25,8 +25,6 @@ The auth information is a struct inside the `BrokerSpec`
 
 ```
 type BrokerAuthInfo struct {
-	// BasicAuthSecret is a reference to a Secret containing auth information the
-	// catalog should use to authenticate to this Broker using basic auth.
 	BasicAuthSecret *v1.ObjectReference
 }
 ```
@@ -39,22 +37,20 @@ simplicity, we use a string here. We can just rename `BasicAuthSecret` to be
 
 ```
 type BrokerAuthInfo struct {
-	// BasicAuthSecret is a reference to a Secret containing auth information the
-	// catalog should use to authenticate to this Broker using basic auth.
 	AuthSecret *v1.ObjectReference
-    SecretType string
+	SecretType string // the supported values are "basic"
 }
 ```
 
 So for example, to use Basic Auth like we currently do, we could just set
 `SecretType` to be "basic"
 
-Then, we add an `AuthInterface`
+Then, we replace AuthConfig with an interface, `AuthInterface`
 
 ```
 type AuthInterface interface {
-    AddAuth(*http.Request) error
-    ParseSecret(kubernetes.Interface, Secret) error
+	AddAuth(*http.Request) error
+	ParseSecret(kubernetes.Interface, Secret) error
 }
 ```
 
@@ -62,12 +58,12 @@ BasicAuth would then look like this
 
 ```
 type BasicAuth struct {
-    Username string
-    Password string
+	Username string
+	Password string
 }
 
 func (basic *BasicAuth) AddAuth(req *http.Request) error {
-    req.SetBasicAuth(basic.Username, basic.password)
+	req.SetBasicAuth(basic.Username, basic.password)
 }
 
 func (basic *BasicAuth) ParseSecret(client kubernetes.Interface, authSecret Secret) {
@@ -81,8 +77,8 @@ func (basic *BasicAuth) ParseSecret(client kubernetes.Interface, authSecret Secr
 		return nil, fmt.Errorf("auth secret didn't contain password")
 	}
 
-    basic.Username = string(usernameBytes)
-    basic.Password = string(passwordBytes)
+	basic.Username = string(usernameBytes)
+	basic.Password = string(passwordBytes)
 }
 ```
 
