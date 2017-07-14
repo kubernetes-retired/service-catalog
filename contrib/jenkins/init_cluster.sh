@@ -46,7 +46,22 @@ gcloud auth activate-service-account \
 
 echo "Creating cluster ${CLUSTERNAME}"
 
+# Use the latest 1.6.X version that GKE offers.
+CLUSTER_VERSION="$(gcloud container get-server-config --zone "${ZONE}" \
+  | awk '
+    BEGIN {p=0};
+    /validMasterVersions:/ {p=1; next};
+    /validNodeVersions:/ {exit};
+    p && /1.6/ {print $2; exit}
+  ')"
+
+[[ -n "${CLUSTER_VERSION}" ]] \
+  || { echo 'Could not find valid 1.6.X cluster version on Google Container Engine.'; exit 1; }
+
+echo "Using cluster version ${CLUSTER_VERSION}"
+
 gcloud container clusters create "${CLUSTERNAME}" --project="${PROJECT}" --zone="${ZONE}" \
+  --cluster-version "${CLUSTER_VERSION}" \
   || { echo 'Cannot create cluster.'; exit 1; }
 
 echo "Using cluster ${CLUSTERNAME}."
