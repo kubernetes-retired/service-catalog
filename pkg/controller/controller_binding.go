@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
-	settingsv1alpha1 "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -462,44 +461,11 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[st
 		}
 	}
 
-	if binding.Spec.AlphaPodPresetTemplate == nil {
-		return nil
-	}
-
-	podPreset := &settingsv1alpha1.PodPreset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      binding.Spec.AlphaPodPresetTemplate.Name,
-			Namespace: binding.Namespace,
-		},
-		Spec: settingsv1alpha1.PodPresetSpec{
-			Selector: binding.Spec.AlphaPodPresetTemplate.Selector,
-			EnvFrom: []v1.EnvFromSource{
-				{
-					SecretRef: &v1.SecretEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: binding.Spec.SecretName,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	_, err = c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Create(podPreset)
 	return err
 }
 
 func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
 	var err error
-
-	if binding.Spec.AlphaPodPresetTemplate != nil {
-		podPresetName := binding.Spec.AlphaPodPresetTemplate.Name
-		glog.V(5).Infof("Deleting PodPreset %v/%v", binding.Namespace, podPresetName)
-		err := c.kubeClient.SettingsV1alpha1().PodPresets(binding.Namespace).Delete(podPresetName, &metav1.DeleteOptions{})
-		if err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
 
 	glog.V(5).Infof("Deleting Secret %v/%v", binding.Namespace, binding.Spec.SecretName)
 	err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})

@@ -370,28 +370,6 @@ type BindingSpec struct {
 	//
 	// Immutable.
 	ExternalID string `json:"externalID"`
-
-	// Currently, this field is ALPHA: it may change or disappear at any time
-	// and its data will not be migrated.
-	//
-	// AlphaPodPresetTemplate describes how a PodPreset should be created once
-	// the Binding has been made. If supplied, a PodPreset will be created
-	// using information in this field once the Binding has been made in the
-	// Broker. The PodPreset will use the EnvFrom feature to expose the keys
-	// from the Secret (specified by SecretName) that holds the Binding
-	// information into Pods.
-	//
-	// In the future, we will provide a higher degree of control over the PodPreset.
-	AlphaPodPresetTemplate *AlphaPodPresetTemplate `json:"alphaPodPresetTemplate,omitempty"`
-}
-
-// AlphaPodPresetTemplate represents how a PodPreset should be created for a
-// Binding.
-type AlphaPodPresetTemplate struct {
-	// Name is the name of the PodPreset to create.
-	Name string `json:"name"`
-	// Selector is the LabelSelector of the PodPreset to create.
-	Selector metav1.LabelSelector `json:"selector"`
 }
 
 // BindingStatus represents the current status of a Binding.
