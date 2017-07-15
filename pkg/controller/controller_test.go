@@ -18,7 +18,6 @@ package controller
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http/httptest"
 	"reflect"
 	"runtime/debug"
@@ -33,6 +32,7 @@ import (
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -1488,6 +1488,12 @@ func addGetNamespaceReaction(fakeKubeClient *clientgofake.Clientset) {
 
 func addGetSecretNotFoundReaction(fakeKubeClient *clientgofake.Clientset) {
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, nil, errors.New("not found")
+		return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), action.(clientgotesting.GetAction).GetName())
+	})
+}
+
+func addGetSecretReaction(fakeKubeClient *clientgofake.Clientset, secret *v1.Secret) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, secret, nil
 	})
 }

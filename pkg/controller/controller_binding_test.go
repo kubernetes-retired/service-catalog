@@ -125,6 +125,83 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	}
 }
 
+func TestReconcileBindingWithSecretConflict(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+	// existing Secret with nil controllerRef
+	addGetSecretReaction(fakeKubeClient, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ExternalID:  bindingGUID,
+			SecretName:  testBindingSecretName,
+		},
+	}
+
+	err := testController.reconcileBinding(binding)
+	if err == nil {
+		t.Fatalf("a binding should fail to create a secret: %v", err)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNsUID),
+		},
+	})
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedBinding := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.Binding)
+	assertBindingReadyFalse(t, updatedBinding)
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 2)
+
+	// first action is a get on the namespace
+	// second action is a get on the secret
+
+	action := kubeActions[1].(clientgotesting.GetAction)
+	if e, a := "get", action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+	}
+	if e, a := "secrets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorInjectingBindResultReason
+	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
 func TestReconcileBindingWithParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -189,7 +266,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	updatedBinding := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.Binding)
 	assertBindingReadyTrue(t, updatedBinding)
 
 	kubeActions := fakeKubeClient.Actions()
@@ -208,6 +285,13 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	actionSecret, ok := action.GetObject().(*v1.Secret)
 	if !ok {
 		t.Fatal("couldn't convert secret into a v1.Secret")
+	}
+	controllerRef := GetControllerOf(actionSecret)
+	if controllerRef == nil || controllerRef.UID != updatedBinding.UID {
+		t.Fatalf("Secret is not owned by the Binding: %v", controllerRef)
+	}
+	if !IsControlledBy(actionSecret, updatedBinding) {
+		t.Fatal("Secret is not owned by the Binding")
 	}
 	if e, a := testBindingSecretName, actionSecret.Name; e != a {
 		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)

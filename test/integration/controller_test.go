@@ -21,8 +21,11 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
+	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
 
 	// avoid error `servicecatalog/v1alpha1 is not enabled`
@@ -41,7 +44,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -276,6 +278,8 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
+	addGetSecretNotFoundReaction(fakeKubeClient)
+
 	// create an sc client and running server
 	catalogClient, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
 		return &servicecatalog.Broker{}
@@ -313,4 +317,10 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	informerFactory.Start(stopCh)
 	t.Log("informers start")
 	return fakeKubeClient, catalogClient, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer
+}
+
+func addGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), action.(clientgotesting.GetAction).GetName())
+	})
 }
