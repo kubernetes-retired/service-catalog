@@ -1,12 +1,12 @@
 # Overview
-Currently the only authorization method supported by the service catalog is
+Currently the only authentication method supported by the service catalog is
 basic auth. The user is expected to create a secret containing their
 credentials which is then read by the service catalog when required.
 
 # Problem
 We would like to be able to support brokers which require other kinds of
-authorization. Hopefully we can add support in a way that is generic enough
-for new types of authorization to be easy to support.
+authentication. Hopefully we can add support in a way that is generic enough
+for new types of authentication to be easy to support.
 
 # Background
 Currently the way auth works is
