@@ -25,20 +25,18 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/pborman/uuid"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	fake "github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
-	"k8s.io/client-go/pkg/api"
 	restclient "k8s.io/client-go/rest"
 
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
-	"k8s.io/apiserver/pkg/storage/storagebackend"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	serverstorage "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/pkg/api/install"
 	_ "k8s.io/client-go/pkg/apis/extensions/install"
@@ -52,17 +50,32 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func getFreshApiserverAndClient(
+type TestServerConfig struct {
+	etcdServerList []string
+	storageType    serverstorage.StorageType
+	emptyObjFunc   func() runtime.Object
+}
+
+// NewTestServerConfig is a default constructor for the standard test-apiserver setup
+func NewTestServerConfig() *TestServerConfig {
+	return &TestServerConfig{
+		etcdServerList: []string{"http://localhost:2379"},
+	}
+}
+
+func withConfigGetFreshApiserverAndClient(
 	t *testing.T,
-	storageTypeStr string,
-	newEmptyObj func() runtime.Object,
-) (servicecatalogclient.Interface, func()) {
+	serverConfig *TestServerConfig,
+) (servicecatalogclient.Interface,
+	*restclient.Config,
+	func(),
+) {
 	securePort := rand.Intn(31743) + 1024
 	insecurePort := rand.Intn(31743) + 1024
 	insecureAddr := fmt.Sprintf("http://localhost:%d", insecurePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
-	shutdown := func() {
+	shutdownServer := func() {
 		t.Logf("Shutting down server on ports: %d and %d", insecurePort, securePort)
 		close(stopCh)
 	}
@@ -70,34 +83,42 @@ func getFreshApiserverAndClient(
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
+	// start the server in the background
 	go func() {
-
-		tprOptions := server.NewTPROptions()
-		tprOptions.RESTClient = fake.NewRESTClient(newEmptyObj)
-		tprOptions.InstallTPRsFunc = func() error {
-			return nil
+		var tprOptions *server.TPROptions
+		var etcdOptions *server.EtcdOptions
+		if serverstorage.StorageTypeEtcd == serverConfig.storageType {
+			etcdOptions = server.NewEtcdOptions()
+			etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
+		} else if serverstorage.StorageTypeTPR == serverConfig.storageType {
+			tprOptions = server.NewTPROptions()
+			tprOptions.RESTClient = fake.NewRESTClient(serverConfig.emptyObjFunc)
+			tprOptions.InstallTPRsFunc = func() error {
+				return nil
+			}
+			tprOptions.GlobalNamespace = globalTPRNamespace
+		} else {
+			t.Fatal("no storage type specified")
 		}
-		tprOptions.GlobalNamespace = globalTPRNamespace
+
 		options := &server.ServiceCatalogServerOptions{
-			StorageTypeString:       storageTypeStr,
+			StorageTypeString:       serverConfig.storageType.String(),
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 			SecureServingOptions:    secureServingOptions,
 			InsecureServingOptions:  genericserveroptions.NewInsecureServingOptions(),
-			EtcdOptions: &server.EtcdOptions{
-				EtcdOptions: genericserveroptions.NewEtcdOptions(storagebackend.NewDefaultConfig(uuid.New(), api.Scheme, nil)),
-			},
-			TPROptions:            tprOptions,
-			AuthenticationOptions: genericserveroptions.NewDelegatingAuthenticationOptions(),
-			AuthorizationOptions:  genericserveroptions.NewDelegatingAuthorizationOptions(),
-			AuditOptions:          genericserveroptions.NewAuditLogOptions(),
-			DisableAuth:           true,
-			StopCh:                stopCh,
-			StandaloneMode:        true, // this must be true because we have no kube server for integration.
+			EtcdOptions:             etcdOptions,
+			TPROptions:              tprOptions,
+			AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
+			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
+			AuditOptions:            genericserveroptions.NewAuditLogOptions(),
+			DisableAuth:             true,
+			StopCh:                  stopCh,
+			StandaloneMode:          true, // this must be true because we have no kube server for integration.
 		}
 		options.InsecureServingOptions.BindPort = insecurePort
 		options.SecureServingOptions.ServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
-		options.EtcdOptions.StorageConfig.ServerList = []string{"http://localhost:2379"}
+
 		if err := server.RunServer(options); err != nil {
 			close(serverFailed)
 			t.Fatalf("Error in bringing up the server: %v", err)
@@ -115,7 +136,27 @@ func getFreshApiserverAndClient(
 	if nil != err {
 		t.Fatal("can't make the client from the config", err)
 	}
-	return clientset, shutdown
+	return clientset, config, shutdownServer
+}
+
+func getFreshApiserverAndClient(
+	t *testing.T,
+	storageTypeStr string,
+	newEmptyObj func() runtime.Object,
+) (servicecatalogclient.Interface, func()) {
+	var serverStorageType serverstorage.StorageType
+	serverStorageType, err := serverstorage.StorageTypeFromString(storageTypeStr)
+	if nil != err {
+		t.Fatal("non supported storage type")
+	}
+
+	serverConfig := &TestServerConfig{
+		etcdServerList: []string{"http://localhost:2379"},
+		storageType:    serverStorageType,
+		emptyObjFunc:   newEmptyObj,
+	}
+	client, _, shutdownFunc := withConfigGetFreshApiserverAndClient(t, serverConfig)
+	return client, shutdownFunc
 }
 
 func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
