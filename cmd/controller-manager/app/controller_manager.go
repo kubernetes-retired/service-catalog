@@ -143,8 +143,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// TODO: disambiguate API errors
 		return fmt.Errorf("failed to get Service Catalog client configuration: %v", err)
 	}
-	// TODO (nilebox): Dirty temporary hack. Should whether accept as flag for application, or handle TLS correctly
-	serviceCatalogKubeconfig.Insecure = true
+	serviceCatalogKubeconfig.Insecure = controllerManagerOptions.ServiceCatalogInsecureSkipVerify
 
 	glog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers

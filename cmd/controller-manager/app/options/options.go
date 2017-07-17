@@ -86,6 +86,7 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.K8sKubeconfigPath, "k8s-kubeconfig", "", "Path to k8s core kubeconfig")
 	fs.StringVar(&s.ServiceCatalogAPIServerURL, "service-catalog-api-server-url", "", "The URL for the service-catalog API server")
 	fs.StringVar(&s.ServiceCatalogKubeconfigPath, "service-catalog-kubeconfig", "", "Path to service-catalog kubeconfig")
+	fs.BoolVar(&s.ServiceCatalogInsecureSkipVerify, "service-catalog-insecure-skip-verify", s.ServiceCatalogInsecureSkipVerify, "Skip verification of the TLS certificate for the service-catalog API server")
 	fs.DurationVar(&s.ResyncInterval, "resync-interval", s.ResyncInterval, "The interval on which the controller will resync its informers")
 	fs.DurationVar(&s.BrokerRelistInterval, "broker-relist-interval", s.BrokerRelistInterval, "The interval on which a broker's catalog is relisted after the broker becomes ready")
 	fs.BoolVar(&s.OSBAPIContextProfile, "enable-osb-api-context-profile", s.OSBAPIContextProfile, "This does nothing.")
