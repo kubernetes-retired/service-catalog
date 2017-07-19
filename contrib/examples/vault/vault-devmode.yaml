@@ -1,0 +1,101 @@
+apiVersion: v1
+data:
+  cf-broker.hcl: |+
+    # Manage internal state under "/broker", but since this token is going to
+    # generate children, it needs full management of the "/cf/*" space
+    path "/cf/" {
+      capabilities = ["list"]
+    }
+
+    path "/cf/*" {
+      capabilities = ["create", "read", "update", "delete", "list"]
+    }
+
+    # List all mounts
+    path "sys/mounts" {
+      capabilities = ["read", "list"]
+    }
+
+    # Create mounts under the "/cf/" prefix
+    path "sys/mounts/cf/*" {
+      capabilities = ["create", "update", "delete"]
+    }
+
+    # Create policies with the "cf-*" prefix
+    path "sys/policy/cf-*" {
+      capabilities = ["create", "update", "delete"]
+    }
+
+    # Create token role
+    path "/auth/token/roles/cf-*" {
+      capabilities = ["create", "update", "delete"]
+    }
+
+    # Create tokens from role
+    path "/auth/token/create/cf-*" {
+      capabilities = ["create", "update"]
+    }
+
+    # Revoke tokens by accessor
+    path "/auth/token/revoke-accessor" {
+      capabilities = ["create", "update"]
+    }
+
+kind: ConfigMap
+metadata:
+  name: cf-broker-hcl
+  namespace: catalog
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: vault
+  name: vaultdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+      - image: vault
+        imagePullPolicy: Always
+        name: vault
+        ports:
+        - containerPort: 8200
+          name: web
+          protocol: TCP
+        securityContext:
+          capabilities:
+            add: ["IPC_LOCK"]
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/hcl
+      volumes:
+        - name: config-volume
+          configMap:
+            # Provide the name of the ConfigMap containing the files you want
+            # to add to the container
+            name: cf-broker-hcl
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: vault
+  name: vaultdev
+spec:
+  ports:
+  - port: 8200
+    protocol: TCP
+    targetPort: 8200
+  selector:
+    app: vault
+  sessionAffinity: None
+  type: ClusterIP
