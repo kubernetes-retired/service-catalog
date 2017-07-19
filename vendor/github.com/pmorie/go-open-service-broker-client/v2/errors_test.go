@@ -11,27 +11,43 @@ func TestIsHTTPError(t *testing.T) {
 		name     string
 		err      error
 		expected bool
+		result   *HTTPStatusCodeError
 	}{
 		{
 			name:     "non-http error",
 			err:      errors.New("some error"),
 			expected: false,
+			result:   nil,
 		},
 		{
 			name:     "http error",
-			err:      HTTPStatusCodeError{},
+			err:      HTTPStatusCodeError{StatusCode: http.StatusGone},
 			expected: true,
+			result:   &HTTPStatusCodeError{StatusCode: http.StatusGone},
+		},
+		{
+			name:     "http pointer error",
+			err:      &HTTPStatusCodeError{StatusCode: http.StatusGone},
+			expected: true,
+			result:   &HTTPStatusCodeError{StatusCode: http.StatusGone},
 		},
 		{
 			name:     "nil",
 			err:      nil,
 			expected: false,
+			result:   nil,
 		},
 	}
 
 	for _, tc := range cases {
-		if e, a := tc.expected, IsHTTPError(tc.err); e != a {
-			t.Errorf("%v: expected %v, got %v", tc.name, e, a)
+		err, actual := IsHTTPError(tc.err)
+		if tc.expected != actual {
+			t.Errorf("%v: expected %v, got %v", tc.name, tc.expected, actual)
+		}
+		if tc.result != err {
+			if *tc.result != *err {
+				t.Errorf("%v: expected %v, got %v", tc.name, tc.result, err)
+			}
 		}
 	}
 }
@@ -144,6 +160,22 @@ func TestIsAsyncRequiredError(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			name: "no error message",
+			err: HTTPStatusCodeError{
+				StatusCode:  http.StatusUnprocessableEntity,
+				Description: strPtr(AsyncErrorDescription),
+			},
+			expected: false,
+		},
+		{
+			name: "no description",
+			err: HTTPStatusCodeError{
+				StatusCode:   http.StatusUnprocessableEntity,
+				ErrorMessage: strPtr(AsyncErrorMessage),
+			},
+			expected: false,
+		},
 	}
 
 	for _, tc := range cases {
@@ -188,6 +220,22 @@ func TestIsAppGUIDRequiredError(t *testing.T) {
 				Description:  strPtr(AppGUIDRequiredErrorDescription),
 			},
 			expected: true,
+		},
+		{
+			name: "no error message",
+			err: HTTPStatusCodeError{
+				StatusCode:  http.StatusUnprocessableEntity,
+				Description: strPtr(AppGUIDRequiredErrorDescription),
+			},
+			expected: false,
+		},
+		{
+			name: "no description",
+			err: HTTPStatusCodeError{
+				StatusCode:   http.StatusUnprocessableEntity,
+				ErrorMessage: strPtr(AppGUIDRequiredErrorMessage),
+			},
+			expected: false,
 		},
 	}
 

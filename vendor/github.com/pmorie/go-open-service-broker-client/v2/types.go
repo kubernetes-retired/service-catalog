@@ -308,7 +308,7 @@ type BindResource struct {
 	Route   *string `json:"route,omitempty"`
 }
 
-// BindResponse represents a broker's response to an UnbindRequest.
+// BindResponse represents a broker's response to a BindRequest.
 type BindResponse struct {
 	// Credentials is a free-form hash of credentials that can be used by
 	// applications or users to access the service.

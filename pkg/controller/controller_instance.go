@@ -116,8 +116,8 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 	glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
-		if osb.IsHTTPError(err) {
-			httpErr := err.(osb.HTTPStatusCodeError)
+		httpErr, isError := osb.IsHTTPError(err)
+		if isError {
 			s := fmt.Sprintf(
 				"Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q with status code %d: ErrorMessage: %v, Description: %v",
 				instance.Namespace,
@@ -444,8 +444,8 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 		// condition false; it should be sufficient to create an event for
 		// the instance.
 		errText := ""
-		if osb.IsHTTPError(err) {
-			httpErr, _ := err.(osb.HTTPStatusCodeError)
+		httpErr, isError := osb.IsHTTPError(err)
+		if isError {
 			errText = fmt.Sprintf("Status code: %d; ErrorMessage: %q; description: %q", httpErr.StatusCode, httpErr.ErrorMessage, httpErr.Description)
 		} else {
 			errText = err.Error()
