@@ -71,11 +71,11 @@ func TestRunServerInstallTPRFails(t *testing.T) {
 		}
 	}
 
-	if getAction != 4 {
-		t.Errorf("Expected 4 'get' action, got %d", getAction)
+	if getAction != 5 {
+		t.Errorf("Expected 5 'get' actions, got %d", getAction)
 	}
 
-	if createAction != 4 {
-		t.Errorf("Expected 4 'create' action, got %d", createAction)
+	if createAction != 5 {
+		t.Errorf("Expected 5 'create' actions, got %d", createAction)
 	}
 }

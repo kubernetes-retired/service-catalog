@@ -92,6 +92,7 @@ func TestReconcileServiceInstanceNonExistentServiceBroker(t *testing.T) {
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -134,6 +135,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	}
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(broker)
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -187,6 +189,7 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -242,6 +245,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -320,6 +324,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
@@ -372,6 +377,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -444,6 +450,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -513,6 +520,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -586,6 +594,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -650,6 +659,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -707,6 +717,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 
@@ -749,6 +760,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -815,6 +827,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 	credentials := getTestServiceInstanceCredential()
 	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Add(credentials)
 
@@ -877,7 +890,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 
 	err = testController.reconcileServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("This should not fail")
+		t.Fatalf("This should not fail : %v", err)
 	}
 
 	brokerActions = fakeBrokerClient.Actions()
@@ -928,6 +941,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -948,7 +962,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	err := testController.reconcileServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("This should not fail")
+		t.Fatalf("This should not fail : %v", err)
 	}
 
 	// The item should've been added to the pollingQueue for later processing
@@ -994,6 +1008,7 @@ func TestReconcileServiceInstanceDeleteFailedInstance(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceWithFailedStatus()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -1041,6 +1056,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeServiceBroker(t *testing.T) 
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -1083,6 +1099,7 @@ func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceWithFailedStatus()
 
@@ -1125,6 +1142,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1178,6 +1196,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1232,6 +1251,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1288,6 +1308,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1341,6 +1362,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1401,6 +1423,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1464,6 +1487,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1524,6 +1548,7 @@ func TestPollServiceInstanceServiceBrokerError(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1579,6 +1604,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioningWithFinalizer(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName

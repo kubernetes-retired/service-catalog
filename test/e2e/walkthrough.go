@@ -118,7 +118,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
 				ServiceClassName: serviceclassName,
-				PlanName:         "default",
+				PlanName:         "default" + "86064792-7ea2-467b-af93-ac9694d96d52",
 			},
 		}
 		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instance)

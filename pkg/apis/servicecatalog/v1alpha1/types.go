@@ -231,10 +231,6 @@ type ServiceClass struct {
 	// Bindable which overrides the value of this field.
 	Bindable bool `json:"bindable"`
 
-	// Plans is the list of ServicePlans for this ServiceClass.  All
-	// ServiceClasses have at least one ServicePlan.
-	Plans []ServicePlan `json:"plans"`
-
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ServiceClass may change ServicePlans after being provisioned.
 	PlanUpdatable bool `json:"planUpdatable"`
@@ -268,10 +264,21 @@ type ServiceClass struct {
 	Requires []string `json:"requires,omitempty"`
 }
 
+// ServicePlanList is a list of ServicePlans.
+type ServicePlanList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ServicePlan `json:"items"`
+}
+
+// +genclient=true
+// +nonNamespaced=true
+
 // ServicePlan represents a tier of a ServiceClass.
 type ServicePlan struct {
-	// Name is the CLI-friendly name of this ServicePlan.
-	Name string `json:"name"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
@@ -315,6 +322,10 @@ type ServicePlan struct {
 	// ServiceInstanceCredentialCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
 	ServiceInstanceCredentialCreateParameterSchema *runtime.RawExtension `json:"serviceInstanceCredentialCreateParameterSchema,omitempty"`
+
+	// ServiceClassRef is a reference to the service class that
+	// owns this plan.
+	ServiceClassRef v1.LocalObjectReference `json:"serviceClassRef"`
 }
 
 // ServiceInstanceList is a list of instances.

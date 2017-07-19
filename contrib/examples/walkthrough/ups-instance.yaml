@@ -5,7 +5,7 @@ metadata:
   namespace: test-ns
 spec:
   serviceClassName: user-provided-service
-  planName: default
+  planName: default86064792-7ea2-467b-af93-ac9694d96d52
   parameters:
     credentials:
       name: root

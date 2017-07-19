@@ -34,6 +34,7 @@ import (
 var thirdPartyResources = []v1beta1.ThirdPartyResource{
 	serviceBrokerTPR,
 	serviceClassTPR,
+	servicePlanTPR,
 	serviceInstanceTPR,
 	serviceInstanceCredentialTPR,
 }
@@ -70,7 +71,7 @@ func InstallTypes(cl extensionsv1beta.ThirdPartyResourceInterface) error {
 				glog.Infof("Created TPR '%s'", tpr.Name)
 
 				// There can be a delay, so poll until it's ready to go...
-				err := wait.PollImmediate(1*time.Second, 1*time.Second, func() (bool, error) {
+				err := wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
 					if _, err := client.Get(tpr.Name, metav1.GetOptions{}); err == nil {
 						glog.Infof("TPR %s is ready", tpr.Name)
 						return true, nil

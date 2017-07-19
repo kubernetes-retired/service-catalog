@@ -70,8 +70,12 @@ const (
 	errorWithParameters                        string = "ErrorWithParameters"
 	errorListingServiceClassesReason           string = "ErrorListingServiceClasses"
 	errorListingServiceClassesMessage          string = "Error listing service classes."
+	errorListingServicePlansReason             string = "ErrorListingServicePlans"
+	errorListingServicePlansMessage            string = "Error listing service plans."
 	errorDeletingServiceClassReason            string = "ErrorDeletingServiceClass"
 	errorDeletingServiceClassMessage           string = "Error deleting service class."
+	errorDeletingServicePlanReason             string = "ErrorDeletingServicePlan"
+	errorDeletingServicePlanMessage            string = "Error deleting service plan."
 	errorNonexistentServiceClassReason         string = "ReferencesNonexistentServiceClass"
 	errorNonexistentServiceClassMessage        string = "ReferencesNonexistentServiceClass"
 	errorNonexistentServicePlanReason          string = "ReferencesNonexistentServicePlan"
@@ -282,7 +286,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		}
 
 		glog.V(4).Infof("Converting catalog response for ServiceBroker %v into service-catalog API", broker.Name)
-		catalog, err := convertCatalog(brokerCatalog)
+		serviceClasses, servicePlans, err := convertCatalog(brokerCatalog)
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(s)
@@ -292,7 +296,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		}
 		glog.V(5).Infof("Successfully converted catalog payload from ServiceBroker %v to service-catalog API", broker.Name)
 
-		if len(catalog) == 0 {
+		if len(serviceClasses) == 0 {
 			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
 			glog.Warning(s)
 			c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
@@ -300,7 +304,25 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 			return stderrors.New(s)
 		}
 
-		for _, serviceClass := range catalog {
+		for _, servicePlan := range servicePlans {
+			glog.V(4).Infof("Reconciling servicePlan %q (broker %q)", servicePlan.Name, broker.Name)
+			if err := c.reconcileServicePlan(servicePlan); err != nil {
+				s := fmt.Sprintf(
+					"Error reconciling servicePlan %q (broker %q): %s",
+					servicePlan.Name,
+					broker.Name,
+					err,
+				)
+				glog.Warning(s)
+				c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+				c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+					errorSyncingCatalogMessage+s)
+				return err
+			}
+			glog.V(5).Infof("Reconciled servicePlan %v (broker %v)", servicePlan.Name)
+		}
+
+		for _, serviceClass := range serviceClasses {
 			glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Name, broker.Name)
 			if err := c.reconcileServiceClassFromServiceBrokerCatalog(broker, serviceClass); err != nil {
 				s := fmt.Sprintf(
@@ -347,7 +369,49 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		// Delete ServiceClasses that are for THIS ServiceBroker.
 		for _, svcClass := range svcClasses {
 			if svcClass.ServiceBrokerName == broker.Name {
-				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
+				// TODO : implement and switch to filter
+				// selectors. This is horrifyingly inefficient
+				// otherwise with lots of plans.
+				//
+				// find all the service plans owned by this service class
+				plans, err := c.servicePlanLister.List(labels.Everything())
+				if err != nil {
+					c.updateServiceBrokerCondition(
+						broker,
+						v1alpha1.ServiceBrokerConditionReady,
+						v1alpha1.ConditionUnknown,
+						errorListingServicePlansReason,
+						errorListingServicePlansMessage,
+					)
+					c.recorder.Eventf(broker, api.EventTypeWarning, errorListingServicePlansReason, "%v %v", errorListingServicePlansMessage, err)
+					return err
+				}
+				for _, plan := range plans {
+					// only process the plans this class owns
+					if svcClass.Name == plan.ServiceClassRef.Name {
+						err := c.serviceCatalogClient.ServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
+						if err != nil && !errors.IsNotFound(err) {
+							s := fmt.Sprintf(
+								"Error deleting ServicePlan %q (ServiceClass %q): %s",
+								plan.Name,
+								svcClass.Name,
+								err,
+							)
+							glog.Warning(s)
+							c.updateServiceBrokerCondition(
+								broker,
+								v1alpha1.ServiceBrokerConditionReady,
+								v1alpha1.ConditionUnknown,
+								errorDeletingServicePlanMessage,
+								errorDeletingServicePlanReason+s,
+							)
+							c.recorder.Eventf(broker, api.EventTypeWarning, errorDeletingServicePlanReason, "%v %v", errorDeletingServicePlanMessage, s)
+							return err
+						}
+					}
+				}
+
+				err = c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 				if err != nil && !errors.IsNotFound(err) {
 					s := fmt.Sprintf(
 						"Error deleting ServiceClass %q (ServiceBroker %q): %s",
@@ -397,14 +461,15 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alp
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServiceClass.
+		glog.V(5).Infof("Fresh serviceClass %q; creating", serviceClass.Name)
 		if _, err := c.serviceCatalogClient.ServiceClasses().Create(serviceClass); err != nil {
-			glog.Errorf("Error creating serviceClass %v from ServiceBroker %v: %v", serviceClass.Name, broker.Name, err)
+			glog.Errorf("Error creating serviceClass %q from ServiceBroker %q: %v", serviceClass.Name, broker.Name, err)
 			return err
 		}
 
 		return nil
 	} else if err != nil {
-		glog.Errorf("Error getting serviceClass %v: %v", serviceClass.Name, err)
+		glog.Errorf("Error getting serviceClass %q: %v", serviceClass.Name, err)
 		return err
 	}
 
@@ -431,14 +496,62 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alp
 
 	toUpdate := clone.(*v1alpha1.ServiceClass)
 	toUpdate.Bindable = serviceClass.Bindable
-	toUpdate.Plans = serviceClass.Plans
 	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
 	toUpdate.Tags = serviceClass.Tags
 	toUpdate.Description = serviceClass.Description
 	toUpdate.Requires = serviceClass.Requires
 
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
-		glog.Errorf("Error updating serviceClass %v from ServiceBroker %v: %v", serviceClass.Name, broker.Name, err)
+		glog.Errorf("Error updating ServiceClass %q from ServiceBroker %q: %v", serviceClass.Name, broker.Name, err)
+		return err
+	}
+
+	return nil
+}
+
+// reconcileServicePlan reconciles a ServicePlan after the
+// ServiceClass's catalog has been re-listed.
+func (c *controller) reconcileServicePlan(servicePlan *v1alpha1.ServicePlan) error {
+	existingServicePlan, err := c.servicePlanLister.Get(servicePlan.Name)
+	if errors.IsNotFound(err) {
+		// An error returned from a lister Get call means that the object does
+		// not exist.  Create a new ServicePlan.
+		if _, err := c.serviceCatalogClient.ServicePlans().Create(servicePlan); err != nil {
+			glog.Errorf("Error creating servicePlan %q: %v", servicePlan.Name, err)
+			return err
+		}
+
+		return nil
+	} else if err != nil {
+		glog.Errorf("Error getting servicePlan %q: %v", servicePlan.Name, err)
+		return err
+	}
+
+	if existingServicePlan.ExternalID != servicePlan.ExternalID {
+		errMsg := fmt.Sprintf("ServicePlan %q already exists with OSB guid %q, received different guid %q", servicePlan.Name, existingServicePlan.ExternalID, servicePlan.ExternalID)
+		glog.Error(errMsg)
+		return fmt.Errorf(errMsg)
+	}
+
+	glog.V(5).Infof("Found existing servicePlan %q; updating", servicePlan.Name)
+
+	// There was an existing service plan -- project the update onto it and
+	// update it.
+	clone, err := api.Scheme.DeepCopy(existingServicePlan)
+	if err != nil {
+		return err
+	}
+
+	toUpdate := clone.(*v1alpha1.ServicePlan)
+	toUpdate.Description = servicePlan.Description
+	toUpdate.Bindable = servicePlan.Bindable
+	toUpdate.Free = servicePlan.Free
+	toUpdate.ServiceInstanceCreateParameterSchema = servicePlan.ServiceInstanceCreateParameterSchema
+	toUpdate.ServiceInstanceUpdateParameterSchema = servicePlan.ServiceInstanceUpdateParameterSchema
+	toUpdate.ServiceInstanceCredentialCreateParameterSchema = servicePlan.ServiceInstanceCredentialCreateParameterSchema
+
+	if _, err := c.serviceCatalogClient.ServicePlans().Update(toUpdate); err != nil {
+		glog.Errorf("Error updating ServicePlan %q: %v", servicePlan.Name, err)
 		return err
 	}
 
@@ -491,9 +604,9 @@ func (c *controller) updateServiceBrokerCondition(broker *v1alpha1.ServiceBroker
 	glog.V(4).Infof("Updating ready condition for ServiceBroker %v to %v", broker.Name, status)
 	_, err = c.serviceCatalogClient.ServiceBrokers().UpdateStatus(toUpdate)
 	if err != nil {
-		glog.Errorf("Error updating ready condition for ServiceBroker %v: %v", broker.Name, err)
+		glog.Errorf("Error updating ready condition for ServiceBroker %q: %v", broker.Name, err)
 	} else {
-		glog.V(5).Infof("Updated ready condition for ServiceBroker %v to %v", broker.Name, status)
+		glog.V(5).Infof("Updated ready condition for ServiceBroker %q to %v", broker.Name, status)
 	}
 
 	return err
@@ -509,7 +622,7 @@ func (c *controller) updateServiceBrokerFinalizers(
 	// now removing the last finalizer).
 	broker, err := c.serviceCatalogClient.ServiceBrokers().Get(broker.Name, metav1.GetOptions{})
 	if err != nil {
-		glog.Errorf("Error getting ServiceBroker %v to finalize: %v", broker.Name, err)
+		glog.Errorf("Error getting ServiceBroker %q to finalize: %v", broker.Name, err)
 	}
 
 	clone, err := api.Scheme.DeepCopy(broker)

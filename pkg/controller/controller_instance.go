@@ -1042,16 +1042,6 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 	return nil
 }
 
-func findServicePlan(name string, plans []v1alpha1.ServicePlan) *v1alpha1.ServicePlan {
-	for _, plan := range plans {
-		if name == plan.Name {
-			return &plan
-		}
-	}
-
-	return nil
-}
-
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
 // the condition already exists in the status, it is mutated; if the condition
 // does not already exist in the status, it is added.  Other conditions in the

@@ -108,8 +108,9 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 # "apiserver" instead of "bin/apiserver".
 #########################################################################
 build: .init .generate_files \
-       $(BINDIR)/controller-manager $(BINDIR)/apiserver \
-       $(BINDIR)/user-broker
+	$(BINDIR)/apiserver \
+	$(BINDIR)/controller-manager \
+	$(BINDIR)/user-broker
 
 user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: .init contrib/cmd/user-broker \

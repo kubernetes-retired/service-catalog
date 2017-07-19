@@ -18,6 +18,7 @@ package tpr
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -41,19 +42,17 @@ func setup(getFn, createFn func(core.Action) (bool, runtime.Object, error)) *kub
 
 //make sure all resources types are installed
 func TestInstallTypesAllResources(t *testing.T) {
-	getCallCount := 0
 	createCallCount := 0
 
 	fakeClientset := setup(
 		func(core.Action) (bool, runtime.Object, error) {
-			getCallCount++
 			// if 'create' has been called on all tprs, return 'nil' error to indicate tpr is created
 			if createCallCount == len(thirdPartyResources) {
 				return true, &v1beta1.ThirdPartyResource{}, nil
 			}
 
 			// return error to indicate tpr is not found
-			return true, nil, errors.New("Resource not found")
+			return true, nil, fmt.Errorf("Resource not found : %v", name)
 		},
 		func(core.Action) (bool, runtime.Object, error) {
 			createCallCount++
@@ -149,23 +148,25 @@ func TestInstallTypesErrors(t *testing.T) {
 func TestInstallTypesPolling(t *testing.T) {
 	getCallCount := 0
 	createCallCount := 0
-	getCallArgs := []string{}
+	getCallActions := []core.GetAction{}
 
 	fakeClientset := setup(
 		func(action core.Action) (bool, runtime.Object, error) {
 			getCallCount++
+			// wait until we've had enough GET calls to return a tpr.
 			if getCallCount > len(thirdPartyResources) {
-				getCallArgs = append(getCallArgs, action.(core.GetAction).GetName())
+				getCallActions = append(getCallActions, action.(core.GetAction))
 				return true, &v1beta1.ThirdPartyResource{}, nil
 			}
 
+			// return error to indicate tpr is not found
 			return true, nil, errors.New("Resource not found")
 		},
 		func(action core.Action) (bool, runtime.Object, error) {
 			createCallCount++
 			name := action.(core.CreateAction).GetObject().(*v1beta1.ThirdPartyResource).Name
 			if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {
-				return true, nil, errors.New("Error creatingTPR")
+				return true, nil, fmt.Errorf("Error creatingTPR : %v", name)
 			}
 			return true, nil, nil
 		},
@@ -175,9 +176,10 @@ func TestInstallTypesPolling(t *testing.T) {
 		t.Fatal("InstallTypes was supposed to error but didn't")
 	}
 
-	for _, name := range getCallArgs {
+	for _, action := range getCallActions {
+		name := action.GetName()
 		if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {
-			t.Errorf("Failed to skip polling for resource that failed to install")
+			t.Errorf("Failed to skip polling for resource that failed to install: %q", action)
 		}
 	}
 }

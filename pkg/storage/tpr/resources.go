@@ -54,6 +54,13 @@ var ServiceClassResource = metav1.APIResource{
 	Namespaced: true,
 }
 
+// ServicePlanResource represents the API resource for the service plan
+// third party resource
+var ServicePlanResource = metav1.APIResource{
+	Name:       ServicePlanKind.TPRName(),
+	Namespaced: true,
+}
+
 // ServiceInstanceResource represents the API resource for the service instance third
 // party resource
 var serviceInstanceTPR = v1beta1.ThirdPartyResource{
@@ -108,6 +115,21 @@ var serviceClassTPR = v1beta1.ThirdPartyResource{
 	},
 	ObjectMeta: metav1.ObjectMeta{
 		Name: withGroupName(ServiceClassKind.TPRName()),
+	},
+	Versions: []v1beta1.APIVersion{
+		{Name: tprVersion},
+	},
+}
+
+// ServicePlanResource represents the API resource for the service plan third
+// party resource
+var servicePlanTPR = v1beta1.ThirdPartyResource{
+	TypeMeta: metav1.TypeMeta{
+		Kind:       tprKind,
+		APIVersion: tprVersion,
+	},
+	ObjectMeta: metav1.ObjectMeta{
+		Name: withGroupName(ServicePlanKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},

@@ -20,7 +20,6 @@ import (
 	"regexp"
 
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/util/sets"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -81,63 +80,7 @@ func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("externalID"), serviceclass.ExternalID, msg))
 	}
 
-	if len(serviceclass.Plans) < 1 {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("plans"), serviceclass.Plans, "at least one plan is required"))
-	}
-
-	planNames := sets.NewString()
-	for i, plan := range serviceclass.Plans {
-		planPath := field.NewPath("plans").Index(i)
-		allErrs = append(allErrs, validateServicePlan(plan, planPath)...)
-
-		if planNames.Has(plan.Name) {
-			allErrs = append(allErrs, field.Invalid(planPath.Child("name"), plan.Name, "each plan must have a unique name"))
-		}
-	}
-
 	return allErrs
-}
-
-// validateServicePlan validates the fields of a single ServicePlan and
-// returns a list of errors.
-func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	for _, msg := range validateServicePlanName(plan.Name) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), plan.Name, msg))
-	}
-
-	if "" == plan.ExternalID {
-		allErrs = append(allErrs, field.Required(fldPath.Child("externalID"), "externalID is required"))
-	}
-
-	if "" == plan.Description {
-		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
-	}
-
-	for _, msg := range validateExternalID(plan.ExternalID) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), plan.ExternalID, msg))
-	}
-
-	return allErrs
-}
-
-const servicePlanNameFmt string = `[-_a-zA-Z0-9]+`
-const servicePlanNameMaxLength int = 63
-
-var servicePlanNameRegexp = regexp.MustCompile("^" + servicePlanNameFmt + "$")
-
-// validateServicePlanName is the validation function for ServicePlan names.
-func validateServicePlanName(value string) []string {
-	var errs []string
-	if len(value) > servicePlanNameMaxLength {
-		errs = append(errs, utilvalidation.MaxLenError(servicePlanNameMaxLength))
-	}
-	if !servicePlanNameRegexp.MatchString(value) {
-		errs = append(errs, utilvalidation.RegexError(servicePlanNameFmt, "plan-name", "plan_name"))
-	}
-
-	return errs
 }
 
 // ValidateServiceClassUpdate checks that when changing from an older

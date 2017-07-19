@@ -97,11 +97,12 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: "nothere",
-			PlanName:         testPlanName,
+			PlanName:         testServicePlanName,
 			ExternalID:       instanceGUID,
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -162,6 +163,7 @@ func TestReconcileServiceInstanceCredentialWithSecretConflict(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -241,6 +243,7 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -353,6 +356,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T)
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestNonbindableServiceInstance())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlanNonbindable())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -422,6 +426,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 		}
 		return i
 	}())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -506,6 +511,7 @@ func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceBindableServiceNonbindablePlan())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlanNonbindable())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -552,6 +558,7 @@ func TestReconcileServiceInstanceCredentialFailsWithServiceInstanceAsyncOngoing(
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceAsyncProvisioning(""))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -613,6 +620,7 @@ func TestReconcileServiceInstanceCredentialServiceInstanceNotReady(t *testing.T)
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -662,6 +670,7 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -683,6 +692,7 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
+	// TODO missing the action
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
@@ -707,6 +717,7 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -926,6 +937,7 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -1007,6 +1019,7 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerError(t *testing.T) 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1054,6 +1067,7 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerHTTPError(t *testing
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1091,6 +1105,7 @@ func TestReconcileServiceInstanceCredentialWithFailureCondition(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 
@@ -1123,6 +1138,7 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialCallFail
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := getTestServiceInstanceCredential()
 
@@ -1180,6 +1196,7 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := getTestServiceInstanceCredential()
 
@@ -1397,6 +1414,7 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	t1 := metav1.NewTime(time.Now())
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -1454,6 +1472,7 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	t1 := metav1.NewTime(time.Now())
 	binding := &v1alpha1.ServiceInstanceCredential{
