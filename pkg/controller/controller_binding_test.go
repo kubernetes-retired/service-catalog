@@ -855,6 +855,9 @@ func TestReconcileBindingWithBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating Binding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker": Unexpected action`
+	if 1 != len(events) {
+		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
+	}
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
 	}
@@ -893,6 +896,9 @@ func TestReconcileBindingWithBrokerHTTPError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating Binding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker", Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
+	if 1 != len(events) {
+		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
+	}
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: '%v', expecting: '%v'", a, e)
 	}
@@ -1062,6 +1068,9 @@ func TestReconcileUnbindingWithBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding Binding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker": Unexpected action`
+	if 1 != len(events) {
+		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
+	}
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
 	}
@@ -1103,6 +1112,9 @@ func TestReconcileUnbindingWithBrokerHTTPError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error creating Unbinding "test-binding/test-ns" for Instance "test-ns/test-instance" of ServiceClass "test-serviceclass" at Broker "test-broker", Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
+	if 1 != len(events) {
+		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
+	}
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
 	}
