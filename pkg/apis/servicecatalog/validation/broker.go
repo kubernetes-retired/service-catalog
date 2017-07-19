@@ -27,7 +27,7 @@ import (
 var ValidateBrokerName = apivalidation.NameIsDNSSubdomain
 
 // ValidateBroker implements the validation rules for a BrokerResource.
-func ValidateBroker(broker *sc.Broker) field.ErrorList {
+func ValidateBroker(broker *sc.ServiceCatalogBroker) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs,
@@ -40,7 +40,7 @@ func ValidateBroker(broker *sc.Broker) field.ErrorList {
 	return allErrs
 }
 
-func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorList {
+func validateBrokerSpec(spec *sc.ServiceCatalogBrokerSpec, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if "" == spec.URL {
@@ -76,7 +76,7 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 }
 
 // ValidateBrokerUpdate checks that when changing from an older broker to a newer broker is okay ?
-func ValidateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
+func ValidateBrokerUpdate(new *sc.ServiceCatalogBroker, old *sc.ServiceCatalogBroker) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateBroker(new)...)
 	allErrs = append(allErrs, ValidateBroker(old)...)
@@ -84,7 +84,7 @@ func ValidateBrokerUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
 }
 
 // ValidateBrokerStatusUpdate checks that when changing from an older broker to a newer broker is okay.
-func ValidateBrokerStatusUpdate(new *sc.Broker, old *sc.Broker) field.ErrorList {
+func ValidateBrokerStatusUpdate(new *sc.ServiceCatalogBroker, old *sc.ServiceCatalogBroker) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateBrokerUpdate(new, old)...)
 	return allErrs

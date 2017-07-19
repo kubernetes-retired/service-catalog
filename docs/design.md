@@ -123,14 +123,14 @@ can be in different NS's than the rest (which must all be in the same).
 Before a Service can be used by an Application it must first be registered
 with the Kubernetes platform. Since Services are managed by Service Brokers
 we must first register the Service Broker by creating an instance of a
-`Broker`:
+`ServiceCatalogBroker`:
 
     kubectl create -f broker.yaml
 
 where `broker.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Broker
+    kind: ServiceCatalogBroker
     metadata:
       name: BestDataBase
     spec:
@@ -138,14 +138,14 @@ where `broker.yaml` might look like:
 
 **TODO** beef-up theses sample resource snippets
 
-After a `Broker` resource is created the Service Catalog Controller will
-receive an event indicating its addition to the datastore. The Controller
-will then query the Service Broker (at the `url` specified) for the list
-of available Services. Each Service will then have a corresponding
-`ServiceClass` resource created:
+After a `ServiceCatalogBroker` resource is created the Service Catalog
+Controller will receive an event indicating its addition to the datastore.
+The Controller will then query the Service Broker (at the `url` specified)
+for the list of available Services. Each Service will then have a corresponding
+`ServiceCatalogServiceClass` resource created:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: ServiceClass
+    kind: ServiceCatalogServiceClass
     metadata:
       name: smallDB
       brokerName: BestDataBase
@@ -162,27 +162,28 @@ Users can then query for the list of available Services:
 ### Creating a Service Instance
 
 Before a Service can be used, a new Instance of it must be created. This is
-done by creating a new `Instance` resource:
+done by creating a new `ServiceCatalogInstance` resource:
 
     kubectl create -f instance.yaml
 
 where `instance.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Instance
+    kind: ServiceCatalogInstance
     metadata:
       name: johnsDB
     spec:
       serviceClassName: smallDB
 
-Within the `Instance` resource is the specified Plan to be used. This allows
-for the user of the Service to indicate which variant of the Service they
-want - perhaps based on QoS type of variants.
+Within the `ServiceCatalogInstance` resource is the specified Plan to be used.
+This allows for the user of the Service to indicate which variant of the
+Service they want - perhaps based on QoS type of variants.
 
 **TODO** Discuss the parameters that can be passed in
 
-Once an `Instance` resource is created, the Controller talks with the
-specified Service Broker to create a new Instance of the desired Service.
+Once an `ServiceCatalogInstance` resource is created, the Controller talks
+with the specified Service Broker to create a new Instance of the desired
+Service.
 
 There are two modes for provisioning:
 [synchronous and asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#synchronous-and-asynchronous-operations)
@@ -216,23 +217,23 @@ before its fully realized. We shouldn't let the SB be the one to detect this.
 Before a Service Instance can be used it must be "bound" to an Application.
 This means that a link, or usage intent, between an Application and the
 Service Instance must be established. This is done by creating a new
-`Binding` resource:
+`ServiceCatalogBinding` resource:
 
     kubectl create -f binding.yaml
 
 where `instance.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Binding
+    kind: ServiceCatalogBinding
     metadata:
       name: johnsBinding
     spec:
       secretName: johnSecret
       ...Pod selector labels...
 
-The Controller, upon being notified of the new `Binding` resource, will
-then talk to the Service Broker to create a new Binding for the specified
-Service Instance.
+The Controller, upon being notified of the new `ServiceCatalogBinding`
+resource, will then talk to the Service Broker to create a new Binding for
+the specified Service Instance.
 
 Within the Binding object that is returned from the Service Broker are
 a set of Credentials. These Credentials contain all of the information
@@ -248,7 +249,7 @@ by reading the documentation of the Service.
 
 The Credentials will not be stored in the Service Catalog's datastore.
 Rather, they will be stored in the Kubenetes core as Secrets and a reference
-to the Secret will be saved within the `Binding` resource. If the
+to the Secret will be saved within the `ServiceCatalogBinding` resource. If the
 Binding `Spec.SecretName` is not specified then the Controller will
 use the Binding `Name` property as the name of the Secret.
 

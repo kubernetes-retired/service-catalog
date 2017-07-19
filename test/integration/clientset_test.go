@@ -88,7 +88,7 @@ func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.Broker{}
+				return &servicecatalog.ServiceCatalogBroker{}
 			})
 			defer shutdownServer()
 			if err := testGroupVersion(client); err != nil {
@@ -170,7 +170,7 @@ func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.Broker{}
+				return &servicecatalog.ServiceCatalogBroker{}
 			})
 			defer shutdownServer()
 			if err := testNoName(client); err != nil {
@@ -191,16 +191,16 @@ func testNoName(client servicecatalogclient.Interface) error {
 
 	ns := "namespace"
 
-	if br, e := scClient.Brokers().Create(&v1alpha1.Broker{}); nil == e {
+	if br, e := scClient.ServiceCatalogBrokers().Create(&v1alpha1.ServiceCatalogBroker{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", br.Name)
 	}
-	if sc, e := scClient.ServiceClasses().Create(&v1alpha1.ServiceClass{}); nil == e {
+	if sc, e := scClient.ServiceCatalogServiceClasses().Create(&v1alpha1.ServiceCatalogServiceClass{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", sc.Name)
 	}
-	if i, e := scClient.Instances(ns).Create(&v1alpha1.Instance{}); nil == e {
+	if i, e := scClient.ServiceCatalogInstances(ns).Create(&v1alpha1.ServiceCatalogInstance{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", i.Name)
 	}
-	if bi, e := scClient.Bindings(ns).Create(&v1alpha1.Binding{}); nil == e {
+	if bi, e := scClient.ServiceCatalogBindings(ns).Create(&v1alpha1.ServiceCatalogBinding{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", bi.Name)
 	}
 	return nil
@@ -212,7 +212,7 @@ func TestBrokerClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.Broker{}
+				return &servicecatalog.ServiceCatalogBroker{}
 			})
 			defer shutdownServer()
 			if err := testBrokerClient(sType, client, name); err != nil {
@@ -228,10 +228,10 @@ func TestBrokerClient(t *testing.T) {
 }
 
 func testBrokerClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	brokerClient := client.Servicecatalog().Brokers()
-	broker := &v1alpha1.Broker{
+	brokerClient := client.Servicecatalog().ServiceCatalogBrokers()
+	broker := &v1alpha1.ServiceCatalogBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.BrokerSpec{
+		Spec: v1alpha1.ServiceCatalogBrokerSpec{
 			URL: "https://example.com",
 		},
 	}
@@ -302,7 +302,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	brokerUpdated.Status = v1alpha1.BrokerStatus{
+	brokerUpdated.Status = v1alpha1.ServiceCatalogBrokerStatus{
 		Conditions: []v1alpha1.BrokerCondition{
 			readyConditionTrue,
 		},
@@ -372,7 +372,7 @@ func TestServiceClassClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceClass{}
+				return &servicecatalog.ServiceCatalogServiceClass{}
 			})
 			defer shutdownServer()
 
@@ -389,15 +389,15 @@ func TestServiceClassClient(t *testing.T) {
 }
 
 func testServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	serviceClassClient := client.Servicecatalog().ServiceClasses()
+	serviceClassClient := client.Servicecatalog().ServiceCatalogServiceClasses()
 
-	serviceClass := &v1alpha1.ServiceClass{
+	serviceClass := &v1alpha1.ServiceCatalogServiceClass{
 		ObjectMeta:  metav1.ObjectMeta{Name: name},
 		BrokerName:  "test-broker",
 		Bindable:    true,
 		ExternalID:  "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 		Description: "test description",
-		Plans: []v1alpha1.ServicePlan{
+		Plans: []v1alpha1.ServiceCatalogServicePlan{
 			{
 				Name:        "test-service-plan",
 				ExternalID:  "test-service-plan-external-id",
@@ -495,7 +495,7 @@ func TestInstanceClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-instance"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.Instance{}
+				return &servicecatalog.ServiceCatalogInstance{}
 			})
 			defer shutdownServer()
 			if err := testInstanceClient(sType, client, name); err != nil {
@@ -515,11 +515,11 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		osbGUID      = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 		dashboardURL = "http://test-dashboard.example.com"
 	)
-	instanceClient := client.Servicecatalog().Instances("test-namespace")
+	instanceClient := client.Servicecatalog().ServiceCatalogInstances("test-namespace")
 
-	instance := &v1alpha1.Instance{
+	instance := &v1alpha1.ServiceCatalogInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.InstanceSpec{
+		Spec: v1alpha1.ServiceCatalogInstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
 			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
@@ -606,7 +606,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	instanceServer.Status = v1alpha1.InstanceStatus{
+	instanceServer.Status = v1alpha1.ServiceCatalogInstanceStatus{
 		Conditions: []v1alpha1.InstanceCondition{readyConditionTrue},
 	}
 
@@ -657,7 +657,7 @@ func TestBindingClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
 			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.Binding{}
+				return &servicecatalog.ServiceCatalogBinding{}
 			})
 			defer shutdownServer()
 
@@ -675,11 +675,11 @@ func TestBindingClient(t *testing.T) {
 }
 
 func testBindingClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	bindingClient := client.Servicecatalog().Bindings("test-namespace")
+	bindingClient := client.Servicecatalog().ServiceCatalogBindings("test-namespace")
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: "bar",
 			},
@@ -781,7 +781,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	bindingServer.Status = v1alpha1.BindingStatus{
+	bindingServer.Status = v1alpha1.ServiceCatalogBindingStatus{
 		Conditions: []v1alpha1.BindingCondition{readyConditionTrue},
 	}
 	if _, err = bindingClient.UpdateStatus(bindingServer); err != nil {

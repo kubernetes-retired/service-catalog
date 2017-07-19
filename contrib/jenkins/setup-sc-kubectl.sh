@@ -43,7 +43,7 @@ kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster
 kubectl config use-context service-catalog-ctx
 
 retry -n 10 \
-  kubectl get brokers,serviceclasses,instances,bindings \
+  kubectl get servicecatalogbrokers,servicecatalogserviceclasses,servicecataloginstances,servicecatalogbindings \
   || error_exit 'Issue listing resources from service catalog API server.'
 
 echo 'Set up service catalog kubeconfig.'

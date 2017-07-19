@@ -73,7 +73,7 @@ func getRuntimeObjectFromUpdateAction(t testing.Action) (runtime.Object, error) 
 // - the conditions
 func checkInstance(descr instanceDescription) func(runtime.Object) error {
 	return func(obj runtime.Object) error {
-		inst, ok := obj.(*v1alpha1.Instance)
+		inst, ok := obj.(*v1alpha1.ServiceCatalogInstance)
 		if !ok {
 			return fmt.Errorf("expected an instance, got a %s", reflect.TypeOf(obj))
 		}

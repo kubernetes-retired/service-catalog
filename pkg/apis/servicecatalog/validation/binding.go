@@ -28,11 +28,11 @@ import (
 var validateBindingName = apivalidation.NameIsDNSSubdomain
 
 // ValidateBinding validates a Binding and returns a list of errors.
-func ValidateBinding(binding *sc.Binding) field.ErrorList {
+func ValidateBinding(binding *sc.ServiceCatalogBinding) field.ErrorList {
 	return internalValidateBinding(binding, true)
 }
 
-func internalValidateBinding(binding *sc.Binding, create bool) field.ErrorList {
+func internalValidateBinding(binding *sc.ServiceCatalogBinding, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&binding.ObjectMeta, true, /*namespace*/
 		validateBindingName,
@@ -42,7 +42,7 @@ func internalValidateBinding(binding *sc.Binding, create bool) field.ErrorList {
 	return allErrs
 }
 
-func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path, create bool) field.ErrorList {
+func validateBindingSpec(spec *sc.ServiceCatalogBindingSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	for _, msg := range validateInstanceName(spec.InstanceRef.Name, false /* prefix */) {
@@ -65,12 +65,12 @@ func validateBindingSpec(spec *sc.BindingSpec, fldPath *field.Path, create bool)
 }
 
 // ValidateBindingUpdate checks that when changing from an older binding to a newer binding is okay.
-func ValidateBindingUpdate(new *sc.Binding, old *sc.Binding) field.ErrorList {
+func ValidateBindingUpdate(new *sc.ServiceCatalogBinding, old *sc.ServiceCatalogBinding) field.ErrorList {
 	return internalValidateBinding(new, false)
 }
 
 // ValidateBindingStatusUpdate checks that when changing from an older binding to a newer binding is okay.
-func ValidateBindingStatusUpdate(new *sc.Binding, old *sc.Binding) field.ErrorList {
+func ValidateBindingStatusUpdate(new *sc.ServiceCatalogBinding, old *sc.ServiceCatalogBinding) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateBindingUpdate(new, old)...)
 	return allErrs

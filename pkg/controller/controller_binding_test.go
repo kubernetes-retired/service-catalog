@@ -42,9 +42,9 @@ import (
 func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: "nothere"},
 			ExternalID:  bindingGUID,
 		},
@@ -81,21 +81,21 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	instance := &v1alpha1.Instance{
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	instance := &v1alpha1.ServiceCatalogInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName, Namespace: testNamespace},
-		Spec: v1alpha1.InstanceSpec{
+		Spec: v1alpha1.ServiceCatalogInstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         testPlanName,
 			ExternalID:       instanceGUID,
 		},
 	}
-	sharedInformers.Instances().Informer().GetStore().Add(instance)
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(instance)
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 		},
@@ -143,13 +143,13 @@ func TestReconcileBindingWithSecretConflict(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -176,7 +176,7 @@ func TestReconcileBindingWithSecretConflict(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-	updatedBinding := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.Binding)
+	updatedBinding := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceCatalogBinding)
 	assertBindingReadyFalse(t, updatedBinding)
 
 	kubeActions := fakeKubeClient.Actions()
@@ -217,13 +217,13 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -266,7 +266,7 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-	updatedBinding := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.Binding)
+	updatedBinding := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceCatalogBinding)
 	assertBindingReadyTrue(t, updatedBinding)
 
 	kubeActions := fakeKubeClient.Actions()
@@ -323,13 +323,13 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestNonbindableInstance())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestNonbindableInstance())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 		},
@@ -374,11 +374,11 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(func() *v1alpha1.Instance {
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(func() *v1alpha1.ServiceCatalogInstance {
 		i := getTestInstanceNonbindableServiceBindablePlan()
-		i.Status = v1alpha1.InstanceStatus{
+		i.Status = v1alpha1.ServiceCatalogInstanceStatus{
 			Conditions: []v1alpha1.InstanceCondition{
 				{
 					Type:   v1alpha1.InstanceConditionReady,
@@ -389,9 +389,9 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 		return i
 	}())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -463,13 +463,13 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceBindableServiceNonbindablePlan())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceBindableServiceNonbindablePlan())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 		},
@@ -502,13 +502,13 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceAsyncProvisioning(""))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceAsyncProvisioning(""))
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 		},
@@ -557,13 +557,13 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstance())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 		},
@@ -600,13 +600,13 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 		return true, &v1.Namespace{}, errors.New("No namespace")
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstance())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 		},
@@ -639,25 +639,25 @@ func TestReconcileBindingDelete(t *testing.T) {
 		UnbindReaction: &fakeosb.UnbindReaction{},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstance())
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              testBindingName,
 			Namespace:         testNamespace,
 			DeletionTimestamp: &metav1.Time{},
 			Finalizers:        []string{v1alpha1.FinalizerServiceCatalog},
 		},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
 		},
 	}
 
-	fakeCatalogClient.AddReactor("get", "bindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "servicecatalogbindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, binding, nil
 	})
 
@@ -734,13 +734,13 @@ func TestReconcileBindingWithPodPresetTemplate(t *testing.T) {
 		return true, nil, nil
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -835,13 +835,13 @@ func TestReconcileBindingWithBrokerError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -876,13 +876,13 @@ func TestReconcileBindingWithBrokerHTTPError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: testBindingName, Namespace: testNamespace},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -905,9 +905,9 @@ func TestReconcileBindingWithBrokerHTTPError(t *testing.T) {
 }
 
 func TestUpdateBindingCondition(t *testing.T) {
-	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Binding {
+	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.ServiceCatalogBinding {
 		instance := getTestBinding()
-		instance.Status = v1alpha1.BindingStatus{
+		instance.Status = v1alpha1.ServiceCatalogBindingStatus{
 			Conditions: []v1alpha1.BindingCondition{{
 				Type:               v1alpha1.BindingConditionReady,
 				Status:             status,
@@ -921,7 +921,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 
 	cases := []struct {
 		name                  string
-		input                 *v1alpha1.Binding
+		input                 *v1alpha1.ServiceCatalogBinding
 		status                v1alpha1.ConditionStatus
 		reason                string
 		message               string
@@ -976,7 +976,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 			t.Errorf("%v: deep copy failed", tc.name)
 			continue
 		}
-		inputClone := clone.(*v1alpha1.Binding)
+		inputClone := clone.(*v1alpha1.ServiceCatalogBinding)
 
 		err = testController.updateBindingCondition(tc.input, v1alpha1.BindingConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
@@ -999,7 +999,7 @@ func TestUpdateBindingCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedBinding.(*v1alpha1.Binding)
+		updateActionObject, ok := updatedBinding.(*v1alpha1.ServiceCatalogBinding)
 		if !ok {
 			t.Errorf("%v: couldn't convert to binding", tc.name)
 			continue
@@ -1042,18 +1042,18 @@ func TestReconcileUnbindingWithBrokerError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	t1 := metav1.NewTime(time.Now())
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              testBindingName,
 			Namespace:         testNamespace,
 			DeletionTimestamp: &t1,
 		},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,
@@ -1086,18 +1086,18 @@ func TestReconcileUnbindingWithBrokerHTTPError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	t1 := metav1.NewTime(time.Now())
-	binding := &v1alpha1.Binding{
+	binding := &v1alpha1.ServiceCatalogBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              testBindingName,
 			Namespace:         testNamespace,
 			DeletionTimestamp: &t1,
 		},
-		Spec: v1alpha1.BindingSpec{
+		Spec: v1alpha1.ServiceCatalogBindingSpec{
 			InstanceRef: v1.LocalObjectReference{Name: testInstanceName},
 			ExternalID:  bindingGUID,
 			SecretName:  testBindingSecretName,

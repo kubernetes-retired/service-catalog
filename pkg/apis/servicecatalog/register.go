@@ -47,14 +47,14 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Broker{},
-		&BrokerList{},
-		&ServiceClass{},
-		&ServiceClassList{},
-		&Instance{},
-		&InstanceList{},
-		&Binding{},
-		&BindingList{},
+		&ServiceCatalogBroker{},
+		&ServiceCatalogBrokerList{},
+		&ServiceCatalogServiceClass{},
+		&ServiceCatalogServiceClassList{},
+		&ServiceCatalogInstance{},
+		&ServiceCatalogInstanceList{},
+		&ServiceCatalogBinding{},
+		&ServiceCatalogBindingList{},
 	)
 	return nil
 }

@@ -48,7 +48,7 @@ func (c *controller) reconcileServiceClassKey(key string) error {
 	return c.reconcileServiceClass(serviceClass)
 }
 
-func (c *controller) reconcileServiceClass(serviceClass *v1alpha1.ServiceClass) error {
+func (c *controller) reconcileServiceClass(serviceClass *v1alpha1.ServiceCatalogServiceClass) error {
 	glog.V(4).Infof("Processing ServiceClass %v", serviceClass.Name)
 	return nil
 }
@@ -58,7 +58,7 @@ func (c *controller) serviceClassUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) serviceClassDelete(obj interface{}) {
-	serviceClass, ok := obj.(*v1alpha1.ServiceClass)
+	serviceClass, ok := obj.(*v1alpha1.ServiceCatalogServiceClass)
 	if serviceClass == nil || !ok {
 		return
 	}

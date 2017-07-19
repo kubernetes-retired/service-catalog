@@ -69,7 +69,7 @@ func (p StorageProvider) v1alpha1Storage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter,
 ) (map[string]rest.Storage, error) {
-	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("brokers"))
+	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicecatalogbrokers"))
 	if err != nil {
 		return nil, err
 	}
@@ -88,22 +88,22 @@ func (p StorageProvider) v1alpha1Storage(
 			RESTOptions:      brokerRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceBrokerKind,
+			SingularKind:     tpr.ServiceCatalogBrokerKind,
 			NewSingularFunc:  broker.NewSingular,
-			ListKind:         tpr.ServiceBrokerListKind,
+			ListKind:         tpr.ServiceCatalogBrokerListKind,
 			NewListFunc:      broker.NewList,
 			CheckObjectFunc:  broker.CheckObject,
 			DestroyFunc:      func() {},
 			Keyer: tpr.Keyer{
 				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceBrokerKind.String(),
+				ResourceName:     tpr.ServiceCatalogBrokerKind.String(),
 				Separator:        "/",
 			},
 		},
 		p.StorageType,
 	)
 
-	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
+	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicecatalogserviceclasses"))
 	if err != nil {
 		return nil, err
 	}
@@ -122,15 +122,15 @@ func (p StorageProvider) v1alpha1Storage(
 			RESTOptions:      serviceClassRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceClassKind,
+			SingularKind:     tpr.ServiceCatalogServiceClassKind,
 			NewSingularFunc:  serviceclass.NewSingular,
-			ListKind:         tpr.ServiceClassListKind,
+			ListKind:         tpr.ServiceCatalogServiceClassListKind,
 			NewListFunc:      serviceclass.NewList,
 			CheckObjectFunc:  serviceclass.CheckObject,
 			DestroyFunc:      func() {},
 			Keyer: tpr.Keyer{
 				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceClassKind.String(),
+				ResourceName:     tpr.ServiceCatalogServiceClassKind.String(),
 				Separator:        "/",
 			},
 			HardDelete: true,
@@ -138,7 +138,7 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
-	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("instances"))
+	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicecataloginstances"))
 	if err != nil {
 		return nil, err
 	}
@@ -157,22 +157,22 @@ func (p StorageProvider) v1alpha1Storage(
 			RESTOptions:      instanceClassRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceInstanceKind,
+			SingularKind:     tpr.ServiceCatalogInstanceKind,
 			NewSingularFunc:  instance.NewSingular,
-			ListKind:         tpr.ServiceInstanceListKind,
+			ListKind:         tpr.ServiceCatalogInstanceListKind,
 			NewListFunc:      instance.NewList,
 			CheckObjectFunc:  instance.CheckObject,
 			DestroyFunc:      func() {},
 			Keyer: tpr.Keyer{
 				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceInstanceKind.String(),
+				ResourceName:     tpr.ServiceCatalogInstanceKind.String(),
 				Separator:        "/",
 			},
 		},
 		p.StorageType,
 	)
 
-	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("bindings"))
+	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicecatalogbindings"))
 	if err != nil {
 		return nil, err
 	}
@@ -191,15 +191,15 @@ func (p StorageProvider) v1alpha1Storage(
 			RESTOptions:      bindingClassRESTOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceBindingKind,
+			SingularKind:     tpr.ServiceCatalogBindingKind,
 			NewSingularFunc:  binding.NewSingular,
-			ListKind:         tpr.ServiceBindingListKind,
+			ListKind:         tpr.ServiceCatalogBindingListKind,
 			NewListFunc:      binding.NewList,
 			CheckObjectFunc:  binding.CheckObject,
 			DestroyFunc:      func() {},
 			Keyer: tpr.Keyer{
 				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceBindingKind.String(),
+				ResourceName:     tpr.ServiceCatalogBindingKind.String(),
 				Separator:        "/",
 			},
 		},
@@ -214,13 +214,13 @@ func (p StorageProvider) v1alpha1Storage(
 		return nil, err
 	}
 	return map[string]rest.Storage{
-		"brokers":          brokerStorage,
-		"brokers/status":   brokerStatusStorage,
-		"serviceclasses":   serviceClassStorage,
-		"instances":        instanceStorage,
-		"instances/status": instanceStatusStorage,
-		"bindings":         bindingStorage,
-		"bindings/status":  bindingStatusStorage,
+		"servicecatalogbrokers":          brokerStorage,
+		"servicecatalogbrokers/status":   brokerStatusStorage,
+		"servicecatalogserviceclasses":   serviceClassStorage,
+		"servicecataloginstances":        instanceStorage,
+		"servicecataloginstances/status": instanceStatusStorage,
+		"servicecatalogbindings":         bindingStorage,
+		"servicecatalogbindings/status":  bindingStatusStorage,
 	}, nil
 }
 

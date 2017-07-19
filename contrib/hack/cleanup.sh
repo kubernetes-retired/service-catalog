@@ -18,7 +18,7 @@ set -o nounset
 set -o errexit
 
 KUBECTL=kubectl
-TYPES='servicebrokers serviceclasses serviceinstances servicebindings'
+TYPES='servicecatalogbrokers servicecatalogserviceclasses servicecataloginstances servicecatalogbindings'
 
 for i in $TYPES; do
   for j in `$KUBECTL get --no-headers $i | cut -d ' ' -f 1`; do

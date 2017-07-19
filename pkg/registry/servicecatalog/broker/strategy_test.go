@@ -23,12 +23,12 @@ import (
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 )
 
-func brokerWithFalseReadyCondition() *sc.Broker {
-	return &sc.Broker{
-		Spec: sc.BrokerSpec{
+func brokerWithFalseReadyCondition() *sc.ServiceCatalogBroker {
+	return &sc.ServiceCatalogBroker{
+		Spec: sc.ServiceCatalogBrokerSpec{
 			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		},
-		Status: sc.BrokerStatus{
+		Status: sc.ServiceCatalogBrokerStatus{
 			Conditions: []sc.BrokerCondition{
 				{
 					Type:   sc.BrokerConditionReady,
@@ -39,12 +39,12 @@ func brokerWithFalseReadyCondition() *sc.Broker {
 	}
 }
 
-func brokerWithTrueReadyCondition() *sc.Broker {
-	return &sc.Broker{
-		Spec: sc.BrokerSpec{
+func brokerWithTrueReadyCondition() *sc.ServiceCatalogBroker {
+	return &sc.ServiceCatalogBroker{
+		Spec: sc.ServiceCatalogBrokerSpec{
 			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		},
-		Status: sc.BrokerStatus{
+		Status: sc.ServiceCatalogBrokerStatus{
 			Conditions: []sc.BrokerCondition{
 				{
 					Type:   sc.BrokerConditionReady,
@@ -75,11 +75,11 @@ func TestBrokerStrategyTrivial(t *testing.T) {
 // TestBrokerCreate
 func TestBroker(t *testing.T) {
 	// Create a broker or brokers
-	broker := &sc.Broker{
-		Spec: sc.BrokerSpec{
+	broker := &sc.ServiceCatalogBroker{
+		Spec: sc.ServiceCatalogBrokerSpec{
 			URL: "abcd",
 		},
-		Status: sc.BrokerStatus{
+		Status: sc.ServiceCatalogBrokerStatus{
 			Conditions: nil,
 		},
 	}
@@ -117,8 +117,8 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 	// checksumShouldBeSet: whether or not checksum field in newer broker should be set
 	cases := []struct {
 		name                string
-		old                 *sc.Broker
-		newer               *sc.Broker
+		old                 *sc.ServiceCatalogBroker
+		newer               *sc.ServiceCatalogBroker
 		shouldChecksum      bool
 		checksumShouldBeSet bool
 	}{
@@ -131,7 +131,7 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 		},
 		{
 			name: "not ready -> not ready, checksum already set",
-			old: func() *sc.Broker {
+			old: func() *sc.ServiceCatalogBroker {
 				b := brokerWithFalseReadyCondition()
 				cs := "22081-9471-471"
 				b.Status.Checksum = &cs

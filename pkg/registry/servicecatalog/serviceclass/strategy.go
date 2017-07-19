@@ -59,7 +59,7 @@ var (
 
 // Canonicalize does not transform a serviceclass.
 func (serviceclassRESTStrategy) Canonicalize(obj runtime.Object) {
-	_, ok := obj.(*sc.ServiceClass)
+	_, ok := obj.(*sc.ServiceCatalogServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
 	}
@@ -72,7 +72,7 @@ func (serviceclassRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives the incoming Serviceclass.
 func (serviceclassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	_, ok := obj.(*sc.ServiceClass)
+	_, ok := obj.(*sc.ServiceCatalogServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
 	}
@@ -80,7 +80,7 @@ func (serviceclassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, 
 }
 
 func (serviceclassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateServiceClass(obj.(*sc.ServiceClass))
+	return scv.ValidateServiceClass(obj.(*sc.ServiceCatalogServiceClass))
 }
 
 func (serviceclassRESTStrategy) AllowCreateOnUpdate() bool {
@@ -92,11 +92,11 @@ func (serviceclassRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (serviceclassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newServiceclass, ok := new.(*sc.ServiceClass)
+	newServiceclass, ok := new.(*sc.ServiceCatalogServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update to")
 	}
-	oldServiceclass, ok := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ServiceCatalogServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update from")
 	}
@@ -105,11 +105,11 @@ func (serviceclassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 }
 
 func (serviceclassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newServiceclass, ok := new.(*sc.ServiceClass)
+	newServiceclass, ok := new.(*sc.ServiceCatalogServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate to")
 	}
-	oldServiceclass, ok := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ServiceCatalogServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate from")
 	}

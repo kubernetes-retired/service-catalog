@@ -28,18 +28,18 @@ import (
 func TestValidateBroker(t *testing.T) {
 	cases := []struct {
 		name   string
-		broker *servicecatalog.Broker
+		broker *servicecatalog.ServiceCatalogBroker
 		valid  bool
 	}{
 		{
 			// covers the case where there is no AuthInfo field specified. the validator should
 			// ignore the field and still succeed the validation
 			name: "valid broker - no auth secret",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceCatalogBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceCatalogBrokerSpec{
 					URL: "http://example.com",
 				},
 			},
@@ -47,11 +47,11 @@ func TestValidateBroker(t *testing.T) {
 		},
 		{
 			name: "valid broker - auth secret",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceCatalogBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceCatalogBrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.BrokerAuthInfo{
 						BasicAuthSecret: &v1.ObjectReference{
@@ -65,12 +65,12 @@ func TestValidateBroker(t *testing.T) {
 		},
 		{
 			name: "invalid broker - broker with namespace",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceCatalogBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-broker",
 					Namespace: "oops",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceCatalogBrokerSpec{
 					URL: "http://example.com",
 				},
 			},
@@ -78,11 +78,11 @@ func TestValidateBroker(t *testing.T) {
 		},
 		{
 			name: "invalid broker - auth secret missing namespace",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceCatalogBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceCatalogBrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.BrokerAuthInfo{
 						BasicAuthSecret: &v1.ObjectReference{
@@ -95,11 +95,11 @@ func TestValidateBroker(t *testing.T) {
 		},
 		{
 			name: "invalid broker - auth secret missing name",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceCatalogBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceCatalogBrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.BrokerAuthInfo{
 						BasicAuthSecret: &v1.ObjectReference{

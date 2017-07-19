@@ -32,10 +32,10 @@ import (
 // install, and each value is the resource to install
 //
 var thirdPartyResources = []v1beta1.ThirdPartyResource{
-	serviceBrokerTPR,
-	serviceClassTPR,
-	serviceInstanceTPR,
-	serviceBindingTPR,
+	serviceCatalogBrokerTPR,
+	serviceCatalogServiceClassTPR,
+	serviceCatalogInstanceTPR,
+	serviceCatalogBindingTPR,
 }
 
 // ErrTPRInstall is returned when we fail to install TPR
