@@ -20,7 +20,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
@@ -97,6 +100,50 @@ func TestGroupVersion(t *testing.T) {
 			t.Errorf("%s test failed", sType)
 		}
 	}
+}
+
+func TestEtcdHealthCheckerSuccess(t *testing.T) {
+	serverConfig := NewTestServerConfig()
+	serverConfig.storageType = server.StorageTypeEtcd
+	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
+	resp, err := http.Get(clientconfig.Host + "/healthz")
+	if nil != err || http.StatusOK != resp.StatusCode {
+		t.Fatal("health check endpoint should not have failed")
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("couldn't read response body", err)
+	}
+	if strings.Contains(string(body), "healthz check failed") {
+		t.Fatal("health check endpoint should not have failed")
+	}
+
+	defer shutdownServer()
+}
+
+func TestEtcdHealthCheckerFail(t *testing.T) {
+	serverConfig := NewTestServerConfig()
+	// this server won't exist
+	serverConfig.etcdServerList = []string{""}
+	serverConfig.storageType = server.StorageTypeEtcd
+	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
+	resp, err := http.Get(clientconfig.Host + "/healthz")
+	if nil != err || http.StatusInternalServerError != resp.StatusCode {
+		t.Fatal("health check endpoint should have failed and did not")
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("couldn't read response body", err)
+	}
+	if !strings.Contains(string(body), "healthz check failed") {
+		t.Fatal("health check endpoint should contain a failure message")
+	}
+
+	defer shutdownServer()
 }
 
 func testGroupVersion(client servicecatalogclient.Interface) error {
