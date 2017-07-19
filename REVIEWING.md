@@ -7,8 +7,7 @@ situations for which process is not specified.
 
 PRs may only be merged after the following criteria are met:
 
-1. It has been 'LGTM'-ed by 2 different reviewers, each from a different
-  organization and different from the author's organization
+1. It has been 'LGTM'-ed by 2 different reviewers
 1. It has all appropriate corresponding documentation and testcases
 
 ## LGTMs
