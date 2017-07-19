@@ -221,7 +221,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"instanceRef", "secretName", "externalID"},
+					Required: []string{"instanceRef", "externalID"},
 				},
 			},
 			Dependencies: []string{

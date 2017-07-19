@@ -364,7 +364,7 @@ type BindingSpec struct {
 
 	// SecretName is the name of the secret to create in the Binding's
 	// namespace that will hold the credentials associated with the Binding.
-	SecretName string `json:"secretName"`
+	SecretName string `json:"secretName,omitempty"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//

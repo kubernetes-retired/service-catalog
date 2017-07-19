@@ -674,7 +674,6 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 				Name: "bar",
 			},
 			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
-			SecretName: "secret-name",
 			ExternalID: "UUID-string",
 		},
 	}
@@ -699,6 +698,13 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			"didn't get the same binding back from the server \n%+v\n%+v",
 			binding,
 			bindingServer,
+		)
+	}
+	if bindingServer.Spec.SecretName != "test-binding" {
+		return fmt.Errorf(
+			"didn't get the right secret name back from the server \n%+v\n%+v",
+			"test-binding",
+			bindingServer.Spec.SecretName,
 		)
 	}
 
