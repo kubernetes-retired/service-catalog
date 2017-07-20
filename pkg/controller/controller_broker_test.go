@@ -34,6 +34,7 @@ import (
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
+	"strings"
 )
 
 func TestShouldReconcileBroker(t *testing.T) {
@@ -372,33 +373,138 @@ func TestReconcileBrokerZeroServices(t *testing.T) {
 	}
 }
 
-func TestReconcileBrokerWithAuthError(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
-
-	broker := getTestBroker()
-	broker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
-		BasicAuthSecret: &v1.ObjectReference{
-			Namespace: "does_not_exist",
-			Name:      "auth-name",
+func TestReconcileBrokerWithAuth(t *testing.T) {
+	basicAuthInfo := &v1alpha1.BrokerAuthInfo{
+		Basic: &v1alpha1.BasicAuthConfig{
+			SecretRef: &v1.LocalObjectReference{
+				Name: "auth-secret",
+			},
+		},
+	}
+	bearerAuthInfo := &v1alpha1.BrokerAuthInfo{
+		Bearer: &v1alpha1.BearerTokenAuthConfig{
+			SecretRef: &v1.LocalObjectReference{
+				Name: "auth-secret",
+			},
+		},
+	}
+	basicAuthSecret := &v1.Secret{
+		Data: map[string][]byte{
+			v1alpha1.BasicAuthUsernameKey: []byte("foo"),
+			v1alpha1.BasicAuthPasswordKey: []byte("bar"),
+		},
+	}
+	bearerAuthSecret := &v1.Secret{
+		Data: map[string][]byte{
+			v1alpha1.BearerTokenKey: []byte("token"),
 		},
 	}
 
-	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, nil, errors.New("no secret defined")
-	})
+	// The test cases here are testing the correctness of authentication with broker
+	//
+	// Anonymous struct fields:
+	// name: short description of the test
+	// authInfo: broker auth configuration
+	// secret: auth secret to be returned upon request from Service Catalog
+	// shouldSucceed: whether authentication should succeed
+	cases := []struct {
+		name          string
+		authInfo      *v1alpha1.BrokerAuthInfo
+		secret        *v1.Secret
+		shouldSucceed bool
+	}{
+		{
+			name:          "basic auth - normal",
+			authInfo:      basicAuthInfo,
+			secret:        basicAuthSecret,
+			shouldSucceed: true,
+		},
+		{
+			name:          "basic auth - invalid secret",
+			authInfo:      basicAuthInfo,
+			secret:        bearerAuthSecret,
+			shouldSucceed: false,
+		},
+		{
+			name:          "basic auth - secret not found",
+			authInfo:      basicAuthInfo,
+			secret:        nil,
+			shouldSucceed: false,
+		},
+		{
+			name:          "bearer auth - normal",
+			authInfo:      bearerAuthInfo,
+			secret:        bearerAuthSecret,
+			shouldSucceed: true,
+		},
+		{
+			name:          "bearer auth - invalid secret",
+			authInfo:      bearerAuthInfo,
+			secret:        basicAuthSecret,
+			shouldSucceed: false,
+		},
+		{
+			name:          "bearer auth - secret not found",
+			authInfo:      bearerAuthInfo,
+			secret:        nil,
+			shouldSucceed: false,
+		},
+	}
 
-	if err := testController.reconcileBroker(broker); err == nil {
-		t.Fatal("Should have failed to get the auth for the broker.")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			testReconcileBrokerWithAuth(t, tc.authInfo, tc.secret, tc.shouldSucceed)
+		})
+	}
+}
+
+func testReconcileBrokerWithAuth(t *testing.T, authInfo *v1alpha1.BrokerAuthInfo, secret *v1.Secret, shouldSucceed bool) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
+
+	broker := getTestBrokerWithAuth(authInfo)
+	if secret != nil {
+		addGetSecretReaction(fakeKubeClient, secret)
+	} else {
+		addGetSecretNotFoundReaction(fakeKubeClient)
+	}
+	testServiceClass := getTestServiceClass()
+	fakeBrokerClient.CatalogReaction = &fakeosb.CatalogReaction{
+		Response: &osb.CatalogResponse{
+			Services: []osb.Service{
+				{
+					ID:   testServiceClass.ExternalID,
+					Name: testServiceClass.Name,
+				},
+			},
+		},
+	}
+
+	err := testController.reconcileBroker(broker)
+	if shouldSucceed && err != nil {
+		t.Fatal("Should have succeeded to get the catalog for the broker. got error: ", err)
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	if shouldSucceed {
+		// GetCatalog
+		assertNumberOfBrokerActions(t, brokerActions, 1)
+		assertGetCatalog(t, brokerActions[0])
+	} else {
+		assertNumberOfBrokerActions(t, brokerActions, 0)
+	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedBroker := assertUpdateStatus(t, actions[0], broker)
-	assertBrokerReadyFalse(t, updatedBroker)
+	if shouldSucceed {
+		assertNumberOfActions(t, actions, 2)
+		assertCreate(t, actions[0], testServiceClass)
+		updatedBroker := assertUpdateStatus(t, actions[1], broker)
+		assertBrokerReadyTrue(t, updatedBroker)
+	} else {
+		assertNumberOfActions(t, actions, 1)
+		updatedBroker := assertUpdateStatus(t, actions[0], broker)
+		assertBrokerReadyFalse(t, updatedBroker)
+	}
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -415,8 +521,13 @@ func TestReconcileBrokerWithAuthError(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
-	if e, a := expectedEvent, events[0]; e != a {
+	var expectedEvent string
+	if shouldSucceed {
+		expectedEvent = api.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
+	} else {
+		expectedEvent = api.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\""
+	}
+	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
 }

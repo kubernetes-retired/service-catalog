@@ -46,7 +46,7 @@ func TestValidateBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid broker - auth secret",
+			name: "valid broker - basic auth - secret",
 			broker: &servicecatalog.Broker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
@@ -54,9 +54,29 @@ func TestValidateBroker(t *testing.T) {
 				Spec: servicecatalog.BrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.BrokerAuthInfo{
-						BasicAuthSecret: &v1.ObjectReference{
-							Namespace: "test-ns",
-							Name:      "test-secret",
+						Basic: &servicecatalog.BasicAuthConfig{
+							SecretRef: &v1.LocalObjectReference{
+								Name: "test-secret",
+							},
+						},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid broker - bearer auth - secret",
+			broker: &servicecatalog.Broker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.BrokerSpec{
+					URL: "http://example.com",
+					AuthInfo: &servicecatalog.BrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &v1.LocalObjectReference{
+								Name: "test-secret",
+							},
 						},
 					},
 				},
@@ -77,7 +97,7 @@ func TestValidateBroker(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "invalid broker - auth secret missing namespace",
+			name: "invalid broker - basic auth - secret missing name",
 			broker: &servicecatalog.Broker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
@@ -85,8 +105,8 @@ func TestValidateBroker(t *testing.T) {
 				Spec: servicecatalog.BrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.BrokerAuthInfo{
-						BasicAuthSecret: &v1.ObjectReference{
-							Name: "test-secret",
+						Basic: &servicecatalog.BasicAuthConfig{
+							SecretRef: &v1.LocalObjectReference{},
 						},
 					},
 				},
@@ -94,7 +114,7 @@ func TestValidateBroker(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "invalid broker - auth secret missing name",
+			name: "invalid broker - bearer auth - secret missing name",
 			broker: &servicecatalog.Broker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
@@ -102,8 +122,8 @@ func TestValidateBroker(t *testing.T) {
 				Spec: servicecatalog.BrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.BrokerAuthInfo{
-						BasicAuthSecret: &v1.ObjectReference{
-							Namespace: "test-ns",
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &v1.LocalObjectReference{},
 						},
 					},
 				},

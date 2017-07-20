@@ -33,6 +33,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -365,42 +366,84 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 
 // Broker utility methods - move?
 
-// getAuthCredentialsFromBroker returns the auth credentials, if any,
-// contained in the secret referenced in the Broker's AuthSecret field, or
-// returns an error. If the AuthSecret field is nil, empty values are
+// getAuthCredentialsFromBroker returns the auth credentials, if any, or
+// returns an error. If the AuthInfo field is nil, empty values are
 // returned.
 func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (*osb.AuthConfig, error) {
-	// TODO: when we start supporting additional auth schemes, this code will have to accommodate
-	// the new schemes
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
 
-	basicAuthSecret := broker.Spec.AuthInfo.BasicAuthSecret
-
-	authSecret, err := client.Core().Secrets(basicAuthSecret.Namespace).Get(basicAuthSecret.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
+	authInfo := broker.Spec.AuthInfo
+	if authInfo.Basic != nil {
+		secretRef := authInfo.Basic.SecretRef
+		secret, err := client.Core().Secrets(broker.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		basicAuthConfig, err := getBasicAuthConfig(secret)
+		if err != nil {
+			return nil, err
+		}
+		return &osb.AuthConfig{
+			BasicAuthConfig: basicAuthConfig,
+		}, nil
+	} else if authInfo.Bearer != nil {
+		secretRef := authInfo.Bearer.SecretRef
+		secret, err := client.Core().Secrets(broker.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		bearerConfig, err := getBearerConfig(secret)
+		if err != nil {
+			return nil, err
+		}
+		return &osb.AuthConfig{
+			BearerConfig: bearerConfig,
+		}, nil
+	} else if authInfo.BasicAuthSecret != nil {
+		secretRef := authInfo.BasicAuthSecret
+		secret, err := client.Core().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		basicAuthConfig, err := getBasicAuthConfig(secret)
+		if err != nil {
+			return nil, err
+		}
+		return &osb.AuthConfig{
+			BasicAuthConfig: basicAuthConfig,
+		}, nil
 	}
+	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
+}
 
-	usernameBytes, ok := authSecret.Data["username"]
+func getBasicAuthConfig(secret *apiv1.Secret) (*osb.BasicAuthConfig, error) {
+	usernameBytes, ok := secret.Data["username"]
 	if !ok {
 		return nil, fmt.Errorf("auth secret didn't contain username")
 	}
 
-	passwordBytes, ok := authSecret.Data["password"]
+	passwordBytes, ok := secret.Data["password"]
 	if !ok {
 		return nil, fmt.Errorf("auth secret didn't contain password")
 	}
 
-	authConfig := &osb.AuthConfig{
-		BasicAuthConfig: &osb.BasicAuthConfig{
-			Username: string(usernameBytes),
-			Password: string(passwordBytes),
-		},
+	return &osb.BasicAuthConfig{
+		Username: string(usernameBytes),
+		Password: string(passwordBytes),
+	}, nil
+}
+
+func getBearerConfig(secret *apiv1.Secret) (*osb.BearerConfig, error) {
+	tokenBytes, ok := secret.Data["token"]
+	if !ok {
+		return nil, fmt.Errorf("auth secret didn't contain token")
 	}
 
-	return authConfig, nil
+	return &osb.BearerConfig{
+		Token: string(tokenBytes),
+	}, nil
 }
 
 // convertCatalog converts a service broker catalog into an array of ServiceClasses

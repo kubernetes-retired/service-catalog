@@ -307,6 +307,12 @@ func getTestBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
 	return broker
 }
 
+func getTestBrokerWithAuth(authInfo *v1alpha1.BrokerAuthInfo) *v1alpha1.Broker {
+	broker := getTestBroker()
+	broker.Spec.AuthInfo = authInfo
+	return broker
+}
+
 // a bindable service class wired to the result of getTestBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
