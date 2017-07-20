@@ -183,7 +183,7 @@ func (c checkEtcdConnectable) Check(_ *http.Request) error {
 	serverReachable, err := preflight.EtcdConnection{ServerList: c.ServerList}.CheckEtcdServers()
 
 	if err != nil {
-		glog.Error("etcd checker failed with err: %v", err)
+		glog.Errorf("etcd checker failed with err: %v", err)
 		return err
 	}
 	if !serverReachable {
