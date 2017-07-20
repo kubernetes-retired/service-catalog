@@ -7,25 +7,38 @@ situations for which process is not specified.
 
 PRs may only be merged after the following criteria are met:
 
-1. It has been 'LGTM'-ed by 2 different reviewers, each from a different
+1. It has been approved by 2 different reviewers, each from a different
   organization and different from the author's organization
-1. It has all appropriate corresponding documentation and testcases
+1. It has all appropriate corresponding documentation and test cases
+
+We use the the 
+[Github Pull Request Reviews](https://help.github.com/articles/about-pull-request-reviews/)
+system to approve PRs. 
 
 ## LGTMs
 
-When a reviewer deems a PR good enough to merge, they should add a comment to the PR
-thread that simply reads 'LGTM'. If they do not deem it ready for merge,
-they should add comments -- either inline or on the PR thread -- that indicate
-changes they believe should be made before merge.
+When a reviewer believes that a PR is ready to merge, they should submit their PR review
+as "Approve" to the pull request.
+
+If they still have comments that they would like the submitter to address,
+and don't believe it's ready to review, they should submit their comments as part of the Github 
+PR review system, and then submit the review as "Request changes".
+
+Details on how to use the pull request reviews system can be found
+[here](https://help.github.com/articles/about-pull-request-reviews/).
 
 ## Vetoing
 
 If a reviewer decides that a PR should not be merged in its current state,
-even if it has 2 'LGTM' approvals from others, they should mark that PR with
+even if it has 2 approvals from others, they should mark that PR with
 `do-not-merge` label.
 
 This label should only be used by a reviewer when that person believes there
-is a fundamental problem with the PR. The reviewer should summarize that problem
-in the PR comments and a longer discussion may be required.
+is a fundamental problem with the PR, and it needs to be discussed in more detail before it
+proceeds.
 
-We expect this label to be used infrequently.
+The reviewer should summarize that problem in a PR comment and organize a longer discussion
+if necessary.
+
+We expect the `do-not-merge` label to be used infrequently for the purpose of preventing a PR
+merge.
