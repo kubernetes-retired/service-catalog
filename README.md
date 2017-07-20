@@ -77,6 +77,10 @@ Our goal is to have extensive use-case and functional documentation.
 
 See [here](./docs/v1) for [documentation](./docs/v1).
 
+See [here](https://github.com/kubernetes-incubator/service-catalog/wiki/Examples) for examples and
+[here](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md) for
+broker servers that are compatible with this software.
+
 ### Terminology
 
 This project's problem domain contains a few inconvenient but unavoidable
