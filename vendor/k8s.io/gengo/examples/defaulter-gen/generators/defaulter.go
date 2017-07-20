@@ -320,7 +320,7 @@ func Packages(context *generator.Context, arguments *args.GeneratorArgs) generat
 				if d.object != nil {
 					continue
 				}
-				if newCallTreeForType(existingDefaulters, newDefaulters).build(t, true) != nil {
+				if buildCallTreeForType(t, true, existingDefaulters, newDefaulters) != nil {
 					args := defaultingArgsFromType(t)
 					sw.Do("$.inType|objectdefaultfn$", args)
 					newDefaulters[t] = defaults{
@@ -387,22 +387,7 @@ func Packages(context *generator.Context, arguments *args.GeneratorArgs) generat
 	return packages
 }
 
-// callTreeForType contains fields necessary to build a tree for types.
-type callTreeForType struct {
-	existingDefaulters     defaulterFuncMap
-	newDefaulters          defaulterFuncMap
-	currentlyBuildingTypes map[*types.Type]bool
-}
-
-func newCallTreeForType(existingDefaulters, newDefaulters defaulterFuncMap) *callTreeForType {
-	return &callTreeForType{
-		existingDefaulters:     existingDefaulters,
-		newDefaulters:          newDefaulters,
-		currentlyBuildingTypes: make(map[*types.Type]bool),
-	}
-}
-
-// build creates a tree of paths to fields (based on how they would be accessed in Go - pointer, elem,
+// buildCallTreeForType creates a tree of paths to fields (based on how they would be accessed in Go - pointer, elem,
 // slice, or key) and the functions that should be invoked on each field. An in-order traversal of the resulting tree
 // can be used to generate a Go function that invokes each nested function on the appropriate type. The return
 // value may be nil if there are no functions to call on type or the type is a primitive (Defaulters can only be
@@ -411,7 +396,7 @@ func newCallTreeForType(existingDefaulters, newDefaulters defaulterFuncMap) *cal
 // that could be or will be generated. If newDefaulters has an entry for a type, but the 'object' field is nil,
 // this function skips adding that defaulter - this allows us to avoid generating object defaulter functions for
 // list types that call empty defaulters.
-func (c *callTreeForType) build(t *types.Type, root bool) *callNode {
+func buildCallTreeForType(t *types.Type, root bool, existingDefaulters, newDefaulters defaulterFuncMap) *callNode {
 	parent := &callNode{}
 
 	if root {
@@ -419,8 +404,8 @@ func (c *callTreeForType) build(t *types.Type, root bool) *callNode {
 		parent.elem = true
 	}
 
-	defaults, _ := c.existingDefaulters[t]
-	newDefaults, generated := c.newDefaulters[t]
+	defaults, _ := existingDefaulters[t]
+	newDefaults, generated := newDefaulters[t]
 	switch {
 	case !root && generated && newDefaults.object != nil:
 		parent.call = append(parent.call, newDefaults.object)
@@ -447,33 +432,19 @@ func (c *callTreeForType) build(t *types.Type, root bool) *callNode {
 	// base has been added already, now add any additional defaulters defined for this object
 	parent.call = append(parent.call, defaults.additional...)
 
-	// if the type already exists, don't build the tree for it and don't generate anything.
-	// This is used to avoid recursion for nested recursive types.
-	if c.currentlyBuildingTypes[t] {
-		return nil
-	}
-	// if type doesn't exist, mark it as existing
-	c.currentlyBuildingTypes[t] = true
-
-	defer func() {
-		// The type will now acts as a parent, not a nested recursive type.
-		// We can now build the tree for it safely.
-		c.currentlyBuildingTypes[t] = false
-	}()
-
 	switch t.Kind {
 	case types.Pointer:
-		if child := c.build(t.Elem, false); child != nil {
+		if child := buildCallTreeForType(t.Elem, false, existingDefaulters, newDefaulters); child != nil {
 			child.elem = true
 			parent.children = append(parent.children, *child)
 		}
 	case types.Slice, types.Array:
-		if child := c.build(t.Elem, false); child != nil {
+		if child := buildCallTreeForType(t.Elem, false, existingDefaulters, newDefaulters); child != nil {
 			child.index = true
 			parent.children = append(parent.children, *child)
 		}
 	case types.Map:
-		if child := c.build(t.Elem, false); child != nil {
+		if child := buildCallTreeForType(t.Elem, false, existingDefaulters, newDefaulters); child != nil {
 			child.key = true
 			parent.children = append(parent.children, *child)
 		}
@@ -487,13 +458,13 @@ func (c *callTreeForType) build(t *types.Type, root bool) *callNode {
 					name = field.Type.Name.Name
 				}
 			}
-			if child := c.build(field.Type, false); child != nil {
+			if child := buildCallTreeForType(field.Type, false, existingDefaulters, newDefaulters); child != nil {
 				child.field = name
 				parent.children = append(parent.children, *child)
 			}
 		}
 	case types.Alias:
-		if child := c.build(t.Underlying, false); child != nil {
+		if child := buildCallTreeForType(t.Underlying, false, existingDefaulters, newDefaulters); child != nil {
 			parent.children = append(parent.children, *child)
 		}
 	}
@@ -600,7 +571,7 @@ func (g *genDefaulter) GenerateType(c *generator.Context, t *types.Type, w io.Wr
 
 	glog.V(5).Infof("generating for type %v", t)
 
-	callTree := newCallTreeForType(g.existingDefaulters, g.newDefaulters).build(t, true)
+	callTree := buildCallTreeForType(t, true, g.existingDefaulters, g.newDefaulters)
 	if callTree == nil {
 		glog.V(5).Infof("  no defaulters defined")
 		return nil

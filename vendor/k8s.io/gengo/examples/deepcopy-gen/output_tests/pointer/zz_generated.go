@@ -40,7 +40,7 @@ func DeepCopy_pointer_Ttest(in interface{}, out interface{}, c *conversion.Clone
 		*out = *in
 		if in.Types != nil {
 			in, out := &in.Types, &out.Types
-			*out = make(map[string]*Ttest, len(*in))
+			*out = make(map[string]*Ttest)
 			for key, val := range *in {
 				if newVal, err := c.DeepCopy(&val); err != nil {
 					return err

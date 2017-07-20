@@ -40,77 +40,77 @@ func DeepCopy_maps_Ttest(in interface{}, out interface{}, c *conversion.Cloner) 
 		*out = *in
 		if in.Byte != nil {
 			in, out := &in.Byte, &out.Byte
-			*out = make(map[string]byte, len(*in))
+			*out = make(map[string]byte)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Int16 != nil {
 			in, out := &in.Int16, &out.Int16
-			*out = make(map[string]int16, len(*in))
+			*out = make(map[string]int16)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Int32 != nil {
 			in, out := &in.Int32, &out.Int32
-			*out = make(map[string]int32, len(*in))
+			*out = make(map[string]int32)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Int64 != nil {
 			in, out := &in.Int64, &out.Int64
-			*out = make(map[string]int64, len(*in))
+			*out = make(map[string]int64)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Uint8 != nil {
 			in, out := &in.Uint8, &out.Uint8
-			*out = make(map[string]byte, len(*in))
+			*out = make(map[string]byte)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Uint16 != nil {
 			in, out := &in.Uint16, &out.Uint16
-			*out = make(map[string]uint16, len(*in))
+			*out = make(map[string]uint16)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Uint32 != nil {
 			in, out := &in.Uint32, &out.Uint32
-			*out = make(map[string]uint32, len(*in))
+			*out = make(map[string]uint32)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Uint64 != nil {
 			in, out := &in.Uint64, &out.Uint64
-			*out = make(map[string]uint64, len(*in))
+			*out = make(map[string]uint64)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Float32 != nil {
 			in, out := &in.Float32, &out.Float32
-			*out = make(map[string]float32, len(*in))
+			*out = make(map[string]float32)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.Float64 != nil {
 			in, out := &in.Float64, &out.Float64
-			*out = make(map[string]float64, len(*in))
+			*out = make(map[string]float64)
 			for key, val := range *in {
 				(*out)[key] = val
 			}
 		}
 		if in.String != nil {
 			in, out := &in.String, &out.String
-			*out = make(map[string]string, len(*in))
+			*out = make(map[string]string)
 			for key, val := range *in {
 				(*out)[key] = val
 			}

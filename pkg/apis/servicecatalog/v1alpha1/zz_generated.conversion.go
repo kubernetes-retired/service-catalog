@@ -386,6 +386,7 @@ func autoConvert_servicecatalog_BrokerStatus_To_v1alpha1_BrokerStatus(in *servic
 	} else {
 		out.Conditions = *(*[]BrokerCondition)(unsafe.Pointer(&in.Conditions))
 	}
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 

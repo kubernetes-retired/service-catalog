@@ -40,6 +40,7 @@ import:
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo
+  version: c79c13d131b0a8f42d05faa6491c12e94ccc6f30 # see https://github.com/kubernetes/kubernetes/blob/release-1.7/Godeps/Godeps.json
   subpackages:
   - args
 - package: github.com/kubernetes/repo-infra
@@ -47,7 +48,7 @@ import:
 - package: k8s.io/kubernetes
   version: ebb8d6e0fadfc95f3d64ccecc36c8ed2ac9224ef # client-go origin version
 - package: k8s.io/client-go
-  version: release-4.0
+  version: e356aa2e77ab4a5914c216c12ba14cce25a25ab0 # in sync with kubernetes 1.7.0
 - package: k8s.io/apimachinery
   version: abe34e4f5b4413c282a83011892cbeea5b32223b # wanted by client-go; release-1.7 branch
 - package: k8s.io/apiserver
@@ -61,5 +62,6 @@ import:
   version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8 # wanted by k8s.io/kubernetes
 - package: github.com/pivotal-cf/brokerapi
 - package: code.cloudfoundry.org/lager
+  version: dfcbcba2dd4a5228c43b0292d219d5c010daed3a
 - package: github.com/pmorie/go-open-service-broker-client
   version: 8811635fed0170d82bfc1c3d4d7fbd5a01ae45ed

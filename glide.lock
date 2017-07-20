@@ -1,5 +1,5 @@
-hash: 0c7192490a780f58b009711d1084a2d52f95a0f83d2a72e46f04f33e992a0536
-updated: 2017-07-18T13:40:26.147557265-04:00
+hash: e872ffba1b42ff4d0b77dc5af5bbe6fadc77647e1edbfa9a7fde7699459cf139
+updated: 2017-07-21T13:58:14.204655699+10:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -484,7 +484,7 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
-  version: df46f7f13b3da19b90b8b4f0d18b8adc6fbf28dc
+  version: e356aa2e77ab4a5914c216c12ba14cce25a25ab0
   subpackages:
   - discovery
   - discovery/fake
@@ -652,12 +652,13 @@ imports:
   - util/jsonpath
   - util/workqueue
 - name: k8s.io/gengo
-  version: d3548819d587579f7fc1a18712e13e080acf40a4
+  version: c79c13d131b0a8f42d05faa6491c12e94ccc6f30
   subpackages:
   - args
 - name: k8s.io/kubernetes
   version: ebb8d6e0fadfc95f3d64ccecc36c8ed2ac9224ef
   subpackages:
+  - cmd/kube-apiserver/app/preflight
   - pkg/api
   - pkg/api/install
   - pkg/api/v1

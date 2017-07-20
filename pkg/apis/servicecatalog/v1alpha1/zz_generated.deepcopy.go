@@ -65,12 +65,11 @@ func DeepCopy_v1alpha1_AlphaPodPresetTemplate(in interface{}, out interface{}, c
 		in := in.(*AlphaPodPresetTemplate)
 		out := out.(*AlphaPodPresetTemplate)
 		*out = *in
-		newVal, err := c.DeepCopy(&in.Selector)
-		if err != nil {
+		if newVal, err := c.DeepCopy(&in.Selector); err != nil {
 			return err
+		} else {
+			out.Selector = *newVal.(*v1.LabelSelector)
 		}
-		out.Selector = *newVal.(*v1.LabelSelector)
-
 		return nil
 	}
 }
@@ -81,12 +80,11 @@ func DeepCopy_v1alpha1_Binding(in interface{}, out interface{}, c *conversion.Cl
 		in := in.(*Binding)
 		out := out.(*Binding)
 		*out = *in
-		newVal, err := c.DeepCopy(&in.ObjectMeta)
-		if err != nil {
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
+		} else {
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
-		out.ObjectMeta = *newVal.(*v1.ObjectMeta)
-
 		if err := DeepCopy_v1alpha1_BindingSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
@@ -135,12 +133,11 @@ func DeepCopy_v1alpha1_BindingSpec(in interface{}, out interface{}, c *conversio
 		*out = *in
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		if in.AlphaPodPresetTemplate != nil {
 			in, out := &in.AlphaPodPresetTemplate, &out.AlphaPodPresetTemplate
@@ -183,12 +180,11 @@ func DeepCopy_v1alpha1_Broker(in interface{}, out interface{}, c *conversion.Clo
 		in := in.(*Broker)
 		out := out.(*Broker)
 		*out = *in
-		newVal, err := c.DeepCopy(&in.ObjectMeta)
-		if err != nil {
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
+		} else {
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
-		out.ObjectMeta = *newVal.(*v1.ObjectMeta)
-
 		if err := DeepCopy_v1alpha1_BrokerSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
@@ -291,12 +287,11 @@ func DeepCopy_v1alpha1_Instance(in interface{}, out interface{}, c *conversion.C
 		in := in.(*Instance)
 		out := out.(*Instance)
 		*out = *in
-		newVal, err := c.DeepCopy(&in.ObjectMeta)
-		if err != nil {
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
+		} else {
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
-		out.ObjectMeta = *newVal.(*v1.ObjectMeta)
-
 		if err := DeepCopy_v1alpha1_InstanceSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
@@ -345,12 +340,11 @@ func DeepCopy_v1alpha1_InstanceSpec(in interface{}, out interface{}, c *conversi
 		*out = *in
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		return nil
 	}
@@ -396,12 +390,11 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 		in := in.(*ServiceClass)
 		out := out.(*ServiceClass)
 		*out = *in
-		newVal, err := c.DeepCopy(&in.ObjectMeta)
-		if err != nil {
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
+		} else {
+			out.ObjectMeta = *newVal.(*v1.ObjectMeta)
 		}
-		out.ObjectMeta = *newVal.(*v1.ObjectMeta)
-
 		if in.Plans != nil {
 			in, out := &in.Plans, &out.Plans
 			*out = make([]ServicePlan, len(*in))
@@ -413,12 +406,11 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 		}
 		if in.ExternalMetadata != nil {
 			in, out := &in.ExternalMetadata, &out.ExternalMetadata
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		if in.AlphaTags != nil {
 			in, out := &in.AlphaTags, &out.AlphaTags
@@ -466,39 +458,35 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 		}
 		if in.ExternalMetadata != nil {
 			in, out := &in.ExternalMetadata, &out.ExternalMetadata
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		if in.AlphaInstanceCreateParameterSchema != nil {
 			in, out := &in.AlphaInstanceCreateParameterSchema, &out.AlphaInstanceCreateParameterSchema
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		if in.AlphaInstanceUpdateParameterSchema != nil {
 			in, out := &in.AlphaInstanceUpdateParameterSchema, &out.AlphaInstanceUpdateParameterSchema
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		if in.AlphaBindingCreateParameterSchema != nil {
 			in, out := &in.AlphaBindingCreateParameterSchema, &out.AlphaBindingCreateParameterSchema
-			newVal, err := c.DeepCopy(*in)
-			if err != nil {
+			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
+			} else {
+				*out = newVal.(*runtime.RawExtension)
 			}
-			*out = newVal.(*runtime.RawExtension)
-
 		}
 		return nil
 	}
