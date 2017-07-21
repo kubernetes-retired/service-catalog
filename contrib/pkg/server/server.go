@@ -31,7 +31,6 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	//"k8s.io/apimachinery/pkg/api/errors"  // TODO decomment once we start using the k8s client
 )
 
 type server struct {
@@ -54,7 +53,6 @@ func createHandler(b broker.Broker) http.Handler {
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.bind).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.unBind).Methods("DELETE")
 
-	router.HandleFunc("/debug", s.debug).Methods("GET")
 	return router
 }
 
@@ -188,33 +186,4 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
 	}
-}
-
-func (s *server) debug(w http.ResponseWriter, r *http.Request) {
-	glog.Warning("[DEBUG] External debug request.")
-
-	cs := getKubeClient()
-	ver, err := cs.ServerVersion()
-	if err != nil {
-		panic(err)
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-
-	fmt.Fprint(w, fmt.Sprintf("[DEBUG]: Version==%v", ver))
-}
-
-func getKubeClient() *kubernetes.Clientset {
-	glog.Info("Getting API Client config")
-	kubeClientConfig, err := rest.InClusterConfig()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	glog.Info("Creating new Kubernetes Clientset")
-	cs, err := kubernetes.NewForConfig(kubeClientConfig)
-	if err != nil {
-		panic(err.Error())
-	}
-	return cs
 }
