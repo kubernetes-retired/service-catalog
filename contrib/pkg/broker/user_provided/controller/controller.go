@@ -18,7 +18,6 @@ package controller
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -32,18 +31,26 @@ type errNoSuchInstance struct {
 }
 
 func (e errNoSuchInstance) Error() string {
-	return fmt.Sprintf("no such instance with ID %s", e.instanceID)
+	return fmt.Sprintf("No such instance with ID %s", e.instanceID)
 }
 
 type userProvidedServiceInstance struct {
-	Name       string
-	Credential *brokerapi.Credential
+	Name         string                    `json:"name"`
+	ServiceID    string                    `json:"serviceid"`
+	Credential   *brokerapi.Credential    `json:"credential"`
+	PodName      string                    `json:"podname"`
+	PodNamespace string                `json:"podnamespace"`
 }
 
 type userProvidedController struct {
 	rwMutex     sync.RWMutex
 	instanceMap map[string]*userProvidedServiceInstance
 }
+
+const (
+	serviceidUserProvided string = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+	serviceidDatabasePod  string = "database-1"
+)
 
 // CreateController creates an instance of a User Provided service broker controller.
 func CreateController() controller.Controller {
@@ -59,7 +66,7 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 		Services: []*brokerapi.Service{
 			{
 				Name:        "user-provided-service",
-				ID:          "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
+				ID:          serviceidUserProvided,
 				Description: "A user provided service",
 				Plans: []brokerapi.ServicePlan{{
 					Name:        "default",
@@ -67,6 +74,20 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 					Description: "Sample plan description",
 					Free:        true,
 				},
+				},
+				Bindable: true,
+			},
+			{
+				Name:        "database-service",
+				ID:          serviceidDatabasePod,
+				Description: "A Hacky little pod service.",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "default",
+						Description: "There is only one, and this is it.",
+						Free:        true,
+					},
 				},
 				Bindable: true,
 			},
@@ -82,6 +103,21 @@ func (c *userProvidedController) CreateServiceInstance(
 	credString, ok := req.Parameters["credentials"]
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
+
+	//DEBUG
+	glog.Info("[DEBUG] New CreateServiceInstanceRequest (ID: %q)", id)
+
+	if _, ok := c.instanceMap[id]; ok {
+		return nil, fmt.Errorf("Instance %q already exists", id)
+	}
+	// Create New Instance
+	c.instanceMap[id] = &userProvidedServiceInstance{
+		Name:      id,
+		ServiceID: req.ServiceID,
+	}
+
+	// Extract credentials from request or generate dummy
+	credString, ok := req.Parameters["credentials"]
 	if ok {
 		jsonCred, err := json.Marshal(credString)
 		if err != nil {
@@ -90,23 +126,29 @@ func (c *userProvidedController) CreateServiceInstance(
 		}
 		var cred brokerapi.Credential
 		err = json.Unmarshal(jsonCred, &cred)
-
-		c.instanceMap[id] = &userProvidedServiceInstance{
-			Name:       id,
-			Credential: &cred,
-		}
+		c.instanceMap[id].Credential = &cred
 	} else {
-		c.instanceMap[id] = &userProvidedServiceInstance{
-			Name: id,
-			Credential: &brokerapi.Credential{
-				"special-key-1": "special-value-1",
-				"special-key-2": "special-value-2",
-			},
+		c.instanceMap[id].Credential = &brokerapi.Credential{
+			"special-key-1": "special-value-1",
+			"special-key-2": "special-value-2",
 		}
 	}
 
-	glog.Infof("Created User Provided Service Instance:\n%v\n", c.instanceMap[id])
-	return &brokerapi.CreateServiceInstanceResponse{}, nil
+	// Do provisioning logic based on service id
+	switch c.instanceMap[id].ServiceID {
+	case serviceidUserProvided:
+		break
+	case serviceidDatabasePod:
+		name, ns, err := provisionInstancePod(id, req.ContextProfile.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		c.instanceMap[id].PodName = name
+		c.instanceMap[id].PodNamespace = ns
+
+	}
+	glog.Infof("Created User Provided Service Instance: %q", c.instanceMap[id].Name)
+	return nil, nil
 }
 
 func (c *userProvidedController) GetServiceInstanceLastOperation(
@@ -128,13 +170,26 @@ func (c *userProvidedController) RemoveServiceInstance(
 	glog.Info("RemoveServiceInstance()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
-	_, ok := c.instanceMap[instanceID]
-	if ok {
-		delete(c.instanceMap, instanceID)
-		return &brokerapi.DeleteServiceInstanceResponse{}, nil
-	}
 
-	return &brokerapi.DeleteServiceInstanceResponse{}, nil
+	// DEBUG
+	glog.Infof("[DEBUG] RemoveServiceInstance %q", id)
+
+	if _, ok := c.instanceMap[id]; ! ok {
+		return nil, errNoSuchInstance{instanceID: id}
+	}
+	switch c.instanceMap[id].ServiceID {
+	case serviceidUserProvided:
+		break
+	case serviceidDatabasePod:
+		if err := deprovisionInstancePod(c.instanceMap[id].PodName, c.instanceMap[id].PodNamespace); err != nil {
+			errmsg := fmt.Errorf("Error deleting intance pod %q (ns: %q): %v",
+				c.instanceMap[id].PodName, c.instanceMap[id].PodNamespace, err)
+			glog.Error(errmsg)
+			return nil, errmsg
+		}
+	}
+	delete(c.instanceMap, id)
+	return nil, nil
 }
 
 func (c *userProvidedController) Bind(
@@ -149,10 +204,25 @@ func (c *userProvidedController) Bind(
 	if !ok {
 		return nil, errNoSuchInstance{instanceID: instanceID}
 	}
+	switch c.instanceMap[instanceID].ServiceID {
+	case serviceidUserProvided:
+		break
+	case serviceidDatabasePod:
+		podIP, podPort, err := getInstancePodIP(c.instanceMap[instanceID])
+		if err != nil {
+			return nil, err
+		}
+		return &brokerapi.CreateServiceBindingResponse{
+			Credentials: brokerapi.Credential{
+				"mongo_svc_ip_port": fmt.Sprintf("%s:%d", podIP, podPort),
+			},
+		}, nil
+	}
 	cred := instance.Credential
 	return &brokerapi.CreateServiceBindingResponse{Credentials: *cred}, nil
 }
 
+//TODO implement DB unbinding
 func (c *userProvidedController) UnBind(instanceID, bindingID, serviceID, planID string) error {
 	glog.Info("UnBind()")
 	// Since we don't persist the binding, there's nothing to do here.

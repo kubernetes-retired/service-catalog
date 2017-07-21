@@ -31,7 +31,6 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	//"k8s.io/apimachinery/pkg/api/errors"  // TODO decomment once we start using the k8s client
 )
 
 type server struct {
@@ -54,7 +53,6 @@ func createHandler(c controller.Controller) http.Handler {
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.bind).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.unBind).Methods("DELETE")
 
-	router.HandleFunc("/debug", s.debug).Methods("GET")
 	return router
 }
 
@@ -78,7 +76,7 @@ func Run(ctx context.Context, addr string, c controller.Controller) error {
 }
 
 func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
-	glog.Infof("Get Service Broker Catalog...")
+	glog.Infof("Getting Service Broker Catalog...")
 
 	if result, err := s.controller.Catalog(); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
@@ -93,7 +91,7 @@ func (s *server) getServiceInstanceLastOperation(w http.ResponseWriter, r *http.
 	serviceID := q.Get("service_id")
 	planID := q.Get("plan_id")
 	operation := q.Get("operation")
-	glog.Infof("GetServiceInstance ... %s\n", instanceID)
+	glog.Infof("Getting ServiceInstance ... %s\n", instanceID)
 
 	if result, err := s.controller.GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
@@ -104,7 +102,7 @@ func (s *server) getServiceInstanceLastOperation(w http.ResponseWriter, r *http.
 
 func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["instance_id"]
-	glog.Infof("CreateServiceInstance %s...\n", id)
+	glog.Infof("Creating ServiceInstance %s...\n", id)
 
 	var req brokerapi.CreateServiceInstanceRequest
 	if err := util.BodyToObject(r, &req); err != nil {
@@ -133,7 +131,7 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	serviceID := q.Get("service_id")
 	planID := q.Get("plan_id")
 	acceptsIncomplete := q.Get("accepts_incomplete") == "true"
-	glog.Infof("RemoveServiceInstance %s...\n", instanceID)
+	glog.Infof("Removing ServiceInstance %s...\n", instanceID)
 
 	if result, err := s.controller.RemoveServiceInstance(instanceID, serviceID, planID, acceptsIncomplete); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
@@ -188,33 +186,4 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
 	}
-}
-
-func (s *server) debug(w http.ResponseWriter, r *http.Request) {
-	glog.Warning("[DEBUG] External debug request.")
-
-	cs := getKubeClient()
-	ver, err := cs.ServerVersion()
-	if err != nil {
-		panic(err)
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-
-	fmt.Fprint(w, fmt.Sprintf("[DEBUG]: Version==%v", ver))
-}
-
-func getKubeClient() *kubernetes.Clientset {
-	glog.Info("Getting API Client config")
-	kubeClientConfig, err := rest.InClusterConfig()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	glog.Info("Creating new Kubernetes Clientset")
-	cs, err := kubernetes.NewForConfig(kubeClientConfig)
-	if err != nil {
-		panic(err.Error())
-	}
-	return cs
 }
