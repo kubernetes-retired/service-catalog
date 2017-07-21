@@ -451,6 +451,10 @@ type BindingConditionType string
 const (
 	// BindingConditionReady represents a BindingCondition is in ready state.
 	BindingConditionReady BindingConditionType = "Ready"
+
+	// BindingConditionFailed represents a BindingCondition that has failed
+	// completely and should not be retried.
+	BindingConditionFailed BindingConditionType = "Failed"
 )
 
 // These are internal finalizer values to service catalog, must be qualified name.

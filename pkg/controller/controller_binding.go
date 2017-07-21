@@ -18,7 +18,6 @@ package controller
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -69,9 +68,42 @@ func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
 	c.bindingAdd(newObj)
 }
 
+func makeBindingClone(binding *v1alpha1.Binding) (*v1alpha1.Binding, error) {
+	clone, err := api.Scheme.DeepCopy(binding)
+	if err != nil {
+		return nil, err
+	}
+	return clone.(*v1alpha1.Binding), nil
+}
+
+func isBindingFailed(binding *v1alpha1.Binding) bool {
+	for _, condition := range binding.Status.Conditions {
+		if condition.Type == v1alpha1.BindingConditionFailed && condition.Status == v1alpha1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
 // an error is returned to indicate that the binding has not been
 // fully processed and should be resubmitted at a later time.
 func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
+	// TODO: this will change once we fully implement orphan mitigation, see:
+	// https://github.com/kubernetes-incubator/service-catalog/issues/988
+	if isBindingFailed(binding) && binding.ObjectMeta.DeletionTimestamp == nil {
+		glog.V(4).Infof(
+			"Not processing event for Binding %v/%v because status showed that it has failed",
+			binding.Namespace,
+			binding.Name,
+		)
+		return nil
+	}
+
+	toUpdate, err := makeBindingClone(binding)
+	if err != nil {
+		return err
+	}
+
 	// Determine whether the checksum has been invalidated by a change to the
 	// object.  If the binding's checksum matches the calculated checksum,
 	// there is no work to do.
@@ -104,13 +136,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			binding.Spec.InstanceRef.Name,
 			err,
 		)
-		c.updateBindingCondition(
-			binding,
+		c.setBindingCondition(
+			toUpdate,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonexistentInstanceReason,
 			"The binding references an Instance that does not exist. "+s,
 		)
+		c.updateBindingStatus(toUpdate)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentInstanceReason, s)
 		return err
 	}
@@ -124,13 +157,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			binding.Spec.InstanceRef.Name,
 		)
 		glog.Info(s)
-		c.updateBindingCondition(
-			binding,
+		c.setBindingCondition(
+			toUpdate,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorWithOngoingAsyncOperation,
 			errorWithOngoingAsyncOperationMessage,
 		)
+		c.updateBindingStatus(toUpdate)
 		c.recorder.Event(binding, api.EventTypeWarning, errorWithOngoingAsyncOperation, s)
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
@@ -149,13 +183,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			instance.Spec.PlanName,
 		)
 		glog.Warning(s)
-		c.updateBindingCondition(
-			binding,
+		c.setBindingCondition(
+			toUpdate,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonbindableServiceClassReason,
 			s,
 		)
+		c.updateBindingStatus(toUpdate)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonbindableServiceClassReason, s)
 		return nil
 	}
@@ -169,13 +204,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 			if err != nil {
 				s := fmt.Sprintf("Failed to unmarshal Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
 				glog.Warning(s)
-				c.updateBindingCondition(
-					binding,
+				c.setBindingCondition(
+					toUpdate,
 					v1alpha1.BindingConditionReady,
 					v1alpha1.ConditionFalse,
 					errorWithParameters,
 					"Error unmarshaling binding parameters. "+s,
 				)
+				c.updateBindingStatus(toUpdate)
 				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
 				return err
 			}
@@ -185,13 +221,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if err != nil {
 			s := fmt.Sprintf("Failed to get namespace %q during binding: %s", instance.Namespace, err)
 			glog.Info(s)
-			c.updateBindingCondition(
-				binding,
+			c.setBindingCondition(
+				toUpdate,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorFindingNamespaceInstanceReason,
 				"Error finding namespace for instance. "+s,
 			)
+			c.updateBindingStatus(toUpdate)
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorFindingNamespaceInstanceReason, s)
 			return err
 		}
@@ -199,13 +236,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if !isInstanceReady(instance) {
 			s := fmt.Sprintf(`Binding cannot begin because referenced instance "%v/%v" is not ready`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.updateBindingCondition(
-				binding,
+			c.setBindingCondition(
+				toUpdate,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorInstanceNotReadyReason,
 				s,
 			)
+			c.updateBindingStatus(toUpdate)
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorInstanceNotReadyReason, s)
 			return nil
 		}
@@ -235,24 +273,34 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 					httpErr.Error(),
 				)
 				glog.Warning(s)
-				c.updateBindingCondition(
-					binding,
+
+				c.setBindingCondition(
+					toUpdate,
+					v1alpha1.BindingConditionFailed,
+					v1alpha1.ConditionTrue,
+					"BindingReturnedFailure",
+					s,
+				)
+				c.setBindingCondition(
+					toUpdate,
 					v1alpha1.BindingConditionReady,
 					v1alpha1.ConditionFalse,
 					errorBindCallReason,
 					"Bind call failed. "+s)
+				c.updateBindingStatus(toUpdate)
 				c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
 				return err
 			}
 
 			s := fmt.Sprintf("Error creating Binding \"%s/%s\" for Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
 			glog.Warning(s)
-			c.updateBindingCondition(
-				binding,
+			c.setBindingCondition(
+				toUpdate,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorBindCallReason,
 				"Bind call failed. "+s)
+			c.updateBindingStatus(toUpdate)
 			c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
 			return err
 		}
@@ -261,23 +309,25 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if err != nil {
 			s := fmt.Sprintf("Error injecting binding results for Binding \"%s/%s\": %s", binding.Namespace, binding.Name, err)
 			glog.Warning(s)
-			c.updateBindingCondition(
-				binding,
+			c.setBindingCondition(
+				toUpdate,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorInjectingBindResultReason,
 				"Error injecting bind result "+s,
 			)
+			c.updateBindingStatus(toUpdate)
 			c.recorder.Event(binding, api.EventTypeWarning, errorInjectingBindResultReason, s)
 			return err
 		}
-		c.updateBindingCondition(
-			binding,
+		c.setBindingCondition(
+			toUpdate,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionTrue,
 			successInjectedBindResultReason,
 			successInjectedBindResultMessage,
 		)
+		c.updateBindingStatus(toUpdate)
 		c.recorder.Event(binding, api.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
 
 		glog.V(5).Infof("Successfully bound to Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
@@ -294,13 +344,14 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		if err != nil {
 			s := fmt.Sprintf("Error deleting secret: %s", err)
 			glog.Warning(s)
-			c.updateBindingCondition(
-				binding,
+			c.setBindingCondition(
+				toUpdate,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionUnknown,
 				errorEjectingBindReason,
 				errorEjectingBindMessage+s,
 			)
+			c.updateBindingStatus(toUpdate)
 			c.recorder.Eventf(binding, api.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
 			return err
 		}
@@ -325,12 +376,13 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 					httpErr.Error(),
 				)
 				glog.Warning(s)
-				c.updateBindingCondition(
-					binding,
+				c.setBindingCondition(
+					toUpdate,
 					v1alpha1.BindingConditionReady,
 					v1alpha1.ConditionFalse,
 					errorUnbindCallReason,
 					"Unbind call failed. "+s)
+				c.updateBindingStatus(toUpdate)
 				c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
 				return err
 			}
@@ -345,26 +397,30 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 				err,
 			)
 			glog.Warning(s)
-			c.updateBindingCondition(
-				binding,
+			c.setBindingCondition(
+				toUpdate,
 				v1alpha1.BindingConditionReady,
 				v1alpha1.ConditionFalse,
 				errorUnbindCallReason,
 				"Unbind call failed. "+s)
+			c.updateBindingStatus(toUpdate)
 			c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
 			return err
 		}
 
-		c.updateBindingCondition(
-			binding,
+		c.setBindingCondition(
+			toUpdate,
 			v1alpha1.BindingConditionReady,
 			v1alpha1.ConditionFalse,
 			successUnboundReason,
 			"The binding was deleted successfully",
 		)
+		c.updateBindingStatus(toUpdate)
 		// Clear the finalizer
 		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
-		c.updateBindingFinalizers(binding, finalizers.List())
+		if err = c.updateBindingFinalizers(binding, finalizers.List()); err != nil {
+			return err
+		}
 		c.recorder.Event(binding, api.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
 
 		glog.V(5).Infof("Successfully deleted Binding %v/%v of Instance %v/%v of ServiceClass %v at Broker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
@@ -472,19 +528,21 @@ func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
 	return nil
 }
 
-// updateBindingCondition updates the given condition for the given Binding
-// with the given status, reason, and message.
-func (c *controller) updateBindingCondition(
-	binding *v1alpha1.Binding,
+func (c *controller) setBindingCondition(toUpdate *v1alpha1.Binding,
 	conditionType v1alpha1.BindingConditionType,
 	status v1alpha1.ConditionStatus,
-	reason, message string) error {
+	reason, message string) {
 
-	clone, err := api.Scheme.DeepCopy(binding)
-	if err != nil {
-		return err
-	}
-	toUpdate := clone.(*v1alpha1.Binding)
+	setBindingConditionInternal(toUpdate, conditionType, status, reason, message, metav1.Now())
+}
+
+func setBindingConditionInternal(toUpdate *v1alpha1.Binding,
+	conditionType v1alpha1.BindingConditionType,
+	status v1alpha1.ConditionStatus,
+	reason, message string,
+	t metav1.Time) {
+
+	glog.V(5).Infof("Setting Binding '%v/%v' condition %q to %v", toUpdate.Namespace, toUpdate.Name, conditionType, status)
 
 	newCondition := v1alpha1.BindingCondition{
 		Type:    conditionType,
@@ -493,34 +551,64 @@ func (c *controller) updateBindingCondition(
 		Message: message,
 	}
 
-	t := time.Now()
-
-	if len(binding.Status.Conditions) == 0 {
-		glog.Infof(`Setting lastTransitionTime for Binding "%v/%v" condition %q to %v`, binding.Namespace, binding.Name, conditionType, t)
-		newCondition.LastTransitionTime = metav1.NewTime(t)
+	if len(toUpdate.Status.Conditions) == 0 {
+		glog.Infof(`Setting lastTransitionTime for Binding "%v/%v" condition %q to %v`,
+			toUpdate.Namespace, toUpdate.Name, conditionType, t)
+		newCondition.LastTransitionTime = t
 		toUpdate.Status.Conditions = []v1alpha1.BindingCondition{newCondition}
-	} else {
-		for i, cond := range binding.Status.Conditions {
-			if cond.Type == conditionType {
-				if cond.Status != newCondition.Status {
-					glog.Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, binding.Namespace, binding.Name, conditionType, cond.Status, status, t)
-					newCondition.LastTransitionTime = metav1.NewTime(time.Now())
-				} else {
-					newCondition.LastTransitionTime = cond.LastTransitionTime
-				}
-
-				toUpdate.Status.Conditions[i] = newCondition
-				break
+		return
+	}
+	for i, cond := range toUpdate.Status.Conditions {
+		if cond.Type == conditionType {
+			if cond.Status != newCondition.Status {
+				glog.V(3).Infof(`Found status change for Binding "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`,
+					toUpdate.Namespace, toUpdate.Name, conditionType, cond.Status, status, t)
+				newCondition.LastTransitionTime = t
+			} else {
+				newCondition.LastTransitionTime = cond.LastTransitionTime
 			}
+
+			toUpdate.Status.Conditions[i] = newCondition
+			return
 		}
 	}
 
-	logContext := fmt.Sprintf("%v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
+	glog.V(3).Infof("Setting lastTransitionTime for Binding '%v/%v' condition %q to %v",
+		toUpdate.Namespace, toUpdate.Name, conditionType, t)
+
+	newCondition.LastTransitionTime = t
+	toUpdate.Status.Conditions = append(toUpdate.Status.Conditions, newCondition)
+}
+
+func (c *controller) updateBindingStatus(toUpdate *v1alpha1.Binding) error {
+	glog.V(4).Infof("Updating status for Binding %v/%v", toUpdate.Namespace, toUpdate.Name)
+	_, err := c.serviceCatalogClient.Bindings(toUpdate.Namespace).UpdateStatus(toUpdate)
+	if err != nil {
+		glog.Errorf("Error updating status for Binding %v/%v", toUpdate.Namespace, toUpdate.Name)
+	}
+	return err
+}
+
+// updateBindingCondition updates the given condition for the given Binding
+// with the given status, reason, and message.
+func (c *controller) updateBindingCondition(
+	binding *v1alpha1.Binding,
+	conditionType v1alpha1.BindingConditionType,
+	status v1alpha1.ConditionStatus,
+	reason, message string) error {
+
+	toUpdate, err := makeBindingClone(binding)
+	if err != nil {
+		return err
+	}
+
+	c.setBindingCondition(toUpdate, conditionType, status, reason, message)
+
+	glog.V(4).Infof("Updating %v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
 		conditionType, binding.Namespace, binding.Name, status, reason, message)
-	glog.V(4).Infof("Updating %v", logContext)
 	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
-		glog.Errorf("Error updating %v: %v", logContext, err)
+		glog.Errorf("Error updating %v condition for Binding %v/%v to %v: %v", conditionType, binding.Namespace, binding.Name, status, err)
 	}
 	return err
 }

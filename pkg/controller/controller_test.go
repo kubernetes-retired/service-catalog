@@ -511,6 +511,18 @@ func getTestBinding() *v1alpha1.Binding {
 	}
 }
 
+func getTestBindingWithFailedStatus() *v1alpha1.Binding {
+	binding := getTestBinding()
+	binding.Status = v1alpha1.BindingStatus{
+		Conditions: []v1alpha1.BindingCondition{{
+			Type:   v1alpha1.BindingConditionFailed,
+			Status: v1alpha1.ConditionTrue,
+		}},
+	}
+
+	return binding
+}
+
 type instanceParameters struct {
 	Name string            `json:"name"`
 	Args map[string]string `json:"args"`
@@ -1420,7 +1432,7 @@ func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions [
 
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		f(t, "%vUnexpected number of actions: expected %v, got %v", logContext, e, a)
+		f(t, "%vUnexpected number of actions: expected %v, got %v\nactions: %+v", logContext, e, a, actions)
 		return false
 	}
 
