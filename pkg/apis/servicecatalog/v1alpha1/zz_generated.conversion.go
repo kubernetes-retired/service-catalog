@@ -337,6 +337,7 @@ func Convert_servicecatalog_BrokerSpec_To_v1alpha1_BrokerSpec(in *servicecatalog
 
 func autoConvert_v1alpha1_BrokerStatus_To_servicecatalog_BrokerStatus(in *BrokerStatus, out *servicecatalog.BrokerStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.BrokerCondition)(unsafe.Pointer(&in.Conditions))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 
@@ -346,6 +347,7 @@ func Convert_v1alpha1_BrokerStatus_To_servicecatalog_BrokerStatus(in *BrokerStat
 
 func autoConvert_servicecatalog_BrokerStatus_To_v1alpha1_BrokerStatus(in *servicecatalog.BrokerStatus, out *BrokerStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]BrokerCondition)(unsafe.Pointer(&in.Conditions))
+	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
 	return nil
 }
 

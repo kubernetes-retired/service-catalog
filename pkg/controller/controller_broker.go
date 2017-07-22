@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
+	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,6 +116,11 @@ const (
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true.
 func shouldReconcileBroker(broker *v1alpha1.Broker, now time.Time, relistInterval time.Duration) bool {
+	brokerChecksum := checksum.BrokerSpecChecksum(broker.Spec)
+	if broker.Status.Checksum != nil && brokerChecksum != *broker.Status.Checksum {
+		// If the spec has changed, we should reconcile the broker.
+		return true
+	}
 	if broker.DeletionTimestamp != nil || len(broker.Status.Conditions) == 0 {
 		// If the deletion timestamp is set or the broker has no status
 		// conditions, we should reconcile it.

@@ -69,6 +69,10 @@ type BrokerAuthInfo struct {
 // BrokerStatus represents the current status of a Broker.
 type BrokerStatus struct {
 	Conditions []BrokerCondition `json:"conditions"`
+
+	// Checksum is the sha hash of the BrokerSpec that was last successfully
+	// reconciled against the broker.
+	Checksum *string `json:"checksum,omitempty"`
 }
 
 // BrokerCondition contains condition information for a Broker.

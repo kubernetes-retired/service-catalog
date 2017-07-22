@@ -260,6 +260,11 @@ func DeepCopy_v1alpha1_BrokerStatus(in interface{}, out interface{}, c *conversi
 				}
 			}
 		}
+		if in.Checksum != nil {
+			in, out := &in.Checksum, &out.Checksum
+			*out = new(string)
+			**out = **in
+		}
 		return nil
 	}
 }
