@@ -34,7 +34,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/diff"
 
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -336,7 +336,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	}
 }
 
-func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
+func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Error: errors.New("fake creation failure"),
@@ -379,7 +379,73 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorProvisionCalledReason + " " + "Error provisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": fake creation failure"
+	expectedEvent := api.EventTypeWarning + " " + errorErrorCallingProvisionReason + " " + "Error provisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": fake creation failure"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusConflict,
+				ErrorMessage: strPtr("OutOfQuota"),
+				Description:  strPtr("You're out of quota!"),
+			},
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := getTestInstance()
+
+	if err := testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedObject := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedObject)
+	updatedInstance, ok := updatedObject.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.Instance")
+	}
+	if l := len(updatedInstance.Status.Conditions); l != 2 {
+		t.Fatalf("Expected 2 conditions, got %v", l)
+	}
+
+	if updatedInstance.Status.Conditions[0].Type != v1alpha1.InstanceConditionFailed && updatedInstance.Status.Conditions[0].Status != v1alpha1.ConditionTrue {
+		t.Fatalf("Expected failed condition to be set")
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "Error provisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -394,13 +460,7 @@ func TestReconcileInstance(t *testing.T) {
 		},
 	})
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID(testNsUID),
-			},
-		}, nil
-	})
+	addGetNamespaceReaction(fakeKubeClient)
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
@@ -441,7 +501,7 @@ func TestReconcileInstance(t *testing.T) {
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
-	assertInstanceDashboardURL(t, instance, testDashboardURL)
+	assertInstanceDashboardURL(t, updatedInstance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -735,6 +795,36 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 	assertEmptyFinalizers(t, updatedInstance)
 
 	// no events because no external deprovision was needed
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
+}
+
+func TestReconcileInstanceWithFailureCondition(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := getTestInstanceWithFailedStatus()
+
+	if err := testController.reconcileInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected the polling queue to be empty")
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+
+	// verify no actions on the kube client
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
 }
@@ -1134,6 +1224,137 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
+}
+
+func TestSetInstanceCondition(t *testing.T) {
+	instanceWithCondition := func(condition *v1alpha1.InstanceCondition) *v1alpha1.Instance {
+		instance := getTestInstance()
+		instance.Status = v1alpha1.InstanceStatus{
+			Conditions: []v1alpha1.InstanceCondition{*condition},
+		}
+
+		return instance
+	}
+
+	newTs := metav1.Now()
+
+	condition := func(cType v1alpha1.InstanceConditionType, status v1alpha1.ConditionStatus, s ...string) *v1alpha1.InstanceCondition {
+		c := &v1alpha1.InstanceCondition{
+			Type:   cType,
+			Status: status,
+		}
+
+		if len(s) > 0 {
+			c.Reason = s[0]
+		}
+
+		if len(s) > 1 {
+			c.Message = s[1]
+		}
+
+		c.LastTransitionTime = metav1.NewTime(newTs.Add(-5 * time.Minute))
+
+		return c
+	}
+
+	readyFalse := func() *v1alpha1.InstanceCondition {
+		return condition(v1alpha1.InstanceConditionReady, v1alpha1.ConditionFalse, "Reason", "Message")
+	}
+
+	readyFalsef := func(reason, message string) *v1alpha1.InstanceCondition {
+		return condition(v1alpha1.InstanceConditionReady, v1alpha1.ConditionFalse, reason, message)
+	}
+
+	readyTrue := func() *v1alpha1.InstanceCondition {
+		return condition(v1alpha1.InstanceConditionReady, v1alpha1.ConditionTrue, "Reason", "Message")
+	}
+
+	failedTrue := func() *v1alpha1.InstanceCondition {
+		return condition(v1alpha1.InstanceConditionFailed, v1alpha1.ConditionTrue, "Reason", "Message")
+	}
+
+	// this test works by calling setInstanceCondition with the input and
+	// condition fields of the test case, and ensuring that afterward the
+	// input (which is mutated by the setInstanceCondition call) is deep-equal
+	// to the test case result.
+	cases := []struct {
+		name      string
+		input     *v1alpha1.Instance
+		condition *v1alpha1.InstanceCondition
+		result    *v1alpha1.Instance
+	}{
+		{
+			name:      "new ready condition",
+			input:     getTestInstance(),
+			condition: readyFalse(),
+			result: func() *v1alpha1.Instance {
+				i := instanceWithCondition(readyFalse())
+				i.Status.Conditions[0].LastTransitionTime = newTs
+				return i
+			}(),
+		},
+		{
+			name:      "not ready -> not ready",
+			input:     instanceWithCondition(readyFalse()),
+			condition: readyTrue(),
+			result: func() *v1alpha1.Instance {
+				i := instanceWithCondition(readyTrue())
+				i.Status.Conditions[0].LastTransitionTime = newTs
+				return i
+			}(),
+		},
+		{
+			name:      "not ready -> not ready, reason and message change",
+			input:     instanceWithCondition(readyFalse()),
+			condition: readyFalsef("DifferentReason", "DifferentMessage"),
+			result:    instanceWithCondition(readyFalsef("DifferentReason", "DifferentMessage")),
+		},
+		{
+			name:      "not ready -> ready",
+			input:     instanceWithCondition(readyFalse()),
+			condition: readyTrue(),
+			result: func() *v1alpha1.Instance {
+				i := instanceWithCondition(readyTrue())
+				i.Status.Conditions[0].LastTransitionTime = newTs
+				return i
+			}(),
+		},
+		{
+			name:      "ready -> ready",
+			input:     instanceWithCondition(readyTrue()),
+			condition: readyTrue(),
+			result:    instanceWithCondition(readyTrue()),
+		},
+		{
+			name:      "ready -> not ready",
+			input:     instanceWithCondition(readyTrue()),
+			condition: readyFalse(),
+			result: func() *v1alpha1.Instance {
+				i := instanceWithCondition(readyFalse())
+				i.Status.Conditions[0].LastTransitionTime = newTs
+				return i
+			}(),
+		},
+		{
+			name:      "not ready + failed",
+			input:     instanceWithCondition(readyFalse()),
+			condition: failedTrue(),
+			result: func() *v1alpha1.Instance {
+				i := instanceWithCondition(readyFalse())
+				i.Status.Conditions = append(i.Status.Conditions, *failedTrue())
+				i.Status.Conditions[1].LastTransitionTime = newTs
+				return i
+			}(),
+		},
+	}
+
+	for _, tc := range cases {
+		setInstanceConditionInternal(tc.input, tc.condition.Type, tc.condition.Status, tc.condition.Reason, tc.condition.Message, newTs)
+
+		if !reflect.DeepEqual(tc.input, tc.result) {
+			t.Errorf("%v: unexpected diff: %v", tc.name, diff.ObjectReflectDiff(tc.input, tc.result))
+		}
+	}
 }
 
 func TestUpdateInstanceCondition(t *testing.T) {
