@@ -29,7 +29,7 @@ import (
 )
 
 func TestInstanceSpecChecksum(t *testing.T) {
-	spec := servicecatalog.InstanceSpec{
+	spec := servicecatalog.ServiceCatalogInstanceSpec{
 		ServiceClassName: "blorb",
 		PlanName:         "plumbus",
 		ExternalID:       "ea6d2fc8-0bb8-11e7-af5d-0242ac110005",
@@ -37,8 +37,8 @@ func TestInstanceSpecChecksum(t *testing.T) {
 
 	unversionedChecksum := unversioned.InstanceSpecChecksum(spec)
 
-	versionedSpec := v1alpha1.InstanceSpec{}
-	v1alpha1.Convert_servicecatalog_InstanceSpec_To_v1alpha1_InstanceSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	versionedSpec := v1alpha1.ServiceCatalogInstanceSpec{}
+	v1alpha1.Convert_servicecatalog_ServiceCatalogInstanceSpec_To_v1alpha1_ServiceCatalogInstanceSpec(&spec, &versionedSpec, nil /* conversionScope */)
 	versionedChecksum := checksumv1alpha1.InstanceSpecChecksum(versionedSpec)
 
 	if e, a := unversionedChecksum, versionedChecksum; e != a {
@@ -48,7 +48,7 @@ func TestInstanceSpecChecksum(t *testing.T) {
 
 // TestBindingChecksum tests that an internal and v1alpha1 checksum of the same object are equivalent
 func TestBindingSpecChecksum(t *testing.T) {
-	spec := servicecatalog.BindingSpec{
+	spec := servicecatalog.ServiceCatalogBindingSpec{
 		InstanceRef: v1.LocalObjectReference{Name: "test-instance"},
 		SecretName:  "test-secret",
 		ExternalID:  "1995a7e6-d078-4ce6-9057-bcefd793634e",
@@ -56,8 +56,8 @@ func TestBindingSpecChecksum(t *testing.T) {
 
 	unversionedChecksum := unversioned.BindingSpecChecksum(spec)
 
-	versionedSpec := v1alpha1.BindingSpec{}
-	v1alpha1.Convert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	versionedSpec := v1alpha1.ServiceCatalogBindingSpec{}
+	v1alpha1.Convert_servicecatalog_ServiceCatalogBindingSpec_To_v1alpha1_ServiceCatalogBindingSpec(&spec, &versionedSpec, nil /* conversionScope */)
 	versionedChecksum := checksumv1alpha1.BindingSpecChecksum(versionedSpec)
 
 	if e, a := unversionedChecksum, versionedChecksum; e != a {
@@ -67,7 +67,7 @@ func TestBindingSpecChecksum(t *testing.T) {
 
 // TestBrokerSpecChecksum tests than an internal and v1alpha1 checksum of the same object are equivalent
 func TestBrokerSpecChecksum(t *testing.T) {
-	spec := servicecatalog.BrokerSpec{
+	spec := servicecatalog.ServiceCatalogBrokerSpec{
 		URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		AuthInfo: &servicecatalog.BrokerAuthInfo{
 			BasicAuthSecret: &v1.ObjectReference{
@@ -78,8 +78,8 @@ func TestBrokerSpecChecksum(t *testing.T) {
 	}
 
 	unversionedChecksum := unversioned.BrokerSpecChecksum(spec)
-	versionedSpec := v1alpha1.BrokerSpec{}
-	v1alpha1.Convert_servicecatalog_BrokerSpec_To_v1alpha1_BrokerSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	versionedSpec := v1alpha1.ServiceCatalogBrokerSpec{}
+	v1alpha1.Convert_servicecatalog_ServiceCatalogBrokerSpec_To_v1alpha1_ServiceCatalogBrokerSpec(&spec, &versionedSpec, nil /* conversionScope */)
 	versionedChecksum := checksumv1alpha1.BrokerSpecChecksum(versionedSpec)
 
 	if e, a := unversionedChecksum, versionedChecksum; e != a {

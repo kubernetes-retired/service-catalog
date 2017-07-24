@@ -42,9 +42,9 @@ var (
 // NewSingular returns a new shell of a service instance, according to the given namespace and
 // name
 func NewSingular(ns, name string) runtime.Object {
-	return &servicecatalog.Instance{
+	return &servicecatalog.ServiceCatalogInstance{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceInstanceKind.String(),
+			Kind: tpr.ServiceCatalogInstanceKind.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -55,22 +55,22 @@ func NewSingular(ns, name string) runtime.Object {
 
 // EmptyObject returns an empty instance
 func EmptyObject() runtime.Object {
-	return &servicecatalog.Instance{}
+	return &servicecatalog.ServiceCatalogInstance{}
 }
 
 // NewList returns a new shell of an instance list
 func NewList() runtime.Object {
-	return &servicecatalog.InstanceList{
+	return &servicecatalog.ServiceCatalogInstanceList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceInstanceListKind.String(),
+			Kind: tpr.ServiceCatalogInstanceListKind.String(),
 		},
-		Items: []servicecatalog.Instance{},
+		Items: []servicecatalog.ServiceCatalogInstance{},
 	}
 }
 
 // CheckObject returns a non-nil error if obj is not an instance object
 func CheckObject(obj runtime.Object) error {
-	_, ok := obj.(*servicecatalog.Instance)
+	_, ok := obj.(*servicecatalog.ServiceCatalogInstance)
 	if !ok {
 		return errNotAnInstance
 	}
@@ -88,14 +88,14 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 }
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
-func toSelectableFields(instance *servicecatalog.Instance) fields.Set {
+func toSelectableFields(instance *servicecatalog.ServiceCatalogInstance) fields.Set {
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&instance.ObjectMeta, true)
 	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
 func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
-	instance, ok := obj.(*servicecatalog.Instance)
+	instance, ok := obj.(*servicecatalog.ServiceCatalogInstance)
 	if !ok {
 		return nil, nil, false, fmt.Errorf("given object is not an Instance")
 	}
@@ -109,7 +109,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 
 	storageInterface, dFunc := opts.GetStorage(
 		1000,
-		&servicecatalog.Instance{},
+		&servicecatalog.ServiceCatalogInstance{},
 		prefix,
 		instanceRESTStrategies,
 		NewList,
@@ -129,7 +129,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// QualifiedResource should always be plural
-		QualifiedResource: api.Resource("instances"),
+		QualifiedResource: api.Resource("servicecataloginstances"),
 
 		CreateStrategy:          instanceRESTStrategies,
 		UpdateStrategy:          instanceRESTStrategies,

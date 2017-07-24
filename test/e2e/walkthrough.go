@@ -60,17 +60,17 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 	It("Run walkthrough-example ", func() {
 		var (
-			brokerName = upsbrokername
+			brokerName       = upsbrokername
 			serviceclassName = "user-provided-service"
-			testns = "test-ns"
-			instanceName = "ups-instance"
-			bindingName = "ups-binding"
+			testns           = "test-ns"
+			instanceName     = "ups-instance"
+			bindingName      = "ups-binding"
 		)
 
 		//Broker and ServiceClass should become ready
 		By("Make sure the named Broker not exist before create")
-		if _, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Brokers().Get(brokerName, metav1.GetOptions{}); err == nil {
-			err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Brokers().Delete(brokerName, nil)
+		if _, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogBrokers().Get(brokerName, metav1.GetOptions{}); err == nil {
+			err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogBrokers().Delete(brokerName, nil)
 			Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
 
 			By("Waiting for Broker to not exist")
@@ -79,23 +79,23 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		}
 
 		By("Creating a Broker")
-		url := "http://" + upsbrokername + "." +f.Namespace.Name + ".svc.cluster.local"
-		broker := &v1alpha1.Broker{
+		url := "http://" + upsbrokername + "." + f.Namespace.Name + ".svc.cluster.local"
+		broker := &v1alpha1.ServiceCatalogBroker{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: brokerName,
 			},
-			Spec: v1alpha1.BrokerSpec{
+			Spec: v1alpha1.ServiceCatalogBrokerSpec{
 				URL: url,
 			},
 		}
-		broker, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Brokers().Create(broker)
+		broker, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogBrokers().Create(broker)
 		Expect(err).NotTo(HaveOccurred(), "failed to create Broker")
 
 		By("Waiting for Broker to be ready")
 		err = util.WaitForBrokerCondition(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(),
 			broker.Name,
 			v1alpha1.BrokerCondition{
-				Type: v1alpha1.BrokerConditionReady,
+				Type:   v1alpha1.BrokerConditionReady,
 				Status: v1alpha1.ConditionTrue,
 			},
 		)
@@ -111,17 +111,17 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(err).NotTo(HaveOccurred(), "failed to create kube namespace")
 
 		By("Creating a Instance")
-		instance := &v1alpha1.Instance{
+		instance := &v1alpha1.ServiceCatalogInstance{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: instanceName,
+				Name:      instanceName,
 				Namespace: testnamespace.Name,
 			},
-			Spec: v1alpha1.InstanceSpec{
+			Spec: v1alpha1.ServiceCatalogInstanceSpec{
 				ServiceClassName: serviceclassName,
-				PlanName: "default",
+				PlanName:         "default",
 			},
 		}
-		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Instances(testnamespace.Name).Create(instance)
+		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogInstances(testnamespace.Name).Create(instance)
 		Expect(err).NotTo(HaveOccurred(), "failed to create instance")
 
 		By("Waiting for Instance to be ready")
@@ -129,7 +129,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			testnamespace.Name,
 			instanceName,
 			v1alpha1.InstanceCondition{
-				Type: v1alpha1.InstanceConditionReady,
+				Type:   v1alpha1.InstanceConditionReady,
 				Status: v1alpha1.ConditionTrue,
 			},
 		)
@@ -137,19 +137,19 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		//Binding to the Instance
 		By("Creating a Binding")
-		binding := &v1alpha1.Binding{
+		binding := &v1alpha1.ServiceCatalogBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: bindingName,
+				Name:      bindingName,
 				Namespace: testnamespace.Name,
 			},
-			Spec: v1alpha1.BindingSpec{
+			Spec: v1alpha1.ServiceCatalogBindingSpec{
 				InstanceRef: v1.LocalObjectReference{
 					Name: instanceName,
 				},
 				SecretName: "my-secret",
 			},
 		}
-		binding, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Bindings(testnamespace.Name).Create(binding)
+		binding, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogBindings(testnamespace.Name).Create(binding)
 		Expect(err).NotTo(HaveOccurred(), "failed to create binding")
 
 		By("Waiting for Binding to be ready")
@@ -157,7 +157,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			testnamespace.Name,
 			bindingName,
 			v1alpha1.BindingCondition{
-				Type: v1alpha1.BindingConditionReady,
+				Type:   v1alpha1.BindingConditionReady,
 				Status: v1alpha1.ConditionTrue,
 			},
 		)
@@ -169,7 +169,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		//Unbinding from the Instance
 		By("Deleting the Binding")
-		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Bindings(testnamespace.Name).Delete(bindingName, nil)
+		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogBindings(testnamespace.Name).Delete(bindingName, nil)
 		Expect(err).NotTo(HaveOccurred(), "failed to delete the binding")
 
 		By("Waiting for Binding to not exist")
@@ -182,7 +182,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		//Deprovisioning the Instance
 		By("Deleting the Instance")
-		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Instances(testnamespace.Name).Delete(instanceName, nil)
+		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogInstances(testnamespace.Name).Delete(instanceName, nil)
 		Expect(err).NotTo(HaveOccurred(), "failed to delete the instance")
 
 		By("Waiting for Instance to not exist")
@@ -195,7 +195,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		//Deleting Broker and ServiceClass
 		By("Deleting the Broker")
-		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().Brokers().Delete(brokerName, nil)
+		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceCatalogBrokers().Delete(brokerName, nil)
 		Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
 
 		By("Waiting for Broker to not exist")

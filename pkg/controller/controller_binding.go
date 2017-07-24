@@ -35,7 +35,7 @@ import (
 )
 
 // bindingControllerKind contains the schema.GroupVersionKind for this controller type.
-var bindingControllerKind = v1alpha1.SchemeGroupVersion.WithKind("Binding")
+var bindingControllerKind = v1alpha1.SchemeGroupVersion.WithKind("ServiceCatalogBinding")
 
 // Binding handlers and control-loop
 
@@ -53,7 +53,7 @@ func (c *controller) reconcileBindingKey(key string) error {
 	if err != nil {
 		return err
 	}
-	binding, err := c.bindingLister.Bindings(namespace).Get(name)
+	binding, err := c.bindingLister.ServiceCatalogBindings(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		glog.Infof("Not doing work for Binding %v because it has been deleted", key)
 		return nil
@@ -72,7 +72,7 @@ func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
 
 // an error is returned to indicate that the binding has not been
 // fully processed and should be resubmitted at a later time.
-func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
+func (c *controller) reconcileBinding(binding *v1alpha1.ServiceCatalogBinding) error {
 	// Determine whether the checksum has been invalidated by a change to the
 	// object.  If the binding's checksum matches the calculated checksum,
 	// there is no work to do.
@@ -94,7 +94,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 
 	glog.V(4).Infof("Processing Binding %v/%v", binding.Namespace, binding.Name)
 
-	instance, err := c.instanceLister.Instances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
+	instance, err := c.instanceLister.ServiceCatalogInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent Instance \"%s/%s\"", binding.Namespace, binding.Name, binding.Namespace, binding.Spec.InstanceRef.Name)
 		glog.Warningf(
@@ -385,7 +385,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 //
 // Note: enforcing that the plan belongs to the given service class is the
 // responsibility of the caller.
-func isPlanBindable(serviceClass *v1alpha1.ServiceClass, plan *v1alpha1.ServicePlan) bool {
+func isPlanBindable(serviceClass *v1alpha1.ServiceCatalogServiceClass, plan *v1alpha1.ServiceCatalogServicePlan) bool {
 	if plan.Bindable != nil {
 		return *plan.Bindable
 	}
@@ -393,7 +393,7 @@ func isPlanBindable(serviceClass *v1alpha1.ServiceClass, plan *v1alpha1.ServiceP
 	return serviceClass.Bindable
 }
 
-func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[string]interface{}) error {
+func (c *controller) injectBinding(binding *v1alpha1.ServiceCatalogBinding, credentials map[string]interface{}) error {
 	glog.V(5).Infof("Creating/updating Secret %v/%v", binding.Namespace, binding.Spec.SecretName)
 
 	secretData := make(map[string][]byte)
@@ -489,7 +489,7 @@ func (c *controller) injectBinding(binding *v1alpha1.Binding, credentials map[st
 	return err
 }
 
-func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
+func (c *controller) ejectBinding(binding *v1alpha1.ServiceCatalogBinding) error {
 	var err error
 
 	if binding.Spec.AlphaPodPresetTemplate != nil {
@@ -513,7 +513,7 @@ func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
 // updateBindingCondition updates the given condition for the given Binding
 // with the given status, reason, and message.
 func (c *controller) updateBindingCondition(
-	binding *v1alpha1.Binding,
+	binding *v1alpha1.ServiceCatalogBinding,
 	conditionType v1alpha1.BindingConditionType,
 	status v1alpha1.ConditionStatus,
 	reason, message string) error {
@@ -522,7 +522,7 @@ func (c *controller) updateBindingCondition(
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.Binding)
+	toUpdate := clone.(*v1alpha1.ServiceCatalogBinding)
 
 	newCondition := v1alpha1.BindingCondition{
 		Type:    conditionType,
@@ -556,7 +556,7 @@ func (c *controller) updateBindingCondition(
 	logContext := fmt.Sprintf("%v condition for Binding %v/%v to %v (Reason: %q, Message: %q)",
 		conditionType, binding.Namespace, binding.Name, status, reason, message)
 	glog.V(4).Infof("Updating %v", logContext)
-	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
+	_, err = c.serviceCatalogClient.ServiceCatalogBindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf("Error updating %v: %v", logContext, err)
 	}
@@ -565,13 +565,13 @@ func (c *controller) updateBindingCondition(
 
 // updateBindingFinalizers updates the given finalizers for the given Binding.
 func (c *controller) updateBindingFinalizers(
-	binding *v1alpha1.Binding,
+	binding *v1alpha1.ServiceCatalogBinding,
 	finalizers []string) error {
 
 	// Get the latest version of the binding so that we can avoid conflicts
 	// (since we have probably just updated the status of the binding and are
 	// now removing the last finalizer).
-	binding, err := c.serviceCatalogClient.Bindings(binding.Namespace).Get(binding.Name, metav1.GetOptions{})
+	binding, err := c.serviceCatalogClient.ServiceCatalogBindings(binding.Namespace).Get(binding.Name, metav1.GetOptions{})
 	if err != nil {
 		glog.Errorf("Error getting Binding %v/%v to finalize: %v", binding.Namespace, binding.Name, err)
 	}
@@ -580,7 +580,7 @@ func (c *controller) updateBindingFinalizers(
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.Binding)
+	toUpdate := clone.(*v1alpha1.ServiceCatalogBinding)
 
 	toUpdate.Finalizers = finalizers
 
@@ -588,7 +588,7 @@ func (c *controller) updateBindingFinalizers(
 		binding.Namespace, binding.Name, finalizers)
 
 	glog.V(4).Infof("Updating %v", logContext)
-	_, err = c.serviceCatalogClient.Bindings(binding.Namespace).UpdateStatus(toUpdate)
+	_, err = c.serviceCatalogClient.ServiceCatalogBindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf("Error updating %v: %v", logContext, err)
 	}
@@ -596,7 +596,7 @@ func (c *controller) updateBindingFinalizers(
 }
 
 func (c *controller) bindingDelete(obj interface{}) {
-	binding, ok := obj.(*v1alpha1.Binding)
+	binding, ok := obj.(*v1alpha1.ServiceCatalogBinding)
 	if binding == nil || !ok {
 		return
 	}

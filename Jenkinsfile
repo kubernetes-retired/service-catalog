@@ -140,6 +140,7 @@ node {
       echo 'Run succeeded.'
     } catch (Exception e) {
       echo 'Run failed.'
+	  echo "${e.message}"
       currentBuild.result = 'FAILURE'
     } finally {
       archiveArtifacts artifacts: 'walkthrough*.txt', fingerprint: true
@@ -148,6 +149,7 @@ node {
         sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
       } catch (Exception e) {
         echo 'Exception caught during cleanup.'
+	    echo "${e.message}"
         currentBuild.result = 'FAILURE'
       }
     }

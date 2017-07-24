@@ -59,10 +59,10 @@ const (
 func NewController(
 	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
-	brokerInformer informers.BrokerInformer,
-	serviceClassInformer informers.ServiceClassInformer,
-	instanceInformer informers.InstanceInformer,
-	bindingInformer informers.BindingInformer,
+	brokerInformer informers.ServiceCatalogBrokerInformer,
+	serviceClassInformer informers.ServiceCatalogServiceClassInformer,
+	instanceInformer informers.ServiceCatalogInstanceInformer,
+	bindingInformer informers.ServiceCatalogBindingInformer,
 	brokerClientCreateFunc osb.CreateFunc,
 	brokerRelistInterval time.Duration,
 	osbAPIPreferredVersion string,
@@ -75,10 +75,10 @@ func NewController(
 		brokerRelistInterval:   brokerRelistInterval,
 		OSBAPIPreferredVersion: osbAPIPreferredVersion,
 		recorder:               recorder,
-		brokerQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "broker"),
-		serviceClassQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
-		instanceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
-		bindingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
+		brokerQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-catalog-broker"),
+		serviceClassQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-catalog-service-class"),
+		instanceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-catalog-instance"),
+		bindingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-catalog-binding"),
 		pollingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
 	}
 
@@ -127,10 +127,10 @@ type controller struct {
 	kubeClient             kubernetes.Interface
 	serviceCatalogClient   servicecatalogclientset.ServicecatalogV1alpha1Interface
 	brokerClientCreateFunc osb.CreateFunc
-	brokerLister           listers.BrokerLister
-	serviceClassLister     listers.ServiceClassLister
-	instanceLister         listers.InstanceLister
-	bindingLister          listers.BindingLister
+	brokerLister           listers.ServiceCatalogBrokerLister
+	serviceClassLister     listers.ServiceCatalogServiceClassLister
+	instanceLister         listers.ServiceCatalogInstanceLister
+	bindingLister          listers.ServiceCatalogBindingLister
 	brokerRelistInterval   time.Duration
 	OSBAPIPreferredVersion string
 	recorder               record.EventRecorder
@@ -152,10 +152,10 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	glog.Info("Starting service-catalog controller")
 
 	for i := 0; i < workers; i++ {
-		go wait.Until(worker(c.brokerQueue, "Broker", maxRetries, c.reconcileBrokerKey), time.Second, stopCh)
-		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, c.reconcileServiceClassKey), time.Second, stopCh)
-		go wait.Until(worker(c.instanceQueue, "Instance", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
-		go wait.Until(worker(c.bindingQueue, "Binding", maxRetries, c.reconcileBindingKey), time.Second, stopCh)
+		go wait.Until(worker(c.brokerQueue, "ServiceCatalogBroker", maxRetries, c.reconcileBrokerKey), time.Second, stopCh)
+		go wait.Until(worker(c.serviceClassQueue, "ServiceCatalogServiceClass", maxRetries, c.reconcileServiceClassKey), time.Second, stopCh)
+		go wait.Until(worker(c.instanceQueue, "ServiceCatalogInstance", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
+		go wait.Until(worker(c.bindingQueue, "ServiceCatalogBinding", maxRetries, c.reconcileBindingKey), time.Second, stopCh)
 		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
 	}
 
@@ -209,7 +209,7 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // getServiceClassPlanAndBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an Instance.
-func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
+func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.ServiceCatalogInstance) (*v1alpha1.ServiceCatalogServiceClass, *v1alpha1.ServiceCatalogServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
 		s := fmt.Sprintf("Instance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ServiceClassName)
@@ -289,7 +289,7 @@ func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (
 // getServiceClassPlanAndBrokerForBinding is a sequence of operations that's
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given Instance.
-func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.Instance, binding *v1alpha1.Binding) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
+func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.ServiceCatalogInstance, binding *v1alpha1.ServiceCatalogBinding) (*v1alpha1.ServiceCatalogServiceClass, *v1alpha1.ServiceCatalogServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
 		s := fmt.Sprintf("Binding \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ServiceClassName)
@@ -372,7 +372,7 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 // contained in the secret referenced in the Broker's AuthSecret field, or
 // returns an error. If the AuthSecret field is nil, empty values are
 // returned.
-func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.Broker) (*osb.AuthConfig, error) {
+func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.ServiceCatalogBroker) (*osb.AuthConfig, error) {
 	// TODO: when we start supporting additional auth schemes, this code will have to accommodate
 	// the new schemes
 	if broker.Spec.AuthInfo == nil {
@@ -407,14 +407,14 @@ func getAuthCredentialsFromBroker(client kubernetes.Interface, broker *v1alpha1.
 }
 
 // convertCatalog converts a service broker catalog into an array of ServiceClasses
-func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
-	ret := make([]*v1alpha1.ServiceClass, len(in.Services))
+func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceCatalogServiceClass, error) {
+	ret := make([]*v1alpha1.ServiceCatalogServiceClass, len(in.Services))
 	for i, svc := range in.Services {
 		plans, err := convertServicePlans(svc.Plans)
 		if err != nil {
 			return nil, err
 		}
-		ret[i] = &v1alpha1.ServiceClass{
+		ret[i] = &v1alpha1.ServiceCatalogServiceClass{
 			Bindable:      svc.Bindable,
 			Plans:         plans,
 			PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
@@ -439,10 +439,10 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
 	return ret, nil
 }
 
-func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
-	ret := make([]v1alpha1.ServicePlan, len(plans))
+func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServiceCatalogServicePlan, error) {
+	ret := make([]v1alpha1.ServiceCatalogServicePlan, len(plans))
 	for i := range plans {
-		ret[i] = v1alpha1.ServicePlan{
+		ret[i] = v1alpha1.ServiceCatalogServicePlan{
 			Name:        plans[i].Name,
 			ExternalID:  plans[i].ID,
 			Free:        (plans[i].Free != nil && *plans[i].Free),
@@ -514,7 +514,7 @@ func unmarshalParameters(in []byte) (map[string]interface{}, error) {
 
 // isInstanceReady returns whether the given instance has a ready condition
 // with status true.
-func isInstanceReady(instance *v1alpha1.Instance) bool {
+func isInstanceReady(instance *v1alpha1.ServiceCatalogInstance) bool {
 	for _, cond := range instance.Status.Conditions {
 		if cond.Type == v1alpha1.InstanceConditionReady {
 			return cond.Status == v1alpha1.ConditionTrue

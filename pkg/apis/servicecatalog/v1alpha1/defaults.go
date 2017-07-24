@@ -25,19 +25,19 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
 }
 
-func SetDefaults_InstanceSpec(spec *InstanceSpec) {
+func SetDefaults_ServiceCatalogInstanceSpec(spec *ServiceCatalogInstanceSpec) {
 	if spec.ExternalID == "" {
 		spec.ExternalID = uuid.NewV4().String()
 	}
 }
 
-func SetDefaults_BindingSpec(spec *BindingSpec) {
+func SetDefaults_ServiceCatalogBindingSpec(spec *ServiceCatalogBindingSpec) {
 	if spec.ExternalID == "" {
 		spec.ExternalID = uuid.NewV4().String()
 	}
 }
 
-func SetDefaults_Binding(binding *Binding) {
+func SetDefaults_ServiceCatalogBinding(binding *ServiceCatalogBinding) {
 	// If not specified, make the SecretName default to the binding name
 	if binding.Spec.SecretName == "" {
 		binding.Spec.SecretName = binding.Name

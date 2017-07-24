@@ -64,10 +64,10 @@ function cleanup() {
     # TODO: Hack in order to delete TPRs. Will need to be removed when TPRs can be deleted
     # by the catalog API server.
     if [[ -n "${WITH_TPR:-}" ]]; then
-      kubectl delete thirdpartyresources binding.servicecatalog.k8s.io
-      kubectl delete thirdpartyresources instance.servicecatalog.k8s.io
-      kubectl delete thirdpartyresources broker.servicecatalog.k8s.io
-      kubectl delete thirdpartyresources service-class.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources service-catalog-binding.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources service-catalog-instance.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources service-catalog-broker.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources service-catalog-service-class.servicecatalog.k8s.io
     fi
   } &> /dev/null
 }

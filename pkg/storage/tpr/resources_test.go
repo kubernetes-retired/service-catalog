@@ -32,7 +32,7 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("instance"),
+			Name: withGroupName("service-catalog-instance"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},
@@ -45,7 +45,7 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("broker"),
+			Name: withGroupName("service-catalog-broker"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},
@@ -58,7 +58,7 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("service-class"),
+			Name: withGroupName("service-catalog-service-class"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},
@@ -71,26 +71,26 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("binding"),
+			Name: withGroupName("service-catalog-binding"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},
 		},
 	}
 
-	if !reflect.DeepEqual(serviceInstanceSample, serviceInstanceTPR) {
+	if !reflect.DeepEqual(serviceInstanceSample, serviceCatalogInstanceTPR) {
 		t.Errorf("Unexpected Instance TPR structure")
 	}
 
-	if !reflect.DeepEqual(serviceBindingSample, serviceBindingTPR) {
-		t.Errorf("Unexpected Broker TPR structure")
-	}
-
-	if !reflect.DeepEqual(serviceBrokerSample, serviceBrokerTPR) {
+	if !reflect.DeepEqual(serviceBindingSample, serviceCatalogBindingTPR) {
 		t.Errorf("Unexpected Binding TPR structure")
 	}
 
-	if !reflect.DeepEqual(serviceClassSample, serviceClassTPR) {
+	if !reflect.DeepEqual(serviceBrokerSample, serviceCatalogBrokerTPR) {
+		t.Errorf("Unexpected Broker TPR structure")
+	}
+
+	if !reflect.DeepEqual(serviceClassSample, serviceCatalogServiceClassTPR) {
 		t.Errorf("Unexpected Service Class TPR structure")
 	}
 }

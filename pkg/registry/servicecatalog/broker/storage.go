@@ -42,9 +42,9 @@ var (
 // NewSingular returns a new shell of a service broker, according to the given namespace and
 // name
 func NewSingular(ns, name string) runtime.Object {
-	return &servicecatalog.Broker{
+	return &servicecatalog.ServiceCatalogBroker{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceBrokerKind.String(),
+			Kind: tpr.ServiceCatalogBrokerKind.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -55,22 +55,22 @@ func NewSingular(ns, name string) runtime.Object {
 
 // EmptyObject returns an empty broker
 func EmptyObject() runtime.Object {
-	return &servicecatalog.Broker{}
+	return &servicecatalog.ServiceCatalogBroker{}
 }
 
 // NewList returns a new shell of a broker list
 func NewList() runtime.Object {
-	return &servicecatalog.BrokerList{
+	return &servicecatalog.ServiceCatalogBrokerList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceBrokerListKind.String(),
+			Kind: tpr.ServiceCatalogBrokerListKind.String(),
 		},
-		Items: []servicecatalog.Broker{},
+		Items: []servicecatalog.ServiceCatalogBroker{},
 	}
 }
 
 // CheckObject returns a non-nil error if obj is not a broker object
 func CheckObject(obj runtime.Object) error {
-	_, ok := obj.(*servicecatalog.Broker)
+	_, ok := obj.(*servicecatalog.ServiceCatalogBroker)
 	if !ok {
 		return errNotABroker
 	}
@@ -88,14 +88,14 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 }
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
-func toSelectableFields(broker *servicecatalog.Broker) fields.Set {
+func toSelectableFields(broker *servicecatalog.ServiceCatalogBroker) fields.Set {
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&broker.ObjectMeta, true)
 	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
 func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
-	broker, ok := obj.(*servicecatalog.Broker)
+	broker, ok := obj.(*servicecatalog.ServiceCatalogBroker)
 	if !ok {
 		return nil, nil, false, fmt.Errorf("given object is not a Broker")
 	}
@@ -109,7 +109,7 @@ func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 
 	storageInterface, dFunc := opts.GetStorage(
 		1000,
-		&servicecatalog.Broker{},
+		&servicecatalog.ServiceCatalogBroker{},
 		prefix,
 		brokerRESTStrategies,
 		NewList,
@@ -129,7 +129,7 @@ func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// QualifiedResource should always be plural
-		QualifiedResource: api.Resource("brokers"),
+		QualifiedResource: api.Resource("servicecatalogbrokers"),
 
 		CreateStrategy:          brokerRESTStrategies,
 		UpdateStrategy:          brokerRESTStrategies,

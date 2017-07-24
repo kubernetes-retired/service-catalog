@@ -65,7 +65,7 @@ else ifeq ($(ARCH),ppc64le)
 else ifeq ($(ARCH),s390x)
 	BASEIMAGE?=s390x/debian:jessie
 else
-$(error Unsupported platform to compile for)
+    $(error Unsupported platform to compile for)
 endif
 
 GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
@@ -226,6 +226,7 @@ verify: .init .generate_files verify-client-gen
 	  'for i in $$(find $(TOP_SRC_DIRS) -name *.go \
 	    | grep -v generated \
 	    | grep -v ^pkg/client/ \
+	    | grep -v ^pkg/apis/servicecatalog/ \
 	    | grep -v v1alpha1/defaults.go); \
 	  do \
 	   golint --set_exit_status $$i || exit 1; \
@@ -290,6 +291,7 @@ clean: clean-bin clean-build-image clean-generated clean-coverage
 clean-bin:
 	rm -rf $(BINDIR)
 	rm -f .generate_exes
+	rm -f .init
 
 clean-build-image:
 	rm -rf .pkg
@@ -312,7 +314,7 @@ clean-generated:
 
 # purge-generated removes generated files from the filesystem.
 purge-generated:
-	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
+	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm -f {} \;
 	find $(TOP_SRC_DIRS) -type d -name *_generated -exec rm -rf {} \;
 	rm -f pkg/openapi/openapi_generated.go
 	echo 'package v1alpha1' > pkg/apis/servicecatalog/v1alpha1/types.generated.go

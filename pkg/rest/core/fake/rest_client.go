@@ -256,38 +256,38 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 		var codec runtime.Codec
 		var err error
 		switch tipe {
-		case "brokers":
-			list = &sc.BrokerList{TypeMeta: newTypeMeta("broker-list")}
+		case "servicecatalogbrokers":
+			list = &sc.ServiceCatalogBrokerList{TypeMeta: newTypeMeta("service-catalog-broker-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.BrokerList{})
-		case "serviceclasses":
-			list = &sc.ServiceClassList{TypeMeta: newTypeMeta("service-class-list")}
+			codec, err = testapi.GetCodecForObject(&sc.ServiceCatalogBrokerList{})
+		case "servicecatalogserviceclasses":
+			list = &sc.ServiceCatalogServiceClassList{TypeMeta: newTypeMeta("service-catalog-service-class-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.ServiceClassList{})
-		case "instances":
-			list = &sc.InstanceList{TypeMeta: newTypeMeta("instance-list")}
+			codec, err = testapi.GetCodecForObject(&sc.ServiceCatalogServiceClassList{})
+		case "servicecataloginstances":
+			list = &sc.ServiceCatalogInstanceList{TypeMeta: newTypeMeta("service-catalog-instance-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.InstanceList{})
-		case "bindings":
-			list = &sc.BindingList{TypeMeta: newTypeMeta("binding-list")}
+			codec, err = testapi.GetCodecForObject(&sc.ServiceCatalogInstanceList{})
+		case "servicecatalogbindings":
+			list = &sc.ServiceCatalogBindingList{TypeMeta: newTypeMeta("service-catalog-binding-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.BindingList{})
+			codec, err = testapi.GetCodecForObject(&sc.ServiceCatalogBindingList{})
 		default:
 			errStr := fmt.Sprintf("unrecognized resource type: %s", tipe)
 			http.Error(rw, errStr, http.StatusInternalServerError)

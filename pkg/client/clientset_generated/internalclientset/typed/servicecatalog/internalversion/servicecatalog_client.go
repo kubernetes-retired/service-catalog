@@ -23,10 +23,10 @@ import (
 
 type ServicecatalogInterface interface {
 	RESTClient() rest.Interface
-	BindingsGetter
-	BrokersGetter
-	InstancesGetter
-	ServiceClassesGetter
+	ServiceCatalogBindingsGetter
+	ServiceCatalogBrokersGetter
+	ServiceCatalogInstancesGetter
+	ServiceCatalogServiceClassesGetter
 }
 
 // ServicecatalogClient is used to interact with features provided by the servicecatalog.k8s.io group.
@@ -34,20 +34,20 @@ type ServicecatalogClient struct {
 	restClient rest.Interface
 }
 
-func (c *ServicecatalogClient) Bindings(namespace string) BindingInterface {
-	return newBindings(c, namespace)
+func (c *ServicecatalogClient) ServiceCatalogBindings(namespace string) ServiceCatalogBindingInterface {
+	return newServiceCatalogBindings(c, namespace)
 }
 
-func (c *ServicecatalogClient) Brokers() BrokerInterface {
-	return newBrokers(c)
+func (c *ServicecatalogClient) ServiceCatalogBrokers() ServiceCatalogBrokerInterface {
+	return newServiceCatalogBrokers(c)
 }
 
-func (c *ServicecatalogClient) Instances(namespace string) InstanceInterface {
-	return newInstances(c, namespace)
+func (c *ServicecatalogClient) ServiceCatalogInstances(namespace string) ServiceCatalogInstanceInterface {
+	return newServiceCatalogInstances(c, namespace)
 }
 
-func (c *ServicecatalogClient) ServiceClasses() ServiceClassInterface {
-	return newServiceClasses(c)
+func (c *ServicecatalogClient) ServiceCatalogServiceClasses() ServiceCatalogServiceClassInterface {
+	return newServiceCatalogServiceClasses(c)
 }
 
 // NewForConfig creates a new ServicecatalogClient for the given config.

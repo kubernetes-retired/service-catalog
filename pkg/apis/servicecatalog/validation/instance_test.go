@@ -28,17 +28,17 @@ import (
 func TestValidateInstance(t *testing.T) {
 	cases := []struct {
 		name     string
-		instance *servicecatalog.Instance
+		instance *servicecatalog.ServiceCatalogInstance
 		valid    bool
 	}{
 		{
 			name: "valid",
-			instance: &servicecatalog.Instance{
+			instance: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					PlanName:         "Test-Plan",
 				},
@@ -47,11 +47,11 @@ func TestValidateInstance(t *testing.T) {
 		},
 		{
 			name: "missing namespace",
-			instance: &servicecatalog.Instance{
+			instance: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-instance",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					PlanName:         "test-plan",
 				},
@@ -60,12 +60,12 @@ func TestValidateInstance(t *testing.T) {
 		},
 		{
 			name: "missing serviceClassName",
-			instance: &servicecatalog.Instance{
+			instance: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					PlanName: "test-plan",
 				},
 			},
@@ -73,12 +73,12 @@ func TestValidateInstance(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClassName",
-			instance: &servicecatalog.Instance{
+			instance: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "oing20&)*^&",
 					PlanName:         "test-plan",
 				},
@@ -87,12 +87,12 @@ func TestValidateInstance(t *testing.T) {
 		},
 		{
 			name: "missing planName",
-			instance: &servicecatalog.Instance{
+			instance: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 				},
 			},
@@ -100,12 +100,12 @@ func TestValidateInstance(t *testing.T) {
 		},
 		{
 			name: "invalid planName",
-			instance: &servicecatalog.Instance{
+			instance: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					PlanName:         "9651.JVHbebe",
 				},
@@ -128,36 +128,36 @@ func TestValidateInstance(t *testing.T) {
 func TestValidateInstanceUpdate(t *testing.T) {
 	cases := []struct {
 		name  string
-		old   *servicecatalog.Instance
-		new   *servicecatalog.Instance
+		old   *servicecatalog.ServiceCatalogInstance
+		new   *servicecatalog.ServiceCatalogInstance
 		valid bool
 		err   string // Error string to match against if error expected
 	}{
 		{
 			name: "no update with async op in progress",
-			old: &servicecatalog.Instance{
+			old: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					PlanName:         "Test-Plan",
 				},
-				Status: servicecatalog.InstanceStatus{
+				Status: servicecatalog.ServiceCatalogInstanceStatus{
 					AsyncOpInProgress: true,
 				},
 			},
-			new: &servicecatalog.Instance{
+			new: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					PlanName:         "Test-Plan-2",
 				},
-				Status: servicecatalog.InstanceStatus{
+				Status: servicecatalog.ServiceCatalogInstanceStatus{
 					AsyncOpInProgress: true,
 				},
 			},
@@ -166,31 +166,31 @@ func TestValidateInstanceUpdate(t *testing.T) {
 		},
 		{
 			name: "allow update with no async op in progress",
-			old: &servicecatalog.Instance{
+			old: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					PlanName:         "Test-Plan",
 				},
-				Status: servicecatalog.InstanceStatus{
+				Status: servicecatalog.ServiceCatalogInstanceStatus{
 					AsyncOpInProgress: false,
 				},
 			},
-			new: &servicecatalog.Instance{
+			new: &servicecatalog.ServiceCatalogInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-instance",
 					Namespace: "test-ns",
 				},
-				Spec: servicecatalog.InstanceSpec{
+				Spec: servicecatalog.ServiceCatalogInstanceSpec{
 					ServiceClassName: "test-serviceclass",
 					// TODO(vaikas): This does not actually update
 					// spec yet, but once it does, validate it changes.
 					PlanName: "Test-Plan-2",
 				},
-				Status: servicecatalog.InstanceStatus{
+				Status: servicecatalog.ServiceCatalogInstanceStatus{
 					AsyncOpInProgress: false,
 				},
 			},
@@ -220,17 +220,17 @@ func TestValidateInstanceUpdate(t *testing.T) {
 func TestValidateInstanceStatusUpdate(t *testing.T) {
 	cases := []struct {
 		name  string
-		old   *servicecatalog.InstanceStatus
-		new   *servicecatalog.InstanceStatus
+		old   *servicecatalog.ServiceCatalogInstanceStatus
+		new   *servicecatalog.ServiceCatalogInstanceStatus
 		valid bool
 		err   string // Error string to match against if error expected
 	}{
 		{
 			name: "Start async op",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: false,
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 			},
 			valid: true,
@@ -238,10 +238,10 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 		},
 		{
 			name: "Complete async op",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: false,
 			},
 			valid: true,
@@ -249,14 +249,14 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 		},
 		{
 			name: "InstanceConditionReady can not be true if async is ongoing",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 				Conditions: []servicecatalog.InstanceCondition{{
 					Type:   servicecatalog.InstanceConditionReady,
 					Status: servicecatalog.ConditionFalse,
 				}},
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 				Conditions: []servicecatalog.InstanceCondition{{
 					Type:   servicecatalog.InstanceConditionReady,
@@ -268,14 +268,14 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 		},
 		{
 			name: "InstanceConditionReady can be true if async is completed",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 				Conditions: []servicecatalog.InstanceCondition{{
 					Type:   servicecatalog.InstanceConditionReady,
 					Status: servicecatalog.ConditionFalse,
 				}},
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: false,
 				Conditions: []servicecatalog.InstanceCondition{{
 					Type:   servicecatalog.InstanceConditionReady,
@@ -287,11 +287,11 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 		},
 		{
 			name: "Update instance condition ready status during async",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 				Conditions:        []servicecatalog.InstanceCondition{{Status: servicecatalog.ConditionFalse}},
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 				Conditions:        []servicecatalog.InstanceCondition{{Status: servicecatalog.ConditionTrue}},
 			},
@@ -300,11 +300,11 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 		},
 		{
 			name: "Update instance condition ready status during async false",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: false,
 				Conditions:        []servicecatalog.InstanceCondition{{Status: servicecatalog.ConditionFalse}},
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: false,
 				Conditions:        []servicecatalog.InstanceCondition{{Status: servicecatalog.ConditionTrue}},
 			},
@@ -313,11 +313,11 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 		},
 		{
 			name: "Update instance condition to ready status and finish async op",
-			old: &servicecatalog.InstanceStatus{
+			old: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: true,
 				Conditions:        []servicecatalog.InstanceCondition{{Status: servicecatalog.ConditionFalse}},
 			},
-			new: &servicecatalog.InstanceStatus{
+			new: &servicecatalog.ServiceCatalogInstanceStatus{
 				AsyncOpInProgress: false,
 				Conditions:        []servicecatalog.InstanceCondition{{Status: servicecatalog.ConditionTrue}},
 			},
@@ -327,23 +327,23 @@ func TestValidateInstanceStatusUpdate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		old := &servicecatalog.Instance{
+		old := &servicecatalog.ServiceCatalogInstance{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-instance",
 				Namespace: "test-ns",
 			},
-			Spec: servicecatalog.InstanceSpec{
+			Spec: servicecatalog.ServiceCatalogInstanceSpec{
 				ServiceClassName: "test-serviceclass",
 				PlanName:         "Test-Plan",
 			},
 			Status: *tc.old,
 		}
-		new := &servicecatalog.Instance{
+		new := &servicecatalog.ServiceCatalogInstance{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-instance",
 				Namespace: "test-ns",
 			},
-			Spec: servicecatalog.InstanceSpec{
+			Spec: servicecatalog.ServiceCatalogInstanceSpec{
 				ServiceClassName: "test-serviceclass",
 				PlanName:         "Test-Plan",
 			},

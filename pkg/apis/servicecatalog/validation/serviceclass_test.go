@@ -24,8 +24,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-func validServiceClass() *servicecatalog.ServiceClass {
-	return &servicecatalog.ServiceClass{
+func validServiceClass() *servicecatalog.ServiceCatalogServiceClass {
+	return &servicecatalog.ServiceCatalogServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-serviceclass",
 		},
@@ -33,7 +33,7 @@ func validServiceClass() *servicecatalog.ServiceClass {
 		BrokerName:  "test-broker",
 		ExternalID:  "1234-4354a-49b",
 		Description: "service description",
-		Plans: []servicecatalog.ServicePlan{
+		Plans: []servicecatalog.ServiceCatalogServicePlan{
 			{
 				Name:        "test-plan",
 				ExternalID:  "40d-0983-1b89",
@@ -46,7 +46,7 @@ func validServiceClass() *servicecatalog.ServiceClass {
 func TestValidateServiceClass(t *testing.T) {
 	cases := []struct {
 		name         string
-		serviceClass *servicecatalog.ServiceClass
+		serviceClass *servicecatalog.ServiceCatalogServiceClass
 		valid        bool
 	}{
 		{
@@ -56,7 +56,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "valid serviceClass - plan with underscore in name",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Plans[0].Name = "test_plan"
 				return s
@@ -65,7 +65,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "valid serviceClass - uppercase in GUID",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.ExternalID = "40D-0983-1b89"
 				return s
@@ -74,7 +74,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "valid serviceClass - period in GUID",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a.plan-name"
 				return s
@@ -83,7 +83,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - has namespace",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Namespace = "test-ns"
 				return s
@@ -92,7 +92,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - missing guid",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.ExternalID = ""
 				return s
@@ -101,7 +101,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - invalid guid",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.ExternalID = "1234-4354a\\%-49b"
 				return s
@@ -110,7 +110,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - missing description",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Description = ""
 				return s
@@ -119,7 +119,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - invalid plan name",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Plans[0].Name = "test-plan.oops"
 				return s
@@ -128,7 +128,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - invalid plan guid",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Plans[0].ExternalID = "40d-0983-1b89-★"
 				return s
@@ -137,7 +137,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - missing plan guid",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Plans[0].ExternalID = "40d-0983-1b89-★"
 				return s
@@ -146,7 +146,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - missing plan description",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Plans[0].Description = ""
 				return s
@@ -155,7 +155,7 @@ func TestValidateServiceClass(t *testing.T) {
 		},
 		{
 			name: "invalid serviceClass - no plans",
-			serviceClass: func() *servicecatalog.ServiceClass {
+			serviceClass: func() *servicecatalog.ServiceCatalogServiceClass {
 				s := validServiceClass()
 				s.Plans = nil
 				return s

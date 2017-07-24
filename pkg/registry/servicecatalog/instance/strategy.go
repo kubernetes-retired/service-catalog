@@ -72,7 +72,7 @@ var (
 
 // Canonicalize does not transform a instance.
 func (instanceRESTStrategy) Canonicalize(obj runtime.Object) {
-	_, ok := obj.(*sc.Instance)
+	_, ok := obj.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to create")
 	}
@@ -86,7 +86,7 @@ func (instanceRESTStrategy) NamespaceScoped() bool {
 // PrepareForCreate receives a the incoming Instance and clears it's
 // Status. Status is not a user settable field.
 func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	instance, ok := obj.(*sc.Instance)
+	instance, ok := obj.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to create")
 	}
@@ -94,14 +94,14 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
-	instance.Status = sc.InstanceStatus{}
+	instance.Status = sc.ServiceCatalogInstanceStatus{}
 	// Fill in the first entry set to "creating"?
 	instance.Status.Conditions = []sc.InstanceCondition{}
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
 
 func (instanceRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateInstance(obj.(*sc.Instance))
+	return scv.ValidateInstance(obj.(*sc.ServiceCatalogInstance))
 }
 
 func (instanceRESTStrategy) AllowCreateOnUpdate() bool {
@@ -113,11 +113,11 @@ func (instanceRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newInstance, ok := new.(*sc.Instance)
+	newInstance, ok := new.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")
 	}
-	oldInstance, ok := old.(*sc.Instance)
+	oldInstance, ok := old.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update from")
 	}
@@ -133,11 +133,11 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 }
 
 func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newInstance, ok := new.(*sc.Instance)
+	newInstance, ok := new.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate to")
 	}
-	oldInstance, ok := old.(*sc.Instance)
+	oldInstance, ok := old.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate from")
 	}
@@ -146,11 +146,11 @@ func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, o
 }
 
 func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newInstance, ok := new.(*sc.Instance)
+	newInstance, ok := new.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")
 	}
-	oldInstance, ok := old.(*sc.Instance)
+	oldInstance, ok := old.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update from")
 	}
@@ -182,11 +182,11 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context
 }
 
 func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newInstance, ok := new.(*sc.Instance)
+	newInstance, ok := new.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate to")
 	}
-	oldInstance, ok := old.(*sc.Instance)
+	oldInstance, ok := old.(*sc.ServiceCatalogInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate from")
 	}

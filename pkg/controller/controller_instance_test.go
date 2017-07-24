@@ -48,9 +48,9 @@ const (
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
-	instance := &v1alpha1.Instance{
+	instance := &v1alpha1.ServiceCatalogInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
-		Spec: v1alpha1.InstanceSpec{
+		Spec: v1alpha1.ServiceCatalogInstanceSpec{
 			ServiceClassName: "nothere",
 			PlanName:         "nothere",
 			ExternalID:       instanceGUID,
@@ -83,7 +83,7 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -120,8 +120,8 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 			Name:      "auth-name",
 		},
 	}
-	sharedInformers.Brokers().Informer().GetStore().Add(broker)
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(broker)
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -171,12 +171,12 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
-	instance := &v1alpha1.Instance{
+	instance := &v1alpha1.ServiceCatalogInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testInstanceName},
-		Spec: v1alpha1.InstanceSpec{
+		Spec: v1alpha1.ServiceCatalogInstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         "nothere",
 			ExternalID:       instanceGUID,
@@ -222,8 +222,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -272,9 +272,9 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
 
-	updateObject, ok := updatedInstance.(*v1alpha1.Instance)
+	updateObject, ok := updatedInstance.(*v1alpha1.ServiceCatalogInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.Instance")
+		t.Fatalf("couldn't convert to *v1alpha1.ServiceCatalogInstance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
@@ -294,8 +294,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
@@ -343,8 +343,8 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -402,8 +402,8 @@ func TestReconcileInstance(t *testing.T) {
 		}, nil
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -466,8 +466,8 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -537,8 +537,8 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -602,8 +602,8 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 		return true, &v1.Namespace{}, errors.New("No namespace")
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 
@@ -640,8 +640,8 @@ func TestReconcileInstanceDelete(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -651,7 +651,7 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	checksum := checksum.InstanceSpecChecksum(instance.Spec)
 	instance.Status.Checksum = &checksum
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "servicecataloginstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -702,14 +702,14 @@ func TestReconcileInstanceDelete(t *testing.T) {
 func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "servicecataloginstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -749,8 +749,8 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
@@ -792,8 +792,8 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
@@ -834,8 +834,8 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncProvisioning(testOperation)
 
@@ -877,8 +877,8 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -923,8 +923,8 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -967,8 +967,8 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -1012,8 +1012,8 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -1056,8 +1056,8 @@ func TestPollServiceInstanceBrokerError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioning(testOperation)
 
@@ -1095,12 +1095,12 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 		},
 	})
 
-	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceCatalogBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstanceAsyncDeprovisioningWithFinalizer(testOperation)
 	// updateInstanceFinalizers fetches the latest object.
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "servicecataloginstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -1137,9 +1137,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 }
 
 func TestUpdateInstanceCondition(t *testing.T) {
-	getTestInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Instance {
+	getTestInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.ServiceCatalogInstance {
 		instance := getTestInstance()
-		instance.Status = v1alpha1.InstanceStatus{
+		instance.Status = v1alpha1.ServiceCatalogInstanceStatus{
 			Conditions: []v1alpha1.InstanceCondition{{
 				Type:               v1alpha1.InstanceConditionReady,
 				Status:             status,
@@ -1153,7 +1153,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 
 	cases := []struct {
 		name                  string
-		input                 *v1alpha1.Instance
+		input                 *v1alpha1.ServiceCatalogInstance
 		status                v1alpha1.ConditionStatus
 		reason                string
 		message               string
@@ -1219,7 +1219,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			t.Errorf("%v: deep copy failed", tc.name)
 			continue
 		}
-		inputClone := clone.(*v1alpha1.Instance)
+		inputClone := clone.(*v1alpha1.ServiceCatalogInstance)
 
 		err = testController.updateInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
@@ -1245,7 +1245,7 @@ func TestUpdateInstanceCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedInstance.(*v1alpha1.Instance)
+		updateActionObject, ok := updatedInstance.(*v1alpha1.ServiceCatalogInstance)
 		if !ok {
 			t.Errorf("%v: couldn't convert to instance", tc.name)
 			continue

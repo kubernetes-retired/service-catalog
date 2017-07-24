@@ -49,14 +49,14 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Broker{},
-		&BrokerList{},
-		&ServiceClass{},
-		&ServiceClassList{},
-		&Instance{},
-		&InstanceList{},
-		&Binding{},
-		&BindingList{},
+		&ServiceCatalogBroker{},
+		&ServiceCatalogBrokerList{},
+		&ServiceCatalogServiceClass{},
+		&ServiceCatalogServiceClassList{},
+		&ServiceCatalogInstance{},
+		&ServiceCatalogInstanceList{},
+		&ServiceCatalogBinding{},
+		&ServiceCatalogBindingList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	scheme.AddKnownTypes(schema.GroupVersion{Version: "v1"}, &metav1.Status{})
