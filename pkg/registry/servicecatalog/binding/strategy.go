@@ -70,7 +70,7 @@ var (
 
 // Canonicalize does not transform a binding.
 func (bindingRESTStrategy) Canonicalize(obj runtime.Object) {
-	_, ok := obj.(*sc.ServiceCatalogBinding)
+	_, ok := obj.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to create")
 	}
@@ -84,7 +84,7 @@ func (bindingRESTStrategy) NamespaceScoped() bool {
 // PrepareForCreate receives a the incoming Binding and clears it's
 // Status. Status is not a user settable field.
 func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	binding, ok := obj.(*sc.ServiceCatalogBinding)
+	binding, ok := obj.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to create")
 	}
@@ -93,14 +93,14 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
-	binding.Status = sc.ServiceCatalogBindingStatus{}
+	binding.Status = sc.BindingStatus{}
 	// Fill in the first entry set to "creating"?
 	binding.Status.Conditions = []sc.BindingCondition{}
 	binding.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
 
 func (bindingRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateBinding(obj.(*sc.ServiceCatalogBinding))
+	return scv.ValidateBinding(obj.(*sc.Binding))
 }
 
 func (bindingRESTStrategy) AllowCreateOnUpdate() bool {
@@ -112,11 +112,11 @@ func (bindingRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newBinding, ok := new.(*sc.ServiceCatalogBinding)
+	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update to")
 	}
-	oldBinding, ok := old.(*sc.ServiceCatalogBinding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update from")
 	}
@@ -125,11 +125,11 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, 
 }
 
 func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newBinding, ok := new.(*sc.ServiceCatalogBinding)
+	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate to")
 	}
-	oldBinding, ok := old.(*sc.ServiceCatalogBinding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate from")
 	}
@@ -138,11 +138,11 @@ func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, ol
 }
 
 func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newBinding, ok := new.(*sc.ServiceCatalogBinding)
+	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update to")
 	}
-	oldBinding, ok := old.(*sc.ServiceCatalogBinding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update from")
 	}
@@ -173,11 +173,11 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context,
 }
 
 func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newBinding, ok := new.(*sc.ServiceCatalogBinding)
+	newBinding, ok := new.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate to")
 	}
-	oldBinding, ok := old.(*sc.ServiceCatalogBinding)
+	oldBinding, ok := old.(*sc.Binding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate from")
 	}

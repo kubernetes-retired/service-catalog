@@ -58,7 +58,7 @@ func TestShouldReconcileBroker(t *testing.T) {
 	// shouldReconcileBroker
 	cases := []struct {
 		name      string
-		broker    *v1alpha1.ServiceCatalogBroker
+		broker    *v1alpha1.Broker
 		now       time.Time
 		interval  time.Duration
 		reconcile bool
@@ -72,7 +72,7 @@ func TestShouldReconcileBroker(t *testing.T) {
 		},
 		{
 			name: "deletionTimestamp set",
-			broker: func() *v1alpha1.ServiceCatalogBroker {
+			broker: func() *v1alpha1.Broker {
 				b := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
 				b.DeletionTimestamp = &metav1.Time{}
 				return b
@@ -83,9 +83,9 @@ func TestShouldReconcileBroker(t *testing.T) {
 		},
 		{
 			name: "no ready condition",
-			broker: func() *v1alpha1.ServiceCatalogBroker {
+			broker: func() *v1alpha1.Broker {
 				b := getTestBroker()
-				b.Status = v1alpha1.ServiceCatalogBrokerStatus{
+				b.Status = v1alpha1.BrokerStatus{
 					Conditions: []v1alpha1.BrokerCondition{
 						{
 							Type:   v1alpha1.BrokerConditionType("NotARealCondition"),
@@ -108,7 +108,7 @@ func TestShouldReconcileBroker(t *testing.T) {
 		},
 		{
 			name: "ready, interval elapsed",
-			broker: func() *v1alpha1.ServiceCatalogBroker {
+			broker: func() *v1alpha1.Broker {
 				broker := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
 				return broker
 			}(),
@@ -118,7 +118,7 @@ func TestShouldReconcileBroker(t *testing.T) {
 		},
 		{
 			name: "ready, interval not elapsed",
-			broker: func() *v1alpha1.ServiceCatalogBroker {
+			broker: func() *v1alpha1.Broker {
 				broker := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
 				return broker
 			}(),
@@ -128,7 +128,7 @@ func TestShouldReconcileBroker(t *testing.T) {
 		},
 		{
 			name: "ready, interval not elapsed, checksum changed",
-			broker: func() *v1alpha1.ServiceCatalogBroker {
+			broker: func() *v1alpha1.Broker {
 				broker := getTestBrokerWithStatus(v1alpha1.ConditionTrue)
 				cs := "22081-9471-471"
 				broker.Status.Checksum = &cs
@@ -159,7 +159,7 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
 	testServiceClass := getTestServiceClass()
-	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
 	if err := testController.reconcileBroker(getTestBroker()); err != nil {
 		t.Fatalf("This should not fail : %v", err)
@@ -189,7 +189,7 @@ func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 
 	testServiceClass := getTestServiceClass()
 	testServiceClass.ExternalID = "notTheSame"
-	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
 	if err := testController.reconcileBroker(getTestBroker()); err == nil {
 		t.Fatal("The same service class should not be allowed with a different ID")
@@ -223,7 +223,7 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 
 	testServiceClass := getTestServiceClass()
 	testServiceClass.BrokerName = "notTheSame"
-	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
 	if err := testController.reconcileBroker(getTestBroker()); err == nil {
 		t.Fatal("The same service class should not belong to two different brokers.")
@@ -256,12 +256,12 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
 	testServiceClass := getTestServiceClass()
-	sharedInformers.ServiceCatalogServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
 	broker := getTestBroker()
 	broker.DeletionTimestamp = &metav1.Time{}
 	broker.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
-	fakeCatalogClient.AddReactor("get", "servicecatalogbrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "brokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, broker, nil
 	})
 
@@ -426,7 +426,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 
 	broker := getTestBroker()
 
-	fakeCatalogClient.AddReactor("create", "servicecatalogserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("create", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("error creating serviceclass")
 	})
 
@@ -442,7 +442,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	createSCAction := actions[0].(clientgotesting.CreateAction)
-	createdSC, ok := createSCAction.GetObject().(*v1alpha1.ServiceCatalogServiceClass)
+	createdSC, ok := createSCAction.GetObject().(*v1alpha1.ServiceClass)
 	if !ok {
 		t.Fatalf("couldn't convert to a ServiceClass: %+v", createSCAction.GetObject())
 	}
@@ -467,7 +467,7 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 func TestUpdateBrokerCondition(t *testing.T) {
 	cases := []struct {
 		name                  string
-		input                 *v1alpha1.ServiceCatalogBroker
+		input                 *v1alpha1.Broker
 		status                v1alpha1.ConditionStatus
 		reason                string
 		message               string
@@ -523,7 +523,7 @@ func TestUpdateBrokerCondition(t *testing.T) {
 			continue
 		}
 
-		inputClone := clone.(*v1alpha1.ServiceCatalogBroker)
+		inputClone := clone.(*v1alpha1.Broker)
 
 		err = testController.updateBrokerCondition(tc.input, v1alpha1.BrokerConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
@@ -546,7 +546,7 @@ func TestUpdateBrokerCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedBroker.(*v1alpha1.ServiceCatalogBroker)
+		updateActionObject, ok := updatedBroker.(*v1alpha1.Broker)
 		if !ok {
 			t.Errorf("%v: couldn't convert to broker", tc.name)
 			continue

@@ -26,92 +26,92 @@ const (
 	tprVersion = "v1alpha1"
 )
 
-// ServiceCatalogInstanceResource represents the API resource for the service instance third
+// ServiceInstanceResource represents the API resource for the service instance third
 // party resource
-var ServiceCatalogInstanceResource = metav1.APIResource{
-	Name:       ServiceCatalogInstanceKind.TPRName(),
+var ServiceInstanceResource = metav1.APIResource{
+	Name:       ServiceInstanceKind.TPRName(),
 	Namespaced: true,
 }
 
-// ServiceCatalogBindingResource represents the API resource for the service binding third
+// ServiceBindingResource represents the API resource for the service binding third
 // party resource
-var ServiceCatalogBindingResource = metav1.APIResource{
-	Name:       ServiceCatalogBindingKind.TPRName(),
+var ServiceBindingResource = metav1.APIResource{
+	Name:       ServiceBindingKind.TPRName(),
 	Namespaced: true,
 }
 
-// ServiceCatalogBrokerResource represents the API resource for the service broker third
+// ServiceBrokerResource represents the API resource for the service broker third
 // party resource
-var ServiceCatalogBrokerResource = metav1.APIResource{
-	Name:       ServiceCatalogBrokerKind.TPRName(),
+var ServiceBrokerResource = metav1.APIResource{
+	Name:       ServiceBrokerKind.TPRName(),
 	Namespaced: true,
 }
 
-// ServiceCatalogServiceClassResource represents the API resource for the service class third
+// ServiceClassResource represents the API resource for the service class third
 // party resource
-var ServiceCatalogServiceClassResource = metav1.APIResource{
-	// ServiceCatalogServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
+var ServiceClassResource = metav1.APIResource{
+	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
 	// it here
-	Name:       "service-catalog-service-class",
+	Name:       "service-class",
 	Namespaced: true,
 }
 
-// ServiceCatalogInstanceResource represents the API resource for the service instance third
+// ServiceInstanceResource represents the API resource for the service instance third
 // party resource
-var serviceCatalogInstanceTPR = v1beta1.ThirdPartyResource{
+var serviceInstanceTPR = v1beta1.ThirdPartyResource{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
 	ObjectMeta: metav1.ObjectMeta{
-		Name: withGroupName(ServiceCatalogInstanceKind.TPRName()),
+		Name: withGroupName(ServiceInstanceKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},
 	},
 }
 
-// ServiceCatalogBindingResource represents the API resource for the service binding third
+// ServiceBindingResource represents the API resource for the service binding third
 // party resource
-var serviceCatalogBindingTPR = v1beta1.ThirdPartyResource{
+var serviceBindingTPR = v1beta1.ThirdPartyResource{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
 	ObjectMeta: metav1.ObjectMeta{
-		Name: withGroupName(ServiceCatalogBindingKind.TPRName()),
+		Name: withGroupName(ServiceBindingKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},
 	},
 }
 
-// ServiceCatalogBrokerResource represents the API resource for the service broker third
+// ServiceBrokerResource represents the API resource for the service broker third
 // party resource
-var serviceCatalogBrokerTPR = v1beta1.ThirdPartyResource{
+var serviceBrokerTPR = v1beta1.ThirdPartyResource{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
 	ObjectMeta: metav1.ObjectMeta{
-		Name: withGroupName(ServiceCatalogBrokerKind.TPRName()),
+		Name: withGroupName(ServiceBrokerKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},
 	},
 }
 
-// ServiceCatalogServiceClassResource represents the API resource for the service class third
+// ServiceClassResource represents the API resource for the service class third
 // party resource
-var serviceCatalogServiceClassTPR = v1beta1.ThirdPartyResource{
+var serviceClassTPR = v1beta1.ThirdPartyResource{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
-	// ServiceCatalogServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
+	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
 	// it here
 	ObjectMeta: metav1.ObjectMeta{
-		Name: withGroupName(ServiceCatalogServiceClassKind.TPRName()),
+		Name: withGroupName(ServiceClassKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},

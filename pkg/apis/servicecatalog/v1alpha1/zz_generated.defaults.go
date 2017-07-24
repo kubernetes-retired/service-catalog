@@ -28,32 +28,32 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
-	scheme.AddTypeDefaultingFunc(&ServiceCatalogBinding{}, func(obj interface{}) { SetObjectDefaults_ServiceCatalogBinding(obj.(*ServiceCatalogBinding)) })
-	scheme.AddTypeDefaultingFunc(&ServiceCatalogBindingList{}, func(obj interface{}) { SetObjectDefaults_ServiceCatalogBindingList(obj.(*ServiceCatalogBindingList)) })
-	scheme.AddTypeDefaultingFunc(&ServiceCatalogInstance{}, func(obj interface{}) { SetObjectDefaults_ServiceCatalogInstance(obj.(*ServiceCatalogInstance)) })
-	scheme.AddTypeDefaultingFunc(&ServiceCatalogInstanceList{}, func(obj interface{}) { SetObjectDefaults_ServiceCatalogInstanceList(obj.(*ServiceCatalogInstanceList)) })
+	scheme.AddTypeDefaultingFunc(&Binding{}, func(obj interface{}) { SetObjectDefaults_Binding(obj.(*Binding)) })
+	scheme.AddTypeDefaultingFunc(&BindingList{}, func(obj interface{}) { SetObjectDefaults_BindingList(obj.(*BindingList)) })
+	scheme.AddTypeDefaultingFunc(&Instance{}, func(obj interface{}) { SetObjectDefaults_Instance(obj.(*Instance)) })
+	scheme.AddTypeDefaultingFunc(&InstanceList{}, func(obj interface{}) { SetObjectDefaults_InstanceList(obj.(*InstanceList)) })
 	return nil
 }
 
-func SetObjectDefaults_ServiceCatalogBinding(in *ServiceCatalogBinding) {
-	SetDefaults_ServiceCatalogBinding(in)
-	SetDefaults_ServiceCatalogBindingSpec(&in.Spec)
+func SetObjectDefaults_Binding(in *Binding) {
+	SetDefaults_Binding(in)
+	SetDefaults_BindingSpec(&in.Spec)
 }
 
-func SetObjectDefaults_ServiceCatalogBindingList(in *ServiceCatalogBindingList) {
+func SetObjectDefaults_BindingList(in *BindingList) {
 	for i := range in.Items {
 		a := &in.Items[i]
-		SetObjectDefaults_ServiceCatalogBinding(a)
+		SetObjectDefaults_Binding(a)
 	}
 }
 
-func SetObjectDefaults_ServiceCatalogInstance(in *ServiceCatalogInstance) {
-	SetDefaults_ServiceCatalogInstanceSpec(&in.Spec)
+func SetObjectDefaults_Instance(in *Instance) {
+	SetDefaults_InstanceSpec(&in.Spec)
 }
 
-func SetObjectDefaults_ServiceCatalogInstanceList(in *ServiceCatalogInstanceList) {
+func SetObjectDefaults_InstanceList(in *InstanceList) {
 	for i := range in.Items {
 		a := &in.Items[i]
-		SetObjectDefaults_ServiceCatalogInstance(a)
+		SetObjectDefaults_Instance(a)
 	}
 }

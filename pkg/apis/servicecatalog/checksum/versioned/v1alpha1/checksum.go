@@ -31,7 +31,7 @@ import (
 // - PlanName
 // - Parameters
 // - ExternalID
-func InstanceSpecChecksum(spec v1alpha1.ServiceCatalogInstanceSpec) string {
+func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("serviceClassName: %v\n", spec.ServiceClassName)
 	specString += fmt.Sprintf("planName: %v\n", spec.PlanName)
@@ -52,7 +52,7 @@ func InstanceSpecChecksum(spec v1alpha1.ServiceCatalogInstanceSpec) string {
 // - InstanceRef.Name
 // - Parameters
 // - ExternalID
-func BindingSpecChecksum(spec v1alpha1.ServiceCatalogBindingSpec) string {
+func BindingSpecChecksum(spec v1alpha1.BindingSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
 
@@ -70,7 +70,7 @@ func BindingSpecChecksum(spec v1alpha1.ServiceCatalogBindingSpec) string {
 // the following fields:
 // - URL
 // - AuthInfo (may be nil, but special handling is unnecessary with %v)
-func BrokerSpecChecksum(spec v1alpha1.ServiceCatalogBrokerSpec) string {
+func BrokerSpecChecksum(spec v1alpha1.BrokerSpec) string {
 	specString := fmt.Sprintf("URL: %v\n", spec.URL)
 	specString += fmt.Sprintf("AuthInfo: %v\n", spec.AuthInfo)
 	glog.V(5).Infof("specString: %v", specString)

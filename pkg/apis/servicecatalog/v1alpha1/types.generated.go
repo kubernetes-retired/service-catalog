@@ -73,7 +73,7 @@ func init() {
 	}
 }
 
-func (x *ServiceCatalogBroker) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *Broker) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -216,7 +216,7 @@ func (x *ServiceCatalogBroker) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBroker) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *Broker) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -246,7 +246,7 @@ func (x *ServiceCatalogBroker) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *Broker) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -307,14 +307,14 @@ func (x *ServiceCatalogBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decode
 			}
 		case "spec":
 			if r.TryDecodeAsNil() {
-				x.Spec = ServiceCatalogBrokerSpec{}
+				x.Spec = BrokerSpec{}
 			} else {
 				yyv10 := &x.Spec
 				yyv10.CodecDecodeSelf(d)
 			}
 		case "status":
 			if r.TryDecodeAsNil() {
-				x.Status = ServiceCatalogBrokerStatus{}
+				x.Status = BrokerStatus{}
 			} else {
 				yyv11 := &x.Status
 				yyv11.CodecDecodeSelf(d)
@@ -326,7 +326,7 @@ func (x *ServiceCatalogBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decode
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBroker) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *Broker) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -412,7 +412,7 @@ func (x *ServiceCatalogBroker) codecDecodeSelfFromArray(l int, d *codec1978.Deco
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Spec = ServiceCatalogBrokerSpec{}
+		x.Spec = BrokerSpec{}
 	} else {
 		yyv19 := &x.Spec
 		yyv19.CodecDecodeSelf(d)
@@ -429,7 +429,7 @@ func (x *ServiceCatalogBroker) codecDecodeSelfFromArray(l int, d *codec1978.Deco
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Status = ServiceCatalogBrokerStatus{}
+		x.Status = BrokerStatus{}
 	} else {
 		yyv20 := &x.Status
 		yyv20.CodecDecodeSelf(d)
@@ -450,7 +450,7 @@ func (x *ServiceCatalogBroker) codecDecodeSelfFromArray(l int, d *codec1978.Deco
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *BrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -571,7 +571,7 @@ func (x *ServiceCatalogBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym15
 					if false {
 					} else {
-						h.encSliceServiceCatalogBroker(([]ServiceCatalogBroker)(x.Items), e)
+						h.encSliceBroker(([]Broker)(x.Items), e)
 					}
 				}
 			} else {
@@ -585,7 +585,7 @@ func (x *ServiceCatalogBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym16
 					if false {
 					} else {
-						h.encSliceServiceCatalogBroker(([]ServiceCatalogBroker)(x.Items), e)
+						h.encSliceBroker(([]Broker)(x.Items), e)
 					}
 				}
 			}
@@ -598,7 +598,7 @@ func (x *ServiceCatalogBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBrokerList) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *BrokerList) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -628,7 +628,7 @@ func (x *ServiceCatalogBrokerList) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *BrokerList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -696,7 +696,7 @@ func (x *ServiceCatalogBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.De
 				_ = yym11
 				if false {
 				} else {
-					h.decSliceServiceCatalogBroker((*[]ServiceCatalogBroker)(yyv10), d)
+					h.decSliceBroker((*[]Broker)(yyv10), d)
 				}
 			}
 		default:
@@ -706,7 +706,7 @@ func (x *ServiceCatalogBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.De
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *BrokerList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -799,7 +799,7 @@ func (x *ServiceCatalogBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.
 		_ = yym20
 		if false {
 		} else {
-			h.decSliceServiceCatalogBroker((*[]ServiceCatalogBroker)(yyv19), d)
+			h.decSliceBroker((*[]Broker)(yyv19), d)
 		}
 	}
 	for {
@@ -818,7 +818,7 @@ func (x *ServiceCatalogBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *BrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -900,7 +900,7 @@ func (x *ServiceCatalogBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBrokerSpec) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *BrokerSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -930,7 +930,7 @@ func (x *ServiceCatalogBrokerSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *BrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -982,7 +982,7 @@ func (x *ServiceCatalogBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.De
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBrokerSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *BrokerSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -1225,7 +1225,7 @@ func (x *BrokerAuthInfo) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogBrokerStatus) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *BrokerStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -1327,7 +1327,7 @@ func (x *ServiceCatalogBrokerStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBrokerStatus) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *BrokerStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -1357,7 +1357,7 @@ func (x *ServiceCatalogBrokerStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBrokerStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *BrokerStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -1414,7 +1414,7 @@ func (x *ServiceCatalogBrokerStatus) codecDecodeSelfFromMap(l int, d *codec1978.
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBrokerStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *BrokerStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -1905,7 +1905,7 @@ func (x *ConditionStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogServiceClassList) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceClassList) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -2026,7 +2026,7 @@ func (x *ServiceCatalogServiceClassList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym15
 					if false {
 					} else {
-						h.encSliceServiceCatalogServiceClass(([]ServiceCatalogServiceClass)(x.Items), e)
+						h.encSliceServiceClass(([]ServiceClass)(x.Items), e)
 					}
 				}
 			} else {
@@ -2040,7 +2040,7 @@ func (x *ServiceCatalogServiceClassList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym16
 					if false {
 					} else {
-						h.encSliceServiceCatalogServiceClass(([]ServiceCatalogServiceClass)(x.Items), e)
+						h.encSliceServiceClass(([]ServiceClass)(x.Items), e)
 					}
 				}
 			}
@@ -2053,7 +2053,7 @@ func (x *ServiceCatalogServiceClassList) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogServiceClassList) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceClassList) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -2083,7 +2083,7 @@ func (x *ServiceCatalogServiceClassList) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogServiceClassList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceClassList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -2151,7 +2151,7 @@ func (x *ServiceCatalogServiceClassList) codecDecodeSelfFromMap(l int, d *codec1
 				_ = yym11
 				if false {
 				} else {
-					h.decSliceServiceCatalogServiceClass((*[]ServiceCatalogServiceClass)(yyv10), d)
+					h.decSliceServiceClass((*[]ServiceClass)(yyv10), d)
 				}
 			}
 		default:
@@ -2161,7 +2161,7 @@ func (x *ServiceCatalogServiceClassList) codecDecodeSelfFromMap(l int, d *codec1
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogServiceClassList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceClassList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -2254,7 +2254,7 @@ func (x *ServiceCatalogServiceClassList) codecDecodeSelfFromArray(l int, d *code
 		_ = yym20
 		if false {
 		} else {
-			h.decSliceServiceCatalogServiceClass((*[]ServiceCatalogServiceClass)(yyv19), d)
+			h.decSliceServiceClass((*[]ServiceClass)(yyv19), d)
 		}
 	}
 	for {
@@ -2273,7 +2273,7 @@ func (x *ServiceCatalogServiceClassList) codecDecodeSelfFromArray(l int, d *code
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -2453,7 +2453,7 @@ func (x *ServiceCatalogServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym24
 					if false {
 					} else {
-						h.encSliceServiceCatalogServicePlan(([]ServiceCatalogServicePlan)(x.Plans), e)
+						h.encSliceServicePlan(([]ServicePlan)(x.Plans), e)
 					}
 				}
 			} else {
@@ -2467,7 +2467,7 @@ func (x *ServiceCatalogServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym25
 					if false {
 					} else {
-						h.encSliceServiceCatalogServicePlan(([]ServiceCatalogServicePlan)(x.Plans), e)
+						h.encSliceServicePlan(([]ServicePlan)(x.Plans), e)
 					}
 				}
 			}
@@ -2617,7 +2617,7 @@ func (x *ServiceCatalogServiceClass) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogServiceClass) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceClass) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -2647,7 +2647,7 @@ func (x *ServiceCatalogServiceClass) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -2751,7 +2751,7 @@ func (x *ServiceCatalogServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.
 				_ = yym17
 				if false {
 				} else {
-					h.decSliceServiceCatalogServicePlan((*[]ServiceCatalogServicePlan)(yyv16), d)
+					h.decSliceServicePlan((*[]ServicePlan)(yyv16), d)
 				}
 			}
 		case "planUpdatable":
@@ -2828,7 +2828,7 @@ func (x *ServiceCatalogServiceClass) codecDecodeSelfFromMap(l int, d *codec1978.
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceClass) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -2987,7 +2987,7 @@ func (x *ServiceCatalogServiceClass) codecDecodeSelfFromArray(l int, d *codec197
 		_ = yym42
 		if false {
 		} else {
-			h.decSliceServiceCatalogServicePlan((*[]ServiceCatalogServicePlan)(yyv41), d)
+			h.decSliceServicePlan((*[]ServicePlan)(yyv41), d)
 		}
 	}
 	yyj28++
@@ -3123,7 +3123,7 @@ func (x *ServiceCatalogServiceClass) codecDecodeSelfFromArray(l int, d *codec197
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -3427,7 +3427,7 @@ func (x *ServiceCatalogServicePlan) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogServicePlan) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServicePlan) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -3457,7 +3457,7 @@ func (x *ServiceCatalogServicePlan) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -3626,7 +3626,7 @@ func (x *ServiceCatalogServicePlan) codecDecodeSelfFromMap(l int, d *codec1978.D
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServicePlan) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -3879,7 +3879,7 @@ func (x *ServiceCatalogServicePlan) codecDecodeSelfFromArray(l int, d *codec1978
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogInstanceList) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *InstanceList) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -4000,7 +4000,7 @@ func (x *ServiceCatalogInstanceList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym15
 					if false {
 					} else {
-						h.encSliceServiceCatalogInstance(([]ServiceCatalogInstance)(x.Items), e)
+						h.encSliceInstance(([]Instance)(x.Items), e)
 					}
 				}
 			} else {
@@ -4014,7 +4014,7 @@ func (x *ServiceCatalogInstanceList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym16
 					if false {
 					} else {
-						h.encSliceServiceCatalogInstance(([]ServiceCatalogInstance)(x.Items), e)
+						h.encSliceInstance(([]Instance)(x.Items), e)
 					}
 				}
 			}
@@ -4027,7 +4027,7 @@ func (x *ServiceCatalogInstanceList) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogInstanceList) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *InstanceList) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4057,7 +4057,7 @@ func (x *ServiceCatalogInstanceList) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogInstanceList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *InstanceList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4125,7 +4125,7 @@ func (x *ServiceCatalogInstanceList) codecDecodeSelfFromMap(l int, d *codec1978.
 				_ = yym11
 				if false {
 				} else {
-					h.decSliceServiceCatalogInstance((*[]ServiceCatalogInstance)(yyv10), d)
+					h.decSliceInstance((*[]Instance)(yyv10), d)
 				}
 			}
 		default:
@@ -4135,7 +4135,7 @@ func (x *ServiceCatalogInstanceList) codecDecodeSelfFromMap(l int, d *codec1978.
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogInstanceList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *InstanceList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4228,7 +4228,7 @@ func (x *ServiceCatalogInstanceList) codecDecodeSelfFromArray(l int, d *codec197
 		_ = yym20
 		if false {
 		} else {
-			h.decSliceServiceCatalogInstance((*[]ServiceCatalogInstance)(yyv19), d)
+			h.decSliceInstance((*[]Instance)(yyv19), d)
 		}
 	}
 	for {
@@ -4247,7 +4247,7 @@ func (x *ServiceCatalogInstanceList) codecDecodeSelfFromArray(l int, d *codec197
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogInstance) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *Instance) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -4390,7 +4390,7 @@ func (x *ServiceCatalogInstance) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogInstance) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *Instance) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4420,7 +4420,7 @@ func (x *ServiceCatalogInstance) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogInstance) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *Instance) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4481,14 +4481,14 @@ func (x *ServiceCatalogInstance) codecDecodeSelfFromMap(l int, d *codec1978.Deco
 			}
 		case "spec":
 			if r.TryDecodeAsNil() {
-				x.Spec = ServiceCatalogInstanceSpec{}
+				x.Spec = InstanceSpec{}
 			} else {
 				yyv10 := &x.Spec
 				yyv10.CodecDecodeSelf(d)
 			}
 		case "status":
 			if r.TryDecodeAsNil() {
-				x.Status = ServiceCatalogInstanceStatus{}
+				x.Status = InstanceStatus{}
 			} else {
 				yyv11 := &x.Status
 				yyv11.CodecDecodeSelf(d)
@@ -4500,7 +4500,7 @@ func (x *ServiceCatalogInstance) codecDecodeSelfFromMap(l int, d *codec1978.Deco
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogInstance) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *Instance) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4586,7 +4586,7 @@ func (x *ServiceCatalogInstance) codecDecodeSelfFromArray(l int, d *codec1978.De
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Spec = ServiceCatalogInstanceSpec{}
+		x.Spec = InstanceSpec{}
 	} else {
 		yyv19 := &x.Spec
 		yyv19.CodecDecodeSelf(d)
@@ -4603,7 +4603,7 @@ func (x *ServiceCatalogInstance) codecDecodeSelfFromArray(l int, d *codec1978.De
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Status = ServiceCatalogInstanceStatus{}
+		x.Status = InstanceStatus{}
 	} else {
 		yyv20 := &x.Status
 		yyv20.CodecDecodeSelf(d)
@@ -4624,7 +4624,7 @@ func (x *ServiceCatalogInstance) codecDecodeSelfFromArray(l int, d *codec1978.De
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *InstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -4760,7 +4760,7 @@ func (x *ServiceCatalogInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogInstanceSpec) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *InstanceSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4790,7 +4790,7 @@ func (x *ServiceCatalogInstanceSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogInstanceSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *InstanceSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4874,7 +4874,7 @@ func (x *ServiceCatalogInstanceSpec) codecDecodeSelfFromMap(l int, d *codec1978.
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogInstanceSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *InstanceSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -4992,7 +4992,7 @@ func (x *ServiceCatalogInstanceSpec) codecDecodeSelfFromArray(l int, d *codec197
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *InstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -5185,7 +5185,7 @@ func (x *ServiceCatalogInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogInstanceStatus) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *InstanceStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -5215,7 +5215,7 @@ func (x *ServiceCatalogInstanceStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogInstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *InstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -5316,7 +5316,7 @@ func (x *ServiceCatalogInstanceStatus) codecDecodeSelfFromMap(l int, d *codec197
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogInstanceStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *InstanceStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -5855,7 +5855,7 @@ func (x *InstanceConditionType) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingList) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *BindingList) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -5976,7 +5976,7 @@ func (x *ServiceCatalogBindingList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym15
 					if false {
 					} else {
-						h.encSliceServiceCatalogBinding(([]ServiceCatalogBinding)(x.Items), e)
+						h.encSliceBinding(([]Binding)(x.Items), e)
 					}
 				}
 			} else {
@@ -5990,7 +5990,7 @@ func (x *ServiceCatalogBindingList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym16
 					if false {
 					} else {
-						h.encSliceServiceCatalogBinding(([]ServiceCatalogBinding)(x.Items), e)
+						h.encSliceBinding(([]Binding)(x.Items), e)
 					}
 				}
 			}
@@ -6003,7 +6003,7 @@ func (x *ServiceCatalogBindingList) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingList) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *BindingList) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6033,7 +6033,7 @@ func (x *ServiceCatalogBindingList) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *BindingList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6101,7 +6101,7 @@ func (x *ServiceCatalogBindingList) codecDecodeSelfFromMap(l int, d *codec1978.D
 				_ = yym11
 				if false {
 				} else {
-					h.decSliceServiceCatalogBinding((*[]ServiceCatalogBinding)(yyv10), d)
+					h.decSliceBinding((*[]Binding)(yyv10), d)
 				}
 			}
 		default:
@@ -6111,7 +6111,7 @@ func (x *ServiceCatalogBindingList) codecDecodeSelfFromMap(l int, d *codec1978.D
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBindingList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *BindingList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6204,7 +6204,7 @@ func (x *ServiceCatalogBindingList) codecDecodeSelfFromArray(l int, d *codec1978
 		_ = yym20
 		if false {
 		} else {
-			h.decSliceServiceCatalogBinding((*[]ServiceCatalogBinding)(yyv19), d)
+			h.decSliceBinding((*[]Binding)(yyv19), d)
 		}
 	}
 	for {
@@ -6223,7 +6223,7 @@ func (x *ServiceCatalogBindingList) codecDecodeSelfFromArray(l int, d *codec1978
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogBinding) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *Binding) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -6366,7 +6366,7 @@ func (x *ServiceCatalogBinding) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBinding) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *Binding) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6396,7 +6396,7 @@ func (x *ServiceCatalogBinding) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBinding) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *Binding) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6457,14 +6457,14 @@ func (x *ServiceCatalogBinding) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 			}
 		case "spec":
 			if r.TryDecodeAsNil() {
-				x.Spec = ServiceCatalogBindingSpec{}
+				x.Spec = BindingSpec{}
 			} else {
 				yyv10 := &x.Spec
 				yyv10.CodecDecodeSelf(d)
 			}
 		case "status":
 			if r.TryDecodeAsNil() {
-				x.Status = ServiceCatalogBindingStatus{}
+				x.Status = BindingStatus{}
 			} else {
 				yyv11 := &x.Status
 				yyv11.CodecDecodeSelf(d)
@@ -6476,7 +6476,7 @@ func (x *ServiceCatalogBinding) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBinding) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *Binding) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6562,7 +6562,7 @@ func (x *ServiceCatalogBinding) codecDecodeSelfFromArray(l int, d *codec1978.Dec
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Spec = ServiceCatalogBindingSpec{}
+		x.Spec = BindingSpec{}
 	} else {
 		yyv19 := &x.Spec
 		yyv19.CodecDecodeSelf(d)
@@ -6579,7 +6579,7 @@ func (x *ServiceCatalogBinding) codecDecodeSelfFromArray(l int, d *codec1978.Dec
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Status = ServiceCatalogBindingStatus{}
+		x.Status = BindingStatus{}
 	} else {
 		yyv20 := &x.Status
 		yyv20.CodecDecodeSelf(d)
@@ -6600,7 +6600,7 @@ func (x *ServiceCatalogBinding) codecDecodeSelfFromArray(l int, d *codec1978.Dec
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogBindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *BindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -6759,7 +6759,7 @@ func (x *ServiceCatalogBindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingSpec) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *BindingSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6789,7 +6789,7 @@ func (x *ServiceCatalogBindingSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *BindingSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -6879,7 +6879,7 @@ func (x *ServiceCatalogBindingSpec) codecDecodeSelfFromMap(l int, d *codec1978.D
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBindingSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *BindingSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -7246,7 +7246,7 @@ func (x *AlphaPodPresetTemplate) codecDecodeSelfFromArray(l int, d *codec1978.De
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceCatalogBindingStatus) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *BindingStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -7348,7 +7348,7 @@ func (x *ServiceCatalogBindingStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingStatus) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *BindingStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -7378,7 +7378,7 @@ func (x *ServiceCatalogBindingStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceCatalogBindingStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *BindingStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -7435,7 +7435,7 @@ func (x *ServiceCatalogBindingStatus) codecDecodeSelfFromMap(l int, d *codec1978
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceCatalogBindingStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *BindingStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -7900,7 +7900,7 @@ func (x *BindingConditionType) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceCatalogBroker(v []ServiceCatalogBroker, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceBroker(v []Broker, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -7913,7 +7913,7 @@ func (x codecSelfer1234) encSliceServiceCatalogBroker(v []ServiceCatalogBroker, 
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceBroker(v *[]Broker, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -7924,7 +7924,7 @@ func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker,
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceCatalogBroker{}
+			yyv1 = []Broker{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -7944,10 +7944,10 @@ func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker,
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceCatalogBroker, yyrl1)
+					yyv1 = make([]Broker, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceCatalogBroker, yyrl1)
+				yyv1 = make([]Broker, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -7962,7 +7962,7 @@ func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker,
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceCatalogBroker{}
+				yyv1[yyj1] = Broker{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -7971,10 +7971,10 @@ func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker,
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceCatalogBroker{})
+				yyv1 = append(yyv1, Broker{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogBroker{}
+					yyv1[yyj1] = Broker{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -7988,13 +7988,13 @@ func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker,
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceCatalogBroker{}) // var yyz1 ServiceCatalogBroker
+				yyv1 = append(yyv1, Broker{}) // var yyz1 Broker
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogBroker{}
+					yyv1[yyj1] = Broker{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -8009,7 +8009,7 @@ func (x codecSelfer1234) decSliceServiceCatalogBroker(v *[]ServiceCatalogBroker,
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceCatalogBroker{}
+			yyv1 = []Broker{}
 			yyc1 = true
 		}
 	}
@@ -8138,7 +8138,7 @@ func (x codecSelfer1234) decSliceBrokerCondition(v *[]BrokerCondition, d *codec1
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceCatalogServiceClass(v []ServiceCatalogServiceClass, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceServiceClass(v []ServiceClass, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -8151,7 +8151,7 @@ func (x codecSelfer1234) encSliceServiceCatalogServiceClass(v []ServiceCatalogSe
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogServiceClass, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceServiceClass(v *[]ServiceClass, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -8162,7 +8162,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceCatalogServiceClass{}
+			yyv1 = []ServiceClass{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -8182,10 +8182,10 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceCatalogServiceClass, yyrl1)
+					yyv1 = make([]ServiceClass, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceCatalogServiceClass, yyrl1)
+				yyv1 = make([]ServiceClass, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -8200,7 +8200,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceCatalogServiceClass{}
+				yyv1[yyj1] = ServiceClass{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -8209,10 +8209,10 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceCatalogServiceClass{})
+				yyv1 = append(yyv1, ServiceClass{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogServiceClass{}
+					yyv1[yyj1] = ServiceClass{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -8226,13 +8226,13 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceCatalogServiceClass{}) // var yyz1 ServiceCatalogServiceClass
+				yyv1 = append(yyv1, ServiceClass{}) // var yyz1 ServiceClass
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogServiceClass{}
+					yyv1[yyj1] = ServiceClass{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -8247,7 +8247,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceCatalogServiceClass{}
+			yyv1 = []ServiceClass{}
 			yyc1 = true
 		}
 	}
@@ -8257,7 +8257,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServiceClass(v *[]ServiceCatalogS
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceCatalogServicePlan(v []ServiceCatalogServicePlan, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceServicePlan(v []ServicePlan, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -8270,7 +8270,7 @@ func (x codecSelfer1234) encSliceServiceCatalogServicePlan(v []ServiceCatalogSer
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogServicePlan, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceServicePlan(v *[]ServicePlan, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -8281,7 +8281,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceCatalogServicePlan{}
+			yyv1 = []ServicePlan{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -8301,10 +8301,10 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceCatalogServicePlan, yyrl1)
+					yyv1 = make([]ServicePlan, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceCatalogServicePlan, yyrl1)
+				yyv1 = make([]ServicePlan, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -8319,7 +8319,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceCatalogServicePlan{}
+				yyv1[yyj1] = ServicePlan{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -8328,10 +8328,10 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceCatalogServicePlan{})
+				yyv1 = append(yyv1, ServicePlan{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogServicePlan{}
+					yyv1[yyj1] = ServicePlan{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -8345,13 +8345,13 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceCatalogServicePlan{}) // var yyz1 ServiceCatalogServicePlan
+				yyv1 = append(yyv1, ServicePlan{}) // var yyz1 ServicePlan
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogServicePlan{}
+					yyv1[yyj1] = ServicePlan{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -8366,7 +8366,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceCatalogServicePlan{}
+			yyv1 = []ServicePlan{}
 			yyc1 = true
 		}
 	}
@@ -8376,7 +8376,7 @@ func (x codecSelfer1234) decSliceServiceCatalogServicePlan(v *[]ServiceCatalogSe
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceCatalogInstance(v []ServiceCatalogInstance, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceInstance(v []Instance, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -8389,7 +8389,7 @@ func (x codecSelfer1234) encSliceServiceCatalogInstance(v []ServiceCatalogInstan
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInstance, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceInstance(v *[]Instance, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -8400,7 +8400,7 @@ func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInsta
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceCatalogInstance{}
+			yyv1 = []Instance{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -8420,10 +8420,10 @@ func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInsta
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceCatalogInstance, yyrl1)
+					yyv1 = make([]Instance, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceCatalogInstance, yyrl1)
+				yyv1 = make([]Instance, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -8438,7 +8438,7 @@ func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInsta
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceCatalogInstance{}
+				yyv1[yyj1] = Instance{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -8447,10 +8447,10 @@ func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInsta
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceCatalogInstance{})
+				yyv1 = append(yyv1, Instance{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogInstance{}
+					yyv1[yyj1] = Instance{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -8464,13 +8464,13 @@ func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInsta
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceCatalogInstance{}) // var yyz1 ServiceCatalogInstance
+				yyv1 = append(yyv1, Instance{}) // var yyz1 Instance
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogInstance{}
+					yyv1[yyj1] = Instance{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -8485,7 +8485,7 @@ func (x codecSelfer1234) decSliceServiceCatalogInstance(v *[]ServiceCatalogInsta
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceCatalogInstance{}
+			yyv1 = []Instance{}
 			yyc1 = true
 		}
 	}
@@ -8614,7 +8614,7 @@ func (x codecSelfer1234) decSliceInstanceCondition(v *[]InstanceCondition, d *co
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceCatalogBinding(v []ServiceCatalogBinding, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceBinding(v []Binding, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -8627,7 +8627,7 @@ func (x codecSelfer1234) encSliceServiceCatalogBinding(v []ServiceCatalogBinding
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBinding, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceBinding(v *[]Binding, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -8638,7 +8638,7 @@ func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBindin
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceCatalogBinding{}
+			yyv1 = []Binding{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -8658,10 +8658,10 @@ func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBindin
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceCatalogBinding, yyrl1)
+					yyv1 = make([]Binding, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceCatalogBinding, yyrl1)
+				yyv1 = make([]Binding, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -8676,7 +8676,7 @@ func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBindin
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceCatalogBinding{}
+				yyv1[yyj1] = Binding{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -8685,10 +8685,10 @@ func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBindin
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceCatalogBinding{})
+				yyv1 = append(yyv1, Binding{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogBinding{}
+					yyv1[yyj1] = Binding{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -8702,13 +8702,13 @@ func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBindin
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceCatalogBinding{}) // var yyz1 ServiceCatalogBinding
+				yyv1 = append(yyv1, Binding{}) // var yyz1 Binding
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceCatalogBinding{}
+					yyv1[yyj1] = Binding{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -8723,7 +8723,7 @@ func (x codecSelfer1234) decSliceServiceCatalogBinding(v *[]ServiceCatalogBindin
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceCatalogBinding{}
+			yyv1 = []Binding{}
 			yyc1 = true
 		}
 	}

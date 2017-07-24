@@ -55,7 +55,7 @@ func validateExternalID(value string) []string {
 }
 
 // ValidateServiceClass validates a ServiceClass and returns a list of errors.
-func ValidateServiceClass(serviceclass *sc.ServiceCatalogServiceClass) field.ErrorList {
+func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs,
@@ -100,7 +100,7 @@ func ValidateServiceClass(serviceclass *sc.ServiceCatalogServiceClass) field.Err
 
 // validateServicePlan validates the fields of a single ServicePlan and
 // returns a list of errors.
-func validateServicePlan(plan sc.ServiceCatalogServicePlan, fldPath *field.Path) field.ErrorList {
+func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	for _, msg := range validateServicePlanName(plan.Name) {
@@ -142,7 +142,7 @@ func validateServicePlanName(value string) []string {
 
 // ValidateServiceClassUpdate checks that when changing from an older
 // ServiceClass to a newer ServiceClass is okay.
-func ValidateServiceClassUpdate(new *sc.ServiceCatalogServiceClass, old *sc.ServiceCatalogServiceClass) field.ErrorList {
+func ValidateServiceClassUpdate(new *sc.ServiceClass, old *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateServiceClass(new)...)
 	allErrs = append(allErrs, ValidateServiceClass(old)...)

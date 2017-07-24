@@ -25,26 +25,26 @@ import (
 // +genclient=true
 // +nonNamespaced=true
 
-// ServiceCatalogBroker represents an entity that provides
-// ServiceCatalogServiceClasses for use in the service catalog.
-type ServiceCatalogBroker struct {
+// Broker represents an entity that provides ServiceClasses for use in the
+// service catalog.
+type Broker struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec   ServiceCatalogBrokerSpec
-	Status ServiceCatalogBrokerStatus
+	Spec   BrokerSpec
+	Status BrokerStatus
 }
 
-// ServiceCatalogBrokerList is a list of Brokers.
-type ServiceCatalogBrokerList struct {
+// BrokerList is a list of Brokers.
+type BrokerList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceCatalogBroker
+	Items []Broker
 }
 
-// ServiceCatalogBrokerSpec represents a description of a Broker.
-type ServiceCatalogBrokerSpec struct {
+// BrokerSpec represents a description of a Broker.
+type BrokerSpec struct {
 	// URL is the address used to communicate with the Broker.
 	URL string
 
@@ -53,21 +53,20 @@ type ServiceCatalogBrokerSpec struct {
 	AuthInfo *BrokerAuthInfo
 }
 
-// BrokerAuthInfo is a union type that contains information on
-// one of the authentication methods the the service catalog and brokers may
-// support, according to the OpenServiceBroker API specification
-// (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
+// BrokerAuthInfo is a union type that contains information on one of the authentication methods
+// the the service catalog and brokers may support, according to the OpenServiceBroker API
+// specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
 //
-// Note that we currently restrict a single broker to have only one of these
-// fields set on it.
+// Note that we currently restrict a single broker to have only one of these fields
+// set on it.
 type BrokerAuthInfo struct {
 	// BasicAuthSecret is a reference to a Secret containing auth information the
 	// catalog should use to authenticate to this Broker using basic auth.
 	BasicAuthSecret *v1.ObjectReference
 }
 
-// ServiceCatalogBrokerStatus represents the current status of a Broker.
-type ServiceCatalogBrokerStatus struct {
+// BrokerStatus represents the current status of a Broker.
+type BrokerStatus struct {
 	Conditions []BrokerCondition
 
 	// Checksum is the sha hash of the BrokerSpec that was last successfully
@@ -124,19 +123,19 @@ const (
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
-// ServiceCatalogServiceClassList is a list of ServiceClasses.
-type ServiceCatalogServiceClassList struct {
+// ServiceClassList is a list of ServiceClasses.
+type ServiceClassList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceCatalogServiceClass
+	Items []ServiceClass
 }
 
 // +genclient=true
 // +nonNamespaced=true
 
-// ServiceCatalogServiceClass represents an offering in the service catalog.
-type ServiceCatalogServiceClass struct {
+// ServiceClass represents an offering in the service catalog.
+type ServiceClass struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
@@ -156,7 +155,7 @@ type ServiceCatalogServiceClass struct {
 
 	// Plans is the list of ServicePlans for this ServiceClass.  All
 	// ServiceClasses have at least one ServicePlan.
-	Plans []ServiceCatalogServicePlan
+	Plans []ServicePlan
 
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ServiceClass may change ServicePlans after being provisioned.
@@ -191,8 +190,8 @@ type ServiceCatalogServiceClass struct {
 	AlphaRequires []string
 }
 
-// ServiceCatalogServicePlan represents a tier of a ServiceClass.
-type ServiceCatalogServicePlan struct {
+// ServicePlan represents a tier of a ServiceClass.
+type ServicePlan struct {
 	// Name is the CLI-friendly name of this ServicePlan.
 	Name string
 
@@ -240,29 +239,29 @@ type ServiceCatalogServicePlan struct {
 	AlphaBindingCreateParameterSchema *runtime.RawExtension
 }
 
-// ServiceCatalogInstanceList is a list of instances.
-type ServiceCatalogInstanceList struct {
+// InstanceList is a list of instances.
+type InstanceList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceCatalogInstance
+	Items []Instance
 }
 
 // +genclient=true
 
-// ServiceCatalogInstance represents a provisioned instance of a ServiceClass.
-type ServiceCatalogInstance struct {
+// Instance represents a provisioned instance of a ServiceClass.
+type Instance struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec   ServiceCatalogInstanceSpec
-	Status ServiceCatalogInstanceStatus
+	Spec   InstanceSpec
+	Status InstanceStatus
 }
 
-// ServiceCatalogInstanceSpec represents the desired state of an Instance.
-type ServiceCatalogInstanceSpec struct {
-	// ServiceCatalogServiceClassName is the name of the ServiceClass this
-	// Instance should be provisioned from.
+// InstanceSpec represents the desired state of an Instance.
+type InstanceSpec struct {
+	// ServiceClassName is the name of the ServiceClass this Instance
+	// should be provisioned from.
 	//
 	// Immutable.
 	ServiceClassName string
@@ -281,8 +280,8 @@ type ServiceCatalogInstanceSpec struct {
 	ExternalID string
 }
 
-// ServiceCatalogInstanceStatus represents the current status of an Instance.
-type ServiceCatalogInstanceStatus struct {
+// InstanceStatus represents the current status of an Instance.
+type InstanceStatus struct {
 	// Conditions is an array of InstanceConditions capturing aspects of an
 	// Instance's status.
 	Conditions []InstanceCondition
@@ -335,28 +334,28 @@ const (
 	InstanceConditionReady InstanceConditionType = "Ready"
 )
 
-// ServiceCatalogBindingList is a list of Bindings.
-type ServiceCatalogBindingList struct {
+// BindingList is a list of Bindings.
+type BindingList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceCatalogBinding
+	Items []Binding
 }
 
 // +genclient=true
 
-// ServiceCatalogBinding represents a "used by" relationship between an
-// application and an Instance.
-type ServiceCatalogBinding struct {
+// Binding represents a "used by" relationship between an application and an
+// Instance.
+type Binding struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec   ServiceCatalogBindingSpec
-	Status ServiceCatalogBindingStatus
+	Spec   BindingSpec
+	Status BindingStatus
 }
 
-// ServiceCatalogBindingSpec represents the desired state of a Binding.
-type ServiceCatalogBindingSpec struct {
+// BindingSpec represents the desired state of a Binding.
+type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this Binding is to.
 	//
 	// Immutable.
@@ -398,8 +397,8 @@ type AlphaPodPresetTemplate struct {
 	Selector metav1.LabelSelector
 }
 
-// ServiceCatalogBindingStatus represents the current status of a Binding.
-type ServiceCatalogBindingStatus struct {
+// BindingStatus represents the current status of a Binding.
+type BindingStatus struct {
 	Conditions []BindingCondition
 
 	// Checksum is the checksum of the BindingSpec that was last successfully

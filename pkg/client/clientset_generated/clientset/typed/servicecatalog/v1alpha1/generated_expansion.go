@@ -16,10 +16,10 @@ limitations under the License.
 
 package v1alpha1
 
-type ServiceCatalogBindingExpansion interface{}
+type BindingExpansion interface{}
 
-type ServiceCatalogBrokerExpansion interface{}
+type BrokerExpansion interface{}
 
-type ServiceCatalogInstanceExpansion interface{}
+type InstanceExpansion interface{}
 
-type ServiceCatalogServiceClassExpansion interface{}
+type ServiceClassExpansion interface{}

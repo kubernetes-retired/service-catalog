@@ -35,12 +35,12 @@ const (
 	instanceDeleteTimeout = 30 * time.Second
 )
 
-func newTestInstance(name, serviceClassName, planName string) *v1alpha1.ServiceCatalogInstance {
-	return &v1alpha1.ServiceCatalogInstance{
+func newTestInstance(name, serviceClassName, planName string) *v1alpha1.Instance {
+	return &v1alpha1.Instance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: v1alpha1.ServiceCatalogInstanceSpec{
+		Spec: v1alpha1.InstanceSpec{
 			PlanName:         planName,
 			ServiceClassName: serviceClassName,
 		},
@@ -48,19 +48,19 @@ func newTestInstance(name, serviceClassName, planName string) *v1alpha1.ServiceC
 }
 
 // createInstance in the specified namespace
-func createInstance(c clientset.Interface, namespace string, instance *v1alpha1.ServiceCatalogInstance) (*v1alpha1.ServiceCatalogInstance, error) {
-	return c.ServicecatalogV1alpha1().ServiceCatalogInstances(namespace).Create(instance)
+func createInstance(c clientset.Interface, namespace string, instance *v1alpha1.Instance) (*v1alpha1.Instance, error) {
+	return c.ServicecatalogV1alpha1().Instances(namespace).Create(instance)
 }
 
 // deleteInstance with the specified namespace and name
 func deleteInstance(c clientset.Interface, namespace, name string) error {
-	return c.ServicecatalogV1alpha1().ServiceCatalogInstances(namespace).Delete(name, nil)
+	return c.ServicecatalogV1alpha1().Instances(namespace).Delete(name, nil)
 }
 
 // waitForInstanceToBeDeleted waits for the instance to be removed.
 func waitForInstanceToBeDeleted(c clientset.Interface, namespace, name string) error {
 	return wait.Poll(framework.Poll, instanceDeleteTimeout, func() (bool, error) {
-		_, err := c.ServicecatalogV1alpha1().ServiceCatalogInstances(namespace).Get(name, metav1.GetOptions{})
+		_, err := c.ServicecatalogV1alpha1().Instances(namespace).Get(name, metav1.GetOptions{})
 		if err == nil {
 			framework.Logf("waiting for instance %s to be deleted", name)
 			return false, nil
@@ -73,7 +73,7 @@ func waitForInstanceToBeDeleted(c clientset.Interface, namespace, name string) e
 	})
 }
 
-var _ = framework.ServiceCatalogDescribe("ServiceCatalogInstance", func() {
+var _ = framework.ServiceCatalogDescribe("Instance", func() {
 	f := framework.NewDefaultFramework("instance")
 
 	It("should verify an Instance can be deleted if referenced service class does not exist.", func() {

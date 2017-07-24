@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
@@ -124,14 +124,14 @@ func TestBasicFlows(t *testing.T) {
 
 	client := catalogClient.ServicecatalogV1alpha1()
 
-	broker := &v1alpha1.ServiceCatalogBroker{
+	broker := &v1alpha1.Broker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.ServiceCatalogBrokerSpec{
+		Spec: v1alpha1.BrokerSpec{
 			URL: testBrokerURL,
 		},
 	}
 
-	_, err := client.ServiceCatalogBrokers().Create(broker)
+	_, err := client.Brokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %q (%q)", broker, err)
 	}
@@ -156,16 +156,16 @@ func TestBasicFlows(t *testing.T) {
 
 	//-----------------
 
-	instance := &v1alpha1.ServiceCatalogInstance{
+	instance := &v1alpha1.Instance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
-		Spec: v1alpha1.ServiceCatalogInstanceSpec{
+		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
 			ExternalID:       testExternalID,
 		},
 	}
 
-	if _, err := client.ServiceCatalogInstances(testNamespace).Create(instance); err != nil {
+	if _, err := client.Instances(testNamespace).Create(instance); err != nil {
 		t.Fatalf("error creating Instance: %v", err)
 	}
 
@@ -176,7 +176,7 @@ func TestBasicFlows(t *testing.T) {
 		t.Fatalf("error waiting for instance to become ready: %v", err)
 	}
 
-	retInst, err := client.ServiceCatalogInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	retInst, err := client.Instances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
 	}
@@ -191,16 +191,16 @@ func TestBasicFlows(t *testing.T) {
 	// Binding test begins here
 	//-----------------
 
-	binding := &v1alpha1.ServiceCatalogBinding{
+	binding := &v1alpha1.Binding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
-		Spec: v1alpha1.ServiceCatalogBindingSpec{
+		Spec: v1alpha1.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
 	}
 
-	_, err = client.ServiceCatalogBindings(testNamespace).Create(binding)
+	_, err = client.Bindings(testNamespace).Create(binding)
 	if err != nil {
 		t.Fatalf("error creating Binding: %v", binding)
 	}
@@ -213,7 +213,7 @@ func TestBasicFlows(t *testing.T) {
 		t.Fatalf("error waiting for binding to become ready: %v", err)
 	}
 
-	err = client.ServiceCatalogBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
+	err = client.Bindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatalf("binding delete should have been accepted: %v", err)
 	}
@@ -226,7 +226,7 @@ func TestBasicFlows(t *testing.T) {
 	//-----------------
 	// End binding test
 
-	err = client.ServiceCatalogInstances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
+	err = client.Instances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("instance delete should have been accepted: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestBasicFlows(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ServiceCatalogBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.Brokers().Delete(testBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -281,7 +281,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 
 	// create an sc client and running server
 	catalogClient, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
-		return &servicecatalog.ServiceCatalogBroker{}
+		return &servicecatalog.Broker{}
 	})
 
 	fakeOSBClient := fakeosb.NewFakeClient(config) // error should always be nil
@@ -297,10 +297,10 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	testController, err := controller.NewController(
 		fakeKubeClient,
 		catalogClient.ServicecatalogV1alpha1(),
-		serviceCatalogSharedInformers.ServiceCatalogBrokers(),
-		serviceCatalogSharedInformers.ServiceCatalogServiceClasses(),
-		serviceCatalogSharedInformers.ServiceCatalogInstances(),
-		serviceCatalogSharedInformers.ServiceCatalogBindings(),
+		serviceCatalogSharedInformers.Brokers(),
+		serviceCatalogSharedInformers.ServiceClasses(),
+		serviceCatalogSharedInformers.Instances(),
+		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
 		24*time.Hour,
 		osb.Version2_12().HeaderValue(),

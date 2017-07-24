@@ -26,20 +26,20 @@ type FakeServicecatalogV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeServicecatalogV1alpha1) ServiceCatalogBindings(namespace string) v1alpha1.ServiceCatalogBindingInterface {
-	return &FakeServiceCatalogBindings{c, namespace}
+func (c *FakeServicecatalogV1alpha1) Bindings(namespace string) v1alpha1.BindingInterface {
+	return &FakeBindings{c, namespace}
 }
 
-func (c *FakeServicecatalogV1alpha1) ServiceCatalogBrokers() v1alpha1.ServiceCatalogBrokerInterface {
-	return &FakeServiceCatalogBrokers{c}
+func (c *FakeServicecatalogV1alpha1) Brokers() v1alpha1.BrokerInterface {
+	return &FakeBrokers{c}
 }
 
-func (c *FakeServicecatalogV1alpha1) ServiceCatalogInstances(namespace string) v1alpha1.ServiceCatalogInstanceInterface {
-	return &FakeServiceCatalogInstances{c, namespace}
+func (c *FakeServicecatalogV1alpha1) Instances(namespace string) v1alpha1.InstanceInterface {
+	return &FakeInstances{c, namespace}
 }
 
-func (c *FakeServicecatalogV1alpha1) ServiceCatalogServiceClasses() v1alpha1.ServiceCatalogServiceClassInterface {
-	return &FakeServiceCatalogServiceClasses{c}
+func (c *FakeServicecatalogV1alpha1) ServiceClasses() v1alpha1.ServiceClassInterface {
+	return &FakeServiceClasses{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

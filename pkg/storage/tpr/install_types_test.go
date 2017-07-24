@@ -18,7 +18,6 @@ package tpr
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -83,7 +82,7 @@ func TestInstallTypesResourceExisted(t *testing.T) {
 			getCallCount++
 			if getCallCount == 1 {
 				// return broker TPR on 1st call to indicate broker TPR exists
-				return true, &serviceCatalogBrokerTPR, nil
+				return true, &serviceBrokerTPR, nil
 			} else if createCallCount == len(thirdPartyResources)-1 {
 				// once 'create' has been called on all tprs, return 'nil' error to indicate tpr is created
 				return true, &v1beta1.ThirdPartyResource{}, nil
@@ -107,7 +106,7 @@ func TestInstallTypesResourceExisted(t *testing.T) {
 	}
 
 	for _, name := range createCallArgs {
-		if name == serviceCatalogBrokerTPR.Name {
+		if name == serviceBrokerTPR.Name {
 			t.Errorf("Failed to skip installing 'broker' as Third Party Resource as it already existed")
 		}
 	}
@@ -165,8 +164,8 @@ func TestInstallTypesPolling(t *testing.T) {
 		func(action core.Action) (bool, runtime.Object, error) {
 			createCallCount++
 			name := action.(core.CreateAction).GetObject().(*v1beta1.ThirdPartyResource).Name
-			if name == serviceCatalogBrokerTPR.Name || name == serviceCatalogInstanceTPR.Name {
-				return true, nil, fmt.Errorf("Error creating TPR(%s,%s,%s)", name, serviceCatalogBrokerTPR.Name, serviceCatalogInstanceTPR.Name)
+			if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {
+				return true, nil, errors.New("Error creating TPR")
 			}
 			return true, nil, nil
 		},
@@ -177,7 +176,7 @@ func TestInstallTypesPolling(t *testing.T) {
 	}
 
 	for _, name := range getCallArgs {
-		if name == serviceCatalogBrokerTPR.Name || name == serviceCatalogInstanceTPR.Name {
+		if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {
 			t.Errorf("Failed to skip polling for resource that failed to install")
 		}
 	}

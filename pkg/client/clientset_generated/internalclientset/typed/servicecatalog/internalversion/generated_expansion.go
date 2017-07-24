@@ -16,10 +16,10 @@ limitations under the License.
 
 package internalversion
 
-type ServiceCatalogBindingExpansion interface{}
+type BindingExpansion interface{}
 
-type ServiceCatalogBrokerExpansion interface{}
+type BrokerExpansion interface{}
 
-type ServiceCatalogInstanceExpansion interface{}
+type InstanceExpansion interface{}
 
-type ServiceCatalogServiceClassExpansion interface{}
+type ServiceClassExpansion interface{}

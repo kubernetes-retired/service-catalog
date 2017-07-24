@@ -25,7 +25,7 @@ import (
 
 func TestGetNamespace(t *testing.T) {
 	const namespace = "testns"
-	obj := &sc.ServiceCatalogInstance{
+	obj := &sc.Instance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 		},
