@@ -55,11 +55,11 @@ func (k Kind) TPRName() string {
 
 // URLName returns the URL-worthy name this TPR kind. Examples:
 //
-//	Kind("ServiceCatalogServiceClass").URLName() == "servicecatalogserviceclasses"
-//	Kind("ServiceCatalogBroker").URLName() == "servicecatalogbrokers"
+//	Kind("ServiceClass").URLName() == "serviceclasses"
+//	Kind("Broker").URLName() == "brokers"
 //
 // Note that this function is incomplete - it is only guaranteed to properly pluralize our 4
-// resource types ("ServiceCatalogBroker", "ServiceCatalogServiceClass", "ServiceCatalogInstance", "ServiceCatalogBinding")
+// resource types ("Broker", "ServiceClass", "Instance", "Binding")
 func (k Kind) URLName() string {
 	str := k.String()
 	strLen := len(str)
@@ -74,27 +74,27 @@ func (k Kind) URLName() string {
 }
 
 const (
-	// ServiceCatalogBrokerKind is the name of a Service Broker resource, a Kubernetes third party resource.
-	ServiceCatalogBrokerKind Kind = "ServiceCatalogBroker"
+	// ServiceBrokerKind is the name of a Service Broker resource, a Kubernetes third party resource.
+	ServiceBrokerKind Kind = "Broker"
 
-	// ServiceCatalogBrokerListKind is the name of a list of Service Broker resources
-	ServiceCatalogBrokerListKind Kind = "ServiceCatalogBrokerList"
+	// ServiceBrokerListKind is the name of a list of Service Broker resources
+	ServiceBrokerListKind Kind = "BrokerList"
 
-	// ServiceCatalogBindingKind is the name of a Service Binding resource, a Kubernetes third party resource.
-	ServiceCatalogBindingKind Kind = "ServiceCatalogBinding"
+	// ServiceBindingKind is the name of a Service Binding resource, a Kubernetes third party resource.
+	ServiceBindingKind Kind = "Binding"
 
-	// ServiceCatalogBindingListKind is the name for lists of Service Bindings
-	ServiceCatalogBindingListKind Kind = "ServiceCatalogBindingList"
+	// ServiceBindingListKind is the name for lists of Service Bindings
+	ServiceBindingListKind Kind = "BindingList"
 
-	// ServiceCatalogServiceClassKind is the name of a Service Class resource, a Kubernetes third party resource.
-	ServiceCatalogServiceClassKind Kind = "ServiceCatalogServiceClass"
+	// ServiceClassKind is the name of a Service Class resource, a Kubernetes third party resource.
+	ServiceClassKind Kind = "ServiceClass"
 
-	// ServiceCatalogServiceClassListKind is the name of a list of service class resources
-	ServiceCatalogServiceClassListKind Kind = "ServiceCatalogServiceClassList"
+	// ServiceClassListKind is the name of a list of service class resources
+	ServiceClassListKind Kind = "ServiceClassList"
 
-	// ServiceCatalogInstanceKind is the name of a Service Instance resource, a Kubernetes third party resource.
-	ServiceCatalogInstanceKind Kind = "ServiceCatalogInstance"
+	// ServiceInstanceKind is the name of a Service Instance resource, a Kubernetes third party resource.
+	ServiceInstanceKind Kind = "Instance"
 
-	// ServiceCatalogInstanceListKind is the name of a list of service instance resources
-	ServiceCatalogInstanceListKind Kind = "ServiceCatalogInstanceList"
+	// ServiceInstanceListKind is the name of a list of service instance resources
+	ServiceInstanceListKind Kind = "InstanceList"
 )

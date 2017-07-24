@@ -25,13 +25,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-func validBinding() *servicecatalog.ServiceCatalogBinding {
-	return &servicecatalog.ServiceCatalogBinding{
+func validBinding() *servicecatalog.Binding {
+	return &servicecatalog.Binding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-binding",
 			Namespace: "test-ns",
 		},
-		Spec: servicecatalog.ServiceCatalogBindingSpec{
+		Spec: servicecatalog.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: "test-instance",
 			},
@@ -43,7 +43,7 @@ func validBinding() *servicecatalog.ServiceCatalogBinding {
 func TestValidateBinding(t *testing.T) {
 	cases := []struct {
 		name    string
-		binding *servicecatalog.ServiceCatalogBinding
+		binding *servicecatalog.Binding
 		valid   bool
 	}{
 		{
@@ -53,7 +53,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "missing namespace",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Namespace = ""
 				return b
@@ -62,7 +62,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "missing instance name",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Spec.InstanceRef.Name = ""
 				return b
@@ -71,7 +71,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "invalid instance name",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Spec.InstanceRef.Name = "test-instance-)*!"
 				return b
@@ -80,7 +80,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "missing secretName",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Spec.SecretName = ""
 				return b
@@ -89,7 +89,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "invalid secretName",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Spec.SecretName = "T_T"
 				return b
@@ -98,7 +98,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "invalid alphaPodPresetTemplate.name",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Spec.AlphaPodPresetTemplate = &servicecatalog.AlphaPodPresetTemplate{
 					Name: "T_T",
@@ -109,7 +109,7 @@ func TestValidateBinding(t *testing.T) {
 		},
 		{
 			name: "invalid alphaPodPresetTemplate.selector",
-			binding: func() *servicecatalog.ServiceCatalogBinding {
+			binding: func() *servicecatalog.Binding {
 				b := validBinding()
 				b.Spec.AlphaPodPresetTemplate = &servicecatalog.AlphaPodPresetTemplate{
 					Selector: metav1.LabelSelector{},

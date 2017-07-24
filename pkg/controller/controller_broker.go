@@ -54,7 +54,7 @@ func (c *controller) brokerUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) brokerDelete(obj interface{}) {
-	broker, ok := obj.(*v1alpha1.ServiceCatalogBroker)
+	broker, ok := obj.(*v1alpha1.Broker)
 	if broker == nil || !ok {
 		return
 	}
@@ -115,7 +115,7 @@ const (
 // returns true unless the broker has a ready condition with status true and
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true.
-func shouldReconcileBroker(broker *v1alpha1.ServiceCatalogBroker, now time.Time, relistInterval time.Duration) bool {
+func shouldReconcileBroker(broker *v1alpha1.Broker, now time.Time, relistInterval time.Duration) bool {
 	brokerChecksum := checksum.BrokerSpecChecksum(broker.Spec)
 	if broker.Status.Checksum != nil && brokerChecksum != *broker.Status.Checksum {
 		// If the spec has changed, we should reconcile the broker.
@@ -168,7 +168,7 @@ func (c *controller) reconcileBrokerKey(key string) error {
 // reconcileBroker is the control-loop that reconciles a Broker. An
 // error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
-func (c *controller) reconcileBroker(broker *v1alpha1.ServiceCatalogBroker) error {
+func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 	glog.V(4).Infof("Processing Broker %v", broker.Name)
 
 	// If the broker's ready condition is true and the relist interval has not
@@ -290,7 +290,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.ServiceCatalogBroker) erro
 		// Delete ServiceClasses that are for THIS Broker.
 		for _, svcClass := range svcClasses {
 			if svcClass.BrokerName == broker.Name {
-				err := c.serviceCatalogClient.ServiceCatalogServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
+				err := c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 				if err != nil && !errors.IsNotFound(err) {
 					s := fmt.Sprintf(
 						"Error deleting ServiceClass %q (Broker %q): %s",
@@ -333,14 +333,14 @@ func (c *controller) reconcileBroker(broker *v1alpha1.ServiceCatalogBroker) erro
 
 // reconcileServiceClassFromBrokerCatalog reconciles a ServiceClass after the
 // Broker's catalog has been re-listed.
-func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.ServiceCatalogBroker, serviceClass *v1alpha1.ServiceCatalogServiceClass) error {
+func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Broker, serviceClass *v1alpha1.ServiceClass) error {
 	serviceClass.BrokerName = broker.Name
 
 	existingServiceClass, err := c.serviceClassLister.Get(serviceClass.Name)
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServiceClass.
-		if _, err := c.serviceCatalogClient.ServiceCatalogServiceClasses().Create(serviceClass); err != nil {
+		if _, err := c.serviceCatalogClient.ServiceClasses().Create(serviceClass); err != nil {
 			glog.Errorf("Error creating serviceClass %v from Broker %v: %v", serviceClass.Name, broker.Name, err)
 			return err
 		}
@@ -372,7 +372,7 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Ser
 		return err
 	}
 
-	toUpdate := clone.(*v1alpha1.ServiceCatalogServiceClass)
+	toUpdate := clone.(*v1alpha1.ServiceClass)
 	toUpdate.Bindable = serviceClass.Bindable
 	toUpdate.Plans = serviceClass.Plans
 	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
@@ -380,7 +380,7 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Ser
 	toUpdate.Description = serviceClass.Description
 	toUpdate.AlphaRequires = serviceClass.AlphaRequires
 
-	if _, err := c.serviceCatalogClient.ServiceCatalogServiceClasses().Update(toUpdate); err != nil {
+	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating serviceClass %v from Broker %v: %v", serviceClass.Name, broker.Name, err)
 		return err
 	}
@@ -390,12 +390,12 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Ser
 
 // updateBrokerReadyCondition updates the ready condition for the given Broker
 // with the given status, reason, and message.
-func (c *controller) updateBrokerCondition(broker *v1alpha1.ServiceCatalogBroker, conditionType v1alpha1.BrokerConditionType, status v1alpha1.ConditionStatus, reason, message string) error {
+func (c *controller) updateBrokerCondition(broker *v1alpha1.Broker, conditionType v1alpha1.BrokerConditionType, status v1alpha1.ConditionStatus, reason, message string) error {
 	clone, err := api.Scheme.DeepCopy(broker)
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ServiceCatalogBroker)
+	toUpdate := clone.(*v1alpha1.Broker)
 	newCondition := v1alpha1.BrokerCondition{
 		Type:    conditionType,
 		Status:  status,
@@ -426,7 +426,7 @@ func (c *controller) updateBrokerCondition(broker *v1alpha1.ServiceCatalogBroker
 	}
 
 	glog.V(4).Infof("Updating ready condition for Broker %v to %v", broker.Name, status)
-	_, err = c.serviceCatalogClient.ServiceCatalogBrokers().UpdateStatus(toUpdate)
+	_, err = c.serviceCatalogClient.Brokers().UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf("Error updating ready condition for Broker %v: %v", broker.Name, err)
 	} else {
@@ -438,13 +438,13 @@ func (c *controller) updateBrokerCondition(broker *v1alpha1.ServiceCatalogBroker
 
 // updateBrokerFinalizers updates the given finalizers for the given Broker.
 func (c *controller) updateBrokerFinalizers(
-	broker *v1alpha1.ServiceCatalogBroker,
+	broker *v1alpha1.Broker,
 	finalizers []string) error {
 
 	// Get the latest version of the broker so that we can avoid conflicts
 	// (since we have probably just updated the status of the broker and are
 	// now removing the last finalizer).
-	broker, err := c.serviceCatalogClient.ServiceCatalogBrokers().Get(broker.Name, metav1.GetOptions{})
+	broker, err := c.serviceCatalogClient.Brokers().Get(broker.Name, metav1.GetOptions{})
 	if err != nil {
 		glog.Errorf("Error getting Broker %v to finalize: %v", broker.Name, err)
 	}
@@ -453,7 +453,7 @@ func (c *controller) updateBrokerFinalizers(
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ServiceCatalogBroker)
+	toUpdate := clone.(*v1alpha1.Broker)
 
 	toUpdate.Finalizers = finalizers
 
@@ -461,7 +461,7 @@ func (c *controller) updateBrokerFinalizers(
 		broker.Name, finalizers)
 
 	glog.V(4).Infof("Updating %v", logContext)
-	_, err = c.serviceCatalogClient.ServiceCatalogBrokers().UpdateStatus(toUpdate)
+	_, err = c.serviceCatalogClient.Brokers().UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf("Error updating %v: %v", logContext, err)
 	}

@@ -25,14 +25,14 @@ import (
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 )
 
-func bindingWithFalseReadyCondition() *servicecatalog.ServiceCatalogBinding {
-	return &servicecatalog.ServiceCatalogBinding{
-		Spec: servicecatalog.ServiceCatalogBindingSpec{
+func bindingWithFalseReadyCondition() *servicecatalog.Binding {
+	return &servicecatalog.Binding{
+		Spec: servicecatalog.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: "some-string",
 			},
 		},
-		Status: servicecatalog.ServiceCatalogBindingStatus{
+		Status: servicecatalog.BindingStatus{
 			Conditions: []servicecatalog.BindingCondition{
 				{
 					Type:   servicecatalog.BindingConditionReady,
@@ -43,14 +43,14 @@ func bindingWithFalseReadyCondition() *servicecatalog.ServiceCatalogBinding {
 	}
 }
 
-func bindingWithTrueReadyCondition() *servicecatalog.ServiceCatalogBinding {
-	return &servicecatalog.ServiceCatalogBinding{
-		Spec: servicecatalog.ServiceCatalogBindingSpec{
+func bindingWithTrueReadyCondition() *servicecatalog.Binding {
+	return &servicecatalog.Binding{
+		Spec: servicecatalog.BindingSpec{
 			InstanceRef: v1.LocalObjectReference{
 				Name: "some-string",
 			},
 		},
-		Status: servicecatalog.ServiceCatalogBindingStatus{
+		Status: servicecatalog.BindingStatus{
 			Conditions: []servicecatalog.BindingCondition{
 				{
 					Type:   servicecatalog.BindingConditionReady,
@@ -64,8 +64,8 @@ func bindingWithTrueReadyCondition() *servicecatalog.ServiceCatalogBinding {
 func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 	cases := []struct {
 		name                string
-		old                 *servicecatalog.ServiceCatalogBinding
-		newer               *servicecatalog.ServiceCatalogBinding
+		old                 *servicecatalog.Binding
+		newer               *servicecatalog.Binding
 		shouldChecksum      bool
 		checksumShouldBeSet bool
 	}{
@@ -78,7 +78,7 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 		},
 		{
 			name: "not ready -> not ready, checksum already set",
-			old: func() *servicecatalog.ServiceCatalogBinding {
+			old: func() *servicecatalog.Binding {
 				b := bindingWithFalseReadyCondition()
 				cs := "22081-9471-471"
 				b.Status.Checksum = &cs

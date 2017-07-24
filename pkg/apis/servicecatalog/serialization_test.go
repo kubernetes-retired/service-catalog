@@ -210,7 +210,7 @@ func TestSpecificKind(t *testing.T) {
 		fmt.Println(kind)
 	}
 
-	kind := "ServiceCatalogServiceClass"
+	kind := "ServiceClass"
 	for i := 0; i < *fuzzIters; i++ {
 		doRoundTripTest(serviceCatalogAPIGroup(), kind, t)
 		if t.Failed() {
@@ -220,7 +220,7 @@ func TestSpecificKind(t *testing.T) {
 }
 
 func TestBrokerList(t *testing.T) {
-	kind := "ServiceCatalogBrokerList"
+	kind := "BrokerList"
 	item, err := api.Scheme.New(serviceCatalogAPIGroup().InternalGroupVersion().WithKind(kind))
 	if err != nil {
 		t.Errorf("Couldn't make a %v? %v", kind, err)
@@ -271,9 +271,9 @@ func TestRoundTripTypes(t *testing.T) {
 }
 
 func testEncodePtr(t *testing.T) {
-	broker := &servicecatalog.ServiceCatalogBroker{
+	broker := &servicecatalog.Broker{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "ServiceCatalogBroker",
+			Kind: "Broker",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{"name": "broker_foo"},

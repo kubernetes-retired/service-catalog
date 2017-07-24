@@ -85,10 +85,10 @@ function cleanup() {
     # TODO: Hack in order to delete TPRs. Will need to be removed when TPRs can be deleted
     # by the catalog API server.
     if [[ -n "${WITH_TPR:-}" ]]; then
-      kubectl delete thirdpartyresources service-catalog-binding.servicecatalog.k8s.io
-      kubectl delete thirdpartyresources service-catalog-instance.servicecatalog.k8s.io
-      kubectl delete thirdpartyresources service-catalog-broker.servicecatalog.k8s.io
-      kubectl delete thirdpartyresources service-catalog-service-class.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources binding.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources instance.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources broker.servicecatalog.k8s.io
+      kubectl delete thirdpartyresources service-class.servicecatalog.k8s.io
     fi
   } &> /dev/null
 }
@@ -215,7 +215,7 @@ kubectl config set-context service-catalog-ctx --cluster=service-catalog-cluster
 kubectl config use-context service-catalog-ctx
 
 retry -n 10 \
-  kubectl get servicecatalogbrokers,servicecatalogserviceclasses,servicecataloginstances,servicecatalogbindings \
+  kubectl get brokers,serviceclasses,instances,bindings \
   || error_exit 'Issue listing resources from service catalog API server.'
 
 # Create the broker
@@ -226,19 +226,19 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-broker.yaml" \
   || error_exit 'Error when creating ups-broker.'
 
 wait_for_expected_output -e 'FetchedCatalog' -n 10 \
-    kubectl get servicecatalogbrokers ups-broker -o yaml \
+    kubectl get brokers ups-broker -o yaml \
   || {
-    kubectl get servicecatalogbrokers ups-broker -o yaml
+    kubectl get brokers ups-broker -o yaml
     error_exit 'Did not receive expected condition when creating ups-broker.'
   }
 
-[[ "$(kubectl get servicecatalogbrokers ups-broker -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl get brokers ups-broker -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl get servicecatalogbrokers ups-broker -o yaml
+    kubectl get brokers ups-broker -o yaml
     error_exit 'Failure status reported when attempting to fetch catalog from ups-broker.'
   }
 
-[[ "$(kubectl get servicecatalogserviceclasses)" == *user-provided-service* ]] \
+[[ "$(kubectl get serviceclasses)" == *user-provided-service* ]] \
   || error_exit 'user-provided-service not listed when fetching service classes.'
 
 # Provision an instance
@@ -249,15 +249,15 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-instance.yaml" \
   || error_exit 'Error when creating ups-instance.'
 
 wait_for_expected_output -e 'ProvisionedSuccessfully' -n 10 \
-  kubectl get servicecataloginstances -n test-ns ups-instance -o yaml \
+  kubectl get instances -n test-ns ups-instance -o yaml \
   || {
-    kubectl get servicecataloginstances -n test-ns ups-instance -o yaml
+    kubectl get instances -n test-ns ups-instance -o yaml
     error_exit 'Did not receive expected condition when provisioning ups-instance.'
   }
 
-[[ "$(kubectl get servicecataloginstances -n test-ns ups-instance -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl get instances -n test-ns ups-instance -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl get servicecataloginstances -n test-ns ups-instance -o yaml
+    kubectl get instances -n test-ns ups-instance -o yaml
     error_exit 'Failure status reported when attempting to provision ups-instance.'
   }
 
@@ -269,15 +269,15 @@ kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-binding.yaml" \
   || error_exit 'Error when creating ups-binding.'
 
 wait_for_expected_output -e 'InjectedBindResult' -n 10 \
-  kubectl get servicecatalogbindings -n test-ns ups-binding -o yaml \
+  kubectl get bindings -n test-ns ups-binding -o yaml \
   || {
-    kubectl get servicecatalogbindings -n test-ns ups-binding -o yaml
+    kubectl get bindings -n test-ns ups-binding -o yaml
     error_exit 'Did not receive expected condition when injecting ups-binding.'
   }
 
-[[ "$(kubectl get servicecatalogbindings -n test-ns ups-binding -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl get bindings -n test-ns ups-binding -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl get servicecatalogbindings -n test-ns ups-binding -o yaml
+    kubectl get bindings -n test-ns ups-binding -o yaml
     error_exit 'Failure status reported when attempting to inject ups-binding.'
   }
 
@@ -292,7 +292,7 @@ if [[ -z "${WITH_TPR:-}" ]]; then
 
   echo 'Unbinding from instance...'
 
-  kubectl delete -n test-ns servicecatalogbindings ups-binding \
+  kubectl delete -n test-ns bindings ups-binding \
     || error_exit 'Error when deleting ups-binding.'
 
   export KUBECONFIG="${K8S_KUBECONFIG}"
@@ -305,20 +305,20 @@ if [[ -z "${WITH_TPR:-}" ]]; then
 
   echo 'Deprovisioning instance...'
 
-  kubectl delete -n test-ns servicecataloginstances ups-instance \
+  kubectl delete -n test-ns instances ups-instance \
     || error_exit 'Error when deleting ups-instance.'
 
   # Delete the broker
 
   echo 'Deleting broker...'
 
-  kubectl delete servicecatalogbrokers ups-broker \
+  kubectl delete brokers ups-broker \
     || error_exit 'Error when deleting ups-broker.'
 
   wait_for_expected_output -x -e 'user-provided-service' -n 10 \
-      kubectl get servicecatalogserviceclasses \
+      kubectl get serviceclasses \
     || {
-      kubectl get servicecatalogserviceclasses
+      kubectl get serviceclasses
       error_exit 'Service classes not successfully removed upon deleting ups-broker.'
     }
 fi

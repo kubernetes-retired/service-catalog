@@ -38,11 +38,11 @@ const (
 	testOperation             = "testoperation"
 )
 
-func setup() (*util.FakeBrokerServer, *servicecatalog.ServiceCatalogBroker) {
+func setup() (*util.FakeBrokerServer, *servicecatalog.Broker) {
 	fbs := &util.FakeBrokerServer{}
 	url := fbs.Start()
-	fakeBroker := &servicecatalog.ServiceCatalogBroker{
-		Spec: servicecatalog.ServiceCatalogBrokerSpec{
+	fakeBroker := &servicecatalog.Broker{
+		Spec: servicecatalog.BrokerSpec{
 			URL: url,
 		},
 	}

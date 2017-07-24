@@ -28,8 +28,8 @@ import (
 )
 
 func TestStripNamespacesFromList(t *testing.T) {
-	lst := sc.ServiceCatalogBrokerList{
-		Items: []sc.ServiceCatalogBroker{
+	lst := sc.BrokerList{
+		Items: []sc.Broker{
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "testns1",
@@ -59,7 +59,7 @@ func TestGetAllNamespaces(t *testing.T) {
 		ns1Name = "ns1"
 	)
 	cl := fake.NewRESTClient(func() runtime.Object {
-		return &sc.ServiceCatalogBroker{}
+		return &sc.Broker{}
 	})
 	nsList, err := getAllNamespaces(cl)
 	if err != nil {
@@ -84,14 +84,14 @@ func TestGetAllNamespaces(t *testing.T) {
 func TestListResource(t *testing.T) {
 	const (
 		ns   = "testns"
-		kind = ServiceCatalogBrokerKind
+		kind = ServiceBrokerKind
 	)
 
 	cl := fake.NewRESTClient(func() runtime.Object {
-		return &sc.ServiceCatalogBroker{}
+		return &sc.Broker{}
 	})
-	listObj := sc.ServiceCatalogBrokerList{TypeMeta: newTypeMeta(kind)}
-	codec, err := testapi.GetCodecForObject(&sc.ServiceCatalogBrokerList{TypeMeta: newTypeMeta(kind)})
+	listObj := sc.BrokerList{TypeMeta: newTypeMeta(kind)}
+	codec, err := testapi.GetCodecForObject(&sc.BrokerList{TypeMeta: newTypeMeta(kind)})
 	if err != nil {
 		t.Fatalf("error getting codec (%s)", err)
 	}
@@ -102,11 +102,11 @@ func TestListResource(t *testing.T) {
 	if len(objs) != 0 {
 		t.Fatalf("expected 0 objects returned, got %d instead", len(objs))
 	}
-	cl.Storage.Set(ns, ServiceCatalogBrokerKind.URLName(), "broker1", &sc.ServiceCatalogBroker{
+	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker1", &sc.Broker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker1"},
 	})
-	cl.Storage.Set(ns, ServiceCatalogBrokerKind.URLName(), "broker2", &sc.ServiceCatalogBroker{
+	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker2", &sc.Broker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker2"},
 	})
@@ -114,10 +114,10 @@ func TestListResource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error listing resource (%s)", err)
 	}
-	if len(objs) != len(cl.Storage[ns][ServiceCatalogBrokerKind.URLName()]) {
+	if len(objs) != len(cl.Storage[ns][ServiceBrokerKind.URLName()]) {
 		t.Fatalf(
 			"expected %d objects returned, got %d instead",
-			len(cl.Storage[ns][ServiceCatalogBrokerKind.URLName()]),
+			len(cl.Storage[ns][ServiceBrokerKind.URLName()]),
 			len(objs),
 		)
 	}

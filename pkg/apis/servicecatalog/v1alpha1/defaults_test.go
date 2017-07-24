@@ -69,9 +69,9 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 }
 
 func TestSetDefaultInstance(t *testing.T) {
-	i := &versioned.ServiceCatalogInstance{}
+	i := &versioned.Instance{}
 	obj2 := roundTrip(t, runtime.Object(i))
-	i2 := obj2.(*versioned.ServiceCatalogInstance)
+	i2 := obj2.(*versioned.Instance)
 
 	if i2.Spec.ExternalID == "" {
 		t.Error("Expected a default ExternalID, but got none")
@@ -79,9 +79,9 @@ func TestSetDefaultInstance(t *testing.T) {
 }
 
 func TestSetDefaultBinding(t *testing.T) {
-	b := &versioned.ServiceCatalogBinding{}
+	b := &versioned.Binding{}
 	obj2 := roundTrip(t, runtime.Object(b))
-	b2 := obj2.(*versioned.ServiceCatalogBinding)
+	b2 := obj2.(*versioned.Binding)
 
 	if b2.Spec.ExternalID == "" {
 		t.Error("Expected a default ExternalID, but got none")

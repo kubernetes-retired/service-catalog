@@ -32,14 +32,14 @@ func (e errUnsupportedResource) Error() string {
 // GetResourceClient returns the *dynamic.ResourceClient for a given resource type
 func GetResourceClient(cl *dynamic.Client, kind Kind, namespace string) (*dynamic.ResourceClient, error) {
 	switch kind {
-	case ServiceCatalogInstanceKind, ServiceCatalogInstanceListKind:
-		return cl.Resource(&ServiceCatalogInstanceResource, namespace), nil
-	case ServiceCatalogBindingKind, ServiceCatalogBindingListKind:
-		return cl.Resource(&ServiceCatalogBindingResource, namespace), nil
-	case ServiceCatalogBrokerKind, ServiceCatalogBrokerListKind:
-		return cl.Resource(&ServiceCatalogBrokerResource, namespace), nil
-	case ServiceCatalogServiceClassKind, ServiceCatalogServiceClassListKind:
-		return cl.Resource(&ServiceCatalogServiceClassResource, namespace), nil
+	case ServiceInstanceKind, ServiceInstanceListKind:
+		return cl.Resource(&ServiceInstanceResource, namespace), nil
+	case ServiceBindingKind, ServiceBindingListKind:
+		return cl.Resource(&ServiceBindingResource, namespace), nil
+	case ServiceBrokerKind, ServiceBrokerListKind:
+		return cl.Resource(&ServiceBrokerResource, namespace), nil
+	case ServiceClassKind, ServiceClassListKind:
+		return cl.Resource(&ServiceClassResource, namespace), nil
 	default:
 		return nil, errUnsupportedResource{kind: kind}
 	}
