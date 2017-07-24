@@ -52,14 +52,14 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=Servicecatalog, Version=InternalVersion
-	case servicecatalog.SchemeGroupVersion.WithResource("bindings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().Bindings().Informer()}, nil
-	case servicecatalog.SchemeGroupVersion.WithResource("brokers"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().Brokers().Informer()}, nil
-	case servicecatalog.SchemeGroupVersion.WithResource("instances"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().Instances().Informer()}, nil
-	case servicecatalog.SchemeGroupVersion.WithResource("serviceclasses"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceClasses().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("servicecatalogbindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceCatalogBindings().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("servicecatalogbrokers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceCatalogBrokers().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("servicecataloginstances"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceCatalogInstances().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("servicecatalogserviceclasses"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceCatalogServiceClasses().Informer()}, nil
 
 	}
 

@@ -18,26 +18,26 @@ limitations under the License.
 
 package internalversion
 
-// BindingListerExpansion allows custom methods to be added to
-// BindingLister.
-type BindingListerExpansion interface{}
+// ServiceCatalogBindingListerExpansion allows custom methods to be added to
+// ServiceCatalogBindingLister.
+type ServiceCatalogBindingListerExpansion interface{}
 
-// BindingNamespaceListerExpansion allows custom methods to be added to
-// BindingNamespaceLister.
-type BindingNamespaceListerExpansion interface{}
+// ServiceCatalogBindingNamespaceListerExpansion allows custom methods to be added to
+// ServiceCatalogBindingNamespaceLister.
+type ServiceCatalogBindingNamespaceListerExpansion interface{}
 
-// BrokerListerExpansion allows custom methods to be added to
-// BrokerLister.
-type BrokerListerExpansion interface{}
+// ServiceCatalogBrokerListerExpansion allows custom methods to be added to
+// ServiceCatalogBrokerLister.
+type ServiceCatalogBrokerListerExpansion interface{}
 
-// InstanceListerExpansion allows custom methods to be added to
-// InstanceLister.
-type InstanceListerExpansion interface{}
+// ServiceCatalogInstanceListerExpansion allows custom methods to be added to
+// ServiceCatalogInstanceLister.
+type ServiceCatalogInstanceListerExpansion interface{}
 
-// InstanceNamespaceListerExpansion allows custom methods to be added to
-// InstanceNamespaceLister.
-type InstanceNamespaceListerExpansion interface{}
+// ServiceCatalogInstanceNamespaceListerExpansion allows custom methods to be added to
+// ServiceCatalogInstanceNamespaceLister.
+type ServiceCatalogInstanceNamespaceListerExpansion interface{}
 
-// ServiceClassListerExpansion allows custom methods to be added to
-// ServiceClassLister.
-type ServiceClassListerExpansion interface{}
+// ServiceCatalogServiceClassListerExpansion allows custom methods to be added to
+// ServiceCatalogServiceClassLister.
+type ServiceCatalogServiceClassListerExpansion interface{}

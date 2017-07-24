@@ -24,14 +24,14 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// Bindings returns a BindingInformer.
-	Bindings() BindingInformer
-	// Brokers returns a BrokerInformer.
-	Brokers() BrokerInformer
-	// Instances returns a InstanceInformer.
-	Instances() InstanceInformer
-	// ServiceClasses returns a ServiceClassInformer.
-	ServiceClasses() ServiceClassInformer
+	// ServiceCatalogBindings returns a ServiceCatalogBindingInformer.
+	ServiceCatalogBindings() ServiceCatalogBindingInformer
+	// ServiceCatalogBrokers returns a ServiceCatalogBrokerInformer.
+	ServiceCatalogBrokers() ServiceCatalogBrokerInformer
+	// ServiceCatalogInstances returns a ServiceCatalogInstanceInformer.
+	ServiceCatalogInstances() ServiceCatalogInstanceInformer
+	// ServiceCatalogServiceClasses returns a ServiceCatalogServiceClassInformer.
+	ServiceCatalogServiceClasses() ServiceCatalogServiceClassInformer
 }
 
 type version struct {
@@ -43,22 +43,22 @@ func New(f internalinterfaces.SharedInformerFactory) Interface {
 	return &version{f}
 }
 
-// Bindings returns a BindingInformer.
-func (v *version) Bindings() BindingInformer {
-	return &bindingInformer{factory: v.SharedInformerFactory}
+// ServiceCatalogBindings returns a ServiceCatalogBindingInformer.
+func (v *version) ServiceCatalogBindings() ServiceCatalogBindingInformer {
+	return &serviceCatalogBindingInformer{factory: v.SharedInformerFactory}
 }
 
-// Brokers returns a BrokerInformer.
-func (v *version) Brokers() BrokerInformer {
-	return &brokerInformer{factory: v.SharedInformerFactory}
+// ServiceCatalogBrokers returns a ServiceCatalogBrokerInformer.
+func (v *version) ServiceCatalogBrokers() ServiceCatalogBrokerInformer {
+	return &serviceCatalogBrokerInformer{factory: v.SharedInformerFactory}
 }
 
-// Instances returns a InstanceInformer.
-func (v *version) Instances() InstanceInformer {
-	return &instanceInformer{factory: v.SharedInformerFactory}
+// ServiceCatalogInstances returns a ServiceCatalogInstanceInformer.
+func (v *version) ServiceCatalogInstances() ServiceCatalogInstanceInformer {
+	return &serviceCatalogInstanceInformer{factory: v.SharedInformerFactory}
 }
 
-// ServiceClasses returns a ServiceClassInformer.
-func (v *version) ServiceClasses() ServiceClassInformer {
-	return &serviceClassInformer{factory: v.SharedInformerFactory}
+// ServiceCatalogServiceClasses returns a ServiceCatalogServiceClassInformer.
+func (v *version) ServiceCatalogServiceClasses() ServiceCatalogServiceClassInformer {
+	return &serviceCatalogServiceClassInformer{factory: v.SharedInformerFactory}
 }
