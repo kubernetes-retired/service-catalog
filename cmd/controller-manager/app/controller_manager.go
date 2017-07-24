@@ -143,6 +143,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// TODO: disambiguate API errors
 		return fmt.Errorf("failed to get Service Catalog client configuration: %v", err)
 	}
+	serviceCatalogKubeconfig.Insecure = controllerManagerOptions.ServiceCatalogInsecureSkipVerify
 
 	glog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers

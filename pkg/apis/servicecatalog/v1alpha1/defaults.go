@@ -22,12 +22,7 @@ import (
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
-	RegisterDefaults(scheme)
-	return scheme.AddDefaultingFuncs(
-		SetDefaults_InstanceSpec,
-		SetDefaults_BindingSpec,
-		SetDefaults_Binding,
-	)
+	return RegisterDefaults(scheme)
 }
 
 func SetDefaults_InstanceSpec(spec *InstanceSpec) {

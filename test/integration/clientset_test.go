@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -106,7 +107,12 @@ func TestEtcdHealthCheckerSuccess(t *testing.T) {
 	serverConfig := NewTestServerConfig()
 	serverConfig.storageType = server.StorageTypeEtcd
 	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
-	resp, err := http.Get(clientconfig.Host + "/healthz")
+	t.Log(clientconfig.Host)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	c := &http.Client{Transport: tr}
+	resp, err := c.Get(clientconfig.Host + "/healthz")
 	if nil != err || http.StatusOK != resp.StatusCode {
 		t.Fatal("health check endpoint should not have failed")
 	}
@@ -129,7 +135,11 @@ func TestEtcdHealthCheckerFail(t *testing.T) {
 	serverConfig.etcdServerList = []string{""}
 	serverConfig.storageType = server.StorageTypeEtcd
 	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
-	resp, err := http.Get(clientconfig.Host + "/healthz")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	c := &http.Client{Transport: tr}
+	resp, err := c.Get(clientconfig.Host + "/healthz")
 	if nil != err || http.StatusInternalServerError != resp.StatusCode {
 		t.Fatal("health check endpoint should have failed and did not")
 	}

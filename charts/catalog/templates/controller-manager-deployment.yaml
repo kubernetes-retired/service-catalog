@@ -53,12 +53,9 @@ spec:
         {{- end}}
         {{- if not .Values.useAggregator }}
         - --service-catalog-api-server-url
-        {{- if .Values.apiserver.insecure }}
-        - http://{{ template "fullname" . }}-apiserver
-        {{- else }}
         - https://{{ template "fullname" . }}-apiserver
         {{- end }}
-        {{- end }}
+        - "--service-catalog-insecure-skip-verify=true"
         - -v
         - "{{ .Values.controllerManager.verbosity }}"
         - --resync-interval
