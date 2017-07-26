@@ -127,11 +127,39 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 		AcceptsIncomplete: true,
 	}
 
-	glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
-	response, err := brokerClient.DeprovisionInstance(request)
-	if err != nil {
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
+	// If the instance is not failed, deprovision it at the broker.
+	if !isInstanceFailed(instance) {
+		// it is arguable we should perform an extract-method refactor on this
+		// code block
+
+		glog.V(4).Infof("Deprovisioning Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		response, err := brokerClient.DeprovisionInstance(request)
+		if err != nil {
+			httpErr, isError := osb.IsHTTPError(err)
+			if isError {
+				s := fmt.Sprintf(
+					"Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q with status code %d: ErrorMessage: %v, Description: %v",
+					instance.Namespace,
+					instance.Name,
+					serviceClass.Name,
+					brokerName,
+					httpErr.StatusCode,
+					httpErr.ErrorMessage,
+					httpErr.Description,
+				)
+				glog.Warning(s)
+
+				setInstanceCondition(
+					toUpdate,
+					v1alpha1.InstanceConditionReady,
+					v1alpha1.ConditionUnknown,
+					errorDeprovisionCalledReason,
+					"Deprovision call failed. "+s)
+				c.updateInstanceStatus(toUpdate)
+				c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+				return err
+			}
+
 			s := fmt.Sprintf(
 				"Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q with status code %d: ErrorMessage: %v, Description: %v",
 				instance.Namespace,
@@ -155,50 +183,32 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 			return err
 		}
 
-		s := fmt.Sprintf(
-			"Error deprovisioning Instance \"%s/%s\" of ServiceClass %q at Broker %q: %s",
-			instance.Namespace,
-			instance.Name,
-			serviceClass.Name,
-			brokerName,
-			err,
-		)
-		glog.Warning(s)
-		setInstanceCondition(
-			toUpdate,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionUnknown,
-			errorDeprovisionCalledReason,
-			"Deprovision call failed. "+s)
-		c.updateInstanceStatus(toUpdate)
+		if response.Async {
+			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+			if response.OperationKey != nil && *response.OperationKey != "" {
+				key := string(*response.OperationKey)
+				toUpdate.Status.LastOperation = &key
+			}
 
-		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
-		return err
-	}
+			// Tag this instance as having an ongoing async operation so we can enforce
+			// no other operations against it can start.
+			toUpdate.Status.AsyncOpInProgress = true
 
-	if response.Async {
-		glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
-		if response.OperationKey != nil && *response.OperationKey != "" {
-			key := string(*response.OperationKey)
-			toUpdate.Status.LastOperation = &key
+			setInstanceCondition(
+				toUpdate,
+				v1alpha1.InstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				asyncDeprovisioningReason,
+				asyncDeprovisioningMessage,
+			)
+			err := c.updateInstanceStatus(toUpdate)
+			if err != nil {
+				return err
+			}
+		} else {
+			glog.V(5).Infof("Deprovision call to broker succeeded for Instance %v/%v, finalizing", instance.Namespace, instance.Name)
 		}
 
-		// Tag this instance as having an ongoing async operation so we can enforce
-		// no other operations against it can start.
-		toUpdate.Status.AsyncOpInProgress = true
-
-		setInstanceCondition(
-			toUpdate,
-			v1alpha1.InstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			asyncDeprovisioningReason,
-			asyncDeprovisioningMessage,
-		)
-		err := c.updateInstanceStatus(toUpdate)
-		if err != nil {
-			return err
-		}
-	} else {
 		setInstanceCondition(
 			toUpdate,
 			v1alpha1.InstanceConditionReady,
@@ -206,18 +216,22 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 			successDeprovisionReason,
 			successDeprovisionMessage,
 		)
-		err := c.updateInstanceStatus(toUpdate)
+		err = c.updateInstanceStatus(toUpdate)
 		if err != nil {
 			return err
 		}
 
-		// Clear the finalizer
-		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
-		if err = c.updateInstanceFinalizers(instance, finalizers.List()); err != nil {
-			return err
-		}
 		c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 		glog.V(5).Infof("Successfully deprovisioned Instance %v/%v of ServiceClass %v at Broker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		// In the success case, fall through to clearing the finalizer.
+	}
+
+	glog.V(5).Infof("Clearing catalog finalizer from Instance %v/%v", instance.Namespace, instance.Name)
+
+	// Clear the finalizer
+	finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+	if err = c.updateInstanceFinalizers(instance, finalizers.List()); err != nil {
+		return err
 	}
 
 	return nil
@@ -240,13 +254,13 @@ func isInstanceFailed(instance *v1alpha1.Instance) bool {
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	// Currently, we only set a failure condition if the initial provision
-	// call fails, so if that condition is set, there is no more work to do.
-	// We will need to reevaluate this logic as we make any changes to capture
-	// permanent failure in new cases.
+	// call fails, so if that condition is set, we only need to remove the
+	// finalizer from the instance. We will need to reevaluate this logic as
+	// we make any changes to capture permanent failure in new cases.
 	//
 	// TODO: this will change once we fully implement orphan mitigation, see:
 	// https://github.com/kubernetes-incubator/service-catalog/issues/988
-	if isInstanceFailed(instance) {
+	if isInstanceFailed(instance) && instance.ObjectMeta.DeletionTimestamp == nil {
 		glog.V(4).Infof(
 			"Not processing event for Instance %v/%v because status showed that it has failed",
 			instance.Namespace,
@@ -264,6 +278,13 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
 	// but does not affect the checksum.
+	//
+	// Note: currently the instance spec is immutable because we do not yet
+	// support plan or parameter updates.  This logic is currently meant only
+	// to facilitate re-trying provision requests where there was a problem
+	// communicating with the broker.  In the future the same logic will
+	// result in an instance that requires update being processed by the
+	// controller.
 	if !instance.Status.AsyncOpInProgress {
 		if instance.Status.Checksum != nil && instance.DeletionTimestamp == nil {
 			instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
@@ -282,7 +303,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 
 	// if the instance is marked for deletion, handle that first.
 	if instance.ObjectMeta.DeletionTimestamp != nil {
-		glog.V(4).Infof("Soft-deleting Instance %v/%v", instance.Namespace, instance.Name)
 		return c.reconcileInstanceDelete(instance)
 	}
 
@@ -410,7 +430,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	}
 
 	if response.DashboardURL != nil && *response.DashboardURL != "" {
-		glog.Infof("setting dashboard url to %v", *response.DashboardURL)
 		url := *response.DashboardURL
 		toUpdate.Status.DashboardURL = &url
 	}

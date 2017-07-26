@@ -336,6 +336,9 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceWithProvisionCallFailure tests that when the provision
+// call to the broker fails, that the ready condition becomes false, and the
+// failure condition is not set.
 func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -373,8 +376,16 @@ func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updatedInstance := assertUpdateStatus(t, actions[0], instance)
-	assertInstanceReadyFalse(t, updatedInstance)
+	updatedObject := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedObject)
+	// The ready condition should be the only condition set.
+	updatedInstance, ok := updatedObject.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.Instance")
+	}
+	if l := len(updatedInstance.Status.Conditions); l != 1 {
+		t.Fatalf("Expected 1 condition, got %v", l)
+	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -754,6 +765,52 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
+}
+
+// TestReconcileInstanceDeleteFailedInstance tests that a failed instance will
+// be finalized, but no deprovision request will be sent to the broker.
+func TestReconcileInstanceDeleteFailedInstance(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := getTestInstanceWithFailedStatus()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+
+	// we only invoke the broker client to deprovision if we have a checksum set
+	// as that implies a previous success.
+	checksum := checksum.InstanceSpecChecksum(instance.Spec)
+	instance.Status.Checksum = &checksum
+
+	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	err := testController.reconcileInstance(instance)
+	if err != nil {
+		t.Fatalf("Unexpected error from reconcileInstance: %v", err)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The two actions should be:
+	// 0. Get against the instance
+	// 1. Removing the finalizer
+	assertNumberOfActions(t, actions, 2)
+	assertGet(t, actions[0], instance)
+	updatedInstance := assertUpdateStatus(t, actions[1], instance)
+	assertEmptyFinalizers(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
 }
 
 // TestReconcileInstanceDeleteDoesNotInvokeBroker verfies that if an instance is created that is never
@@ -1236,8 +1293,14 @@ func TestSetInstanceCondition(t *testing.T) {
 		return instance
 	}
 
+	// The value of the LastTransitionTime field on conditions has to be
+	// tested to ensure it is updated correctly.
+	//
+	// Time basis for all condition changes:
 	newTs := metav1.Now()
+	oldTs := metav1.NewTime(newTs.Add(-5 * time.Minute))
 
+	// condition is a shortcut method for creating conditions with the 'old' timestamp.
 	condition := func(cType v1alpha1.InstanceConditionType, status v1alpha1.ConditionStatus, s ...string) *v1alpha1.InstanceCondition {
 		c := &v1alpha1.InstanceCondition{
 			Type:   cType,
@@ -1252,10 +1315,14 @@ func TestSetInstanceCondition(t *testing.T) {
 			c.Message = s[1]
 		}
 
-		c.LastTransitionTime = metav1.NewTime(newTs.Add(-5 * time.Minute))
+		// This is the expected 'before' timestamp for all conditions under
+		// test.
+		c.LastTransitionTime = oldTs
 
 		return c
 	}
+
+	// shortcut methods for creating conditions of different types
 
 	readyFalse := func() *v1alpha1.InstanceCondition {
 		return condition(v1alpha1.InstanceConditionReady, v1alpha1.ConditionFalse, "Reason", "Message")
@@ -1273,10 +1340,21 @@ func TestSetInstanceCondition(t *testing.T) {
 		return condition(v1alpha1.InstanceConditionFailed, v1alpha1.ConditionTrue, "Reason", "Message")
 	}
 
+	// withNewTs sets the LastTransitionTime to the 'new' basis time and
+	// returns it.
+	withNewTs := func(c *v1alpha1.InstanceCondition) *v1alpha1.InstanceCondition {
+		c.LastTransitionTime = newTs
+		return c
+	}
+
 	// this test works by calling setInstanceCondition with the input and
 	// condition fields of the test case, and ensuring that afterward the
 	// input (which is mutated by the setInstanceCondition call) is deep-equal
 	// to the test case result.
+	//
+	// take note of where withNewTs is used when declaring the result to
+	// indicate that the LastTransitionTime field on a condition should have
+	// changed.
 	cases := []struct {
 		name      string
 		input     *v1alpha1.Instance
@@ -1287,24 +1365,16 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "new ready condition",
 			input:     getTestInstance(),
 			condition: readyFalse(),
-			result: func() *v1alpha1.Instance {
-				i := instanceWithCondition(readyFalse())
-				i.Status.Conditions[0].LastTransitionTime = newTs
-				return i
-			}(),
+			result:    instanceWithCondition(withNewTs(readyFalse())),
 		},
 		{
-			name:      "not ready -> not ready",
+			name:      "not ready -> not ready; no ts update",
 			input:     instanceWithCondition(readyFalse()),
-			condition: readyTrue(),
-			result: func() *v1alpha1.Instance {
-				i := instanceWithCondition(readyTrue())
-				i.Status.Conditions[0].LastTransitionTime = newTs
-				return i
-			}(),
+			condition: readyFalse(),
+			result:    instanceWithCondition(readyFalse()),
 		},
 		{
-			name:      "not ready -> not ready, reason and message change",
+			name:      "not ready -> not ready, reason and message change; no ts update",
 			input:     instanceWithCondition(readyFalse()),
 			condition: readyFalsef("DifferentReason", "DifferentMessage"),
 			result:    instanceWithCondition(readyFalsef("DifferentReason", "DifferentMessage")),
@@ -1313,14 +1383,10 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "not ready -> ready",
 			input:     instanceWithCondition(readyFalse()),
 			condition: readyTrue(),
-			result: func() *v1alpha1.Instance {
-				i := instanceWithCondition(readyTrue())
-				i.Status.Conditions[0].LastTransitionTime = newTs
-				return i
-			}(),
+			result:    instanceWithCondition(withNewTs(readyTrue())),
 		},
 		{
-			name:      "ready -> ready",
+			name:      "ready -> ready; no ts update",
 			input:     instanceWithCondition(readyTrue()),
 			condition: readyTrue(),
 			result:    instanceWithCondition(readyTrue()),
@@ -1329,20 +1395,15 @@ func TestSetInstanceCondition(t *testing.T) {
 			name:      "ready -> not ready",
 			input:     instanceWithCondition(readyTrue()),
 			condition: readyFalse(),
-			result: func() *v1alpha1.Instance {
-				i := instanceWithCondition(readyFalse())
-				i.Status.Conditions[0].LastTransitionTime = newTs
-				return i
-			}(),
+			result:    instanceWithCondition(withNewTs(readyFalse())),
 		},
 		{
-			name:      "not ready + failed",
+			name:      "not ready -> not ready + failed",
 			input:     instanceWithCondition(readyFalse()),
 			condition: failedTrue(),
 			result: func() *v1alpha1.Instance {
 				i := instanceWithCondition(readyFalse())
-				i.Status.Conditions = append(i.Status.Conditions, *failedTrue())
-				i.Status.Conditions[1].LastTransitionTime = newTs
+				i.Status.Conditions = append(i.Status.Conditions, *withNewTs(failedTrue()))
 				return i
 			}(),
 		},
