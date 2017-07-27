@@ -257,10 +257,6 @@ func TestBasicFlows(t *testing.T) {
 //
 // TODO: additional tests for scenarios like this will be needed once we
 // implement orphan mitigation.
-//
-// TODO: the addition of this test makes it very clear to me how we can apply
-// extract method to make these test cases far easier to read.  I am happy to
-// do it here or in a follow-up; reviewer's choice.
 func TestProvisionFailure(t *testing.T) {
 	_, catalogClient, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
