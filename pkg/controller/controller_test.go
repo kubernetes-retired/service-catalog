@@ -77,7 +77,10 @@ const (
 	testNsUID                       = "test-ns-uid"
 )
 
-var testDashboardURL = "http://dashboard"
+var (
+	testDashboardURL      = "http://dashboard"
+	errStatusUpdateFailed = errors.New("status update failed")
+)
 
 const testCatalog = `{
   "services": [{

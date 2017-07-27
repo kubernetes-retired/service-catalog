@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	settingsv1alpha1 "k8s.io/client-go/pkg/apis/settings/v1alpha1"
@@ -69,12 +70,18 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	updatedBinding := assertUpdateStatus(t, actions[0], binding)
 	assertBindingReadyFalse(t, updatedBinding, errorNonexistentInstanceReason)
 
-	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
+			// TODO: parameterize this check in test cases
+			updatedBinding := assertUpdateStatus(t, actions[0], binding)
+			assertBindingReadyFalse(t, updatedBinding, errorNonexistentInstanceReason)
 
-	expectedEvent := api.EventTypeWarning + " " + errorNonexistentInstanceReason + " " + "Binding \"/test-binding\" references a non-existent Instance \"/nothere\""
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+			events := getRecordedEvents(testController)
+			assertNumEvents(t, events, testCase.numEvents)
+			for i, event := range events {
+				if err := testCase.checkEvent(i, event); err != nil {
+					t.Fatalf("error in event %d (%s)", i, err)
+				}
+			}
+		})
 	}
 }
 
@@ -101,8 +108,7 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
-	if err == nil {
+	if err := testController.reconcileBinding(binding); err == nil {
 		t.Fatal("serviceclass nothere was found and it should not be found")
 	}
 
@@ -239,9 +245,8 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	}
 	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	err = testController.reconcileBinding(binding)
-	if err != nil {
-		t.Fatalf("a valid binding should not fail: %v", err)
+	if err = testController.reconcileBinding(binding); err != nil {
+		t.Fatalf("got unexpected error from reconcileBinding (%s)", err)
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
@@ -335,13 +340,9 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
-	if err != nil {
-		t.Fatalf("binding should fail against a non-bindable ServiceClass")
+	if err := testController.reconcileBinding(binding); err != nil {
+		t.Fatalf("expected no error on reconcileBinding (%s)", err)
 	}
-
-	brokerActions := fakeBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -398,8 +399,7 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
-	if err != nil {
+	if err := testController.reconcileBinding(binding); err != nil {
 		t.Fatalf("A bindable plan overrides the bindability of a service class: %v", err)
 	}
 
@@ -475,7 +475,7 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
+	if err := testController.reconcileBinding(binding); err != nil {
 	if err != nil {
 		t.Fatalf("binding against a nonbindable plan should fail")
 	}
@@ -514,12 +514,9 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
-	if err == nil {
+	if err := testController.reconcileBinding(binding); err == nil {
 		t.Fatalf("reconcileBinding did not fail with async operation ongoing")
-	}
-
-	if !strings.Contains(err.Error(), "Ongoing Asynchronous") {
+	} else if !strings.Contains(err.Error(), "Ongoing Asynchronous") {
 		t.Fatalf("Did not get the expected error %q : got %q", "Ongoing Asynchronous", err)
 	}
 
@@ -569,8 +566,7 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
-	if err != nil {
+	if err := testController.reconcileBinding(binding); err != nil {
 		t.Fatalf("a binding cannot be created against an instance that is not prepared")
 	}
 
@@ -596,8 +592,9 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 func TestReconcileBindingNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
+	errNoNamespace := errors.New("No namespace")
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1.Namespace{}, errors.New("No namespace")
+		return true, &v1.Namespace{}, errNoNamespace
 	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
@@ -612,13 +609,13 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 		},
 	}
 
-	err := testController.reconcileBinding(binding)
-	if err == nil {
+	if err := testController.reconcileBinding(binding); err != nil {
 		t.Fatalf("Bindings are namespaced. If we cannot get the namespace we cannot find the binding")
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
+
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -661,8 +658,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 		return true, binding, nil
 	})
 
-	err := testController.reconcileBinding(binding)
-	if err != nil {
+	if err := testController.reconcileBinding(binding); err != nil {
 		t.Fatalf("%v", err)
 	}
 
