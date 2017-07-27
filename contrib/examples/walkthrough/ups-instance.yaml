@@ -7,6 +7,10 @@ spec:
   serviceClassName: user-provided-service
   planName: default
   parameters:
-    credentials:
-      name: root
-      password: letmein
+  - name: credentials
+    type: json
+    value: >
+      {
+        "name": "root",
+        "password": "letmein"
+      }

@@ -60,6 +60,10 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
 	}
 
+	if spec.Parameters != nil {
+		// TODO: validate parameters
+	}
+
 	return allErrs
 }
 

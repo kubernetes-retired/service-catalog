@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
@@ -540,16 +539,6 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 
 	}
 	return ret, nil
-}
-
-func unmarshalParameters(in []byte) (map[string]interface{}, error) {
-	parameters := make(map[string]interface{})
-	if len(in) > 0 {
-		if err := yaml.Unmarshal(in, &parameters); err != nil {
-			return parameters, err
-		}
-	}
-	return parameters, nil
 }
 
 // isInstanceReady returns whether the given instance has a ready condition

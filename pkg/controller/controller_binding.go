@@ -165,7 +165,7 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 
 		var parameters map[string]interface{}
 		if binding.Spec.Parameters != nil {
-			parameters, err = unmarshalParameters(binding.Spec.Parameters.Raw)
+			parameters, err = unmarshalRawParameters(binding.Spec.Parameters.Raw)
 			if err != nil {
 				s := fmt.Sprintf("Failed to unmarshal Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
 				glog.Warning(s)

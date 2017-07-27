@@ -47,21 +47,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 )
 
-// Used for testing instance parameters
-type ipStruct struct {
-	Bar    string            `json:"bar"`
-	Values map[string]string `json:"values"`
+var instanceParameters = []v1alpha1.Parameter{
+	{
+		Name:  "bar",
+		Value: "barvalue",
+	},
+	{
+		Name: "values",
+		Type: v1alpha1.ValueTypeJSON,
+		Value: `
+		{
+      		"first" : "firstvalue",
+      		"second" : "secondvalue"
+    	}`,
+	},
 }
 
 const (
-	instanceParameter = `{
-    "bar": "barvalue",
-    "values": {
-      "first" : "firstvalue",
-      "second" : "secondvalue"
-    }
-  }
-`
 	bindingParameter = `{
     "foo": "bar",
     "baz": [
@@ -526,7 +528,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
-			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
+			Parameters:       instanceParameters,
 			ExternalID:       osbGUID,
 		},
 	}
@@ -585,22 +587,25 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
-	parameters := ipStruct{}
-	err = json.Unmarshal(instanceServer.Spec.Parameters.Raw, &parameters)
-	if err != nil {
-		return fmt.Errorf("Couldn't unmarshal returned instance parameters: %v", err)
+	parameters := instanceServer.Spec.Parameters
+	if len(parameters) != 2 {
+		return fmt.Errorf("Unexpected number of parameters: %d", len(parameters))
 	}
-	if parameters.Bar != "barvalue" {
-		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
+	// Check that the defaults were applied
+	if parameters[0].Type != v1alpha1.ValueTypeString {
+		return fmt.Errorf("Didn't get back 'string' type for key 'bar' was %+v", parameters)
 	}
-	if len(parameters.Values) != 2 {
-		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
+	if parameters[1].Type != v1alpha1.ValueTypeJSON {
+		return fmt.Errorf("Didn't get back 'json' type for key 'values' was %+v", parameters)
 	}
-	if parameters.Values["first"] != "firstvalue" {
-		return fmt.Errorf("Didn't get back 'firstvalue' value for key 'first' in Values map was %+v", parameters)
-	}
-	if parameters.Values["second"] != "secondvalue" {
-		return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
+	// Check the parameter contents
+	for i, p := range parameters {
+		if p.Name != instanceParameters[i].Name {
+			return fmt.Errorf("Unexpected parameter name: expected=%s, actual=%s", instanceParameters[i].Name, p.Name)
+		}
+		if p.Value != instanceParameters[i].Value {
+			return fmt.Errorf("Unexpected parameter name: \nexpected=%s \nactual=%s", instanceParameters[i].Value, p.Value)
+		}
 	}
 
 	// update the instance's conditions
