@@ -498,7 +498,13 @@ func TestInstanceClient(t *testing.T) {
 				return &servicecatalog.Instance{}
 			})
 			defer shutdownServer()
-			if err := testInstanceClient(sType, client, name); err != nil {
+			if err := testInstanceClient(sType, client, name+"-secret-params", secretRefSecretType); err != nil {
+				t.Fatal(err)
+			}
+			if err := testInstanceClient(sType, client, name+"-secret-key-params", secretKeyRefSecretType); err != nil {
+				t.Fatal(err)
+			}
+			if err := testInstanceClient(sType, client, name+"-inline-params", inlineSecretType); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -510,7 +516,15 @@ func TestInstanceClient(t *testing.T) {
 	}
 }
 
-func testInstanceClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+type secretType string
+
+const (
+	secretRefSecretType    secretType = "SecretRef"
+	secretKeyRefSecretType secretType = "SecretKeyRef"
+	inlineSecretType       secretType = "Inline"
+)
+
+func testInstanceClient(sType server.StorageType, client servicecatalogclient.Interface, name string, secretType secretType) error {
 	const (
 		osbGUID      = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 		dashboardURL = "http://test-dashboard.example.com"
@@ -522,9 +536,28 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
-			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
 			ExternalID:       osbGUID,
+			Parameters:       &v1alpha1.Parameters{},
 		},
+	}
+
+	// set instance parameters
+	switch secretType {
+	case secretRefSecretType:
+		instance.Spec.Parameters.SecretRef = &v1.LocalObjectReference{
+			Name: "secret-name",
+		}
+	case secretKeyRefSecretType:
+		instance.Spec.Parameters.SecretKeyRef = &v1alpha1.SecretKeyReference{
+			Name: "secret-name",
+			Key:  "secret-key",
+		}
+	case inlineSecretType:
+		instance.Spec.Parameters.Inline = &runtime.RawExtension{
+			Raw: []byte(instanceParameter),
+		}
+	default:
+		return fmt.Errorf("unsupported secret type: %s", secretType)
 	}
 
 	// list the instances & expect there to be none
@@ -580,23 +613,56 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
 	}
 
-	// check the parameters of the fetched-by-name instance with what was expected
-	parameters := ipStruct{}
-	err = json.Unmarshal(instanceServer.Spec.Parameters.Raw, &parameters)
-	if err != nil {
-		return fmt.Errorf("Couldn't unmarshal returned instance parameters: %v", err)
+	// check the parameters object
+	params := instanceServer.Spec.Parameters
+	if params == nil {
+		return errors.New("parameters object is missing")
 	}
-	if parameters.Bar != "barvalue" {
-		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
-	}
-	if len(parameters.Values) != 2 {
-		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
-	}
-	if parameters.Values["first"] != "firstvalue" {
-		return fmt.Errorf("Didn't get back 'firstvalue' value for key 'first' in Values map was %+v", parameters)
-	}
-	if parameters.Values["second"] != "secondvalue" {
-		return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
+	switch secretType {
+	case secretRefSecretType:
+		// check the reference to secret containing parameters is present
+		if params.SecretRef == nil {
+			return errors.New("parameters.secretRef is missing")
+		}
+		if params.SecretRef.Name != "secret-name" {
+			return fmt.Errorf("Didn't get back 'secret-name' value for secret name, was %+v", params.SecretRef.Name)
+		}
+	case secretKeyRefSecretType:
+		// check the reference to secret containing parameters is present
+		if params.SecretKeyRef == nil {
+			return errors.New("parameters.secretRef is missing")
+		}
+		if params.SecretKeyRef.Name != "secret-name" {
+			return fmt.Errorf("Didn't get back 'secret-name' value for secret name, was %+v", params.SecretKeyRef.Name)
+		}
+		if params.SecretKeyRef.Key != "secret-key" {
+			return fmt.Errorf("Didn't get back 'secret-key' value for secret key, was %+v", params.SecretKeyRef.Key)
+		}
+	case inlineSecretType:
+		// check the reference to secret containing parameters is present
+		if params.Inline == nil {
+			return errors.New("parameters.secretRef is missing")
+		}
+		// check the inline parameters
+		parameters := ipStruct{}
+		err = json.Unmarshal(params.Inline.Raw, &parameters)
+		if err != nil {
+			return fmt.Errorf("Couldn't unmarshal returned instance parameters: %v", err)
+		}
+		if parameters.Bar != "barvalue" {
+			return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
+		}
+		if len(parameters.Values) != 2 {
+			return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
+		}
+		if parameters.Values["first"] != "firstvalue" {
+			return fmt.Errorf("Didn't get back 'firstvalue' value for key 'first' in Values map was %+v", parameters)
+		}
+		if parameters.Values["second"] != "secondvalue" {
+			return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
+		}
+	default:
+		return fmt.Errorf("unsupported secret type: %s", secretType)
 	}
 
 	// update the instance's conditions

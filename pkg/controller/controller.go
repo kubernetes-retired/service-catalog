@@ -41,6 +41,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -502,12 +503,39 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 	return ret, nil
 }
 
-func unmarshalParameters(in []byte) (map[string]interface{}, error) {
+func unmarshalRawParameters(in []byte) (map[string]interface{}, error) {
 	parameters := make(map[string]interface{})
 	if len(in) > 0 {
 		if err := yaml.Unmarshal(in, &parameters); err != nil {
 			return parameters, err
 		}
+	}
+	return parameters, nil
+}
+
+// fetchSecretParameters requests and returns the contents of the given secret as a map
+func fetchSecretParameters(kubeClient kubernetes.Interface, namespace string, secretRef *v1.LocalObjectReference) (map[string]interface{}, error) {
+	secret, err := kubeClient.CoreV1().Secrets(namespace).Get(secretRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]interface{}, len(secret.Data))
+	for k, v := range secret.Data {
+		// Each value is treated as a plain string, hence only flat map[string]string is supported through multi-key secret
+		result[k] = string(v)
+	}
+	return result, nil
+}
+
+// fetchSecretKeyParameters requests and returns the contents of the given secret key as a map
+func fetchSecretKeyParameters(kubeClient kubernetes.Interface, namespace string, secretKeyRef *v1alpha1.SecretKeyReference) (map[string]interface{}, error) {
+	secret, err := kubeClient.CoreV1().Secrets(namespace).Get(secretKeyRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	parameters := make(map[string]interface{})
+	if json.Unmarshal(secret.Data[secretKeyRef.Key], &parameters) != nil {
+		return nil, fmt.Errorf("failed to unmarshal parameters: %v", err)
 	}
 	return parameters, nil
 }

@@ -215,7 +215,63 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	}
 }
 
-func TestReconcileInstanceWithParameters(t *testing.T) {
+func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := getTestInstance()
+
+	// Secret with invalid JSON
+	invalidSecret := &v1.Secret{
+		Data: map[string][]byte{
+			testSecretKey: []byte("invalid json"),
+		},
+	}
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, invalidSecret, nil
+	})
+
+	instance.Spec.Parameters = &v1alpha1.Parameters{
+		SecretKeyRef: &v1alpha1.SecretKeyReference{
+			Name: testSecretName,
+			Key:  testSecretKey,
+		},
+	}
+
+	if err := testController.reconcileInstance(instance); err == nil {
+		t.Fatalf("this should fail due to a parse error")
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	kubeActions := fakeKubeClient.Actions()
+	// verify no kube resources created
+	// only 1 action - get secret
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "secrets", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to fetch Instance secret key parameters"
+	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+func TestReconcileInstanceWithInlineParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{},
@@ -235,7 +291,9 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
 	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+	instance.Spec.Parameters = &v1alpha1.Parameters{
+		Inline: &runtime.RawExtension{Raw: b},
+	}
 
 	if err = testController.reconcileInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
@@ -278,7 +336,7 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
+	if len(updateObject.Spec.Parameters.Inline.Raw) == 0 {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
 
@@ -291,47 +349,136 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 }
 
-func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+func TestReconcileInstanceWithSecretRefParameters(t *testing.T) {
+	testReconcileInstanceWithSecretParameters(t, false)
+}
+
+func TestReconcileInstanceWithSecretKeyRefParameters(t *testing.T) {
+	testReconcileInstanceWithSecretParameters(t, true)
+}
+
+func testReconcileInstanceWithSecretParameters(t *testing.T, useSecretKey bool) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{},
+		},
+	})
 
 	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestInstance()
+
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
+	// Pass parameters as Secret
+	var secretKey *v1alpha1.SecretKeyReference
+	var secretParams *v1.Secret
+	var err error
+	if useSecretKey {
+		secretParams, secretKey, err = getTestSecretKeyParameters(&parameters)
+	} else {
+		secretParams, err = getTestSecretParameters(&parameters)
+	}
 	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		t.Fatalf("Couldn't generate test secret params: %v", err)
 	}
-	// corrupt the byte slice to begin with a '!' instead of an opening JSON bracket '{'
-	b[0] = 0x21
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, secretParams, nil
+	})
 
-	if err = testController.reconcileInstance(instance); err == nil {
-		t.Fatalf("this should fail due to a parse error")
+	if useSecretKey {
+		instance.Spec.Parameters = &v1alpha1.Parameters{
+			SecretKeyRef: secretKey,
+		}
+	} else {
+		instance.Spec.Parameters = &v1alpha1.Parameters{
+			SecretRef: &v1.LocalObjectReference{
+				Name: secretParams.Name,
+			},
+		}
 	}
+
+	testController.reconcileInstance(instance)
 
 	brokerActions := fakeBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+
+	requestParameters := make(map[string]interface{})
+	if useSecretKey {
+		// should be a JSON tree
+		requestParameters["args"] = map[string]interface{}{
+			"first":  "first-arg",
+			"second": "second-arg",
+		}
+		requestParameters["name"] = "test-param"
+	} else {
+		// should be a flat map[string]string, nested JSON is represented as a string
+		argBytes, _ := json.Marshal(map[string]interface{}{
+			"first":  "first-arg",
+			"second": "second-arg",
+		})
+		requestParameters["args"] = string(argBytes)
+		requestParameters["name"] = "test-param"
+	}
+
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+		Parameters: requestParameters,
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "secrets", checkType: checkGetActionType},
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
-	assertInstanceReadyFalse(t, updatedInstance)
+	assertInstanceReadyTrue(t, updatedInstance)
+
+	updateObject, ok := updatedInstance.(*v1alpha1.Instance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.Instance")
+	}
+
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if updateObject.Spec.Parameters == nil {
+		t.Fatalf("Parameters was unexpectedly nil")
+	}
+	if useSecretKey {
+		if updateObject.Spec.Parameters.SecretKeyRef == nil {
+			t.Fatalf("Parameters.SecretKeyRef was unexpectedly nil")
+		}
+		if updateObject.Spec.Parameters.SecretRef != nil {
+			t.Fatalf("Parameters.SecretRef was expected to be nil")
+		}
+	} else {
+		if updateObject.Spec.Parameters.SecretRef == nil {
+			t.Fatalf("Parameters.SecretRef was unexpectedly nil")
+		}
+		if updateObject.Spec.Parameters.SecretKeyRef != nil {
+			t.Fatalf("Parameters.SecretKeyRef was expected to be nil")
+		}
+	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to unmarshal Instance parameters"
-	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
+	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
 }

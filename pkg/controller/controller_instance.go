@@ -252,16 +252,61 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 
 	var parameters map[string]interface{}
 	if instance.Spec.Parameters != nil {
-		parameters, err = unmarshalParameters(instance.Spec.Parameters.Raw)
-		if err != nil {
-			s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
+		params := instance.Spec.Parameters
+		if params.SecretRef != nil {
+			parameters, err = fetchSecretParameters(c.kubeClient, instance.Namespace, params.SecretRef)
+			if err != nil {
+				s := fmt.Sprintf("Failed to fetch Instance secret parameters\n%s\n %s", instance.Spec.Parameters, err)
+				glog.Warning(s)
+				c.updateInstanceCondition(
+					instance,
+					v1alpha1.InstanceConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithParameters,
+					s,
+				)
+				c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+				return err
+			}
+		} else if params.SecretKeyRef != nil {
+			parameters, err = fetchSecretKeyParameters(c.kubeClient, instance.Namespace, params.SecretKeyRef)
+			if err != nil {
+				s := fmt.Sprintf("Failed to fetch Instance secret key parameters\n%s\n %s", instance.Spec.Parameters, err)
+				glog.Warning(s)
+				c.updateInstanceCondition(
+					instance,
+					v1alpha1.InstanceConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithParameters,
+					s,
+				)
+				c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+				return err
+			}
+		} else if params.Inline != nil {
+			parameters, err = unmarshalRawParameters(params.Inline.Raw)
+			if err != nil {
+				s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
+				glog.Warning(s)
+				c.updateInstanceCondition(
+					instance,
+					v1alpha1.InstanceConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithParameters,
+					s,
+				)
+				c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+				return err
+			}
+		} else {
+			s := "Parameters object must not be empty if defined"
 			glog.Warning(s)
 			c.updateInstanceCondition(
 				instance,
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				errorWithParameters,
-				"Error unmarshaling instance parameters. "+s,
+				"Error preparing instance parameters. "+s,
 			)
 			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
 			return err

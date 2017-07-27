@@ -37,7 +37,16 @@ func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	specString += fmt.Sprintf("planName: %v\n", spec.PlanName)
 
 	if spec.Parameters != nil {
-		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
+		params := spec.Parameters
+		if params.SecretRef != nil {
+			// TODO Store checksum over secret contents https://github.com/kubernetes-incubator/service-catalog/issues/1062
+			specString += fmt.Sprintf("parameters.secretRef: %v\n", params.SecretRef.Name)
+		} else if params.SecretKeyRef != nil {
+			// TODO Store checksum over secret contents https://github.com/kubernetes-incubator/service-catalog/issues/1062
+			specString += fmt.Sprintf("parameters.secretKeyRef: %v[%v]\n", params.SecretKeyRef.Name, params.SecretKeyRef.Key)
+		} else if params.Inline != nil {
+			specString += fmt.Sprintf("parameters.inline:\n\n%v\n\n", string(params.Inline.Raw))
+		}
 	}
 
 	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
