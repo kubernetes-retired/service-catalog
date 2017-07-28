@@ -370,6 +370,7 @@ resource.
 kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-binding.yaml
 ```
 
+
 That command should output:
 
 ```console
@@ -384,6 +385,12 @@ the status of this process like so:
 
 ```console
 kubectl --context=service-catalog get bindings -n test-ns ups-binding -o yaml
+```
+
+_NOTE: if using the API aggregator, you will need to use the fully qualified name of the binding resource due to [issue 1008](https://github.com/kubernetes-incubator/service-catalog/issues/1008):_
+
+```console
+kubectl get bindings.v1alpha1.servicecatalog.k8s.io -n test-ns ups-binding -o yaml
 ```
 
 We should see something like:
