@@ -436,6 +436,18 @@ func getTestInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Instan
 	return instance
 }
 
+func getTestInstanceWithFailedStatus() *v1alpha1.Instance {
+	instance := getTestInstance()
+	instance.Status = v1alpha1.InstanceStatus{
+		Conditions: []v1alpha1.InstanceCondition{{
+			Type:   v1alpha1.InstanceConditionFailed,
+			Status: v1alpha1.ConditionTrue,
+		}},
+	}
+
+	return instance
+}
+
 // getTestInstanceAsync returns an instance in async mode
 func getTestInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
 	instance := getTestInstance()
@@ -1307,46 +1319,46 @@ func assertInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alp
 func assertAsyncOpInProgressTrue(t *testing.T, obj runtime.Object) {
 	instance, ok := obj.(*v1alpha1.Instance)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
 	if !instance.Status.AsyncOpInProgress {
-		t.Fatalf("expected AsyncOpInProgress to be true but was %v", instance.Status.AsyncOpInProgress)
+		fatalf(t, "expected AsyncOpInProgress to be true but was %v", instance.Status.AsyncOpInProgress)
 	}
 }
 
 func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
 	instance, ok := obj.(*v1alpha1.Instance)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
 	if instance.Status.AsyncOpInProgress {
-		t.Fatalf("expected AsyncOpInProgress to be false but was %v", instance.Status.AsyncOpInProgress)
+		fatalf(t, "expected AsyncOpInProgress to be false but was %v", instance.Status.AsyncOpInProgress)
 	}
 }
 
 func assertInstanceLastOperation(t *testing.T, obj runtime.Object, operation string) {
 	instance, ok := obj.(*v1alpha1.Instance)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
 	if instance.Status.LastOperation == nil {
 		if operation != "" {
-			t.Fatalf("Last Operation <nil> is not what was expected: %q", operation)
+			fatalf(t, "Last Operation <nil> is not what was expected: %q", operation)
 		}
 	} else if *instance.Status.LastOperation != operation {
-		t.Fatalf("Last Operation %q is not what was expected: %q", *instance.Status.LastOperation, operation)
+		fatalf(t, "Last Operation %q is not what was expected: %q", *instance.Status.LastOperation, operation)
 	}
 }
 
 func assertInstanceDashboardURL(t *testing.T, obj runtime.Object, dashboardURL string) {
 	instance, ok := obj.(*v1alpha1.Instance)
 	if !ok {
-		t.Fatalf("Couldn't convert object %+v into a *v1alpha1.Instance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.Instance", obj)
 	}
 	if instance.Status.DashboardURL == nil {
-		t.Fatal("DashboardURL was nil")
+		fatalf(t, "DashboardURL was nil")
 	} else if *instance.Status.DashboardURL != dashboardURL {
-		t.Fatalf("Unexpected DashboardURL: expected %q, got %q", dashboardURL, *instance.Status.DashboardURL)
+		fatalf(t, "Unexpected DashboardURL: expected %q, got %q", dashboardURL, *instance.Status.DashboardURL)
 	}
 }
 

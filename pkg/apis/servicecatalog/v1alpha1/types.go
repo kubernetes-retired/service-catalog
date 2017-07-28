@@ -333,6 +333,10 @@ const (
 	// InstanceConditionReady represents that a given InstanceCondition is in
 	// ready state.
 	InstanceConditionReady InstanceConditionType = "Ready"
+
+	// InstanceConditionFailed represents information about a final failure
+	// that should not be retried.
+	InstanceConditionFailed InstanceConditionType = "Failed"
 )
 
 // BindingList is a list of Bindings.
