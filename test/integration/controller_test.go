@@ -97,10 +97,21 @@ func TestBasicFlows(t *testing.T) {
 			},
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
+			// Async is temporarily disabled due to a race condition where
+			// multiple goroutines can be working on the same instance at the
+			// same time.
 			Response: &osb.ProvisionResponse{
 				Async: false,
 			},
 		},
+		// Temporarily commented out because async is temporarily disabled.
+		//
+		// PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+		// 	Response: &osb.LastOperationResponse{
+		// 		State: osb.StateSucceeded,
+		// 		Async: true,
+		// 	},
+		// },
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
 				Credentials: map[string]interface{}{
