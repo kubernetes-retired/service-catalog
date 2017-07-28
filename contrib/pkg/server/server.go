@@ -28,9 +28,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	"github.com/gorilla/mux"
-
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type server struct {
