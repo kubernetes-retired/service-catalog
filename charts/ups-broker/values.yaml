@@ -4,4 +4,4 @@
 image: user-broker:canary
 # ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
 #imagePullPolicy: Always
-imagePullPolicy: Never
+imagePullPolicy: IfNotPresent
