@@ -142,7 +142,7 @@ func TestGetItem(t *testing.T) {
 		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), createURL(ns1, tipe1, name1), http.StatusNotFound},
 		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), createURL(ns1, tipe1, name1), http.StatusOK},
 	}
-	runtime.ObjectCreater.New(kind)
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			request, err := http.NewRequest("GET", tc.url, nil)
@@ -156,17 +156,61 @@ func TestGetItem(t *testing.T) {
 
 			router.ServeHTTP(tc.rw, request)
 
-			if tc.rw.getResponse().StatusCode != tc.expectedStatus && tc.rw.headerSet {
-				t.Error("Expected Status ", tc.expectedStatus, "got", tc.rw.getResponse().StatusCode)
-			}
 			body, err := ioutil.ReadAll(tc.rw.getResponse().Body)
+			if err != nil {
+				t.Error("Could not read response.", err)
+			}
 
+			if tc.rw.getResponse().StatusCode != tc.expectedStatus && tc.rw.headerSet {
+				t.Error("Expected Status", tc.expectedStatus, "got", tc.rw.getResponse().StatusCode)
+				t.Error("Http error:", string(body))
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
-			fmt.Println("body is: ", string(body))
-
 		})
-
 	}
+}
+
+func TestGetItems(t *testing.T) {
+	testCases := []struct {
+		name           string
+		storage        NamespacedStorage
+		watcher        *Watcher
+		rw             *responseWriter
+		url            string
+		expectedStatus int
+	}{
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%v/brokers", ns1), http.StatusOK},
+		{"Multiple Items", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%v/brokers", ns1), http.StatusOK},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			request, err := http.NewRequest("GET", tc.url, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
+				return &servicecatalog.Instance{}
+			})
+
+			router.ServeHTTP(tc.rw, request)
+
+			body, err := ioutil.ReadAll(tc.rw.getResponse().Body)
+			if err != nil {
+				t.Error("Could not read response.", err)
+			}
+
+			if tc.rw.getResponse().StatusCode != tc.expectedStatus && tc.rw.headerSet {
+				t.Error("Expected Status", tc.expectedStatus, "got", tc.rw.getResponse().StatusCode)
+				t.Error("Http error:", string(body))
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+
 }
