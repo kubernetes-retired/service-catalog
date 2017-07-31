@@ -51,7 +51,7 @@ type parameter struct {
 	Map   map[string]string `json:"map"`
 }
 
-func createParameter(c fuzz.Continue) (*runtime.RawExtension, error) {
+func createBindingParameters(c fuzz.Continue) (*runtime.RawExtension, error) {
 	p := parameter{Value: c.RandString()}
 	p.Map = make(map[string]string)
 	for i := 0; i < c.Rand.Intn(10); i++ {
@@ -63,6 +63,15 @@ func createParameter(c fuzz.Continue) (*runtime.RawExtension, error) {
 		return nil, err
 	}
 	return &runtime.RawExtension{Raw: b}, nil
+}
+
+func createInstanceParameters(c fuzz.Continue) *servicecatalog.Parameters {
+	return &servicecatalog.Parameters{
+		SecretKeyRef: &servicecatalog.SecretKeyReference{
+			Name: c.RandString(),
+			Key:  c.RandString(),
+		},
+	}
 }
 
 func createServiceMetadata(c fuzz.Continue) (*runtime.RawExtension, error) {
@@ -195,12 +204,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		func(is *servicecatalog.InstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.ExternalID = uuid.NewV4().String()
-			parameters, err := createParameter(c)
-			if err != nil {
-				t.Errorf("Failed to create parameter object: %v", err)
-				return
-			}
-			is.Parameters = parameters
+			is.Parameters = createInstanceParameters(c)
 		},
 		func(bs *servicecatalog.BindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
@@ -212,7 +216,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			for bs.SecretName == "" {
 				bs.SecretName = c.RandString()
 			}
-			parameters, err := createParameter(c)
+			parameters, err := createBindingParameters(c)
 			if err != nil {
 				t.Errorf("Failed to create parameter object: %v", err)
 				return

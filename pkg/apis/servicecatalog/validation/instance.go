@@ -60,6 +60,27 @@ func validateInstanceSpec(spec *sc.InstanceSpec, fldPath *field.Path, create boo
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
 	}
 
+	if spec.Parameters != nil {
+		params := spec.Parameters
+		nonNils := 0
+		if params.SecretRef != nil {
+			nonNils++
+		}
+		if params.SecretKeyRef != nil {
+			nonNils++
+		}
+		if params.Inline != nil {
+			nonNils++
+		}
+		if nonNils == 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("parameters"), params,
+				"parameters must not be empty if defined"))
+		} else if nonNils > 1 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("parameters"), params,
+				"only one of parameters child fields can be set at a time"))
+		}
+	}
+
 	return allErrs
 }
 

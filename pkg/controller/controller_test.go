@@ -18,6 +18,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 	"reflect"
 	"runtime/debug"
@@ -75,6 +76,8 @@ const (
 	testBindingSecretName           = "test-secret"
 	testOperation                   = "test-operation"
 	testNsUID                       = "test-ns-uid"
+	testSecretName                  = "test-secret"
+	testSecretKey                   = "test-secret-key"
 )
 
 var testDashboardURL = "http://dashboard"
@@ -283,6 +286,38 @@ const instanceParameterSchemaBytes = `{
     "protocol"
   ]
 }`
+
+// input parameters for the instance represented as secret
+func getTestSecretParameters(params *instanceParameters) (*v1.Secret, error) {
+	data := make(map[string][]byte)
+	data["name"] = []byte(params.Name)
+	b, err := json.Marshal(params.Args)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal parameters %v : %v", params.Args, err)
+	}
+	data["args"] = b
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
+		Data:       data,
+	}, nil
+}
+
+// input parameters for the instance represented as a single secret key record
+func getTestSecretKeyParameters(params *instanceParameters) (*v1.Secret, *v1alpha1.SecretKeyReference, error) {
+	b, err := json.Marshal(params)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Failed to marshal parameters %v : %v", params.Args, err)
+	}
+	data := make(map[string][]byte)
+	data[testSecretKey] = b
+	return &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
+			Data:       data,
+		}, &v1alpha1.SecretKeyReference{
+			Name: testSecretName,
+			Key:  testSecretKey,
+		}, nil
+}
 
 // broker used in most of the tests that need a broker
 func getTestBroker() *v1alpha1.Broker {

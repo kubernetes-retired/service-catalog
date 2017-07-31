@@ -270,9 +270,9 @@ type InstanceSpec struct {
 	// provisioned from.
 	PlanName string
 
-	// Parameters is a YAML representation of the properties to be
+	// Parameters is a set of properties to be
 	// passed to the underlying broker.
-	Parameters *runtime.RawExtension
+	Parameters *Parameters
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
@@ -443,3 +443,28 @@ const (
 const (
 	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
 )
+
+// Parameters is a union type for supporting different ways of representing parameters used for:
+// - Instance input parameters
+// - Binding output credentials
+type Parameters struct {
+	// Reference to a secret in the namespace.
+	// The parameters will be created as a dictionary from all keys in the secret.
+	SecretRef *v1.LocalObjectReference
+	// Reference to a secret key in the namespace.
+	// The parameters will be set from the JSON contained in this secret key
+	SecretKeyRef *SecretKeyReference
+	// Inline is an inline arbitrary JSON or YAML representation of the parameters,
+	// to be converted into equivalent JSON
+	// Note that this way of passing parameters is considered insecure, and only applicable
+	// for non-sensitive data
+	Inline *runtime.RawExtension
+}
+
+// SecretKeyReference references a key of a Secret.
+type SecretKeyReference struct {
+	// The name of the secret in the pod's namespace to select from.
+	Name string
+	// The key of the secret to select from.  Must be a valid secret key.
+	Key string
+}
