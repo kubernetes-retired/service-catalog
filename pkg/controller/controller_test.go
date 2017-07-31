@@ -284,6 +284,55 @@ const instanceParameterSchemaBytes = `{
   ]
 }`
 
+type originatingIdentityTestCase struct {
+	name                        string
+	includeUserInfo             bool
+	enableOriginatingIdentity   bool
+	expectedOriginatingIdentity bool
+}
+
+var originatingIdentityTestCases = []originatingIdentityTestCase{
+	{
+		name:                        "originating identity not included when feature disabled",
+		includeUserInfo:             true,
+		enableOriginatingIdentity:   false,
+		expectedOriginatingIdentity: false,
+	},
+	{
+		name:                        "originating identity not included when no creating user info",
+		includeUserInfo:             false,
+		enableOriginatingIdentity:   true,
+		expectedOriginatingIdentity: false,
+	},
+	{
+		name:                        "originating identity included",
+		includeUserInfo:             true,
+		enableOriginatingIdentity:   true,
+		expectedOriginatingIdentity: true,
+	},
+}
+
+var testUserInfo = &v1alpha1.UserInfo{
+	Username: "fakeusername",
+	UID:      "fakeuid",
+	Groups:   []string{"fakegroup1"},
+	Extra: map[string]v1alpha1.ExtraValue{
+		"fakekey": v1alpha1.ExtraValue([]string{"fakevalue"}),
+	},
+}
+
+const testOriginatingIdentityValue = `{
+	"username": "fakeusername",
+	"uid": "fakeuid",
+	"groups": ["fakegroup1"],
+	"fakekey": ["fakevalue"]
+}`
+
+var testOriginatingIdentity = &osb.AlphaOriginatingIdentity{
+	Platform: originatingIdentityPlatform,
+	Value:    testOriginatingIdentityValue,
+}
+
 // broker used in most of the tests that need a broker
 func getTestServiceBroker() *v1alpha1.ServiceBroker {
 	return &v1alpha1.ServiceBroker{
@@ -1492,9 +1541,24 @@ func assertBind(t *testing.T, action fakeosb.Action, request *osb.BindRequest) {
 		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
+	actualRequest, ok := action.Request.(*osb.BindRequest)
+	if !ok {
+		fatalf(t, "unexpected request type; expected %T, got %T", request, actualRequest)
+	}
+
+	expectedOriginatingIdentity := request.OriginatingIdentity
+	actualOriginatingIdentity := actualRequest.OriginatingIdentity
+	request.OriginatingIdentity = nil
+	actualRequest.OriginatingIdentity = nil
+
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
 		fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
+
+	request.OriginatingIdentity = expectedOriginatingIdentity
+	actualRequest.OriginatingIdentity = actualOriginatingIdentity
+
+	assertOriginatingIdentity(t, expectedOriginatingIdentity, actualOriginatingIdentity)
 }
 
 func assertUnbind(t *testing.T, action fakeosb.Action, request *osb.UnbindRequest) {
@@ -1504,6 +1568,29 @@ func assertUnbind(t *testing.T, action fakeosb.Action, request *osb.UnbindReques
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
 		fatalf(t, "unexpected diff in bind request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+	}
+}
+
+func assertOriginatingIdentity(t *testing.T, expected *osb.AlphaOriginatingIdentity, actual *osb.AlphaOriginatingIdentity) {
+	if e, a := expected, actual; (e != nil) != (a != nil) {
+		fatalf(t, "unexpected originating identity in request: expected %q, got %q", e, a)
+	}
+	if expected == nil {
+		return
+	}
+	if e, a := expected.Platform, actual.Platform; e != a {
+		fatalf(t, "invalid originating identity platform in request: expected %q, got %q", e, a)
+	}
+	var expectedValue interface{}
+	if err := json.Unmarshal([]byte(expected.Value), &expectedValue); err != nil {
+		fatalf(t, "invalid originating identity value in expected request: %q: %v", expected.Value, err)
+	}
+	var actualValue interface{}
+	if err := json.Unmarshal([]byte(actual.Value), &actualValue); err != nil {
+		fatalf(t, "invalid originating identity value in actual request: %q: %v", actual.Value, err)
+	}
+	if e, a := expectedValue, actualValue; !reflect.DeepEqual(e, a) {
+		fatalf(t, "unexpected diff in originating identity value in request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 

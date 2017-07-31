@@ -20,16 +20,19 @@ package instance
 
 import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	api "k8s.io/client-go/pkg/api"
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for instances
@@ -38,7 +41,7 @@ func NewScopeStrategy() rest.NamespaceScopedStrategy {
 }
 
 // implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
-// NamespaceScopedStrategy
+// NamespaceScopedStrategy, and RESTGracefulDeleteStrategy.
 // The implementation disallows any modifications to the instance.Status fields.
 type instanceRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
@@ -60,9 +63,10 @@ var (
 		// `GenerateName(base string) string`
 		NameGenerator: names.SimpleNameGenerator,
 	}
-	_ rest.RESTCreateStrategy = instanceRESTStrategies
-	_ rest.RESTUpdateStrategy = instanceRESTStrategies
-	_ rest.RESTDeleteStrategy = instanceRESTStrategies
+	_ rest.RESTCreateStrategy         = instanceRESTStrategies
+	_ rest.RESTUpdateStrategy         = instanceRESTStrategies
+	_ rest.RESTDeleteStrategy         = instanceRESTStrategies
+	_ rest.RESTGracefulDeleteStrategy = instanceRESTStrategies
 
 	instanceStatusUpdateStrategy = instanceStatusRESTStrategy{
 		instanceRESTStrategies,
@@ -90,6 +94,8 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	if !ok {
 		glog.Fatal("received a non-instance object to create")
 	}
+
+	setServiceInstanceUserInfo(instance, ctx)
 
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
@@ -139,6 +145,7 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 	// Note that since we do not currently handle any changes to the spec,
 	// the generation will never be incremented
 	if !apiequality.Semantic.DeepEqual(oldServiceInstance.Spec, newServiceInstance.Spec) {
+		setServiceInstanceUserInfo(newServiceInstance, ctx)
 		newServiceInstance.Generation = oldServiceInstance.Generation + 1
 	}
 }
@@ -154,6 +161,16 @@ func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, o
 	}
 
 	return scv.ValidateServiceInstanceUpdate(newServiceInstance, oldServiceInstance)
+}
+
+func (instanceRESTStrategy) CheckGracefulDelete(ctx genericapirequest.Context, obj runtime.Object, options *metav1.DeleteOptions) bool {
+	serviceInstance, ok := obj.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-instance object to delete")
+	}
+	setServiceInstanceUserInfo(serviceInstance, ctx)
+	// Don't actually do graceful deletion. We are just using this strategy to set the user info prior to reconciling the delete.
+	return false
 }
 
 func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
@@ -180,4 +197,24 @@ func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, 
 	}
 
 	return scv.ValidateServiceInstanceStatusUpdate(newServiceInstance, oldServiceInstance)
+}
+
+// setServiceInstanceUserInfo injects user.Info from the request context
+func setServiceInstanceUserInfo(instance *sc.ServiceInstance, ctx genericapirequest.Context) {
+	instance.Spec.UserInfo = nil
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		if user, ok := genericapirequest.UserFrom(ctx); ok {
+			instance.Spec.UserInfo = &sc.UserInfo{
+				Username: user.GetName(),
+				UID:      user.GetUID(),
+				Groups:   user.GetGroups(),
+			}
+			if extra := user.GetExtra(); len(extra) > 0 {
+				instance.Spec.UserInfo.Extra = map[string]sc.ExtraValue{}
+				for k, v := range extra {
+					instance.Spec.UserInfo.Extra[k] = sc.ExtraValue(v)
+				}
+			}
+		}
+	}
 }

@@ -257,6 +257,22 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			BindResource: &osb.BindResource{AppGUID: &appGUID},
 		}
 
+		originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
+		if err != nil {
+			s := fmt.Sprintf("Failed to prepare Binding originating identity\n%v\n %v", binding.Spec.UserInfo, err)
+			glog.Warning(s)
+			c.updateServiceInstanceCredentialCondition(
+				binding,
+				v1alpha1.ServiceInstanceCredentialConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithOriginatingIdentity,
+				s,
+			)
+			c.recorder.Event(binding, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			return err
+		}
+		request.OriginatingIdentity = originatingIdentity
+
 		response, err := brokerClient.Bind(request)
 		if err != nil {
 			httpErr, isError := osb.IsHTTPError(err)
@@ -365,6 +381,23 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			ServiceID:  serviceClass.ExternalID,
 			PlanID:     servicePlan.ExternalID,
 		}
+
+		originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
+		if err != nil {
+			s := fmt.Sprintf("Failed to prepare Unbinding originating identity\n%v\n %v", binding.Spec.UserInfo, err)
+			glog.Warning(s)
+			c.updateServiceInstanceCredentialCondition(
+				binding,
+				v1alpha1.ServiceInstanceCredentialConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithOriginatingIdentity,
+				s,
+			)
+			c.recorder.Event(binding, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			return err
+		}
+		unbindRequest.OriginatingIdentity = originatingIdentity
+
 		_, err = brokerClient.Unbind(unbindRequest)
 		if err != nil {
 			httpErr, isError := osb.IsHTTPError(err)

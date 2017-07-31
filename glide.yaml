@@ -90,4 +90,4 @@ import:
 - package: code.cloudfoundry.org/lager
   version: dfcbcba2dd4a5228c43b0292d219d5c010daed3a
 - package: github.com/pmorie/go-open-service-broker-client
-  version: 48d1e069bbc4a7ec3fe52dee77a48046fbbf48e4
+  version: 962a416798366b37a20a06fdb0a09180589ca964

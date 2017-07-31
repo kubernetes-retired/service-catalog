@@ -237,6 +237,25 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		AcceptsIncomplete: true,
 	}
 
+	originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
+	if err != nil {
+		s := fmt.Sprintf("Failed to prepare deprovisioning ServiceInstance originating identity\n%v\n %v", instance.Spec.UserInfo, err)
+		glog.Warning(s)
+
+		setServiceInstanceCondition(
+			toUpdate,
+			v1alpha1.ServiceInstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorWithOriginatingIdentity,
+			s,
+		)
+		c.updateServiceInstanceStatus(toUpdate)
+
+		c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+		return err
+	}
+	request.OriginatingIdentity = originatingIdentity
+
 	// If the instance is not failed, deprovision it at the broker.
 	if !isServiceInstanceFailed(instance) {
 		// it is arguable we should perform an extract-method refactor on this
@@ -497,6 +516,25 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		"namespace": instance.Namespace,
 	}
 
+	originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
+	if err != nil {
+		s := fmt.Sprintf("Failed to prepare ServiceInstance originating identity\n%v\n %v", instance.Spec.UserInfo, err)
+		glog.Warning(s)
+
+		setServiceInstanceCondition(
+			toUpdate,
+			v1alpha1.ServiceInstanceConditionReady,
+			v1alpha1.ConditionFalse,
+			errorWithOriginatingIdentity,
+			s,
+		)
+		c.updateServiceInstanceStatus(toUpdate)
+
+		c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+		return err
+	}
+	request.OriginatingIdentity = originatingIdentity
+
 	glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	response, err := brokerClient.ProvisionInstance(request)
 	if err != nil {
@@ -630,6 +668,16 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		key := osb.OperationKey(*instance.Status.LastOperation)
 		request.OperationKey = &key
 	}
+
+	originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
+	if err != nil {
+		s := fmt.Sprintf("Failed to prepare LastOperation originating identity\n%v\n %v", instance.Spec.UserInfo, err)
+		glog.Warning(s)
+
+		c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+		return err
+	}
+	request.OriginatingIdentity = originatingIdentity
 
 	glog.V(5).Infof("Polling last operation on ServiceInstance %v/%v", instance.Namespace, instance.Name)
 
@@ -854,7 +902,7 @@ func setServiceInstanceCondition(toUpdate *v1alpha1.ServiceInstance,
 	setServiceInstanceConditionInternal(toUpdate, conditionType, status, reason, message, metav1.Now())
 }
 
-// setServiceInstanceConditionInternal is setInstanceCondition but allows the time to
+// setServiceInstanceConditionInternal is setServiceInstanceCondition but allows the time to
 // be parameterized for testing.
 func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	conditionType v1alpha1.ServiceInstanceConditionType,
