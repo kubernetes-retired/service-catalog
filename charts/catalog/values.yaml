@@ -1,4 +1,6 @@
 # Default values for Service Catalog
+# determines whether the API server should be registered with the kube-aggregator
+useAggregator: false
 apiserver:
   # apiserver image to use
   image: quay.io/kubernetes-service-catalog/apiserver:v0.0.14
@@ -93,4 +95,5 @@ controllerManager:
     # Whether the controller has option to set leader election namespace.
     activated: false
   serviceAccount: service-catalog-controller-manager
-useAggregator: false
+  # Controls whether the API server's TLS verification should be skipped.
+  apiserverSkipVerify: true

@@ -16,9 +16,9 @@ DNS enabled already.
 * If you are using hack/local-up-cluster.sh, ensure the
 `KUBE_ENABLE_CLUSTER_DNS` environment variable is set as follows:
 
-  ```console
-  KUBE_ENABLE_CLUSTER_DNS=true hack/local-up-cluster.sh -O
-  ```
+```console
+hack/local-up-cluster.sh -O
+```
 
 ### Getting Helm and installing Tiller
 
@@ -31,6 +31,18 @@ be done with Helm setup.
 
 If you don't already have Helm v2, see the
 [installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
+
+### RBAC Considerations
+
+If your kubernetes cluster has [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/)
+enabled, you must ensure that the default service account for the `kube-system`
+namespace has the `cluster-admin` role:
+
+```console
+kubectl create clusterrolebinding default-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+```
+
+This is required in order for helm to work correctly in clusters with RBAC enabled.
 
 ## Step 1 - Installing the Service Catalog
 
