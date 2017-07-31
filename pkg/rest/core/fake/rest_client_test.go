@@ -22,7 +22,10 @@ import (
 	"net/http"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 )
 
 const (
@@ -38,6 +41,7 @@ const (
 func createSingleItemStorage() NamespacedStorage {
 	storage := make(NamespacedStorage)
 	storage.Set(ns1, tipe1, name1, &servicecatalog.Broker{})
+	// storage.Set(ns1, tipe1, name1, &servicecatalog.Instance{})
 	return storage
 }
 
@@ -126,45 +130,43 @@ func TestResponseWriterGetResponse(t *testing.T) {
 	}
 }
 
-func TestGetItemEmptyStorage(t *testing.T) {
-	storage := make(NamespacedStorage)
-	rw := newResponseWriter()
-	url := createURL(ns1, tipe1, name1)
-	request, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	f := getItem(storage)
-	f(rw, request)
-
-	if rw.getResponse().StatusCode != http.StatusNotFound && rw.headerSet {
-		t.Fatal("Expected NotFoundStatus for empty storage")
-	}
-
-}
-
 func TestGetItem(t *testing.T) {
-	storage := createSingleItemStorage()
-	rw := newResponseWriter()
-	url := createURL(ns1, tipe1, name1)
-	request, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		name           string
+		storage        NamespacedStorage
+		watcher        *Watcher
+		rw             *responseWriter
+		url            string
+		expectedStatus int
+	}{
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), createURL(ns1, tipe1, name1), http.StatusNotFound},
+		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), createURL(ns1, tipe1, name1), http.StatusOK},
 	}
+	runtime.ObjectCreater.New(kind)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			request, err := http.NewRequest("GET", tc.url, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	f := getItem(storage)
-	f(rw, request)
+			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
+				return &servicecatalog.Instance{}
+			})
 
-	if rw.getResponse().StatusCode != http.StatusOK && rw.headerSet {
-		t.Fatal("Expected Status OK", http.StatusOK, "got", rw.getResponse().StatusCode)
+			router.ServeHTTP(tc.rw, request)
+
+			if tc.rw.getResponse().StatusCode != tc.expectedStatus && tc.rw.headerSet {
+				t.Error("Expected Status ", tc.expectedStatus, "got", tc.rw.getResponse().StatusCode)
+			}
+			body, err := ioutil.ReadAll(tc.rw.getResponse().Body)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			fmt.Println("body is: ", string(body))
+
+		})
+
 	}
-	_, err = ioutil.ReadAll(rw.getResponse().Body)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
 }
