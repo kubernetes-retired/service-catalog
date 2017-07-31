@@ -88,13 +88,29 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 	if !ok {
 		glog.Fatal("received a non-binding object to create")
 	}
-	// Is there anything to pull out of the context `ctx`?
+
+	// Clear any user-specified user info
+	binding.Spec.AlphaUser.Username = ""
+	binding.Spec.AlphaUser.UID = ""
+	binding.Spec.AlphaUser.Groups = nil
+	binding.Spec.AlphaUser.Extra = nil
+	// Inject user.Info from request context
+	if user, ok := genericapirequest.UserFrom(ctx); ok {
+		binding.Spec.AlphaUser.Username = user.GetName()
+		binding.Spec.AlphaUser.UID = user.GetUID()
+		binding.Spec.AlphaUser.Groups = user.GetGroups()
+		if extra := user.GetExtra(); len(extra) > 0 {
+			binding.Spec.AlphaUser.Extra = map[string]sc.AlphaExtraValue{}
+			for k, v := range extra {
+				binding.Spec.AlphaUser.Extra[k] = sc.AlphaExtraValue(v)
+			}
+		}
+	}
 
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
 	binding.Status = sc.BindingStatus{}
-	// Fill in the first entry set to "creating"?
 	binding.Status.Conditions = []sc.BindingCondition{}
 	binding.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
