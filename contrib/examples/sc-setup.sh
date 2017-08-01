@@ -4,6 +4,10 @@
 # Note: the local cluster is assumed to be running.
 # Args:
 #   $1= path to s-c repo. Default is "~/go/src/k8s.io/service-catalog" or KPATH if defined.
+# Env vars:
+#   DEMO=y: (default) use the "demo-pod-provision" directory under contrib/examples for yaml files
+#   DEMO=n: use the "walkthrough" directory under contrib/examples for yaml files.
+#
 
 # Executes the passed-in kubectl cmd looking for all containers to be Running and returns an error if
 # the loop times-out, or if the cmd generates an error. The expected number of containers is the 2nd
@@ -75,7 +79,7 @@ function waitForCmdSuccess() {
   err=0
 
   for (( elapsed=0; elapsed <= maxSleep; )) ; do
-    out="$(eval $cmd)"
+    eval $cmd >& /dev/null
     err=$?
     (( err == 0 )) && break
     increment=$(((elapsed/15)+1)) # sleep an extra second every 15s
@@ -91,25 +95,37 @@ function waitForCmdSuccess() {
 ##
 ## *** main ***
 ##
+echo
 
 # path to s-c repo
 sc_path="$1"
 [[ -z "$sc_path" && -n "$KPATH" ]] && sc_path="$(dirname $KPATH)/service-catalog"
 [[ -z "$sc_path" ]] && sc_path="~/go/src/k8s.io/service-catalog"
+if [[ ! -d "$sc_path" ]] ; then
+  echo "$sc_path is not a directory or does not exist"
+  exit 1
+fi
 
-echo
+# env vars
+yaml_dir="demo-pod-provision"
+[[ "$DEMO" == "n" ]] && yaml_dir="walkthrough"
+yaml_path="contrib/examples/$yaml_dir"
+if [[ ! -d "$sc_path/$yaml_path" ]] ; then
+  echo "$sc_path/$yaml_path is not a directory or does not exist"
+  exit 1
+fi
+
+
 echo "******* begin service-catalog setup ***********"
 echo "  assumes local-up-cluster is running"
 echo "  s-c repo path: $sc_path"
+echo "  yaml path    : $yaml_path  (DEMO=\"$DEMO\")"
+sleep 2
 
 echo
 echo "** Verifying pre-requisits"
 if [[ -z "$GOPATH" ]] ; then
   echo "GOPATH variable missing"
-  exit 1
-fi
-if [[ ! -d "$sc_path" ]] ; then
-  echo "$sc_path is not a directory or does not exist"
   exit 1
 fi
 if [[ ! -f "/usr/local/bin/helm" ]] ; then
@@ -189,12 +205,12 @@ waitForCmdSuccess "kubectl get -n ups-broker service,deployment" 15
 cluster_ip="$(kubectl get -n ups-broker service | grep ups-broker | awk '{print $3}')"
 
 # create broker resource
-echo "--> kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-broker.yaml"
+echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml"
 echo
-kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-broker.yaml
+kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml
 waitForMatch \
   'kubectl --context=service-catalog get brokers ups-broker -o yaml |grep reason: |tr -d "[:space:]"' \
-  "reason:FetchedCatalog" "ups-broker" 90
+  "reason:FetchedCatalog" "ups-broker" 180
 if (( $? != 0 )) ; then
   echo "catalog was not fetched"
   exit 1
@@ -209,7 +225,7 @@ echo
 echo "--> kubectl create namespace test-ns"
 echo
 kubectl create namespace test-ns
-kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-instance.yaml
+kubectl --context=service-catalog create -f $yaml_path/ups-instance.yaml
 kubectl --context=service-catalog get instances -n test-ns
 waitForMatch \
   'kubectl --context=service-catalog get instances -n test-ns -o yaml|grep reason: |tr -d "[:space:]"' \
@@ -221,14 +237,14 @@ fi
 
 # create binding and verify resulting secret
 echo
-echo "--> kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-binding.yaml"
+echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-binding.yaml"
 echo
-kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-binding.yaml
-secretName="$(grep secretName: contrib/examples/walkthrough/ups-binding.yaml | awk '{print $2}')"
+kubectl --context=service-catalog create -f $yaml_path/ups-binding.yaml
+secretName="$(grep secretName: $yaml_path/ups-binding.yaml | awk '{print $2}')"
 waitForCmdSuccess "kubectl -n test-ns get secret $secretName" 15
 (( $? != 0 )) && exit 1
 
 echo
-echo "******* done! ***********"
 echo "Cluster broker ip: $cluster_ip"
+echo "******* done! ***********"
 echo
