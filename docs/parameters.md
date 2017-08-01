@@ -11,7 +11,9 @@ Table of Contents
     - [Other primitive types (int, bool, float)](#other-primitive-types-int-bool-float)
     - [Arrays](#arrays)
   - [Passing all parameters from a single source at once](#passing-all-parameters-from-a-single-source-at-once)
+    - [Passing the entire payload at once](#passing-the-entire-payload-at-once)
   - [Conflict resolution](#conflict-resolution)
+- [Advanced example](#advanced-example)
 
 ## Overview
 `parameters` and `parametersFrom` properties of `Instance` and `Broker` resources 
@@ -236,13 +238,56 @@ You can also pass several `Secret`s and/or `ConfigMap`s at once:
         name: configmap1
 ```
 
-Parameter values could be passed as JSON objects, the same way as for [individual parameters](#json-object):
+Parameter values could be passed as JSON objects, in a similar way to [individual parameters](#json-object):
 ```yaml
   ...
   parametersFrom:
-    - type: json
-      secretRef:
+    - secretRef:
         name: mysecret
+        type: json
+```
+
+#### Passing the entire payload at once
+
+If the user has the entire parameters payload prepared to be sent, there are
+several options of passing it:
+- Inline embedded raw JSON (applicable only for non-sensitive data)
+```yaml
+  ...
+  parametersFrom:
+    - value:
+        simple: text
+        obj:
+          child: true
+        list:
+        - item1
+        - item2
+```
+which will be transformed into the following payload to be sent to the broker:
+```json
+{
+  "simple": "text",
+  "obj": {
+    "child": true
+  },
+  "list": ["item1", "item2"]
+}
+```
+- Secret key with JSON payload:
+```yaml
+  ...
+  parametersFrom:
+    - secretKeyRef:
+        name: mysecret
+        key: mykey
+```
+- ConfigMap key with JSON payload
+```yaml
+  ...
+  parametersFrom:
+    - configMapKeyRef:
+        name: myconfig
+        key: mykey
 ```
 
 ### Conflict resolution
@@ -321,4 +366,103 @@ which will result in the following JSON parameters object:
   }
 }
 
+```
+
+## Advanced example
+
+### Sources
+
+**password-secret**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: map-secret
+type: Opaque
+stringData:
+  password: qwerty
+```
+
+**one-two-secret**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: map-secret
+type: Opaque
+stringData:
+  one: a
+  two: b
+```
+
+**blob-secret**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: blob-secret
+type: Opaque
+stringData:
+  blob: >
+    {
+      "blobSecretString": "text",
+      "blobSecretObj": {
+        "json": true
+      }
+    }
+```
+
+### Instance specification
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  name: qwerty-instance
+  namespace: test-ns
+spec:
+  serviceClassName: qwerty
+  planName: default
+  parametersFrom:
+  - value:
+      inline: true
+      list:
+      - item1
+      - item2
+  - secretRef:
+      name: one-two-secret
+  - secretKeyRef:
+      name: blob-secret
+      key: blob
+  parameters:
+  - name: basicString
+    value: Plain text, passed as a string
+  - name: basicJson
+    type: json 
+    value: { "labels": ["foo", "bar"] }
+  - name: passwordFromSecret
+    valueFrom:
+      secretKeyRef:
+        name: password-secret
+        key: password
+```
+
+### Parameters payload to be passed to the broker
+
+```json
+{
+  "inline": true,
+  "list": ["item1", "item2"],
+  "one": "a",
+  "two": "b",
+  "blobSecretString": "text",
+  "blobSecretObj": {
+    "json": true
+  },
+  "basicString": "Plain text, passed as a string",
+  "basicJson": {
+    "labels": ["foo", "bar"]
+  },
+  "passwordFromSecret": "qwerty"
+}
 ```
