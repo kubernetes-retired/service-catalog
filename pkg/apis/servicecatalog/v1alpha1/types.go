@@ -30,28 +30,28 @@ import (
 type Broker struct {
 	metav1.TypeMeta `json:",inline"`
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Spec   BrokerSpec   `json:"spec"`
-	Status BrokerStatus `json:"status"`
+	Spec   BrokerSpec   `json:"spec" protobuf:"bytes,2,opt,name=spec"`
+	Status BrokerStatus `json:"status" protobuf:"bytes,3,opt,name=status"`
 }
 
 // BrokerList is a list of Brokers.
 type BrokerList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Items []Broker `json:"items"`
+	Items []Broker `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
 // BrokerSpec represents a description of a Broker.
 type BrokerSpec struct {
 	// URL is the address used to communicate with the Broker.
-	URL string `json:"url"`
+	URL string `json:"url" protobuf:"bytes,1,opt,name=url"`
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
 	// with the Broker.
-	AuthInfo *BrokerAuthInfo `json:"authInfo,omitempty"`
+	AuthInfo *BrokerAuthInfo `json:"authInfo,omitempty" protobuf:"bytes,2,opt,name=authInfo"`
 }
 
 // BrokerAuthInfo is a union type that contains information on one of the authentication methods
@@ -63,37 +63,37 @@ type BrokerSpec struct {
 type BrokerAuthInfo struct {
 	// BasicAuthSecret is a reference to a Secret containing auth information the
 	// catalog should use to authenticate to this Broker using basic auth.
-	BasicAuthSecret *v1.ObjectReference `json:"basicAuthSecret,omitempty"`
+	BasicAuthSecret *v1.ObjectReference `json:"basicAuthSecret,omitempty" protobuf:"bytes,1,opt,name=basicAuthSecret,casttype=k8s.io/client-go/pkg/api/v1/types.ObjectReference"`
 }
 
 // BrokerStatus represents the current status of a Broker.
 type BrokerStatus struct {
-	Conditions []BrokerCondition `json:"conditions"`
+	Conditions []BrokerCondition `json:"conditions" protobuf:"bytes,1,rep,name=conditions"`
 
 	// Checksum is the sha hash of the BrokerSpec that was last successfully
 	// reconciled against the broker.
-	Checksum *string `json:"checksum,omitempty"`
+	Checksum *string `json:"checksum,omitempty" protobuf:"bytes,2,opt,name=checksum"`
 }
 
 // BrokerCondition contains condition information for a Broker.
 type BrokerCondition struct {
 	// Type of the condition, currently ('Ready').
-	Type BrokerConditionType `json:"type"`
+	Type BrokerConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=BrokerConditionType"`
 
 	// Status of the condition, one of ('True', 'False', 'Unknown').
-	Status ConditionStatus `json:"status"`
+	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
 
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime" protobuf:"bytes,3,opt,name=lastTransitionTime"`
 
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
-	Reason string `json:"reason"`
+	Reason string `json:"reason" protobuf:"bytes,4,opt,name=reason"`
 
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
-	Message string `json:"message"`
+	Message string `json:"message" protobuf:"bytes,5,opt,name=message"`
 }
 
 // BrokerConditionType represents a broker condition value.
@@ -127,9 +127,9 @@ const (
 // ServiceClassList is a list of ServiceClasses.
 type ServiceClassList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Items []ServiceClass `json:"items"`
+	Items []ServiceClass `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
 // +genclient=true
@@ -138,39 +138,39 @@ type ServiceClassList struct {
 // ServiceClass represents an offering in the service catalog.
 type ServiceClass struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// BrokerName is the reference to the Broker that provides this
 	// ServiceClass.
 	//
 	// Immutable.
-	BrokerName string `json:"brokerName"`
+	BrokerName string `json:"brokerName" protobuf:"bytes,3,opt,name=brokerName"`
 
 	// Description is a short description of this ServiceClass.
-	Description string `json:"description"`
+	Description string `json:"description" protobuf:"bytes,4,opt,name=description"`
 
 	// Bindable indicates whether a user can create bindings to an Instance
 	// provisioned from this service. ServicePlan has an optional field called
 	// Bindable which overrides the value of this field.
-	Bindable bool `json:"bindable"`
+	Bindable bool `json:"bindable" protobuf:"varint,5,opt,name=bindable"`
 
 	// Plans is the list of ServicePlans for this ServiceClass.  All
 	// ServiceClasses have at least one ServicePlan.
-	Plans []ServicePlan `json:"plans"`
+	Plans []ServicePlan `json:"plans" protobuf:"bytes,6,rep,name=plans"`
 
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ServiceClass may change ServicePlans after being provisioned.
-	PlanUpdatable bool `json:"planUpdatable"`
+	PlanUpdatable bool `json:"planUpdatable" protobuf:"varint,7,opt,name=planUpdatable"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
-	ExternalID string `json:"externalID"`
+	ExternalID string `json:"externalID" protobuf:"bytes,8,opt,name=externalID"`
 
 	// ExternalMetadata is a blob of information about the ServiceClass, meant
 	// to be user-facing content and display instructions.  This field may
 	// contain platform-specific conventional values.
-	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
+	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty" protobuf:"bytes,9,opt,name=externalMetadata"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
@@ -179,7 +179,7 @@ type ServiceClass struct {
 	// attributes of the ServiceClass.  These are used in Cloud Foundry in a
 	// way similar to Kubernetes labels, but they currently have no special
 	// meaning in Kubernetes.
-	AlphaTags []string `json:"alphaTags,omitempty"`
+	AlphaTags []string `json:"alphaTags,omitempty" protobuf:"bytes,10,rep,name=alphaTags"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
@@ -188,41 +188,41 @@ type ServiceClass struct {
 	// that must be granted to an instance of this service within Cloud
 	// Foundry.  These 'permissions' have no meaning within Kubernetes and an
 	// Instance provisioned from this ServiceClass will not work correctly.
-	AlphaRequires []string `json:"alphaRequires,omitempty"`
+	AlphaRequires []string `json:"alphaRequires,omitempty" protobuf:"bytes,11,rep,name=alphaRequires"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
 type ServicePlan struct {
 	// Name is the CLI-friendly name of this ServicePlan.
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
-	ExternalID string `json:"externalID"`
+	ExternalID string `json:"externalID" protobuf:"bytes,2,opt,name=externalID"`
 
 	// Description is a short description of this ServicePlan.
-	Description string `json:"description"`
+	Description string `json:"description" protobuf:"bytes,3,opt,name=description"`
 
 	// Bindable indicates whether a user can create bindings to an Instance
 	// using this ServicePlan.  If set, overrides the value of the
 	// ServiceClass.Bindable field.
-	Bindable *bool `json:"bindable,omitempty"`
+	Bindable *bool `json:"bindable,omitempty" protobuf:"varint,4,opt,name=bindable"`
 
 	// Free indicates whether this plan is available at no cost.
-	Free bool `json:"free"`
+	Free bool `json:"free" protobuf:"varint,5,opt,name=free"`
 
 	// ExternalMetadata is a blob of information about the plan, meant to be
 	// user-facing content and display instructions.  This field may contain
 	// platform-specific conventional values.
-	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
+	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty" protobuf:"bytes,6,opt,name=externalMetadata"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
 	// AlphaInstanceCreateParameterSchema is the schema for the parameters
 	// that may be supplied when provisioning a new Instance on this plan.
-	AlphaInstanceCreateParameterSchema *runtime.RawExtension `json:"alphaInstanceCreateParameterSchema,omitempty"`
+	AlphaInstanceCreateParameterSchema *runtime.RawExtension `json:"alphaInstanceCreateParameterSchema,omitempty" protobuf:"bytes,7,opt,name=alphaInstanceCreateParameterSchema"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
@@ -230,22 +230,22 @@ type ServicePlan struct {
 	// AlphaInstanceUpdateParameterSchema is the schema for the parameters
 	// that may be updated once an Instance has been provisioned on this plan.
 	// This field only has meaning if the ServiceClass is PlanUpdatable.
-	AlphaInstanceUpdateParameterSchema *runtime.RawExtension `json:"alphaInstanceUpdateParameterSchema,omitempty"`
+	AlphaInstanceUpdateParameterSchema *runtime.RawExtension `json:"alphaInstanceUpdateParameterSchema,omitempty" protobuf:"bytes,8,opt,name=alphaInstanceUpdateParameterSchema"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
 	// AlphaBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an Instance on this plan.
-	AlphaBindingCreateParameterSchema *runtime.RawExtension `json:"alphaBindingCreateParameterSchema,omitempty"`
+	AlphaBindingCreateParameterSchema *runtime.RawExtension `json:"alphaBindingCreateParameterSchema,omitempty" protobuf:"bytes,9,opt,name=alphaBindingCreateParameterSchema"`
 }
 
 // InstanceList is a list of instances.
 type InstanceList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Items []Instance `json:"items"`
+	Items []Instance `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
 // +genclient=true
@@ -253,10 +253,10 @@ type InstanceList struct {
 // Instance represents a provisioned instance of a ServiceClass.
 type Instance struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Spec   InstanceSpec   `json:"spec"`
-	Status InstanceStatus `json:"status"`
+	Spec   InstanceSpec   `json:"spec" protobuf:"bytes,2,opt,name=spec"`
+	Status InstanceStatus `json:"status" protobuf:"bytes,3,opt,name=status"`
 }
 
 // InstanceSpec represents the desired state of an Instance.
@@ -265,65 +265,65 @@ type InstanceSpec struct {
 	// should be provisioned from.
 	//
 	// Immutable.
-	ServiceClassName string `json:"serviceClassName"`
+	ServiceClassName string `json:"serviceClassName" protobuf:"bytes,1,opt,name=serviceClassName"`
 
 	// PlanName is the name of the ServicePlan this Instance should be
 	// provisioned from.
-	PlanName string `json:"planName"`
+	PlanName string `json:"planName" protobuf:"bytes,2,opt,name=planName"`
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
-	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty" protobuf:"bytes,3,opt,name=parameters"`
 
 	// ExternalID is the identity of this object for use with the OSB SB API.
 	//
 	// Immutable.
-	ExternalID string `json:"externalID"`
+	ExternalID string `json:"externalID" protobuf:"bytes,4,opt,name=externalID"`
 }
 
 // InstanceStatus represents the current status of an Instance.
 type InstanceStatus struct {
 	// Conditions is an array of InstanceConditions capturing aspects of an
 	// Instance's status.
-	Conditions []InstanceCondition `json:"conditions"`
+	Conditions []InstanceCondition `json:"conditions" protobuf:"bytes,1,rep,name=conditions"`
 
 	// AsyncOpInProgress is set to true if there is an ongoing async operation
 	// against this Service Instance in progress.
-	AsyncOpInProgress bool `json:"asyncOpInProgress"`
+	AsyncOpInProgress bool `json:"asyncOpInProgress" protobuf:"varint,2,opt,name=asyncOpInProgress"`
 
 	// LastOperation is the string that the broker may have returned when
 	// an async operation started, it should be sent back to the broker
 	// on poll requests as a query param.
-	LastOperation *string `json:"lastOperation,omitempty"`
+	LastOperation *string `json:"lastOperation,omitempty" protobuf:"bytes,3,opt,name=lastOperation"`
 
 	// DashboardURL is the URL of a web-based management user interface for
 	// the service instance.
-	DashboardURL *string `json:"dashboardURL,omitempty"`
+	DashboardURL *string `json:"dashboardURL,omitempty" protobuf:"bytes,4,opt,name=dashboardURL"`
 
 	// Checksum is the checksum of the InstanceSpec that was last successfully
 	// reconciled against the broker.
-	Checksum *string `json:"checksum,omitempty"`
+	Checksum *string `json:"checksum,omitempty" protobuf:"bytes,5,opt,name=checksum"`
 }
 
 // InstanceCondition contains condition information about an Instance.
 type InstanceCondition struct {
 	// Type of the condition, currently ('Ready').
-	Type InstanceConditionType `json:"type"`
+	Type InstanceConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=InstanceConditionType"`
 
 	// Status of the condition, one of ('True', 'False', 'Unknown').
-	Status ConditionStatus `json:"status"`
+	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
 
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime" protobuf:"bytes,3,opt,name=lastTransitionTime"`
 
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
-	Reason string `json:"reason"`
+	Reason string `json:"reason" protobuf:"bytes,4,opt,name=reason"`
 
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
-	Message string `json:"message"`
+	Message string `json:"message" protobuf:"bytes,5,opt,name=message"`
 }
 
 // InstanceConditionType represents a instance condition value.
@@ -342,9 +342,9 @@ const (
 // BindingList is a list of Bindings.
 type BindingList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Items []Binding `json:"items"`
+	Items []Binding `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
 // +genclient=true
@@ -353,10 +353,10 @@ type BindingList struct {
 // Instance.
 type Binding struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Spec   BindingSpec   `json:"spec"`
-	Status BindingStatus `json:"status"`
+	Spec   BindingSpec   `json:"spec" protobuf:"bytes,2,opt,name=spec"`
+	Status BindingStatus `json:"status" protobuf:"bytes,3,opt,name=status"`
 }
 
 // BindingSpec represents the desired state of a Binding.
@@ -364,20 +364,20 @@ type BindingSpec struct {
 	// InstanceRef is the reference to the Instance this Binding is to.
 	//
 	// Immutable.
-	InstanceRef v1.LocalObjectReference `json:"instanceRef"`
+	InstanceRef v1.LocalObjectReference `json:"instanceRef" protobuf:"bytes,1,opt,name=instanceRef,casttype=k8s.io/client-go/pkg/api/v1/types.LocalObjectReference"`
 
 	// Parameters is a YAML representation of the properties to be
 	// passed to the underlying broker.
-	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty" protobuf:"bytes,2,opt,name=parameters"`
 
 	// SecretName is the name of the secret to create in the Binding's
 	// namespace that will hold the credentials associated with the Binding.
-	SecretName string `json:"secretName,omitempty"`
+	SecretName string `json:"secretName,omitempty" protobuf:"bytes,3,opt,name=secretName"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
-	ExternalID string `json:"externalID"`
+	ExternalID string `json:"externalID" protobuf:"bytes,4,opt,name=externalID"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
@@ -390,46 +390,46 @@ type BindingSpec struct {
 	// information into Pods.
 	//
 	// In the future, we will provide a higher degree of control over the PodPreset.
-	AlphaPodPresetTemplate *AlphaPodPresetTemplate `json:"alphaPodPresetTemplate,omitempty"`
+	AlphaPodPresetTemplate *AlphaPodPresetTemplate `json:"alphaPodPresetTemplate,omitempty" protobuf:"bytes,5,opt,name=alphaPodPresetTemplate"`
 }
 
 // AlphaPodPresetTemplate represents how a PodPreset should be created for a
 // Binding.
 type AlphaPodPresetTemplate struct {
 	// Name is the name of the PodPreset to create.
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// Selector is the LabelSelector of the PodPreset to create.
-	Selector metav1.LabelSelector `json:"selector"`
+	Selector metav1.LabelSelector `json:"selector" protobuf:"bytes,2,opt,name=selector"`
 }
 
 // BindingStatus represents the current status of a Binding.
 type BindingStatus struct {
-	Conditions []BindingCondition `json:"conditions"`
+	Conditions []BindingCondition `json:"conditions" protobuf:"bytes,1,rep,name=conditions"`
 
 	// Checksum is the checksum of the BindingSpec that was last successfully
 	// reconciled against the broker.
-	Checksum *string `json:"checksum,omitempty"`
+	Checksum *string `json:"checksum,omitempty" protobuf:"bytes,2,opt,name=checksum"`
 }
 
 // BindingCondition condition information for a Binding.
 type BindingCondition struct {
 	// Type of the condition, currently ('Ready').
-	Type BindingConditionType `json:"type"`
+	Type BindingConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=BindingConditionType"`
 
 	// Status of the condition, one of ('True', 'False', 'Unknown').
-	Status ConditionStatus `json:"status"`
+	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
 
 	// LastTransitionTime is the timestamp corresponding to the last status
 	// change of this condition.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime" protobuf:"bytes,3,opt,name=lastTransitionTime"`
 
 	// Reason is a brief machine readable explanation for the condition's last
 	// transition.
-	Reason string `json:"reason"`
+	Reason string `json:"reason" protobuf:"bytes,4,opt,name=reason"`
 
 	// Message is a human readable description of the details of the last
 	// transition, complementing reason.
-	Message string `json:"message"`
+	Message string `json:"message" protobuf:"bytes,5,opt,name=message"`
 }
 
 // BindingConditionType represents a BindingCondition value.
