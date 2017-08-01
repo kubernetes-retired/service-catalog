@@ -32,8 +32,8 @@ function waitForContainerRunning() {
     echo "...waiting $elapsed sec for $expect containers to be Ready, have $have..."
     sleep $increment
   done
-  (( elapsed > maxSleep )) && return 1
 
+  (( elapsed > maxSleep )) && err=2
   return $err
 }
 
@@ -63,8 +63,8 @@ function waitForMatch() {
     echo "...waiting $elapsed sec for $object match. Have: \"$out\", expect: \"$match\"..."
     sleep $increment
   done
-  (( elapsed > maxSleep )) && return 1
 
+  (( elapsed > maxSleep )) && err=2
   return $err
 }
 
@@ -79,7 +79,7 @@ function waitForCmdSuccess() {
   err=0
 
   for (( elapsed=0; elapsed <= maxSleep; )) ; do
-    eval $cmd >/dev/null
+    eval $cmd >& /dev/null
     err=$?
     (( err == 0 )) && break
     increment=$(((elapsed/15)+1)) # sleep an extra second every 15s
@@ -87,8 +87,8 @@ function waitForCmdSuccess() {
     echo "...waiting $elapsed sec for cmd \"$cmd\" to succeed..."
     sleep $increment
   done
-  (( elapsed > maxSleep )) && return 1
 
+  (( elapsed > maxSleep )) && err=2
   return $err
 }
 
@@ -128,18 +128,20 @@ if [[ -z "$GOPATH" ]] ; then
   echo "GOPATH variable missing"
   exit 1
 fi
-if ! which helm >/dev/null; then
+if [[ ! -f "/usr/local/bin/helm" ]] ; then
   echo "helm binary missing, install helm:"
   echo "wget -P /tmp/ https://storage.googleapis.com/kubernetes-helm/helm-v2.5.0-linux-amd64.tar.gz && "
   echo " tar -zxvf /tmp/helm-v2.5.0-linux-amd64.tar.gz -C /tmp/ && "
   echo " mv /tmp/linux-amd64/helm /usr/local/bin/"
   exit 1
 fi
-if ! rpm -q socat >/dev/null ; then
+if ! rpm -q rpm -q socat >/dev/null ; then
   echo "socket cat pkg missing:"
   echo "yum install -y socat"
   exit 1
 fi
+
+cd $sc_path
 
 # check kube-dns is running (assumed to be local cluster)
 echo
@@ -194,13 +196,15 @@ echo
 echo "--> helm install charts/ups-broker --name ups-broker --namespace ups-broker"
 echo
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
+echo
+echo "--> kubectl get -n ups-broker service,deployment"
+echo
 waitForCmdSuccess "kubectl get -n ups-broker service,deployment" 15
 (( $? != 0 )) && exit 1
 # capture cluster-ip
 cluster_ip="$(kubectl get -n ups-broker service | grep ups-broker | awk '{print $3}')"
 
 # create broker resource
-cd $sc_path
 echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml"
 echo
 kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml
@@ -231,24 +235,12 @@ if (( $? != 0 )) ; then
   exit 1
 fi
 
-# create binding
+# create binding and verify resulting secret
 echo
 echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-binding.yaml"
 echo
 kubectl --context=service-catalog create -f $yaml_path/ups-binding.yaml
-
-# verify resulting secret
 secretName="$(grep secretName: $yaml_path/ups-binding.yaml | awk '{print $2}')"
-if [[ -z "$secretName" ]] ; then # use binding name instead
-  secretName="$(sed -n '/metadata:/,/name:/p;' $yaml_path/ups-binding.yaml | tail -n 1 | awk '{print $2}')"
-fi
-if [[ -z "$secretName" ]] ; then
-  echo "missing secret name from $yaml_path/ups-binding.yaml"
-  cat $yaml_path/ups-binding.yaml
-  exit 1
-fi
-echo
-echo "** verifying secret name \"$secretName\" was created..."
 waitForCmdSuccess "kubectl -n test-ns get secret $secretName" 15
 (( $? != 0 )) && exit 1
 

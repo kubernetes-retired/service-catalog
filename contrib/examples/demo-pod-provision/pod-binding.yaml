@@ -1,9 +1,0 @@
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Binding
-metadata:
-  name: database-binding
-  namespace: test-ns
-spec:
-  instanceRef:
-    name: database-instance
-  secretName: my-secret
