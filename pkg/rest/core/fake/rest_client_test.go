@@ -58,13 +58,6 @@ func createMultipleItemStorage() NamespacedStorage {
 
 }
 
-func createURL(namespace, tipe, name string) string {
-	if name == "" {
-		return fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", namespace, tipe)
-	}
-	return fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", namespace, tipe, name)
-}
-
 func TestNamespacedStorageSetDelete(t *testing.T) {
 	storage := make(NamespacedStorage)
 
@@ -139,8 +132,8 @@ func TestGetItem(t *testing.T) {
 		url            string
 		expectedStatus int
 	}{
-		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), createURL(ns1, tipe1, name1), http.StatusNotFound},
-		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), createURL(ns1, tipe1, name1), http.StatusOK},
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusNotFound},
+		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusOK},
 	}
 
 	for _, tc := range testCases {
@@ -213,4 +206,46 @@ func TestGetItems(t *testing.T) {
 		})
 	}
 
+}
+
+func TestCreateItem(t *testing.T) {
+	testCases := []struct {
+		name           string
+		storage        NamespacedStorage
+		watcher        *Watcher
+		rw             *responseWriter
+		url            string
+		expectedStatus int
+	}{
+		{"Create Item (empty storage)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), http.StatusCreated},
+		// {"Create Item(non-empty storage)", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), http.StatusOK},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			request, err := http.NewRequest("POST", tc.url, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
+				return &servicecatalog.Instance{}
+			})
+
+			router.ServeHTTP(tc.rw, request)
+
+			body, err := ioutil.ReadAll(tc.rw.getResponse().Body)
+			if err != nil {
+				t.Error("Could not read response.", err)
+			}
+
+			if tc.rw.getResponse().StatusCode != tc.expectedStatus && tc.rw.headerSet {
+				t.Error("Expected Status", tc.expectedStatus, "got", tc.rw.getResponse().StatusCode)
+				t.Error("Http error:", string(body))
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
 }
