@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package userbroker
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"testing"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 )
 
 // Make sure that userProvidedController implements Controller interface
-var _ controller.Controller = &userProvidedController{}
+var _ broker.Broker = &userProvidedBroker{}
 
-func TestController(t *testing.T) {
+func TestBroker(t *testing.T) {
 }

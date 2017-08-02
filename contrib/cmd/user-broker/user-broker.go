@@ -27,8 +27,8 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/user_provided/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/userbroker/server"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/userbroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )
 
@@ -62,7 +62,7 @@ func runWithContext(ctx context.Context) error {
 	}
 
 	addr := ":" + strconv.Itoa(options.Port)
-	return server.Run(ctx, addr, controller.CreateController())
+	return server.Run(ctx, addr, userbroker.CreateBroker())
 }
 
 // cancelOnInterrupt calls f when os.Interrupt or SIGTERM is received.

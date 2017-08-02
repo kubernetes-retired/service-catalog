@@ -23,20 +23,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 )
 
 //
 // Test of server /v2/catalog endpoint.
 //
 
-// Make sure that Controller stub implements controller.Controller interface
-var _ controller.Controller = &Controller{}
+var _ broker.Broker = &Broker{}
 
 // /v2/catalog returns HTTP error on error.
 func TestCatalogReturnsHTTPErrorOnError(t *testing.T) {
-	handler := createHandler(&Controller{
+	handler := createHandler(&Broker{
 		t: t,
 		catalog: func() (*brokerapi.Catalog, error) {
 			return nil, errors.New("Catalog retrieval error")
@@ -61,7 +60,7 @@ func TestCatalogReturnsHTTPErrorOnError(t *testing.T) {
 
 // /v2/catalog returns compliant JSON
 func TestCatalogReturnsCompliantJSON(t *testing.T) {
-	handler := createHandler(&Controller{
+	handler := createHandler(&Broker{
 		t: t,
 		catalog: func() (*brokerapi.Catalog, error) {
 			return &brokerapi.Catalog{Services: []*brokerapi.Service{
@@ -116,7 +115,7 @@ func readJSON(rr *httptest.ResponseRecorder) (map[string]interface{}, error) {
 	return result, err
 }
 
-type Controller struct {
+type Broker struct {
 	t *testing.T
 
 	catalog                         func() (*brokerapi.Catalog, error)
@@ -127,50 +126,50 @@ type Controller struct {
 	unBind                          func(instanceID string, bindingID string) error
 }
 
-func (controller *Controller) Catalog() (*brokerapi.Catalog, error) {
-	if controller.catalog == nil {
-		controller.t.Error("Test failed to provide 'catalog' handler")
+func (b *Broker) Catalog() (*brokerapi.Catalog, error) {
+	if b.catalog == nil {
+		b.t.Error("Test failed to provide 'catalog' handler")
 	}
 
-	return controller.catalog()
+	return b.catalog()
 }
 
-func (controller *Controller) GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation string) (*brokerapi.LastOperationResponse, error) {
-	if controller.getServiceInstanceLastOperation == nil {
-		controller.t.Error("Test failed to provide 'getServiceInstanceLastOperation' handler")
+func (b *Broker) GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation string) (*brokerapi.LastOperationResponse, error) {
+	if b.getServiceInstanceLastOperation == nil {
+		b.t.Error("Test failed to provide 'getServiceInstanceLastOperation' handler")
 	}
 
-	return controller.getServiceInstanceLastOperation(instanceID)
+	return b.getServiceInstanceLastOperation(instanceID)
 }
 
-func (controller *Controller) CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
-	if controller.createServiceInstance == nil {
-		controller.t.Error("Test failed to provide 'createServiceInstance' handler")
+func (b *Broker) CreateServiceInstance(id string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+	if b.createServiceInstance == nil {
+		b.t.Error("Test failed to provide 'createServiceInstance' handler")
 	}
 
-	return controller.createServiceInstance(id, req)
+	return b.createServiceInstance(id, req)
 }
 
-func (controller *Controller) RemoveServiceInstance(instanceID, serviceID, planID string, acceptsIncomplete bool) (*brokerapi.DeleteServiceInstanceResponse, error) {
-	if controller.removeServiceInstance == nil {
-		controller.t.Error("Test failed to provide 'removeServiceInstance' handler")
+func (b *Broker) RemoveServiceInstance(instanceID, serviceID, planID string, acceptsIncomplete bool) (*brokerapi.DeleteServiceInstanceResponse, error) {
+	if b.removeServiceInstance == nil {
+		b.t.Error("Test failed to provide 'removeServiceInstance' handler")
 	}
 
-	return controller.removeServiceInstance(instanceID)
+	return b.removeServiceInstance(instanceID)
 }
 
-func (controller *Controller) Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
-	if controller.bind == nil {
-		controller.t.Error("Test failed to provide 'bind' handler")
+func (b *Broker) Bind(instanceID string, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
+	if b.bind == nil {
+		b.t.Error("Test failed to provide 'bind' handler")
 	}
 
-	return controller.bind(instanceID, bindingID, req)
+	return b.bind(instanceID, bindingID, req)
 }
 
-func (controller *Controller) UnBind(instanceID, bindingID, serviceID, planID string) error {
-	if controller.unBind == nil {
-		controller.t.Error("Test failed to provide 'unBind' handler")
+func (b *Broker) UnBind(instanceID, bindingID, serviceID, planID string) error {
+	if b.unBind == nil {
+		b.t.Error("Test failed to provide 'unBind' handler")
 	}
 
-	return controller.unBind(instanceID, bindingID)
+	return b.unBind(instanceID, bindingID)
 }
