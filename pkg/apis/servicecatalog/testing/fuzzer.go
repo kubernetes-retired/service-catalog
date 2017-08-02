@@ -82,7 +82,6 @@ func createInstanceParametersFrom(c fuzz.Continue) ([]servicecatalog.ParametersF
 	}
 	return []servicecatalog.ParametersFromSource{
 		{
-			Name:  c.RandString(),
 			Value: raw,
 		},
 	}, nil

@@ -211,25 +211,6 @@ func TestBuildParameters(t *testing.T) {
 			shouldSucceed: true,
 		},
 		{
-			name: "parametersFrom: name + secret",
-			parametersFrom: []v1alpha1.ParametersFromSource{
-				{
-					Name: "nesting",
-					SecretRef: &v1alpha1.SecretReference{
-						Type: v1alpha1.ValueTypeString,
-						Name: "secret",
-					},
-				},
-			},
-			secret: stringSecret,
-			expected: map[string]interface{}{
-				"nesting": map[string]interface{}{
-					"secret-key": "textFromSecret",
-				},
-			},
-			shouldSucceed: true,
-		},
-		{
 			name: "parametersFrom + parameters: normal",
 			parametersFrom: []v1alpha1.ParametersFromSource{
 				{
@@ -257,10 +238,8 @@ func TestBuildParameters(t *testing.T) {
 			name: "parametersFrom + parameters: conflict",
 			parametersFrom: []v1alpha1.ParametersFromSource{
 				{
-					Name: "p1",
-					SecretRef: &v1alpha1.SecretReference{
-						Type: v1alpha1.ValueTypeString,
-						Name: "secret",
+					Value: &runtime.RawExtension{
+						Raw: []byte("{ \"p1\": \"v2\" }"),
 					},
 				},
 			},

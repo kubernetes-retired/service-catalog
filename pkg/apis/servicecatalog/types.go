@@ -514,9 +514,6 @@ type ParameterSource struct {
 
 // ParametersFromSource represents the source of a set of Parameters
 type ParametersFromSource struct {
-	// An optional property name to put parameters from the source into
-	// +optional
-	Name string
 	// The inline YAML/JSON payload to be translated into equivalent
 	// JSON object
 	Value *runtime.RawExtension

@@ -780,13 +780,6 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				SchemaProps: spec.SchemaProps{
 					Description: "ParametersFromSource represents the source of a set of Parameters",
 					Properties: map[string]spec.Schema{
-						"name": {
-							SchemaProps: spec.SchemaProps{
-								Description: "An optional property name to put parameters from the source into",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
 						"value": {
 							SchemaProps: spec.SchemaProps{
 								Description: "The inline YAML/JSON payload to be translated into equivalent JSON object",

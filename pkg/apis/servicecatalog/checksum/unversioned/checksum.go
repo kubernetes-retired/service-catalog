@@ -122,9 +122,6 @@ func parameterChecksum(parameter servicecatalog.Parameter) string {
 func parametersFromChecksum(parameters servicecatalog.ParametersFromSource) string {
 	specString := ""
 
-	if parameters.Name != "" {
-		specString += fmt.Sprintf("name: %v\n", parameters.Name)
-	}
 	if parameters.Value != nil {
 		specString += fmt.Sprintf("type: %v\n", string(parameters.Value.Raw))
 	}

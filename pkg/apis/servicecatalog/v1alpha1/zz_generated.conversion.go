@@ -622,7 +622,6 @@ func Convert_servicecatalog_ParameterSource_To_v1alpha1_ParameterSource(in *serv
 }
 
 func autoConvert_v1alpha1_ParametersFromSource_To_servicecatalog_ParametersFromSource(in *ParametersFromSource, out *servicecatalog.ParametersFromSource, s conversion.Scope) error {
-	out.Name = in.Name
 	out.Value = (*runtime.RawExtension)(unsafe.Pointer(in.Value))
 	out.SecretRef = (*servicecatalog.SecretReference)(unsafe.Pointer(in.SecretRef))
 	out.SecretKeyRef = (*servicecatalog.SecretKeyReference)(unsafe.Pointer(in.SecretKeyRef))
@@ -635,7 +634,6 @@ func Convert_v1alpha1_ParametersFromSource_To_servicecatalog_ParametersFromSourc
 }
 
 func autoConvert_servicecatalog_ParametersFromSource_To_v1alpha1_ParametersFromSource(in *servicecatalog.ParametersFromSource, out *ParametersFromSource, s conversion.Scope) error {
-	out.Name = in.Name
 	out.Value = (*runtime.RawExtension)(unsafe.Pointer(in.Value))
 	out.SecretRef = (*SecretReference)(unsafe.Pointer(in.SecretRef))
 	out.SecretKeyRef = (*SecretKeyReference)(unsafe.Pointer(in.SecretKeyRef))

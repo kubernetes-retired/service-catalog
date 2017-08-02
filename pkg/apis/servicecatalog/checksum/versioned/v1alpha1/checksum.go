@@ -122,9 +122,6 @@ func parameterChecksum(parameter v1alpha1.Parameter) string {
 func parametersFromChecksum(parameters v1alpha1.ParametersFromSource) string {
 	specString := ""
 
-	if parameters.Name != "" {
-		specString += fmt.Sprintf("name: %v\n", parameters.Name)
-	}
 	if parameters.Value != nil {
 		specString += fmt.Sprintf("type: %v\n", string(parameters.Value.Raw))
 	}

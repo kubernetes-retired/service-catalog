@@ -79,12 +79,6 @@ func fetchParametersFromSource(kubeClient kubernetes.Interface, namespace string
 		params = p.(map[string]interface{})
 
 	}
-	if parametersFrom.Name != "" {
-		return map[string]interface{}{
-			// Nested object to avoid conflicts while merging
-			parametersFrom.Name: params,
-		}, nil
-	}
 	return params, nil
 }
 
