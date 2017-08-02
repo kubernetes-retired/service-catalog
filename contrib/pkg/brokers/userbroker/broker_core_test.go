@@ -19,6 +19,7 @@ package userbroker
 import (
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 	"testing"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 )
 
 // Make sure that userProvidedController implements Controller interface

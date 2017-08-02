@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 )
 
 // errNoSuchInstance implements the Error interface.
