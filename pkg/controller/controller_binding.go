@@ -164,17 +164,17 @@ func (c *controller) reconcileBinding(binding *v1alpha1.Binding) error {
 		glog.V(4).Infof("Adding/Updating Binding %v/%v", binding.Namespace, binding.Name)
 
 		var parameters map[string]interface{}
-		if binding.Spec.Parameters != nil {
-			parameters, err = unmarshalRawParameters(binding.Spec.Parameters.Raw)
+		if binding.Spec.Parameters != nil || binding.Spec.ParametersFrom != nil {
+			parameters, err = buildParameters(c.kubeClient, binding.Namespace, binding.Spec.ParametersFrom, binding.Spec.Parameters)
 			if err != nil {
-				s := fmt.Sprintf("Failed to unmarshal Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
+				s := fmt.Sprintf("Failed to prepare Binding parameters\n%s\n %s", binding.Spec.Parameters, err)
 				glog.Warning(s)
 				c.updateBindingCondition(
 					binding,
 					v1alpha1.BindingConditionReady,
 					v1alpha1.ConditionFalse,
 					errorWithParameters,
-					"Error unmarshaling binding parameters. "+s,
+					s,
 				)
 				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
 				return err

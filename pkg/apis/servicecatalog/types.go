@@ -409,9 +409,17 @@ type BindingSpec struct {
 	// Immutable.
 	InstanceRef v1.LocalObjectReference
 
-	// Parameters is a YAML representation of the properties to be
+	// List of sources to populate parameters.
+	// When a key exists in multiple
+	// sources, the value associated with the last source will take precedence.
+	// Values defined by a Parameter with a duplicate key will take precedence.
+	// +optional
+	ParametersFrom []ParametersFromSource
+
+	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.
-	Parameters *runtime.RawExtension
+	// +optional
+	Parameters []Parameter
 
 	// SecretName is the name of the secret to create in the Binding's
 	// namespace that will hold the credentials associated with the Binding.

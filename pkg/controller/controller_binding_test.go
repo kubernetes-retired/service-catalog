@@ -236,7 +236,11 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
 	}
-	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
+	binding.Spec.ParametersFrom = []v1alpha1.ParametersFromSource{
+		{
+			Value: &runtime.RawExtension{Raw: b},
+		},
+	}
 
 	err = testController.reconcileBinding(binding)
 	if err != nil {

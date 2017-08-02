@@ -18,7 +18,6 @@ package integration
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -47,7 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 )
 
-var instanceParameters = []v1alpha1.Parameter{
+var parameters = []v1alpha1.Parameter{
 	{
 		Name:  "bar",
 		Value: "barvalue",
@@ -63,26 +62,9 @@ var instanceParameters = []v1alpha1.Parameter{
 	},
 }
 
-const (
-	bindingParameter = `{
-    "foo": "bar",
-    "baz": [
-      "first",
-      "second"
-    ]
-  }
-`
-)
-
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
 	server.StorageTypeTPR,
-}
-
-// Used for testing binding parameters
-type bpStruct struct {
-	Foo string   `json:"foo"`
-	Baz []string `json:"baz"`
 }
 
 // TestGroupVersion is trivial.
@@ -528,7 +510,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
-			Parameters:       instanceParameters,
+			Parameters:       parameters,
 			ExternalID:       osbGUID,
 		},
 	}
@@ -600,11 +582,11 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 	// Check the parameter contents
 	for i, p := range parameters {
-		if p.Name != instanceParameters[i].Name {
-			return fmt.Errorf("Unexpected parameter name: expected=%s, actual=%s", instanceParameters[i].Name, p.Name)
+		if p.Name != parameters[i].Name {
+			return fmt.Errorf("Unexpected parameter name: expected=%s, actual=%s", parameters[i].Name, p.Name)
 		}
-		if p.Value != instanceParameters[i].Value {
-			return fmt.Errorf("Unexpected parameter name: \nexpected=%s \nactual=%s", instanceParameters[i].Value, p.Value)
+		if p.Value != parameters[i].Value {
+			return fmt.Errorf("Unexpected parameter name: \nexpected=%s \nactual=%s", parameters[i].Value, p.Value)
 		}
 	}
 
@@ -692,7 +674,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			InstanceRef: v1.LocalObjectReference{
 				Name: "bar",
 			},
-			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
+			Parameters: parameters,
 			ExternalID: "UUID-string",
 		},
 	}
@@ -756,32 +738,26 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		)
 	}
 
-	parameters := bpStruct{}
-	err = json.Unmarshal(bindingServer.Spec.Parameters.Raw, &parameters)
-	if err != nil {
-		return fmt.Errorf("Couldn't unmarshal returned parameters: %v", err)
+	// check the parameters of the fetched-by-name instance with what was expected
+	parameters := bindingServer.Spec.Parameters
+	if len(parameters) != 2 {
+		return fmt.Errorf("Unexpected number of parameters: %d", len(parameters))
 	}
-	if parameters.Foo != "bar" {
-		return fmt.Errorf("Didn't get back 'bar' value for key 'foo' was %+v", parameters)
+	// Check that the defaults were applied
+	if parameters[0].Type != v1alpha1.ValueTypeString {
+		return fmt.Errorf("Didn't get back 'string' type for key 'bar' was %+v", parameters)
 	}
-	if len(parameters.Baz) != 2 {
-		return fmt.Errorf("Didn't get back two values for 'baz' array in parameters was %+v", parameters)
+	if parameters[1].Type != v1alpha1.ValueTypeJSON {
+		return fmt.Errorf("Didn't get back 'json' type for key 'values' was %+v", parameters)
 	}
-	foundFirst := false
-	foundSecond := false
-	for _, val := range parameters.Baz {
-		if val == "first" {
-			foundFirst = true
+	// Check the parameter contents
+	for i, p := range parameters {
+		if p.Name != parameters[i].Name {
+			return fmt.Errorf("Unexpected parameter name: expected=%s, actual=%s", parameters[i].Name, p.Name)
 		}
-		if val == "second" {
-			foundSecond = true
+		if p.Value != parameters[i].Value {
+			return fmt.Errorf("Unexpected parameter name: \nexpected=%s \nactual=%s", parameters[i].Value, p.Value)
 		}
-	}
-	if !foundFirst {
-		return fmt.Errorf("Didn't find first value in parameters.baz was %+v", parameters)
-	}
-	if !foundSecond {
-		return fmt.Errorf("Didn't find second value in parameters.baz was %+v", parameters)
 	}
 
 	readyConditionTrue := v1alpha1.BindingCondition{

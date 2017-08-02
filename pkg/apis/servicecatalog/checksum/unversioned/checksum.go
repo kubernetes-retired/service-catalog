@@ -56,6 +56,47 @@ func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 	return fmt.Sprintf("%x", sum)
 }
 
+// BindingSpecChecksum calculates a checksum of the given BindingSpec based on
+// the following fields:
+//
+// - InstanceRef.Name
+// - Parameters
+// - ExternalID
+func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
+	specString := ""
+	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
+
+	if spec.Parameters != nil {
+		specString += "parameters: \n"
+		for _, p := range spec.Parameters {
+			specString += fmt.Sprintf("%v\n", parameterChecksum(p))
+		}
+	}
+	if spec.ParametersFrom != nil {
+		specString += "parametersFrom: \n"
+		for _, p := range spec.ParametersFrom {
+			specString += fmt.Sprintf("%v\n", parametersFromChecksum(p))
+		}
+	}
+
+	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
+
+	sum := sha256.Sum256([]byte(specString))
+	return fmt.Sprintf("%x", sum)
+}
+
+// BrokerSpecChecksum calculates a sha256 hash for the given BrokerSpec based on
+// the following fields:
+// - URL
+// - AuthInfo (may be nil, but special handling is unnecessary with %v)
+func BrokerSpecChecksum(spec servicecatalog.BrokerSpec) string {
+	specString := fmt.Sprintf("URL: %v\n", spec.URL)
+	specString += fmt.Sprintf("AuthInfo: %v\n", spec.AuthInfo)
+	glog.V(5).Infof("specString: %v", specString)
+	sum := sha256.Sum256([]byte(specString))
+	return fmt.Sprintf("%x", sum)
+}
+
 func parameterChecksum(parameter servicecatalog.Parameter) string {
 	specString := ""
 	specString += fmt.Sprintf("name: %v\n", parameter.Name)
@@ -94,38 +135,6 @@ func parametersFromChecksum(parameters servicecatalog.ParametersFromSource) stri
 		specString += fmt.Sprintf("secretKeyRef: %v[%v]\n", parameters.SecretKeyRef.Name, parameters.SecretKeyRef.Key)
 	}
 
-	sum := sha256.Sum256([]byte(specString))
-	return fmt.Sprintf("%x", sum)
-}
-
-// BindingSpecChecksum calculates a checksum of the given BindingSpec based on
-// the following fields:
-//
-// - InstanceRef.Name
-// - Parameters
-// - ExternalID
-func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
-	specString := ""
-	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
-
-	if spec.Parameters != nil {
-		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
-	}
-
-	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
-
-	sum := sha256.Sum256([]byte(specString))
-	return fmt.Sprintf("%x", sum)
-}
-
-// BrokerSpecChecksum calculates a sha256 hash for the given BrokerSpec based on
-// the following fields:
-// - URL
-// - AuthInfo (may be nil, but special handling is unnecessary with %v)
-func BrokerSpecChecksum(spec servicecatalog.BrokerSpec) string {
-	specString := fmt.Sprintf("URL: %v\n", spec.URL)
-	specString += fmt.Sprintf("AuthInfo: %v\n", spec.AuthInfo)
-	glog.V(5).Infof("specString: %v", specString)
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)
 }

@@ -152,12 +152,22 @@ func DeepCopy_servicecatalog_BindingSpec(in interface{}, out interface{}, c *con
 		in := in.(*BindingSpec)
 		out := out.(*BindingSpec)
 		*out = *in
+		if in.ParametersFrom != nil {
+			in, out := &in.ParametersFrom, &out.ParametersFrom
+			*out = make([]ParametersFromSource, len(*in))
+			for i := range *in {
+				if err := DeepCopy_servicecatalog_ParametersFromSource(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
+		}
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
-			if newVal, err := c.DeepCopy(*in); err != nil {
-				return err
-			} else {
-				*out = newVal.(*runtime.RawExtension)
+			*out = make([]Parameter, len(*in))
+			for i := range *in {
+				if err := DeepCopy_servicecatalog_Parameter(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
 			}
 		}
 		return nil

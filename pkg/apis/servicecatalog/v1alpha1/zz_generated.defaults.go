@@ -38,6 +38,14 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 func SetObjectDefaults_Binding(in *Binding) {
 	SetDefaults_Binding(in)
 	SetDefaults_BindingSpec(&in.Spec)
+	for i := range in.Spec.ParametersFrom {
+		a := &in.Spec.ParametersFrom[i]
+		SetDefaults_ParametersFromSource(a)
+	}
+	for i := range in.Spec.Parameters {
+		a := &in.Spec.Parameters[i]
+		SetDefaults_Parameter(a)
+	}
 }
 
 func SetObjectDefaults_BindingList(in *BindingList) {

@@ -236,12 +236,13 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			for bs.SecretName == "" {
 				bs.SecretName = c.RandString()
 			}
-			parameters, err := createRawParameters(c)
+			bs.Parameters = createInstanceParameters(c)
+			parametersFrom, err := createInstanceParametersFrom(c)
 			if err != nil {
-				t.Errorf("Failed to create parameter object: %v", err)
+				t.Errorf("Failed to create parametersFrom object: %v", err)
 				return
 			}
-			bs.Parameters = parameters
+			bs.ParametersFrom = parametersFrom
 		},
 		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
 			c.FuzzNoCustom(sc)

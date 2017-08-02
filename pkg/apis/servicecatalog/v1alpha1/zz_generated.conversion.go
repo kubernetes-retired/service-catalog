@@ -219,7 +219,8 @@ func Convert_servicecatalog_BindingList_To_v1alpha1_BindingList(in *servicecatal
 
 func autoConvert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingSpec, out *servicecatalog.BindingSpec, s conversion.Scope) error {
 	out.InstanceRef = in.InstanceRef
-	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.ParametersFrom = *(*[]servicecatalog.ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
+	out.Parameters = *(*[]servicecatalog.Parameter)(unsafe.Pointer(&in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
 	return nil
@@ -232,7 +233,8 @@ func Convert_v1alpha1_BindingSpec_To_servicecatalog_BindingSpec(in *BindingSpec,
 
 func autoConvert_servicecatalog_BindingSpec_To_v1alpha1_BindingSpec(in *servicecatalog.BindingSpec, out *BindingSpec, s conversion.Scope) error {
 	out.InstanceRef = in.InstanceRef
-	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.ParametersFrom = *(*[]ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
+	out.Parameters = *(*[]Parameter)(unsafe.Pointer(&in.Parameters))
 	out.SecretName = in.SecretName
 	out.ExternalID = in.ExternalID
 	return nil
