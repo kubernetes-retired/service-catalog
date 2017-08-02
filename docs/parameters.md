@@ -314,58 +314,14 @@ For example, for the structure like this
     - name: param
       value: 2
   parametersFrom:
-    - name: param
-      secretRef:
-        name: mysecret
+    - value:
+        param: 3
 ```
 the parameters JSON structure to be sent to the broker is going to be
 ```json
 {
   "param": "2"
 }
-```
-
-To avoid conflicts for `parametersFrom` (for example, in the case when multiple 
-secrets of the same structure need to be passed to the broker), the user can specify 
-a `name` field which will produce an extra nesting level.
-
-For example, let's say we have the following structure in a `Secret`:
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysecret
-type: Opaque
-data:
-  username: YWRtaW4=
-  password: MWYyZDFlMmU2N2Rm
-```
-
-To inject credentials from two instances of such a `Secret`, we can avoid the 
-naming conflict by providing unique names:
-```yaml
-  ...
-  parametersFrom:
-    - name: master
-      secretRef:
-        name: secret1
-    - name: slave
-      secretRef:
-        name: secret2
-```
-which will result in the following JSON parameters object:
-```json
-{
-  "master": {
-    "username": "root",
-    "password": "letmein"
-  },
-  "slave": {
-    "username": "foo",
-    "password": "bar"
-  }
-}
-
 ```
 
 ## Advanced example
