@@ -141,8 +141,6 @@ if ! rpm -q socat >/dev/null ; then
   exit 1
 fi
 
-cd $sc_path
-
 # check kube-dns is running (assumed to be local cluster)
 echo
 echo "** ensure kube-dns is running..."
@@ -202,6 +200,7 @@ waitForCmdSuccess "kubectl get -n ups-broker service,deployment" 15
 cluster_ip="$(kubectl get -n ups-broker service | grep ups-broker | awk '{print $3}')"
 
 # create broker resource
+cd $sc_path
 echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml"
 echo
 kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml
