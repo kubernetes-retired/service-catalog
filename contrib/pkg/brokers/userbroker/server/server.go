@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
@@ -31,14 +31,14 @@ import (
 )
 
 type server struct {
-	controller controller.Controller
+	broker broker.Broker
 }
 
 // CreateHandler creates Broker HTTP handler based on an implementation
-// of a controller.Controller interface.
-func createHandler(c controller.Controller) http.Handler {
+// of a broker.Broker interface.
+func createHandler(b broker.Broker) http.Handler {
 	s := server{
-		controller: c,
+		broker: b,
 	}
 
 	var router = mux.NewRouter()
@@ -53,13 +53,13 @@ func createHandler(c controller.Controller) http.Handler {
 	return router
 }
 
-// Run creates the HTTP handler based on an implementation of a
-// controller.Controller interface, and begins to listen on the specified address.
-func Run(ctx context.Context, addr string, c controller.Controller) error {
+// Start creates the HTTP handler based on an implementation of a
+// broker.Broker interface, and begins to listen on the specified port.
+func Run(ctx context.Context, addr string, b broker.Broker) error {
 	glog.Infof("Starting server on %d\n", addr)
 	srv := http.Server{
 		Addr:    addr,
-		Handler: createHandler(c),
+		Handler: createHandler(b),
 	}
 	go func() {
 		<-ctx.Done()
@@ -75,7 +75,7 @@ func Run(ctx context.Context, addr string, c controller.Controller) error {
 func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
 	glog.Infof("Getting Service Broker Catalog...")
 
-	if result, err := s.controller.Catalog(); err == nil {
+	if result, err := s.broker.Catalog(); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
@@ -90,7 +90,7 @@ func (s *server) getServiceInstanceLastOperation(w http.ResponseWriter, r *http.
 	operation := q.Get("operation")
 	glog.Infof("Getting ServiceInstance ... %s\n", instanceID)
 
-	if result, err := s.controller.GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation); err == nil {
+	if result, err := s.broker.GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
@@ -115,7 +115,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 		req.Parameters = make(map[string]interface{})
 	}
 
-	if result, err := s.controller.CreateServiceInstance(id, &req); err == nil {
+	if result, err := s.broker.CreateServiceInstance(id, &req); err == nil {
 		util.WriteResponse(w, http.StatusCreated, result)
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
@@ -130,7 +130,7 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	acceptsIncomplete := q.Get("accepts_incomplete") == "true"
 	glog.Infof("Removing ServiceInstance %s...\n", instanceID)
 
-	if result, err := s.controller.RemoveServiceInstance(instanceID, serviceID, planID, acceptsIncomplete); err == nil {
+	if result, err := s.broker.RemoveServiceInstance(instanceID, serviceID, planID, acceptsIncomplete); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
@@ -161,7 +161,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 	// Pass in the instanceId to the template.
 	req.Parameters["instanceId"] = instanceID
 
-	if result, err := s.controller.Bind(instanceID, bindingID, &req); err == nil {
+	if result, err := s.broker.Bind(instanceID, bindingID, &req); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
@@ -176,7 +176,7 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 	planID := q.Get("plan_id")
 	glog.Infof("UnBind: Service instance guid: %s:%s", bindingID, instanceID)
 
-	if err := s.controller.UnBind(instanceID, bindingID, serviceID, planID); err == nil {
+	if err := s.broker.UnBind(instanceID, bindingID, serviceID, planID); err == nil {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, "{}") //id)
