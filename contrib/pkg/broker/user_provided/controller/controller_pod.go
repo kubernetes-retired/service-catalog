@@ -11,13 +11,17 @@ import (
 )
 
 const (
-	MONGO_INITDB_ROOT_USERNAME_NAME  = "MONGO_INITDB_ROOT_USERNAME" // DO NOT CHANGE - must match docker image variable
+	// MONGO_INITDB_ROOT_USERNAME & MONGO_INITDB_ROOT_PASSWORD are container env vars set in the
+	// mongo pod.  The mongo container will enable authentication only when these vars are set.
+	MONGO_INITDB_ROOT_USERNAME_NAME  = "MONGO_INITDB_ROOT_USERNAME" // DO NOT CHANGE
 	MONGO_INITDB_ROOT_USERNAME_VALUE = "admin"
-	MONGO_INITDB_ROOT_PASSWORD_NAME  = "MONGO_INITDB_ROOT_PASSWORD" // DO NOT CHANGE - must match docker image variable
+	MONGO_INITDB_ROOT_PASSWORD_NAME  = "MONGO_INITDB_ROOT_PASSWORD" // DO NOT CHANGE
 	MONGO_INITDB_ROOT_PASSWORD_VALUE = "password"
 	INST_RESOURCE_LABEL_NAME         = "instanceID"
 )
 
+// doDBProvision Creates a database service instance.
+// The instance is made up of 1 pod (running mongo) and 1 secret (containing admin creds)
 func doDBProvision(instanceID, ns string) (error) {
 	if ns == "" {
 		glog.Error("Request Context does not contain a Namespace")
@@ -43,6 +47,9 @@ func doDBProvision(instanceID, ns string) (error) {
 	return nil
 }
 
+// doDBDeprovision Deletes a database service instance
+// Deprovisioning deletes the db pod and secret.
+// On error, does not delete instance so as not to orphan resources.
 func doDBDeprovision(instanceID, ns string) error {
 	if ns == "" {
 		glog.Error("Request Context does not contain a Namespace")
@@ -73,6 +80,7 @@ func doDBDeprovision(instanceID, ns string) error {
 	return nil
 }
 
+// doDBBind returns the mongo pod IP and Port
 // TODO implement db user creation via `mgo` package
 func doDBBind(instanceID, ns string) (string, int32, error) {
 	ip, port, err := getDBPodIP(instanceID, ns)
@@ -82,11 +90,13 @@ func doDBBind(instanceID, ns string) (string, int32, error) {
 	return ip, port, nil
 }
 
+// doDBUnbind does nothing.
 // TODO implement db user deletion via `mgo` package
 func doDBUnbind() (string, error) {
 	return "MongoDB Unbind not implemented.", nil
 }
 
+// getDBPodIP uses a k8s api client to get the pod and extract its IP and Port
 func getDBPodIP(instanceID, ns string) (string, int32, error) {
 	cs, err := getKubeClient()
 	if err != nil {
@@ -101,6 +111,7 @@ func getDBPodIP(instanceID, ns string) (string, int32, error) {
 	return pods.Items[0].Status.PodIP, pods.Items[0].Spec.Containers[0].Ports[0].ContainerPort, nil
 }
 
+// getKubeClient returns a k8s api client
 func getKubeClient() (*kubernetes.Clientset, error) {
 	glog.Info("Getting API Client config")
 	kubeClientConfig, err := rest.InClusterConfig()
@@ -113,6 +124,7 @@ func getKubeClient() (*kubernetes.Clientset, error) {
 	return cs, err
 }
 
+// newDBInstanceResources returns a mongo pod and secret definition
 func newDBInstanceResources(instanceID string) (*v1.Pod, *v1.Secret) {
 	secretName := "db-" + instanceID + "-secret"
 	isOptional := false
