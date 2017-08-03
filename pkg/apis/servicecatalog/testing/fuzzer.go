@@ -51,7 +51,7 @@ type parameter struct {
 	Map   map[string]string `json:"map"`
 }
 
-func createRawParameters(c fuzz.Continue) (*runtime.RawExtension, error) {
+func createParameter(c fuzz.Continue) (*runtime.RawExtension, error) {
 	p := parameter{Value: c.RandString()}
 	p.Map = make(map[string]string)
 	for i := 0; i < c.Rand.Intn(10); i++ {
@@ -63,28 +63,6 @@ func createRawParameters(c fuzz.Continue) (*runtime.RawExtension, error) {
 		return nil, err
 	}
 	return &runtime.RawExtension{Raw: b}, nil
-}
-
-func createInstanceParameters(c fuzz.Continue) []servicecatalog.Parameter {
-	return []servicecatalog.Parameter{
-		{
-			Name:  c.RandString(),
-			Type:  servicecatalog.ValueTypeString,
-			Value: c.RandString(),
-		},
-	}
-}
-
-func createInstanceParametersFrom(c fuzz.Continue) ([]servicecatalog.ParametersFromSource, error) {
-	raw, err := createRawParameters(c)
-	if err != nil {
-		return nil, err
-	}
-	return []servicecatalog.ParametersFromSource{
-		{
-			Value: raw,
-		},
-	}, nil
 }
 
 func createServiceMetadata(c fuzz.Continue) (*runtime.RawExtension, error) {
@@ -217,13 +195,12 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		func(is *servicecatalog.InstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.ExternalID = uuid.NewV4().String()
-			is.Parameters = createInstanceParameters(c)
-			parametersFrom, err := createInstanceParametersFrom(c)
+			parameters, err := createParameter(c)
 			if err != nil {
-				t.Errorf("Failed to create parametersFrom object: %v", err)
+				t.Errorf("Failed to create parameter object: %v", err)
 				return
 			}
-			is.ParametersFrom = parametersFrom
+			is.Parameters = parameters
 		},
 		func(bs *servicecatalog.BindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
@@ -235,13 +212,12 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			for bs.SecretName == "" {
 				bs.SecretName = c.RandString()
 			}
-			bs.Parameters = createInstanceParameters(c)
-			parametersFrom, err := createInstanceParametersFrom(c)
+			parameters, err := createParameter(c)
 			if err != nil {
-				t.Errorf("Failed to create parametersFrom object: %v", err)
+				t.Errorf("Failed to create parameter object: %v", err)
 				return
 			}
-			bs.ParametersFrom = parametersFrom
+			bs.Parameters = parameters
 		},
 		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
 			c.FuzzNoCustom(sc)

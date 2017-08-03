@@ -38,10 +38,7 @@ func InstanceSpecChecksum(spec v1alpha1.InstanceSpec) string {
 	specString += fmt.Sprintf("planName: %v\n", spec.PlanName)
 
 	if spec.Parameters != nil {
-		specString += "parameters: \n"
-		for _, p := range spec.Parameters {
-			specString += fmt.Sprintf("%v\n", parameterChecksum(p))
-		}
+		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
 	}
 	if spec.ParametersFrom != nil {
 		specString += "parametersFrom: \n"
@@ -67,10 +64,7 @@ func BindingSpecChecksum(spec v1alpha1.BindingSpec) string {
 	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
 
 	if spec.Parameters != nil {
-		specString += "parameters: \n"
-		for _, p := range spec.Parameters {
-			specString += fmt.Sprintf("%v\n", parameterChecksum(p))
-		}
+		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
 	}
 	if spec.ParametersFrom != nil {
 		specString += "parametersFrom: \n"
@@ -97,37 +91,9 @@ func BrokerSpecChecksum(spec v1alpha1.BrokerSpec) string {
 	return fmt.Sprintf("%x", sum)
 }
 
-func parameterChecksum(parameter v1alpha1.Parameter) string {
-	specString := ""
-	specString += fmt.Sprintf("name: %v\n", parameter.Name)
-
-	if parameter.Type != "" {
-		specString += fmt.Sprintf("type: %v\n", parameter.Type)
-	}
-	if parameter.Value != "" {
-		specString += fmt.Sprintf("value: %v\n", parameter.Value)
-	}
-	if parameter.ValueFrom != nil {
-		valueFrom := parameter.ValueFrom
-		if valueFrom.SecretKeyRef != nil {
-			specString += fmt.Sprintf("valueFrom.secretKeyRef: %v[%v]\n", valueFrom.SecretKeyRef.Name, valueFrom.SecretKeyRef.Key)
-		}
-
-	}
-
-	sum := sha256.Sum256([]byte(specString))
-	return fmt.Sprintf("%x", sum)
-}
-
 func parametersFromChecksum(parameters v1alpha1.ParametersFromSource) string {
 	specString := ""
 
-	if parameters.Value != nil {
-		specString += fmt.Sprintf("type: %v\n", string(parameters.Value.Raw))
-	}
-	if parameters.SecretRef != nil {
-		specString += fmt.Sprintf("secretRef: %v(%v)\n", parameters.SecretRef.Name, parameters.SecretRef.Type)
-	}
 	if parameters.SecretKeyRef != nil {
 		specString += fmt.Sprintf("secretKeyRef: %v[%v]\n", parameters.SecretKeyRef.Name, parameters.SecretKeyRef.Key)
 	}

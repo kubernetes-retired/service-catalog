@@ -29,32 +29,6 @@ func SetDefaults_InstanceSpec(spec *InstanceSpec) {
 	if spec.ExternalID == "" {
 		spec.ExternalID = uuid.NewV4().String()
 	}
-	if spec.Parameters != nil {
-		for i, p := range spec.Parameters {
-			SetDefaults_Parameter(&p)
-			spec.Parameters[i] = p
-		}
-	}
-	if spec.ParametersFrom != nil {
-		for i, p := range spec.ParametersFrom {
-			SetDefaults_ParametersFromSource(&p)
-			spec.ParametersFrom[i] = p
-		}
-	}
-}
-
-func SetDefaults_Parameter(parameter *Parameter) {
-	if parameter.Type == "" {
-		parameter.Type = ValueTypeString
-	}
-}
-
-func SetDefaults_ParametersFromSource(parametersFrom *ParametersFromSource) {
-	if parametersFrom.SecretRef != nil {
-		if parametersFrom.SecretRef.Type == "" {
-			parametersFrom.SecretRef.Type = ValueTypeString
-		}
-	}
 }
 
 func SetDefaults_BindingSpec(spec *BindingSpec) {

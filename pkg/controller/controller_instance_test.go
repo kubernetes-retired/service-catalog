@@ -232,22 +232,11 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
 
-	b, err := json.Marshal(parameters.Args)
+	b, err := json.Marshal(parameters)
 	if err != nil {
 		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
 	}
-	instance.Spec.Parameters = []v1alpha1.Parameter{
-		{
-			Name:  "name",
-			Type:  v1alpha1.ValueTypeString,
-			Value: parameters.Name,
-		},
-		{
-			Name:  "args",
-			Type:  v1alpha1.ValueTypeJSON,
-			Value: string(b),
-		},
-	}
+	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	if err = testController.reconcileInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
@@ -265,11 +254,11 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 			"namespace": "test-ns",
 		},
 		Parameters: map[string]interface{}{
-			"name": "test-param",
 			"args": map[string]interface{}{
 				"first":  "first-arg",
 				"second": "second-arg",
 			},
+			"name": "test-param",
 		},
 	})
 
@@ -290,8 +279,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters) == 0 {
-		t.Fatalf("Parameters were unexpectedly empty")
+	if len(updateObject.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
 	}
 
 	events := getRecordedEvents(testController)
@@ -320,18 +309,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	}
 	// corrupt the byte slice to begin with a '!' instead of an opening JSON bracket '{'
 	b[0] = 0x21
-	instance.Spec.Parameters = []v1alpha1.Parameter{
-		{
-			Name:  "name",
-			Type:  v1alpha1.ValueTypeString,
-			Value: parameters.Name,
-		},
-		{
-			Name:  "args",
-			Type:  v1alpha1.ValueTypeJSON,
-			Value: string(b),
-		},
-	}
+	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
 	if err = testController.reconcileInstance(instance); err == nil {
 		t.Fatalf("this should fail due to a parse error")
@@ -354,7 +332,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to prepare Instance parameters"
-	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) { // event contains RawExtension, so just compare error message
+	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
 		t.Fatalf("Received unexpected event: %v", a)
 	}
 }

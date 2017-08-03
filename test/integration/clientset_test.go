@@ -18,6 +18,7 @@ package integration
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -46,25 +47,40 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 )
 
-var parameters = []v1alpha1.Parameter{
-	{
-		Name:  "bar",
-		Value: "barvalue",
-	},
-	{
-		Name: "values",
-		Type: v1alpha1.ValueTypeJSON,
-		Value: `
-		{
-      		"first" : "firstvalue",
-      		"second" : "secondvalue"
-    	}`,
-	},
+// Used for testing instance parameters
+type ipStruct struct {
+	Bar    string            `json:"bar"`
+	Values map[string]string `json:"values"`
 }
+
+const (
+	instanceParameter = `{
+    "bar": "barvalue",
+    "values": {
+      "first" : "firstvalue",
+      "second" : "secondvalue"
+    }
+  }
+`
+	bindingParameter = `{
+    "foo": "bar",
+    "baz": [
+      "first",
+      "second"
+    ]
+  }
+`
+)
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
 	server.StorageTypeTPR,
+}
+
+// Used for testing binding parameters
+type bpStruct struct {
+	Foo string   `json:"foo"`
+	Baz []string `json:"baz"`
 }
 
 // TestGroupVersion is trivial.
@@ -510,7 +526,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		Spec: v1alpha1.InstanceSpec{
 			ServiceClassName: "service-class-name",
 			PlanName:         "plan-name",
-			Parameters:       parameters,
+			Parameters:       &runtime.RawExtension{Raw: []byte(instanceParameter)},
 			ExternalID:       osbGUID,
 		},
 	}
@@ -569,25 +585,22 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
-	parameters := instanceServer.Spec.Parameters
-	if len(parameters) != 2 {
-		return fmt.Errorf("Unexpected number of parameters: %d", len(parameters))
+	parameters := ipStruct{}
+	err = json.Unmarshal(instanceServer.Spec.Parameters.Raw, &parameters)
+	if err != nil {
+		return fmt.Errorf("Couldn't unmarshal returned instance parameters: %v", err)
 	}
-	// Check that the defaults were applied
-	if parameters[0].Type != v1alpha1.ValueTypeString {
-		return fmt.Errorf("Didn't get back 'string' type for key 'bar' was %+v", parameters)
+	if parameters.Bar != "barvalue" {
+		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
 	}
-	if parameters[1].Type != v1alpha1.ValueTypeJSON {
-		return fmt.Errorf("Didn't get back 'json' type for key 'values' was %+v", parameters)
+	if len(parameters.Values) != 2 {
+		return fmt.Errorf("Didn't get back 'barvalue' value for key 'bar' was %+v", parameters)
 	}
-	// Check the parameter contents
-	for i, p := range parameters {
-		if p.Name != parameters[i].Name {
-			return fmt.Errorf("Unexpected parameter name: expected=%s, actual=%s", parameters[i].Name, p.Name)
-		}
-		if p.Value != parameters[i].Value {
-			return fmt.Errorf("Unexpected parameter name: \nexpected=%s \nactual=%s", parameters[i].Value, p.Value)
-		}
+	if parameters.Values["first"] != "firstvalue" {
+		return fmt.Errorf("Didn't get back 'firstvalue' value for key 'first' in Values map was %+v", parameters)
+	}
+	if parameters.Values["second"] != "secondvalue" {
+		return fmt.Errorf("Didn't get back 'secondvalue' value for key 'second' in Values map was %+v", parameters)
 	}
 
 	// update the instance's conditions
@@ -674,7 +687,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 			InstanceRef: v1.LocalObjectReference{
 				Name: "bar",
 			},
-			Parameters: parameters,
+			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
 			ExternalID: "UUID-string",
 		},
 	}
@@ -738,26 +751,32 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		)
 	}
 
-	// check the parameters of the fetched-by-name instance with what was expected
-	parameters := bindingServer.Spec.Parameters
-	if len(parameters) != 2 {
-		return fmt.Errorf("Unexpected number of parameters: %d", len(parameters))
+	parameters := bpStruct{}
+	err = json.Unmarshal(bindingServer.Spec.Parameters.Raw, &parameters)
+	if err != nil {
+		return fmt.Errorf("Couldn't unmarshal returned parameters: %v", err)
 	}
-	// Check that the defaults were applied
-	if parameters[0].Type != v1alpha1.ValueTypeString {
-		return fmt.Errorf("Didn't get back 'string' type for key 'bar' was %+v", parameters)
+	if parameters.Foo != "bar" {
+		return fmt.Errorf("Didn't get back 'bar' value for key 'foo' was %+v", parameters)
 	}
-	if parameters[1].Type != v1alpha1.ValueTypeJSON {
-		return fmt.Errorf("Didn't get back 'json' type for key 'values' was %+v", parameters)
+	if len(parameters.Baz) != 2 {
+		return fmt.Errorf("Didn't get back two values for 'baz' array in parameters was %+v", parameters)
 	}
-	// Check the parameter contents
-	for i, p := range parameters {
-		if p.Name != parameters[i].Name {
-			return fmt.Errorf("Unexpected parameter name: expected=%s, actual=%s", parameters[i].Name, p.Name)
+	foundFirst := false
+	foundSecond := false
+	for _, val := range parameters.Baz {
+		if val == "first" {
+			foundFirst = true
 		}
-		if p.Value != parameters[i].Value {
-			return fmt.Errorf("Unexpected parameter name: \nexpected=%s \nactual=%s", parameters[i].Value, p.Value)
+		if val == "second" {
+			foundSecond = true
 		}
+	}
+	if !foundFirst {
+		return fmt.Errorf("Didn't find first value in parameters.baz was %+v", parameters)
+	}
+	if !foundSecond {
+		return fmt.Errorf("Didn't find second value in parameters.baz was %+v", parameters)
 	}
 
 	readyConditionTrue := v1alpha1.BindingCondition{

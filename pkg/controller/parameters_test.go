@@ -28,37 +28,25 @@ import (
 )
 
 func TestBuildParameters(t *testing.T) {
-	stringSecret := &v1.Secret{
+	secret := &v1.Secret{
 		Data: map[string][]byte{
-			"secret-key": []byte("textFromSecret"),
-		},
-	}
-	jsonSecret := &v1.Secret{
-		Data: map[string][]byte{
-			"secret-key": []byte("{ \"json\": true }"),
+			"json-key":   []byte("{ \"json\": true }"),
+			"string-key": []byte("textFromSecret"),
 		},
 	}
 
 	cases := []struct {
 		name           string
 		parametersFrom []v1alpha1.ParametersFromSource
-		parameters     []v1alpha1.Parameter
+		parameters     *runtime.RawExtension
 		secret         *v1.Secret
 		expected       map[string]interface{}
 		shouldSucceed  bool
 	}{
 		{
 			name: "parameters: basic",
-			parameters: []v1alpha1.Parameter{
-				{
-					Name:  "p1",
-					Type:  v1alpha1.ValueTypeString,
-					Value: "v1",
-				}, {
-					Name:  "p2",
-					Type:  v1alpha1.ValueTypeString,
-					Value: "v2",
-				},
+			parameters: &runtime.RawExtension{
+				Raw: []byte(`{ "p1": "v1", "p2": "v2" }`),
 			},
 			expected: map[string]interface{}{
 				"p1": "v1",
@@ -67,98 +55,11 @@ func TestBuildParameters(t *testing.T) {
 			shouldSucceed: true,
 		},
 		{
-			name: "parameters: json",
-			parameters: []v1alpha1.Parameter{
-				{
-					Name:  "json",
-					Type:  v1alpha1.ValueTypeJSON,
-					Value: "{ \"bool\": true, \"string\": \"str\", \"obj\": { \"child\": \"s\"} }",
-				},
+			name: "parameters: invalid JSON",
+			parameters: &runtime.RawExtension{
+				Raw: []byte("not a JSON"),
 			},
-			expected: map[string]interface{}{
-				"json": map[string]interface{}{
-					"bool":   true,
-					"string": "str",
-					"obj": map[string]interface{}{
-						"child": "s",
-					},
-				},
-			},
-			shouldSucceed: true,
-		},
-		{
-			name: "parameters: value from secret key",
-			parameters: []v1alpha1.Parameter{
-				{
-					Name: "p1",
-					Type: v1alpha1.ValueTypeString,
-					ValueFrom: &v1alpha1.ParameterSource{
-						SecretKeyRef: &v1alpha1.SecretKeyReference{
-							Name: "secret",
-							Key:  "secret-key",
-						},
-					},
-				},
-			},
-			secret: stringSecret,
-			expected: map[string]interface{}{
-				"p1": "textFromSecret",
-			},
-			shouldSucceed: true,
-		},
-		{
-			name: "parameters: secret not found",
-			parameters: []v1alpha1.Parameter{
-				{
-					Name: "p1",
-					Type: v1alpha1.ValueTypeString,
-					ValueFrom: &v1alpha1.ParameterSource{
-						SecretKeyRef: &v1alpha1.SecretKeyReference{
-							Name: "secret",
-							Key:  "key",
-						},
-					},
-				},
-			},
-			secret:        nil, // Not found
 			shouldSucceed: false,
-		},
-		{
-			name: "parameters: conflict",
-			parameters: []v1alpha1.Parameter{
-				{
-					Name:  "p1",
-					Type:  v1alpha1.ValueTypeString,
-					Value: "v1",
-				}, {
-					Name:  "p1",
-					Type:  v1alpha1.ValueTypeString,
-					Value: "v2",
-				},
-			},
-			expected: map[string]interface{}{
-				"p1": "v2",
-			},
-			shouldSucceed: true,
-		},
-		{
-			name: "parametersFrom: inline",
-			parametersFrom: []v1alpha1.ParametersFromSource{
-				{
-					Value: &runtime.RawExtension{
-						Raw: []byte("{ \"bool\": true, \"string\": \"str\", \"obj\": { \"child\": \"s\"} }"),
-					},
-				},
-			},
-			secret: stringSecret,
-			expected: map[string]interface{}{
-				"bool":   true,
-				"string": "str",
-				"obj": map[string]interface{}{
-					"child": "s",
-				},
-			},
-			shouldSucceed: true,
 		},
 		{
 			name: "parametersFrom: secretKey with blob",
@@ -166,71 +67,46 @@ func TestBuildParameters(t *testing.T) {
 				{
 					SecretKeyRef: &v1alpha1.SecretKeyReference{
 						Name: "secret",
-						Key:  "secret-key",
+						Key:  "json-key",
 					},
 				},
 			},
-			secret: jsonSecret,
+			secret: secret,
 			expected: map[string]interface{}{
 				"json": true,
 			},
 			shouldSucceed: true,
 		},
 		{
-			name: "parametersFrom: secret",
+			name: "parametersFrom: secretKey with invalid blob",
 			parametersFrom: []v1alpha1.ParametersFromSource{
 				{
-					SecretRef: &v1alpha1.SecretReference{
-						Type: v1alpha1.ValueTypeString,
+					SecretKeyRef: &v1alpha1.SecretKeyReference{
 						Name: "secret",
+						Key:  "string-key",
 					},
 				},
 			},
-			secret: stringSecret,
-			expected: map[string]interface{}{
-				"secret-key": "textFromSecret",
-			},
-			shouldSucceed: true,
-		},
-		{
-			name: "parametersFrom: secret with json",
-			parametersFrom: []v1alpha1.ParametersFromSource{
-				{
-					SecretRef: &v1alpha1.SecretReference{
-						Type: v1alpha1.ValueTypeJSON,
-						Name: "secret",
-					},
-				},
-			},
-			secret: jsonSecret,
-			expected: map[string]interface{}{
-				"secret-key": map[string]interface{}{
-					"json": true,
-				},
-			},
-			shouldSucceed: true,
+			secret:        secret,
+			shouldSucceed: false,
 		},
 		{
 			name: "parametersFrom + parameters: normal",
 			parametersFrom: []v1alpha1.ParametersFromSource{
 				{
-					SecretRef: &v1alpha1.SecretReference{
-						Type: v1alpha1.ValueTypeString,
+					SecretKeyRef: &v1alpha1.SecretKeyReference{
 						Name: "secret",
+						Key:  "json-key",
 					},
 				},
 			},
-			parameters: []v1alpha1.Parameter{
-				{
-					Name:  "p1",
-					Type:  v1alpha1.ValueTypeString,
-					Value: "v1",
-				},
+			parameters: &runtime.RawExtension{
+				Raw: []byte(`{ "p1": "v1" }`),
 			},
-			secret: stringSecret,
+			secret: secret,
 			expected: map[string]interface{}{
-				"secret-key": "textFromSecret",
-				"p1":         "v1",
+				"json": true,
+				"p1":   "v1",
 			},
 			shouldSucceed: true,
 		},
@@ -238,23 +114,17 @@ func TestBuildParameters(t *testing.T) {
 			name: "parametersFrom + parameters: conflict",
 			parametersFrom: []v1alpha1.ParametersFromSource{
 				{
-					Value: &runtime.RawExtension{
-						Raw: []byte("{ \"p1\": \"v2\" }"),
+					SecretKeyRef: &v1alpha1.SecretKeyReference{
+						Name: "secret",
+						Key:  "json-key",
 					},
 				},
 			},
-			parameters: []v1alpha1.Parameter{
-				{
-					Name:  "p1",
-					Type:  v1alpha1.ValueTypeString,
-					Value: "v1",
-				},
+			parameters: &runtime.RawExtension{
+				Raw: []byte(`{ "json": "v1" }`),
 			},
-			secret: stringSecret,
-			expected: map[string]interface{}{
-				"p1": "v1",
-			},
-			shouldSucceed: true,
+			secret:        secret,
+			shouldSucceed: false,
 		},
 	}
 
@@ -265,7 +135,7 @@ func TestBuildParameters(t *testing.T) {
 	}
 }
 
-func testBuildParameters(t *testing.T, parametersFrom []v1alpha1.ParametersFromSource, parameters []v1alpha1.Parameter, secret *v1.Secret, expected map[string]interface{}, shouldSucceed bool) {
+func testBuildParameters(t *testing.T, parametersFrom []v1alpha1.ParametersFromSource, parameters *runtime.RawExtension, secret *v1.Secret, expected map[string]interface{}, shouldSucceed bool) {
 	// create a fake kube client
 	fakeKubeClient := &clientgofake.Clientset{}
 	if secret != nil {

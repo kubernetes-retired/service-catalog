@@ -307,17 +307,22 @@ type InstanceSpec struct {
 	// provisioned from.
 	PlanName string `json:"planName"`
 
-	// List of sources to populate parameters.
-	// When a key exists in multiple
-	// sources, the value associated with the last source will take precedence.
-	// Values defined by a Parameter with a duplicate key will take precedence.
-	// +optional
-	ParametersFrom []ParametersFromSource `json:"parametersFrom,omitempty"`
-
 	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.
+	// The inline YAML/JSON payload to be translated into equivalent
+	// JSON object.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
 	// +optional
-	Parameters []Parameter `json:"parameters,omitempty"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// List of sources to populate parameters.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
+	// +optional
+	ParametersFrom []ParametersFromSource `json:"parametersFrom,omitempty"`
 
 	// ExternalID is the identity of this object for use with the OSB SB API.
 	//
@@ -410,17 +415,22 @@ type BindingSpec struct {
 	// Immutable.
 	InstanceRef v1.LocalObjectReference `json:"instanceRef"`
 
-	// List of sources to populate parameters.
-	// When a key exists in multiple
-	// sources, the value associated with the last source will take precedence.
-	// Values defined by a Parameter with a duplicate key will take precedence.
-	// +optional
-	ParametersFrom []ParametersFromSource `json:"parametersFrom,omitempty"`
-
 	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.
+	// The inline YAML/JSON payload to be translated into equivalent
+	// JSON object.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
 	// +optional
-	Parameters []Parameter `json:"parameters,omitempty"`
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// List of sources to populate parameters.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
+	// +optional
+	ParametersFrom []ParametersFromSource `json:"parametersFrom,omitempty"`
 
 	// SecretName is the name of the secret to create in the Binding's
 	// namespace that will hold the credentials associated with the Binding.
@@ -475,55 +485,12 @@ const (
 	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
 )
 
-// Parameter represents a parameter for instance.
-type Parameter struct {
-	// Required
-	Name string `json:"name"`
-	// Type defines the format of the value
-	// Defaults to "string".
-	Type ParameterValueType `json:"type,omitempty"`
-	// Optional: no more than one of the following may be specified.
-	// Optional: Inline string value
-	// +optional
-	Value string `json:"value,omitempty"`
-	// Optional: Specifies a source the value of this parameter should come from.
-	// +optional
-	ValueFrom *ParameterSource `json:"valueFrom,omitempty"`
-}
-
-// ParameterValueType represents a value format.
-type ParameterValueType string
-
-const (
-	// ValueTypeString represents a "string" value type
-	ValueTypeString ParameterValueType = "string"
-	// ValueTypeJSON represents a "JSON object" value type
-	ValueTypeJSON ParameterValueType = "json"
-	// TODO add "int", "float", "array"
-)
-
-// ParameterSource represents a source for the value of a Parameter.
-// Only one of its fields may be set.
-type ParameterSource struct {
-	// Selects a key of a secret in the pod's namespace.
-	// +optional
-	SecretKeyRef *SecretKeyReference `json:"secretKeyRef,omitempty"`
-	// TODO add support for ConfigMapKeyRef
-}
-
 // ParametersFromSource represents the source of a set of Parameters
 type ParametersFromSource struct {
-	// The inline YAML/JSON payload to be translated into equivalent
-	// JSON object
-	Value *runtime.RawExtension `json:"value,omitempty"`
-	// The Secret to select from.
-	//+optional
-	SecretRef *SecretReference `json:"secretRef,omitempty"`
 	// The Secret key to select from.
 	// The value must be a JSON object.
 	//+optional
 	SecretKeyRef *SecretKeyReference `json:"secretKeyRef,omitempty"`
-	// TODO add support for ConfigMapRef and ConfigMapKeyRef
 }
 
 // SecretKeyReference references a key of a Secret.
@@ -532,12 +499,4 @@ type SecretKeyReference struct {
 	Name string `json:"name"`
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key string `json:"key"`
-}
-
-// SecretReference references a Secret containing parameters.
-type SecretReference struct {
-	// The name of the secret in the pod's namespace to select from.
-	Name string
-	// Type defines the format of all values in the secret
-	Type ParameterValueType
 }
