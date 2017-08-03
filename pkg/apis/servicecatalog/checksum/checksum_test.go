@@ -71,8 +71,9 @@ func TestBrokerSpecChecksum(t *testing.T) {
 		URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		AuthInfo: &servicecatalog.BrokerAuthInfo{
 			Basic: &servicecatalog.BasicAuthConfig{
-				SecretRef: &v1.LocalObjectReference{
-					Name: "test-secret",
+				SecretRef: &v1.ObjectReference{
+					Namespace: "test-ns",
+					Name:      "test-secret",
 				},
 			},
 		},

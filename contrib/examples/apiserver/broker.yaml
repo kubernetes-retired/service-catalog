@@ -12,4 +12,5 @@ spec:
   authInfo:
     basic:
       secretRef:
+        namespace: some-namespace
         name: secret-name

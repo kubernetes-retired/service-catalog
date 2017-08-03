@@ -79,7 +79,7 @@ type BasicAuthConfig struct {
 	// Required at least one of the fields:
 	// - Secret.Data["username"] - username used for authentication
 	// - Secret.Data["password"] - password or token needed for authentication
-	SecretRef *v1.LocalObjectReference `json:"secretRef,omitempty"`
+	SecretRef *v1.ObjectReference `json:"secretRef,omitempty"`
 }
 
 // BearerTokenAuthConfig provides config for the bearer token authentication.
@@ -89,7 +89,7 @@ type BearerTokenAuthConfig struct {
 	//
 	// Required field:
 	// - Secret.Data["token"] - bearer token for authentication
-	SecretRef *v1.LocalObjectReference `json:"secretRef,omitempty"`
+	SecretRef *v1.ObjectReference `json:"secretRef,omitempty"`
 }
 
 const (

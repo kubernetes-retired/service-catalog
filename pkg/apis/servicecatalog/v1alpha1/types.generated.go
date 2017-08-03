@@ -67,7 +67,7 @@ func init() {
 		var v0 pkg1_v1.TypeMeta
 		var v1 pkg4_runtime.RawExtension
 		var v2 pkg2_types.UID
-		var v3 pkg3_v1.LocalObjectReference
+		var v3 pkg3_v1.ObjectReference
 		var v4 time.Time
 		_, _, _, _, _ = v0, v1, v2, v3, v4
 	}
@@ -1459,7 +1459,7 @@ func (x *BasicAuthConfig) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 				}
 			} else {
 				if x.SecretRef == nil {
-					x.SecretRef = new(pkg3_v1.LocalObjectReference)
+					x.SecretRef = new(pkg3_v1.ObjectReference)
 				}
 				x.SecretRef.CodecDecodeSelf(d)
 			}
@@ -1494,7 +1494,7 @@ func (x *BasicAuthConfig) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) 
 		}
 	} else {
 		if x.SecretRef == nil {
-			x.SecretRef = new(pkg3_v1.LocalObjectReference)
+			x.SecretRef = new(pkg3_v1.ObjectReference)
 		}
 		x.SecretRef.CodecDecodeSelf(d)
 	}
@@ -1636,7 +1636,7 @@ func (x *BearerTokenAuthConfig) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 				}
 			} else {
 				if x.SecretRef == nil {
-					x.SecretRef = new(pkg3_v1.LocalObjectReference)
+					x.SecretRef = new(pkg3_v1.ObjectReference)
 				}
 				x.SecretRef.CodecDecodeSelf(d)
 			}
@@ -1671,7 +1671,7 @@ func (x *BearerTokenAuthConfig) codecDecodeSelfFromArray(l int, d *codec1978.Dec
 		}
 	} else {
 		if x.SecretRef == nil {
-			x.SecretRef = new(pkg3_v1.LocalObjectReference)
+			x.SecretRef = new(pkg3_v1.ObjectReference)
 		}
 		x.SecretRef.CodecDecodeSelf(d)
 	}

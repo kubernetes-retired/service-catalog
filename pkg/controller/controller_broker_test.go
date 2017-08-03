@@ -376,15 +376,17 @@ func TestReconcileBrokerZeroServices(t *testing.T) {
 func TestReconcileBrokerWithAuth(t *testing.T) {
 	basicAuthInfo := &v1alpha1.BrokerAuthInfo{
 		Basic: &v1alpha1.BasicAuthConfig{
-			SecretRef: &v1.LocalObjectReference{
-				Name: "auth-secret",
+			SecretRef: &v1.ObjectReference{
+				Namespace: "test-ns",
+				Name:      "auth-secret",
 			},
 		},
 	}
 	bearerAuthInfo := &v1alpha1.BrokerAuthInfo{
 		Bearer: &v1alpha1.BearerTokenAuthConfig{
-			SecretRef: &v1.LocalObjectReference{
-				Name: "auth-secret",
+			SecretRef: &v1.ObjectReference{
+				Namespace: "test-ns",
+				Name:      "auth-secret",
 			},
 		},
 	}

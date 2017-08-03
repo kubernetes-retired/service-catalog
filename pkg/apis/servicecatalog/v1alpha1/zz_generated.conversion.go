@@ -106,7 +106,7 @@ func Convert_servicecatalog_AlphaPodPresetTemplate_To_v1alpha1_AlphaPodPresetTem
 }
 
 func autoConvert_v1alpha1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig(in *BasicAuthConfig, out *servicecatalog.BasicAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*v1.LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	out.SecretRef = (*v1.ObjectReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
@@ -116,7 +116,7 @@ func Convert_v1alpha1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig(in *Basi
 }
 
 func autoConvert_servicecatalog_BasicAuthConfig_To_v1alpha1_BasicAuthConfig(in *servicecatalog.BasicAuthConfig, out *BasicAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*v1.LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	out.SecretRef = (*v1.ObjectReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
@@ -126,7 +126,7 @@ func Convert_servicecatalog_BasicAuthConfig_To_v1alpha1_BasicAuthConfig(in *serv
 }
 
 func autoConvert_v1alpha1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthConfig(in *BearerTokenAuthConfig, out *servicecatalog.BearerTokenAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*v1.LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	out.SecretRef = (*v1.ObjectReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 
@@ -136,7 +136,7 @@ func Convert_v1alpha1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthCon
 }
 
 func autoConvert_servicecatalog_BearerTokenAuthConfig_To_v1alpha1_BearerTokenAuthConfig(in *servicecatalog.BearerTokenAuthConfig, out *BearerTokenAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*v1.LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	out.SecretRef = (*v1.ObjectReference)(unsafe.Pointer(in.SecretRef))
 	return nil
 }
 

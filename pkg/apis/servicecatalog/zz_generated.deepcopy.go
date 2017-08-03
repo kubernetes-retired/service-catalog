@@ -84,7 +84,7 @@ func DeepCopy_servicecatalog_BasicAuthConfig(in interface{}, out interface{}, c 
 		*out = *in
 		if in.SecretRef != nil {
 			in, out := &in.SecretRef, &out.SecretRef
-			*out = new(api_v1.LocalObjectReference)
+			*out = new(api_v1.ObjectReference)
 			**out = **in
 		}
 		return nil
@@ -99,7 +99,7 @@ func DeepCopy_servicecatalog_BearerTokenAuthConfig(in interface{}, out interface
 		*out = *in
 		if in.SecretRef != nil {
 			in, out := &in.SecretRef, &out.SecretRef
-			*out = new(api_v1.LocalObjectReference)
+			*out = new(api_v1.ObjectReference)
 			**out = **in
 		}
 		return nil

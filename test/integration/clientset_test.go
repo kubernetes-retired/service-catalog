@@ -282,8 +282,9 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		)
 	}
 
-	authSecret := &v1.LocalObjectReference{
-		Name: "test-name",
+	authSecret := &v1.ObjectReference{
+		Namespace: "test-namespace",
+		Name:      "test-name",
 	}
 
 	brokerServer.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
@@ -294,6 +295,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 
 	brokerUpdated, err := brokerClient.Update(brokerServer)
 	if nil != err ||
+		"test-namespace" != brokerUpdated.Spec.AuthInfo.Basic.SecretRef.Namespace ||
 		"test-name" != brokerUpdated.Spec.AuthInfo.Basic.SecretRef.Name {
 		return fmt.Errorf("broker wasn't updated, %v, %v", brokerServer, brokerUpdated)
 	}
@@ -337,6 +339,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 
 	brokerServer, err = brokerClient.Get(name, metav1.GetOptions{})
 	if nil != err ||
+		"test-namespace" != brokerServer.Spec.AuthInfo.Basic.SecretRef.Namespace ||
 		"test-name" != brokerServer.Spec.AuthInfo.Basic.SecretRef.Name {
 		return fmt.Errorf("broker wasn't updated (%v)", brokerServer)
 	}

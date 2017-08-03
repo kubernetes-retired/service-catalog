@@ -61,14 +61,14 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						"secretRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this Broker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
-								Ref:         ref("k8s.io/client-go/pkg/api/v1.LocalObjectReference"),
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
 							},
 						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
+				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BearerTokenAuthConfig": {
 			Schema: spec.Schema{
@@ -78,14 +78,14 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						"secretRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this Broker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
-								Ref:         ref("k8s.io/client-go/pkg/api/v1.LocalObjectReference"),
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
 							},
 						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
+				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Binding": {
 			Schema: spec.Schema{

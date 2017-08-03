@@ -84,7 +84,7 @@ func DeepCopy_v1alpha1_BasicAuthConfig(in interface{}, out interface{}, c *conve
 		*out = *in
 		if in.SecretRef != nil {
 			in, out := &in.SecretRef, &out.SecretRef
-			*out = new(api_v1.LocalObjectReference)
+			*out = new(api_v1.ObjectReference)
 			**out = **in
 		}
 		return nil
@@ -99,7 +99,7 @@ func DeepCopy_v1alpha1_BearerTokenAuthConfig(in interface{}, out interface{}, c 
 		*out = *in
 		if in.SecretRef != nil {
 			in, out := &in.SecretRef, &out.SecretRef
-			*out = new(api_v1.LocalObjectReference)
+			*out = new(api_v1.ObjectReference)
 			**out = **in
 		}
 		return nil

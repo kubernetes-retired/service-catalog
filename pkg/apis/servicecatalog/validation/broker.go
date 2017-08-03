@@ -54,6 +54,9 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 		if spec.AuthInfo.Basic != nil {
 			secretRef := spec.AuthInfo.Basic.SecretRef
 			if secretRef != nil {
+				for _, msg := range apivalidation.ValidateNamespaceName(secretRef.Namespace, false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "namespace"), secretRef.Namespace, msg))
+				}
 				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.Name, false /* prefix */) {
 					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "name"), secretRef.Name, msg))
 				}
@@ -66,6 +69,9 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 		} else if spec.AuthInfo.Bearer != nil {
 			secretRef := spec.AuthInfo.Bearer.SecretRef
 			if secretRef != nil {
+				for _, msg := range apivalidation.ValidateNamespaceName(secretRef.Namespace, false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "namespace"), secretRef.Namespace, msg))
+				}
 				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.Name, false /* prefix */) {
 					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "name"), secretRef.Name, msg))
 				}
@@ -81,7 +87,6 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 				for _, msg := range apivalidation.ValidateNamespaceName(basicAuthSecret.Namespace, false /* prefix */) {
 					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basicAuthSecret", "namespace"), basicAuthSecret.Namespace, msg))
 				}
-
 				for _, msg := range apivalidation.NameIsDNSSubdomain(basicAuthSecret.Name, false /* prefix */) {
 					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basicAuthSecret", "name"), basicAuthSecret.Name, msg))
 				}
