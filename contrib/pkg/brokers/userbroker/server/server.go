@@ -56,7 +56,7 @@ func createHandler(b broker.Broker) http.Handler {
 // Start creates the HTTP handler based on an implementation of a
 // broker.Broker interface, and begins to listen on the specified port.
 func Run(ctx context.Context, addr string, b broker.Broker) error {
-	glog.Infof("Starting server on %d\n", addr)
+	glog.Infof("Starting server on %v\n", addr)
 	srv := http.Server{
 		Addr:    addr,
 		Handler: createHandler(b),

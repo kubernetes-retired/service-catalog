@@ -115,20 +115,20 @@ func (b *userProvidedBroker) Catalog() (*brokerapi.Catalog, error) {
 // as determined by the instance's serviceID.
 // New services should be added as a new case in the switch.
 func (b *userProvidedBroker) CreateServiceInstance(
-	id string,
+	instanceID string,
 	req *brokerapi.CreateServiceInstanceRequest,
 ) (*brokerapi.CreateServiceInstanceResponse, error) {
 	b.rwMutex.Lock()
 	defer b.rwMutex.Unlock()
 
-	glog.Info("CreateServiceInstance", id)
+	glog.Info("CreateServiceInstance()", instanceID)
 
-	if _, ok := b.instanceMap[id]; ok {
-		return nil, fmt.Errorf("Instance %q already exists", id)
+	if _, ok := b.instanceMap[instanceID]; ok {
+		return nil, fmt.Errorf("Instance %q already exists", instanceID)
 	}
 	// Create New Instance
 	newInstance := &userProvidedServiceInstance{
-		Id:        id,
+		Id:        instanceID,
 		ServiceID: req.ServiceID,
 		Namespace: req.ContextProfile.Namespace,
 	}
@@ -136,13 +136,13 @@ func (b *userProvidedBroker) CreateServiceInstance(
 	switch newInstance.ServiceID {
 	case serviceidUserProvided:
 	case serviceidDatabasePod:
-		err := doDBProvision(id, newInstance.Namespace)
+		err := doDBProvision(instanceID, newInstance.Namespace)
 		if err != nil {
 			return nil, err
 		}
 	}
 	glog.Infof("Provisioned Instance %q in Namespace %q", newInstance.Id, newInstance.Namespace)
-	b.instanceMap[id] = newInstance
+	b.instanceMap[instanceID] = newInstance
 	return nil, nil
 }
 
@@ -167,9 +167,6 @@ func (b *userProvidedBroker) RemoveServiceInstance(
 	glog.Info("RemoveServiceInstance()")
 	b.rwMutex.Lock()
 	defer b.rwMutex.Unlock()
-
-	// DEBUG
-	glog.Infof("[DEBUG] Remove ServiceInstance Request (ID: %q)", instanceID)
 
 	if _, ok := b.instanceMap[instanceID]; ! ok {
 		return nil, errNoSuchInstance{instanceID: instanceID}
