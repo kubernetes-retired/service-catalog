@@ -5,8 +5,6 @@ Table of Contents
 - [Design](#design)
   - [Basic example](#basic-example)
   - [Passing sensitive data](#passing-sensitive-data)
-    - [Reference to a secret](#reference-to-a-secret)
-    - [The entire payload with sensitive data](#the-entire-payload-with-sensitive-data)
   - [Merging multiple sources and conflict resolution](#merging-multiple-sources-and-conflict-resolution)
 - [Example with multiple sources](#example-with-multiple-sources)
 
@@ -63,39 +61,10 @@ spec:
 ### Passing sensitive data
 
 `Secret` resources can be used to store sensitive data. The `parametersFrom`
-field allows to reference the external parameters source.
-The following sections describe the two ways in which secrets can be used to 
-populate the parameters sent to a broker.
+field allows the user to reference the external parameters source.
 
-#### Reference to a secret
-
-Use the `secretRef` field to pass a reference to a secret with parameter contents.
-
-```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Instance
-metadata:
-  name: qwerty-instance
-  namespace: test-ns
-spec:
-  serviceClassName: qwerty
-  planName: default
-  parametersFrom:
-    - secretRef:
-        name: mysecret
-```
-
-Each secret key will be transformed into a top-level parameter name, and 
-corresponding data will be represented as a value for this parameter.
-
-Note that every value is always treated as a **string**, other value types are 
-not supported for `secretRef`.
-
-#### The entire payload with sensitive data
-
-If the user has the entire JSON payload prepared to be sent, and it 
-contains sensitive data, this payload can be stored in a single `Secret` key, and 
-passed using a `secretKeyRef` field:
+If the user has sensitive data in their parameters, the entire JSON payload can 
+be stored in a single `Secret` key, and passed using a `secretKeyRef` field:
 
 ```yaml
   ...
@@ -118,18 +87,6 @@ resource stops and its `status` is marked with error condition.
 ## Example with multiple sources
 
 ### Sources
-
-**one-two-secret**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: map-secret
-type: Opaque
-stringData:
-  oneSecret: a
-  twoSecret: b
-```
 
 **blob-secret**
 ```yaml
@@ -165,8 +122,6 @@ spec:
     - foo
     - bar
   parametersFrom:
-  - secretRef:
-      name: one-two-secret
   - secretKeyRef:
       name: blob-secret
       key: blob
@@ -178,8 +133,6 @@ spec:
 {
   "inlineField": "abc",
   "sampleLabels": ["foo", "bar"],
-  "oneSecret": "a",
-  "twoSecret": "b",
   "blobSecretString": "text",
   "blobSecretObj": {
     "json": true
