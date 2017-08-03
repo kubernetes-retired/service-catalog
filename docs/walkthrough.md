@@ -51,11 +51,12 @@ The service catalog is packaged as a Helm chart located in the
 wide variety of customizations which are detailed in that directory's
 [README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/README.md).
 
-### The Service Catalog Database
+### The Service Catalog Data Store
 
-We'll be interacting with a variety of resources in the following steps. The service catalog API
-server needs to store all of these resources in a database. The database implementation in the API
-server is pluggable, and we currently support the following implementations:
+We'll be interacting with a variety of resources in the following steps. The
+service catalog API server needs to store all of these resources in a data
+store. The data store implementation in the API server is pluggable, and we
+currently support the following implementations:
 
 1. Etcd 3
 2. Third Party Resources (also, known as TPRs) - this is an _alpha_ feature right now. It has known issues
@@ -68,19 +69,19 @@ possible to access data via the TPRs directly, but we don't recommend it.
 
 ### Install
 
-To install the service catalog system with Etcd 3 as the backing database:
+To install the service catalog system with Etcd 3 as the backing data store:
 
 ```console
 helm install charts/catalog --name catalog --namespace catalog
 ```
 
-To install the service catalog system with TPRs as the backing database:
+To install the service catalog system with TPRs as the backing data store:
 
 ```console
 helm install charts/catalog --name catalog --namespace catalog --set apiserver.storage.type=tpr,apiserver.storage.tpr.globalNamespace=catalog
 ```
 
-Regardless of which database implementation you choose, the remainder of the steps in this
+Regardless of which data store implementation you choose, the remainder of the steps in this
 walkthrough will stay the same.
 
 ### API Server Authentication and Authorization
