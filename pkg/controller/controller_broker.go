@@ -267,10 +267,6 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 	// All updates not having a DeletingTimestamp will have been handled above
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
-	// Since the potential exists for a broker to have multiple finalizers and
-	// since those most be cleared in order, we proceed with the soft delete
-	// only if it's "our turn--" i.e. only if the finalizer we care about is at
-	// the head of the finalizers list.
 	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("Finalizing Broker %v", broker.Name)
 
