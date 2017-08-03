@@ -6,4 +6,3 @@ metadata:
 spec:
   instanceRef:
     name: database-instance
-  secretName: my-secret
