@@ -18,78 +18,83 @@ function waitForContainerRunning() {
   cmd="$1"
   maxSleep=${2:-5}
   elapsed=0
-  err=0
+
+  echo
+  echo "--> $cmd"
+  echo
 
   for (( elapsed=0; elapsed <= maxSleep; )) ; do
     out="$(eval $cmd)"
-    err=$?
-    (( err != 0 )) && break
+    (( $? != 0 )) && return 1  # error
     expect="${out#*/}"
     have="${out%/*}"
-    (( have == expect )) && break
+    (( have == expect )) && return 0  # success
     increment=$(((elapsed/15)+1)) # sleep an extra second every 15s
     ((elapsed+=increment))
     echo "...waiting $elapsed sec for $expect containers to be Ready, have $have..."
     sleep $increment
   done
-  (( elapsed > maxSleep )) && return 1
 
-  return $err
+  return 1
 }
 
 # Executes the passed-in kubectl cmd and compares its output with the passed-in match string.
 # Returns an error if the loop times-out or if the cmd generates an error. The output produced by
-# the command is expected to be santitized, eg. removing spaces/tabs to better handle json or yaml.
-# args: $1= the command to execute which produces the string to be matched against. Note this
-#           string is expected to have all whitespaces removed, eg. `tr -d "[:space:]"`
+# the command will be santitized, eg. removing spaces/tabs to better handle json or yaml.
+# args: $1= the command to execute which produces the string to be matched against.
 #       $2= the match string
 #       $3= resource object type (subject of `kubectl` eg, "pod")
 #       $4= the total wait time in seconds, default=5
 # Note: the passed-in match string needs to have all spaces removed.
 function waitForMatch() {
   cmd="$1"
-  match="$2"
+  match="$(tr -d "[:space:]" <<<"$2")"  # remove spaces etc.
   object="$3"
   maxSleep=${4:-5}
-  err=0
+
+  echo
+  echo "--> $cmd"
+  echo
 
   for (( elapsed=0; elapsed <= maxSleep; )) ; do
-    out="$(eval $cmd)"
-    err=$?
-    (( err != 0 )) && break
-    [[ "$out" == "$match" ]] && break
+    out="$(eval $cmd | tr -d "[:space:]")" # remove spaces, etc
+    (( $? != 0 )) && return 1  # error
+    [[ "$out" == "$match" ]] && return 0  # success
     increment=$(((elapsed/15)+1)) # sleep an extra second every 15s
     ((elapsed+=increment))
     echo "...waiting $elapsed sec for $object match. Have: \"$out\", expect: \"$match\"..."
     sleep $increment
   done
-  (( elapsed > maxSleep )) && return 1
 
-  return $err
+  return 1
 }
 
-# Waits for the passed-in cmd to return an exit code of 0, or up to the specified time-out. Returns an
-# error if the wait times-out of the cmd returns an error.
+# Waits for the passed-in cmd to return an exit code of 0. An error is returned if the wait times-out.
+# Note: some kubectl cmds return no error even though the resource does not exist, in which case the
+#   loop continues.
 # args: $1= the command to execute which produces the "x/y" containers ready string for the target pod
 #       $2= the total wait time in seconds, default=5
 function waitForCmdSuccess() {
   cmd="$1"
   maxSleep=${2:-5}
   elapsed=0
-  err=0
+  out=""
+
+  echo
+  echo "--> $cmd"
+  echo
 
   for (( elapsed=0; elapsed <= maxSleep; )) ; do
-    eval $cmd >/dev/null
-    err=$?
-    (( err == 0 )) && break
+    out="$(eval $cmd 2>&1)"
+    (( $? == 0 )) && [[ "$out" != "No resources found."  ]] && return 0  # success
     increment=$(((elapsed/15)+1)) # sleep an extra second every 15s
     ((elapsed+=increment))
     echo "...waiting $elapsed sec for cmd \"$cmd\" to succeed..."
     sleep $increment
   done
-  (( elapsed > maxSleep )) && return 1
 
-  return $err
+  echo "$out"
+  return 1
 }
 
 ##
@@ -108,7 +113,7 @@ fi
 
 # env vars
 yaml_dir="demo-pod-provision"
-[[ "$DEMO" == "n" ]] && yaml_dir="walkthrough"
+[[ "$DEMO" == "n" || "$DEMO" == "no" ]] && yaml_dir="walkthrough"
 yaml_path="contrib/examples/$yaml_dir"
 if [[ ! -d "$sc_path/$yaml_path" ]] ; then
   echo "$sc_path/$yaml_path is not a directory or does not exist"
@@ -157,6 +162,13 @@ kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-adm
 kubectl create clusterrolebinding catalog --clusterrole=cluster-admin --serviceaccount=catalog:default
 kubectl create clusterrolebinding ups-broker --clusterrole=cluster-admin --serviceaccount=ups-broker:default
 
+# config kubectl to talk to s-c api server in local cluster
+ip=$(hostname -i)
+###kubectl config set-cluster service-catalog --server=http://$ip:30080
+###kubectl config set-context service-catalog --cluster=service-catalog
+kubectl config set-cluster service-catalog --server="https://$ip:30443" --insecure-skip-tls-verify=true
+kubectl config set-context service-catalog --cluster=service-catalog --user=myself
+
 # start helm steps
 echo
 echo "--> helm init"
@@ -184,11 +196,6 @@ if (( $? != 0 )) ; then
   exit 1
 fi
 
-# config kubectl to talk to s-c api server in local cluster
-ip=$(hostname -i)
-kubectl config set-cluster service-catalog --server=http://$ip:30080
-kubectl config set-context service-catalog --cluster=service-catalog
-
 # deploy object broker
 echo
 echo "--> helm install charts/ups-broker --name ups-broker --namespace ups-broker"
@@ -204,9 +211,8 @@ cd $sc_path
 echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml"
 echo
 kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml
-waitForMatch \
-  'kubectl --context=service-catalog get brokers ups-broker -o yaml |grep reason: |tr -d "[:space:]"' \
-  "reason:FetchedCatalog" "ups-broker" 180
+waitForMatch "kubectl --context=service-catalog get brokers ups-broker -o yaml | grep reason:" \
+  "reason: FetchedCatalog" "ups-broker" 180
 if (( $? != 0 )) ; then
   echo "catalog was not fetched"
   exit 1
@@ -223,9 +229,8 @@ echo
 kubectl create namespace test-ns
 kubectl --context=service-catalog create -f $yaml_path/ups-instance.yaml
 kubectl --context=service-catalog get instances -n test-ns
-waitForMatch \
-  'kubectl --context=service-catalog get instances -n test-ns -o yaml|grep reason: |tr -d "[:space:]"' \
-  "reason:ProvisionedSuccessfully" "service-instance" 30
+waitForMatch "kubectl --context=service-catalog get instances -n test-ns -o yaml | grep reason:" \
+  "reason: ProvisionedSuccessfully" "service-instance" 90
 if (( $? != 0 )) ; then
   echo "ServiceInstance was not created"
   exit 1
