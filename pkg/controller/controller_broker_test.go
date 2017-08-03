@@ -31,25 +31,25 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
+	"strings"
+
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
-	"strings"
 )
 
+// TestShouldReconcileBroker ensures that with the expected conditions the
+// reconciler is reported as needing to run.
+//
+// The test cases are proving:
+// - broker without ready condition will reconcile
+// - broker with deletion timestamp set will reconcile
+// - broker without ready condition, with status will reconcile
+// - broker without ready condition, without status will reconcile
+// - broker with status/ready, past relist interval will reconcile
+// - broker with status/ready, within relist interval will NOT reconcile
+// - broker with status/ready/checksum, will reconcile
 func TestShouldReconcileBroker(t *testing.T) {
-	// The test cases here are testing shouldReconcileBroker to ensure that
-	// with the expected conditions the reconciler is reported as needing
-	// to run.
-	// The test cases are proving:
-	// - broker without ready condition will reconcile
-	// - broker with deletion timestamp set will reconcile
-	// - broker without ready condition, with status will reconcile
-	// - broker without ready condition, without status will reconcile
-	// - broker with status/ready, past relist interval will reconcile
-	// - broker with status/ready, within relist interval will NOT reconcile
-	// - broker with status/ready/checksum, will reconcile
-	//
 	// Anonymous struct fields:
 	// name: short description of the test
 	// broker: broker object to test
@@ -156,6 +156,11 @@ func TestShouldReconcileBroker(t *testing.T) {
 	}
 }
 
+// TestReconcileBrokerExistingServiceClass verifies a simple, successful run
+// of reconcileBroker().  This test will cause reconcileBroker() to fetch the
+// catalog from the Broker, create a Service Class for the single service that
+// it lists and reconcile the service class ensuring the name and id of the
+// relisted service matches the existing entry and updates the service catalog.
 func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
@@ -185,6 +190,9 @@ func TestReconcileBrokerExistingServiceClass(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 }
 
+// TestReconcileBrokerExistingServiceClassDifferentExternalID simulates catalog
+// refresh where broker lists an existing service but there is a mismatch on the
+// service class ID which should result in an error
 func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
@@ -219,6 +227,9 @@ func TestReconcileBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
 	}
 }
 
+// TestReconcileBrokerExistingServiceClassDifferentBroker simulates catalog
+// refresh where broker lists a service which matches an existing, already
+// cataloged service but the service points to a different Broker.  Results in an error.
 func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
@@ -253,6 +264,8 @@ func TestReconcileBrokerExistingServiceClassDifferentBroker(t *testing.T) {
 	}
 }
 
+// TestReconcileBrokerDelete simulates a broker reconciliation where broker was marked for deletion.
+// Results in service class and broker both being deleted.
 func TestReconcileBrokerDelete(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
@@ -279,7 +292,7 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	// The three actions should be:
+	// The four actions should be:
 	// 0. Deleting the associated ServiceClass
 	// 1. Updating the ready condition
 	// 2. Getting the broker
@@ -305,6 +318,9 @@ func TestReconcileBrokerDelete(t *testing.T) {
 	}
 }
 
+// TestReconcileBrokerErrorFetchingCatalog simulates broker reconciliation where
+// OSB client responds with an error for getting the catalog which in turn causes
+// reconcileBroker() to return an error.
 func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
@@ -339,6 +355,9 @@ func TestReconcileBrokerErrorFetchingCatalog(t *testing.T) {
 	}
 }
 
+// TestReconcileBrokerZeroServices simulates broker reconciliation where
+// OSB client responds with zero services which causes reconcileBroker()
+// to return an error
 func TestReconcileBrokerZeroServices(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
@@ -534,6 +553,9 @@ func testReconcileBrokerWithAuth(t *testing.T, authInfo *v1alpha1.BrokerAuthInfo
 	}
 }
 
+// TestReconcileBrokerWithReconcileError simulates broker reconciliation where
+// creation of a service class causes an error which causes ReconcileBroker to
+// return an error
 func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, getTestCatalogConfig())
 
@@ -577,7 +599,25 @@ func TestReconcileBrokerWithReconcileError(t *testing.T) {
 	}
 }
 
+// TestUpdateBrokerCondition ensures that with specific conditions
+// the broker correctly reflects the changes during updateBrokerCondition().
+//
+// The test cases are proving:
+// - broker transitions from unset status to not ready results in status change and new time
+// - broker transitions from not ready to not ready results in no changes
+// - broker transitions from not ready to not ready and with reason & msg updates results in no time change, but reflects new reason & msg
+// - broker transitions from not ready to ready results in status change & new time
+// - broker transitions from ready to ready results in no status change
+// - broker transitions from ready to not ready results in status change & new time
+// - condition reason & message should always be updated
 func TestUpdateBrokerCondition(t *testing.T) {
+	// Anonymous struct fields:
+	// name: short description of the test
+	// input: broker object to test
+	// status: new condition status
+	// reason: condition reason
+	// message: condition message
+	// transitionTimeChanged: true if the test conditions should result in transition time change
 	cases := []struct {
 		name                  string
 		input                 *v1alpha1.Broker
@@ -689,7 +729,7 @@ func TestUpdateBrokerCondition(t *testing.T) {
 			continue
 		}
 		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: condition message didn't match; expected %v, got %v", tc.name, e, a)
 		}
 	}
 }
