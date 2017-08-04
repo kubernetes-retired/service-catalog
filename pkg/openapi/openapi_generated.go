@@ -53,6 +53,40 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BasicAuthConfig": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "BasicAuthConfig provides config for the basic authentication.",
+					Properties: map[string]spec.Schema{
+						"secretRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this Broker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BearerTokenAuthConfig": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "BearerTokenAuthConfig provides config for the bearer token authentication.",
+					Properties: map[string]spec.Schema{
+						"secretRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this Broker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.Binding": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -303,11 +337,23 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerAuthInfo": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).\n\nNote that we currently restrict a single broker to have only one of these fields set on it.",
+					Description: "BrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
 					Properties: map[string]spec.Schema{
+						"basic": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Basic provides configuration for basic authentication.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BasicAuthConfig"),
+							},
+						},
+						"bearer": {
+							SchemaProps: spec.SchemaProps{
+								Description: "BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token. The value is referenced from the 'token' field of the given secret.  This value should only contain the token value and not the `Bearer` scheme.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BearerTokenAuthConfig"),
+							},
+						},
 						"basicAuthSecret": {
 							SchemaProps: spec.SchemaProps{
-								Description: "BasicAuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this Broker using basic auth.",
+								Description: "DEPRECATED: use `Basic` field for configuring basic authentication instead. BasicAuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this Broker using basic auth.",
 								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
 							},
 						},
@@ -315,7 +361,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/client-go/pkg/api/v1.ObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BearerTokenAuthConfig", "k8s.io/client-go/pkg/api/v1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerCondition": {
 			Schema: spec.Schema{

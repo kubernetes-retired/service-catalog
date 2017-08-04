@@ -114,9 +114,11 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 
 	broker := getTestBroker()
 	broker.Spec.AuthInfo = &v1alpha1.BrokerAuthInfo{
-		BasicAuthSecret: &v1.ObjectReference{
-			Namespace: "does_not_exist",
-			Name:      "auth-name",
+		Basic: &v1alpha1.BasicAuthConfig{
+			SecretRef: &v1.ObjectReference{
+				Namespace: "does_not_exist",
+				Name:      "auth-name",
+			},
 		},
 	}
 	sharedInformers.Brokers().Informer().GetStore().Add(broker)

@@ -57,14 +57,50 @@ type BrokerSpec struct {
 // BrokerAuthInfo is a union type that contains information on one of the authentication methods
 // the the service catalog and brokers may support, according to the OpenServiceBroker API
 // specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
-//
-// Note that we currently restrict a single broker to have only one of these fields
-// set on it.
 type BrokerAuthInfo struct {
+	// Basic provides configuration for basic authentication.
+	Basic *BasicAuthConfig `json:"basic,omitempty"`
+	// BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
+	// The value is referenced from the 'token' field of the given secret.  This value should only
+	// contain the token value and not the `Bearer` scheme.
+	Bearer *BearerTokenAuthConfig `json:"bearer,omitempty"`
+
+	// DEPRECATED: use `Basic` field for configuring basic authentication instead.
 	// BasicAuthSecret is a reference to a Secret containing auth information the
 	// catalog should use to authenticate to this Broker using basic auth.
 	BasicAuthSecret *v1.ObjectReference `json:"basicAuthSecret,omitempty"`
 }
+
+// BasicAuthConfig provides config for the basic authentication.
+type BasicAuthConfig struct {
+	// SecretRef is a reference to a Secret containing information the
+	// catalog should use to authenticate to this Broker.
+	//
+	// Required at least one of the fields:
+	// - Secret.Data["username"] - username used for authentication
+	// - Secret.Data["password"] - password or token needed for authentication
+	SecretRef *v1.ObjectReference `json:"secretRef,omitempty"`
+}
+
+// BearerTokenAuthConfig provides config for the bearer token authentication.
+type BearerTokenAuthConfig struct {
+	// SecretRef is a reference to a Secret containing information the
+	// catalog should use to authenticate to this Broker.
+	//
+	// Required field:
+	// - Secret.Data["token"] - bearer token for authentication
+	SecretRef *v1.ObjectReference `json:"secretRef,omitempty"`
+}
+
+const (
+	// BasicAuthUsernameKey is the key of the username for SecretTypeBasicAuth secrets
+	BasicAuthUsernameKey = "username"
+	// BasicAuthPasswordKey is the key of the password or token for SecretTypeBasicAuth secrets
+	BasicAuthPasswordKey = "password"
+
+	// BearerTokenKey is the key of the bearer token for SecretTypeBearerTokenAuth secrets
+	BearerTokenKey = "token"
+)
 
 // BrokerStatus represents the current status of a Broker.
 type BrokerStatus struct {
