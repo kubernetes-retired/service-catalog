@@ -77,6 +77,8 @@ func TestBrokerSpecChecksum(t *testing.T) {
 				},
 			},
 		},
+		InsecureSkipTLSVerify: true,
+		CABundle:              []byte{13, 24, 35, 46},
 	}
 
 	unversionedChecksum := unversioned.BrokerSpecChecksum(spec)

@@ -287,6 +287,11 @@ func DeepCopy_servicecatalog_BrokerSpec(in interface{}, out interface{}, c *conv
 				return err
 			}
 		}
+		if in.CABundle != nil {
+			in, out := &in.CABundle, &out.CABundle
+			*out = make([]byte, len(*in))
+			copy(*out, *in)
+		}
 		return nil
 	}
 }
