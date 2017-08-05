@@ -567,5 +567,5 @@ func (c *controller) bindingDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for Binding %v/%v", binding.Namespace, binding.Name)
+	glog.V(4).Infof("Received delete event for Binding %v/%v; no further processing will occur", binding.Namespace, binding.Name)
 }
