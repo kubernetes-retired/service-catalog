@@ -40,30 +40,44 @@ func (c *controller) instanceAdd(obj interface{}) {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-	// TODO(vaikas): If the obj (which really is an Instance right?) has
-	// AsyncOpInProgress flag set, just add it directly to c.pollingQueue
-	// here? Why shouldn't we??
+
 	c.instanceQueue.Add(key)
 }
 
-func (c *controller) reconcileInstanceKey(key string) error {
+func (c *controller) reconcileInstanceKey(key string) (bool, error) {
 	// For namespace-scoped resources, SplitMetaNamespaceKey splits the key
 	// i.e. "namespace/name" into two separate strings
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
-		return err
+		return false, err
 	}
 	instance, err := c.instanceLister.Instances(namespace).Get(name)
 	if errors.IsNotFound(err) {
 		glog.Infof("Not doing work for Instance %v because it has been deleted", key)
-		return nil
+		return false, nil
 	}
 	if err != nil {
 		glog.Errorf("Unable to retrieve Instance %v from store: %v", key, err)
-		return err
+		return false, err
 	}
 
-	return c.reconcileInstance(instance)
+	err = c.reconcileInstance(instance)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if we need to poll on this instance.
+	// Have to re-retrieve instance as it might have changed during reconciliation.
+	instance, err = c.instanceLister.Instances(namespace).Get(name)
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		glog.Errorf("Unable to retrieve Instance %v from store: %v", key, err)
+		return false, err
+	}
+
+	return instance.Status.AsyncOpInProgress, nil
 }
 
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
@@ -457,14 +471,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		c.updateInstanceStatus(toUpdate)
 
 		c.recorder.Eventf(instance, api.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
-
-		// Actually, start polling this Service Instance by adding it into the polling queue
-		key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
-		if err != nil {
-			glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
-			return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
-		}
-		c.pollingQueue.Add(key)
 	} else {
 		glog.V(5).Infof("Successfully provisioned Instance %v/%v of ServiceClass %v at Broker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 
@@ -479,6 +485,14 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		c.updateInstanceStatus(toUpdate)
 
 		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
+
+		key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+		if err != nil {
+			glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+			return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+		}
+
+		c.instanceQueue.Add(key)
 	}
 	return nil
 }
@@ -602,7 +616,6 @@ func (c *controller) pollInstance(serviceClass *v1alpha1.ServiceClass, servicePl
 				message,
 			)
 		}
-		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
 	case osb.StateSucceeded:
 		// Update the instance to reflect that an async operation is no longer
 		// in progress.
