@@ -389,7 +389,7 @@ func (c *controller) reconcileServiceClassFromBrokerCatalog(broker *v1alpha1.Bro
 	return nil
 }
 
-// updateBrokerReadyCondition updates the ready condition for the given Broker
+// updateBrokerCondition updates the ready condition for the given Broker
 // with the given status, reason, and message.
 func (c *controller) updateBrokerCondition(broker *v1alpha1.Broker, conditionType v1alpha1.BrokerConditionType, status v1alpha1.ConditionStatus, reason, message string) error {
 	clone, err := api.Scheme.DeepCopy(broker)
