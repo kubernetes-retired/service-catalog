@@ -30,6 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
+	// If you change this package, you must also update
+	// plugin/pkg/admission/podpreset/exists/admission.go to check
+	// for the correct version of the necessary PodPreset support.
 	settingsv1alpha1 "k8s.io/client-go/pkg/apis/settings/v1alpha1"
 	"k8s.io/client-go/tools/cache"
 )
