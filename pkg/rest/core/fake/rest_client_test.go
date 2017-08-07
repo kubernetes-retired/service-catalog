@@ -212,17 +212,42 @@ func TestGetItems(t *testing.T) {
 
 func TestCreateItem(t *testing.T) {
 	testCases := []struct {
-		name           string
-		storage        NamespacedStorage
-		watcher        *Watcher
-		rw             *responseWriter
-		url            string
-		item           runtime.Object
-		expectedStatus int
+		name                  string
+		storage               NamespacedStorage
+		watcher               *Watcher
+		rw                    *responseWriter
+		url                   string
+		item                  runtime.Object
+		expectedStatus        int
+		expectedStorageLength int
 	}{
-		{"Create Item (empty storage)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{TypeMeta: metav1.TypeMeta{Kind: "broker", APIVersion: "v1"}}, http.StatusCreated},
-		// {"Create misformed item(no Kind)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{}, http.StatusInternalServerError},
-		// {"Create Item(non-empty storage)", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), http.StatusOK},
+		{
+			"Create Item (empty storage)",
+			make(NamespacedStorage), NewWatcher(),
+			newResponseWriter(),
+			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1),
+			&servicecatalog.Broker{ObjectMeta: metav1.ObjectMeta{Name: name1}, TypeMeta: metav1.TypeMeta{Kind: "Broker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
+			http.StatusCreated,
+			1,
+		},
+		{
+			"Create misformed item(no Kind)",
+			make(NamespacedStorage),
+			NewWatcher(),
+			newResponseWriter(),
+			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1),
+			&servicecatalog.Broker{}, http.StatusInternalServerError,
+			0,
+		},
+		{
+			"Create Item(non-empty storage)",
+			createMultipleItemStorage(),
+			NewWatcher(),
+			newResponseWriter(),
+			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{TypeMeta: metav1.TypeMeta{Kind: "Broker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
+			http.StatusCreated,
+			2,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -255,8 +280,8 @@ func TestCreateItem(t *testing.T) {
 				t.Error("Expected Status", tc.expectedStatus, "got", tc.rw.getResponse().StatusCode)
 				t.Error("Http error:", string(body))
 			}
-			if err != nil {
-				t.Fatal(err)
+			if len(tc.storage) != tc.expectedStorageLength {
+				t.Error("Expected the length of the storage to be", tc.expectedStorageLength, "got", len(tc.storage))
 			}
 		})
 	}
