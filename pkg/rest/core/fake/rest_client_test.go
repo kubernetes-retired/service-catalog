@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -219,8 +220,8 @@ func TestCreateItem(t *testing.T) {
 		item           runtime.Object
 		expectedStatus int
 	}{
-		{"Create Item (empty storage)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{}, http.StatusCreated},
-		{"Create misformed item(no Kind)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{kind: Broker}, http.StatusInternalServerError},
+		{"Create Item (empty storage)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{TypeMeta: metav1.TypeMeta{Kind: "broker", APIVersion: "v1"}}, http.StatusCreated},
+		// {"Create misformed item(no Kind)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{}, http.StatusInternalServerError},
 		// {"Create Item(non-empty storage)", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), http.StatusOK},
 	}
 
@@ -240,7 +241,7 @@ func TestCreateItem(t *testing.T) {
 			}
 
 			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
-				return &servicecatalog.Instance{}
+				return tc.item
 			})
 
 			router.ServeHTTP(tc.rw, request)
