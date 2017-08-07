@@ -17,15 +17,16 @@ limitations under the License.
 package fake
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -215,15 +216,25 @@ func TestCreateItem(t *testing.T) {
 		watcher        *Watcher
 		rw             *responseWriter
 		url            string
+		item           runtime.Object
 		expectedStatus int
 	}{
-		{"Create Item (empty storage)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), http.StatusCreated},
+		{"Create Item (empty storage)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{}, http.StatusCreated},
+		{"Create misformed item(no Kind)", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.Broker{kind: Broker}, http.StatusInternalServerError},
 		// {"Create Item(non-empty storage)", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), http.StatusOK},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			request, err := http.NewRequest("POST", tc.url, nil)
+			codec, err := testapi.GetCodecForObject(tc.item)
+			if err != nil {
+				t.Fatalf("error getting a codec for %#v (%s)", tc.item, err)
+			}
+			bodyBytes, err := runtime.Encode(codec, tc.item)
+			if err != nil {
+				t.Fatalf("error getting a encoding %#v (%s)", tc.item, err)
+			}
+			request, err := http.NewRequest("POST", tc.url, bytes.NewReader(bodyBytes))
 			if err != nil {
 				t.Fatal(err)
 			}
