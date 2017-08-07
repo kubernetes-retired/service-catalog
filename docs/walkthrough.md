@@ -32,17 +32,22 @@ be done with Helm setup.
 If you don't already have Helm v2, see the
 [installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
 
-### RBAC Considerations
-
-If your kubernetes cluster has [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/)
-enabled, you must ensure that the default service account for the `kube-system`
-namespace has the `cluster-admin` role:
+If your kubernetes cluster has
+[RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) enabled, you must
+ensure that the tiller pod has `cluster-admin` access. By default, `helm init`
+installs the tiller pod into `kube-system` namespace, with tiller configured to
+use the `default` service account.
 
 ```console
-kubectl create clusterrolebinding default-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+kubectl create clusterrolebinding tiller-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 ```
 
-This is required in order for helm to work correctly in clusters with RBAC enabled.
+`cluster-admin` access is required in order for helm to work correctly in
+clusters with RBAC enabled.  If you used the `--tiller-namespace` or
+`--service-account` flags when running `helm init`, the `--serviceaccount` flag
+in the previous command needs to be adjusted to reference the appropriate
+namespace and ServiceAccount name.
+
 
 ## Step 1 - Installing the Service Catalog
 
