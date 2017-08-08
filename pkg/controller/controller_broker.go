@@ -59,7 +59,7 @@ func (c *controller) brokerDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for Broker %v", broker.Name)
+	glog.V(4).Infof("Received delete event for Broker %v; no further processing will occur", broker.Name)
 }
 
 // the Message strings have a terminating period and space so they can

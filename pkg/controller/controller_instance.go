@@ -228,7 +228,7 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 		}
 
 		if response.Async {
-			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+			glog.V(5).Infof("Received asynchronous de-provisioning response for Instance %v/%v of ServiceClass %v at Broker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 			if response.OperationKey != nil && *response.OperationKey != "" {
 				key := string(*response.OperationKey)
 				toUpdate.Status.LastOperation = &key
@@ -881,5 +881,5 @@ func (c *controller) instanceDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for Instance %v/%v", instance.Namespace, instance.Name)
+	glog.V(4).Infof("Received delete event for Instance %v/%v; no further processing will occur", instance.Namespace, instance.Name)
 }
