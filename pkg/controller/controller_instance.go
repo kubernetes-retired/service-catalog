@@ -149,10 +149,6 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 	// All updates not having a DeletingTimestamp will have been handled above
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
-	// Since the potential exists for an instance to have multiple finalizers and
-	// since those most be cleared in order, we proceed with the soft delete
-	// only if it's "our turn--" i.e. only if the finalizer we care about is at
-	// the head of the finalizers list.
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
 	if err != nil {
 		return err
