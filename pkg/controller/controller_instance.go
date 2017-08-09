@@ -68,7 +68,7 @@ func (c *controller) reconcileInstanceKey(key string) (bool, error) {
 
 	// Check if we need to poll on this instance.
 	// Have to re-retrieve instance as it might have changed during reconciliation.
-	instance, err = c.instanceLister.Instances(namespace).Get(name)
+	instance, err = c.serviceCatalogClient.Instances(instance.Namespace).Get(name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return false, nil
 	}
