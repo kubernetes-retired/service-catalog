@@ -485,14 +485,6 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		c.updateInstanceStatus(toUpdate)
 
 		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
-
-		key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
-		if err != nil {
-			glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
-			return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
-		}
-
-		c.instanceQueue.Add(key)
 	}
 	return nil
 }
