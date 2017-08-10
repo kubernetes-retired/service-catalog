@@ -4,7 +4,7 @@ Table of Contents
 - [Overview](#overview)
 - [Working on Issues](#working-on-issues)
 - [Prerequisites](#prerequisites)
-- [Cloning the Repo](#cloning-the-repo)
+- [Workflow](#workflow)
 - [Building](#building)
 - [Testing](#testing)
 - [Advanced Build Steps](#advanced-build-steps)
