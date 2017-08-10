@@ -92,12 +92,13 @@ linux/amd64 binaries suitable for execution within a Docker container.
 We can set up the repo by following a process similar to the [dev guide for k8s]( https://github.com/kubernetes/community/blob/master/contributors/devel/development.md#1-fork-in-the-cloud)
 
 ### 1 Fork in the Cloud
-1. Visit Visit https://github.com/kubernetes-incubator/service-catalog
+1. Visit https://github.com/kubernetes-incubator/service-catalog
 2. Click Fork button (top right) to establish a cloud-based fork.
 
 ### 2 Clone fork to local storage
 
-Per Go's workspace instructions, place Service Catalog's code on your GOPATH using the following cloning procedure.
+Per Go's workspace instructions, place Service Catalog's code on your GOPATH
+using the following cloning procedure.
 
 Define a local working directory:
 
@@ -122,7 +123,7 @@ cd $working_dir
 git clone https://github.com/$user/service-catalog.git
 # or: git clone git@github.com:$user/service-catalog.git
 
-cd $working_dir/service-catalog
+cd service-catalog
 git remote add upstream https://github.com/kubernetes-incubator/service-catalog.git
 # or: git remote add upstream git@github.com:kubernetes-incubator/service-catalog.git
 
