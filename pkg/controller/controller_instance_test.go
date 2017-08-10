@@ -331,7 +331,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to unmarshal Instance parameters"
+	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to prepare Instance parameters"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
 		t.Fatalf("Received unexpected event: %v", a)
 	}

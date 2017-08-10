@@ -306,9 +306,22 @@ type InstanceSpec struct {
 	// provisioned from.
 	PlanName string
 
-	// Parameters is a YAML representation of the properties to be
+	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.
+	// The inline YAML/JSON payload to be translated into equivalent
+	// JSON object.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
+	// +optional
 	Parameters *runtime.RawExtension
+
+	// List of sources to populate parameters.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
+	// +optional
+	ParametersFrom []ParametersFromSource
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
@@ -401,9 +414,22 @@ type BindingSpec struct {
 	// Immutable.
 	InstanceRef v1.LocalObjectReference
 
-	// Parameters is a YAML representation of the properties to be
+	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.
+	// The inline YAML/JSON payload to be translated into equivalent
+	// JSON object.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
+	// +optional
 	Parameters *runtime.RawExtension
+
+	// List of sources to populate parameters.
+	// If a top-level parameter name exists in multiples sources among
+	// `Parameters` and `ParametersFrom` fields, it is
+	// considered to be a user error in the specification
+	// +optional
+	ParametersFrom []ParametersFromSource
 
 	// SecretName is the name of the secret to create in the Binding's
 	// namespace that will hold the credentials associated with the Binding.
@@ -457,3 +483,19 @@ const (
 const (
 	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
 )
+
+// ParametersFromSource represents the source of a set of Parameters
+type ParametersFromSource struct {
+	// The Secret key to select from.
+	// The value must be a JSON object.
+	//+optional
+	SecretKeyRef *SecretKeyReference
+}
+
+// SecretKeyReference references a key of a Secret.
+type SecretKeyReference struct {
+	// The name of the secret in the pod's namespace to select from.
+	Name string
+	// The key of the secret to select from.  Must be a valid secret key.
+	Key string
+}

@@ -375,10 +375,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	toUpdate := clone.(*v1alpha1.Instance)
 
 	var parameters map[string]interface{}
-	if instance.Spec.Parameters != nil {
-		parameters, err = unmarshalParameters(instance.Spec.Parameters.Raw)
+	if instance.Spec.Parameters != nil || instance.Spec.ParametersFrom != nil {
+		parameters, err = buildParameters(c.kubeClient, instance.Namespace, instance.Spec.ParametersFrom, instance.Spec.Parameters)
 		if err != nil {
-			s := fmt.Sprintf("Failed to unmarshal Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
+			s := fmt.Sprintf("Failed to prepare Instance parameters\n%s\n %s", instance.Spec.Parameters, err)
 			glog.Warning(s)
 
 			setInstanceCondition(
@@ -386,7 +386,7 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 				v1alpha1.InstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				errorWithParameters,
-				"Error unmarshaling instance parameters. "+s,
+				s,
 			)
 			c.updateInstanceStatus(toUpdate)
 
