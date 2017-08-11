@@ -110,6 +110,8 @@ func (d *defaultPlan) SetInternalServiceCatalogInformerFactory(f informers.Share
 }
 
 func (d *defaultPlan) Validate() error {
+	glog.V(4).Infof("d is %+v", d)
+	glog.V(4).Infof("scLister is %+v", d.scLister)
 	if d.scLister == nil {
 		return fmt.Errorf("missing service class lister")
 	}

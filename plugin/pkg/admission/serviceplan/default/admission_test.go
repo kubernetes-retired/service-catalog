@@ -17,7 +17,6 @@ limitations under the License.
 package defaultserviceplan
 
 import (
-	//	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -30,14 +29,11 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	core "k8s.io/client-go/testing"
 
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
-	//	internalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/fake"
-
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
+	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
 )
 
 // newHandlerForTest returns a configured handler for testing.
@@ -54,27 +50,20 @@ func newHandlerForTest(internalClient internalclientset.Interface) (admission.In
 }
 
 // newFakeServiceCatalogClientForTest creates a fake clientset that returns a
-// clientset configured to return the specified serviceclass.
+// ServiceClassList with the givne ServiceClass as the single list item.
 func newFakeServiceCatalogClientForTest(sc *servicecatalog.ServiceClass) *fake.Clientset {
 	fakeClient := &fake.Clientset{}
-	fakeClient.AddReactor("get", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
-		return true, sc, nil
+
+	scList := &servicecatalog.ServiceClassList{
+		ListMeta: metav1.ListMeta{
+			ResourceVersion: "1",
+		}}
+	scList.Items = append(scList.Items, *sc)
+
+	fakeClient.AddReactor("list", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
+		return true, scList, nil
 	})
-	glog.V(4).Infof("Created fakeclient as %+v", fakeClient)
 	return fakeClient
-}
-
-// newMockClientForTest creates a mock client.
-func newMockClientForTest() *fake.Clientset {
-	fakeClient := &fake.Clientset{}
-	return fakeClient
-}
-
-// newBroker returns a new broker for testing.
-func newBroker() servicecatalog.Broker {
-	return servicecatalog.Broker{
-		ObjectMeta: metav1.ObjectMeta{Name: "broker"},
-	}
 }
 
 // newInstance returns a new instance for the specified namespace.
@@ -147,14 +136,44 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 
 	instance := newInstance("dummy")
 	instance.Spec.ServiceClassName = "foo"
-	instance.Spec.PlanName = "bar"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
-	if err == nil {
+	if err != nil {
 		actions := ""
 		for _, action := range mockSCClient.Actions() {
 			actions = actions + action.GetVerb() + ":" + action.GetResource().Resource + ":" + action.GetSubresource() + ", "
 		}
 		t.Errorf("expected error returned from admission handler: %v", actions)
+	}
+	// Make sure the Instance has been mutated to include the service plan name
+	if instance.Spec.PlanName != "bar" {
+		t.Errorf("PlanName was not modified for the default plan")
+	}
+}
+
+func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
+	sc := newServiceClass("foo", "bar", "baz")
+	glog.V(4).Infof("Created Service as %+v", sc)
+	mockSCClient := newFakeServiceCatalogClientForTest(sc)
+	handler, informerFactory, err := newHandlerForTest(mockSCClient)
+	if err != nil {
+		t.Errorf("unexpected error initializing handler: %v", err)
+	}
+	informerFactory.Start(wait.NeverStop)
+
+	instance := newInstance("dummy")
+	instance.Spec.ServiceClassName = "foo"
+
+	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
+	if err != nil {
+		actions := ""
+		for _, action := range mockSCClient.Actions() {
+			actions = actions + action.GetVerb() + ":" + action.GetResource().Resource + ":" + action.GetSubresource() + ", "
+		}
+		t.Errorf("expected error returned from admission handler: %v", actions)
+	}
+	// Make sure the Instance has been mutated to include the service plan name
+	if instance.Spec.PlanName != "bar" {
+		t.Errorf("PlanName was not modified for the default plan")
 	}
 }
