@@ -108,7 +108,7 @@ const (
 	successUnboundReason             string = "UnboundSuccessfully"
 	asyncProvisioningReason          string = "Provisioning"
 	asyncProvisioningMessage         string = "The instance is being provisioned asynchronously"
-	asyncDeprovisioningReason        string = "Derovisioning"
+	asyncDeprovisioningReason        string = "Deprovisioning"
 	asyncDeprovisioningMessage       string = "The instance is being deprovisioned asynchronously"
 )
 

@@ -254,9 +254,13 @@ func (c *controller) reconcileInstanceDelete(instance *v1alpha1.Instance) error 
 			if err != nil {
 				return err
 			}
-		} else {
-			glog.V(5).Infof("Deprovision call to broker succeeded for Instance %v/%v, finalizing", instance.Namespace, instance.Name)
+
+			c.recorder.Eventf(instance, api.EventTypeNormal, asyncDeprovisioningReason, asyncDeprovisioningMessage)
+
+			return nil
 		}
+
+		glog.V(5).Infof("Deprovision call to broker succeeded for Instance %v/%v, finalizing", instance.Namespace, instance.Name)
 
 		setInstanceCondition(
 			toUpdate,
@@ -318,6 +322,10 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 		return nil
 	}
 
+	if instance.Status.AsyncOpInProgress {
+		return c.pollInstanceInternal(instance)
+	}
+
 	// If there's no async op in progress, determine whether the checksum
 	// has been invalidated by a change to the object. If the instance's
 	// checksum matches the calculated checksum, there is no work to do.
@@ -334,37 +342,30 @@ func (c *controller) reconcileInstance(instance *v1alpha1.Instance) error {
 	// communicating with the broker.  In the future the same logic will
 	// result in an instance that requires update being processed by the
 	// controller.
-	if !instance.Status.AsyncOpInProgress {
-		if instance.Status.Checksum != nil && instance.DeletionTimestamp == nil {
-			instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
-			if instanceChecksum == *instance.Status.Checksum {
-				glog.V(4).Infof(
-					"Not processing event for Instance %v/%v because checksum showed there is no work to do",
-					instance.Namespace,
-					instance.Name,
-				)
-				return nil
-			}
+	if instance.Status.Checksum != nil && instance.DeletionTimestamp == nil {
+		instanceChecksum := checksum.InstanceSpecChecksum(instance.Spec)
+		if instanceChecksum == *instance.Status.Checksum {
+			glog.V(4).Infof(
+				"Not processing event for Instance %v/%v because checksum showed there is no work to do",
+				instance.Namespace,
+				instance.Name,
+			)
+			return nil
 		}
 	}
 
 	glog.V(4).Infof("Processing Instance %v/%v", instance.Namespace, instance.Name)
 
-	// if the instance is marked for deletion, handle that first.
 	if instance.ObjectMeta.DeletionTimestamp != nil {
 		return c.reconcileInstanceDelete(instance)
 	}
+
+	glog.V(4).Infof("Adding/Updating Instance %v/%v", instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndBroker(instance)
 	if err != nil {
 		return err
 	}
-
-	if instance.Status.AsyncOpInProgress {
-		return c.pollInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
-	}
-
-	glog.V(4).Infof("Adding/Updating Instance %v/%v", instance.Namespace, instance.Name)
 
 	// we will definitely update the instance's status - make a deep copy now
 	// for use later in this method.

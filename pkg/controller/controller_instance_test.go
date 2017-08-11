@@ -779,6 +779,79 @@ func TestReconcileInstanceDelete(t *testing.T) {
 	}
 }
 
+func TestReconcileInstanceDeleteAsynchronous(t *testing.T) {
+	key := osb.OperationKey(testOperation)
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{
+				Async:        true,
+				OperationKey: &key,
+			},
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+
+	instance := getTestInstance()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	// we only invoke the broker client to deprovision if we have a checksum set
+	// as that implies a previous success.
+	checksum := checksum.InstanceSpecChecksum(instance.Spec)
+	instance.Status.Checksum = &checksum
+
+	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	if testController.pollingQueue.Len() != 0 {
+		t.Fatalf("Expected the polling queue to be empty")
+	}
+
+	err := testController.reconcileInstance(instance)
+	if err != nil {
+		t.Fatalf("This should not fail")
+	}
+
+	// The item should've been added to the pollingQueue for later processing
+
+	// TODO: add a way to peek into rate-limited adds that are still pending,
+	// then uncomment.
+	// if testController.pollingQueue.Len() != 1 {
+	// 	t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
+	// }
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+	})
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The action should be:
+	// 0. Updating the ready condition
+	assertNumberOfActions(t, actions, 1)
+
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + asyncDeprovisioningReason + " " + "The instance is being deprovisioned asynchronously"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
 // TestReconcileInstanceDeleteFailedInstance tests that a failed instance will
 // be finalized, but no deprovision request will be sent to the broker.
 func TestReconcileInstanceDeleteFailedInstance(t *testing.T) {
