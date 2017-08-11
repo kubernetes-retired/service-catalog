@@ -156,7 +156,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, c.reconcileServiceClassKey), time.Second, stopCh)
 		go wait.Until(worker(c.instanceQueue, "Instance", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
 		go wait.Until(worker(c.bindingQueue, "Binding", maxRetries, c.reconcileBindingKey), time.Second, stopCh)
-		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, c.requeueInstanceForPoll), time.Second, stopCh)
+		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, c.reconcileInstanceKey), time.Second, stopCh)
 	}
 
 	<-stopCh
@@ -172,6 +172,9 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
 // If reconciler returns an error, requeue the item up to maxRetries before giving up.
 // It enforces that the reconciler is never invoked concurrently with the same key.
+// TODO: Consider allowing the reconciler to return an error that either specifies whether
+// this is recoverable or not, rather than always continuing on an error condition. Seems
+// like it should be possible to return an error, yet stop any further polling work.
 func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetries int, reconciler func(key string) error) func() {
 	return func() {
 		exit := false
