@@ -755,22 +755,10 @@ func TestReconcileInstanceDeleteAsynchronous(t *testing.T) {
 		return true, instance, nil
 	})
 
-	if testController.pollingQueue.Len() != 0 {
-		t.Fatalf("Expected the polling queue to be empty")
-	}
-
 	err := testController.reconcileInstance(instance)
 	if err != nil {
 		t.Fatalf("This should not fail")
 	}
-
-	// The item should've been added to the pollingQueue for later processing
-
-	// TODO: add a way to peek into rate-limited adds that are still pending,
-	// then uncomment.
-	// if testController.pollingQueue.Len() != 1 {
-	// 	t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
-	// }
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
