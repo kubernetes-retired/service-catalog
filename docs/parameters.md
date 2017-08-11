@@ -4,9 +4,8 @@ Table of Contents
 - [Overview](#overview)
 - [Design](#design)
   - [Basic example](#basic-example)
-  - [Passing sensitive data](#passing-sensitive-data)
-  - [Merging multiple sources and conflict resolution](#merging-multiple-sources-and-conflict-resolution)
-- [Example with multiple sources](#example-with-multiple-sources)
+  - [Passing parameters as an inline JSON](#passing-parameters-as-an-inline-json)
+  - [Referencing sensitive data stored in secrets](#referencing-sensitive-data-stored-in-secret)
 
 ## Overview
 `parameters` and `parametersFrom` properties of `Instance` and `Broker` resources 
@@ -20,9 +19,72 @@ of this structure.
 
 ## Design
 
-When you create an `Instance` or a `Binding`, you can set parameters to be passed 
-to the corresponding broker.
-To set parameters, include the `parameters` or `parametersFrom` field in the spec.
+To set input parameters, you may use the `parameters` and `parametersFrom` 
+fields in the `spec` field of the `Instance` or `Binding` resource:
+- `parameters` : can be used to specify a set of properties to be sent to the 
+broker. The data specified will be passed "as-is" to the broker without any 
+modifications - aside from converting it to JSON for transmission to the broker 
+in the case of the `spec` field being specified as `YAML`. Any valid `YAML` or 
+`JSON` constructs are supported. One only parameters field may be specified per
+`spec`.
+- `parametersFrom` : can be used to specify which secret, and key in that secret, 
+which contains a `string` that represents the json to include in the set of 
+parameters to be sent to the broker. The `parametersFrom` field is a list which 
+supports multiple sources referenced per `spec`.
+
+You may use either, or both, of these fields as needed.
+
+If multiple sources in `parameters` and `parametersFrom` blocks are specified,
+the final payload is a result of merging all of them at the top level.
+If there are any duplicate properties defined at the top level, the specification
+is considered to be invalid, the further processing of the `Instance`/`Binding`
+resource stops and its `status` is marked with error condition.
+
+The format of the `spec` will be (in YAML format):
+```yaml
+spec:
+  ...
+  parameters:
+    name: value
+  parametersFrom:
+    - secretKeyRef:
+        name: secretName
+        key: myKey
+```
+or, in JSON format
+```json
+"spec": {
+  "parameters": {
+    "name": "value"
+  },
+  "parametersFrom": {
+    "secretKeyRef": {
+      "name": "secretName",
+      "key": "myKey"
+    }
+  }
+}
+```
+and the secret would need to have a key named myKey:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName
+type: Opaque
+stringData:
+  myKey: >
+    {
+      "password": "letmein"
+    }
+```
+The final JSON payload to be sent to the broker would then look like:
+```json
+{
+  "name": "value",
+  "password": "letmein"
+}
+```
 
 ### Basic example
 
@@ -58,7 +120,55 @@ spec:
     ami_id: ami-ecb68a84
 ```
 
-### Passing sensitive data
+### Passing parameters as an inline JSON
+
+As shown in the example above, parameters can be specified directly in the
+`Instance`/`Binding` resource specification in the `parameters` field.
+The structure of parameters is not limited to just key-value pairs, arbitrary 
+YAML/JSON structure supported as an input (YAML format gets translated into 
+equivalent JSON structure to be passed to the broker).
+
+Let's have a look at the broker for 
+[Spring Cloud Config Server](https://docs.pivotal.io/spring-cloud-services/1-4/common/config-server/configuring-with-vault.html),
+as an example.
+
+It requires JSON configuration like this:
+```json
+{
+  "vault": {
+    "host": "127.0.0.1",
+    "port": "8200",
+    "proxy": {
+      "http": {
+        "host": "proxy.wise.com",
+        "port": "80"
+      }
+    }
+  }
+}
+```
+The corresponding `Instance` resource with such configuration can be defined as 
+follows:
+```yaml
+apiVersion: servicecatalog.k8s.io/v1alpha1
+kind: Instance
+metadata:
+  name: spring-cloud-instance
+  namespace: test-ns
+spec:
+  serviceClassName: cloud-config
+  planName: default
+  parameters:
+    vault:
+      host: 127.0.0.1
+      port: "8200"
+      proxy:
+        http:
+          host: proxy.wise.com
+          port: "80"
+```
+
+### Referencing sensitive data stored in secret
 
 `Secret` resources can be used to store sensitive data. The `parametersFrom`
 field allows the user to reference the external parameters source.
@@ -75,67 +185,3 @@ be stored in a single `Secret` key, and passed using a `secretKeyRef` field:
 ```
 
 The value stored in a secret key must be a valid JSON.
-
-### Merging multiple sources and conflict resolution
-
-If multiple sources in `parameters` and `parametersFrom` blocks are specified,
-the final payload is a result of merging all of them at the top level.
-If there are any duplicate properties defined at the top level, the specification
-is considered to be invalid, the further processing of the `Instance`/`Binding` 
-resource stops and its `status` is marked with error condition.
-
-## Example with multiple sources
-
-### Sources
-
-**blob-secret**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: blob-secret
-type: Opaque
-stringData:
-  blob: >
-    {
-      "blobSecretString": "text",
-      "blobSecretObj": {
-        "json": true
-      }
-    }
-```
-
-### Instance specification
-
-```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Instance
-metadata:
-  name: qwerty-instance
-  namespace: test-ns
-spec:
-  serviceClassName: qwerty
-  planName: default
-  parameters:
-    inlineField: abc
-    sampleLabels:
-    - foo
-    - bar
-  parametersFrom:
-  - secretKeyRef:
-      name: blob-secret
-      key: blob
-```
-
-### Parameters payload to be passed to the broker
-
-```json
-{
-  "inlineField": "abc",
-  "sampleLabels": ["foo", "bar"],
-  "blobSecretString": "text",
-  "blobSecretObj": {
-    "json": true
-  }
-}
-```
