@@ -17,6 +17,7 @@ limitations under the License.
 package defaultserviceplan
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -50,7 +51,7 @@ func newHandlerForTest(internalClient internalclientset.Interface) (admission.In
 }
 
 // newFakeServiceCatalogClientForTest creates a fake clientset that returns a
-// ServiceClassList with the givne ServiceClass as the single list item.
+// ServiceClassList with the given ServiceClass as the single list item.
 func newFakeServiceCatalogClientForTest(sc *servicecatalog.ServiceClass) *fake.Clientset {
 	fakeClient := &fake.Clientset{}
 
@@ -82,9 +83,31 @@ func newServiceClass(name string, plans ...string) *servicecatalog.ServiceClass 
 	return sc
 }
 
+func TestWithListFailure(t *testing.T) {
+	fakeClient := &fake.Clientset{}
+	fakeClient.AddReactor("list", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
+		return true, nil, fmt.Errorf("simulated test failure")
+	})
+	handler, informerFactory, err := newHandlerForTest(fakeClient)
+	if err != nil {
+		t.Errorf("unexpected error initializing handler: %v", err)
+	}
+	informerFactory.Start(wait.NeverStop)
+
+	instance := newInstance("dummy")
+	instance.Spec.ServiceClassName = "foo"
+
+	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
+	if err == nil {
+		t.Errorf("unexpected success with no ServiceClasses.List succeeding")
+	} else if !strings.Contains(err.Error(), "not yet ready to handle request") {
+		t.Errorf("did not find expected error, got %q", err)
+	}
+}
+
 func TestWithPlanWorks(t *testing.T) {
-	mockSCClient := newFakeServiceCatalogClientForTest(&servicecatalog.ServiceClass{})
-	handler, informerFactory, err := newHandlerForTest(mockSCClient)
+	fakeClient := newFakeServiceCatalogClientForTest(&servicecatalog.ServiceClass{})
+	handler, informerFactory, err := newHandlerForTest(fakeClient)
 	if err != nil {
 		t.Errorf("unexpected error initializing handler: %v", err)
 	}
@@ -97,16 +120,16 @@ func TestWithPlanWorks(t *testing.T) {
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
 		actions := ""
-		for _, action := range mockSCClient.Actions() {
+		for _, action := range fakeClient.Actions() {
 			actions = actions + action.GetVerb() + ":" + action.GetResource().Resource + ":" + action.GetSubresource() + ", "
 		}
-		t.Errorf("unexpected error returned from admission handler: %v", actions)
+		t.Errorf("unexpected error %q returned from admission handler: %v", err, actions)
 	}
 }
 
 func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
-	mockSCClient := newFakeServiceCatalogClientForTest(&servicecatalog.ServiceClass{})
-	handler, informerFactory, err := newHandlerForTest(mockSCClient)
+	fakeClient := newFakeServiceCatalogClientForTest(&servicecatalog.ServiceClass{})
+	handler, informerFactory, err := newHandlerForTest(fakeClient)
 	if err != nil {
 		t.Errorf("unexpected error initializing handler: %v", err)
 	}
@@ -118,17 +141,16 @@ func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
 		t.Errorf("unexpected success with no plan specified and no serviceclass existing")
-	}
-	if !strings.Contains(err.Error(), "does not exist, PlanName must be") {
-		t.Errorf("did not find expected error")
+	} else if !strings.Contains(err.Error(), "does not exist, PlanName must be") {
+		t.Errorf("did not find expected error, got %q", err)
 	}
 }
 
 func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 	sc := newServiceClass("foo", "bar")
 	glog.V(4).Infof("Created Service as %+v", sc)
-	mockSCClient := newFakeServiceCatalogClientForTest(sc)
-	handler, informerFactory, err := newHandlerForTest(mockSCClient)
+	fakeClient := newFakeServiceCatalogClientForTest(sc)
+	handler, informerFactory, err := newHandlerForTest(fakeClient)
 	if err != nil {
 		t.Errorf("unexpected error initializing handler: %v", err)
 	}
@@ -140,10 +162,10 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
 		actions := ""
-		for _, action := range mockSCClient.Actions() {
+		for _, action := range fakeClient.Actions() {
 			actions = actions + action.GetVerb() + ":" + action.GetResource().Resource + ":" + action.GetSubresource() + ", "
 		}
-		t.Errorf("expected error returned from admission handler: %v", actions)
+		t.Errorf("unexpected error %q returned from admission handler: %v", err, actions)
 	}
 	// Make sure the Instance has been mutated to include the service plan name
 	if instance.Spec.PlanName != "bar" {
@@ -154,8 +176,8 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 	sc := newServiceClass("foo", "bar", "baz")
 	glog.V(4).Infof("Created Service as %+v", sc)
-	mockSCClient := newFakeServiceCatalogClientForTest(sc)
-	handler, informerFactory, err := newHandlerForTest(mockSCClient)
+	fakeClient := newFakeServiceCatalogClientForTest(sc)
+	handler, informerFactory, err := newHandlerForTest(fakeClient)
 	if err != nil {
 		t.Errorf("unexpected error initializing handler: %v", err)
 	}
@@ -165,15 +187,10 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 	instance.Spec.ServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
-	if err != nil {
-		actions := ""
-		for _, action := range mockSCClient.Actions() {
-			actions = actions + action.GetVerb() + ":" + action.GetResource().Resource + ":" + action.GetSubresource() + ", "
-		}
-		t.Errorf("expected error returned from admission handler: %v", actions)
-	}
-	// Make sure the Instance has been mutated to include the service plan name
-	if instance.Spec.PlanName != "bar" {
-		t.Errorf("PlanName was not modified for the default plan")
+	if err == nil {
+		t.Errorf("unexpected success with no plan specified and no serviceclass existing")
+		return
+	} else if !strings.Contains(err.Error(), "has more than one plan, PlanName must be") {
+		t.Errorf("did not find expected error, got %q", err)
 	}
 }
