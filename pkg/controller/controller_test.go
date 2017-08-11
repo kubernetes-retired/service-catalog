@@ -53,7 +53,7 @@ import (
 // - tests for the methods on controller.go
 // - test fixtures used in other controller_*_test.go files
 //
-// Other controller_*_test.go files contain tests related to the reconcilation
+// Other controller_*_test.go files contain tests related to the reconciliation
 // loops for the different catalog API resources.
 
 const (
