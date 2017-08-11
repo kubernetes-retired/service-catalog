@@ -75,6 +75,7 @@ func (d *defaultPlan) Admit(a admission.Attributes) error {
 
 	sc, err := d.scLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
+		glog.V(4).Info(fmt.Sprintf("Failed to fetch the service class %s", err))
 		msg := fmt.Sprintf("ServiceClass %q does not exist, PlanName must be specified", instance.Spec.ServiceClassName)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, fmt.Errorf(msg))
