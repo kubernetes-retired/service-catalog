@@ -26,12 +26,14 @@ import (
 	"time"
 
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
+	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
@@ -712,6 +714,217 @@ func TestReconcileBindingDelete(t *testing.T) {
 	}
 }
 
+// TestSetBindingCondition verifies setting a condition on a binding yields
+// the results as expected with respect to the changed condition and transition
+// time.
+func TestSetBindingCondition(t *testing.T) {
+	bindingWithCondition := func(condition *v1alpha1.BindingCondition) *v1alpha1.Binding {
+		binding := getTestBinding()
+		binding.Status = v1alpha1.BindingStatus{
+			Conditions: []v1alpha1.BindingCondition{*condition},
+		}
+
+		return binding
+	}
+
+	// The value of the LastTransitionTime field on conditions has to be
+	// tested to ensure it is updated correctly.
+	//
+	// Time basis for all condition changes:
+	newTs := metav1.Now()
+	oldTs := metav1.NewTime(newTs.Add(-5 * time.Minute))
+
+	// condition is a shortcut method for creating conditions with the 'old' timestamp.
+	condition := func(cType v1alpha1.BindingConditionType, status v1alpha1.ConditionStatus, s ...string) *v1alpha1.BindingCondition {
+		c := &v1alpha1.BindingCondition{
+			Type:   cType,
+			Status: status,
+		}
+
+		if len(s) > 0 {
+			c.Reason = s[0]
+		}
+
+		if len(s) > 1 {
+			c.Message = s[1]
+		}
+
+		// This is the expected 'before' timestamp for all conditions under
+		// test.
+		c.LastTransitionTime = oldTs
+
+		return c
+	}
+
+	// shortcut methods for creating conditions of different types
+
+	readyFalse := func() *v1alpha1.BindingCondition {
+		return condition(v1alpha1.BindingConditionReady, v1alpha1.ConditionFalse, "Reason", "Message")
+	}
+
+	readyFalsef := func(reason, message string) *v1alpha1.BindingCondition {
+		return condition(v1alpha1.BindingConditionReady, v1alpha1.ConditionFalse, reason, message)
+	}
+
+	readyTrue := func() *v1alpha1.BindingCondition {
+		return condition(v1alpha1.BindingConditionReady, v1alpha1.ConditionTrue, "Reason", "Message")
+	}
+
+	failedTrue := func() *v1alpha1.BindingCondition {
+		return condition(v1alpha1.BindingConditionFailed, v1alpha1.ConditionTrue, "Reason", "Message")
+	}
+
+	// withNewTs sets the LastTransitionTime to the 'new' basis time and
+	// returns it.
+	withNewTs := func(c *v1alpha1.BindingCondition) *v1alpha1.BindingCondition {
+		c.LastTransitionTime = newTs
+		return c
+	}
+
+	// this test works by calling setBindingCondition with the input and
+	// condition fields of the test case, and ensuring that afterward the
+	// input (which is mutated by the setBindingCondition call) is deep-equal
+	// to the test case result.
+	//
+	// take note of where withNewTs is used when declaring the result to
+	// indicate that the LastTransitionTime field on a condition should have
+	// changed.
+	cases := []struct {
+		name      string
+		input     *v1alpha1.Binding
+		condition *v1alpha1.BindingCondition
+		result    *v1alpha1.Binding
+	}{
+		{
+			name:      "new ready condition",
+			input:     getTestBinding(),
+			condition: readyFalse(),
+			result:    bindingWithCondition(withNewTs(readyFalse())),
+		},
+		{
+			name:      "not ready -> not ready; no ts update",
+			input:     bindingWithCondition(readyFalse()),
+			condition: readyFalse(),
+			result:    bindingWithCondition(readyFalse()),
+		},
+		{
+			name:      "not ready -> not ready, reason and message change; no ts update",
+			input:     bindingWithCondition(readyFalse()),
+			condition: readyFalsef("DifferentReason", "DifferentMessage"),
+			result:    bindingWithCondition(readyFalsef("DifferentReason", "DifferentMessage")),
+		},
+		{
+			name:      "not ready -> ready",
+			input:     bindingWithCondition(readyFalse()),
+			condition: readyTrue(),
+			result:    bindingWithCondition(withNewTs(readyTrue())),
+		},
+		{
+			name:      "ready -> ready; no ts update",
+			input:     bindingWithCondition(readyTrue()),
+			condition: readyTrue(),
+			result:    bindingWithCondition(readyTrue()),
+		},
+		{
+			name:      "ready -> not ready",
+			input:     bindingWithCondition(readyTrue()),
+			condition: readyFalse(),
+			result:    bindingWithCondition(withNewTs(readyFalse())),
+		},
+		{
+			name:      "not ready -> not ready + failed",
+			input:     bindingWithCondition(readyFalse()),
+			condition: failedTrue(),
+			result: func() *v1alpha1.Binding {
+				i := bindingWithCondition(readyFalse())
+				i.Status.Conditions = append(i.Status.Conditions, *withNewTs(failedTrue()))
+				return i
+			}(),
+		},
+	}
+
+	for _, tc := range cases {
+		setBindingConditionInternal(tc.input, tc.condition.Type, tc.condition.Status, tc.condition.Reason, tc.condition.Message, newTs)
+
+		if !reflect.DeepEqual(tc.input, tc.result) {
+			t.Errorf("%v: unexpected diff: %v", tc.name, diff.ObjectReflectDiff(tc.input, tc.result))
+		}
+	}
+}
+
+// TestReconcileBindingDeleteFailedBinding tests reconcileBinding to ensure
+// a binding with a failed status is deleted properly.
+func TestReconcileBindingDeleteFailedBinding(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstance())
+
+	binding := getTestBindingWithFailedStatus()
+	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	binding.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+
+	checksum := checksum.BindingSpecChecksum(binding.Spec)
+	binding.Status.Checksum = &checksum
+
+	fakeCatalogClient.AddReactor("get", "bindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
+	err := testController.reconcileBinding(binding)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+	})
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "delete", resourceName: "secrets", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	// The three actions should be:
+	// 0. Updating the ready condition
+	// 1. Get against the binding in question
+	// 2. Removing the finalizer
+	assertNumberOfActions(t, actions, 3)
+
+	updatedBinding := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedBinding)
+
+	assertGet(t, actions[1], binding)
+
+	updatedBinding = assertUpdateStatus(t, actions[2], binding)
+	assertEmptyFinalizers(t, updatedBinding)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
 func TestReconcileBindingWithBrokerError(t *testing.T) {
 	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -791,6 +1004,154 @@ func TestReconcileBindingWithBrokerHTTPError(t *testing.T) {
 	}
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: '%v', expecting: '%v'", a, e)
+	}
+}
+
+// TestReconcileBindingWithFailureCondition tests reconcileBinding to ensure
+// no processing is done on a binding containing a failed status.
+func TestReconcileBindingWithFailureCondition(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := getTestBindingWithFailedStatus()
+
+	if err := testController.reconcileBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
+}
+
+// TestReconcileBindingWithBindingCallFailure tests reconcileBinding to ensure
+// a bind creation failure is handled properly.
+func TestReconcileBindingWithBindingCallFailure(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Error: errors.New("fake creation failure"),
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := getTestBinding()
+
+	if err := testController.reconcileBinding(binding); err == nil {
+		t.Fatal("Binding creation should fail")
+	}
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(""),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(""),
+		},
+	})
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating Binding \"test-binding/test-ns\" for Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": fake creation failure"
+
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+// TestReconcileBindingWithBindingFailure tests reconcileBinding to ensure
+// a binding request that receives an error from the broker is handled properly.
+func TestReconcileBindingWithBindingFailure(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusConflict,
+				ErrorMessage: strPtr("ServiceBindingExists"),
+				Description:  strPtr("Service binding with the same id, for the same service instance already exists."),
+			},
+		},
+	})
+
+	sharedInformers.Brokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.Instances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := getTestBinding()
+
+	if err := testController.reconcileBinding(binding); err == nil {
+		t.Fatal("Binding creation should fail")
+	}
+
+	// verify one kube action occurred
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedObject := assertUpdateStatus(t, actions[0], binding)
+	assertBindingReadyFalse(t, updatedObject)
+	updatedBinding, ok := updatedObject.(*v1alpha1.Binding)
+	if !ok {
+		t.Fatal("Couldn't convert to v1alpha1.Binding")
+	}
+	if num := len(updatedBinding.Status.Conditions); num != 2 {
+		t.Fatalf("Expected two conditions, got %v", num)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(""),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(""),
+		},
+	})
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating Binding \"test-binding/test-ns\" for Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\", Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>"
+
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 

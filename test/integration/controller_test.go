@@ -575,6 +575,184 @@ func TestProvisionFailure(t *testing.T) {
 	}
 }
 
+// TestBindingFailure tests that a binding gets a failure condition when the
+// broker returns a failure response for a bind operation.
+func TestBindingFailure(t *testing.T) {
+	_, fakeCatalogClient, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+		CatalogReaction: &fakeosb.CatalogReaction{
+			Response: &osb.CatalogResponse{
+				Services: []osb.Service{
+					{
+						Name:        testServiceClassName,
+						ID:          "12345",
+						Description: "a test service",
+						Bindable:    true,
+						Plans: []osb.Plan{
+							{
+								Name:        testPlanName,
+								Free:        truePtr(),
+								ID:          "34567",
+								Description: "a test plan",
+							},
+						},
+					},
+				},
+			},
+		},
+		BindReaction: &fakeosb.BindReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusConflict,
+				ErrorMessage: strPtr("ServiceBindingExists"),
+				Description:  strPtr("Service binding with the same id, for the same service instance already exists."),
+			},
+		},
+		UnbindReaction: &fakeosb.UnbindReaction{},
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				Async: false,
+			},
+		},
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{
+				Async: false,
+			},
+		},
+	})
+	defer shutdownServer()
+
+	client := fakeCatalogClient.ServicecatalogV1alpha1()
+	broker := &v1alpha1.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		Spec: v1alpha1.BrokerSpec{
+			URL: testBrokerURL,
+		},
+	}
+
+	_, err := client.Brokers().Create(broker)
+	if nil != err {
+		t.Fatalf("error creating the broker %q (%q)", broker, err)
+	}
+
+	err = util.WaitForBrokerCondition(client,
+		testBrokerName,
+		v1alpha1.BrokerCondition{
+			Type:   v1alpha1.BrokerConditionReady,
+			Status: v1alpha1.ConditionTrue,
+		})
+	if err != nil {
+		t.Fatalf("error waiting for broker to become ready: %v", err)
+	}
+
+	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	if nil != err {
+		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+	}
+
+	// TODO: find some way to compose scenarios; extract method here for real
+	// logic for this test.
+
+	//-----------------
+
+	instance := &v1alpha1.Instance{
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
+		Spec: v1alpha1.InstanceSpec{
+			ServiceClassName: testServiceClassName,
+			PlanName:         testPlanName,
+			ExternalID:       testExternalID,
+		},
+	}
+
+	if _, err := client.Instances(testNamespace).Create(instance); err != nil {
+		t.Fatalf("error creating Instance: %v", err)
+	}
+
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.InstanceCondition{
+		Type:   v1alpha1.InstanceConditionReady,
+		Status: v1alpha1.ConditionTrue,
+	}); err != nil {
+		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
+
+	retInst, err := client.Instances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if retInst.Spec.ExternalID != instance.Spec.ExternalID {
+		t.Fatalf(
+			"returned OSB GUID '%s' doesn't match original '%s'",
+			retInst.Spec.ExternalID,
+			instance.Spec.ExternalID,
+		)
+	}
+
+	// Binding test begins here
+	//-----------------
+
+	binding := &v1alpha1.Binding{
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
+		Spec: v1alpha1.BindingSpec{
+			InstanceRef: v1.LocalObjectReference{
+				Name: testInstanceName,
+			},
+		},
+	}
+
+	_, err = client.Bindings(testNamespace).Create(binding)
+	if err != nil {
+		t.Fatalf("error creating Binding: %v", binding)
+	}
+
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.BindingCondition{
+		Type:   v1alpha1.BindingConditionFailed,
+		Status: v1alpha1.ConditionTrue,
+	})
+	if err != nil {
+		t.Fatalf("error waiting for binding to become failed: %v", err)
+	}
+
+	err = client.Bindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
+	if err != nil {
+		t.Fatalf("binding delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForBindingToNotExist(client, testNamespace, testBindingName)
+	if err != nil {
+		t.Fatalf("error waiting for binding to not exist: %v", err)
+	}
+
+	//-----------------
+	// End binding test
+
+	err = client.Instances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("instance delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForInstanceToNotExist(client, testNamespace, testInstanceName)
+	if err != nil {
+		t.Fatalf("error waiting for instance to be deleted: %v", err)
+	}
+
+	//-----------------
+	// End provision test
+
+	// Delete the broker
+	err = client.Brokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("broker should be deleted (%s)", err)
+	}
+
+	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	if err != nil {
+		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+	}
+
+	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	if err != nil {
+		t.Fatalf("error waiting for Broker to not exist: %v", err)
+	}
+}
+
 // newTestController creates a new test controller injected with fake clients
 // and returns:
 //
