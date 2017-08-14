@@ -5,8 +5,14 @@ services:
 cache:
   directories:
   - .glide
-script:
-- make verify build test images
+jobs:
+  include:
+    - stage: Verify and Test
+      script: make verify test
+    - stage: Build and Make Image
+      script: make build images
+#script:
+#- make verify build test images
 deploy:
   provider: script
   script: scripts/deploy.sh
