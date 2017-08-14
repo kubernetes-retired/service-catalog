@@ -20,3 +20,11 @@ contrib/build/*/tmp/*
 .pkg
 .kube
 .var
+charts/catalog/apiserver-key.pem
+charts/catalog/apiserver.csr
+charts/catalog/apiserver.pem
+charts/catalog/ca-key.pem
+charts/catalog/ca.csr
+charts/catalog/ca.pem
+charts/catalog/server-ca-config.json
+charts/catalog/svc-cat-ca.json

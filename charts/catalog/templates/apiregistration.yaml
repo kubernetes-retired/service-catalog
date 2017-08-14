@@ -13,7 +13,7 @@ spec:
   service:
     namespace: {{ .Release.Namespace }}
     name: {{ template "fullname" . }}-apiserver
-  caBundle: {{ .Values.apiserver.tls.ca }}
+  caBundle: {{ (.Files.Get .Values.apiserver.tls.caFileName) | b64enc }}
   {{ if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1alpha1" -}}
   priority: {{ .Values.apiserver.aggregator.priority }}
   {{ else if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1beta1" -}}
