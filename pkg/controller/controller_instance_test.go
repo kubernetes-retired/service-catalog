@@ -44,6 +44,8 @@ const (
 	lastOperationDescription = "testdescr"
 )
 
+// TestReconcileInstanceNonExistentServiceClass tests that reconcileInstance gets a failure when
+// the specified service class is not found
 func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
@@ -79,6 +81,8 @@ func TestReconcileInstanceNonExistentServiceClass(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceNonExistentBroker tests reconciling an instance whose
+// broker does not exist.  This returns an error.
 func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -109,6 +113,8 @@ func TestReconcileInstanceNonExistentBroker(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceWithAuthError tests reconcileInstance when Kube Client
+// fails to locate the broker authentication secret.
 func TestReconcileInstanceWithAuthError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -169,6 +175,8 @@ func TestReconcileInstanceWithAuthError(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceNonExistentServicePlan tests that reconcileInstance
+// fails when service class points at a non-existent service plan
 func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -216,6 +224,7 @@ func TestReconcileInstanceNonExistentServicePlan(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceWithParameters tests a simple successful reconciliation
 func TestReconcileInstanceWithParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -265,11 +274,6 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	// verify no kube resources created
-	// One single action comes from getting namespace uid
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
 
@@ -283,6 +287,15 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 		t.Fatalf("Parameters was unexpectedly empty")
 	}
 
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -292,6 +305,8 @@ func TestReconcileInstanceWithParameters(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceWithInvalidParameters tests that reconcileInstance
+// fails with an error when the service parameters are invalid
 func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -338,7 +353,7 @@ func TestReconcileInstanceWithInvalidParameters(t *testing.T) {
 }
 
 // TestReconcileInstanceWithProvisionCallFailure tests that when the provision
-// call to the broker fails, that the ready condition becomes false, and the
+// call to the broker fails, the ready condition becomes false, and the
 // failure condition is not set.
 func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
@@ -372,7 +387,11 @@ func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -388,6 +407,10 @@ func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 		t.Fatalf("Expected 1 condition, got %v", l)
 	}
 
+	if updatedInstance.Status.Conditions[0].Type != v1alpha1.InstanceConditionReady && updatedInstance.Status.Conditions[0].Status != v1alpha1.ConditionFalse {
+		t.Fatalf("Expected failed condition to be set")
+	}
+
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -397,6 +420,9 @@ func TestReconcileInstanceWithProvisionCallFailure(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceWithProvisionFailure tests that when the provision
+// call to the broker fails with an HTTP error, the ready condition becomes
+// false, and the failure condition is set.
 func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -454,6 +480,8 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 		t.Fatalf("Expected failed condition to be set")
 	}
 
+	// already verified 2nd condition Ready=false above
+
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
@@ -463,6 +491,7 @@ func TestReconcileInstanceWithProvisionFailure(t *testing.T) {
 	}
 }
 
+// TestReconcileInstance tests synchronously provisioning a new service
 func TestReconcileInstance(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -509,7 +538,11 @@ func TestReconcileInstance(t *testing.T) {
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	updatedInstance := assertUpdateStatus(t, actions[0], instance)
 	assertInstanceReadyTrue(t, updatedInstance)
@@ -524,6 +557,9 @@ func TestReconcileInstance(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceAsynchronous tests provisioning a new service where
+// the request results in a async response.  Resulting status will indicate
+// not ready and polling in progress.
 func TestReconcileInstanceAsynchronous(t *testing.T) {
 	key := osb.OperationKey(testOperation)
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
@@ -568,6 +604,11 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
+	assertAsyncOpInProgressTrue(t, updatedInstance)
+	assertInstanceLastOperation(t, updatedInstance, testOperation)
+	assertInstanceDashboardURL(t, updatedInstance, testDashboardURL)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -575,9 +616,6 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
-
-	updatedInstance := assertUpdateStatus(t, actions[0], instance)
-	assertInstanceReadyFalse(t, updatedInstance)
 
 	// Since polling is rate-limited, it is not possible to check whether the
 	// instance is in the polling queue.
@@ -597,12 +635,11 @@ func TestReconcileInstanceAsynchronous(t *testing.T) {
 	// if actualKey != expectedKey {
 	// 	t.Fatalf("got key as %q expected %q", actualKey, expectedKey)
 	// }
-
-	assertAsyncOpInProgressTrue(t, updatedInstance)
-	assertInstanceLastOperation(t, updatedInstance, testOperation)
-	assertInstanceDashboardURL(t, updatedInstance, testDashboardURL)
 }
 
+// TestReconcileInstanceAsynchronousNoOperation tests an async provision
+// scenario.  This differs from TestReconcileInstanceAsynchronous() as
+// there is no operation key returned by OSB.
 func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -645,6 +682,10 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
+	assertAsyncOpInProgressTrue(t, updatedInstance)
+	assertInstanceLastOperation(t, updatedInstance, "")
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -652,9 +693,6 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	if e, a := 1, len(kubeActions); e != a {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
-
-	updatedInstance := assertUpdateStatus(t, actions[0], instance)
-	assertInstanceReadyFalse(t, updatedInstance)
 
 	// Since polling is rate-limited, it is not possible to check whether the
 	// instance is in the polling queue.
@@ -674,10 +712,10 @@ func TestReconcileInstanceAsynchronousNoOperation(t *testing.T) {
 	// if key != expectedKey {
 	// 	t.Fatalf("got key as %q expected %q", key, expectedKey)
 	// }
-	assertAsyncOpInProgressTrue(t, updatedInstance)
-	assertInstanceLastOperation(t, updatedInstance, "")
 }
 
+// TestReconcileInstanceNamespaceError test reconciling an instance where kube
+// client fails to get a namespace to create instance in.
 func TestReconcileInstanceNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -700,11 +738,14 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
 	assertUpdateStatus(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
@@ -716,6 +757,7 @@ func TestReconcileInstanceNamespaceError(t *testing.T) {
 	}
 }
 
+// TestReconcileInstanceDelete tests deleting/deprovisioning an instance
 func TestReconcileInstanceDelete(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -898,9 +940,10 @@ func TestReconcileInstanceDeleteFailedInstance(t *testing.T) {
 	assertNumEvents(t, events, 0)
 }
 
-// TestReconcileInstanceDeleteDoesNotInvokeBroker verfies that if an instance is created that is never
-// actually provisioned the instance is able to be deleted and is not blocked by any interaction with
-// a broker (since its very likely that a broker never actually existed).
+// TestReconcileInstanceDeleteDoesNotInvokeBroker verfies that if an instance
+// is created that is never actually provisioned the instance is able to be
+// deleted and is not blocked by any interaction with a broker (since its very
+// likely that a broker never actually existed).
 func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -941,6 +984,8 @@ func TestReconcileInstanceDeleteDoesNotInvokeBroker(t *testing.T) {
 	assertNumEvents(t, events, 0)
 }
 
+// TestReconcileInstanceWithFailureCondition tests reconciling an instance that
+// has a status condition set to failure.
 func TestReconcileInstanceWithFailureCondition(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -971,6 +1016,9 @@ func TestReconcileInstanceWithFailureCondition(t *testing.T) {
 	assertNumEvents(t, events, 0)
 }
 
+// TestPollServiceInstanceInProgressProvisioningWithOperation tests polling an
+// instance that is already in process of provisioning (background/
+// asynchronously) and is still in progress (should be re-polled)
 func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1007,6 +1055,9 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	// there should have been 1 action to update the status with the last operation description
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
+	updatedInstance := assertUpdateStatus(t, actions[0], instance)
+	assertInstanceReadyFalse(t, updatedInstance)
+	assertAsyncOpInProgressTrue(t, updatedInstance)
 
 	// verify no kube resources created.
 	// No actions
@@ -1014,6 +1065,9 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 }
 
+// TestPollServiceInstanceSuccessProvisioningWithOperation tests polling an
+// instance that is already in process of provisioning (background/
+// asynchronously) and is found to be ready
 func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1057,6 +1111,9 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	assertAsyncOpInProgressFalse(t, updatedInstance)
 }
 
+// TestPollServiceInstanceFailureProvisioningWithOperation tests polling an
+// instance where provision was in process asynchronously but has an updated
+// status of failed to provision.
 func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1099,6 +1156,9 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertAsyncOpInProgressFalse(t, updatedInstance)
 }
 
+// TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer tests
+// polling an instance that was asynchronously being deprovisioned and is still
+// in progress.
 func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1146,6 +1206,9 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfActions(t, kubeActions, 0)
 }
 
+// TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer tests
+// polling an instance that was asynchronously being deprovisioned and its
+// current poll status succeeded.  Verify instance is deprovisioned.
 func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1188,8 +1251,15 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
+	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
+// TestPollServiceInstanceFailureDeprovisioningWithOperation tests polling an
+// instance that has a async deprovision in progress.  Current poll status is
+// failed.  Verify instance state is set to unknown.
 func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1233,8 +1303,16 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
+	expectedEvent := api.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "Error deprovisioning Instance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at Broker \"test-broker\": \"\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+
 }
 
+// TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer test
+// polling an instance that has a async deprovision in progress.  Current poll
+// status is Gone (which is fine).  Verify successful deprovisioning.
 func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1277,8 +1355,15 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
+	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
+// TestPollServiceInstanceBrokerError simulates polling a broker and getting a
+// Forbidden status on the poll.  Test simulates that the Broker was already
+// in the process of being deleted prior to the Forbidden status.
 func TestPollServiceInstanceBrokerError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1316,8 +1401,15 @@ func TestPollServiceInstanceBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
+	expectedEvent := api.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation for instance test-ns/test-instance: Status code: 403; ErrorMessage: %!q(*string=<nil>); description: %!q(*string=<nil>)"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
+// TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer tests
+// polling with instance while it is in deprovisioning state to ensure after
+// the poll the service is properly removed
 func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1343,6 +1435,11 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID: instanceGUID,
+		ServiceID:  strPtr(serviceClassGUID),
+		PlanID:     strPtr(planGUID),
+	})
 
 	// verify no kube resources created.
 	// No actions
@@ -1366,8 +1463,29 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
+	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }
 
+// TestSetInstanceCondition ensures that with the expected conditions the
+// SetInstanceCondition() updates a status properly with the given condition
+// The test cases are proving:
+// - status with no existing conditions accepts new condition of Ready=False
+//   and updates the timestamp
+// - status with existing Ready=False condition accepts new condition of
+//   Ready=False with no timestamp change
+// - status with existing Ready=False condition accepts new condition of
+//   Ready=False  with reason & msg change and results with no timestamp change
+// - status with existing Ready=False condition accepts new condition of
+//   Ready=True  and reflects new timestamp
+// - status with existing Ready=True condition accepts new condition of
+//   Ready=True with no timestamp change
+// - status with existing Ready=True condition accepts new condition of
+//   Ready=False and reflects new timestamp
+// - status with existing Ready=False condition accepts new condition of
+//   Failed=True  and reflects Ready=False, Failed=True, new timestamp
 func TestSetInstanceCondition(t *testing.T) {
 	instanceWithCondition := func(condition *v1alpha1.InstanceCondition) *v1alpha1.Instance {
 		instance := getTestInstance()
@@ -1440,6 +1558,11 @@ func TestSetInstanceCondition(t *testing.T) {
 	// take note of where withNewTs is used when declaring the result to
 	// indicate that the LastTransitionTime field on a condition should have
 	// changed.
+	//
+	// name: short description of the test
+	// input: instance status
+	// condition: condition  to set
+	// result: expected instance result
 	cases := []struct {
 		name      string
 		input     *v1alpha1.Instance
@@ -1503,6 +1626,16 @@ func TestSetInstanceCondition(t *testing.T) {
 	}
 }
 
+// TestUpdateInstanceCondition ensures that with the expected conditions the
+// updateInstanceCondition() results in a correct status & associated
+// conditions and the expected client actions are verified test cases prove:
+// - initially unset status accepts a Ready=False and results in time change
+// - initially Ready=False accepts a Ready=False with new null msg update and results in no time change
+// - initially Ready=False accepts a Ready=False update with new reason and msg and results in no time change
+// - initially Ready=False accepts a Ready=True update with msg and results in time change
+// - initially Ready=True accepts a Ready=True update with msg and results in no time change
+// - initially Ready=True accepts a Ready=False update with msg and results in time change
+// - initially Ready=True accepts a Ready=False update with new msg and results in time change
 func TestUpdateInstanceCondition(t *testing.T) {
 	getTestInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Instance {
 		instance := getTestInstance()
@@ -1518,6 +1651,12 @@ func TestUpdateInstanceCondition(t *testing.T) {
 		return instance
 	}
 
+	// name: short description of the test
+	// input: instance status
+	// condition: condition  to set
+	// reason: reason text
+	// message: message text
+	// transitionTimeChanged: true/false indicating if the test should result in an updated transition time change
 	cases := []struct {
 		name                  string
 		input                 *v1alpha1.Instance
