@@ -7,12 +7,10 @@ cache:
   - .glide
 jobs:
   include:
-    - stage: Verify and Test
-      script: make verify test
-    - stage: Build and Make Image
-      script: make build images
-#script:
-#- make verify build test images
+    - stage: Verify and Build
+      script: make verify build
+    - stage: Test and Make Image
+      script: make test images
 deploy:
   provider: script
   script: scripts/deploy.sh
