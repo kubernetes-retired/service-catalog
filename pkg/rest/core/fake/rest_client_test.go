@@ -43,7 +43,6 @@ const (
 func createSingleItemStorage() NamespacedStorage {
 	storage := make(NamespacedStorage)
 	storage.Set(ns1, tipe1, name1, &servicecatalog.Broker{})
-	// storage.Set(ns1, tipe1, name1, &servicecatalog.Instance{})
 	return storage
 }
 
