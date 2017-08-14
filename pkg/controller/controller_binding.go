@@ -47,22 +47,22 @@ func (c *controller) bindingAdd(obj interface{}) {
 	c.bindingQueue.Add(key)
 }
 
-func (c *controller) reconcileBindingKey(key string) error {
+func (c *controller) reconcileBindingKey(key string) (bool, error) {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
-		return err
+		return false, err
 	}
 	binding, err := c.bindingLister.Bindings(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		glog.Infof("Not doing work for Binding %v because it has been deleted", key)
-		return nil
+		return false, nil
 	}
 	if err != nil {
 		glog.Infof("Unable to retrieve Binding %v from store: %v", key, err)
-		return err
+		return false, err
 	}
 
-	return c.reconcileBinding(binding)
+	return false, c.reconcileBinding(binding)
 }
 
 func (c *controller) bindingUpdate(oldObj, newObj interface{}) {

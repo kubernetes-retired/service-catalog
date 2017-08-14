@@ -152,18 +152,18 @@ func shouldReconcileBroker(broker *v1alpha1.Broker, now time.Time, relistInterva
 	return true
 }
 
-func (c *controller) reconcileBrokerKey(key string) error {
+func (c *controller) reconcileBrokerKey(key string) (bool, error) {
 	broker, err := c.brokerLister.Get(key)
 	if errors.IsNotFound(err) {
 		glog.Infof("Not doing work for Broker %v because it has been deleted", key)
-		return nil
+		return false, nil
 	}
 	if err != nil {
 		glog.Infof("Unable to retrieve Broker %v from store: %v", key, err)
-		return err
+		return false, err
 	}
 
-	return c.reconcileBroker(broker)
+	return false, c.reconcileBroker(broker)
 }
 
 // reconcileBroker is the control-loop that reconciles a Broker. An

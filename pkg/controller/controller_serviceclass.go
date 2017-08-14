@@ -34,18 +34,18 @@ func (c *controller) serviceClassAdd(obj interface{}) {
 	c.serviceClassQueue.Add(key)
 }
 
-func (c *controller) reconcileServiceClassKey(key string) error {
+func (c *controller) reconcileServiceClassKey(key string) (bool, error) {
 	serviceClass, err := c.serviceClassLister.Get(key)
 	if errors.IsNotFound(err) {
 		glog.Infof("Not doing work for ServiceClass %v because it has been deleted", key)
-		return nil
+		return false, nil
 	}
 	if err != nil {
 		glog.Errorf("Unable to retrieve ServiceClass %v from store: %v", key, err)
-		return err
+		return false, err
 	}
 
-	return c.reconcileServiceClass(serviceClass)
+	return false, c.reconcileServiceClass(serviceClass)
 }
 
 func (c *controller) reconcileServiceClass(serviceClass *v1alpha1.ServiceClass) error {
