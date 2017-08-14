@@ -211,6 +211,9 @@ kubectl config set-cluster service-catalog --server=https://$SVC_CAT_API_SERVER_
 kubectl config set-context service-catalog --cluster=service-catalog
 ```
 
+Note: Your cloud provider may require firewall rules to allow your traffic get in.
+Please refer to the [Troubleshooting](#troubleshooting) section for details.
+
 ## Step 6 - Creating a Broker Resource
 
 Next, we'll register a broker server with the catalog by creating a new
@@ -507,4 +510,15 @@ Then, delete all the namespaces we created:
 
 ```console
 kubectl delete ns test-ns catalog ups-broker
+```
+
+## Troubleshooting
+
+### Firewall rules
+
+If you are using Google Cloud Platform, you may need to run the following
+commands to setup proper firewall rules to allow your traffic get in.
+
+```console
+gcloud compute firewall-rules create allow-service-catalog-secure --allow tcp:30443 --description "Allow incoming traffic on 30443 port."
 ```
