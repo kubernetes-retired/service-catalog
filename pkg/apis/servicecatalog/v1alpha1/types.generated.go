@@ -7155,7 +7155,7 @@ func (x *BindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 		} else {
 			yysep2 := !z.EncBinary()
 			yy2arr2 := z.EncBasicHandle().StructToArray
-			var yyq2 [4]bool
+			var yyq2 [5]bool
 			_, _, _ = yysep2, yyq2, yy2arr2
 			const yyr2 bool = false
 			yyq2[1] = x.Parameters != nil
@@ -7163,7 +7163,7 @@ func (x *BindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[3] = x.SecretName != ""
 			var yynn2 int
 			if yyr2 || yy2arr2 {
-				r.EncodeArrayStart(4)
+				r.EncodeArrayStart(5)
 			} else {
 				yynn2 = 2
 				for _, b := range yyq2 {
