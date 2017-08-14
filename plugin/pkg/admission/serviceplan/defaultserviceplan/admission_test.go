@@ -141,7 +141,7 @@ func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("Instance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("instances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
 		t.Errorf("unexpected success with no plan specified and no serviceclass existing")
-	} else if !strings.Contains(err.Error(), "does not exist, PlanName must be") {
+	} else if !strings.Contains(err.Error(), "does not exist, can not figure") {
 		t.Errorf("did not find expected error, got %q", err)
 	}
 }
