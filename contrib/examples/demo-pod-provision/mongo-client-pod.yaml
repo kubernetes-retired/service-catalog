@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongo-client
+spec:
+  containers:
+  - name: mongo
+    image: "docker.io/mongo"
+    imagePullPolicy: "IfNotPresent"
+    envFrom:
+    - secretRef:
+        name: "database-binding"
+        optional: false
+  volumes:
+  - name: database-binding
+    secret:
+      secretName: database-binding
