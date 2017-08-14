@@ -215,8 +215,8 @@ func (b *userProvidedBroker) Bind(
 			return nil, err
 		}
 		newCredential = &brokerapi.Credential{
-			"mongoInstanceIp": ip,
-			"mongoInstancePort": port,
+			"MONGO_HOST_IP": ip,
+			"MONGO_HOST_PORT": port,
 		}
 	}
 	b.instanceMap[instanceID].Credential = newCredential
