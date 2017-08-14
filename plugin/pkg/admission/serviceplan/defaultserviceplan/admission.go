@@ -31,7 +31,7 @@ import (
 
 const (
 	// PluginName is name of admission plug-in
-	PluginName = "ServicePlanDefault"
+	PluginName = "DefaultServicePlan"
 )
 
 // Register registers a plugin
@@ -46,14 +46,14 @@ func Register(plugins *admission.Plugins) {
 // a Service Plan if there is only one Service Plan for the
 // specified Service and defaults to that value.
 // that the cluster actually has support for it.
-type defaultPlan struct {
+type defaultServicePlan struct {
 	*admission.Handler
 	scLister internalversion.ServiceClassLister
 }
 
-var _ = scadmission.WantsInternalServiceCatalogInformerFactory(&defaultPlan{})
+var _ = scadmission.WantsInternalServiceCatalogInformerFactory(&defaultServicePlan{})
 
-func (d *defaultPlan) Admit(a admission.Attributes) error {
+func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	// we need to wait for our caches to warm
 	if !d.WaitForReady() {
 		return admission.NewForbidden(a, fmt.Errorf("not yet ready to handle request"))
@@ -100,20 +100,18 @@ func (d *defaultPlan) Admit(a admission.Attributes) error {
 // creation request and if there exists only one plan in the
 // specified Service Class
 func NewDefaultServicePlan() (admission.Interface, error) {
-	return &defaultPlan{
+	return &defaultServicePlan{
 		Handler: admission.NewHandler(admission.Create, admission.Update),
 	}, nil
 }
 
-func (d *defaultPlan) SetInternalServiceCatalogInformerFactory(f informers.SharedInformerFactory) {
+func (d *defaultServicePlan) SetInternalServiceCatalogInformerFactory(f informers.SharedInformerFactory) {
 	scInformer := f.Servicecatalog().InternalVersion().ServiceClasses()
 	d.scLister = scInformer.Lister()
 	d.SetReadyFunc(scInformer.Informer().HasSynced)
 }
 
-func (d *defaultPlan) Validate() error {
-	glog.V(4).Infof("d is %+v", d)
-	glog.V(4).Infof("scLister is %+v", d.scLister)
+func (d *defaultServicePlan) Validate() error {
 	if d.scLister == nil {
 		return fmt.Errorf("missing service class lister")
 	}
