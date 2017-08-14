@@ -81,7 +81,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		if !errors.IsNotFound(err) {
 			return errors.NewInternalError(err)
 		}
-		msg := fmt.Sprintf("ServiceClass %q does not exist, PlanName must be specified", instance.Spec.ServiceClassName)
+		msg := fmt.Sprintf("ServiceClass %q does not exist, can not figure out the default Service Plan.", instance.Spec.ServiceClassName)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, fmt.Errorf(msg))
 	}
