@@ -109,12 +109,17 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 #########################################################################
 build: .init .generate_files \
        $(BINDIR)/controller-manager $(BINDIR)/apiserver \
-       $(BINDIR)/user-broker
+       $(BINDIR)/user-broker $(BINDIR)/heketi-broker
 
 user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f) $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
+
+heketi-broker: $(BINDIR)/heketi-broker
+$(BINDIR)/heketi-broker: .init contrib/cmd/heketi-broker \
+	  $(shell find contrib/cmd/heketi-broker -type f) $(NEWEST_GO_FILE)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/heketi-broker
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
 apiserver: $(BINDIR)/apiserver
@@ -322,7 +327,7 @@ clean-coverage:
 
 # Building Docker Images for our executables
 ############################################
-images: user-broker-image controller-manager-image apiserver-image
+images: user-broker-image heketi-broker-image controller-manager-image apiserver-image
 
 images-all: $(addprefix arch-image-,$(ALL_ARCH))
 arch-image-%:
@@ -347,6 +352,13 @@ user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
 ifeq ($(ARCH),amd64)
 	docker tag $(USER_BROKER_IMAGE) $(REGISTRY)user-broker:$(VERSION)
 	docker tag $(USER_BROKER_MUTABLE_IMAGE) $(REGISTRY)user-broker:$(MUTABLE_TAG)
+endif
+
+heketi-broker-image: contrib/build/heketi-broker/Dockerfile $(BINDIR)/heketi-broker
+	$(call build-and-tag,"heketi-broker",$(USER_BROKER_IMAGE),$(USER_BROKER_MUTABLE_IMAGE),"contrib/")
+ifeq ($(ARCH),amd64)
+	docker tag $(USER_BROKER_IMAGE) $(REGISTRY)heketi-broker:$(VERSION)
+	docker tag $(USER_BROKER_MUTABLE_IMAGE) $(REGISTRY)heketi-broker:$(MUTABLE_TAG)
 endif
 
 apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
