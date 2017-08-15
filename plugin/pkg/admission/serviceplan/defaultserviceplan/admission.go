@@ -93,7 +93,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 
 	p := sc.Plans[0]
-	glog.V(4).Infof("Using default plan %s for Service Class %s for instance %s",
+	glog.V(4).Infof("Using default plan %q for Service Class %q for instance %s",
 		p.Name, sc.Name, instance.Name)
 	instance.Spec.PlanName = p.Name
 	return nil
