@@ -26,7 +26,8 @@ import (
 // +nonNamespaced=true
 
 // Broker represents an entity that provides ServiceClasses for use in the
-// service catalog.
+// service catalog. Broker is backed by an OSBAPI v2 broker supporting the
+// latest minor version of the v2 major version.
 type Broker struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta

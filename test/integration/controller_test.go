@@ -800,7 +800,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		serviceCatalogSharedInformers.Bindings(),
 		brokerClFunc,
 		24*time.Hour,
-		osb.Version2_12().HeaderValue(),
+		osb.LatestAPIVersion().HeaderValue(),
 		fakeRecorder,
 	)
 	t.Log("controller start")
