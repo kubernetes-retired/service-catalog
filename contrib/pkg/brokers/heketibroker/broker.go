@@ -40,7 +40,16 @@ type heketiBroker struct {
 }
 
 func (b *heketiBroker) Catalog() (*brokerapi.Catalog, error) {
-	return nil, nil
+	return &brokerapi.Catalog{
+		Services: []*brokerapi.Service{
+			{
+				Name: "GlusterFS Object Storage",
+				ID: "gfs-object-storage",
+				Description: "A bucket of GlusterFS Object Storage.",
+				Bindable: true,
+			},
+		},
+	}, nil
 }
 
 func (b *heketiBroker) GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation string) (*brokerapi.LastOperationResponse, error) {
