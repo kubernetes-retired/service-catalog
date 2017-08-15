@@ -27,7 +27,7 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/userbroker/server"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/server"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/userbroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )
