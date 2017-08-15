@@ -17,12 +17,13 @@ limitations under the License.
 package defaultserviceplan
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/golang/glog"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apiserver/pkg/admission"
 
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
@@ -68,7 +69,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 	instance, ok := a.GetObject().(*servicecatalog.Instance)
 	if !ok {
-		return errors.NewBadRequest("Resource was marked with kind Instance but was unable to be converted")
+		return apierrors.NewBadRequest("Resource was marked with kind Instance but was unable to be converted")
 	}
 	// If the plan is specified, let it through and have the controller
 	// deal with finding the right plan, etc.
@@ -78,17 +79,17 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	sc, err := d.scLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
-		if !errors.IsNotFound(err) {
-			return errors.NewInternalError(err)
+		if !apierrors.IsNotFound(err) {
+			return admission.NewForbidden(a, err)
 		}
 		msg := fmt.Sprintf("ServiceClass %q does not exist, can not figure out the default Service Plan.", instance.Spec.ServiceClassName)
 		glog.V(4).Info(msg)
-		return admission.NewForbidden(a, fmt.Errorf(msg))
+		return admission.NewForbidden(a, errors.New(msg))
 	}
 	if len(sc.Plans) > 1 {
 		msg := fmt.Sprintf("ServiceClass %q has more than one plan, PlanName must be specified", instance.Spec.ServiceClassName)
 		glog.V(4).Info(msg)
-		return admission.NewForbidden(a, fmt.Errorf(msg))
+		return admission.NewForbidden(a, errors.New(msg))
 	}
 
 	p := sc.Plans[0]
@@ -116,7 +117,7 @@ func (d *defaultServicePlan) SetInternalServiceCatalogInformerFactory(f informer
 
 func (d *defaultServicePlan) Validate() error {
 	if d.scLister == nil {
-		return fmt.Errorf("missing service class lister")
+		return errors.New("missing service class lister")
 	}
 	return nil
 }
