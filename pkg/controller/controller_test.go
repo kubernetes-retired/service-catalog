@@ -416,7 +416,8 @@ func getTestNonbindableInstance() *v1alpha1.Instance {
 
 // an instance referencing the result of getTestNonbindableServiceClass, on the bindable plan.
 func getTestInstanceNonbindableServiceBindablePlan() *v1alpha1.Instance {
-	i := getTestNonbindableInstance()
+	i := getTestInstance()
+	i.Spec.ServiceClassName = testNonbindableServiceClassName
 	i.Spec.PlanName = testPlanName
 
 	return i
