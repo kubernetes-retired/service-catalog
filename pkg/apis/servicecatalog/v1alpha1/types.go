@@ -305,7 +305,11 @@ type InstanceSpec struct {
 
 	// PlanName is the name of the ServicePlan this Instance should be
 	// provisioned from.
-	PlanName string `json:"planName"`
+	// If omitted and there is only one plan in the specified ServiceClass
+	// it will be used.
+	// If omitted and there are more than one plan in the specified ServiceClass
+	// the request will be rejected.
+	PlanName string `json:"planName,omitempty"`
 
 	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.

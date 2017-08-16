@@ -634,7 +634,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"planName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "PlanName is the name of the ServicePlan this Instance should be provisioned from.",
+								Description: "PlanName is the name of the ServicePlan this Instance should be provisioned from. If omitted and there is only one plan in the specified ServiceClass it will be used. If omitted and there are more than one plan in the specified ServiceClass the request will be rejected.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -666,7 +666,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"serviceClassName", "planName", "externalID"},
+					Required: []string{"serviceClassName", "externalID"},
 				},
 			},
 			Dependencies: []string{
