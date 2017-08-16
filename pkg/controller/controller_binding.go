@@ -528,6 +528,14 @@ func (c *controller) ejectBinding(binding *v1alpha1.Binding) error {
 	return nil
 }
 
+// setBindingCondition sets a single condition on a Binding's status: if
+// the condition already exists in the status, it is mutated; if the condition
+// does not already exist in the status, it is added.  Other conditions in the
+// status are not altered.  If the condition exists and its status changes,
+// the LastTransitionTime field is updated.
+//
+// Note: objects coming from informers should never be mutated; always pass a
+// deep copy as the binding parameter.
 func (c *controller) setBindingCondition(toUpdate *v1alpha1.Binding,
 	conditionType v1alpha1.BindingConditionType,
 	status v1alpha1.ConditionStatus,
@@ -536,6 +544,8 @@ func (c *controller) setBindingCondition(toUpdate *v1alpha1.Binding,
 	setBindingConditionInternal(toUpdate, conditionType, status, reason, message, metav1.Now())
 }
 
+// setBindingConditionInternal is setBindingCondition but allows the time to
+// be parameterized for testing.
 func setBindingConditionInternal(toUpdate *v1alpha1.Binding,
 	conditionType v1alpha1.BindingConditionType,
 	status v1alpha1.ConditionStatus,
