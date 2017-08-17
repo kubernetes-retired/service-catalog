@@ -175,7 +175,7 @@ func (f *FakeServiceBrokerServer) updateHandler(w http.ResponseWriter, r *http.R
 func (f *FakeServiceBrokerServer) bindHandler(w http.ResponseWriter, r *http.Request) {
 	glog.Info("fake bind called")
 	f.Request = r
-	req := &brokerapi.ServiceInstanceCredentialRequest{}
+	req := &brokerapi.BindingRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
