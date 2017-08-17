@@ -101,6 +101,10 @@ func validateBrokerSpec(spec *sc.BrokerSpec, fldPath *field.Path) field.ErrorLis
 
 	}
 
+	if spec.InsecureSkipTLSVerify && len(spec.CABundle) > 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("CABundle"), spec.CABundle, "CABundle cannot be used when InsecureSkipTLSVerify is true"))
+	}
+
 	return allErrs
 }
 

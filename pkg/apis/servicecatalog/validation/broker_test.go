@@ -174,6 +174,46 @@ func TestValidateBroker(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			name: "invalid broker - CABundle present with InsecureSkipTLSVerify",
+			broker: &servicecatalog.Broker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.BrokerSpec{
+					URL: "http://example.com",
+					InsecureSkipTLSVerify: true,
+					CABundle:              []byte("fake CABundle"),
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "valid broker - InsecureSkipTLSVerify without CABundle",
+			broker: &servicecatalog.Broker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.BrokerSpec{
+					URL: "http://example.com",
+					InsecureSkipTLSVerify: true,
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid broker - CABundle without InsecureSkipTLSVerify",
+			broker: &servicecatalog.Broker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.BrokerSpec{
+					URL:      "http://example.com",
+					CABundle: []byte("fake CABundle"),
+				},
+			},
+			valid: true,
+		},
 	}
 
 	for _, tc := range cases {
