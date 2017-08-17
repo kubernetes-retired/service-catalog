@@ -56,10 +56,10 @@ func (k Kind) TPRName() string {
 // URLName returns the URL-worthy name this TPR kind. Examples:
 //
 //	Kind("ServiceClass").URLName() == "serviceclasses"
-//	Kind("Broker").URLName() == "brokers"
+//	Kind("ServiceBroker").URLName() == "brokers"
 //
 // Note that this function is incomplete - it is only guaranteed to properly pluralize our 4
-// resource types ("Broker", "ServiceClass", "Instance", "Binding")
+// resource types ("ServiceBroker", "ServiceClass", "ServiceInstance", "ServiceInstanceCredential")
 func (k Kind) URLName() string {
 	str := k.String()
 	strLen := len(str)
@@ -75,16 +75,16 @@ func (k Kind) URLName() string {
 
 const (
 	// ServiceBrokerKind is the name of a Service Broker resource, a Kubernetes third party resource.
-	ServiceBrokerKind Kind = "Broker"
+	ServiceBrokerKind Kind = "ServiceBroker"
 
 	// ServiceBrokerListKind is the name of a list of Service Broker resources
-	ServiceBrokerListKind Kind = "BrokerList"
+	ServiceBrokerListKind Kind = "ServiceBrokerList"
 
-	// ServiceBindingKind is the name of a Service Binding resource, a Kubernetes third party resource.
-	ServiceBindingKind Kind = "Binding"
+	// ServiceInstanceCredentialKind is the name of a Service ServiceInstanceCredential resource, a Kubernetes third party resource.
+	ServiceInstanceCredentialKind Kind = "ServiceInstanceCredential"
 
-	// ServiceBindingListKind is the name for lists of Service Bindings
-	ServiceBindingListKind Kind = "BindingList"
+	// ServiceInstanceCredentialListKind is the name for lists of Service ServiceInstanceCredentials
+	ServiceInstanceCredentialListKind Kind = "ServiceInstanceCredentialList"
 
 	// ServiceClassKind is the name of a Service Class resource, a Kubernetes third party resource.
 	ServiceClassKind Kind = "ServiceClass"
@@ -93,8 +93,8 @@ const (
 	ServiceClassListKind Kind = "ServiceClassList"
 
 	// ServiceInstanceKind is the name of a Service Instance resource, a Kubernetes third party resource.
-	ServiceInstanceKind Kind = "Instance"
+	ServiceInstanceKind Kind = "ServiceInstance"
 
 	// ServiceInstanceListKind is the name of a list of service instance resources
-	ServiceInstanceListKind Kind = "InstanceList"
+	ServiceInstanceListKind Kind = "ServiceInstanceList"
 )

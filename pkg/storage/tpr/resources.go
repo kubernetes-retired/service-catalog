@@ -33,10 +33,10 @@ var ServiceInstanceResource = metav1.APIResource{
 	Namespaced: true,
 }
 
-// ServiceBindingResource represents the API resource for the service binding third
+// ServiceInstanceCredentialResource represents the API resource for the service binding third
 // party resource
-var ServiceBindingResource = metav1.APIResource{
-	Name:       ServiceBindingKind.TPRName(),
+var ServiceInstanceCredentialResource = metav1.APIResource{
+	Name:       ServiceInstanceCredentialKind.TPRName(),
 	Namespaced: true,
 }
 
@@ -71,15 +71,15 @@ var serviceInstanceTPR = v1beta1.ThirdPartyResource{
 	},
 }
 
-// ServiceBindingResource represents the API resource for the service binding third
+// ServiceInstanceCredentialResource represents the API resource for the service binding third
 // party resource
-var serviceBindingTPR = v1beta1.ThirdPartyResource{
+var serviceInstanceCredentialTPR = v1beta1.ThirdPartyResource{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
 	ObjectMeta: metav1.ObjectMeta{
-		Name: withGroupName(ServiceBindingKind.TPRName()),
+		Name: withGroupName(ServiceInstanceCredentialKind.TPRName()),
 	},
 	Versions: []v1beta1.APIVersion{
 		{Name: tprVersion},

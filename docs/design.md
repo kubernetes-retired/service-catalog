@@ -3,26 +3,26 @@
 Table of Contents
 - [Overview](#overview)
 - [Terminology](#terminology)
-- [Open Service Broker API](#open-service-broker-api)
+- [Open Service ServiceBroker API](#open-service-broker-api)
 - [Service Catalog Design](#service-catalog-design)
 - [Current Design](#current-design)
 
 ## Overview
 
 The Service Catalog is an implementation of the
-[Open Service Broker API](https://github.com/openservicebrokerapi) for
+[Open Service ServiceBroker API](https://github.com/openservicebrokerapi) for
 Kubernetes. It allows for:
-- a Service Broker to register with Kubernetes
-- a Service Broker to specify the set of Services (and variantions of those
+- a Service ServiceBroker to register with Kubernetes
+- a Service ServiceBroker to specify the set of Services (and variantions of those
   Services) to Kubernetes that should then be made available to Kubernetes'
   users
 - a user of Kubernetes to discover the Services that are available for use
-- a user of Kubernetes to request for a new Instance of a Service
-- a user of Kubernetes to link an Instance of a Service to a set of Pods
+- a user of Kubernetes to request for a new ServiceInstance of a Service
+- a user of Kubernetes to link an ServiceInstance of a Service to a set of Pods
 
 This infrastructure allows for a loose-coupling between Applications
 running in Kubernetes and the Services they use.
-The Service Broker, in its most basic form, is a blackbox entity. Whether
+The Service ServiceBroker, in its most basic form, is a blackbox entity. Whether
 it is running within Kubernetes itself is not relevant. This allows for
 the Application that uses those Services to focus on its own business logic
 while leaving the management of these Services to the entity that owns
@@ -33,32 +33,32 @@ them.
 - **Application** : Kubernetes uses the term "service" in a different way
   than Service Catalog does, so to avoid confusion the term *Application*
   will refer to the Kubernetes deployment artifact that will use a Service
-  Instance.
-- **Binding**, or *Service Binding* : a link between a Service Instance
+  ServiceInstance.
+- **ServiceServiceInstanceCredential**, or *Service ServiceServiceInstanceCredential* : a link between a Service ServiceInstance
   and an Application. It expresses the intent for an Application to
-  reference and use a particular Service Instance.
-- **Broker**, or *Service Broker* : a entity, available via a web endpoint,
+  reference and use a particular Service ServiceInstance.
+- **ServiceBroker**, or *Service ServiceBroker* : a entity, available via a web endpoint,
   that manages a set of one or more Services.
 - **Credentials** : Information needed by an Application to talk with a
-  Service Instance.
-- **Instance**, or *Service Instance* : Each independent use of a Service
-  Class is called a Service Instance.
-- **Service Class**, or *Service* : one type of Service that a Service Broker
+  Service ServiceInstance.
+- **ServiceInstance**, or *Service ServiceInstance* : Each independent use of a Service
+  Class is called a Service ServiceInstance.
+- **Service Class**, or *Service* : one type of Service that a Service ServiceBroker
   offers.
 - **Plan**, or *Service Plan* : one type of variant of a Service Class. For
   example, a Service Class may expose a set of Plans that offer
   varying degrees of quality-of-services (QoS), each with a different
   cost associated with it.
 
-## Open Service Broker API
+## Open Service ServiceBroker API
 
 The Service Catalog is a compliant implementation of the
-[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) (OSB API). The OSB API specification is the evolution of
-the [Cloud Foundry Service Broker API](https://docs.cloudfoundry.org/services/api.html).
+[Open Service ServiceBroker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) (OSB API). The OSB API specification is the evolution of
+the [Cloud Foundry Service ServiceBroker API](https://docs.cloudfoundry.org/services/api.html).
 
 This document will not go into specifics of how the OSB API works, so for
 more information please see:
-[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
+[Open Service ServiceBroker API](https://github.com/openservicebrokerapi/servicebroker).
 The rest of this document assumes that the reader is familiar with the
 basic concepts of the OSB API specification.
 
@@ -114,23 +114,23 @@ actions based on the changes it detects.
 To understand the Service Catalog resource model, it is best to walk through
 a typical workflow:
 
-### Registering a Service Broker
+### Registering a Service ServiceBroker
 
-**TODO** Talk about namespaces - Brokers, ServiceClasses are not in a ns.
-But Instances, Bindings, Secrets and ConfigMaps are. However, instances
+**TODO** Talk about namespaces - ServiceBrokers, ServiceClasses are not in a ns.
+But ServiceInstances, ServiceServiceInstanceCredentials, Secrets and ConfigMaps are. However, instances
 can be in different NS's than the rest (which must all be in the same).
 
 Before a Service can be used by an Application it must first be registered
-with the Kubernetes platform. Since Services are managed by Service Brokers
-we must first register the Service Broker by creating an instance of a
-`Broker`:
+with the Kubernetes platform. Since Services are managed by Service ServiceBrokers
+we must first register the Service ServiceBroker by creating an instance of a
+`ServiceBroker`:
 
     kubectl create -f broker.yaml
 
 where `broker.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Broker
+    kind: ServiceBroker
     metadata:
       name: BestDataBase
     spec:
@@ -138,9 +138,9 @@ where `broker.yaml` might look like:
 
 **TODO** beef-up theses sample resource snippets
 
-After a `Broker` resource is created the Service Catalog Controller will
+After a `ServiceBroker` resource is created the Service Catalog Controller will
 receive an event indicating its addition to the datastore. The Controller
-will then query the Service Broker (at the `url` specified) for the list
+will then query the Service ServiceBroker (at the `url` specified) for the list
 of available Services. Each Service will then have a corresponding
 `ServiceClass` resource created:
 
@@ -159,87 +159,87 @@ Users can then query for the list of available Services:
 
     kubectl get services
 
-### Creating a Service Instance
+### Creating a Service ServiceInstance
 
-Before a Service can be used, a new Instance of it must be created. This is
-done by creating a new `Instance` resource:
+Before a Service can be used, a new ServiceInstance of it must be created. This is
+done by creating a new `ServiceInstance` resource:
 
     kubectl create -f instance.yaml
 
 where `instance.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Instance
+    kind: ServiceInstance
     metadata:
       name: johnsDB
     spec:
       serviceClassName: smallDB
 
-Within the `Instance` resource is the specified Plan to be used. This allows
+Within the `ServiceInstance` resource is the specified Plan to be used. This allows
 for the user of the Service to indicate which variant of the Service they
 want - perhaps based on QoS type of variants.
 
 **TODO** Discuss the parameters that can be passed in
 
-Once an `Instance` resource is created, the Controller talks with the
-specified Service Broker to create a new Instance of the desired Service.
+Once an `ServiceInstance` resource is created, the Controller talks with the
+specified Service ServiceBroker to create a new ServiceInstance of the desired Service.
 
 There are two modes for provisioning:
 [synchronous and asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#synchronous-and-asynchronous-operations)
 
-For synchronous operations, a request is made to the Service Broker and upon
-successful completion of the request (200 OK), Service Instance can now be used by
+For synchronous operations, a request is made to the Service ServiceBroker and upon
+successful completion of the request (200 OK), Service ServiceInstance can now be used by
 Application.
 
 Some brokers support
 [asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#asynchronous-operations)
-flows. When a Controller makes a request to Service Broker to
-create/update/deprovision a Service Instance, the Service Broker responds with
+flows. When a Controller makes a request to Service ServiceBroker to
+create/update/deprovision a Service ServiceInstance, the Service ServiceBroker responds with
 202 ACCEPTED, and will provide endpoint at
 GET /v2/service_instances/<service_instance_id>/last_operation
 where the Controller can poll the status of the request.
 
-Service Broker may return a last_operation field that then should be sent
+Service ServiceBroker may return a last_operation field that then should be sent
 for each last_operation request. Controller will poll while the state of
 the poll request is 'in_progress'. Controller can also implement a max
 timeout that it will poll before considering the provision failed and will
 stop polling and mark the provisioning as failed.
 
-While a Service Instance has an asynchronous operation in progress, controller
+While a Service ServiceInstance has an asynchronous operation in progress, controller
 must ensure that there no other operations (provision,deprovision,update,bind,unbind).
 
-**TODO** test to see if we have checks to block people from using an Instance
+**TODO** test to see if we have checks to block people from using an ServiceInstance
 before its fully realized. We shouldn't let the SB be the one to detect this.
 
-### Using a Service Instance
+### Using a Service ServiceInstance
 
-Before a Service Instance can be used it must be "bound" to an Application.
+Before a Service ServiceInstance can be used it must be "bound" to an Application.
 This means that a link, or usage intent, between an Application and the
-Service Instance must be established. This is done by creating a new
-`Binding` resource:
+Service ServiceInstance must be established. This is done by creating a new
+`ServiceServiceInstanceCredential` resource:
 
     kubectl create -f binding.yaml
 
 where `instance.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: Binding
+    kind: ServiceServiceInstanceCredential
     metadata:
-      name: johnsBinding
+      name: johnsServiceServiceInstanceCredential
     spec:
       secretName: johnSecret
       ...Pod selector labels...
 
-The Controller, upon being notified of the new `Binding` resource, will
-then talk to the Service Broker to create a new Binding for the specified
-Service Instance.
+The Controller, upon being notified of the new `ServiceServiceInstanceCredential` resource, will
+then talk to the Service ServiceBroker to create a new ServiceServiceInstanceCredential for the specified
+Service ServiceInstance.
 
-Within the Binding object that is returned from the Service Broker are
+Within the ServiceServiceInstanceCredential object that is returned from the Service ServiceBroker are
 a set of Credentials. These Credentials contain all of the information
-needed for the application to talk with the Service Instance. For example,
+needed for the application to talk with the Service ServiceInstance. For example,
 it might include things such as:
-- coordinates (URL) of the Service Instance
-- user-id and password to access the Service Instance
+- coordinates (URL) of the Service ServiceInstance
+- user-id and password to access the Service ServiceInstance
 
 The OSB API specification does not mandate what properties might appear
 in the Credentials, so the Application is required to understand the
@@ -248,12 +248,12 @@ by reading the documentation of the Service.
 
 The Credentials will not be stored in the Service Catalog's datastore.
 Rather, they will be stored in the Kubenetes core as Secrets and a reference
-to the Secret will be saved within the `Binding` resource. If the
-Binding `Spec.SecretName` is not specified then the Controller will
-use the Binding `Name` property as the name of the Secret.
+to the Secret will be saved within the `ServiceServiceInstanceCredential` resource. If the
+ServiceServiceInstanceCredential `Spec.SecretName` is not specified then the Controller will
+use the ServiceServiceInstanceCredential `Name` property as the name of the Secret.
 
-Bindings are not required to be in the same Kubenetes Namespace
-as the Service Instance. This allows for sharing of Service Instances
+ServiceServiceInstanceCredentials are not required to be in the same Kubenetes Namespace
+as the Service ServiceInstance. This allows for sharing of Service ServiceInstances
 across Applications and Namespaces.
 
 In addition to the Secret, the Controller will also create a Pod Injection
@@ -295,19 +295,19 @@ information to be placed into a ConfigMap instead of a Secret.
 
 Once the Secret is made available to the Application's Pods, it is then up
 to the Application code to use that information to talk to the Service
-Instance.
+ServiceInstance.
 
-### Deleting Service Instances
+### Deleting Service ServiceInstances
 
 As with all resources in Kubernetes, you can delete any of the Service
 Catalog resource by doing an HTTP DELETE to the resource's URL. However,
-it is important to note the you can not delete a Service Instance while
-there are Bindings associated with it.  In other words, before a Service
-Instance can be delete, you must first delete all of its Bindings.
-Attempting to delete an Instance that still has a Binding will fail
+it is important to note the you can not delete a Service ServiceInstance while
+there are ServiceServiceInstanceCredentials associated with it.  In other words, before a Service
+ServiceInstance can be delete, you must first delete all of its ServiceServiceInstanceCredentials.
+Attempting to delete an ServiceInstance that still has a ServiceServiceInstanceCredential will fail
 and generate an error.
 
-Deleting a Binding will also, automatically, delete any Secrets or ConfigMaps
+Deleting a ServiceServiceInstanceCredential will also, automatically, delete any Secrets or ConfigMaps
 that might be associated with it.
 
 **TODO** what happens to the Pods using them?

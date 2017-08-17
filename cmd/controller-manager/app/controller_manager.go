@@ -323,16 +323,16 @@ func StartControllers(s *options.ControllerManagerServer,
 		// All shared informers are v1alpha1 API level
 		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
-		glog.V(5).Infof("Creating controller; broker relist interval: %v", s.BrokerRelistInterval)
+		glog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
 		serviceCatalogController, err := controller.NewController(
 			coreClient,
 			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
-			serviceCatalogSharedInformers.Brokers(),
+			serviceCatalogSharedInformers.ServiceBrokers(),
 			serviceCatalogSharedInformers.ServiceClasses(),
-			serviceCatalogSharedInformers.Instances(),
-			serviceCatalogSharedInformers.Bindings(),
+			serviceCatalogSharedInformers.ServiceInstances(),
+			serviceCatalogSharedInformers.ServiceInstanceCredentials(),
 			osb.NewClient,
-			s.BrokerRelistInterval,
+			s.ServiceBrokerRelistInterval,
 			s.OSBAPIPreferredVersion,
 			recorder,
 		)

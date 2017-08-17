@@ -67,7 +67,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("instances") {
 		return nil
 	}
-	instance, ok := a.GetObject().(*servicecatalog.Instance)
+	instance, ok := a.GetObject().(*servicecatalog.ServiceInstance)
 	if !ok {
 		return apierrors.NewBadRequest("Resource was marked with kind Instance but was unable to be converted")
 	}

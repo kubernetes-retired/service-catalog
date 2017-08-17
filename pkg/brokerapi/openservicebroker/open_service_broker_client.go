@@ -36,7 +36,7 @@ import (
 
 const (
 	catalogFormatString         = "%s/v2/catalog"
-	serviceInstanceFormatString = "%s/v2/service_instances/%s"
+	serviceServiceInstanceFormatString = "%s/v2/service_instances/%s"
 	pollingFormatString         = "%s/v2/service_instances/%s/last_operation"
 	bindingFormatString         = "%s/v2/service_instances/%s/service_bindings/%s"
 
@@ -47,9 +47,9 @@ const (
 
 var (
 	errConflict        = errors.New("Service instance with same id but different attributes exists")
-	errBindingConflict = errors.New("Service binding with same service instance id and binding id already exists")
-	errBindingGone     = errors.New("There is no binding with the specified service instance id and binding id")
-	errAsynchronous    = errors.New("Broker only supports this action asynchronously")
+	errServiceInstanceCredentialConflict = errors.New("Service binding with same service instance id and binding id already exists")
+	errServiceInstanceCredentialGone     = errors.New("There is no binding with the specified service instance id and binding id")
+	errAsynchronous    = errors.New("ServiceBroker only supports this action asynchronously")
 	errFailedState     = errors.New("Failed state received from broker")
 	errUnknownState    = errors.New("Unknown state received from broker")
 	errPollingTimeout  = errors.New("Timed out while polling broker")
@@ -89,9 +89,9 @@ type openServiceBrokerClient struct {
 	*http.Client
 }
 
-// NewClient creates an instance of BrokerClient for communicating with brokers
-// which implement the Open Service Broker API.
-func NewClient(name, url, username, password string) brokerapi.BrokerClient {
+// NewClient creates an instance of ServiceBrokerClient for communicating with brokers
+// which implement the Open Service ServiceBroker API.
+func NewClient(name, url, username, password string) brokerapi.ServiceBrokerClient {
 	// TODO(vaikas): Make this into a flag/config option. Necessary to talk to brokers that
 	// have non-root signed certs.
 	tr := &http.Transport{
@@ -135,19 +135,19 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 }
 
 func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, int, error) {
-	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
+	serviceServiceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 
 	resp, err := sendOSBRequest(
 		c,
 		http.MethodPut,
-		serviceInstanceURL,
+		serviceServiceInstanceURL,
 		map[string]string{
 			"accepts_incomplete": fmt.Sprintf("%t", req.AcceptsIncomplete),
 		},
 		req,
 	)
 	if err != nil {
-		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
+		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceServiceInstanceURL, resp, err)
 		errReq := errRequest{message: err.Error()}
 		if resp == nil {
 			return nil, 0, errReq
@@ -185,12 +185,12 @@ func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerap
 }
 
 func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerapi.DeleteServiceInstanceRequest) (*brokerapi.DeleteServiceInstanceResponse, int, error) {
-	serviceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
+	serviceServiceInstanceURL := fmt.Sprintf(serviceInstanceFormatString, c.url, ID)
 
 	resp, err := sendOSBRequest(
 		c,
 		http.MethodDelete,
-		serviceInstanceURL,
+		serviceServiceInstanceURL,
 		map[string]string{
 			"service_id":         req.ServiceID,
 			"plan_id":            req.PlanID,
@@ -199,7 +199,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 		req,
 	)
 	if err != nil {
-		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
+		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceServiceInstanceURL, resp, err)
 		return nil, resp.StatusCode, errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
@@ -225,18 +225,18 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	}
 }
 
-func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
+func (c *openServiceBrokerClient) CreateServiceInstanceCredential(instanceID, bindingID string, req *brokerapi.ServiceInstanceCredentialRequest) (*brokerapi.CreateServiceInstanceCredentialResponse, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
 		glog.Errorf("Failed to marshal: %#v", err)
 		return nil, err
 	}
 
-	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
+	serviceServiceInstanceCredentialURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
 
 	createHTTPReq, err := c.newOSBRequest(
 		http.MethodPut,
-		serviceBindingURL,
+		serviceServiceInstanceCredentialURL,
 		nil,
 		bytes.NewReader(jsonBytes),
 	)
@@ -244,7 +244,7 @@ func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID str
 		return nil, err
 	}
 
-	glog.Infof("Doing a request to: %s", serviceBindingURL)
+	glog.Infof("Doing a request to: %s", serviceServiceInstanceCredentialURL)
 	resp, err := c.Do(createHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to PUT: %#v", err)
@@ -252,30 +252,30 @@ func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID str
 	}
 	defer resp.Body.Close()
 
-	createServiceBindingResponse := brokerapi.CreateServiceBindingResponse{}
-	if err := util.ResponseBodyToObject(resp, &createServiceBindingResponse); err != nil {
+	createServiceInstanceCredentialResponse := brokerapi.CreateServiceInstanceCredentialResponse{}
+	if err := util.ResponseBodyToObject(resp, &createServiceInstanceCredentialResponse); err != nil {
 		glog.Errorf("Error unmarshalling create binding response from broker: %#v", err)
 		return nil, err
 	}
 
 	switch resp.StatusCode {
 	case http.StatusCreated:
-		return &createServiceBindingResponse, nil
+		return &createServiceInstanceCredentialResponse, nil
 	case http.StatusOK:
-		return &createServiceBindingResponse, nil
+		return &createServiceInstanceCredentialResponse, nil
 	case http.StatusConflict:
-		return nil, errBindingConflict
+		return nil, errServiceInstanceCredentialConflict
 	default:
 		return nil, errStatusCode{statusCode: resp.StatusCode}
 	}
 }
 
-func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, serviceID, planID string) error {
-	serviceBindingURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
+func (c *openServiceBrokerClient) DeleteServiceInstanceCredential(instanceID, bindingID, serviceID, planID string) error {
+	serviceServiceInstanceCredentialURL := fmt.Sprintf(bindingFormatString, c.url, instanceID, bindingID)
 
 	deleteHTTPReq, err := c.newOSBRequest(
 		http.MethodDelete,
-		serviceBindingURL,
+		serviceServiceInstanceCredentialURL,
 		map[string]string{
 			"service_id": serviceID,
 			"plan_id":    planID,
@@ -287,7 +287,7 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, se
 		return err
 	}
 
-	glog.Infof("Doing a request to: %s", serviceBindingURL)
+	glog.Infof("Doing a request to: %s", serviceServiceInstanceCredentialURL)
 	resp, err := c.Do(deleteHTTPReq)
 	if err != nil {
 		glog.Errorf("Failed to DELETE: %#v", err)
@@ -299,7 +299,7 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, se
 	case http.StatusOK:
 		return nil
 	case http.StatusGone:
-		return errBindingGone
+		return errServiceInstanceCredentialGone
 	default:
 		return errStatusCode{statusCode: resp.StatusCode}
 	}

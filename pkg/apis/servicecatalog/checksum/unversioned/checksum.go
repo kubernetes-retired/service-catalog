@@ -24,7 +24,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-// InstanceSpecChecksum calculates a checksum of the given InstanceSpec based
+// ServiceInstanceSpecChecksum calculates a checksum of the given InstanceSpec based
 // on the following fields;
 //
 // - ServiceClassName
@@ -32,7 +32,7 @@ import (
 // - Parameters
 // - ParametersFrom
 // - ExternalID
-func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
+func ServiceInstanceSpecChecksum(spec servicecatalog.ServiceInstanceSpec) string {
 	specString := ""
 	specString += fmt.Sprintf("serviceClassName: %v\n", spec.ServiceClassName)
 	specString += fmt.Sprintf("planName: %v\n", spec.PlanName)
@@ -53,15 +53,15 @@ func InstanceSpecChecksum(spec servicecatalog.InstanceSpec) string {
 	return fmt.Sprintf("%x", sum)
 }
 
-// BindingSpecChecksum calculates a checksum of the given BindingSpec based on
+// ServiceInstanceCredentialSpecChecksum calculates a checksum of the given ServiceInstanceCredentialSpec based on
 // the following fields:
 //
-// - InstanceRef.Name
+// - ServiceInstanceRef.Name
 // - Parameters
 // - ExternalID
-func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
+func ServiceInstanceCredentialSpecChecksum(spec servicecatalog.ServiceInstanceCredentialSpec) string {
 	specString := ""
-	specString += fmt.Sprintf("instanceRef: %v\n", spec.InstanceRef.Name)
+	specString += fmt.Sprintf("instanceRef: %v\n", spec.ServiceInstanceRef.Name)
 
 	if spec.Parameters != nil {
 		specString += fmt.Sprintf("parameters:\n\n%v\n\n", string(spec.Parameters.Raw))
@@ -79,11 +79,11 @@ func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
 	return fmt.Sprintf("%x", sum)
 }
 
-// BrokerSpecChecksum calculates a sha256 hash for the given BrokerSpec based on
+// ServiceBrokerSpecChecksum calculates a sha256 hash for the given BrokerSpec based on
 // the following fields:
 // - URL
 // - AuthInfo (may be nil, but special handling is unnecessary with %v)
-func BrokerSpecChecksum(spec servicecatalog.BrokerSpec) string {
+func ServiceBrokerSpecChecksum(spec servicecatalog.ServiceBrokerSpec) string {
 	specString := fmt.Sprintf("URL: %v\n", spec.URL)
 	specString += fmt.Sprintf("AuthInfo: %v\n", spec.AuthInfo)
 	specString += fmt.Sprintf("InsecureSkipTLSVerify: %v\n", spec.InsecureSkipTLSVerify)

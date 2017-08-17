@@ -10,18 +10,18 @@
 
 ## Catalog Publishing/Curation/Discovery
 
-* As a Catalog Operator, I want to be able to register a Service Broker with the
+* As a Catalog Operator, I want to be able to register a Service ServiceBroker with the
   Kubernetes Service Catalog, so that the Service Catalog is aware of the
-  Services that Broker offers
-* As a Catalog Operator, I want to be able to update a registered Service Broker
+  Services that ServiceBroker offers
+* As a Catalog Operator, I want to be able to update a registered Service ServiceBroker
   so that the Service Catalog can maintain the most recent versions of Services
-  that Broker offers
-* As a Catalog Operator, I want to be able to delete a Service Broker from the
+  that ServiceBroker offers
+* As a Catalog Operator, I want to be able to delete a Service ServiceBroker from the
   Service Catalog, so that I can keep the Service Catalog clean of Service
-  Brokers I no longer want to support
+  ServiceBrokers I no longer want to support
 
-* Can I export a list of Service Brokers and types from my Service Controller?
-* Is there an auth story for adding Service Brokers?
+* Can I export a list of Service ServiceBrokers and types from my Service Controller?
+* Is there an auth story for adding Service ServiceBrokers?
 * As a Developer, working outside of the normal production cluster, I would like
   to be able to use the Services available to me from the production cluster
   from my local environment without needing to establish a formal business
@@ -40,21 +40,21 @@
 
 * How are Services identified: name, service name/id, plan name/id?
 * Who can see which Services? (TODO: Include scope? Global/Namespaced)
-* Who can see which Service Instances? (TODO: Include scope? Global/Namespaced)
-* The Service Catalog should contain Services and not Service Instances
+* Who can see which Service ServiceInstances? (TODO: Include scope? Global/Namespaced)
+* The Service Catalog should contain Services and not Service ServiceInstances
 
-### Registering a Service Broker with the Service Catalog
+### Registering a Service ServiceBroker with the Service Catalog
 
-A User must register each Service Broker with the Service Catalog to advertise
-the Services it offers in the Service Catalog. After the Service Broker has been
+A User must register each Service ServiceBroker with the Service Catalog to advertise
+the Services it offers in the Service Catalog. After the Service ServiceBroker has been
 registered with the Service Catalog, the Service Controller makes a call to the
-Service Broker's `/v2/catalog` endpoint. The Service Broker returns a list of
+Service ServiceBroker's `/v2/catalog` endpoint. The Service ServiceBroker returns a list of
 Services offered by that broker. Each Service has a set of plans that
 differentiate the tiers of that Service.
 
-### Updating a Service Broker
+### Updating a Service ServiceBroker
 
-Broker operators make changes to the services their brokers offer. To refresh
+ServiceBroker operators make changes to the services their brokers offer. To refresh
 the services a broker offers, the Service Controller should re-list the
 `/v2/catalog` endpoint.  The Service Controller should apply the result of
 re-listing the broker to its internal representation of that broker's services:
@@ -65,14 +65,14 @@ re-listing the broker to its internal representation of that broker's services:
 
 TODO: spell out various update scenarios and how they affect end-users
 
-### Delete a Service Broker
+### Delete a Service ServiceBroker
 
 There must be a way to delete brokers from the catalog. We should evaluate
 whether deleting a broker should:
 
-1. Cascade down to the Service Instances for the broker
-2. Leave orphaned Service Instances in the Service Catalog
-3. Fail if Service Instances still exist for the broker
+1. Cascade down to the Service ServiceInstances for the broker
+2. Leave orphaned Service ServiceInstances in the Service Catalog
+3. Fail if Service ServiceInstances still exist for the broker
 
 
 ### Search and Browsing Services
@@ -136,57 +136,57 @@ TODO: How to deal with name conflicts for {broker, service}.
 
 ## Requesting Services (Consumer)
 
-* As an Application Operator, how do I cause a new Service Instance to be created from the
+* As an Application Operator, how do I cause a new Service ServiceInstance to be created from the
   Service Catalog?
-* As an Application Operator, how do I bind an application to an existing Service Instance?
+* As an Application Operator, how do I bind an application to an existing Service ServiceInstance?
 * How does the catalog support multiple consumers in different Kubernetes
-  namespaces of the same Service Instance?
-* As an Application Operator, who has requested a Service Instance, know that a request for a
+  namespaces of the same Service ServiceInstance?
+* As an Application Operator, who has requested a Service ServiceInstance, know that a request for a
   service instance has been fulfilled?
 * As an Application Operator, I should be able to pass parameters to be used by the Service
-  Instance or Binding when causing a new Service Instance to be created, so that
-  I may change the attributes of the Service Instance or Binding.
+  ServiceInstance or ServiceServiceInstanceCredential when causing a new Service ServiceInstance to be created, so that
+  I may change the attributes of the Service ServiceInstance or ServiceServiceInstanceCredential.
 
-## Provisioning a Service Instance
+## Provisioning a Service ServiceInstance
 
-* As a Broker operator, I want to control the number of instances of my Service,
+* As a ServiceBroker operator, I want to control the number of instances of my Service,
   so that I can control the resource footprint of my Service.
 
-## Binding to a Service Instance
+## ServiceServiceInstanceCredential to a Service ServiceInstance
 
-* As a Broker operator, I want to control the number of bindings to a Service
-  Instance so that I may provide limits for services (e.g. free plan with 3
+* As a ServiceBroker operator, I want to control the number of bindings to a Service
+  ServiceInstance so that I may provide limits for services (e.g. free plan with 3
   bindings). (TODO: Do we care?)
-* As a user of a Service Instance, I want a predictable set of Kubernetes
+* As a user of a Service ServiceInstance, I want a predictable set of Kubernetes
   resources (Secrets, ConfigMap, etc.) created after binding, so that I know how
-  to configure my application to use the Service Instance.
+  to configure my application to use the Service ServiceInstance.
 * As a broker operator, I want to be able to discover what applications are
-  bound to Service Instances I am responsible for, so that I may operate the
+  bound to Service ServiceInstances I am responsible for, so that I may operate the
   service properly.
-* As an Application Operator I should be able to see what Service Instances my applications are
+* As an Application Operator I should be able to see what Service ServiceInstances my applications are
   bound to.
 * As an Application Operator I should be able to pass paramters when binding to a Service
-  Instance so that I may indicate what type of binding my application needs.
+  ServiceInstance so that I may indicate what type of binding my application needs.
   (e.g. credential type, admin binding, ro binding, rw binding)
 
 As an Application Operator, I should be able to accomplish the following sets of bindings:
 
-* One application may binding to many Service Instances
-* Many different applications may bind to a single Service Instance
+* One application may binding to many Service ServiceInstances
+* Many different applications may bind to a single Service ServiceInstance
   * ...with unique credentials
   * ...with identical credentials
-* One application, binding multiple times to the same Service Instance
+* One application, binding multiple times to the same Service ServiceInstance
 
-## Using/Consuming a Service Instance
+## Using/Consuming a Service ServiceInstance
 
-* As an Application Operator consuming a Service Instance, I need to be able to understand the structure
-  of the Kubernetes resources that are created when a new Binding to a Service
-  Instance is created, so that I can configure my application appropriately.
+* As an Application Operator consuming a Service ServiceInstance, I need to be able to understand the structure
+  of the Kubernetes resources that are created when a new ServiceServiceInstanceCredential to a Service
+  ServiceInstance is created, so that I can configure my application appropriately.
 * As an Application Operator, I want to be able to understand the relationship between a Secret
-  and Service Instance, so that I can properly configure my application (e.g.
+  and Service ServiceInstance, so that I can properly configure my application (e.g.
   app connecting to sharded database).
 * The consuming application may safely assume that network connectivity to the
-  Service Instance is available
+  Service ServiceInstance is available
 
 Consuming applications that need specific handling of credentials or
 configuration should be able to use additional Kubernetes facilities to
@@ -203,21 +203,21 @@ If the user were willing to change the configuration instead, they could specify
 how the credentials were surfaced to the application -- which environment
 variables, volumes, etc.
 
-## Lifecycle of Service Instances
+## Lifecycle of Service ServiceInstances
 
-* As a Service Provider, I should be able to indicate that a Service Instance
+* As a Service Provider, I should be able to indicate that a Service ServiceInstance
   _may_ be upgraded (plan updateable), so that I can communicate Service
   capabilities to end users.
-* As an Application Operator of a Service Instance, I want to be able to change the Service
-  Instance plan so that I may size it appropriately for my needs.
-* What is the update story for bindings to a Service Instance?
-* What is the versioning and update story for a Service Instance: what happens
+* As an Application Operator of a Service ServiceInstance, I want to be able to change the Service
+  ServiceInstance plan so that I may size it appropriately for my needs.
+* What is the update story for bindings to a Service ServiceInstance?
+* What is the versioning and update story for a Service ServiceInstance: what happens
   when a broker changes the Services it provides?
 
-## Unbinding from a Service Instance
+## Unbinding from a Service ServiceInstance
 
 * TODO
 
-## Deprovisioning a Service Instance
+## Deprovisioning a Service ServiceInstance
 
 * TODO
