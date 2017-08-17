@@ -453,7 +453,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"url"},
+					Required: []string{"url", "authInfo"},
 				},
 			},
 			Dependencies: []string{
