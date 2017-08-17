@@ -40,6 +40,8 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 )
 
+// TestReconcileBindingNonExistingInstance tests reconcileBinding to ensure a
+// binding fails as expected when an instance to bind to doesn't exist.
 func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
@@ -79,6 +81,8 @@ func TestReconcileBindingNonExistingInstance(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingNonExistingServiceClass tests reconcileBinding to ensure a
+// binding fails as expected when a serviceclass does not exist.
 func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -126,6 +130,8 @@ func TestReconcileBindingNonExistingServiceClass(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingWithSecretConflict tests reconcileBinding to ensure a
+// binding with an existing secret not owned by the bindings fails as expected.
 func TestReconcileBindingWithSecretConflict(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -185,7 +191,6 @@ func TestReconcileBindingWithSecretConflict(t *testing.T) {
 
 	// first action is a get on the namespace
 	// second action is a get on the secret
-
 	action := kubeActions[1].(clientgotesting.GetAction)
 	if e, a := "get", action.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
@@ -203,6 +208,8 @@ func TestReconcileBindingWithSecretConflict(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingWithParameters tests reconcileBinding to ensure a
+// binding with parameters will be passed to the broker properly.
 func TestReconcileBindingWithParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -275,7 +282,6 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 
 	// first action is a get on the namespace
 	// second action is a get on the secret
-
 	action := kubeActions[2].(clientgotesting.CreateAction)
 	if e, a := "create", action.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
@@ -321,6 +327,9 @@ func TestReconcileBindingWithParameters(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingNonbindableServiceClass tests reconcileBinding to ensure a
+// binding for an instance that references a non-bindable service class and a
+// non-bindable plan fails as expected.
 func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -360,6 +369,9 @@ func TestReconcileBindingNonbindableServiceClass(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingNonbindableServiceClassBindablePlan tests reconcileBinding
+// to ensure a binding for an instance that references a non-bindable service
+// class and a bindable plan fails as expected.
 func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -427,7 +439,6 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 
 	// first action is a get on the namespace
 	// second action is a get on the secret
-
 	action := kubeActions[2].(clientgotesting.CreateAction)
 	if e, a := "create", action.GetVerb(); e != a {
 		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
@@ -461,6 +472,9 @@ func TestReconcileBindingNonbindableServiceClassBindablePlan(t *testing.T) {
 	assertNumEvents(t, events, 1)
 }
 
+// TestReconcileBindingBindableServiceClassNonbindablePlan tests reconcileBinding
+// to ensure a binding for an instance that references a bindable service class
+// and a non-bindable plan fails as expected.
 func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -500,6 +514,9 @@ func TestReconcileBindingBindableServiceClassNonbindablePlan(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingFailsWithInstanceAsyncOngoing tests reconcileBinding
+// to ensure a binding that references an instance that has the
+// AsyncOpInProgreset flag set to true fails as expected.
 func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -553,6 +570,8 @@ func TestReconcileBindingFailsWithInstanceAsyncOngoing(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingInstanceNotReady tests reconcileBinding to ensure a
+// binding for an instance with a ready condition set to false fails as expected.
 func TestReconcileBindingInstanceNotReady(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -594,6 +613,8 @@ func TestReconcileBindingInstanceNotReady(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingNamespaceError tests reconcileBinding to ensure a binding
+// with an invalid namespace fails as expected.
 func TestReconcileBindingNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -635,6 +656,8 @@ func TestReconcileBindingNamespaceError(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingDelete tests reconcileBinding to ensure a binding
+// deletion works as expected.
 func TestReconcileBindingDelete(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		UnbindReaction: &fakeosb.UnbindReaction{},
@@ -677,8 +700,7 @@ func TestReconcileBindingDelete(t *testing.T) {
 	})
 
 	kubeActions := fakeKubeClient.Actions()
-	// The two actions should be:
-	// 0. Deleting the secret
+	// The action should be deleting the secret
 	assertNumberOfActions(t, kubeActions, 1)
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
@@ -925,6 +947,8 @@ func TestReconcileBindingDeleteFailedBinding(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingWithBrokerError tests reconcileBinding to ensure a
+// binding request response that contains a broker error fails as expected.
 func TestReconcileBindingWithBrokerError(t *testing.T) {
 	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -966,6 +990,8 @@ func TestReconcileBindingWithBrokerError(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingWithBrokerHTTPError tests reconcileBindings to ensure a
+// binding request response that contains a broker HTTP error fails as expected.
 func TestReconcileBindingWithBrokerHTTPError(t *testing.T) {
 	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -1155,6 +1181,22 @@ func TestReconcileBindingWithBindingFailure(t *testing.T) {
 	}
 }
 
+// TestUpdateBindingCondition tests updateBindingCondition to ensure all status
+// condition transitions on a binding work as expected.
+//
+// The test cases are proving:
+// - a binding with no status that has status condition set to false will update
+//   the transition time
+// - a binding with condition false set to condition false will not update the
+//   transition time
+// - a binding with condition false set to condition false with a new message and
+//   reason will not update the transition time
+// - a binding with condition false set to condition true will update the
+//   transition time
+// - a binding with condition status true set to true will not update the
+//   transition time
+// - a binding with condition status true set to false will update the transition
+//   time
 func TestUpdateBindingCondition(t *testing.T) {
 	getTestBindingWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Binding {
 		instance := getTestBinding()
@@ -1170,6 +1212,13 @@ func TestUpdateBindingCondition(t *testing.T) {
 		return instance
 	}
 
+	// Anonymous struct fields:
+	// name: short description of the test
+	// input: the binding to test
+	// status: condition status to set for binding condition
+	// reason: reason to set for binding condition
+	// message: message to set for binding condition
+	// transitionTimeChanged: toggle for verifying transition time was updated
 	cases := []struct {
 		name                  string
 		input                 *v1alpha1.Binding
@@ -1285,6 +1334,8 @@ func TestUpdateBindingCondition(t *testing.T) {
 	}
 }
 
+// TestReconcileUnbindingWithBrokerError tests reconcileBinding to ensure an
+// unbinding request response that contains a broker error fails as expected.
 func TestReconcileUnbindingWithBrokerError(t *testing.T) {
 	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		UnbindReaction: &fakeosb.UnbindReaction{
@@ -1327,6 +1378,9 @@ func TestReconcileUnbindingWithBrokerError(t *testing.T) {
 	}
 }
 
+// TestReconcileUnbindingWithBrokerHTTPError tests reconcileBinding to ensure an
+// unbinding request response that contains a broker HTTP error fails as
+// expected.
 func TestReconcileUnbindingWithBrokerHTTPError(t *testing.T) {
 	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		UnbindReaction: &fakeosb.UnbindReaction{
