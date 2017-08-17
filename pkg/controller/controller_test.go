@@ -285,7 +285,7 @@ const instanceParameterSchemaBytes = `{
 }`
 
 // broker used in most of the tests that need a broker
-func getTestServiceBroker() *v1alpha1.Broker {
+func getTestServiceBroker() *v1alpha1.ServiceBroker {
 	return &v1alpha1.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceBrokerName},
 		Spec: v1alpha1.ServiceBrokerSpec{
@@ -294,7 +294,7 @@ func getTestServiceBroker() *v1alpha1.Broker {
 	}
 }
 
-func getTestServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Broker {
+func getTestServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ServiceBroker {
 	broker := getTestServiceBroker()
 	broker.Status = v1alpha1.ServiceBrokerStatus{
 		Conditions: []v1alpha1.ServiceBrokerCondition{{
@@ -307,7 +307,7 @@ func getTestServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.B
 	return broker
 }
 
-func getTestServiceBrokerWithAuth(authInfo *v1alpha1.BrokerAuthInfo) *v1alpha1.Broker {
+func getTestServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1alpha1.ServiceBroker {
 	broker := getTestServiceBroker()
 	broker.Spec.AuthInfo = authInfo
 	return broker
@@ -394,7 +394,7 @@ func getTestCatalog() *osb.CatalogResponse {
 }
 
 // instance referencing the result of getTestServiceClass()
-func getTestServiceInstance() *v1alpha1.Instance {
+func getTestServiceInstance() *v1alpha1.ServiceInstance {
 	return &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
@@ -406,7 +406,7 @@ func getTestServiceInstance() *v1alpha1.Instance {
 }
 
 // an instance referencing the result of getTestNonbindableServiceClass, on the non-bindable plan.
-func getTestNonbindableServiceInstance() *v1alpha1.Instance {
+func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstance()
 	i.Spec.ServiceClassName = testNonbindableServiceClassName
 	i.Spec.PlanName = testNonbindablePlanName
@@ -415,21 +415,21 @@ func getTestNonbindableServiceInstance() *v1alpha1.Instance {
 }
 
 // an instance referencing the result of getTestNonbindableServiceClass, on the bindable plan.
-func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.Instance {
+func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
 	i.Spec.PlanName = testPlanName
 
 	return i
 }
 
-func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.Instance {
+func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstance()
 	i.Spec.PlanName = testNonbindablePlanName
 
 	return i
 }
 
-func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.Instance {
+func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstance()
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -442,7 +442,7 @@ func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1
 	return instance
 }
 
-func getTestServiceInstanceWithFailedStatus() *v1alpha1.Instance {
+func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstance()
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -455,7 +455,7 @@ func getTestServiceInstanceWithFailedStatus() *v1alpha1.Instance {
 }
 
 // getTestServiceInstanceAsync returns an instance in async mode
-func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Instance {
+func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstance()
 	if operation != "" {
 		instance.Status.LastOperation = &operation
@@ -473,7 +473,7 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Instanc
 	return instance
 }
 
-func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Instance {
+func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstance()
 	if operation != "" {
 		instance.Status.LastOperation = &operation
@@ -494,7 +494,7 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Insta
 	return instance
 }
 
-func getTestServiceInstanceAsyncDeprovisioningWithFinalizer(operation string) *v1alpha1.Instance {
+func getTestServiceInstanceAsyncDeprovisioningWithFinalizer(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstanceAsyncDeprovisioning(operation)
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	return instance

@@ -102,11 +102,11 @@ func TestListResource(t *testing.T) {
 	if len(objs) != 0 {
 		t.Fatalf("expected 0 objects returned, got %d instead", len(objs))
 	}
-	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker1", &sc.Broker{
+	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker1", &sc.ServiceBroker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker1"},
 	})
-	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker2", &sc.Broker{
+	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker2", &sc.ServiceBroker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker2"},
 	})

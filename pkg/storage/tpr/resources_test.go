@@ -26,7 +26,7 @@ import (
 
 //make sure each of Third Party Resource kinds are built with the correct structure
 func TestTPRKinds(t *testing.T) {
-	var serviceServiceInstanceSample = v1beta1.ThirdPartyResource{
+	var serviceInstanceSample = v1beta1.ThirdPartyResource{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
@@ -39,7 +39,7 @@ func TestTPRKinds(t *testing.T) {
 		},
 	}
 
-	var serviceServiceBrokerSample = v1beta1.ThirdPartyResource{
+	var serviceBrokerSample = v1beta1.ThirdPartyResource{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
@@ -65,7 +65,7 @@ func TestTPRKinds(t *testing.T) {
 		},
 	}
 
-	var serviceServiceInstanceCredentialSample = v1beta1.ThirdPartyResource{
+	var serviceInstanceCredentialSample = v1beta1.ThirdPartyResource{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ThirdPartyResource",
 			APIVersion: "v1alpha1",
@@ -78,15 +78,15 @@ func TestTPRKinds(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(serviceServiceInstanceSample, serviceInstanceTPR) {
+	if !reflect.DeepEqual(serviceInstanceSample, serviceInstanceTPR) {
 		t.Errorf("Unexpected ServiceInstance TPR structure")
 	}
 
-	if !reflect.DeepEqual(serviceServiceInstanceCredentialSample, serviceServiceInstanceCredentialTPR) {
+	if !reflect.DeepEqual(serviceInstanceCredentialSample, serviceInstanceCredentialTPR) {
 		t.Errorf("Unexpected ServiceBroker TPR structure")
 	}
 
-	if !reflect.DeepEqual(serviceServiceBrokerSample, serviceBrokerTPR) {
+	if !reflect.DeepEqual(serviceBrokerSample, serviceBrokerTPR) {
 		t.Errorf("Unexpected ServiceInstanceCredential TPR structure")
 	}
 

@@ -38,7 +38,7 @@ func TestServiceInstanceSpecChecksum(t *testing.T) {
 	unversionedChecksum := unversioned.ServiceInstanceSpecChecksum(spec)
 
 	versionedSpec := v1alpha1.ServiceInstanceSpec{}
-	v1alpha1.Convert_servicecatalog_ServiceInstanceSpec_To_v1alpha1_InstanceSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	v1alpha1.Convert_servicecatalog_ServiceInstanceSpec_To_v1alpha1_ServiceInstanceSpec(&spec, &versionedSpec, nil /* conversionScope */)
 	versionedChecksum := checksumv1alpha1.ServiceInstanceSpecChecksum(versionedSpec)
 
 	if e, a := unversionedChecksum, versionedChecksum; e != a {
@@ -50,8 +50,8 @@ func TestServiceInstanceSpecChecksum(t *testing.T) {
 func TestServiceInstanceCredentialSpecChecksum(t *testing.T) {
 	spec := servicecatalog.ServiceInstanceCredentialSpec{
 		ServiceInstanceRef: v1.LocalObjectReference{Name: "test-instance"},
-		SecretName:  "test-secret",
-		ExternalID:  "1995a7e6-d078-4ce6-9057-bcefd793634e",
+		SecretName:         "test-secret",
+		ExternalID:         "1995a7e6-d078-4ce6-9057-bcefd793634e",
 	}
 
 	unversionedChecksum := unversioned.ServiceInstanceCredentialSpecChecksum(spec)
@@ -83,7 +83,7 @@ func TestServiceBrokerSpecChecksum(t *testing.T) {
 
 	unversionedChecksum := unversioned.ServiceBrokerSpecChecksum(spec)
 	versionedSpec := v1alpha1.ServiceBrokerSpec{}
-	v1alpha1.Convert_servicecatalog_ServiceBrokerSpec_To_v1alpha1_BrokerSpec(&spec, &versionedSpec, nil /* conversionScope */)
+	v1alpha1.Convert_servicecatalog_ServiceBrokerSpec_To_v1alpha1_ServiceBrokerSpec(&spec, &versionedSpec, nil /* conversionScope */)
 	versionedChecksum := checksumv1alpha1.ServiceBrokerSpecChecksum(versionedSpec)
 
 	if e, a := unversionedChecksum, versionedChecksum; e != a {

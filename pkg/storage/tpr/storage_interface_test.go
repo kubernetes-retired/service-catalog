@@ -52,17 +52,17 @@ func TestCreateExistingWithNoNamespace(t *testing.T) {
 	})
 	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
-	inputServiceBroker := &sc.Broker{
+	inputServiceBroker := &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	createdServiceBroker := &sc.Broker{}
+	createdServiceBroker := &sc.ServiceBroker{}
 	err = iface.Create(
 		context.Background(),
 		key,
@@ -91,13 +91,13 @@ func TestCreateExistingWithNamespace(t *testing.T) {
 	})
 	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
+	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
 		},
 	})
-	inputServiceInstance := &sc.Instance{
+	inputServiceInstance := &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -109,7 +109,7 @@ func TestCreateExistingWithNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	createdServiceInstance := &sc.Instance{}
+	createdServiceInstance := &sc.ServiceInstance{}
 	err = iface.Create(
 		context.Background(),
 		key,
@@ -137,7 +137,7 @@ func TestCreateWithNoNamespace(t *testing.T) {
 		return &sc.ServiceBroker{}
 	})
 	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
-	inputServiceBroker := &sc.Broker{
+	inputServiceBroker := &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: sc.ServiceBrokerSpec{
 			URL: "http://my-awesome-broker.io",
@@ -147,7 +147,7 @@ func TestCreateWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	createdServiceBroker := &sc.Broker{}
+	createdServiceBroker := &sc.ServiceBroker{}
 	if err := iface.Create(
 		context.Background(),
 		key,
@@ -174,8 +174,8 @@ func TestCreateWithNoNamespace(t *testing.T) {
 	// Output and what's in storage should be known to be deeply equal at this
 	// point. Compare either of those to what was passed in. The only diff should
 	// be resource version, so we will set that first.
-	inputServiceBroker.ResourceVersion = createdBroker.ResourceVersion
-	err = deepCompare("input", inputServiceBroker, "output", createdBroker)
+	inputServiceBroker.ResourceVersion = createdServiceBroker.ResourceVersion
+	err = deepCompare("input", inputServiceBroker, "output", createdServiceBroker)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestCreateWithNamespace(t *testing.T) {
 		return &sc.ServiceInstance{}
 	})
 	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
-	inputServiceInstance := &sc.Instance{
+	inputServiceInstance := &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -203,7 +203,7 @@ func TestCreateWithNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	createdServiceInstance := &sc.Instance{}
+	createdServiceInstance := &sc.ServiceInstance{}
 	if err := iface.Create(
 		context.Background(),
 		key,
@@ -230,8 +230,8 @@ func TestCreateWithNamespace(t *testing.T) {
 	// Output and what's in storage should be known to be deeply equal at this
 	// point. Compare either of those to what was passed in. The only diff should
 	// be resource version, so we will set that first.
-	inputServiceInstance.ResourceVersion = createdInstance.ResourceVersion
-	err = deepCompare("input", inputServiceInstance, "output", createdInstance)
+	inputServiceInstance.ResourceVersion = createdServiceInstance.ResourceVersion
+	err = deepCompare("input", inputServiceInstance, "output", createdServiceInstance)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestGetNonExistentWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	outServiceBroker := &sc.Broker{}
+	outServiceBroker := &sc.ServiceBroker{}
 	// Ignore not found
 	if err := iface.Get(
 		context.Background(),
@@ -259,7 +259,7 @@ func TestGetNonExistentWithNoNamespace(t *testing.T) {
 		t.Fatalf("expected no error, but received one (%s)", err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("output", outServiceBroker, "new broker", &sc.Broker{})
+	err = deepCompare("output", outServiceBroker, "new broker", &sc.ServiceBroker{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func TestGetNonExistentWithNoNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("output", outServiceBroker, "new broker", &sc.Broker{})
+	err = deepCompare("output", outServiceBroker, "new broker", &sc.ServiceBroker{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func TestGetNonExistentWithNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	outServiceInstance := &sc.Instance{}
+	outServiceInstance := &sc.ServiceInstance{}
 	// Ignore not found
 	if err := iface.Get(
 		context.Background(),
@@ -305,7 +305,7 @@ func TestGetNonExistentWithNamespace(t *testing.T) {
 		t.Fatalf("expected no error, but received one (%s)", err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new instance
-	err = deepCompare("output", outServiceInstance, "new instance", &sc.Instance{})
+	err = deepCompare("output", outServiceInstance, "new instance", &sc.ServiceInstance{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +321,7 @@ func TestGetNonExistentWithNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new instance
-	err = deepCompare("output", outServiceInstance, "new instance", &sc.Instance{})
+	err = deepCompare("output", outServiceInstance, "new instance", &sc.ServiceInstance{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,7 +334,7 @@ func TestGetWithNoNamespace(t *testing.T) {
 	})
 	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
 	key, err := keyer.Key(request.NewContext(), name)
@@ -370,7 +370,7 @@ func TestGetWithNamespace(t *testing.T) {
 	})
 	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
+	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -415,7 +415,7 @@ func TestGetEmptyListWithNoNamespace(t *testing.T) {
 	})
 	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
 	key := keyer.KeyRoot(request.NewContext())
-	outServiceBrokerList := &sc.BrokerList{}
+	outServiceBrokerList := &sc.ServiceBrokerList{}
 	if err := iface.List(
 		context.Background(),
 		key,
@@ -460,7 +460,7 @@ func TestGetEmptyListWithNamespace(t *testing.T) {
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key := keyer.KeyRoot(ctx)
-	outServiceInstanceList := &sc.InstanceList{}
+	outServiceInstanceList := &sc.ServiceInstanceList{}
 	if err := iface.List(
 		context.Background(),
 		key,
@@ -503,7 +503,7 @@ func TestGetListWithNoNamespace(t *testing.T) {
 	})
 	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
 	list := &sc.ServiceBrokerList{}
@@ -546,7 +546,7 @@ func TestGetListWithNamespace(t *testing.T) {
 	})
 	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
-	fakeCl.Storage.Set(globalNamespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
+	fakeCl.Storage.Set(globalNamespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -600,7 +600,7 @@ func TestUpdateNonExistentWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	updatedServiceBroker := &sc.Broker{}
+	updatedServiceBroker := &sc.ServiceBroker{}
 	// Ignore not found
 	err = iface.GuaranteedUpdate(
 		context.Background(),
@@ -615,7 +615,7 @@ func TestUpdateNonExistentWithNoNamespace(t *testing.T) {
 		}),
 	)
 	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("updated broker", updatedServiceBroker, "new broker", &sc.Broker{})
+	err = deepCompare("updated broker", updatedServiceBroker, "new broker", &sc.ServiceBroker{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -636,7 +636,7 @@ func TestUpdateNonExistentWithNoNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("updated broker", updatedServiceBroker, "new broker", &sc.Broker{})
+	err = deepCompare("updated broker", updatedServiceBroker, "new broker", &sc.ServiceBroker{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -655,7 +655,7 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 		t.Fatalf("error constructing key (%s)", err)
 	}
 	newPlanName := "my-really-awesome-plan"
-	updatedServiceInstance := &sc.Instance{}
+	updatedServiceInstance := &sc.ServiceInstance{}
 	// Ignore not found
 	err = iface.GuaranteedUpdate(
 		context.Background(),
@@ -670,7 +670,7 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 		}),
 	)
 	// Object should remain unmodified-- i.e. deeply equal to a new instance
-	err = deepCompare("updated instance", updatedServiceInstance, "new instance", &sc.Instance{})
+	err = deepCompare("updated instance", updatedServiceInstance, "new instance", &sc.ServiceInstance{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,7 +691,7 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("updated instance", updatedServiceInstance, "new broker", &sc.Instance{})
+	err = deepCompare("updated instance", updatedServiceInstance, "new broker", &sc.ServiceInstance{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -705,7 +705,7 @@ func TestUpdateWithNoNamespace(t *testing.T) {
 	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	newURL := "http://your-incredible-broker.io"
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.Broker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
@@ -718,7 +718,7 @@ func TestUpdateWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	updatedServiceBroker := &sc.Broker{}
+	updatedServiceBroker := &sc.ServiceBroker{}
 	err = iface.GuaranteedUpdate(
 		context.Background(),
 		key,
@@ -758,7 +758,7 @@ func TestUpdateWithNamespace(t *testing.T) {
 	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	newPlanName := "my-really-awesome-plan"
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.Instance{
+	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
@@ -773,7 +773,7 @@ func TestUpdateWithNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	updatedServiceInstance := &sc.Instance{}
+	updatedServiceInstance := &sc.ServiceInstance{}
 	err = iface.GuaranteedUpdate(
 		context.Background(),
 		key,
@@ -815,7 +815,7 @@ func TestDeleteNonExistentWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	outServiceBroker := &sc.Broker{}
+	outServiceBroker := &sc.ServiceBroker{}
 	err = iface.Delete(
 		context.Background(),
 		key,
@@ -826,7 +826,7 @@ func TestDeleteNonExistentWithNoNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new broker
-	err = deepCompare("output", outServiceBroker, "new broker", &sc.Broker{})
+	err = deepCompare("output", outServiceBroker, "new broker", &sc.ServiceBroker{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -844,7 +844,7 @@ func TestDeleteNonExistentWithNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	outServiceInstance := &sc.Instance{}
+	outServiceInstance := &sc.ServiceInstance{}
 	err = iface.Delete(
 		context.Background(),
 		key,
@@ -855,7 +855,7 @@ func TestDeleteNonExistentWithNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object should remain unmodified-- i.e. deeply equal to a new instance
-	err = deepCompare("output", outServiceInstance, "new instance", &sc.Instance{})
+	err = deepCompare("output", outServiceInstance, "new instance", &sc.ServiceInstance{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -881,7 +881,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	outServiceBroker := &sc.Broker{}
+	outServiceBroker := &sc.ServiceBroker{}
 	err = iface.Delete(
 		context.Background(),
 		key,
@@ -933,7 +933,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
 	}
-	outServiceInstance := &sc.Instance{}
+	outServiceInstance := &sc.ServiceInstance{}
 	err = iface.Delete(
 		context.Background(),
 		key,
