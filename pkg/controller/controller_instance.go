@@ -40,10 +40,26 @@ func (c *controller) instanceAdd(obj interface{}) {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-	// TODO(vaikas): If the obj (which really is an ServiceInstance right?) has
-	// AsyncOpInProgress flag set, just add it directly to c.pollingQueue
-	// here? Why shouldn't we??
+
 	c.instanceQueue.Add(key)
+}
+
+func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
+	// A polling instance will be added to the polling queue by the reconciler.
+	// We only need to take care of non-polling instances here.
+	instance := newObj.(*v1alpha1.ServiceInstance)
+	if !instance.Status.AsyncOpInProgress {
+		c.instanceAdd(newObj)
+	}
+}
+
+func (c *controller) instanceDelete(obj interface{}) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if instance == nil || !ok {
+		return
+	}
+
+	glog.V(4).Infof("Received delete event for ServiceInstance %v/%v; no further processing will occur", instance.Namespace, instance.Name)
 }
 
 // Async operations on instances have a somewhat convoluted flow in order to
@@ -94,6 +110,20 @@ func (c *controller) continuePollingServiceInstance(instance *v1alpha1.ServiceIn
 	return c.beginPollingServiceInstance(instance)
 }
 
+// finishPollingServiceInstance removes the instance's key from the controller's instance
+// polling queue.
+func (c *controller) finishPollingServiceInstance(instance *v1alpha1.ServiceInstance) error {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+		return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+	}
+
+	c.pollingQueue.Forget(key)
+
+	return nil
+}
+
 func (c *controller) reconcileServiceInstanceKey(key string) error {
 	// For namespace-scoped resources, SplitMetaNamespaceKey splits the key
 	// i.e. "namespace/name" into two separate strings
@@ -112,10 +142,6 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	}
 
 	return c.reconcileServiceInstance(instance)
-}
-
-func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
-	c.instanceAdd(newObj)
 }
 
 // reconcileServiceInstanceDelete is responsible for handling any instance whose
@@ -697,6 +723,11 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 				successProvisionMessage,
 			)
 		}
+
+		err = c.finishPollingServiceInstance(instance)
+		if err != nil {
+			return err
+		}
 	case osb.StateFailed:
 		description := ""
 		if response.Description != nil {
@@ -727,6 +758,11 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			msg,
 		)
 		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+
+		err = c.finishPollingServiceInstance(instance)
+		if err != nil {
+			return err
+		}
 	default:
 		glog.Warningf("Got invalid state in LastOperationResponse: %q", response.State)
 		return fmt.Errorf("Got invalid state in LastOperationResponse: %q", response.State)
@@ -874,13 +910,4 @@ func (c *controller) updateServiceInstanceFinalizers(
 		glog.Errorf("Error updating %v: %v", logContext, err)
 	}
 	return err
-}
-
-func (c *controller) instanceDelete(obj interface{}) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
-	if instance == nil || !ok {
-		return
-	}
-
-	glog.V(4).Infof("Received delete event for ServiceInstance %v/%v; no further processing will occur", instance.Namespace, instance.Name)
 }
