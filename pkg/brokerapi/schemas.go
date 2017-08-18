@@ -16,6 +16,8 @@ limitations under the License.
 
 package brokerapi
 
+import "encoding/json"
+
 // Schemas represents a plan's schemas for service instance and binding create
 // and update.
 type Schemas struct {
@@ -39,5 +41,5 @@ type ServiceBindingSchema struct {
 // InputParameters represents a schema for input parameters for creation or
 // update of an API resource.
 type InputParameters struct {
-	Parameters interface{} `json:"parameters,omitempty"`
+	Parameters json.RawMessage `json:"parameters,omitempty"`
 }

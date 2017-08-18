@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http/httptest"
 	"reflect"
@@ -188,44 +189,7 @@ const alphaParameterSchemaCatalogBytes = `{
       "schemas": {
       	"service_instance": {
 	  	  "create": {
-	  	  	"parameters": {
-	          "$schema": "http://json-schema.org/draft-04/schema",
-	          "type": "object",
-	          "title": "Parameters",
-	          "properties": {
-	            "name": {
-	              "title": "Queue Name",
-	              "type": "string",
-	              "maxLength": 63,
-	              "default": "My Queue"
-	            },
-	            "email": {
-	              "title": "Email",
-	              "type": "string",
-	              "pattern": "^\\S+@\\S+$",
-	              "description": "Email address for alerts."
-	            },
-	            "protocol": {
-	              "title": "Protocol",
-	              "type": "string",
-	              "default": "Java Message Service (JMS) 1.1",
-	              "enum": [
-	                "Java Message Service (JMS) 1.1",
-	                "Transmission Control Protocol (TCP)",
-	                "Advanced Message Queuing Protocol (AMQP) 1.0"
-	              ]
-	            },
-	            "secure": {
-	              "title": "Enable security",
-	              "type": "boolean",
-	              "default": true
-	            }
-	          },
-	          "required": [
-	            "name",
-	            "protocol"
-	          ]
-	  	  	}
+	  	  	"parameters": ` + instanceParameterSchemaBytes + `
 	  	  },
 	  	  "update": {
 	  	  	"parameters": {
@@ -589,16 +553,10 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 		t.Fatalf("Expected plan.AlphaInstanceCreateParameterSchema to be set, but was nil")
 	}
 
-	cSchema := make(map[string]interface{})
-	if err := json.Unmarshal(plan.AlphaInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
-		schema := make(map[string]interface{})
-		if err := json.Unmarshal([]byte(instanceParameterSchemaBytes), &schema); err != nil {
-			t.Fatalf("Error unmarshalling schema bytes: %v", err)
-		}
-
-		if e, a := schema, cSchema; !reflect.DeepEqual(e, a) {
-			t.Fatalf("Unexpected value of alphaInstanceCreateParameterSchema; expected %v, got %v", e, a)
-		}
+	expectedSchemaBytes := normalizeJSON([]byte(instanceParameterSchemaBytes))
+	actualSchemaBytes := normalizeJSON(plan.AlphaInstanceCreateParameterSchema.Raw)
+	if !reflect.DeepEqual(expectedSchemaBytes, actualSchemaBytes) {
+		t.Fatalf("Unexpected value of alphaInstanceCreateParameterSchema; expected %v, got %v", string(expectedSchemaBytes), string(actualSchemaBytes))
 	}
 
 	if plan.AlphaInstanceUpdateParameterSchema == nil {
@@ -620,6 +578,12 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 			t.Fatalf("Unexpected value of alphaBindingCreateParameterSchema; expected %v, got %v", e, a)
 		}
 	}
+}
+
+func normalizeJSON(jsonBytes []byte) []byte {
+	var buf bytes.Buffer
+	json.Indent(&buf, jsonBytes, "", "  ")
+	return buf.Bytes()
 }
 
 func checkPlan(serviceClass *v1alpha1.ServiceClass, index int, planName, planDescription string, t *testing.T) {
