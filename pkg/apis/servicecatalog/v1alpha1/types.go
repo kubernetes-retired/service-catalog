@@ -292,6 +292,18 @@ type InstanceList struct {
 	Items []Instance `json:"items"`
 }
 
+// AlphaUserInfo holds information about the user that created a resource.
+type AlphaUserInfo struct {
+	Username string                     `json:"username"`
+	UID      string                     `json:"uid"`
+	Groups   []string                   `json:"groups,omitempty"`
+	Extra    map[string]AlphaExtraValue `json:"extra,omitempty"`
+}
+
+// AlphaExtraValue contains additional information about a user that may be
+// provided by the authenticator.
+type AlphaExtraValue []string
+
 // +genclient=true
 
 // Instance represents a provisioned instance of a ServiceClass.
@@ -340,6 +352,14 @@ type InstanceSpec struct {
 	//
 	// Immutable.
 	ExternalID string `json:"externalID"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AlphaUser contains information about the user that created this
+	// instance. This field is set by the API server and not settable by the
+	// end-user. User-provided values for this field are not saved.
+	AlphaUser AlphaUserInfo `json:"alphaUserInfo,omitempty"`
 }
 
 // InstanceStatus represents the current status of an Instance.
@@ -452,6 +472,14 @@ type BindingSpec struct {
 	//
 	// Immutable.
 	ExternalID string `json:"externalID"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AlphaUser contains information about the user that created this
+	// binding. This field is set by the API server and not settable by the
+	// end-user. User-provided values for this field are not saved.
+	AlphaUser AlphaUserInfo
 }
 
 // BindingStatus represents the current status of a Binding.
