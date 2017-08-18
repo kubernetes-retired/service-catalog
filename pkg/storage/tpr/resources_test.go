@@ -32,7 +32,7 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("instance"),
+			Name: withGroupName("service-instance"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},
@@ -45,7 +45,7 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("broker"),
+			Name: withGroupName("service-broker"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},
@@ -71,7 +71,7 @@ func TestTPRKinds(t *testing.T) {
 			APIVersion: "v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: withGroupName("binding"),
+			Name: withGroupName("service-instance-credential"),
 		},
 		Versions: []v1beta1.APIVersion{
 			{Name: "v1alpha1"},

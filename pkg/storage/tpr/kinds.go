@@ -55,8 +55,10 @@ func (k Kind) TPRName() string {
 
 // URLName returns the URL-worthy name this TPR kind. Examples:
 //
+//	Kind("ServiceBroker").URLName() == "servicebrokers"
 //	Kind("ServiceClass").URLName() == "serviceclasses"
-//	Kind("ServiceBroker").URLName() == "brokers"
+//	Kind("ServiceInstance").URLName() == "serviceinstances"
+//      Kind("ServiceInstanceCredntial").URLName() == "serviceinstancecredentials"
 //
 // Note that this function is incomplete - it is only guaranteed to properly pluralize our 4
 // resource types ("ServiceBroker", "ServiceClass", "ServiceInstance", "ServiceInstanceCredential")

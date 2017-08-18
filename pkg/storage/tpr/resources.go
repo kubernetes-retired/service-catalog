@@ -33,26 +33,24 @@ var ServiceInstanceResource = metav1.APIResource{
 	Namespaced: true,
 }
 
-// ServiceInstanceCredentialResource represents the API resource for the service binding third
-// party resource
+// ServiceInstanceCredentialResource represents the API resource for the service
+//  instance credential third party resource
 var ServiceInstanceCredentialResource = metav1.APIResource{
 	Name:       ServiceInstanceCredentialKind.TPRName(),
 	Namespaced: true,
 }
 
-// ServiceBrokerResource represents the API resource for the service broker third
-// party resource
+// ServiceBrokerResource represents the API resource for the service broker
+// third party resource
 var ServiceBrokerResource = metav1.APIResource{
 	Name:       ServiceBrokerKind.TPRName(),
 	Namespaced: true,
 }
 
-// ServiceClassResource represents the API resource for the service class third
-// party resource
+// ServiceClassResource represents the API resource for the service class
+// third party resource
 var ServiceClassResource = metav1.APIResource{
-	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
-	// it here
-	Name:       "service-class",
+	Name:       ServiceClassKind.TPRName(),
 	Namespaced: true,
 }
 
@@ -108,8 +106,6 @@ var serviceClassTPR = v1beta1.ThirdPartyResource{
 		Kind:       tprKind,
 		APIVersion: tprVersion,
 	},
-	// ServiceClass is the kind, but TPRName converts it to 'serviceclass'. For now, just hard-code
-	// it here
 	ObjectMeta: metav1.ObjectMeta{
 		Name: withGroupName(ServiceClassKind.TPRName()),
 	},

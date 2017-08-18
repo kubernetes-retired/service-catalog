@@ -275,7 +275,7 @@ func TestReconcileServiceBrokerDelete(t *testing.T) {
 	broker := getTestServiceBroker()
 	broker.DeletionTimestamp = &metav1.Time{}
 	broker.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
-	fakeCatalogClient.AddReactor("get", "brokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "servicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, broker, nil
 	})
 

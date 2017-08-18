@@ -64,7 +64,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 
 	// We only care about service Instances
-	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("instances") {
+	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("serviceinstances") {
 		return nil
 	}
 	instance, ok := a.GetObject().(*servicecatalog.ServiceInstance)

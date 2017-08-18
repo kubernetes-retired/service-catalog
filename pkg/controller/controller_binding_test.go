@@ -75,7 +75,7 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceInstance(t *testing
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceInstanceReason + " " + "ServiceInstanceCredential \"/test-binding\" references a non-existent Instance \"/nothere\""
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceInstanceReason + " " + "ServiceInstanceCredential \"/test-binding\" references a non-existent ServiceInstance \"/nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -681,7 +681,7 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 		},
 	}
 
-	fakeCatalogClient.AddReactor("get", "bindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstancecredentials", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, binding, nil
 	})
 
@@ -892,7 +892,7 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	checksum := checksum.ServiceInstanceCredentialSpecChecksum(binding.Spec)
 	binding.Status.Checksum = &checksum
 
-	fakeCatalogClient.AddReactor("get", "bindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstancecredentials", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, binding, nil
 	})
 

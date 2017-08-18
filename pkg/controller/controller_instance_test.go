@@ -776,7 +776,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	checksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
 	instance.Status.Checksum = &checksum
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -843,7 +843,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	checksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
 	instance.Status.Checksum = &checksum
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -911,7 +911,7 @@ func TestReconcileServiceInstanceDeleteFailedInstance(t *testing.T) {
 	checksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
 	instance.Status.Checksum = &checksum
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -954,7 +954,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeServiceBroker(t *testing.T) 
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
@@ -1424,7 +1424,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	instance := getTestServiceInstanceAsyncDeprovisioningWithFinalizer(testOperation)
 	// updateServiceInstanceFinalizers fetches the latest object.
-	fakeCatalogClient.AddReactor("get", "instances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
