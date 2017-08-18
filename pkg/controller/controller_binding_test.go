@@ -86,7 +86,7 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceInstance(t *testing
 func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
@@ -101,7 +101,7 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -150,14 +150,14 @@ func TestReconcileServiceInstanceCredentialWithSecretConflict(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -171,11 +171,11 @@ func TestReconcileServiceInstanceCredentialWithSecretConflict(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertBind(t, brokerActions[0], &osb.BindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   serviceClassGUID,
-		PlanID:                      planGUID,
-		AppGUID:                     strPtr(testNsUID),
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNsUID),
 		},
@@ -225,14 +225,14 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -255,11 +255,11 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertBind(t, brokerActions[0], &osb.BindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   serviceClassGUID,
-		PlanID:                      planGUID,
-		AppGUID:                     strPtr(testNsUID),
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
 		Parameters: map[string]interface{}{
 			"args": []interface{}{
 				"first-arg",
@@ -333,14 +333,14 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestNonbindableInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestNonbindableServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -387,9 +387,9 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(func() *v1alpha1.Instance {
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(func() *v1alpha1.ServiceInstance {
 		i := getTestServiceInstanceNonbindableServiceBindablePlan()
 		i.Status = v1alpha1.ServiceInstanceStatus{
 			Conditions: []v1alpha1.ServiceInstanceCondition{
@@ -405,7 +405,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -419,11 +419,11 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertBind(t, brokerActions[0], &osb.BindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   nonbindableServiceClassGUID,
-		PlanID:                      planGUID,
-		AppGUID:                     strPtr(testNsUID),
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  nonbindableServiceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNsUID),
 		},
@@ -478,14 +478,14 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceBindableServiceNonbindablePlan())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceBindableServiceNonbindablePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -520,14 +520,14 @@ func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t
 func TestReconcileServiceInstanceCredentialFailsWithServiceInstanceAsyncOngoing(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceAsyncProvisioning(""))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceAsyncProvisioning(""))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -577,14 +577,14 @@ func TestReconcileServiceInstanceCredentialServiceInstanceNotReady(t *testing.T)
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -622,14 +622,14 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 		return true, &v1.Namespace{}, errors.New("No namespace")
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -663,9 +663,9 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 		UnbindReaction: &fakeosb.UnbindReaction{},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -675,7 +675,7 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 			Finalizers:        []string{v1alpha1.FinalizerServiceCatalog},
 		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -693,10 +693,10 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   serviceClassGUID,
-		PlanID:                      planGUID,
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
 	})
 
 	kubeActions := fakeKubeClient.Actions()
@@ -881,9 +881,9 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 		UnbindReaction: &fakeosb.UnbindReaction{},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -904,10 +904,10 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   serviceClassGUID,
-		PlanID:                      planGUID,
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
 	})
 
 	// verify one kube action occurred
@@ -962,14 +962,14 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerError(t *testing.T) 
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -1005,14 +1005,14 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerHTTPError(t *testing
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -1038,9 +1038,9 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerHTTPError(t *testing
 func TestReconcileServiceInstanceCredentialWithFailureCondition(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 
@@ -1070,9 +1070,9 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialCallFail
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
 
@@ -1094,11 +1094,11 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialCallFail
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertBind(t, brokerActions[0], &osb.BindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   serviceClassGUID,
-		PlanID:                      planGUID,
-		AppGUID:                     strPtr(""),
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(""),
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(""),
 		},
@@ -1127,9 +1127,9 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
 
@@ -1161,11 +1161,11 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertBind(t, brokerActions[0], &osb.BindRequest{
-		ServiceInstanceCredentialID: bindingGUID,
-		ServiceInstanceID:           instanceGUID,
-		ServiceID:                   serviceClassGUID,
-		PlanID:                      planGUID,
-		AppGUID:                     strPtr(""),
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(""),
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(""),
 		},
@@ -1344,9 +1344,9 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	t1 := metav1.NewTime(time.Now())
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -1356,7 +1356,7 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 			DeletionTimestamp: &t1,
 		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
@@ -1391,9 +1391,9 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestInstanceWithStatus(v1alpha1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	t1 := metav1.NewTime(time.Now())
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -1403,7 +1403,7 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 			DeletionTimestamp: &t1,
 		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},

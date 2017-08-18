@@ -167,7 +167,7 @@ func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	testServiceClass := getTestServiceClass()
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
-	if err := testController.reconcileServiceBroker(getTestBroker()); err != nil {
+	if err := testController.reconcileServiceBroker(getTestServiceBroker()); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -182,8 +182,8 @@ func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	assertUpdate(t, actions[0], testServiceClass)
 
 	// second action should be an update action for broker status subresource
-	updatedServiceBroker := assertUpdateStatus(t, actions[1], getTestBroker())
-	assertServiceBrokerReadyTrue(t, updatedBroker)
+	updatedServiceBroker := assertUpdateStatus(t, actions[1], getTestServiceBroker())
+	assertServiceBrokerReadyTrue(t, updatedServiceBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
@@ -200,7 +200,7 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 	testServiceClass.ExternalID = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
-	if err := testController.reconcileServiceBroker(getTestBroker()); err == nil {
+	if err := testController.reconcileServiceBroker(getTestServiceBroker()); err == nil {
 		t.Fatal("The same service class should not be allowed with a different ID")
 	}
 
@@ -211,8 +211,8 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestBroker())
-	assertServiceBrokerReadyFalse(t, updatedBroker)
+	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestServiceBroker())
+	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
@@ -237,7 +237,7 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 	testServiceClass.ServiceBrokerName = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 
-	if err := testController.reconcileServiceBroker(getTestBroker()); err == nil {
+	if err := testController.reconcileServiceBroker(getTestServiceBroker()); err == nil {
 		t.Fatal("The same service class should not belong to two different brokers.")
 	}
 
@@ -248,8 +248,8 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestBroker())
-	assertServiceBrokerReadyFalse(t, updatedBroker)
+	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestServiceBroker())
+	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
@@ -302,7 +302,7 @@ func TestReconcileServiceBrokerDelete(t *testing.T) {
 	assertDelete(t, actions[0], testServiceClass)
 
 	updatedServiceBroker := assertUpdateStatus(t, actions[1], broker)
-	assertServiceBrokerReadyFalse(t, updatedBroker)
+	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	assertGet(t, actions[2], broker)
 
@@ -342,7 +342,7 @@ func TestReconcileServiceBrokerErrorFetchingCatalog(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBroker := assertUpdateStatus(t, actions[0], broker)
-	assertServiceBrokerReadyFalse(t, updatedBroker)
+	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
 
@@ -379,7 +379,7 @@ func TestReconcileServiceBrokerZeroServices(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBroker := assertUpdateStatus(t, actions[0], broker)
-	assertServiceBrokerReadyFalse(t, updatedBroker)
+	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
 
@@ -480,7 +480,7 @@ func TestReconcileServiceBrokerWithAuth(t *testing.T) {
 	}
 }
 
-func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.BrokerAuthInfo, secret *v1.Secret, shouldSucceed bool) {
+func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.ServiceBrokerAuthInfo, secret *v1.Secret, shouldSucceed bool) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
 
 	broker := getTestServiceBrokerWithAuth(authInfo)
@@ -520,11 +520,11 @@ func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.BrokerA
 		assertNumberOfActions(t, actions, 2)
 		assertCreate(t, actions[0], testServiceClass)
 		updatedServiceBroker := assertUpdateStatus(t, actions[1], broker)
-		assertServiceBrokerReadyTrue(t, updatedBroker)
+		assertServiceBrokerReadyTrue(t, updatedServiceBroker)
 	} else {
 		assertNumberOfActions(t, actions, 1)
 		updatedServiceBroker := assertUpdateStatus(t, actions[0], broker)
-		assertServiceBrokerReadyFalse(t, updatedBroker)
+		assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 	}
 
 	// verify one kube action occurred
@@ -585,7 +585,7 @@ func TestReconcileServiceBrokerWithReconcileError(t *testing.T) {
 		t.Fatalf("unexpected diff for created ServiceClass: %v,\n\nEXPECTED: %+v\n\nACTUAL:  %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 	updatedServiceBroker := assertUpdateStatus(t, actions[1], broker)
-	assertServiceBrokerReadyFalse(t, updatedBroker)
+	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
@@ -678,7 +678,7 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 
 		inputClone := clone.(*v1alpha1.ServiceBroker)
 
-		err = testController.updateServiceBrokerCondition(tc.input, v1alpha1.BrokerConditionReady, tc.status, tc.reason, tc.message)
+		err = testController.updateServiceBrokerCondition(tc.input, v1alpha1.ServiceBrokerConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
 			continue
@@ -699,7 +699,7 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedServiceBroker.(*v1alpha1.Broker)
+		updateActionObject, ok := updatedServiceBroker.(*v1alpha1.ServiceBroker)
 		if !ok {
 			t.Errorf("%v: couldn't convert to broker", tc.name)
 			continue

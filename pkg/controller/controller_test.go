@@ -317,7 +317,7 @@ func getTestServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1a
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta:        metav1.ObjectMeta{Name: testServiceClassName},
-		ServiceBrokerName: testBrokerName,
+		ServiceBrokerName: testServiceBrokerName,
 		Description:       "a test service",
 		ExternalID:        serviceClassGUID,
 		Bindable:          true,
@@ -343,7 +343,7 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta:        metav1.ObjectMeta{Name: testNonbindableServiceClassName},
-		ServiceBrokerName: testBrokerName,
+		ServiceBrokerName: testServiceBrokerName,
 		ExternalID:        nonbindableServiceClassGUID,
 		Bindable:          false,
 		Plans: []v1alpha1.ServicePlan{
@@ -505,7 +505,7 @@ func getTestServiceInstanceCredential() *v1alpha1.ServiceInstanceCredential {
 	return &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testInstanceName},
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
@@ -1182,13 +1182,13 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 
 	switch obj.(type) {
 	case *v1alpha1.ServiceBroker:
-		resource = "brokers"
+		resource = "servicebrokers"
 	case *v1alpha1.ServiceClass:
 		resource = "serviceclasses"
 	case *v1alpha1.ServiceInstance:
-		resource = "instances"
+		resource = "serviceinstances"
 	case *v1alpha1.ServiceInstanceCredential:
-		resource = "bindings"
+		resource = "serviceinstancecredentials"
 	}
 
 	if e, a := resource, action.GetResource().Resource; e != a {
@@ -1450,7 +1450,7 @@ func assertGetCatalog(t *testing.T, action fakeosb.Action) {
 }
 
 func assertProvision(t *testing.T, action fakeosb.Action, request *osb.ProvisionRequest) {
-	if e, a := fakeosb.ProvisionServiceInstance, action.Type; e != a {
+	if e, a := fakeosb.ProvisionInstance, action.Type; e != a {
 		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 
@@ -1460,7 +1460,7 @@ func assertProvision(t *testing.T, action fakeosb.Action, request *osb.Provision
 }
 
 func assertDeprovision(t *testing.T, action fakeosb.Action, request *osb.DeprovisionRequest) {
-	if e, a := fakeosb.DeprovisionServiceInstance, action.Type; e != a {
+	if e, a := fakeosb.DeprovisionInstance, action.Type; e != a {
 		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
 	}
 

@@ -70,7 +70,7 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 
 	// There should only be one action that says it failed because no such class exists.
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance, errorNonexistentServiceClassReason)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance, errorNonexistentServiceClassReason)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -102,7 +102,7 @@ func TestReconcileServiceInstanceNonExistentServiceBroker(t *testing.T) {
 
 	// There should only be one action that says it failed because no such broker exists.
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance, errorNonexistentServiceBrokerReason)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance, errorNonexistentServiceBrokerReason)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -180,7 +180,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := &v1alpha1.ServiceInstance{
@@ -232,7 +232,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -255,7 +255,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 		Context: map[string]interface{}{
@@ -275,9 +275,9 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyTrue(t, updatedInstance)
+	assertServiceInstanceReadyTrue(t, updatedServiceInstance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.Instance)
+	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
 	}
@@ -310,7 +310,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -341,7 +341,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -362,7 +362,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -375,7 +375,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 		Context: map[string]interface{}{
@@ -399,7 +399,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	updatedObject := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceReadyFalse(t, updatedObject)
 	// The ready condition should be the only condition set.
-	updatedServiceInstance, ok := updatedObject.(*v1alpha1.Instance)
+	updatedServiceInstance, ok := updatedObject.(*v1alpha1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
 	}
@@ -407,7 +407,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		t.Fatalf("Expected 1 condition, got %v", l)
 	}
 
-	if updatedServiceInstance.Status.Conditions[0].Type != v1alpha1.InstanceConditionReady && updatedInstance.Status.Conditions[0].Status != v1alpha1.ConditionFalse {
+	if updatedServiceInstance.Status.Conditions[0].Type != v1alpha1.ServiceInstanceConditionReady && updatedServiceInstance.Status.Conditions[0].Status != v1alpha1.ConditionFalse {
 		t.Fatalf("Expected failed condition to be set")
 	}
 
@@ -434,7 +434,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -447,7 +447,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 		Context: map[string]interface{}{
@@ -468,7 +468,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 	updatedObject := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceReadyFalse(t, updatedObject)
-	updatedServiceInstance, ok := updatedObject.(*v1alpha1.Instance)
+	updatedServiceInstance, ok := updatedObject.(*v1alpha1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
 	}
@@ -476,7 +476,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 		t.Fatalf("Expected 2 conditions, got %v", l)
 	}
 
-	if updatedServiceInstance.Status.Conditions[0].Type != v1alpha1.InstanceConditionFailed && updatedInstance.Status.Conditions[0].Status != v1alpha1.ConditionTrue {
+	if updatedServiceInstance.Status.Conditions[0].Type != v1alpha1.ServiceInstanceConditionFailed && updatedServiceInstance.Status.Conditions[0].Status != v1alpha1.ConditionTrue {
 		t.Fatalf("Expected failed condition to be set")
 	}
 
@@ -503,7 +503,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -516,7 +516,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 		OrganizationGUID:  testNsUID,
@@ -545,8 +545,8 @@ func TestReconcileServiceInstance(t *testing.T) {
 	}
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyTrue(t, updatedInstance)
-	assertServiceInstanceDashboardURL(t, updatedInstance, testDashboardURL)
+	assertServiceInstanceReadyTrue(t, updatedServiceInstance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -574,7 +574,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -591,7 +591,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 		OrganizationGUID:  testNsUID,
@@ -605,10 +605,10 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 	assertAsyncOpInProgressTrue(t, updatedServiceInstance)
-	assertServiceInstanceLastOperation(t, updatedInstance, testOperation)
-	assertServiceInstanceDashboardURL(t, updatedInstance, testDashboardURL)
+	assertServiceInstanceLastOperation(t, updatedServiceInstance, testOperation)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -652,7 +652,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -669,7 +669,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 		OrganizationGUID:  testNsUID,
@@ -683,9 +683,9 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 	assertAsyncOpInProgressTrue(t, updatedServiceInstance)
-	assertServiceInstanceLastOperation(t, updatedInstance, "")
+	assertServiceInstanceLastOperation(t, updatedServiceInstance, "")
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -723,7 +723,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 		return true, &v1.Namespace{}, errors.New("No namespace")
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -765,7 +765,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -789,7 +789,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 	})
@@ -806,7 +806,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	assertNumberOfActions(t, actions, 3)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 
 	assertGet(t, actions[1], instance)
 	updatedServiceInstance = assertUpdateStatus(t, actions[2], instance)
@@ -832,7 +832,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -868,7 +868,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
 		AcceptsIncomplete: true,
-		ServiceInstanceID:        instanceGUID,
+		InstanceID:        instanceGUID,
 		ServiceID:         serviceClassGUID,
 		PlanID:            planGUID,
 	})
@@ -883,7 +883,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -899,7 +899,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 func TestReconcileServiceInstanceDeleteFailedInstance(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceWithFailedStatus()
@@ -947,7 +947,7 @@ func TestReconcileServiceInstanceDeleteFailedInstance(t *testing.T) {
 func TestReconcileServiceInstanceDeleteDoesNotInvokeServiceBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
@@ -989,7 +989,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeServiceBroker(t *testing.T) 
 func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceWithFailedStatus()
@@ -1029,7 +1029,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
@@ -1042,7 +1042,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1056,7 +1056,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 	assertAsyncOpInProgressTrue(t, updatedServiceInstance)
 
 	// verify no kube resources created.
@@ -1078,7 +1078,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
@@ -1091,7 +1091,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1107,7 +1107,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	// ServiceInstance should be ready and there no longer is an async operation
 	// in place.
-	assertServiceInstanceReadyTrue(t, updatedInstance)
+	assertServiceInstanceReadyTrue(t, updatedServiceInstance)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 }
 
@@ -1123,7 +1123,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
@@ -1136,7 +1136,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1152,7 +1152,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	// ServiceInstance should be not ready and there no longer is an async operation
 	// in place.
-	assertServiceInstanceReadyFalse(t, updatedInstance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 }
 
@@ -1169,7 +1169,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
@@ -1182,7 +1182,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1198,7 +1198,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfActions(t, actions, 1)
 	action := actions[0]
 	updatedServiceInstance := assertUpdateStatus(t, action, instance)
-	assertServiceInstanceReadyFalse(t, updatedInstance, asyncDeprovisioningMessage)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance, asyncDeprovisioningMessage)
 
 	// verify no kube resources created.
 	// No actions
@@ -1218,7 +1218,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
@@ -1231,7 +1231,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1246,7 +1246,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	// ServiceInstance should have been deprovisioned
-	assertServiceInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
@@ -1269,7 +1269,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
@@ -1282,7 +1282,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1298,7 +1298,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	// ServiceInstance should be set to unknown since the operation on the broker
 	// failed.
-	assertServiceInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionUnknown, errorDeprovisionCalledReason)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1alpha1.ConditionUnknown, errorDeprovisionCalledReason)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
@@ -1322,7 +1322,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
@@ -1335,7 +1335,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1350,7 +1350,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	// ServiceInstance should have been deprovisioned
-	assertServiceInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
@@ -1373,7 +1373,7 @@ func TestPollServiceInstanceServiceBrokerError(t *testing.T) {
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
@@ -1386,7 +1386,7 @@ func TestPollServiceInstanceServiceBrokerError(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1419,7 +1419,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 		},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestBroker())
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioningWithFinalizer(testOperation)
@@ -1436,7 +1436,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		ServiceInstanceID: instanceGUID,
+		InstanceID: instanceGUID,
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
@@ -1454,7 +1454,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	assertNumberOfActions(t, actions, 3)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReadyCondition(t, updatedInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1alpha1.ConditionFalse, successDeprovisionReason)
 
 	// ServiceInstance should have been deprovisioned
 	assertGet(t, actions[1], instance)
@@ -1487,7 +1487,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 // - status with existing Ready=False condition accepts new condition of
 //   Failed=True  and reflects Ready=False, Failed=True, new timestamp
 func TestSetServiceInstanceCondition(t *testing.T) {
-	instanceWithCondition := func(condition *v1alpha1.ServiceInstanceCondition) *v1alpha1.Instance {
+	instanceWithCondition := func(condition *v1alpha1.ServiceInstanceCondition) *v1alpha1.ServiceInstance {
 		instance := getTestServiceInstance()
 		instance.Status = v1alpha1.ServiceInstanceStatus{
 			Conditions: []v1alpha1.ServiceInstanceCondition{*condition},
@@ -1504,7 +1504,7 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 	oldTs := metav1.NewTime(newTs.Add(-5 * time.Minute))
 
 	// condition is a shortcut method for creating conditions with the 'old' timestamp.
-	condition := func(cType v1alpha1.ServiceInstanceConditionType, status v1alpha1.ConditionStatus, s ...string) *v1alpha1.InstanceCondition {
+	condition := func(cType v1alpha1.ServiceInstanceConditionType, status v1alpha1.ConditionStatus, s ...string) *v1alpha1.ServiceInstanceCondition {
 		c := &v1alpha1.ServiceInstanceCondition{
 			Type:   cType,
 			Status: status,
@@ -1545,7 +1545,7 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 
 	// withNewTs sets the LastTransitionTime to the 'new' basis time and
 	// returns it.
-	withNewTs := func(c *v1alpha1.ServiceInstanceCondition) *v1alpha1.InstanceCondition {
+	withNewTs := func(c *v1alpha1.ServiceInstanceCondition) *v1alpha1.ServiceInstanceCondition {
 		c.LastTransitionTime = newTs
 		return c
 	}
@@ -1637,7 +1637,7 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 // - initially Ready=True accepts a Ready=False update with msg and results in time change
 // - initially Ready=True accepts a Ready=False update with new msg and results in time change
 func TestUpdateServiceInstanceCondition(t *testing.T) {
-	getTestServiceInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.Instance {
+	getTestServiceInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.ServiceInstance {
 		instance := getTestServiceInstance()
 		instance.Status = v1alpha1.ServiceInstanceStatus{
 			Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -1727,7 +1727,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 		}
 		inputClone := clone.(*v1alpha1.ServiceInstance)
 
-		err = testController.updateServiceInstanceCondition(tc.input, v1alpha1.InstanceConditionReady, tc.status, tc.reason, tc.message)
+		err = testController.updateServiceInstanceCondition(tc.input, v1alpha1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue
@@ -1751,7 +1751,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedServiceInstance.(*v1alpha1.Instance)
+		updateActionObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
 		if !ok {
 			t.Errorf("%v: couldn't convert to instance", tc.name)
 			continue
