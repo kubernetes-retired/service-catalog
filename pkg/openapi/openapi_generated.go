@@ -452,6 +452,20 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.BrokerAuthInfo"),
 							},
 						},
+						"insecureSkipTLSVerify": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker. This is strongly discouraged.  You should use the CABundle instead.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"caBundle": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.",
+								Type:        []string{"string"},
+								Format:      "byte",
+							},
+						},
 					},
 					Required: []string{"url"},
 				},

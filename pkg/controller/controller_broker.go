@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -192,12 +191,7 @@ func (c *controller) reconcileBroker(broker *v1alpha1.Broker) error {
 			return err
 		}
 
-		clientConfig := osb.DefaultClientConfiguration()
-		clientConfig.Name = broker.Name
-		clientConfig.URL = broker.Spec.URL
-		clientConfig.AuthConfig = authConfig
-		clientConfig.EnableAlphaFeatures = true
-		clientConfig.Insecure = true
+		clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
 		glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 		brokerClient, err := c.brokerClientCreateFunc(clientConfig)

@@ -52,6 +52,14 @@ type BrokerSpec struct {
 	// AuthInfo contains the data that the service catalog should use to authenticate
 	// with the Broker.
 	AuthInfo *BrokerAuthInfo `json:"authInfo,omitempty"`
+
+	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker.
+	// This is strongly discouraged.  You should use the CABundle instead.
+	// +optional
+	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+	// CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.
+	// +optional
+	CABundle []byte `json:"caBundle,omitempty"`
 }
 
 // BrokerAuthInfo is a union type that contains information on one of the authentication methods

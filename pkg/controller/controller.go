@@ -267,12 +267,7 @@ func (c *controller) getServiceClassPlanAndBroker(instance *v1alpha1.Instance) (
 		return nil, nil, "", nil, err
 	}
 
-	clientConfig := osb.DefaultClientConfiguration()
-	clientConfig.Name = broker.Name
-	clientConfig.URL = broker.Spec.URL
-	clientConfig.AuthConfig = authConfig
-	clientConfig.EnableAlphaFeatures = true
-	clientConfig.Insecure = true
+	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
@@ -347,12 +342,7 @@ func (c *controller) getServiceClassPlanAndBrokerForBinding(instance *v1alpha1.I
 		return nil, nil, "", nil, err
 	}
 
-	clientConfig := osb.DefaultClientConfiguration()
-	clientConfig.Name = broker.Name
-	clientConfig.URL = broker.Spec.URL
-	clientConfig.AuthConfig = authConfig
-	clientConfig.EnableAlphaFeatures = true
-	clientConfig.Insecure = true
+	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
 	glog.V(4).Infof("Creating client for Broker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
@@ -589,4 +579,17 @@ func NewControllerRef(owner metav1.Object, gvk schema.GroupVersionKind) *metav1.
 		BlockOwnerDeletion: &blockOwnerDeletion,
 		Controller:         &isController,
 	}
+}
+
+// NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
+// to the specified Broker
+func NewClientConfigurationForBroker(broker *v1alpha1.Broker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
+	clientConfig := osb.DefaultClientConfiguration()
+	clientConfig.Name = broker.Name
+	clientConfig.URL = broker.Spec.URL
+	clientConfig.AuthConfig = authConfig
+	clientConfig.EnableAlphaFeatures = true
+	clientConfig.Insecure = broker.Spec.InsecureSkipTLSVerify
+	clientConfig.CAData = broker.Spec.CABundle
+	return clientConfig
 }

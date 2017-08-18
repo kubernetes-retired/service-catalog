@@ -86,6 +86,8 @@ func BindingSpecChecksum(spec servicecatalog.BindingSpec) string {
 func BrokerSpecChecksum(spec servicecatalog.BrokerSpec) string {
 	specString := fmt.Sprintf("URL: %v\n", spec.URL)
 	specString += fmt.Sprintf("AuthInfo: %v\n", spec.AuthInfo)
+	specString += fmt.Sprintf("InsecureSkipTLSVerify: %v\n", spec.InsecureSkipTLSVerify)
+	specString += fmt.Sprintf("CABundle: %v\n", spec.CABundle)
 	glog.V(5).Infof("specString: %v", specString)
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)
