@@ -527,9 +527,11 @@ func TestReconcileServiceInstance(t *testing.T) {
 		},
 	})
 
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
 	// Since synchronous operation, must not make it into the polling queue.
-	if testController.pollingQueue.Len() != 0 {
-		t.Fatalf("Expected the polling queue to be empty")
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -578,9 +580,10 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
+	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.Len() != 0 {
-		t.Fatalf("Expected the polling queue to be empty")
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
@@ -617,24 +620,9 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	// Since polling is rate-limited, it is not possible to check whether the
-	// instance is in the polling queue.
-	//
-	// TODO: add a way to peek into rate-limited adds that are still pending,
-	// then uncomment.
-
-	// if testController.pollingQueue.Len() != 1 {
-	// 	t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
-	// }
-	// item, _ := testController.pollingQueue.Get()
-	// if item == nil {
-	// 	t.Fatalf("Did not get back a key from polling queue")
-	// }
-	// actualKey := item.(string)
-	// expectedKey := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
-	// if actualKey != expectedKey {
-	// 	t.Fatalf("got key as %q expected %q", actualKey, expectedKey)
-	// }
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
+	}
 }
 
 // TestReconcileServiceInstanceAsynchronousNoOperation tests an async provision
@@ -656,9 +644,10 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstance()
+	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.Len() != 0 {
-		t.Fatalf("Expected the polling queue to be empty")
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
@@ -694,24 +683,9 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	// Since polling is rate-limited, it is not possible to check whether the
-	// instance is in the polling queue.
-	//
-	// TODO: add a way to peek into rate-limited adds that are still pending,
-	// then uncomment.
-
-	// if testController.pollingQueue.Len() != 1 {
-	// 	t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
-	// }
-	// item, _ := testController.pollingQueue.Get()
-	// if item == nil {
-	// 	t.Fatalf("Did not get back a key from polling queue")
-	// }
-	// key := item.(string)
-	// expectedKey := fmt.Sprintf("%s/%s", instance.Namespace, instance.Name)
-	// if key != expectedKey {
-	// 	t.Fatalf("got key as %q expected %q", key, expectedKey)
-	// }
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
+	}
 }
 
 // TestReconcileServiceInstanceNamespaceError test reconciling an instance where kube
@@ -847,8 +821,10 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 		return true, instance, nil
 	})
 
-	if testController.pollingQueue.Len() != 0 {
-		t.Fatalf("Expected the polling queue to be empty")
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
 	err := testController.reconcileServiceInstance(instance)
@@ -858,11 +834,9 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	// The item should've been added to the pollingQueue for later processing
 
-	// TODO: add a way to peek into rate-limited adds that are still pending,
-	// then uncomment.
-	// if testController.pollingQueue.Len() != 1 {
-	// 	t.Fatalf("Expected the asynchronous instance to end up in the polling queue")
-	// }
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
+	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
@@ -1001,8 +975,10 @@ func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
-	if testController.pollingQueue.Len() != 0 {
-		t.Fatalf("Expected the polling queue to be empty")
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1033,10 +1009,19 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
 	if err == nil {
 		t.Fatalf("Expected pollServiceInstanceInternal to fail while in progress")
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
