@@ -16,7 +16,7 @@ limitations under the License.
 
 // The controller is responsible for running control loops that reconcile
 // the state of service catalog API resources with service brokers, service
-// classes, service instances, and service bindings.
+// classes, service instances, and service instance credentials.
 
 package options
 
@@ -39,7 +39,7 @@ type ControllerManagerServer struct {
 
 const (
 	defaultResyncInterval               = 5 * time.Minute
-	defaultServiceBrokerRelistInterval         = 24 * time.Hour
+	defaultServiceBrokerRelistInterval  = 24 * time.Hour
 	defaultContentType                  = "application/json"
 	defaultBindAddress                  = "0.0.0.0"
 	defaultPort                         = 10000
@@ -63,7 +63,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			K8sKubeconfigPath:            defaultK8sKubeconfigPath,
 			ServiceCatalogKubeconfigPath: defaultServiceCatalogKubeconfigPath,
 			ResyncInterval:               defaultResyncInterval,
-			ServiceBrokerRelistInterval:         defaultServiceBrokerRelistInterval,
+			ServiceBrokerRelistInterval:  defaultServiceBrokerRelistInterval,
 			OSBAPIContextProfile:         defaultOSBAPIContextProfile,
 			OSBAPIPreferredVersion:       defaultOSBAPIPreferredVersion,
 			ConcurrentSyncs:              defaultConcurrentSyncs,

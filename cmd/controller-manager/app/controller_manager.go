@@ -84,7 +84,7 @@ the core control loops shipped with the service catalog.`,
 const controllerManagerAgentName = "service-catalog-controller-manager"
 const controllerDiscoveryAgentName = "service-catalog-controller-discovery"
 
-var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "brokers"}
+var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "servicebrokers"}
 
 // Run runs the service-catalog controller-manager; should never exit.
 func Run(controllerManagerOptions *options.ControllerManagerServer) error {
