@@ -583,7 +583,7 @@ func NewControllerRef(owner metav1.Object, gvk schema.GroupVersionKind) *metav1.
 
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
 // to the specified Broker
-func NewClientConfigurationForBroker(broker *v1alpha1.Broker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
+func NewClientConfigurationForBroker(broker *v1alpha1.ServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
 	clientConfig := osb.DefaultClientConfiguration()
 	clientConfig.Name = broker.Name
 	clientConfig.URL = broker.Spec.URL

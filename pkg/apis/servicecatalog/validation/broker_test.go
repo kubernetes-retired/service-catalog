@@ -176,11 +176,11 @@ func TestValidateServiceBroker(t *testing.T) {
 		},
 		{
 			name: "invalid broker - CABundle present with InsecureSkipTLSVerify",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceBrokerSpec{
 					URL: "http://example.com",
 					InsecureSkipTLSVerify: true,
 					CABundle:              []byte("fake CABundle"),
@@ -190,11 +190,11 @@ func TestValidateServiceBroker(t *testing.T) {
 		},
 		{
 			name: "valid broker - InsecureSkipTLSVerify without CABundle",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceBrokerSpec{
 					URL: "http://example.com",
 					InsecureSkipTLSVerify: true,
 				},
@@ -203,11 +203,11 @@ func TestValidateServiceBroker(t *testing.T) {
 		},
 		{
 			name: "valid broker - CABundle without InsecureSkipTLSVerify",
-			broker: &servicecatalog.Broker{
+			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
-				Spec: servicecatalog.BrokerSpec{
+				Spec: servicecatalog.ServiceBrokerSpec{
 					URL:      "http://example.com",
 					CABundle: []byte("fake CABundle"),
 				},

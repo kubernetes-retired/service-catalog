@@ -280,6 +280,8 @@ func Convert_servicecatalog_ServiceBrokerList_To_v1alpha1_ServiceBrokerList(in *
 func autoConvert_v1alpha1_ServiceBrokerSpec_To_servicecatalog_ServiceBrokerSpec(in *ServiceBrokerSpec, out *servicecatalog.ServiceBrokerSpec, s conversion.Scope) error {
 	out.URL = in.URL
 	out.AuthInfo = (*servicecatalog.ServiceBrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
+	out.InsecureSkipTLSVerify = in.InsecureSkipTLSVerify
+	out.CABundle = *(*[]byte)(unsafe.Pointer(&in.CABundle))
 	return nil
 }
 
@@ -291,6 +293,8 @@ func Convert_v1alpha1_ServiceBrokerSpec_To_servicecatalog_ServiceBrokerSpec(in *
 func autoConvert_servicecatalog_ServiceBrokerSpec_To_v1alpha1_ServiceBrokerSpec(in *servicecatalog.ServiceBrokerSpec, out *ServiceBrokerSpec, s conversion.Scope) error {
 	out.URL = in.URL
 	out.AuthInfo = (*ServiceBrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
+	out.InsecureSkipTLSVerify = in.InsecureSkipTLSVerify
+	out.CABundle = *(*[]byte)(unsafe.Pointer(&in.CABundle))
 	return nil
 }
 
