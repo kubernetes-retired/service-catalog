@@ -102,7 +102,7 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 	return labels.Set(binding.ObjectMeta.Labels), toSelectableFields(binding), binding.Initializers != nil, nil
 }
 
-// NewStorage creates a new rest.Storage responsible for accessing ServiceInstance
+// NewStorage creates a new rest.Storage responsible for accessing ServiceInstanceCredential
 // resources
 func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 	prefix := "/" + opts.ResourcePrefix()
@@ -130,7 +130,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// QualifiedResource should always be plural
-		QualifiedResource: api.Resource("bindings"),
+		QualifiedResource: api.Resource("serviceinstancecredentials"),
 
 		CreateStrategy:          bindingRESTStrategies,
 		UpdateStrategy:          bindingRESTStrategies,

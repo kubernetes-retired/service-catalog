@@ -129,7 +129,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// QualifiedResource should always be plural
-		QualifiedResource: api.Resource("instances"),
+		QualifiedResource: api.Resource("serviceinstances"),
 
 		CreateStrategy:          instanceRESTStrategies,
 		UpdateStrategy:          instanceRESTStrategies,
