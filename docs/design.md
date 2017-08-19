@@ -3,17 +3,17 @@
 Table of Contents
 - [Overview](#overview)
 - [Terminology](#terminology)
-- [Open Service ServiceBroker API](#open-service-broker-api)
+- [Open Service Broker API](#open-service-broker-api)
 - [Service Catalog Design](#service-catalog-design)
 - [Current Design](#current-design)
 
 ## Overview
 
 The Service Catalog is an implementation of the
-[Open Service ServiceBroker API](https://github.com/openservicebrokerapi) for
+[Open Service Broker API](https://github.com/openservicebrokerapi) for
 Kubernetes. It allows for:
-- a Service ServiceBroker to register with Kubernetes
-- a Service ServiceBroker to specify the set of Services (and variantions of those
+- a Service Broker to register with Kubernetes
+- a Service Broker to specify the set of Services (and variantions of those
   Services) to Kubernetes that should then be made available to Kubernetes'
   users
 - a user of Kubernetes to discover the Services that are available for use
@@ -22,7 +22,7 @@ Kubernetes. It allows for:
 
 This infrastructure allows for a loose-coupling between Applications
 running in Kubernetes and the Services they use.
-The Service ServiceBroker, in its most basic form, is a blackbox entity. Whether
+The Service Broker, in its most basic form, is a blackbox entity. Whether
 it is running within Kubernetes itself is not relevant. This allows for
 the Application that uses those Services to focus on its own business logic
 while leaving the management of these Services to the entity that owns
@@ -37,28 +37,28 @@ them.
 - **ServiceServiceInstanceCredential**, or *Service ServiceServiceInstanceCredential* : a link between a Service ServiceInstance
   and an Application. It expresses the intent for an Application to
   reference and use a particular Service ServiceInstance.
-- **ServiceBroker**, or *Service ServiceBroker* : a entity, available via a web endpoint,
+- **ServiceBroker**, or *Service Broker* : a entity, available via a web endpoint,
   that manages a set of one or more Services.
 - **Credentials** : Information needed by an Application to talk with a
   Service ServiceInstance.
 - **ServiceInstance**, or *Service ServiceInstance* : Each independent use of a Service
   Class is called a Service ServiceInstance.
-- **Service Class**, or *Service* : one type of Service that a Service ServiceBroker
+- **Service Class**, or *Service* : one type of Service that a Service Broker
   offers.
 - **Plan**, or *Service Plan* : one type of variant of a Service Class. For
   example, a Service Class may expose a set of Plans that offer
   varying degrees of quality-of-services (QoS), each with a different
   cost associated with it.
 
-## Open Service ServiceBroker API
+## Open Service Broker API
 
 The Service Catalog is a compliant implementation of the
-[Open Service ServiceBroker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) (OSB API). The OSB API specification is the evolution of
-the [Cloud Foundry Service ServiceBroker API](https://docs.cloudfoundry.org/services/api.html).
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md) (OSB API). The OSB API specification is the evolution of
+the [Cloud Foundry Service Broker API](https://docs.cloudfoundry.org/services/api.html).
 
 This document will not go into specifics of how the OSB API works, so for
 more information please see:
-[Open Service ServiceBroker API](https://github.com/openservicebrokerapi/servicebroker).
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
 The rest of this document assumes that the reader is familiar with the
 basic concepts of the OSB API specification.
 
@@ -114,15 +114,15 @@ actions based on the changes it detects.
 To understand the Service Catalog resource model, it is best to walk through
 a typical workflow:
 
-### Registering a Service ServiceBroker
+### Registering a Service Broker
 
 **TODO** Talk about namespaces - ServiceBrokers, ServiceClasses are not in a ns.
 But ServiceInstances, ServiceServiceInstanceCredentials, Secrets and ConfigMaps are. However, instances
 can be in different NS's than the rest (which must all be in the same).
 
 Before a Service can be used by an Application it must first be registered
-with the Kubernetes platform. Since Services are managed by Service ServiceBrokers
-we must first register the Service ServiceBroker by creating an instance of a
+with the Kubernetes platform. Since Services are managed by Service Brokers
+we must first register the Service Broker by creating an instance of a
 `ServiceBroker`:
 
     kubectl create -f broker.yaml
@@ -140,7 +140,7 @@ where `broker.yaml` might look like:
 
 After a `ServiceBroker` resource is created the Service Catalog Controller will
 receive an event indicating its addition to the datastore. The Controller
-will then query the Service ServiceBroker (at the `url` specified) for the list
+will then query the Service Broker (at the `url` specified) for the list
 of available Services. Each Service will then have a corresponding
 `ServiceClass` resource created:
 
@@ -182,24 +182,24 @@ want - perhaps based on QoS type of variants.
 **TODO** Discuss the parameters that can be passed in
 
 Once an `ServiceInstance` resource is created, the Controller talks with the
-specified Service ServiceBroker to create a new ServiceInstance of the desired Service.
+specified Service Broker to create a new ServiceInstance of the desired Service.
 
 There are two modes for provisioning:
 [synchronous and asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#synchronous-and-asynchronous-operations)
 
-For synchronous operations, a request is made to the Service ServiceBroker and upon
+For synchronous operations, a request is made to the Service Broker and upon
 successful completion of the request (200 OK), Service ServiceInstance can now be used by
 Application.
 
 Some brokers support
 [asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#asynchronous-operations)
-flows. When a Controller makes a request to Service ServiceBroker to
-create/update/deprovision a Service ServiceInstance, the Service ServiceBroker responds with
+flows. When a Controller makes a request to Service Broker to
+create/update/deprovision a Service ServiceInstance, the Service Broker responds with
 202 ACCEPTED, and will provide endpoint at
 GET /v2/service_instances/<service_instance_id>/last_operation
 where the Controller can poll the status of the request.
 
-Service ServiceBroker may return a last_operation field that then should be sent
+Service Broker may return a last_operation field that then should be sent
 for each last_operation request. Controller will poll while the state of
 the poll request is 'in_progress'. Controller can also implement a max
 timeout that it will poll before considering the provision failed and will
@@ -231,10 +231,10 @@ where `instance.yaml` might look like:
       ...Pod selector labels...
 
 The Controller, upon being notified of the new `ServiceServiceInstanceCredential` resource, will
-then talk to the Service ServiceBroker to create a new ServiceServiceInstanceCredential for the specified
+then talk to the Service Broker to create a new ServiceServiceInstanceCredential for the specified
 Service ServiceInstance.
 
-Within the ServiceServiceInstanceCredential object that is returned from the Service ServiceBroker are
+Within the ServiceServiceInstanceCredential object that is returned from the Service Broker are
 a set of Credentials. These Credentials contain all of the information
 needed for the application to talk with the Service ServiceInstance. For example,
 it might include things such as:

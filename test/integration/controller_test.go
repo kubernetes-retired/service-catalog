@@ -131,7 +131,7 @@ func TestBasicFlowsSync(t *testing.T) {
 
 	_, err := client.ServiceBrokers().Create(broker)
 	if nil != err {
-		t.Fatalf("error creating the broker %q (%q)", broker, err)
+		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
 
 	err = util.WaitForBrokerCondition(client,
@@ -316,7 +316,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 
 	_, err := client.ServiceBrokers().Create(broker)
 	if nil != err {
-		t.Fatalf("error creating the broker %q (%q)", broker, err)
+		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
 
 	err = util.WaitForBrokerCondition(client,
@@ -490,7 +490,7 @@ func TestProvisionFailure(t *testing.T) {
 
 	_, err := client.ServiceBrokers().Create(broker)
 	if nil != err {
-		t.Fatalf("error creating the broker %q (%q)", broker, err)
+		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
 
 	err = util.WaitForBrokerCondition(client,
@@ -630,7 +630,7 @@ func TestBindingFailure(t *testing.T) {
 
 	_, err := client.ServiceBrokers().Create(broker)
 	if nil != err {
-		t.Fatalf("error creating the broker %q (%q)", broker, err)
+		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
 
 	err = util.WaitForBrokerCondition(client,
