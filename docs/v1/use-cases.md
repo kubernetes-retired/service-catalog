@@ -10,18 +10,18 @@
 
 ## Catalog Publishing/Curation/Discovery
 
-* As a Catalog Operator, I want to be able to register a Service ServiceBroker with the
+* As a Catalog Operator, I want to be able to register a Service Broker with the
   Kubernetes Service Catalog, so that the Service Catalog is aware of the
   Services that ServiceBroker offers
-* As a Catalog Operator, I want to be able to update a registered Service ServiceBroker
+* As a Catalog Operator, I want to be able to update a registered Service Broker
   so that the Service Catalog can maintain the most recent versions of Services
   that ServiceBroker offers
-* As a Catalog Operator, I want to be able to delete a Service ServiceBroker from the
+* As a Catalog Operator, I want to be able to delete a Service Broker from the
   Service Catalog, so that I can keep the Service Catalog clean of Service
   ServiceBrokers I no longer want to support
 
-* Can I export a list of Service ServiceBrokers and types from my Service Controller?
-* Is there an auth story for adding Service ServiceBrokers?
+* Can I export a list of Service Brokers and types from my Service Controller?
+* Is there an auth story for adding Service Brokers?
 * As a Developer, working outside of the normal production cluster, I would like
   to be able to use the Services available to me from the production cluster
   from my local environment without needing to establish a formal business
@@ -43,16 +43,16 @@
 * Who can see which Service ServiceInstances? (TODO: Include scope? Global/Namespaced)
 * The Service Catalog should contain Services and not Service ServiceInstances
 
-### Registering a Service ServiceBroker with the Service Catalog
+### Registering a Service Broker with the Service Catalog
 
-A User must register each Service ServiceBroker with the Service Catalog to advertise
-the Services it offers in the Service Catalog. After the Service ServiceBroker has been
+A User must register each Service Broker with the Service Catalog to advertise
+the Services it offers in the Service Catalog. After the Service Broker has been
 registered with the Service Catalog, the Service Controller makes a call to the
-Service ServiceBroker's `/v2/catalog` endpoint. The Service ServiceBroker returns a list of
+Service Broker's `/v2/catalog` endpoint. The Service Broker returns a list of
 Services offered by that broker. Each Service has a set of plans that
 differentiate the tiers of that Service.
 
-### Updating a Service ServiceBroker
+### Updating a Service Broker
 
 ServiceBroker operators make changes to the services their brokers offer. To refresh
 the services a broker offers, the Service Controller should re-list the
@@ -65,7 +65,7 @@ re-listing the broker to its internal representation of that broker's services:
 
 TODO: spell out various update scenarios and how they affect end-users
 
-### Delete a Service ServiceBroker
+### Delete a Service Broker
 
 There must be a way to delete brokers from the catalog. We should evaluate
 whether deleting a broker should:
@@ -144,15 +144,15 @@ TODO: How to deal with name conflicts for {broker, service}.
 * As an Application Operator, who has requested a Service ServiceInstance, know that a request for a
   service instance has been fulfilled?
 * As an Application Operator, I should be able to pass parameters to be used by the Service
-  ServiceInstance or ServiceServiceInstanceCredential when causing a new Service ServiceInstance to be created, so that
-  I may change the attributes of the Service ServiceInstance or ServiceServiceInstanceCredential.
+  ServiceInstance or ServiceInstanceCredential when causing a new Service ServiceInstance to be created, so that
+  I may change the attributes of the Service ServiceInstance or ServiceInstanceCredential.
 
 ## Provisioning a Service ServiceInstance
 
 * As a ServiceBroker operator, I want to control the number of instances of my Service,
   so that I can control the resource footprint of my Service.
 
-## ServiceServiceInstanceCredential to a Service ServiceInstance
+## ServiceInstanceCredential to a Service ServiceInstance
 
 * As a ServiceBroker operator, I want to control the number of bindings to a Service
   ServiceInstance so that I may provide limits for services (e.g. free plan with 3
@@ -180,7 +180,7 @@ As an Application Operator, I should be able to accomplish the following sets of
 ## Using/Consuming a Service ServiceInstance
 
 * As an Application Operator consuming a Service ServiceInstance, I need to be able to understand the structure
-  of the Kubernetes resources that are created when a new ServiceServiceInstanceCredential to a Service
+  of the Kubernetes resources that are created when a new ServiceInstanceCredential to a Service
   ServiceInstance is created, so that I can configure my application appropriately.
 * As an Application Operator, I want to be able to understand the relationship between a Secret
   and Service ServiceInstance, so that I can properly configure my application (e.g.

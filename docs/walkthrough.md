@@ -112,7 +112,7 @@ check out the "Cleaning Up" section below. Follow those instructions before you 
 The service catalog API has five main concepts:
 
 - ServiceBroker Server: A server that acts as a service broker and conforms to the 
-[Open Service ServiceBroker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md)
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md)
 specification. This software could be hosted within your own Kubernetes cluster
 or elsewhere.
 
@@ -134,7 +134,7 @@ managed service to make that available for use by one or more in-cluster
 applications. When a new `ServiceInstance` resource is created, the service catalog
 controller will connect to the appropriate broker server and instruct it to
 provision the service instance.
-- `ServiceServiceInstanceCredential`: A "binding" to an `ServiceInstance`. These are created by cluster users
+- `ServiceInstanceCredential`: A "binding" to an `ServiceInstance`. These are created by cluster users
 who wish for their applications to make use of a service `ServiceInstance`. Upon
 creation, the service catalog controller will create a Kubernetes `Secret`
 containing connection details and credentials for the service instance. Such
@@ -381,10 +381,10 @@ status:
     type: Ready
 ```
 
-## Step 9 - ServiceServiceInstanceCredential to the ServiceInstance
+## Step 9 - ServiceInstanceCredential to the ServiceInstance
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
-we will create a [`ServiceServiceInstanceCredential`](../contrib/examples/walkthrough/ups-binding.yaml)
+we will create a [`ServiceInstanceCredential`](../contrib/examples/walkthrough/ups-binding.yaml)
 resource.
 
 ```console
@@ -398,7 +398,7 @@ That command should output:
 binding "ups-binding" created
 ```
 
-After the `ServiceServiceInstanceCredential` resource is created, the service catalog controller will
+After the `ServiceInstanceCredential` resource is created, the service catalog controller will
 communicate with the appropriate broker server to initiate binding. Generally,
 this will cause the broker server to create and issue credentials that the
 service catalog controller will insert into a Kubernetes `Secret`. We can check
@@ -418,7 +418,7 @@ We should see something like:
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: ServiceServiceInstanceCredential
+kind: ServiceInstanceCredential
 metadata:
   creationTimestamp: 2017-03-07T01:44:36Z
   finalizers:
@@ -457,7 +457,7 @@ Notice that a new `Secret` named `ups-binding` has been created.
 ## Step 10 - Unbinding from the ServiceInstance
 
 Now, let's unbind from the instance.  To do this, we simply *delete* the
-`ServiceServiceInstanceCredential` resource that we previously created:
+`ServiceInstanceCredential` resource that we previously created:
 
 ```console
 kubectl --context=service-catalog delete -n test-ns bindings ups-binding

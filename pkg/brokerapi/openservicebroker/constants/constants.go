@@ -18,7 +18,7 @@ package constants
 
 const (
 	// APIVersionHeader is required header for OSB-API requests
-	APIVersionHeader = "X-ServiceBroker-Api-Version"
+	APIVersionHeader = "X-Broker-Api-Version"
 	// APIVersion is the supported OSB-API version
 	APIVersion = "2.11"
 )

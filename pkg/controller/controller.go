@@ -75,10 +75,10 @@ func NewController(
 		brokerRelistInterval:   brokerRelistInterval,
 		OSBAPIPreferredVersion: osbAPIPreferredVersion,
 		recorder:               recorder,
-		brokerQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "broker"),
+		brokerQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-broker"),
 		serviceClassQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
-		instanceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "instance"),
-		bindingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "binding"),
+		instanceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance"),
+		bindingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance-credential"),
 		pollingQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
 	}
 
@@ -152,7 +152,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	glog.Info("Starting service-catalog controller")
 
 	for i := 0; i < workers; i++ {
-		go wait.Until(worker(c.brokerQueue, "ServiceBroker", maxRetries, c.reconcileServiceInstanceCredentialKey), time.Second, stopCh)
+		go wait.Until(worker(c.brokerQueue, "ServiceBroker", maxRetries, c.reconcileServiceBrokerKey), time.Second, stopCh)
 		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, c.reconcileServiceClassKey), time.Second, stopCh)
 		go wait.Until(worker(c.instanceQueue, "ServiceInstance", maxRetries, c.reconcileServiceInstanceKey), time.Second, stopCh)
 		go wait.Until(worker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, c.reconcileServiceInstanceCredentialKey), time.Second, stopCh)

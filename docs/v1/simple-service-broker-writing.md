@@ -1,4 +1,4 @@
-# Use Cases For Simple Service ServiceBroker Writing
+# Use Cases For Simple Service Broker Writing
 Jay Judkowitz
 
 Nov 7th, 2016
