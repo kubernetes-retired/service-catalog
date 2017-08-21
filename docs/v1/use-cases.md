@@ -40,8 +40,8 @@
 
 * How are Services identified: name, service name/id, plan name/id?
 * Who can see which Services? (TODO: Include scope? Global/Namespaced)
-* Who can see which Service ServiceInstances? (TODO: Include scope? Global/Namespaced)
-* The Service Catalog should contain Services and not Service ServiceInstances
+* Who can see which Service Instances? (TODO: Include scope? Global/Namespaced)
+* The Service Catalog should contain Services and not Service Instances
 
 ### Registering a Service Broker with the Service Catalog
 
@@ -70,9 +70,9 @@ TODO: spell out various update scenarios and how they affect end-users
 There must be a way to delete brokers from the catalog. We should evaluate
 whether deleting a broker should:
 
-1. Cascade down to the Service ServiceInstances for the broker
-2. Leave orphaned Service ServiceInstances in the Service Catalog
-3. Fail if Service ServiceInstances still exist for the broker
+1. Cascade down to the Service Instances for the broker
+2. Leave orphaned Service Instances in the Service Catalog
+3. Fail if Service Instances still exist for the broker
 
 
 ### Search and Browsing Services
@@ -136,34 +136,34 @@ TODO: How to deal with name conflicts for {broker, service}.
 
 ## Requesting Services (Consumer)
 
-* As an Application Operator, how do I cause a new Service ServiceInstance to be created from the
+* As an Application Operator, how do I cause a new Service Instance to be created from the
   Service Catalog?
-* As an Application Operator, how do I bind an application to an existing Service ServiceInstance?
+* As an Application Operator, how do I bind an application to an existing Service Instance?
 * How does the catalog support multiple consumers in different Kubernetes
-  namespaces of the same Service ServiceInstance?
-* As an Application Operator, who has requested a Service ServiceInstance, know that a request for a
+  namespaces of the same Service Instance?
+* As an Application Operator, who has requested a Service Instance, know that a request for a
   service instance has been fulfilled?
 * As an Application Operator, I should be able to pass parameters to be used by the Service
-  ServiceInstance or ServiceInstanceCredential when causing a new Service ServiceInstance to be created, so that
-  I may change the attributes of the Service ServiceInstance or ServiceInstanceCredential.
+  ServiceInstance or ServiceInstanceCredential when causing a new Service Instance to be created, so that
+  I may change the attributes of the Service Instance or ServiceInstanceCredential.
 
-## Provisioning a Service ServiceInstance
+## Provisioning a Service Instance
 
 * As a ServiceBroker operator, I want to control the number of instances of my Service,
   so that I can control the resource footprint of my Service.
 
-## ServiceInstanceCredential to a Service ServiceInstance
+## ServiceInstanceCredential to a Service Instance
 
 * As a ServiceBroker operator, I want to control the number of bindings to a Service
   ServiceInstance so that I may provide limits for services (e.g. free plan with 3
   bindings). (TODO: Do we care?)
-* As a user of a Service ServiceInstance, I want a predictable set of Kubernetes
+* As a user of a Service Instance, I want a predictable set of Kubernetes
   resources (Secrets, ConfigMap, etc.) created after binding, so that I know how
-  to configure my application to use the Service ServiceInstance.
+  to configure my application to use the Service Instance.
 * As a broker operator, I want to be able to discover what applications are
-  bound to Service ServiceInstances I am responsible for, so that I may operate the
+  bound to Service Instances I am responsible for, so that I may operate the
   service properly.
-* As an Application Operator I should be able to see what Service ServiceInstances my applications are
+* As an Application Operator I should be able to see what Service Instances my applications are
   bound to.
 * As an Application Operator I should be able to pass paramters when binding to a Service
   ServiceInstance so that I may indicate what type of binding my application needs.
@@ -171,22 +171,22 @@ TODO: How to deal with name conflicts for {broker, service}.
 
 As an Application Operator, I should be able to accomplish the following sets of bindings:
 
-* One application may binding to many Service ServiceInstances
-* Many different applications may bind to a single Service ServiceInstance
+* One application may binding to many Service Instances
+* Many different applications may bind to a single Service Instance
   * ...with unique credentials
   * ...with identical credentials
-* One application, binding multiple times to the same Service ServiceInstance
+* One application, binding multiple times to the same Service Instance
 
-## Using/Consuming a Service ServiceInstance
+## Using/Consuming a Service Instance
 
-* As an Application Operator consuming a Service ServiceInstance, I need to be able to understand the structure
+* As an Application Operator consuming a Service Instance, I need to be able to understand the structure
   of the Kubernetes resources that are created when a new ServiceInstanceCredential to a Service
   ServiceInstance is created, so that I can configure my application appropriately.
 * As an Application Operator, I want to be able to understand the relationship between a Secret
-  and Service ServiceInstance, so that I can properly configure my application (e.g.
+  and Service Instance, so that I can properly configure my application (e.g.
   app connecting to sharded database).
 * The consuming application may safely assume that network connectivity to the
-  Service ServiceInstance is available
+  Service Instance is available
 
 Consuming applications that need specific handling of credentials or
 configuration should be able to use additional Kubernetes facilities to
@@ -203,21 +203,21 @@ If the user were willing to change the configuration instead, they could specify
 how the credentials were surfaced to the application -- which environment
 variables, volumes, etc.
 
-## Lifecycle of Service ServiceInstances
+## Lifecycle of Service Instances
 
-* As a Service Provider, I should be able to indicate that a Service ServiceInstance
+* As a Service Provider, I should be able to indicate that a Service Instance
   _may_ be upgraded (plan updateable), so that I can communicate Service
   capabilities to end users.
-* As an Application Operator of a Service ServiceInstance, I want to be able to change the Service
+* As an Application Operator of a Service Instance, I want to be able to change the Service
   ServiceInstance plan so that I may size it appropriately for my needs.
-* What is the update story for bindings to a Service ServiceInstance?
-* What is the versioning and update story for a Service ServiceInstance: what happens
+* What is the update story for bindings to a Service Instance?
+* What is the versioning and update story for a Service Instance: what happens
   when a broker changes the Services it provides?
 
-## Unbinding from a Service ServiceInstance
+## Unbinding from a Service Instance
 
 * TODO
 
-## Deprovisioning a Service ServiceInstance
+## Deprovisioning a Service Instance
 
 * TODO

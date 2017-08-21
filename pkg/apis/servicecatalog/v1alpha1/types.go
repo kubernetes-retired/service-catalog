@@ -349,7 +349,7 @@ type ServiceInstanceStatus struct {
 	Conditions []ServiceInstanceCondition `json:"conditions"`
 
 	// AsyncOpInProgress is set to true if there is an ongoing async operation
-	// against this Service ServiceInstance in progress.
+	// against this Service Instance in progress.
 	AsyncOpInProgress bool `json:"asyncOpInProgress"`
 
 	// LastOperation is the string that the broker may have returned when

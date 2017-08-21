@@ -55,7 +55,7 @@ const (
 	pollingMaxBackoffDuration = 1 * time.Hour
 )
 
-// NewController returns a new Open Service ServiceBroker catalog controller.
+// NewController returns a new Open Service Broker catalog controller.
 func NewController(
 	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
@@ -114,7 +114,7 @@ func NewController(
 }
 
 // Controller describes a controller that backs the service catalog API for
-// Open Service ServiceBroker compliant Brokers.
+// Open Service Broker compliant Brokers.
 type Controller interface {
 	// Run runs the controller until the given stop channel can be read from.
 	// workers specifies the number of goroutines, per resource, processing work

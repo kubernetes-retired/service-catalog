@@ -33,7 +33,7 @@ High-level functional requirements:
 3.  Native-k8s-style CLI experience
   1.  Formatted list
   2.  Formatted describe
-4.  Integration with Open Service ServiceBroker API:
+4.  Integration with Open Service Broker API:
   1.  Add broker
   2.  Provision service instance
   3.  Bind to service instance

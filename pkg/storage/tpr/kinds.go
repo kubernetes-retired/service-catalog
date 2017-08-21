@@ -82,10 +82,12 @@ const (
 	// ServiceBrokerListKind is the name of a list of Service Broker resources
 	ServiceBrokerListKind Kind = "ServiceBrokerList"
 
-	// ServiceInstanceCredentialKind is the name of a Service ServiceInstanceCredential resource, a Kubernetes third party resource.
+	// ServiceInstanceCredentialKind is the name of a Service Instance
+	// Credential resource, a Kubernetes third party resource.
 	ServiceInstanceCredentialKind Kind = "ServiceInstanceCredential"
 
-	// ServiceInstanceCredentialListKind is the name for lists of Service ServiceInstanceCredentials
+	// ServiceInstanceCredentialListKind is the name for lists of Service
+	// Instance Credentials
 	ServiceInstanceCredentialListKind Kind = "ServiceInstanceCredentialList"
 
 	// ServiceClassKind is the name of a Service Class resource, a Kubernetes third party resource.

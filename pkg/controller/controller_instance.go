@@ -667,7 +667,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		toUpdate := clone.(*v1alpha1.ServiceInstance)
 		toUpdate.Status.AsyncOpInProgress = false
 
-		// If we were asynchronously deleting a Service ServiceInstance, finish
+		// If we were asynchronously deleting a Service Instance, finish
 		// the finalizers.
 		if deleting {
 			err := c.updateServiceInstanceCondition(

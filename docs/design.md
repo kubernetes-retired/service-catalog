@@ -33,16 +33,16 @@ them.
 - **Application** : Kubernetes uses the term "service" in a different way
   than Service Catalog does, so to avoid confusion the term *Application*
   will refer to the Kubernetes deployment artifact that will use a Service
-  ServiceInstance.
-- **ServiceInstanceCredential**, or *Service ServiceInstanceCredential* : a link between a Service ServiceInstance
+  Instance.
+- **ServiceInstanceCredential**, or *Service Instance Credential* : a link between a Service Instance
   and an Application. It expresses the intent for an Application to
-  reference and use a particular Service ServiceInstance.
+  reference and use a particular Service Instance.
 - **ServiceBroker**, or *Service Broker* : a entity, available via a web endpoint,
   that manages a set of one or more Services.
 - **Credentials** : Information needed by an Application to talk with a
-  Service ServiceInstance.
-- **ServiceInstance**, or *Service ServiceInstance* : Each independent use of a Service
-  Class is called a Service ServiceInstance.
+  Service Instance.
+- **ServiceInstance**, or *Service Instance* : Each independent use of a Service
+  Class is called a Service Instance.
 - **Service Class**, or *Service* : one type of Service that a Service Broker
   offers.
 - **Plan**, or *Service Plan* : one type of variant of a Service Class. For
@@ -159,7 +159,7 @@ Users can then query for the list of available Services:
 
     kubectl get services
 
-### Creating a Service ServiceInstance
+### Creating a Service Instance
 
 Before a Service can be used, a new ServiceInstance of it must be created. This is
 done by creating a new `ServiceInstance` resource:
@@ -188,13 +188,13 @@ There are two modes for provisioning:
 [synchronous and asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#synchronous-and-asynchronous-operations)
 
 For synchronous operations, a request is made to the Service Broker and upon
-successful completion of the request (200 OK), Service ServiceInstance can now be used by
+successful completion of the request (200 OK), Service Instance can now be used by
 Application.
 
 Some brokers support
 [asynchronous](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#asynchronous-operations)
 flows. When a Controller makes a request to Service Broker to
-create/update/deprovision a Service ServiceInstance, the Service Broker responds with
+create/update/deprovision a Service Instance, the Service Broker responds with
 202 ACCEPTED, and will provide endpoint at
 GET /v2/service_instances/<service_instance_id>/last_operation
 where the Controller can poll the status of the request.
@@ -205,17 +205,17 @@ the poll request is 'in_progress'. Controller can also implement a max
 timeout that it will poll before considering the provision failed and will
 stop polling and mark the provisioning as failed.
 
-While a Service ServiceInstance has an asynchronous operation in progress, controller
+While a Service Instance has an asynchronous operation in progress, controller
 must ensure that there no other operations (provision,deprovision,update,bind,unbind).
 
 **TODO** test to see if we have checks to block people from using an ServiceInstance
 before its fully realized. We shouldn't let the SB be the one to detect this.
 
-### Using a Service ServiceInstance
+### Using a Service Instance
 
-Before a Service ServiceInstance can be used it must be "bound" to an Application.
+Before a Service Instance can be used it must be "bound" to an Application.
 This means that a link, or usage intent, between an Application and the
-Service ServiceInstance must be established. This is done by creating a new
+Service Instance must be established. This is done by creating a new
 `ServiceInstanceCredential` resource:
 
     kubectl create -f binding.yaml
@@ -232,14 +232,14 @@ where `instance.yaml` might look like:
 
 The Controller, upon being notified of the new `ServiceInstanceCredential` resource, will
 then talk to the Service Broker to create a new ServiceInstanceCredential for the specified
-Service ServiceInstance.
+Service Instance.
 
 Within the ServiceInstanceCredential object that is returned from the Service Broker are
 a set of Credentials. These Credentials contain all of the information
-needed for the application to talk with the Service ServiceInstance. For example,
+needed for the application to talk with the Service Instance. For example,
 it might include things such as:
-- coordinates (URL) of the Service ServiceInstance
-- user-id and password to access the Service ServiceInstance
+- coordinates (URL) of the Service Instance
+- user-id and password to access the Service Instance
 
 The OSB API specification does not mandate what properties might appear
 in the Credentials, so the Application is required to understand the
@@ -253,7 +253,7 @@ ServiceInstanceCredential `Spec.SecretName` is not specified then the Controller
 use the ServiceInstanceCredential `Name` property as the name of the Secret.
 
 ServiceInstanceCredentials are not required to be in the same Kubenetes Namespace
-as the Service ServiceInstance. This allows for sharing of Service ServiceInstances
+as the Service Instance. This allows for sharing of Service Instances
 across Applications and Namespaces.
 
 In addition to the Secret, the Controller will also create a Pod Injection
@@ -297,11 +297,11 @@ Once the Secret is made available to the Application's Pods, it is then up
 to the Application code to use that information to talk to the Service
 ServiceInstance.
 
-### Deleting Service ServiceInstances
+### Deleting Service Instances
 
 As with all resources in Kubernetes, you can delete any of the Service
 Catalog resource by doing an HTTP DELETE to the resource's URL. However,
-it is important to note the you can not delete a Service ServiceInstance while
+it is important to note the you can not delete a Service Instance while
 there are ServiceInstanceCredentials associated with it.  In other words, before a Service
 ServiceInstance can be delete, you must first delete all of its ServiceInstanceCredentials.
 Attempting to delete an ServiceInstance that still has a ServiceInstanceCredential will fail
