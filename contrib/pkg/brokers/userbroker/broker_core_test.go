@@ -17,8 +17,8 @@ limitations under the License.
 package userbroker
 
 import (
-	"testing"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
+	"testing"
 )
 
 // Make sure that userProvidedController implements Controller interface

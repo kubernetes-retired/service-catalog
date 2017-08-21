@@ -23,8 +23,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
 //
