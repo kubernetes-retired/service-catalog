@@ -38,7 +38,7 @@ const (
 
 // doDBProvision Creates a database service instance.
 // The instance is made up of 1 pod (running mongo) and 1 secret (containing admin creds)
-func doDBProvision(instanceID, ns string) (error) {
+func doDBProvision(instanceID, ns string) error {
 	if ns == "" {
 		glog.Error("Request Context does not contain a Namespace")
 		return fmt.Errorf("Namespace not detected in Request")
@@ -119,7 +119,7 @@ func getDBPodIP(instanceID, ns string) (string, int32, error) {
 		return "", 0, err
 	}
 	pods, err := cs.CoreV1().Pods(ns).List(metav1.ListOptions{
-		LabelSelector: INST_RESOURCE_LABEL_NAME+ "=" + instanceID,
+		LabelSelector: INST_RESOURCE_LABEL_NAME + "=" + instanceID,
 	})
 	if err != nil {
 		return "", 0, err
@@ -146,49 +146,49 @@ func newDBInstanceResources(instanceID string) (*v1.Pod, *v1.Secret) {
 	isOptional := false
 
 	return &v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "mongo-" + instanceID,
-			Labels: map[string]string{
-				INST_RESOURCE_LABEL_NAME: instanceID,
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "mongo-" + instanceID,
+				Labels: map[string]string{
+					INST_RESOURCE_LABEL_NAME: instanceID,
+				},
 			},
-		},
-		Spec: v1.PodSpec{
-			Containers: []v1.Container{
-				{
-					Name:            "mongo",
-					Image:           "docker.io/mongo:latest",
-					ImagePullPolicy: "IfNotPresent",
-					EnvFrom: []v1.EnvFromSource{
-						{
-							SecretRef: &v1.SecretEnvSource{
-								LocalObjectReference: v1.LocalObjectReference{
-									Name: secretName,
+			Spec: v1.PodSpec{
+				Containers: []v1.Container{
+					{
+						Name:            "mongo",
+						Image:           "docker.io/mongo:latest",
+						ImagePullPolicy: "IfNotPresent",
+						EnvFrom: []v1.EnvFromSource{
+							{
+								SecretRef: &v1.SecretEnvSource{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: secretName,
+									},
+									Optional: &isOptional,
 								},
-								Optional: &isOptional,
+							},
+						},
+						Args: []string{"mongod"},
+						Ports: []v1.ContainerPort{
+							{
+								Name:          "mongodb",
+								ContainerPort: 27017,
 							},
 						},
 					},
-					Args: []string{"mongod"},
-					Ports: []v1.ContainerPort{
-						{
-							Name:          "mongodb",
-							ContainerPort: 27017,
-						},
-					},
 				},
-			},
-			Volumes: []v1.Volume{
-				{
-					Name: "admin-credentials",
-					VolumeSource: v1.VolumeSource{
-						Secret: &v1.SecretVolumeSource{
-							SecretName: secretName,
+				Volumes: []v1.Volume{
+					{
+						Name: "admin-credentials",
+						VolumeSource: v1.VolumeSource{
+							Secret: &v1.SecretVolumeSource{
+								SecretName: secretName,
+							},
 						},
 					},
 				},
 			},
 		},
-	},
 		&v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: secretName,

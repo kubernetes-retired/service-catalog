@@ -17,13 +17,13 @@ limitations under the License.
 package userbroker
 
 import (
+	"errors"
 	"fmt"
 	"sync"
-	"errors"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
 // errNoSuchInstance implements the Error interface.
@@ -41,19 +41,19 @@ func (e errNoSuchInstance) Error() string {
 // userProvidedServiceInstance contains identifying data for each existing service instance.
 type userProvidedServiceInstance struct {
 	// Id is the instanceID
-	Id         string                   `json:"id"`
+	Id string `json:"id"`
 	// Namespace is the k8s namespace provided in the CreateServiceInstanceReqeust.ContextProfile.Namespace
-	Namespace  string                   `json:"namespace"`
+	Namespace string `json:"namespace"`
 	// ServiceID is the service's associated id.
-	ServiceID  string                   `json:"serviceid"`
+	ServiceID string `json:"serviceid"`
 	// Credential is the binding credential created during Bind()
-	Credential *brokerapi.Credential    `json:"credential"`
+	Credential *brokerapi.Credential `json:"credential"`
 }
 
 // userProvidedBroker implements the OSB API and represents the actual Broker.
 type userProvidedBroker struct {
 	// rwMutex controls concurrent R and RW access.
-	rwMutex     sync.RWMutex
+	rwMutex sync.RWMutex
 	// instanceMap should take instanceIDs as the key and maps to that ID's userProvidedServiceInstance
 	instanceMap map[string]*userProvidedServiceInstance
 }
@@ -63,7 +63,7 @@ const (
 	// serviceidUserProvided is the basic demo. It provides no actual service
 	serviceidUserProvided string = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
 	// serviceidDatabasePod  provides an instance of a mongo db
-	serviceidDatabasePod  string = "database-1"
+	serviceidDatabasePod string = "database-1"
 )
 
 // CreateBroker initializes the service broker.  This function is called by server.Start()
@@ -168,7 +168,7 @@ func (b *userProvidedBroker) RemoveServiceInstance(
 	b.rwMutex.Lock()
 	defer b.rwMutex.Unlock()
 
-	if _, ok := b.instanceMap[instanceID]; ! ok {
+	if _, ok := b.instanceMap[instanceID]; !ok {
 		return nil, errNoSuchInstance{instanceID: instanceID}
 	}
 	switch b.instanceMap[instanceID].ServiceID {
@@ -215,7 +215,7 @@ func (b *userProvidedBroker) Bind(
 			return nil, err
 		}
 		newCredential = &brokerapi.Credential{
-			"MONGO_HOST_IP": ip,
+			"MONGO_HOST_IP":   ip,
 			"MONGO_HOST_PORT": port,
 		}
 	}
