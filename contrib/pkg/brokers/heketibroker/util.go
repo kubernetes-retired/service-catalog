@@ -14,15 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package userbroker
-
-import (
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
-	"testing"
-)
-
-// Make sure that userProvidedController implements Controller interface
-var _ broker.Broker = &userProvidedBroker{}
-
-func TestBroker(t *testing.T) {
-}
+package heketibroker
