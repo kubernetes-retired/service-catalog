@@ -175,24 +175,24 @@ wait_for_expected_output -e 'ProvisionedSuccessfully' \
 
 echo 'Binding to instance...'
 
-kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthrough/ups-binding.yaml" \
-  || error_exit 'Error when creating ups-binding.'
+kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthrough/ups-instance-credential.yaml" \
+  || error_exit 'Error when creating ups-instance-credential.'
 
 wait_for_expected_output -e 'InjectedBindResult' \
-  kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-binding -o yaml \
+  kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml \
   || {
-    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-binding -o yaml
-    error_exit 'Did not receive expected condition when injecting ups-binding.'
+    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
+    error_exit 'Did not receive expected condition when injecting ups-instance-credential.'
   }
 
-[[ "$(kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-binding -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-binding -o yaml
-    error_exit 'Failure status reported when attempting to inject ups-binding.'
+    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
+    error_exit 'Failure status reported when attempting to inject ups-instance-credential.'
   }
 
-[[ "$(kubectl get secrets -n test-ns)" == *ups-binding* ]] \
-  || error_exit '"ups-binding" not present when listing secrets.'
+[[ "$(kubectl get secrets -n test-ns)" == *ups-instance-credential* ]] \
+  || error_exit '"ups-instance-credential" not present when listing secrets.'
 
 # TODO: TPR deletion currently is buggy; only delete if using an etcd-backed API server
 if [[ "${WITH_TPR}" != true ]]; then
@@ -200,12 +200,12 @@ if [[ "${WITH_TPR}" != true ]]; then
 
   echo 'Unbinding from instance...'
 
-  kubectl --context=service-catalog delete -n test-ns serviceinstancecredentials ups-binding \
-    || error_exit 'Error when deleting ups-binding.'
+  kubectl --context=service-catalog delete -n test-ns serviceinstancecredentials ups-instance-credential \
+    || error_exit 'Error when deleting ups-instance-credential.'
 
-  wait_for_expected_output -x -e "ups-binding" \
+  wait_for_expected_output -x -e "ups-instance-credential" \
       kubectl get secrets -n test-ns \
-    || error_exit '"ups-binding" secret not removed upon deleting ups-binding.'
+    || error_exit '"ups-instance-credential" secret not removed upon deleting ups-instance-credential.'
 
   # Deprovision the instance
 

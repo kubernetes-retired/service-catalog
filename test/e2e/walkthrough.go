@@ -64,7 +64,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			serviceclassName = "user-provided-service"
 			testns           = "test-ns"
 			instanceName     = "ups-instance"
-			bindingName      = "ups-binding"
+			bindingName      = "ups-instance-credential"
 		)
 
 		//Broker and ServiceClass should become ready
