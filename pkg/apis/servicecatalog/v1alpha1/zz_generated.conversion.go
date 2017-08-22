@@ -305,7 +305,7 @@ func Convert_servicecatalog_ServiceBrokerSpec_To_v1alpha1_ServiceBrokerSpec(in *
 
 func autoConvert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(in *ServiceBrokerStatus, out *servicecatalog.ServiceBrokerStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
+	out.ReconciledGeneration = in.ReconciledGeneration
 	return nil
 }
 
@@ -320,7 +320,7 @@ func autoConvert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerSta
 	} else {
 		out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
 	}
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
+	out.ReconciledGeneration = in.ReconciledGeneration
 	return nil
 }
 

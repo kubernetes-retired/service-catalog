@@ -320,15 +320,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
-						"checksum": {
+						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Checksum is the sha hash of the ServiceBrokerSpec that was last successfully reconciled against the broker.",
-								Type:        []string{"string"},
-								Format:      "",
+								Description: "ReconciledGeneration is the generation of the broker that was last successfully reconciled.",
+								Type:        []string{"integer"},
+								Format:      "int64",
 							},
 						},
 					},
-					Required: []string{"conditions"},
+					Required: []string{"conditions", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{

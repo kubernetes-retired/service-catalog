@@ -1836,12 +1836,11 @@ func (x *ServiceBrokerStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			var yyq2 [2]bool
 			_, _, _ = yysep2, yyq2, yy2arr2
 			const yyr2 bool = false
-			yyq2[1] = x.Checksum != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(2)
 			} else {
-				yynn2 = 1
+				yynn2 = 2
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -1879,37 +1878,21 @@ func (x *ServiceBrokerStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if yyq2[1] {
-					if x.Checksum == nil {
-						r.EncodeNil()
-					} else {
-						yy7 := *x.Checksum
-						yym8 := z.EncBinary()
-						_ = yym8
-						if false {
-						} else {
-							r.EncodeString(codecSelferC_UTF81234, string(yy7))
-						}
-					}
+				yym7 := z.EncBinary()
+				_ = yym7
+				if false {
 				} else {
-					r.EncodeNil()
+					r.EncodeInt(int64(x.ReconciledGeneration))
 				}
 			} else {
-				if yyq2[1] {
-					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("checksum"))
-					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.Checksum == nil {
-						r.EncodeNil()
-					} else {
-						yy9 := *x.Checksum
-						yym10 := z.EncBinary()
-						_ = yym10
-						if false {
-						} else {
-							r.EncodeString(codecSelferC_UTF81234, string(yy9))
-						}
-					}
+				z.EncSendContainerState(codecSelfer_containerMapKey1234)
+				r.EncodeString(codecSelferC_UTF81234, string("reconciledGeneration"))
+				z.EncSendContainerState(codecSelfer_containerMapValue1234)
+				yym8 := z.EncBinary()
+				_ = yym8
+				if false {
+				} else {
+					r.EncodeInt(int64(x.ReconciledGeneration))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -1985,20 +1968,16 @@ func (x *ServiceBrokerStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder
 					h.decSliceServiceBrokerCondition((*[]ServiceBrokerCondition)(yyv4), d)
 				}
 			}
-		case "checksum":
+		case "reconciledGeneration":
 			if r.TryDecodeAsNil() {
-				if x.Checksum != nil {
-					x.Checksum = nil
-				}
+				x.ReconciledGeneration = 0
 			} else {
-				if x.Checksum == nil {
-					x.Checksum = new(string)
-				}
+				yyv6 := &x.ReconciledGeneration
 				yym7 := z.DecBinary()
 				_ = yym7
 				if false {
 				} else {
-					*((*string)(x.Checksum)) = r.DecodeString()
+					*((*int64)(yyv6)) = int64(r.DecodeInt(64))
 				}
 			}
 		default:
@@ -2049,18 +2028,14 @@ func (x *ServiceBrokerStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decod
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.Checksum != nil {
-			x.Checksum = nil
-		}
+		x.ReconciledGeneration = 0
 	} else {
-		if x.Checksum == nil {
-			x.Checksum = new(string)
-		}
+		yyv11 := &x.ReconciledGeneration
 		yym12 := z.DecBinary()
 		_ = yym12
 		if false {
 		} else {
-			*((*string)(x.Checksum)) = r.DecodeString()
+			*((*int64)(yyv11)) = int64(r.DecodeInt(64))
 		}
 	}
 	for {
