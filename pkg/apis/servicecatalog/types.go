@@ -357,9 +357,9 @@ type ServiceInstanceStatus struct {
 	// the service instance.
 	DashboardURL *string
 
-	// Checksum is the checksum of the ServiceInstanceSpec that was last successfully
-	// reconciled against the broker.
-	Checksum *string
+	// ReconciledGeneration is the generation of the instance that was last
+	// successfully reconciled.
+	ReconciledGeneration int64
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -454,9 +454,9 @@ type ServiceInstanceCredentialSpec struct {
 type ServiceInstanceCredentialStatus struct {
 	Conditions []ServiceInstanceCredentialCondition
 
-	// Checksum is the checksum of the ServiceInstanceCredentialSpec that was last successfully
-	// reconciled against the broker.
-	Checksum *string
+	// ReconciledGeneration is the generation of the ServiceInstanceCredential that was last
+	// successfully reconciled.
+	ReconciledGeneration int64
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.

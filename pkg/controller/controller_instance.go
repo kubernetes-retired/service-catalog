@@ -22,7 +22,6 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -169,7 +168,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	//
 	// TODO: the above logic changes slightly once we handle orphan
 	// mitigation.
-	if !instance.Status.AsyncOpInProgress && instance.Status.Checksum == nil {
+	if !instance.Status.AsyncOpInProgress && instance.Status.ReconciledGeneration == 0 {
 		finalizers.Delete(finalizerToken)
 		// Clear the finalizer
 		return c.updateServiceInstanceFinalizers(instance, finalizers.List())
@@ -355,15 +354,16 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		return c.pollServiceInstanceInternal(instance)
 	}
 
-	// If there's no async op in progress, determine whether the checksum
-	// has been invalidated by a change to the object. If the instance's
-	// checksum matches the calculated checksum, there is no work to do.
-	// If there's an async op in progress, we need to keep polling, hence
-	// do not bail if checksum hasn't changed.
+	// If there's no async op in progress, determine whether there is a new
+	// generation of the object. If the instance's generation does not match
+	// the reconciled generation, then there is a new generation, indicating
+	// that changes have been made to the instance's spec. If there is an
+	// async op in progress, we need to keep polling, hence do not bail if
+	// there is not a new generation.
 	//
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
-	// but does not affect the checksum.
+	// but does not affect the generation.
 	//
 	// Note: currently the instance spec is immutable because we do not yet
 	// support plan or parameter updates.  This logic is currently meant only
@@ -371,11 +371,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// communicating with the broker.  In the future the same logic will
 	// result in an instance that requires update being processed by the
 	// controller.
-	if instance.Status.Checksum != nil && instance.DeletionTimestamp == nil {
-		instanceChecksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
-		if instanceChecksum == *instance.Status.Checksum {
+	if instance.Status.ReconciledGeneration != 0 && instance.DeletionTimestamp == nil {
+		if instance.Status.ReconciledGeneration == instance.Generation {
 			glog.V(4).Infof(
-				"Not processing event for ServiceInstance %v/%v because checksum showed there is no work to do",
+				"Not processing event for ServiceInstance %v/%v because reconciled generation showed there is no work to do",
 				instance.Namespace,
 				instance.Name,
 			)
@@ -545,6 +544,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		}
 	} else {
 		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+
+		// Create/Update for Instance has completed successful, so set Status.ReconciledGeneration to the
+		// Generation used.
+		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
 		// TODO: process response
 		setServiceInstanceCondition(
@@ -718,6 +721,10 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		} else {
+			// Create/Update for InstanceCredential has completed successful, so set Status.ReconciledGeneration to the
+			// Generation used.
+			toUpdate.Status.ReconciledGeneration = toUpdate.Generation
+
 			c.updateServiceInstanceCondition(
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionReady,

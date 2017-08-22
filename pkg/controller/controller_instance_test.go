@@ -28,7 +28,6 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -745,10 +744,9 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	instance := getTestServiceInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
-	// we only invoke the broker client to deprovision if we have a checksum set
+	// we only invoke the broker client to deprovision if we have a recondiled generation set
 	// as that implies a previous success.
-	checksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
-	instance.Status.Checksum = &checksum
+	instance.Status.ReconciledGeneration = 1
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -812,10 +810,9 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	instance := getTestServiceInstance()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
-	// we only invoke the broker client to deprovision if we have a checksum set
+	// we only invoke the broker client to deprovision if we have a recondiled generation set
 	// as that implies a previous success.
-	checksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
-	instance.Status.Checksum = &checksum
+	instance.Status.ReconciledGeneration = 1
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -880,10 +877,9 @@ func TestReconcileServiceInstanceDeleteFailedInstance(t *testing.T) {
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 
-	// we only invoke the broker client to deprovision if we have a checksum set
+	// we only invoke the broker client to deprovision if we have a recondiled generation set
 	// as that implies a previous success.
-	checksum := checksum.ServiceInstanceSpecChecksum(instance.Spec)
-	instance.Status.Checksum = &checksum
+	instance.Status.ReconciledGeneration = 1
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil

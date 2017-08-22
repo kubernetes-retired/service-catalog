@@ -5655,12 +5655,11 @@ func (x *ServiceInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			const yyr2 bool = false
 			yyq2[2] = x.LastOperation != nil
 			yyq2[3] = x.DashboardURL != nil
-			yyq2[4] = x.Checksum != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(5)
 			} else {
-				yynn2 = 2
+				yynn2 = 3
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -5787,37 +5786,21 @@ func (x *ServiceInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if yyq2[4] {
-					if x.Checksum == nil {
-						r.EncodeNil()
-					} else {
-						yy20 := *x.Checksum
-						yym21 := z.EncBinary()
-						_ = yym21
-						if false {
-						} else {
-							r.EncodeString(codecSelferC_UTF81234, string(yy20))
-						}
-					}
+				yym20 := z.EncBinary()
+				_ = yym20
+				if false {
 				} else {
-					r.EncodeNil()
+					r.EncodeInt(int64(x.ReconciledGeneration))
 				}
 			} else {
-				if yyq2[4] {
-					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("checksum"))
-					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.Checksum == nil {
-						r.EncodeNil()
-					} else {
-						yy22 := *x.Checksum
-						yym23 := z.EncBinary()
-						_ = yym23
-						if false {
-						} else {
-							r.EncodeString(codecSelferC_UTF81234, string(yy22))
-						}
-					}
+				z.EncSendContainerState(codecSelfer_containerMapKey1234)
+				r.EncodeString(codecSelferC_UTF81234, string("ReconciledGeneration"))
+				z.EncSendContainerState(codecSelfer_containerMapValue1234)
+				yym21 := z.EncBinary()
+				_ = yym21
+				if false {
+				} else {
+					r.EncodeInt(int64(x.ReconciledGeneration))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -5937,20 +5920,16 @@ func (x *ServiceInstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 					*((*string)(x.DashboardURL)) = r.DecodeString()
 				}
 			}
-		case "checksum":
+		case "ReconciledGeneration":
 			if r.TryDecodeAsNil() {
-				if x.Checksum != nil {
-					x.Checksum = nil
-				}
+				x.ReconciledGeneration = 0
 			} else {
-				if x.Checksum == nil {
-					x.Checksum = new(string)
-				}
+				yyv12 := &x.ReconciledGeneration
 				yym13 := z.DecBinary()
 				_ = yym13
 				if false {
 				} else {
-					*((*string)(x.Checksum)) = r.DecodeString()
+					*((*int64)(yyv12)) = int64(r.DecodeInt(64))
 				}
 			}
 		default:
@@ -6075,18 +6054,14 @@ func (x *ServiceInstanceStatus) codecDecodeSelfFromArray(l int, d *codec1978.Dec
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.Checksum != nil {
-			x.Checksum = nil
-		}
+		x.ReconciledGeneration = 0
 	} else {
-		if x.Checksum == nil {
-			x.Checksum = new(string)
-		}
+		yyv23 := &x.ReconciledGeneration
 		yym24 := z.DecBinary()
 		_ = yym24
 		if false {
 		} else {
-			*((*string)(x.Checksum)) = r.DecodeString()
+			*((*int64)(yyv23)) = int64(r.DecodeInt(64))
 		}
 	}
 	for {
@@ -7686,12 +7661,11 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 			var yyq2 [2]bool
 			_, _, _ = yysep2, yyq2, yy2arr2
 			const yyr2 bool = false
-			yyq2[1] = x.Checksum != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(2)
 			} else {
-				yynn2 = 1
+				yynn2 = 2
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -7729,37 +7703,21 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if yyq2[1] {
-					if x.Checksum == nil {
-						r.EncodeNil()
-					} else {
-						yy7 := *x.Checksum
-						yym8 := z.EncBinary()
-						_ = yym8
-						if false {
-						} else {
-							r.EncodeString(codecSelferC_UTF81234, string(yy7))
-						}
-					}
+				yym7 := z.EncBinary()
+				_ = yym7
+				if false {
 				} else {
-					r.EncodeNil()
+					r.EncodeInt(int64(x.ReconciledGeneration))
 				}
 			} else {
-				if yyq2[1] {
-					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("checksum"))
-					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.Checksum == nil {
-						r.EncodeNil()
-					} else {
-						yy9 := *x.Checksum
-						yym10 := z.EncBinary()
-						_ = yym10
-						if false {
-						} else {
-							r.EncodeString(codecSelferC_UTF81234, string(yy9))
-						}
-					}
+				z.EncSendContainerState(codecSelfer_containerMapKey1234)
+				r.EncodeString(codecSelferC_UTF81234, string("ReconciledGeneration"))
+				z.EncSendContainerState(codecSelfer_containerMapValue1234)
+				yym8 := z.EncBinary()
+				_ = yym8
+				if false {
+				} else {
+					r.EncodeInt(int64(x.ReconciledGeneration))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -7835,20 +7793,16 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 					h.decSliceServiceInstanceCredentialCondition((*[]ServiceInstanceCredentialCondition)(yyv4), d)
 				}
 			}
-		case "checksum":
+		case "ReconciledGeneration":
 			if r.TryDecodeAsNil() {
-				if x.Checksum != nil {
-					x.Checksum = nil
-				}
+				x.ReconciledGeneration = 0
 			} else {
-				if x.Checksum == nil {
-					x.Checksum = new(string)
-				}
+				yyv6 := &x.ReconciledGeneration
 				yym7 := z.DecBinary()
 				_ = yym7
 				if false {
 				} else {
-					*((*string)(x.Checksum)) = r.DecodeString()
+					*((*int64)(yyv6)) = int64(r.DecodeInt(64))
 				}
 			}
 		default:
@@ -7899,18 +7853,14 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromArray(l int, d *cod
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.Checksum != nil {
-			x.Checksum = nil
-		}
+		x.ReconciledGeneration = 0
 	} else {
-		if x.Checksum == nil {
-			x.Checksum = new(string)
-		}
+		yyv11 := &x.ReconciledGeneration
 		yym12 := z.DecBinary()
 		_ = yym12
 		if false {
 		} else {
-			*((*string)(x.Checksum)) = r.DecodeString()
+			*((*int64)(yyv11)) = int64(r.DecodeInt(64))
 		}
 	}
 	for {

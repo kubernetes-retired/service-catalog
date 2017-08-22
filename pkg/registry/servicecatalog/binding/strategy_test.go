@@ -22,11 +22,14 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func bindingWithFalseReadyCondition() *servicecatalog.ServiceInstanceCredential {
+func instanceCredentialWithOldSpec() *servicecatalog.ServiceInstanceCredential {
 	return &servicecatalog.ServiceInstanceCredential{
+		ObjectMeta: metav1.ObjectMeta{
+			Generation: 1,
+		},
 		Spec: servicecatalog.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: "some-string",
@@ -43,74 +46,48 @@ func bindingWithFalseReadyCondition() *servicecatalog.ServiceInstanceCredential 
 	}
 }
 
-func bindingWithTrueReadyCondition() *servicecatalog.ServiceInstanceCredential {
-	return &servicecatalog.ServiceInstanceCredential{
-		Spec: servicecatalog.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
-				Name: "some-string",
-			},
-		},
-		Status: servicecatalog.ServiceInstanceCredentialStatus{
-			Conditions: []servicecatalog.ServiceInstanceCredentialCondition{
-				{
-					Type:   servicecatalog.ServiceInstanceCredentialConditionReady,
-					Status: servicecatalog.ConditionTrue,
-				},
-			},
-		},
-	}
-}
+// TODO: Un-comment "spec-change" test case when there is a field
+// in the spec to which the reconciler allows a change.
 
-func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
+//func instanceCredentialWithNewSpec() *servicecatalog.ServiceInstanceCredential {
+//	ic := instanceCredentialWithOldSpec()
+//	ic.Spec.ServiceInstanceRef = v1.LocalObjectReference{
+//		Name: "new-string",
+//	}
+//	return ic
+//}
+
+// TestInstanceCredentialUpdate tests that generation is incremented correctly when the
+// spec of a ServiceInstanceCredential is updated.
+func TestInstanceCredentialUpdate(t *testing.T) {
 	cases := []struct {
-		name                string
-		old                 *servicecatalog.ServiceInstanceCredential
-		newer               *servicecatalog.ServiceInstanceCredential
-		shouldChecksum      bool
-		checksumShouldBeSet bool
+		name                      string
+		older                     *servicecatalog.ServiceInstanceCredential
+		newer                     *servicecatalog.ServiceInstanceCredential
+		shouldGenerationIncrement bool
 	}{
 		{
-			name:                "not ready -> not ready",
-			old:                 bindingWithFalseReadyCondition(),
-			newer:               bindingWithFalseReadyCondition(),
-			shouldChecksum:      false,
-			checksumShouldBeSet: false,
+			name:  "no spec change",
+			older: instanceCredentialWithOldSpec(),
+			newer: instanceCredentialWithOldSpec(),
 		},
-		{
-			name: "not ready -> not ready, checksum already set",
-			old: func() *servicecatalog.ServiceInstanceCredential {
-				b := bindingWithFalseReadyCondition()
-				cs := "22081-9471-471"
-				b.Status.Checksum = &cs
-				return b
-			}(),
-			newer:               bindingWithFalseReadyCondition(),
-			shouldChecksum:      false,
-			checksumShouldBeSet: true,
-		},
-		{
-			name:           "not ready -> ready",
-			old:            bindingWithFalseReadyCondition(),
-			newer:          bindingWithTrueReadyCondition(),
-			shouldChecksum: true,
-		},
+		//{
+		//	name:  "spec change",
+		//	older: instanceCredentialWithOldSpec(),
+		//	newer: instanceCredentialWithOldSpec(),
+		//	shouldGenerationIncrement: true,
+		//},
 	}
 
 	for _, tc := range cases {
-		strategy := bindingStatusUpdateStrategy
-		strategy.PrepareForUpdate(nil /* api context */, tc.newer, tc.old)
+		bindingRESTStrategies.PrepareForUpdate(nil, tc.newer, tc.older)
 
-		if tc.shouldChecksum {
-			if tc.newer.Status.Checksum == nil {
-				t.Errorf("%v: Checksum should have been set", tc.name)
-				continue
-			}
-
-			if e, a := checksum.ServiceInstanceCredentialSpecChecksum(tc.newer.Spec), *tc.newer.Status.Checksum; e != a {
-				t.Errorf("%v: Checksum was incorrect; expected %v got %v", tc.name, e, a)
-			}
-		} else if tc.checksumShouldBeSet != (tc.newer.Status.Checksum != nil) {
-			t.Errorf("%v: expected checksum to be populated, but was nil", tc.name)
+		expectedGeneration := tc.older.Generation
+		if tc.shouldGenerationIncrement {
+			expectedGeneration = expectedGeneration + 1
+		}
+		if e, a := expectedGeneration, tc.newer.Generation; e != a {
+			t.Errorf("%v: expected %v, got %v for generation", tc.name, e, a)
 		}
 	}
 }

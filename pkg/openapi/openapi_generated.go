@@ -775,15 +775,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
-						"checksum": {
+						"ReconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Checksum is the checksum of the ServiceInstanceCredentialSpec that was last successfully reconciled against the broker.",
-								Type:        []string{"string"},
-								Format:      "",
+								Description: "ReconciledGeneration is the generation of the ServiceInstanceCredential that was last successfully reconciled.",
+								Type:        []string{"integer"},
+								Format:      "int64",
 							},
 						},
 					},
-					Required: []string{"conditions"},
+					Required: []string{"conditions", "ReconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
@@ -923,15 +923,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"checksum": {
+						"ReconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Checksum is the checksum of the ServiceInstanceSpec that was last successfully reconciled against the broker.",
-								Type:        []string{"string"},
-								Format:      "",
+								Description: "ReconciledGeneration is the generation of the instance that was last successfully reconciled.",
+								Type:        []string{"integer"},
+								Format:      "int64",
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress"},
+					Required: []string{"conditions", "asyncOpInProgress", "ReconciledGeneration"},
 				},
 			},
 			Dependencies: []string{

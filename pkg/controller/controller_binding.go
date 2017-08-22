@@ -22,7 +22,6 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,18 +103,17 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		return err
 	}
 
-	// Determine whether the checksum has been invalidated by a change to the
-	// object.  If the binding's checksum matches the calculated checksum,
-	// there is no work to do.
+	// Determine whether there is a new generation of the object. If the binding's
+	// generation does not match the reconciled generation, then there is a new
+	// generation, indicating that changes have been made to the binding's spec.
 	//
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
-	// but does not affect the checksum.
-	if binding.Status.Checksum != nil && binding.DeletionTimestamp == nil {
-		bindingChecksum := checksum.ServiceInstanceCredentialSpecChecksum(binding.Spec)
-		if bindingChecksum == *binding.Status.Checksum {
+	// but does not affect the generation.
+	if binding.Status.ReconciledGeneration != 0 && binding.DeletionTimestamp == nil {
+		if binding.Status.ReconciledGeneration == binding.Generation {
 			glog.V(4).Infof(
-				"Not processing event for ServiceInstanceCredential %v/%v because checksum showed there is no work to do",
+				"Not processing event for ServiceInstanceCredential %v/%v because reconciled generation showed there is no work to do",
 				binding.Namespace,
 				binding.Name,
 			)
@@ -320,6 +318,11 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			c.recorder.Event(binding, api.EventTypeWarning, errorInjectingBindResultReason, s)
 			return err
 		}
+
+		// Create/Update for InstanceCredential has completed successful, so set Status.ReconciledGeneration to the
+		// Generation used.
+		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
+
 		c.setServiceInstanceCredentialCondition(
 			toUpdate,
 			v1alpha1.ServiceInstanceCredentialConditionReady,
