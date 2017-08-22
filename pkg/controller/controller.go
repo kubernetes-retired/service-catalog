@@ -172,6 +172,8 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
 // If reconciler returns an error, requeue the item up to maxRetries before giving up.
 // It enforces that the reconciler is never invoked concurrently with the same key.
+// If forgetAfterSuccess is true, it will cause the queue to forget the item should reconciliation
+// have no error.
 func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetries int, forgetAfterSuccess bool, reconciler func(key string) error) func() {
 	return func() {
 		exit := false

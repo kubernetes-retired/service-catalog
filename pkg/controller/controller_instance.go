@@ -45,8 +45,9 @@ func (c *controller) instanceAdd(obj interface{}) {
 }
 
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
-	// A polling instance will be added to the polling queue by the reconciler.
-	// We only need to take care of non-polling instances here.
+	// Instances with ongoing asynchronous operations will be manually added
+	// to the polling queue by the reconciler. They should be ignored here in
+	// order to enforce polling rate-limiting.
 	instance := newObj.(*v1alpha1.ServiceInstance)
 	if !instance.Status.AsyncOpInProgress {
 		c.instanceAdd(newObj)
@@ -77,6 +78,8 @@ func (c *controller) instanceDelete(obj interface{}) {
 //     work is needed.
 // 5.  the instance work queue is the single work queue that actually services
 //     instances by calling reconcileServiceInstance
+// 6.  when an asynchronous operation is completed, the controller calls
+//     finishPollingServiceInstance to forget the instance from the polling queue
 
 // requeueServiceInstanceForPoll adds the given instance key to the controller's work
 // queue for instances.  It is used to trigger polling for the status of an
