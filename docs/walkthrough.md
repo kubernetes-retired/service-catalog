@@ -447,8 +447,8 @@ see a new one:
 
 ```console
 kubectl get secrets -n test-ns
-NAME                  TYPE                                  DATA      AGE
-default-token-3k61z   kubernetes.io/service-account-token   3         29m
+NAME                              TYPE                                  DATA      AGE
+default-token-3k61z               kubernetes.io/service-account-token   3         29m
 ups-instance-credential           Opaque                                2         1m
 ```
 
