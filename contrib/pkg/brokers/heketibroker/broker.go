@@ -20,13 +20,18 @@ import (
 	//"fmt"
 	//"sync"
 
+	"github.com/minio/minio-go"
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 )
 
+
 // CreateBroker initializes the service broker.  This function is called by server.Start()
 func CreateBroker() broker.Broker {
+	// TODO temp use of minio import so it can be vendored in.
+	_, _ = minio.NewV4("", "", "", false)
+
 	var instanceMap = make(map[string]*heketiServiceInstance)
 	return &heketiBroker{
 		instanceMap: instanceMap,
