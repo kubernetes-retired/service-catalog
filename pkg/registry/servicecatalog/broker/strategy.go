@@ -19,6 +19,7 @@ package broker
 // this was copied from where else and edited to fit our objects
 
 import (
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -28,7 +29,6 @@ import (
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
@@ -98,6 +98,7 @@ func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj ru
 	// Fill in the first entry set to "creating"?
 	broker.Status.Conditions = []sc.ServiceBrokerCondition{}
 	broker.Finalizers = []string{sc.FinalizerServiceCatalog}
+	broker.Generation = 1
 }
 
 func (brokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
@@ -123,6 +124,12 @@ func (brokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, o
 	}
 
 	newServiceBroker.Status = oldServiceBroker.Status
+
+	// Spec updates bump the generation so that we can distinguish between
+	// spec changes and other changes to the object.
+	if !apiequality.Semantic.DeepEqual(oldServiceBroker.Spec, newServiceBroker.Spec) {
+		newServiceBroker.Generation = oldServiceBroker.Generation + 1
+	}
 }
 
 func (brokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
@@ -149,21 +156,6 @@ func (brokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 	}
 	// status changes are not allowed to update spec
 	newServiceBroker.Spec = oldServiceBroker.Spec
-
-	for _, condition := range newServiceBroker.Status.Conditions {
-		if condition.Type == sc.ServiceBrokerConditionReady && condition.Status == sc.ConditionTrue {
-			glog.Infof("Found true ready condition for ServiceBroker %v/%v; updating checksum", newServiceBroker.Namespace, newServiceBroker.Name)
-			newServiceBroker.Status.Checksum = func() *string {
-				s := checksum.ServiceBrokerSpecChecksum(newServiceBroker.Spec)
-				return &s
-			}()
-			return
-		}
-	}
-
-	// if the ready condition is not true, the value of the checksum should
-	// not change.
-	newServiceBroker.Status.Checksum = oldServiceBroker.Status.Checksum
 }
 
 func (brokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

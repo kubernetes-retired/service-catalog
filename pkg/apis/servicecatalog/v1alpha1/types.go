@@ -114,9 +114,9 @@ const (
 type ServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition `json:"conditions"`
 
-	// Checksum is the sha hash of the ServiceBrokerSpec that was last successfully
-	// reconciled against the broker.
-	Checksum *string `json:"checksum,omitempty"`
+	// ReconciledGeneration is the generation of the broker that was last
+	// successfully reconciled.
+	ReconciledGeneration int64 `json:"reconciledGeneration"`
 }
 
 // ServiceBrokerCondition contains condition information for a Broker.

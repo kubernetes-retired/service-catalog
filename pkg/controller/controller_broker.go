@@ -23,7 +23,6 @@ import (
 
 	"github.com/golang/glog"
 
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,8 +115,7 @@ const (
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true.
 func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time, relistInterval time.Duration) bool {
-	brokerChecksum := checksum.ServiceBrokerSpecChecksum(broker.Spec)
-	if broker.Status.Checksum != nil && brokerChecksum != *broker.Status.Checksum {
+	if broker.Status.ReconciledGeneration != broker.Generation {
 		// If the spec has changed, we should reconcile the broker.
 		return true
 	}
@@ -414,6 +412,12 @@ func (c *controller) updateServiceBrokerCondition(broker *v1alpha1.ServiceBroker
 				break
 			}
 		}
+	}
+
+	// Set status.ReconciledGeneration if updating ready condition to true
+
+	if conditionType == v1alpha1.ServiceBrokerConditionReady && status == v1alpha1.ConditionTrue {
+		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 	}
 
 	glog.V(4).Infof("Updating ready condition for ServiceBroker %v to %v", broker.Name, status)
