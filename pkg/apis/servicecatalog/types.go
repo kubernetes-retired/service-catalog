@@ -56,10 +56,10 @@ type ServiceBrokerSpec struct {
 	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker.
 	// This is strongly discouraged.  You should use the CABundle instead.
 	// +optional
-	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+	InsecureSkipTLSVerify bool
 	// CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.
 	// +optional
-	CABundle []byte `json:"caBundle,omitempty"`
+	CABundle []byte
 }
 
 // ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods
