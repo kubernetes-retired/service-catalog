@@ -23,15 +23,15 @@ import (
 	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 )
 
-func brokerWithFalseReadyCondition() *sc.Broker {
-	return &sc.Broker{
-		Spec: sc.BrokerSpec{
+func brokerWithFalseReadyCondition() *sc.ServiceBroker {
+	return &sc.ServiceBroker{
+		Spec: sc.ServiceBrokerSpec{
 			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		},
-		Status: sc.BrokerStatus{
-			Conditions: []sc.BrokerCondition{
+		Status: sc.ServiceBrokerStatus{
+			Conditions: []sc.ServiceBrokerCondition{
 				{
-					Type:   sc.BrokerConditionReady,
+					Type:   sc.ServiceBrokerConditionReady,
 					Status: sc.ConditionFalse,
 				},
 			},
@@ -39,15 +39,15 @@ func brokerWithFalseReadyCondition() *sc.Broker {
 	}
 }
 
-func brokerWithTrueReadyCondition() *sc.Broker {
-	return &sc.Broker{
-		Spec: sc.BrokerSpec{
+func brokerWithTrueReadyCondition() *sc.ServiceBroker {
+	return &sc.ServiceBroker{
+		Spec: sc.ServiceBrokerSpec{
 			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		},
-		Status: sc.BrokerStatus{
-			Conditions: []sc.BrokerCondition{
+		Status: sc.ServiceBrokerStatus{
+			Conditions: []sc.ServiceBrokerCondition{
 				{
-					Type:   sc.BrokerConditionReady,
+					Type:   sc.ServiceBrokerConditionReady,
 					Status: sc.ConditionTrue,
 				},
 			},
@@ -55,9 +55,9 @@ func brokerWithTrueReadyCondition() *sc.Broker {
 	}
 }
 
-// TestBrokerStrategyTrivial is the testing of the trivial hardcoded
+// TestServiceBrokerStrategyTrivial is the testing of the trivial hardcoded
 // boolean flags.
-func TestBrokerStrategyTrivial(t *testing.T) {
+func TestServiceBrokerStrategyTrivial(t *testing.T) {
 	if brokerRESTStrategies.NamespaceScoped() {
 		t.Errorf("broker create must not be namespace scoped")
 	}
@@ -72,14 +72,14 @@ func TestBrokerStrategyTrivial(t *testing.T) {
 	}
 }
 
-// TestBrokerCreate
-func TestBroker(t *testing.T) {
+// TestServiceBrokerCreate
+func TestServiceBroker(t *testing.T) {
 	// Create a broker or brokers
-	broker := &sc.Broker{
-		Spec: sc.BrokerSpec{
+	broker := &sc.ServiceBroker{
+		Spec: sc.ServiceBrokerSpec{
 			URL: "abcd",
 		},
-		Status: sc.BrokerStatus{
+		Status: sc.ServiceBrokerStatus{
 			Conditions: nil,
 		},
 	}
@@ -117,8 +117,8 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 	// checksumShouldBeSet: whether or not checksum field in newer broker should be set
 	cases := []struct {
 		name                string
-		old                 *sc.Broker
-		newer               *sc.Broker
+		old                 *sc.ServiceBroker
+		newer               *sc.ServiceBroker
 		shouldChecksum      bool
 		checksumShouldBeSet bool
 	}{
@@ -131,7 +131,7 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 		},
 		{
 			name: "not ready -> not ready, checksum already set",
-			old: func() *sc.Broker {
+			old: func() *sc.ServiceBroker {
 				b := brokerWithFalseReadyCondition()
 				cs := "22081-9471-471"
 				b.Status.Checksum = &cs
@@ -159,7 +159,7 @@ func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
 				continue
 			}
 
-			if e, a := checksum.BrokerSpecChecksum(tc.newer.Spec), *tc.newer.Status.Checksum; e != a {
+			if e, a := checksum.ServiceBrokerSpecChecksum(tc.newer.Spec), *tc.newer.Status.Checksum; e != a {
 				t.Errorf("%v: Checksum was incorrect; expected %v got %v", tc.name, e, a)
 			}
 		} else if tc.checksumShouldBeSet != (tc.newer.Status.Checksum != nil) {

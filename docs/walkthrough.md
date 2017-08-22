@@ -111,7 +111,7 @@ check out the "Cleaning Up" section below. Follow those instructions before you 
 
 The service catalog API has five main concepts:
 
-- Broker Server: A server that acts as a service broker and conforms to the 
+- ServiceBroker Server: A server that acts as a service broker and conforms to the 
 [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md)
 specification. This software could be hosted within your own Kubernetes cluster
 or elsewhere.
@@ -119,30 +119,30 @@ or elsewhere.
 The remaining four concepts all map directly to new Kubernetes resource types
 that are provided by the service catalog API.
 
-- `Broker`: An in-cluster representation of a broker server. A resource of this
+- `ServiceBroker`: An in-cluster representation of a broker server. A resource of this
 type encapsulates connection details for that broker server. These are created
 and managed by cluster operators who wish to use that broker server to make new
 types of managed services available within their cluster.
 - `ServiceClass`: A *type* of managed service offered by a particular broker.
-Each time a new `Broker` resource is added to the cluster, the service catalog
+Each time a new `ServiceBroker` resource is added to the cluster, the service catalog
 controller connects to the corresponding broker server to obtain a list of
 service offerings. A new `ServiceClass` resource will automatically be created
 for each.
-- `Instance`: A provisioned instance of a `ServiceClass`. These are created
+- `ServiceInstance`: A provisioned instance of a `ServiceClass`. These are created
 by cluster users who wish to make a new concrete _instance_ of some _type_ of
 managed service to make that available for use by one or more in-cluster
-applications. When a new `Instance` resource is created, the service catalog
+applications. When a new `ServiceInstance` resource is created, the service catalog
 controller will connect to the appropriate broker server and instruct it to
 provision the service instance.
-- `Binding`: A "binding" to an `Instance`. These are created by cluster users
-who wish for their applications to make use of a service `Instance`. Upon
+- `ServiceInstanceCredential`: A "binding" to an `ServiceInstance`. These are created by cluster users
+who wish for their applications to make use of a service `ServiceInstance`. Upon
 creation, the service catalog controller will create a Kubernetes `Secret`
 containing connection details and credentials for the service instance. Such
 `Secret`s can be mounted into pods as usual.
 
 These concepts and resources are the building blocks of the service catalog.
 
-## Step 3 - Installing the UPS Broker
+## Step 3 - Installing the UPS ServiceBroker
 
 In order to effectively demonstrate the service catalog, we will require a
 sample broker server. To proceed, we will deploy the [User Provided Service
@@ -214,10 +214,10 @@ kubectl config set-context service-catalog --cluster=service-catalog
 Note: Your cloud provider may require firewall rules to allow your traffic get in.
 Please refer to the [Troubleshooting](#troubleshooting) section for details.
 
-## Step 6 - Creating a Broker Resource
+## Step 6 - Creating a ServiceBroker Resource
 
 Next, we'll register a broker server with the catalog by creating a new
-[`Broker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
+[`ServiceBroker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
 
 Because we haven't created any resources in the service-catalog API server yet,
 `kubectl get` will return an empty list of resources.
@@ -227,7 +227,7 @@ kubectl --context=service-catalog get brokers,serviceclasses,instances,bindings
 No resources found
 ```
 
-Create the new `Broker` resource with the following command:
+Create the new `ServiceBroker` resource with the following command:
 
 ```console
 kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-broker.yaml
@@ -239,7 +239,7 @@ The output of that command should be the following:
 broker "ups-broker" created
 ```
 
-When we create this `Broker` resource, the service catalog controller responds
+When we create this `ServiceBroker` resource, the service catalog controller responds
 by querying the broker server to see what services it offers and creates a
 `ServiceClass` for each.
 
@@ -253,7 +253,7 @@ We should see something like:
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Broker
+kind: ServiceBroker
 metadata:
   creationTimestamp: 2017-03-03T04:11:17Z
   finalizers:
@@ -322,14 +322,14 @@ plans:
   externalID: 86064792-7ea2-467b-af93-ac9694d96d52
 ```
 
-## Step 8 - Provisioning a New Instance
+## Step 8 - Provisioning a New ServiceInstance
 
 Now that a `ServiceClass` named `user-provided-service` exists within our
 cluster's service catalog, we can provision an instance of that. We do so by
-creating a new [`Instance`](../contrib/examples/walkthrough/ups-instance.yaml)
+creating a new [`ServiceInstance`](../contrib/examples/walkthrough/ups-instance.yaml)
 resource.
 
-Unlike `Broker` and `ServiceClass` resources, `Instance` resources must reside
+Unlike `ServiceBroker` and `ServiceClass` resources, `ServiceInstance` resources must reside
 within a Kubernetes namespace. To proceed, we'll first ensure that the namespace
 `test-ns` exists:
 
@@ -337,7 +337,7 @@ within a Kubernetes namespace. To proceed, we'll first ensure that the namespace
 kubectl create namespace test-ns
 ```
 
-We can then continue to create an `Instance`:
+We can then continue to create an `ServiceInstance`:
 
 ```console
 kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-instance.yaml
@@ -349,7 +349,7 @@ That operation should output:
 instance "ups-instance" created
 ```
 
-After the `Instance` is created, the service catalog controller will communicate
+After the `ServiceInstance` is created, the service catalog controller will communicate
 with the appropriate broker server to initiate provisioning. We can check the
 status of this process like so:
 
@@ -361,7 +361,7 @@ We should see something like:
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Instance
+kind: ServiceInstance
 metadata:
   creationTimestamp: 2017-03-03T04:26:08Z
   name: ups-instance
@@ -381,10 +381,10 @@ status:
     type: Ready
 ```
 
-## Step 9 - Binding to the Instance
+## Step 9 - ServiceInstanceCredential to the ServiceInstance
 
-Now that our `Instance` has been created, we can bind to it. To accomplish this,
-we will create a [`Binding`](../contrib/examples/walkthrough/ups-binding.yaml)
+Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
+we will create a [`ServiceInstanceCredential`](../contrib/examples/walkthrough/ups-binding.yaml)
 resource.
 
 ```console
@@ -398,7 +398,7 @@ That command should output:
 binding "ups-binding" created
 ```
 
-After the `Binding` resource is created, the service catalog controller will
+After the `ServiceInstanceCredential` resource is created, the service catalog controller will
 communicate with the appropriate broker server to initiate binding. Generally,
 this will cause the broker server to create and issue credentials that the
 service catalog controller will insert into a Kubernetes `Secret`. We can check
@@ -418,7 +418,7 @@ We should see something like:
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Binding
+kind: ServiceInstanceCredential
 metadata:
   creationTimestamp: 2017-03-07T01:44:36Z
   finalizers:
@@ -454,10 +454,10 @@ ups-binding           Opaque                                2         1m
 
 Notice that a new `Secret` named `ups-binding` has been created.
 
-## Step 10 - Unbinding from the Instance
+## Step 10 - Unbinding from the ServiceInstance
 
 Now, let's unbind from the instance.  To do this, we simply *delete* the
-`Binding` resource that we previously created:
+`ServiceInstanceCredential` resource that we previously created:
 
 ```console
 kubectl --context=service-catalog delete -n test-ns bindings ups-binding
@@ -472,16 +472,16 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-## Step 11 - Deprovisioning the Instance
+## Step 11 - Deprovisioning the ServiceInstance
 
 Now, we can deprovision the instance.  To do this, we simply *delete* the
-`Instance` resource that we previously created:
+`ServiceInstance` resource that we previously created:
 
 ```console
 kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
-## Step 12 - Deleting the Broker
+## Step 12 - Deleting the ServiceBroker
 
 Next, we should remove the broker server, and the services it offers, from the catalog. We can do
 so by simply deleting the broker:

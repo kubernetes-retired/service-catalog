@@ -71,7 +71,7 @@ var (
 
 // Canonicalize does not transform a broker.
 func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {
-	_, ok := obj.(*sc.Broker)
+	_, ok := obj.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to create")
 	}
@@ -82,10 +82,10 @@ func (brokerRESTStrategy) NamespaceScoped() bool {
 	return false
 }
 
-// PrepareForCreate receives a the incoming Broker and clears it's
+// PrepareForCreate receives a the incoming ServiceBroker and clears it's
 // Status. Status is not a user settable field.
 func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	broker, ok := obj.(*sc.Broker)
+	broker, ok := obj.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to create")
 	}
@@ -94,14 +94,14 @@ func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj ru
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
-	broker.Status = sc.BrokerStatus{}
+	broker.Status = sc.ServiceBrokerStatus{}
 	// Fill in the first entry set to "creating"?
-	broker.Status.Conditions = []sc.BrokerCondition{}
+	broker.Status.Conditions = []sc.ServiceBrokerCondition{}
 	broker.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
 
 func (brokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateBroker(obj.(*sc.Broker))
+	return scv.ValidateServiceBroker(obj.(*sc.ServiceBroker))
 }
 
 func (brokerRESTStrategy) AllowCreateOnUpdate() bool {
@@ -113,48 +113,48 @@ func (brokerRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (brokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newBroker, ok := new.(*sc.Broker)
+	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to update to")
 	}
-	oldBroker, ok := old.(*sc.Broker)
+	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to update from")
 	}
 
-	newBroker.Status = oldBroker.Status
+	newServiceBroker.Status = oldServiceBroker.Status
 }
 
 func (brokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newBroker, ok := new.(*sc.Broker)
+	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to validate to")
 	}
-	oldBroker, ok := old.(*sc.Broker)
+	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to validate from")
 	}
 
-	return scv.ValidateBrokerUpdate(newBroker, oldBroker)
+	return scv.ValidateServiceBrokerUpdate(newServiceBroker, oldServiceBroker)
 }
 
 func (brokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newBroker, ok := new.(*sc.Broker)
+	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to update to")
 	}
-	oldBroker, ok := old.(*sc.Broker)
+	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to update from")
 	}
 	// status changes are not allowed to update spec
-	newBroker.Spec = oldBroker.Spec
+	newServiceBroker.Spec = oldServiceBroker.Spec
 
-	for _, condition := range newBroker.Status.Conditions {
-		if condition.Type == sc.BrokerConditionReady && condition.Status == sc.ConditionTrue {
-			glog.Infof("Found true ready condition for Broker %v/%v; updating checksum", newBroker.Namespace, newBroker.Name)
-			newBroker.Status.Checksum = func() *string {
-				s := checksum.BrokerSpecChecksum(newBroker.Spec)
+	for _, condition := range newServiceBroker.Status.Conditions {
+		if condition.Type == sc.ServiceBrokerConditionReady && condition.Status == sc.ConditionTrue {
+			glog.Infof("Found true ready condition for ServiceBroker %v/%v; updating checksum", newServiceBroker.Namespace, newServiceBroker.Name)
+			newServiceBroker.Status.Checksum = func() *string {
+				s := checksum.ServiceBrokerSpecChecksum(newServiceBroker.Spec)
 				return &s
 			}()
 			return
@@ -163,18 +163,18 @@ func (brokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 
 	// if the ready condition is not true, the value of the checksum should
 	// not change.
-	newBroker.Status.Checksum = oldBroker.Status.Checksum
+	newServiceBroker.Status.Checksum = oldServiceBroker.Status.Checksum
 }
 
 func (brokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newBroker, ok := new.(*sc.Broker)
+	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to validate to")
 	}
-	oldBroker, ok := old.(*sc.Broker)
+	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-broker object to validate from")
 	}
 
-	return scv.ValidateBrokerStatusUpdate(newBroker, oldBroker)
+	return scv.ValidateServiceBrokerStatusUpdate(newServiceBroker, oldServiceBroker)
 }
