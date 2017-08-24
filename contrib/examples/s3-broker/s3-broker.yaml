@@ -3,4 +3,4 @@ kind: Broker
 metadata:
   name: s3-broker
 spec:
-  url: http://s3-broker-s3-broker.s3-broker.svc.cluster.local
+  url: http://35.193.223.62:32348
