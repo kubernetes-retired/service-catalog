@@ -76,7 +76,7 @@ for more information.
 
 Our goal is to have extensive use-case and functional documentation.
 
-See [here](./docs/v1) for [documentation](./docs/v1).
+See [here](./docs/v1) for detailed documentation.
 
 See [here](https://github.com/kubernetes-incubator/service-catalog/wiki/Examples) for examples and
 [here](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md) for
@@ -91,7 +91,7 @@ project.
 
 ### Contributing
 
-Interested in contributing?  Check out the [documentation](./CONTRIBUTING.md).
+Interested in contributing?  Check out the [contributing] documentation(./CONTRIBUTING.md).
 
 Also see the [developer's guide](./docs/devguide.md) for information on how to
 build and test the code.
