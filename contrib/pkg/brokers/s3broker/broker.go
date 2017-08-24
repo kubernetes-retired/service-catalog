@@ -41,6 +41,7 @@ type s3Broker struct {
 }
 
 func (b *s3Broker) Catalog() (*brokerapi.Catalog, error) {
+	isBindable := true
 	return &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
 			{
@@ -48,6 +49,15 @@ func (b *s3Broker) Catalog() (*brokerapi.Catalog, error) {
 				ID:          "lkdgkf2napdwedom",
 				Description: "An object bucket backed by GlusterFS Object Storage.",
 				Bindable:    true,
+				Plans: []brokerapi.ServicePlan {
+					{
+						Name: "default",
+						ID: "0",
+						Description: "The best plan, and the only one.",
+						Free: true,
+						Bindable: &isBindable,
+					},
+				},
 			},
 		},
 	}, nil
