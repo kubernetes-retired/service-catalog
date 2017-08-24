@@ -4,5 +4,5 @@ metadata:
   name: s3-instance
   namespace: test-ns
 spec:
-  serviceClassName: s3-service
+  serviceClassName: gluster-object-store 
   planName: default
