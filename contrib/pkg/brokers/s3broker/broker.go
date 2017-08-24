@@ -44,9 +44,9 @@ func (b *s3Broker) Catalog() (*brokerapi.Catalog, error) {
 	return &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
 			{
-				Name:        "GlusterFS Object Storage",
-				ID:          "gfs-object-storage",
-				Description: "A bucket of GlusterFS Object Storage.",
+				Name:        "gluster-object-store",
+				ID:          "lkdgkf2napdwedom",
+				Description: "An object bucket backed by GlusterFS Object Storage.",
 				Bindable:    true,
 			},
 		},
