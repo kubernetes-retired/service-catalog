@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: "{{ template "fullname" . }}-node-port"
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  type: NodePort
+  selector:
+    app: {{ template "fullname" . }}
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
