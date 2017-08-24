@@ -1,0 +1,5 @@
+# Default values for User-Provided Service Broker
+# Image to use
+image: s3-broker:canary
+# ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
+imagePullPolicy: Never

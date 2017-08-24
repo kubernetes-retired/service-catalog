@@ -27,7 +27,7 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/heketibroker"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/s3broker"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )
@@ -62,7 +62,7 @@ func runWithContext(ctx context.Context) error {
 	}
 
 	addr := ":" + strconv.Itoa(options.Port)
-	return server.Run(ctx, addr, heketibroker.CreateBroker())
+	return server.Run(ctx, addr, s3broker.CreateBroker())
 }
 
 // cancelOnInterrupt calls f when os.Interrupt or SIGTERM is received.
