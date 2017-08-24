@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/tools/cache"
@@ -154,6 +155,43 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	// nothing to do...
 	if instance.DeletionTimestamp == nil {
 		return nil
+	}
+
+	// Determine if any credentials exist for this instance.  We don't want to
+	// delete the instance if there are any associated creds
+	credentialsLister := c.bindingLister.ServiceInstanceCredentials(instance.Namespace)
+
+	selector := labels.NewSelector()
+	credentialsList, err := credentialsLister.List(selector)
+	if err != nil {
+		return err
+	}
+	for _, credentials := range credentialsList {
+		if instance.Name == credentials.Spec.ServiceInstanceRef.Name {
+
+			// found credentials, block the deletion until they are removed
+			clone, err := api.Scheme.DeepCopy(instance)
+			if err != nil {
+				return err
+			}
+			toUpdate := clone.(*v1alpha1.ServiceInstance)
+
+			s := fmt.Sprintf(
+				"Delete instance %v/%v blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first.",
+				instance.Namespace,
+				instance.Name)
+			glog.Warning(s)
+
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorDeprovisionCalledReason,
+				"Delete instance failed. "+s)
+			c.updateServiceInstanceStatus(toUpdate)
+			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+			return nil
+		}
 	}
 
 	finalizerToken := v1alpha1.FinalizerServiceCatalog
