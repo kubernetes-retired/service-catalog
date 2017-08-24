@@ -14,6 +14,6 @@
 
 FROM BASEIMAGE
 
-ADD heketi-broker /opt/services/heketi-broker
+ADD s3-broker /opt/services/s3-broker
 
-ENTRYPOINT ["/opt/services/heketi-broker"]
+ENTRYPOINT ["/opt/services/s3-broker"]

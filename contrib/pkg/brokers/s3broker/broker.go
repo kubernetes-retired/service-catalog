@@ -14,37 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package heketibroker
+package s3broker
 
 import (
-	//"fmt"
-	//"sync"
-
-	"github.com/minio/minio-go"
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokers/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	"github.com/minio/minio-go"
 )
-
 
 // CreateBroker initializes the service broker.  This function is called by server.Start()
 func CreateBroker() broker.Broker {
 	// TODO temp use of minio import so it can be vendored in.
-	_, _ = minio.NewV4("", "", "", false)
+	_, _ = minio.NewV2("", "", "", false)
 
-	var instanceMap = make(map[string]*heketiServiceInstance)
-	return &heketiBroker{
+	var instanceMap = make(map[string]*s3ServiceInstance)
+	return &s3Broker{
 		instanceMap: instanceMap,
 	}
 }
 
-type heketiServiceInstance struct{}
+type s3ServiceInstance struct{}
 
-type heketiBroker struct {
-	instanceMap map[string]*heketiServiceInstance
+type s3Broker struct {
+	instanceMap map[string]*s3ServiceInstance
 }
 
-func (b *heketiBroker) Catalog() (*brokerapi.Catalog, error) {
+func (b *s3Broker) Catalog() (*brokerapi.Catalog, error) {
 	return &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
 			{
@@ -57,24 +53,24 @@ func (b *heketiBroker) Catalog() (*brokerapi.Catalog, error) {
 	}, nil
 }
 
-func (b *heketiBroker) GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation string) (*brokerapi.LastOperationResponse, error) {
+func (b *s3Broker) GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation string) (*brokerapi.LastOperationResponse, error) {
 	glog.Info("GetServiceInstanceLastOperation not yet implemented.")
 	return nil, nil
 }
-func (b *heketiBroker) CreateServiceInstance(instanceID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (b *s3Broker) CreateServiceInstance(instanceID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.CreateServiceInstanceResponse, error) {
 	glog.Info("CreateServiceInstance not yet implemented.")
 	return nil, nil
 }
-func (b *heketiBroker) RemoveServiceInstance(instanceID, serviceID, planID string, acceptsIncomplete bool) (*brokerapi.DeleteServiceInstanceResponse, error) {
+func (b *s3Broker) RemoveServiceInstance(instanceID, serviceID, planID string, acceptsIncomplete bool) (*brokerapi.DeleteServiceInstanceResponse, error) {
 	glog.Info("RemoveServiceInstance not yet implemented.")
 	return nil, nil
 }
 
-func (b *heketiBroker) Bind(instanceID, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
+func (b *s3Broker) Bind(instanceID, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
 	glog.Info("Bind not yet implemented.")
 	return nil, nil
 }
-func (b *heketiBroker) UnBind(instanceID, bindingID, serviceID, planID string) error {
+func (b *s3Broker) UnBind(instanceID, bindingID, serviceID, planID string) error {
 	glog.Info("UnBind not yet implemented.")
 	return nil
 }
