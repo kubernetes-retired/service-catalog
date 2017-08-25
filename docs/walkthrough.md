@@ -207,7 +207,7 @@ When you determine the IP address of this service, set its value into the `SVC_C
 environment variable and then run the following commands:
 
 ```console
-kubectl config set-cluster service-catalog --server=https://$SVC_CAT_API_SERVER_IP:30034 --insecure-skip-tls-verify=true
+kubectl config set-cluster service-catalog --server=https://$SVC_CAT_API_SERVER_IP:30443 --insecure-skip-tls-verify=true
 kubectl config set-context service-catalog --cluster=service-catalog
 ```
 
