@@ -77,11 +77,11 @@ func TestSetDefaultServiceBroker(t *testing.T) {
 		t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got none")
 	}
 
-	//incorrectDefaultRelistBehavior := b2.Spec.RelistBehavior != "" &&
-	//b2.Spec.RelistBehavior != versioned.ServiceBrokerRelistBehaviorDuration
-	//if incorrectDefaultRelistBehavior {
-	//t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got something else")
-	//}
+	incorrectDefaultRelistBehavior := b2.Spec.RelistBehavior != "" &&
+		b2.Spec.RelistBehavior != versioned.ServiceBrokerRelistBehaviorDuration
+	if incorrectDefaultRelistBehavior {
+		t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got something else")
+	}
 }
 
 func TestSetDefaultServiceInstance(t *testing.T) {

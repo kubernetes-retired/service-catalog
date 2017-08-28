@@ -18,7 +18,9 @@ package v1alpha1
 
 import (
 	"github.com/satori/go.uuid"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"time"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
@@ -30,9 +32,9 @@ func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
 		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
 	}
 
-	//if spec.RelistBehavior == ServiceBrokerRelistBehaviorDuration {
-	//spec.RelistDuration = &metav1.Duration{15 * time.Minute}
-	//}
+	if spec.RelistBehavior == ServiceBrokerRelistBehaviorDuration {
+		spec.RelistDuration = &metav1.Duration{15 * time.Minute}
+	}
 }
 
 func SetDefaults_ServiceInstanceSpec(spec *ServiceInstanceSpec) {
