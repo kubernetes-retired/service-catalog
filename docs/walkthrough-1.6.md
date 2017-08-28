@@ -3,146 +3,18 @@
 This document outlines the basic features of the service catalog by walking
 through a short demo.
 
-## Step 0 - Prerequisites
+This document contains instructions for a self-guided demo of the Service 
+Catalog for Kubernetes clusters running version 1.6. Since Service
+Catalog only officially supports versions 1.7 and later, these instructions are 
+deprecated and may be removed at any time.
 
-### Starting Kubernetes with DNS
+If you are running a Kubernetes cluster running version 1.7 or later, please 
+see [walkthrough-1.7.md](./walkthrough-1.7.md).
 
-You *must* have a Kubernetes cluster with cluster DNS enabled. We can't list
-instructions here for enabling cluster DNS for all Kubernetes cluster
-installations, but here are a few notes:
+This document assumes that you've installed Service Catalog onto your cluster.
+If you haven't, please see [install-1.6.md](./install-1.6.md).
 
-* If you are using Google Container Engine or minikube, you likely have cluster
-DNS enabled already.
-* If you are using hack/local-up-cluster.sh, ensure the
-`KUBE_ENABLE_CLUSTER_DNS` environment variable is set as follows:
-
-```console
-hack/local-up-cluster.sh -O
-```
-
-### Getting Helm and installing Tiller
-
-You *must* use [Helm](http://helm.sh/) v2 or newer in the installation steps
-below.
-
-If you already have Helm v2 or newer, execute `helm init` (if you haven't
-already) to install Tiller (the server-side component of Helm), and you should
-be done with Helm setup.
-
-If you don't already have Helm v2, see the
-[installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
-
-If your kubernetes cluster has
-[RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) enabled, you must
-ensure that the tiller pod has `cluster-admin` access. By default, `helm init`
-installs the tiller pod into `kube-system` namespace, with tiller configured to
-use the `default` service account.
-
-```console
-kubectl create clusterrolebinding tiller-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
-```
-
-`cluster-admin` access is required in order for helm to work correctly in
-clusters with RBAC enabled.  If you used the `--tiller-namespace` or
-`--service-account` flags when running `helm init`, the `--serviceaccount` flag
-in the previous command needs to be adjusted to reference the appropriate
-namespace and ServiceAccount name.
-
-
-## Step 1 - Installing the Service Catalog
-
-The service catalog is packaged as a Helm chart located in the
-[charts/catalog](../charts/catalog) directory in this repository, and supports a
-wide variety of customizations which are detailed in that directory's
-[README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/README.md).
-
-### The Service Catalog Data Store
-
-We'll be interacting with a variety of resources in the following steps. The
-service catalog API server needs to store all of these resources in a data
-store. The data store implementation in the API server is pluggable, and we
-currently support the following implementations:
-
-1. Etcd 3
-2. Third Party Resources (also, known as TPRs) - this is an _alpha_ feature right now. It has known issues
-
-The first implementation requires that the API server has access to an Etcd 3 cluster, and the
-second only requires access to the Kubernetes API to store TPRs.
-
-Even if you store data in TPRs, you should still access data via the service catalog API. It is 
-possible to access data via the TPRs directly, but we don't recommend it.
-
-### Install
-
-To install the service catalog system with Etcd 3 as the backing data store:
-
-```console
-helm install charts/catalog --name catalog --namespace catalog
-```
-
-To install the service catalog system with TPRs as the backing data store:
-
-```console
-helm install charts/catalog --name catalog --namespace catalog --set apiserver.storage.type=tpr,apiserver.storage.tpr.globalNamespace=catalog
-```
-
-Regardless of which data store implementation you choose, the remainder of the steps in this
-walkthrough will stay the same.
-
-### API Server Authentication and Authorization
-
-Authentication and authorization are disabled in the Helm chart by default. To enable them, 
-set the `apiserver.auth.enabled` option on the Helm chart:
-
-```console
-helm install charts/catalog --name catalog --namespace catalog --set apiserver.auth.enabled=true
-```
-
-For more information about certificate setup, see the [documentation on
-authentication and authorization](./auth.md).
-
-
-### Do Overs
-
-If you make a mistake somewhere along the way in this walk-through and want to start over,
-check out the "Cleaning Up" section below. Follow those instructions before you start over.
-
-## Step 2 - Understanding Service Catalog Components
-
-The service catalog API has five main concepts:
-
-- ServiceBroker Server: A server that acts as a service broker and conforms to the 
-[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md)
-specification. This software could be hosted within your own Kubernetes cluster
-or elsewhere.
-
-The remaining four concepts all map directly to new Kubernetes resource types
-that are provided by the service catalog API.
-
-- `ServiceBroker`: An in-cluster representation of a broker server. A resource of this
-type encapsulates connection details for that broker server. These are created
-and managed by cluster operators who wish to use that broker server to make new
-types of managed services available within their cluster.
-- `ServiceClass`: A *type* of managed service offered by a particular broker.
-Each time a new `ServiceBroker` resource is added to the cluster, the service catalog
-controller connects to the corresponding broker server to obtain a list of
-service offerings. A new `ServiceClass` resource will automatically be created
-for each.
-- `ServiceInstance`: A provisioned instance of a `ServiceClass`. These are created
-by cluster users who wish to make a new concrete _instance_ of some _type_ of
-managed service to make that available for use by one or more in-cluster
-applications. When a new `ServiceInstance` resource is created, the service catalog
-controller will connect to the appropriate broker server and instruct it to
-provision the service instance.
-- `ServiceInstanceCredential`: Access credential to a `ServiceInstance`. These
-are created by cluster users who wish for their applications to make use of a
-service `ServiceInstance`. Upon creation, the service catalog controller will
-create a Kubernetes `Secret` containing connection details and credentials for
-the service instance. Such `Secret`s can be mounted into pods as usual.
-
-These concepts and resources are the building blocks of the service catalog.
-
-## Step 3 - Installing the UPS ServiceBroker
+# Step 1 - Installing the UPS ServiceBroker
 
 In order to effectively demonstrate the service catalog, we will require a
 sample broker server. To proceed, we will deploy the [User Provided Service
@@ -164,57 +36,7 @@ To install with defaults:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-## Step 4 - Installing the Latest `kubectl`
-
-As with Kubernetes itself, interaction with the service catalog system is
-achieved through the `kubectl` command line interface. Chances are high that
-you already have this installed, however, the service catalog *requires*
-`kubectl` version 1.6 or newer.
-
-To proceed, we must:
-
-- Download and install `kubectl` version 1.6 or newer.
-- Configure `kubectl` to communicate with the service catalog's API server.
-
-To install `kubectl` follow the [standard instructions](https://kubernetes.io/docs/tasks/kubectl/install/).
-
-For example, on a mac,
-```console
-curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
-chmod +x ./kubectl
-```
-
-We'll assume hereafter that all `kubectl` commands are using this
-newly-installed executable.
-
-## Step 5 - Configuring `kubectl` to Talk to the API Server
-
-To configure `kubectl` to communicate with the service catalog API server, we'll have to
-get the IP address that points to the `Service` that sits in front of the API server pod(s).
-If you installed the catalog with one of the `helm install` commands above, then this service 
-will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace. 
-
-### Notes on Getting the IP Address
-
-How you get this IP address is highly dependent on your Kubernetes installation method. Regardless
-of how you do it, do not use the Cluster IP of the `Service`. The `Service` is created as a
-`NodePort` in this walkthrough, so you'll likely need to use the IP address of the node or one of
-the nodes in your cluster.
-
-### Setting up a New `kubectl` Context
-
-When you determine the IP address of this service, set its value into the `SVC_CAT_API_SERVER_IP`
-environment variable and then run the following commands:
-
-```console
-kubectl config set-cluster service-catalog --server=https://$SVC_CAT_API_SERVER_IP:30443 --insecure-skip-tls-verify=true
-kubectl config set-context service-catalog --cluster=service-catalog
-```
-
-Note: Your cloud provider may require firewall rules to allow your traffic get in.
-Please refer to the [Troubleshooting](#troubleshooting) section for details.
-
-## Step 6 - Creating a ServiceBroker Resource
+# Step 2 - Creating a ServiceBroker Resource
 
 Next, we'll register a broker server with the catalog by creating a new
 [`ServiceBroker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
@@ -276,7 +98,7 @@ Notice that the `status` field has been set to reflect that the broker server's
 catalog of service offerings has been successfully added to our cluster's
 service catalog.
 
-## Step 7 - Viewing ServiceClasses
+# Step 3 - Viewing ServiceClasses
 
 The controller created a `ServiceClass` for each service that the UPS broker
 provides. We can view the `ServiceClass` resources available in the cluster by
@@ -322,7 +144,7 @@ plans:
   externalID: 86064792-7ea2-467b-af93-ac9694d96d52
 ```
 
-## Step 8 - Provisioning a New ServiceInstance
+# Step 4 - Provisioning a New ServiceInstance
 
 Now that a `ServiceClass` named `user-provided-service` exists within our
 cluster's service catalog, we can provision an instance of that. We do so by
@@ -381,7 +203,7 @@ status:
     type: Ready
 ```
 
-## Step 9 - ServiceInstanceCredential to the ServiceInstance
+# Step 5 - ServiceInstanceCredential to the ServiceInstance
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
 we will create a [`ServiceInstanceCredential`](../contrib/examples/walkthrough/ups-instance-credential.yaml)
@@ -454,7 +276,7 @@ ups-instance-credential           Opaque                                2       
 
 Notice that a new `Secret` named `ups-instance-credential` has been created.
 
-## Step 10 - Unbinding from the ServiceInstance
+# Step 6 - Unbinding from the ServiceInstance
 
 Now, let's unbind from the instance.  To do this, we simply *delete* the
 `ServiceInstanceCredential` resource that we previously created:
@@ -472,7 +294,7 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-## Step 11 - Deprovisioning the ServiceInstance
+# Step 7 - Deprovisioning the ServiceInstance
 
 Now, we can deprovision the instance.  To do this, we simply *delete* the
 `ServiceInstance` resource that we previously created:
@@ -481,7 +303,7 @@ Now, we can deprovision the instance.  To do this, we simply *delete* the
 kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
-## Step 12 - Deleting the ServiceBroker
+# Step 8 - Deleting the ServiceBroker
 
 Next, we should remove the broker server, and the services it offers, from the catalog. We can do
 so by simply deleting the broker:
@@ -498,7 +320,7 @@ kubectl --context=service-catalog get serviceclasses
 No resources found
 ```
 
-## Step 13 - Final Cleanup
+# Step 9 - Final Cleanup
 
 To clean up, delete all our helm deployments:
 

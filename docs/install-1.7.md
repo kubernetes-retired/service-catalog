@@ -1,17 +1,28 @@
+# Installing Service Catalog on Clusters Running Kubernetes 1.7 and Above
 
-# Setting up Service Catalog for API Aggregation in Kubernetes
+Kubernetes 1.7 or higher clusters run the 
+[API Aggregator](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/),
+which is a specialized proxy server that sits in front of the core API Server.
 
-The aggregator is a server that sits in front of the core API
-Server. It allows API servers to come and go and register themselves
-on demand to increase the API that kubernetes offers. Instead of
-having multiple API servers on different ports, it allows them all to
-be combined and aggregated together. This is good for several
-reasons. It allows a client to only use a single API point. This
-provides a much better user experience. It allows the server to be
-secured once behind a single API point.
+The aggregator allows user-defined, Kubernetes compatible API servers to come 
+and go inside the cluster, and register themselves on demand to augment the 
+externally facing API that kubernetes offers.
+
+Instead of requiring the end-user to access multiple API servers, the API 
+aggregation system allows many servers to run inside the cluster, and combines
+all of their APIs into one externally facing API. 
+
+This system is very useful from an end-user's perspective, as it allows the 
+client to use a single API point with familiar tooling, authentication and 
+authorization.
+
+The Service Catalog utilizes API aggregation to present its API. Read on
+to discover how to install it.
+
+# Step 1 - TLS Certificates
 
 We need to provide a set of certificates to be provided as a
-certificate bundle to the APIService apiregistration endpoint.
+certificate bundle to the `APIService` resource.
 
 For development purposes, it is convenient to use the existing CA
 automatically set up by the kubernetes development environment. The
@@ -21,44 +32,57 @@ kubernetes infrastructure CAs or certificates. This script should be
 `source`ed to define all of the variables it contains in the current
 shell process.
 
-The aggregator is a new feature of kubernetes and is an alpha API
-running as a separate pod in kubernetes v1.6. The aggregator is
-enabled by default in kubernetes v1.7 as a beta API, and is the
-default secure endpoint directly integrated into the core kubernetes
-APIServer.
+For background on why we need to deal with certificates and CA's at all, you 
+may read the [the auth doc](auth.md) (this is not required, however).
 
-For background on why we're messing with certificates and CA's at all,
-please check [the auth doc](auth.md).
+## Install `cfssl` Tools
 
-# Steps
+Before we continue, you'll need to install the `cfssl` tools:
 
-## Prerequisites
-You need `cfssl` tools, install with `go get -u github.com/cloudflare/cfssl/cmd/...`.
+```console
+go get -u github.com/cloudflare/cfssl/cmd/...
+```
 
-It is recommended to create a fresh directory, such as `certs/`, to
-hold the generated config and certificates, before running the script.
+## Create a Certificates Directory
 
-## Check that aggregator is enabled
+Please create a fresh directory called `certs` to hold the configuration
+and certificates that we'll generate in the following steps:
 
-`kubectl api-versions` MUST list `apiregistration.k8s.io/v1beta1` (or
-`apiregistration.k8s.io/v1alpha1` if running in kubernetes v1.6)
+```console
+mkdir certs
+```
 
-This API Group will not show up if you are talking to the insecure
-port. The insecure port is not behind the aggregator. The aggregator
-does not support routing of requests to the insecure port. You must
-talk to the secure port, as the aggregator does not serve an API on
-the insecure port.
+## Check That the API Aggregator is Enabled
 
-## Variables used during the rest of the steps
+Run the following:
 
-These will be used during the steps and for the final `helm
-install`. They are key to set, as the signed certificates will be
-bound to the exact service name that is defined below as
-`SVCCAT_SERVICE_NAME`. `SVCCAT_SERVICE_NAME` will be the exact DNS
-entry that the generated certificate is bound to, so any deviation
-from the use of these defined variables will result in a certificate
-that is useless for the purposes of aggregation. All of the DNS
-entries must match.
+```console
+kubectl api-versions
+```
+
+This endpoint must list `apiregistration.k8s.io/v1beta1`. If it does not, your 
+Kubernetes installation is likely version 1.6 or previous. We recommend running
+1.7 or later, but if you decide to continue, please see the 
+[installation document for Kubernetes 1.6](./install-1.6.md).
+
+This `apiregistration.k8s.io/v1beta1` API Group will not show up if you are 
+connecting to the insecure port of the core API server, so be sure that your
+`kubectl` configuration file (often located at `~/.kube/config`) is pointing
+to an https endpoint.
+
+## Create Environment Variables
+
+The following environment variables will be used during the following steps.
+They will be passed to the certificate generation tools as well as the final
+`helm install` step.
+
+They are important to set, as the signed certificates will be bound to the 
+exact service name that is defined below as `SVCCAT_SERVICE_NAME`. 
+
+`SVCCAT_SERVICE_NAME` will be the exact DNS entry that the generated 
+certificate is bound to, so any deviation from the use of these defined 
+variables will result in a certificate that is useless for the purposes of 
+aggregation. All of the DNS entries must match.
 
 ```
 export HELM_RELEASE_NAME=catalog
@@ -66,20 +90,17 @@ export SVCCAT_NAMESPACE=catalog
 export SVCCAT_SERVICE_NAME=${HELM_RELEASE_NAME}-catalog-apiserver
 ```
 
-## Set up the certificate bundle
+## Create Our Own CA and Generate Keys
 
-The APIService expects a certificate bundle. We can create our own, or
+The `APIService` resource expects a certificate bundle. We can create our own, or
 pull the one from kube core for reuse.
 
 The certificate bundle is made up of Certificate Authority, a Serving
-Certificate, and the Serving Private Key.
+Certificate, and the Serving Private Key. 
 
-### Create our own new CA and generate keys
+Run the following to create a CA and generate keys:
 
-This is an example. It is written with zero understanding of the best
-practices of secure certificate generation.
-
-```
+```console
 export CA_NAME=ca
 
 export ALT_NAMES="\"${SVCCAT_SERVICE_NAME}.${SVCCAT_NAMESPACE}\",\"${SVCCAT_SERVICE_NAME}.${SVCCAT_NAMESPACE}.svc"\"
@@ -123,7 +144,7 @@ export SC_SERVING_CERT=apiserver.pem
 export SC_SERVING_KEY=apiserver-key.pem
 ```
 
-## Get the appropriate tls ca/cert/key from kube
+## Get the Appropriate TLS CA, Certificate and Key from Kubernetes
 
 If you are in a cloud provider environment, you most likely do not
 have access to the appropriate keys.
@@ -144,14 +165,14 @@ cp /var/run/kubernetes/${SERVINGCA_CERT} .
 cp /var/run/kubernetes/${SERVINGCA_KEY} .
 ```
 
-### Create a cfssl config file for a new signing key
+## Create a cfssl Config File For a New Signing Key
 
 ```
 export PURPOSE=server
 echo '{"signing":{"default":{"expiry":"43800h","usages":["signing","key encipherment","'${PURPOSE}'"]}}}' > "${PURPOSE}-ca-config.json"
 ```
 
-### Use the existing keys plus the config file to generate the new signing certificate and key
+## Use the Existing Keys and the Config File to Generate the New Signing Certificate and Key
 
 ```
 export NAME_SPACE=catalog
@@ -160,7 +181,7 @@ export ALT_NAMES="\"${SERVICE_NAME}.${NAME_SPACE}\",\"${SERVICE_NAME}.${NAME_SPA
 echo '{"CN":"'${SERVICE_NAME}'","hosts":['${ALT_NAMES}'],"key":{"algo":"rsa","size":2048}}' | cfssl gencert -ca=${SERVINGCA_CERT} -ca-key=${SERVINGCA_KEY} -config=server-ca-config.json - | cfssljson -bare apiserver
 ```
 
-### Final Key Names
+## Final Key Names
 
 These variables define the final names of the resulting keys.
 
@@ -170,7 +191,7 @@ export SC_SERVING_CERT=apiserver.pem
 export SC_SERVING_KEY=apiserver-key.pem
 ```
 
-## Install the Service Catalog Chart with Helm
+# Step 2 - Install the Service Catalog Chart with Helm
 
 Use helm to install the Service Catalog, associating it with the
 configured name ${HELM_NAME}, and into the specified namespace." This
@@ -223,9 +244,9 @@ make test-e2e
 
 # Summary
 
-Before installing the helm chart, run the script in contrib by
-`source`ing it, to define all of the necessary variables.
+Before installing the helm chart, run the script in the `contrib` directory
+by `source`ing it. From the root of this repository, run this command:
 
 ```shell
-source /contrib/svc-cat-apiserver-aggregation-tls-setup.sh
+source ./contrib/svc-cat-apiserver-aggregation-tls-setup.sh
 ```

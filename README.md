@@ -40,6 +40,9 @@ _somewhere_ in a simple way:
     application configuration primitives in Kubernetes: Services, Secrets, and
     ConfigMaps.
 
+For more introduction, installation and self-guided demo instructions, please
+see the [introduction](./docs/introduction.md) doc.
+
 For more details about the design and features of this project see the
 [design](docs/design.md) doc.
 
