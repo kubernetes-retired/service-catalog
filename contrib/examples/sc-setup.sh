@@ -3,20 +3,25 @@
 #           https://docs.google.com/document/d/1mcK4de5OIqpRhBmCf8G4Z-PdXJ5Io1W6L8Gcz5lmAN4/edit?ts=595ea422#heading=h.jvdpxx8x2tol
 # Note: the local cluster is assumed to be running.
 # Args:
-#   $1= path to s-c repo. Default is "~/go/src/k8s.io/service-catalog" or KPATH if defined.
-# Env vars:
-#   DEMO=y: (default) use the "demo-pod-provision" directory under contrib/examples for yaml files
-#   DEMO=n: use the "walkthrough" directory under contrib/examples for yaml files.
+#   $1= "demo" directory under contrib/examples/, eg "demo-pod-provision". Default is "walkthrough".
+#   $2= k8s cluster "user" name, eg. "myuser". Default is "kubernetes-admin"
+#
+# Assumptions:
+#   a. script is run from a service-catalog repo and it lives 2 dirs deeper than the repo root,
+#      eg. <root>/contrib/examples/<script>
+#   b. script is run from the master node. TODO: enhance script to be runnable from laptop session
+#   c. master node environment is able to run make
 #
 
-# Executes the passed-in kubectl cmd looking for all containers to be Running and returns an error if
+
+# Execute the passed-in kubectl cmd looking for all containers to be Running and returns an error if
 # the loop times-out, or if the cmd generates an error. The expected number of containers is the 2nd
 # number in the "x/y" string found under the Ready column.
 # args: $1= the command to execute which produces the "x/y" containers ready string for the target pod
 #       $2= the total wait time in seconds, default=5
 function waitForContainerRunning() {
   cmd="$1"
-  maxSleep=${2:-5}
+  maxSleep=${2:-300}
   elapsed=0
 
   echo
@@ -38,7 +43,7 @@ function waitForContainerRunning() {
   return 1
 }
 
-# Executes the passed-in kubectl cmd and compares its output with the passed-in match string.
+# Execute the passed-in kubectl cmd and compares its output with the passed-in match string.
 # Returns an error if the loop times-out or if the cmd generates an error. The output produced by
 # the command will be santitized, eg. removing spaces/tabs to better handle json or yaml.
 # args: $1= the command to execute which produces the string to be matched against.
@@ -50,7 +55,7 @@ function waitForMatch() {
   cmd="$1"
   match="$(tr -d "[:space:]" <<<"$2")"  # remove spaces etc.
   object="$3"
-  maxSleep=${4:-5}
+  maxSleep=${4:-300}
 
   echo
   echo "--> $cmd"
@@ -76,7 +81,7 @@ function waitForMatch() {
 #       $2= the total wait time in seconds, default=5
 function waitForCmdSuccess() {
   cmd="$1"
-  maxSleep=${2:-5}
+  maxSleep=${2:-300}
   elapsed=0
   out=""
 
@@ -86,7 +91,7 @@ function waitForCmdSuccess() {
 
   for (( elapsed=0; elapsed <= maxSleep; )) ; do
     out="$(eval $cmd 2>&1)"
-    (( $? == 0 )) && [[ "$out" != "No resources found."  ]] && return 0  # success
+    (( $? == 0 )) && [[ "$out" != "No resources found" ]] && return 0  # success
     increment=$(((elapsed/15)+1)) # sleep an extra second every 15s
     ((elapsed+=increment))
     echo "...waiting $elapsed sec for cmd \"$cmd\" to succeed..."
@@ -102,30 +107,26 @@ function waitForCmdSuccess() {
 ##
 echo
 
-# path to s-c repo
-sc_path="$1"
-[[ -z "$sc_path" && -n "$KPATH" ]] && sc_path="$(dirname $KPATH)/service-catalog"
-[[ -z "$sc_path" ]] && sc_path="~/go/src/k8s.io/service-catalog"
-if [[ ! -d "$sc_path" ]] ; then
-  echo "$sc_path is not a directory or does not exist"
-  exit 1
-fi
-
-# env vars
-yaml_dir="demo-pod-provision"
-[[ "$DEMO" == "n" || "$DEMO" == "no" ]] && yaml_dir="walkthrough"
-yaml_path="contrib/examples/$yaml_dir"
+# path to s-c repo and demo dir
+sc_path="$(realpath $(dirname $0)/../../)"  # assumes this script is in <sc-repo>/contrib/examples
+demo_dir="$1"
+[[ -z "$demo_dir" ]] && demo_dir="walkthrough"
+yaml_path="contrib/examples/$demo_dir"
 if [[ ! -d "$sc_path/$yaml_path" ]] ; then
   echo "$sc_path/$yaml_path is not a directory or does not exist"
   exit 1
 fi
 
+# user
+user="$2"
+[[ -z "$user" ]] && user="kubernetes-admin"
 
 echo "******* begin service-catalog setup ***********"
-echo "  assumes local-up-cluster is running"
+echo "  assumes kubectl can access your kubernetes cluster"
 echo "  s-c repo path: $sc_path"
-echo "  yaml path    : $yaml_path  (DEMO=\"$DEMO\")"
-sleep 2
+echo "  yaml path    : $yaml_path"
+echo "  user         : $user"
+sleep 3
 
 echo
 echo "** Verifying pre-requisits"
@@ -162,12 +163,11 @@ kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-adm
 kubectl create clusterrolebinding catalog --clusterrole=cluster-admin --serviceaccount=catalog:default
 kubectl create clusterrolebinding ups-broker --clusterrole=cluster-admin --serviceaccount=ups-broker:default
 
-# config kubectl to talk to s-c api server in local cluster
-ip=$(hostname -i)
-###kubectl config set-cluster service-catalog --server=http://$ip:30080
-###kubectl config set-context service-catalog --cluster=service-catalog
-kubectl config set-cluster service-catalog --server="https://$ip:30443" --insecure-skip-tls-verify=true
-kubectl config set-context service-catalog --cluster=service-catalog --user=myself
+# config kubectl to talk to s-c api server
+master_ip=$(hostname -i)
+kubectl config set-cluster service-catalog --server="https://$master_ip:30443" \
+        --insecure-skip-tls-verify=true
+kubectl config set-context service-catalog --cluster=service-catalog --user=$user
 
 # start helm steps
 echo
@@ -196,18 +196,27 @@ if (( $? != 0 )) ; then
   exit 1
 fi
 
-# deploy object broker
+# deploy broker
+pushd $sc_path
+echo
+echo "--> make user-broker user-broker-image"
+echo
+make user-broker user-broker-image
+if (( $? != 0 )) ; then
+  echo "make failed"
+  exit 1
+fi
+popd
 echo
 echo "--> helm install charts/ups-broker --name ups-broker --namespace ups-broker"
 echo
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 waitForCmdSuccess "kubectl get -n ups-broker service,deployment" 15
 (( $? != 0 )) && exit 1
-# capture cluster-ip
+# capture cluster ip
 cluster_ip="$(kubectl get -n ups-broker service | grep ups-broker | awk '{print $3}')"
 
-# create broker resource
-cd $sc_path
+# create catalog pods
 echo "--> kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml"
 echo
 kubectl --context=service-catalog create -f $yaml_path/ups-broker.yaml
