@@ -34,6 +34,7 @@ layout:
     │   └── hack                # Non-build related scripts
     │   └── jenkins             # Jenkins configuration
     │   └── pkg                 # Contrib golang code
+    │   └── travis              # Travis configuration
     ├── docs                    # Documentation
     ├── pkg                     # Contains all non-"main" Go packages
     ├── plugin                  # Plugins for API server
