@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -142,6 +143,7 @@ func TestCreateWithNoNamespace(t *testing.T) {
 		Spec: sc.ServiceBrokerSpec{
 			URL:            "http://my-awesome-broker.io",
 			RelistBehavior: "Duration",
+			RelistDuration: &metav1.Duration{15 * time.Minute},
 		},
 	}
 	key, err := keyer.Key(request.NewContext(), name)
@@ -339,6 +341,7 @@ func TestGetWithNoNamespace(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: sc.ServiceBrokerSpec{
 			RelistBehavior: "Duration",
+			RelistDuration: &metav1.Duration{15 * time.Minute},
 		},
 	})
 	key, err := keyer.Key(request.NewContext(), name)
@@ -511,6 +514,7 @@ func TestGetListWithNoNamespace(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: sc.ServiceBrokerSpec{
 			RelistBehavior: "Duration",
+			RelistDuration: &metav1.Duration{15 * time.Minute},
 		},
 	})
 	list := &sc.ServiceBrokerList{}
@@ -882,6 +886,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 		},
 		Spec: sc.ServiceBrokerSpec{
 			RelistBehavior: "Duration",
+			RelistDuration: &metav1.Duration{15 * time.Minute},
 		},
 	}
 	brokerWithFinalizers := *brokerNoFinalizers
@@ -1005,6 +1010,7 @@ func TestWatchWithNoNamespace(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: sc.ServiceBrokerSpec{
 			RelistBehavior: "Duration",
+			RelistDuration: &metav1.Duration{15 * time.Minute},
 		},
 	}
 	// send an unversioned object into the watch test. it sends this object to the
@@ -1067,12 +1073,14 @@ func TestWatchListWithNoNamespace(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s1", name)},
 				Spec: sc.ServiceBrokerSpec{
 					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 * time.Minute},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s2", name)},
 				Spec: sc.ServiceBrokerSpec{
 					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 * time.Minute},
 				},
 			},
 		},
