@@ -192,6 +192,10 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			// Set the bytes field on the RawExtension
 			r.Raw = bytes
 		},
+		func(bs *servicecatalog.ServiceBrokerSpec, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			bs.RelistBehavior = "Duration"
+		},
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.ExternalID = uuid.NewV4().String()

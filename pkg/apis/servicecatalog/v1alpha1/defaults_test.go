@@ -68,6 +68,22 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 	return obj3
 }
 
+func TestSetDefaultServiceBroker(t *testing.T) {
+	b := &versioned.ServiceBroker{}
+	obj2 := roundTrip(t, runtime.Object(b))
+	b2 := obj2.(*versioned.ServiceBroker)
+
+	if b2.Spec.RelistBehavior == "" {
+		t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got none")
+	}
+
+	//incorrectDefaultRelistBehavior := b2.Spec.RelistBehavior != "" &&
+	//b2.Spec.RelistBehavior != versioned.ServiceBrokerRelistBehaviorDuration
+	//if incorrectDefaultRelistBehavior {
+	//t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got something else")
+	//}
+}
+
 func TestSetDefaultServiceInstance(t *testing.T) {
 	i := &versioned.ServiceInstance{}
 	obj2 := roundTrip(t, runtime.Object(i))

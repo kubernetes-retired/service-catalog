@@ -25,6 +25,16 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
 }
 
+func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
+	if spec.RelistBehavior == "" {
+		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
+	}
+
+	//if spec.RelistBehavior == ServiceBrokerRelistBehaviorDuration {
+	//spec.RelistDuration = &metav1.Duration{15 * time.Minute}
+	//}
+}
+
 func SetDefaults_ServiceInstanceSpec(spec *ServiceInstanceSpec) {
 	if spec.ExternalID == "" {
 		spec.ExternalID = uuid.NewV4().String()
