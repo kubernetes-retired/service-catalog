@@ -133,8 +133,10 @@ authentication and authorization](./auth.md).
 
 ## Do Overs
 
-If you make a mistake somewhere along the way in this walk-through and want to start over,
-check out the "Cleaning Up" section below. Follow those instructions before you start over.
+If you make a mistake somewhere along the way in this walk-through and want to 
+start over, check out the 
+[Final Cleanup](./walkthrough-1.6.md#Step-9---Final-Cleanup) section in the 
+walkthrough document. Follow those instructions before you start over.
 
 ## Step 3 - Configuring `kubectl` to Talk to the API Server
 
