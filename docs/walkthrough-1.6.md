@@ -11,9 +11,9 @@ deprecated and may be removed at any time.
 If you are running a Kubernetes cluster running version 1.7 or later, please 
 see [walkthrough-1.7.md](./walkthrough-1.7.md).
 
-This document assumes that you've installed Service Catalog onto your cluster.
+__Note: This document assumes that you've installed Service Catalog onto your cluster.
 If you haven't, please see the 
-[installation instructions for 1.6](./install-1.6.md).
+[installation instructions for 1.6](./install-1.6.md).__
 
 # Step 1 - Installing the UPS ServiceBroker
 
