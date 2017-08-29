@@ -1,4 +1,4 @@
-# Service Catalog Demonstration Walkthrough
+# Service Catalog Demonstration Walkthrough (DEPRECATED)
 
 This document outlines the basic features of the service catalog by walking
 through a short demo.
