@@ -37,7 +37,13 @@ cd certs
 We'll assume that you're operating from this `docs/certs` directory for the 
 remainder of this document.
 
-Next, create the certs:
+Next, install the `cfssl` toolchain (which the following script uses):
+
+```console
+go get -u github.com/cloudflare/cfssl/cmd/...
+```
+
+Finally, create the certs:
 
 ```console
 source ../../contrib/svc-cat-apiserver-aggregation-tls-setup.sh
