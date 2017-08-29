@@ -93,7 +93,7 @@ currently support the following implementations:
 
 1. Etcd 3
 2. Third Party Resources (also, known as TPRs) - this is an _alpha_ feature 
-right now. It has known issues and may be removed at any time
+right now. It has known issues and may be removed at any time.
 
 The first implementation requires that the API server has access to an Etcd 3 cluster, and the
 second only requires access to the Kubernetes API to store TPRs.
