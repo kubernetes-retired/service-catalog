@@ -38,6 +38,9 @@ _somewhere_ in a simple way:
     contain information necessary to connect to and authenticate to the
     service instance.
 
+For more introduction, including installation and self-guided demo 
+instructions, please see the [introduction](./docs/introduction.md) doc.
+
 For more details about the design and features of this project see the
 [design](docs/design.md) doc.
 

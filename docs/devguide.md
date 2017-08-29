@@ -267,5 +267,5 @@ the Kubernetes cluster as third party resources.
 
 ## Demo walkthrough
 
-Check out the [walk-through](walkthrough.md) for a detailed guide of an example
-deployment.
+Check out the [introduction](./introduction.md) to get started with 
+installation and a self-guided demo.
