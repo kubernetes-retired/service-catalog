@@ -53,7 +53,7 @@ of Service Catalog.
 ## Kubernetes 1.7 and Above
 
 - [Installation instructions](./install-1.7.md)
-- [Demo instructions](./walkthrough-1.7.md)
+- [Demo instructions](./walkthrough-1.7.md) (this is a work in progress)
 
 ## Kubernetes 1.6 (Deprecated)
 
