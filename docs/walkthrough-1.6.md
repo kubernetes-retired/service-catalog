@@ -204,7 +204,7 @@ status:
     type: Ready
 ```
 
-# Step 5 - ServiceInstanceCredential to the ServiceInstance
+# Step 5 - Requesting a `ServiceInstanceCredential` to use the `ServiceInstance`
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
 we will create a [`ServiceInstanceCredential`](../contrib/examples/walkthrough/ups-instance-credential.yaml)
