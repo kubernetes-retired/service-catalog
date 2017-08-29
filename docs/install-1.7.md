@@ -50,6 +50,7 @@ and certificates that we'll generate in the following steps:
 
 ```console
 mkdir certs
+cd certs
 ```
 
 ## Check That the API Aggregator is Enabled
