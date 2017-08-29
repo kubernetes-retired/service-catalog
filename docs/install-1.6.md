@@ -82,7 +82,7 @@ newly-installed executable.
 The service catalog is packaged as a Helm chart located in the
 [charts/catalog](../charts/catalog) directory in this repository, and supports a
 wide variety of customizations which are detailed in that directory's
-[README.md](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/README.md).
+[README.md](../charts/catalog/README.md).
 
 ## The Service Catalog Data Store
 
