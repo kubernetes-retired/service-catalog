@@ -18,6 +18,82 @@ authentication and authorization.
 
 The Service Catalog utilizes API aggregation to present its API.
 
+# Prerequisites
+
+# Step 1 - Prerequisites
+
+## Starting Kubernetes with DNS
+
+You *must* have a Kubernetes cluster with cluster DNS enabled. We can't list
+instructions here for enabling cluster DNS for all Kubernetes cluster
+installations, but here are a few notes:
+
+* If you are using a cloud-based Kubernetes cluster or minikube, you likely 
+have cluster DNS enabled already.
+* If you are using `hack/local-up-cluster.sh`, ensure the
+`KUBE_ENABLE_CLUSTER_DNS` environment variable is set and then run the install
+script
+
+## Helm
+
+You *must* use [Helm](http://helm.sh/) v2 or newer in the installation steps
+below.
+
+If you already have Helm v2 or newer, execute `helm init` (if you haven't
+already) to install Tiller (the server-side component of Helm), and you should
+be done with Helm setup.
+
+If you don't already have Helm v2, see the
+[installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
+
+## RBAC
+
+Your Kubernetes cluster must have RBAC enabled, and your Tiller pod needs to
+have `cluster-admin` access. If you are using Minikube, make sure to run
+your `minikube start` command with this flag:
+
+```console
+minikube start --extra-config=apiserver.Authorization.Mode=RBAC
+```
+
+AssumingBy default, `helm init` installs the Tiller pod into the `kube-system`
+namespace, with Tiller configured to use the `default` service account.
+
+Configure Tiller with `cluster-admin` access with the following command:
+
+```console
+kubectl create clusterrolebinding tiller-cluster-admin \
+    --clusterrole=cluster-admin \
+    --serviceaccount=kube-system:default
+```
+
+If you used the `--tiller-namespace` or `--service-account` flags when running 
+`helm init`, the `--serviceaccount` flag in the previous command needs to be 
+adjusted to reference the appropriate namespace and ServiceAccount name.
+
+## A Recent `kubectl`
+
+As with Kubernetes itself, interaction with the service catalog system is
+achieved through the `kubectl` command line interface. Chances are high that
+you already have this installed, however, the service catalog *requires*
+`kubectl` version 1.6 or newer.
+
+To proceed, we must:
+
+- Download and install `kubectl` version 1.6 or newer.
+- Configure `kubectl` to communicate with the service catalog's API server.
+
+To install `kubectl` follow the [standard instructions](https://kubernetes.io/docs/tasks/kubectl/install/).
+
+For example, on a mac,
+```console
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
+chmod +x ./kubectl
+```
+
+We'll assume that all `kubectl` commands are using this newly-installed 
+executable.
+
 # Step 1 - Generate TLS Certificates
 
 We provide a script to do all of the steps needed to set up TLS certificates
