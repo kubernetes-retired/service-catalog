@@ -621,6 +621,11 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+
+			err = c.finishPollingServiceInstance(instance)
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 
@@ -642,7 +647,12 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		s := fmt.Sprintf("Error polling last operation for instance %v/%v: %v", instance.Namespace, instance.Name, errText)
 		glog.V(4).Info(s)
 		c.recorder.Event(instance, api.EventTypeWarning, errorPollingLastOperationReason, s)
-		return err
+
+		err = c.continuePollingServiceInstance(instance)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
 	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, response.State, response.Description)
@@ -685,7 +695,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
+		glog.V(4).Infof("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
 	case osb.StateSucceeded:
 		// Update the instance to reflect that an async operation is no longer
 		// in progress.

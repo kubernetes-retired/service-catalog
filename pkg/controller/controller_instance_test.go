@@ -1016,8 +1016,8 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	}
 
 	err := testController.pollServiceInstanceInternal(instance)
-	if err == nil {
-		t.Fatalf("Expected pollServiceInstanceInternal to fail while in progress")
+	if err != nil {
+		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
@@ -1031,11 +1031,6 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
-
-	// Make sure we get an error which means it will get requeued.
-	if !strings.Contains(err.Error(), "still in progress") {
-		t.Fatalf("pollServiceInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
-	}
 
 	// there should have been 1 action to update the status with the last operation description
 	actions := fakeCatalogClient.Actions()
@@ -1067,10 +1062,19 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
 	if err != nil {
 		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1112,10 +1116,19 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
 	if err != nil {
 		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1158,10 +1171,19 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
-	if err == nil {
-		t.Fatalf("Expected pollServiceInstanceInternal to fail while in progress")
+	if err != nil {
+		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1171,11 +1193,6 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 		ServiceID:  strPtr(serviceClassGUID),
 		PlanID:     strPtr(planGUID),
 	})
-
-	// Make sure we get an error which means it will get requeued.
-	if !strings.Contains(err.Error(), "still in progress") {
-		t.Fatalf("pollServiceInstanceInternal failed but not with expected error, expected %q got %q", "still in progress", err)
-	}
 
 	// there should have been 1 action to update the instance status with the last operation
 	// description
@@ -1207,10 +1224,19 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
 	if err != nil {
 		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1258,10 +1284,19 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
 	if err != nil {
 		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1311,10 +1346,19 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
 	if err != nil {
 		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1362,10 +1406,19 @@ func TestPollServiceInstanceServiceBrokerError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
 
 	err := testController.pollServiceInstanceInternal(instance)
-	if err == nil {
-		t.Fatal("expected pollServiceInstanceInternal to return an error")
+	if err != nil {
+		t.Fatalf("pollServiceInstanceInternal failed: %v", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -1408,14 +1461,24 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 
 	instance := getTestServiceInstanceAsyncDeprovisioningWithFinalizer(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
 	// updateServiceInstanceFinalizers fetches the latest object.
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
 
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
 	err := testController.pollServiceInstanceInternal(instance)
 	if err != nil {
 		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
