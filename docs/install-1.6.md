@@ -27,14 +27,14 @@ KUBE_ENABLE_CLUSTER_DNS=true hack/local-up-cluster.sh -O
 
 ## Helm
 
-You *must* use [Helm](http://helm.sh/) v2 or newer in the installation steps
+You *must* use [Helm](http://helm.sh/) v2.5.0 or newer in the installation steps
 below.
 
-If you already have Helm v2 or newer, execute `helm init` (if you haven't
+If you already have Helm v2.5.0 or newer, execute `helm init` (if you haven't
 already) to install Tiller (the server-side component of Helm), and you should
 be done with Helm setup.
 
-If you don't already have Helm v2, see the
+If you don't already have Helm v2.5.0, see the
 [installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
 
 If your kubernetes cluster has
