@@ -177,6 +177,10 @@ configured name ${HELM_NAME}, and into the specified namespace." This
 command also enables authentication and aggregation and provides the
 keys we just generated inline.
 
+The installation commands vary slightly between Linux and Mac OS X because of
+the versions of the `base64` command (Linux has GNU base64, Mac OS X has BSD 
+base64). If you're installing from a Linux based machine, run this:
+
 ```
 helm install charts/catalog \
     --name ${HELM_RELEASE_NAME} --namespace ${SVCCAT_NAMESPACE} \
@@ -185,7 +189,19 @@ helm install charts/catalog \
         --set apiserver.tls.ca=$(base64 --wrap 0 ${SC_SERVING_CA}) \
         --set apiserver.tls.cert=$(base64 --wrap 0 ${SC_SERVING_CERT}) \
         --set apiserver.tls.key=$(base64 --wrap 0 ${SC_SERVING_KEY})
-``` 
+```
+
+If you're on a Mac OS X based machine, run this:
+
+```
+helm install charts/catalog \
+    --name ${HELM_RELEASE_NAME} --namespace ${SVCCAT_NAMESPACE} \
+    --set apiserver.auth.enabled=true \
+        --set useAggregator=true \
+        --set apiserver.tls.ca=$(base64 ${SC_SERVING_CA}) \
+        --set apiserver.tls.cert=$(base64 ${SC_SERVING_CERT}) \
+        --set apiserver.tls.key=$(base64 ${SC_SERVING_KEY})
+```
 
 `servicecatalog.k8s.io/v1alpha1` should show up under `kubectl
 api-versions` almost immediately, but kubectl will be slow to respond
