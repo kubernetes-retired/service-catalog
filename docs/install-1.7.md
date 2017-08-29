@@ -83,7 +83,7 @@ exact service name that is defined below as `SVCCAT_SERVICE_NAME`.
 `SVCCAT_SERVICE_NAME` will be the exact DNS entry that the generated 
 certificate is bound to, so any deviation from the use of these defined 
 variables will result in a certificate that is useless for the purposes of 
-aggregation. All of the DNS entries must match.
+aggregation.
 
 ```
 export HELM_RELEASE_NAME=catalog
