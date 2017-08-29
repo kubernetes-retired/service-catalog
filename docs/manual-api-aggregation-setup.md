@@ -88,7 +88,7 @@ There are two options to get a CA and keys.
 The `APIService` resource expects a certificate bundle. We can create our own, 
 or pull the one core Kubernetes API server for reuse.
 
-The certificate bundle is made up of Certificate Authority, a Serving
+The certificate bundle is made up of a Certificate Authority (CA), a Serving
 Certificate, and the Serving Private Key. 
 
 Run the following to create a CA and generate keys:
