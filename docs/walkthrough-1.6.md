@@ -12,7 +12,8 @@ If you are running a Kubernetes cluster running version 1.7 or later, please
 see [walkthrough-1.7.md](./walkthrough-1.7.md).
 
 This document assumes that you've installed Service Catalog onto your cluster.
-If you haven't, please see [install-1.6.md](./install-1.6.md).
+If you haven't, please see the 
+[installation instructions for 1.6](./install-1.6.md).
 
 # Step 1 - Installing the UPS ServiceBroker
 

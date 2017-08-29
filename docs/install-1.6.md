@@ -6,7 +6,7 @@ only officially supports versions 1.7 and later, these instructions are
 deprecated and may be removed at any time.
 
 If you are running a Kubernetes cluster running version 1.7 or later, please 
-see [install-1.7.md](./install-1.7.md).
+see the [installation instructions for 1.7](./install-1.7.md).
 
 # Step 1 - Prerequisites
 
