@@ -277,9 +277,9 @@ ups-instance-credential           Opaque                                2       
 
 Notice that a new `Secret` named `ups-instance-credential` has been created.
 
-# Step 6 - Unbinding from the ServiceInstance
+# Step 6 - Deleting the `ServiceInstanceCredentials`
 
-Now, let's unbind from the instance.  To do this, we simply *delete* the
+Now, let's unbind from the provisioned instance. To do this, we simply *delete* the
 `ServiceInstanceCredential` resource that we previously created:
 
 ```console
