@@ -9,7 +9,7 @@ and go inside the cluster, and register themselves on demand to augment the
 externally facing API that kubernetes offers.
 
 Instead of requiring the end-user to access multiple API servers, the API 
-aggregation system allows many servers to run inside the cluster, and combines
+aggregation system allows many API servers to run inside the cluster, and combines
 all of their APIs into one externally facing API. 
 
 This system is very useful from an end-user's perspective, as it allows the 
