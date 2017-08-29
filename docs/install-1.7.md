@@ -13,8 +13,8 @@ aggregation system allows many servers to run inside the cluster, and combines
 all of their APIs into one externally facing API. 
 
 This system is very useful from an end-user's perspective, as it allows the 
-client to use a single API point with familiar tooling, authentication and 
-authorization.
+client to use a single API point with familiar, consistent tooling, 
+authentication and authorization.
 
 The Service Catalog utilizes API aggregation to present its API. Read on
 to discover how to install it.
