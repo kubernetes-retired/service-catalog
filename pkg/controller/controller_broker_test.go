@@ -128,11 +128,11 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			reconcile: false,
 		},
 		{
-			name: "ready, interval not elapsed, checksum changed",
+			name: "ready, interval not elapsed, spec changed",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
-				cs := "22081-9471-471"
-				broker.Status.Checksum = &cs
+				broker.Generation = 2
+				broker.Status.ReconciledGeneration = 1
 				return broker
 			}(),
 			now:       time.Now(),

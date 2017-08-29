@@ -65,28 +65,3 @@ func TestServiceInstanceCredentialSpecChecksum(t *testing.T) {
 	}
 }
 
-// TestServiceBrokerSpecChecksum tests than an internal and v1alpha1 checksum of the same object are equivalent
-func TestServiceBrokerSpecChecksum(t *testing.T) {
-	spec := servicecatalog.ServiceBrokerSpec{
-		URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
-		AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-			Basic: &servicecatalog.BasicAuthConfig{
-				SecretRef: &v1.ObjectReference{
-					Namespace: "test-ns",
-					Name:      "test-secret",
-				},
-			},
-		},
-		InsecureSkipTLSVerify: true,
-		CABundle:              []byte{13, 24, 35, 46},
-	}
-
-	unversionedChecksum := unversioned.ServiceBrokerSpecChecksum(spec)
-	versionedSpec := v1alpha1.ServiceBrokerSpec{}
-	v1alpha1.Convert_servicecatalog_ServiceBrokerSpec_To_v1alpha1_ServiceBrokerSpec(&spec, &versionedSpec, nil /* conversionScope */)
-	versionedChecksum := checksumv1alpha1.ServiceBrokerSpecChecksum(versionedSpec)
-
-	if e, a := unversionedChecksum, versionedChecksum; e != a {
-		t.Fatalf("versioned and unversioned checksums should match; expected %v, got %v", e, a)
-	}
-}

@@ -20,7 +20,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
@@ -75,20 +74,6 @@ func ServiceInstanceCredentialSpecChecksum(spec servicecatalog.ServiceInstanceCr
 
 	specString += fmt.Sprintf("externalID: %v\n", spec.ExternalID)
 
-	sum := sha256.Sum256([]byte(specString))
-	return fmt.Sprintf("%x", sum)
-}
-
-// ServiceBrokerSpecChecksum calculates a sha256 hash for the given BrokerSpec based on
-// the following fields:
-// - URL
-// - AuthInfo (may be nil, but special handling is unnecessary with %v)
-func ServiceBrokerSpecChecksum(spec servicecatalog.ServiceBrokerSpec) string {
-	specString := fmt.Sprintf("URL: %v\n", spec.URL)
-	specString += fmt.Sprintf("AuthInfo: %v\n", spec.AuthInfo)
-	specString += fmt.Sprintf("InsecureSkipTLSVerify: %v\n", spec.InsecureSkipTLSVerify)
-	specString += fmt.Sprintf("CABundle: %v\n", spec.CABundle)
-	glog.V(5).Infof("specString: %v", specString)
 	sum := sha256.Sum256([]byte(specString))
 	return fmt.Sprintf("%x", sum)
 }

@@ -234,11 +234,6 @@ func DeepCopy_servicecatalog_ServiceBrokerStatus(in interface{}, out interface{}
 				}
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }

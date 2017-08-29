@@ -20,11 +20,14 @@ import (
 	"testing"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func brokerWithFalseReadyCondition() *sc.ServiceBroker {
+func brokerWithOldSpec() *sc.ServiceBroker {
 	return &sc.ServiceBroker{
+		ObjectMeta: metav1.ObjectMeta{
+			Generation: 1,
+		},
 		Spec: sc.ServiceBrokerSpec{
 			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		},
@@ -39,20 +42,10 @@ func brokerWithFalseReadyCondition() *sc.ServiceBroker {
 	}
 }
 
-func brokerWithTrueReadyCondition() *sc.ServiceBroker {
-	return &sc.ServiceBroker{
-		Spec: sc.ServiceBrokerSpec{
-			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
-		},
-		Status: sc.ServiceBrokerStatus{
-			Conditions: []sc.ServiceBrokerCondition{
-				{
-					Type:   sc.ServiceBrokerConditionReady,
-					Status: sc.ConditionTrue,
-				},
-			},
-		},
-	}
+func brokerWithNewSpec() *sc.ServiceBroker {
+	b := brokerWithOldSpec()
+	b.Spec.URL = "new"
+	return b
 }
 
 // TestServiceBrokerStrategyTrivial is the testing of the trivial hardcoded
@@ -72,8 +65,8 @@ func TestServiceBrokerStrategyTrivial(t *testing.T) {
 	}
 }
 
-// TestServiceBrokerCreate
-func TestServiceBroker(t *testing.T) {
+// TestBrokerCreate
+func TestBroker(t *testing.T) {
 	// Create a broker or brokers
 	broker := &sc.ServiceBroker{
 		Spec: sc.ServiceBrokerSpec{
@@ -95,75 +88,40 @@ func TestServiceBroker(t *testing.T) {
 	}
 }
 
-func TestValidateUpdateStatusPrepareForUpdate(t *testing.T) {
-	// The test cases below test PrepareForUpdate, which takes a new broker
-	// and an older broker. In PrepareForUpdate if the new broker ready
-	// condition is set to true, the status checksum field is set to return
-	// the checksum for the spec associated with that broker.
-	// The test cases are proving:
-	// - if ready condition isn't set, nothing changes
-	// - if ready condition isn't set and checksum was previously set,
-	//   ensure that the checksum is being copied properly
-	// - if ready condition is set (and checksum wasn't previously set),
-	//   ensure that the checksum is being calculated properly
-	// Note that when transitioning to the ready condition, it does not
-	// matter if the checksum was previously set.
-	//
-	// Anonymous struct fields:
-	// name: short description of the test
-	// old: the old broker to compare against new
-	// newer: the new broker to compare against old
-	// shouldChecksum: whether or not the checksum should be calculated and verified
-	// checksumShouldBeSet: whether or not checksum field in newer broker should be set
+// TestBrokerUpdate tests that generation is incremented correctly when the
+// spec of a Broker is updated.
+func TestBrokerUpdate(t *testing.T) {
 	cases := []struct {
-		name                string
-		old                 *sc.ServiceBroker
-		newer               *sc.ServiceBroker
-		shouldChecksum      bool
-		checksumShouldBeSet bool
+		name                      string
+		older                     *sc.ServiceBroker
+		newer                     *sc.ServiceBroker
+		shouldGenerationIncrement bool
 	}{
 		{
-			name:                "not ready -> not ready",
-			old:                 brokerWithFalseReadyCondition(),
-			newer:               brokerWithFalseReadyCondition(),
-			shouldChecksum:      false,
-			checksumShouldBeSet: false,
+			name:  "no spec change",
+			older: brokerWithOldSpec(),
+			newer: brokerWithOldSpec(),
+			shouldGenerationIncrement: false,
 		},
 		{
-			name: "not ready -> not ready, checksum already set",
-			old: func() *sc.ServiceBroker {
-				b := brokerWithFalseReadyCondition()
-				cs := "22081-9471-471"
-				b.Status.Checksum = &cs
-				return b
-			}(),
-			newer:               brokerWithFalseReadyCondition(),
-			shouldChecksum:      false,
-			checksumShouldBeSet: true,
-		},
-		{
-			name:           "not ready -> ready",
-			old:            brokerWithFalseReadyCondition(),
-			newer:          brokerWithTrueReadyCondition(),
-			shouldChecksum: true,
+			name:  "spec change",
+			older: brokerWithOldSpec(),
+			newer: brokerWithNewSpec(),
+			shouldGenerationIncrement: true,
 		},
 	}
 
-	for _, tc := range cases {
-		strategy := brokerStatusUpdateStrategy
-		strategy.PrepareForUpdate(nil /* api context */, tc.newer, tc.old)
+	for i := range cases {
+		brokerRESTStrategies.PrepareForUpdate(nil, cases[i].newer, cases[i].older)
 
-		if tc.shouldChecksum {
-			if tc.newer.Status.Checksum == nil {
-				t.Errorf("%v: Checksum should have been set", tc.name)
-				continue
+		if cases[i].shouldGenerationIncrement {
+			if e, a := cases[i].older.Generation+1, cases[i].newer.Generation; e != a {
+				t.Fatalf("%v: expected %v, got %v for generation", cases[i].name, e, a)
 			}
-
-			if e, a := checksum.ServiceBrokerSpecChecksum(tc.newer.Spec), *tc.newer.Status.Checksum; e != a {
-				t.Errorf("%v: Checksum was incorrect; expected %v got %v", tc.name, e, a)
+		} else {
+			if e, a := cases[i].older.Generation, cases[i].newer.Generation; e != a {
+				t.Fatalf("%v: expected %v, got %v for generation", cases[i].name, e, a)
 			}
-		} else if tc.checksumShouldBeSet != (tc.newer.Status.Checksum != nil) {
-			t.Errorf("%v: expected checksum to be populated, but was nil", tc.name)
 		}
 	}
 }
