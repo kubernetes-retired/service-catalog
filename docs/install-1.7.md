@@ -91,7 +91,11 @@ export SVCCAT_NAMESPACE=catalog
 export SVCCAT_SERVICE_NAME=${HELM_RELEASE_NAME}-catalog-apiserver
 ```
 
-## Create Our Own CA and Generate Keys
+## Get a Certificate Authority (CA) and Keys
+
+There are two options to get a CA and keys.
+
+### Option 1 - Create Our Own CA and Generate Keys
 
 The `APIService` resource expects a certificate bundle. We can create our own, 
 or pull the one core Kubernetes API server for reuse.
@@ -145,7 +149,7 @@ export SC_SERVING_CERT=apiserver.pem
 export SC_SERVING_KEY=apiserver-key.pem
 ```
 
-## Get the Appropriate TLS CA, Certificate and Key from Kubernetes
+### Options 2 - Get the Appropriate TLS CA, Certificate and Key from Kubernetes
 
 If you are in a cloud provider environment, you most likely do not
 have access to the appropriate keys.
