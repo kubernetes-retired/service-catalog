@@ -22,7 +22,7 @@ DNS enabled already.
 `KUBE_ENABLE_CLUSTER_DNS` environment variable is set as follows:
 
 ```console
-hack/local-up-cluster.sh -O
+KUBE_ENABLE_CLUSTER_DNS=true hack/local-up-cluster.sh -O
 ```
 
 ## Helm
