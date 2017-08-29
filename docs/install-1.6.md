@@ -147,10 +147,10 @@ will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace.
 
 ### Notes on Getting the IP Address
 
-How you get this IP address is highly dependent on your Kubernetes installation method. Regardless
-of how you do it, do not use the Cluster IP of the `Service`. The `Service` is created as a
-`NodePort` in this walkthrough, so you'll likely need to use the IP address of the node or one of
-the nodes in your cluster.
+How you get this IP address is highly dependent on your Kubernetes installation
+method. Regardless of how you do it, do not use the Cluster IP of the 
+`Service`. The `Service` is created as a `NodePort` in this walkthrough, you 
+will need to use the address of one of the nodes in your cluster.
 
 ### Setting up a New `kubectl` Context
 
