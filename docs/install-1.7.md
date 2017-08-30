@@ -144,7 +144,7 @@ helm install ../../charts/catalog \
         --set apiserver.tls.ca=$(base64 --wrap 0 ${SC_SERVING_CA}) \
         --set apiserver.tls.cert=$(base64 --wrap 0 ${SC_SERVING_CERT}) \
         --set apiserver.tls.key=$(base64 --wrap 0 ${SC_SERVING_KEY}) \
-        --set apiserver.tls.requestHeaderCA=$(base64 ${SC_SERVING_CA})
+        --set apiserver.tls.requestHeaderCA=$(base64 --wrap 0 ${SC_SERVING_CA})
 ```
 
 If you're on a Mac OS X based machine, run this:
