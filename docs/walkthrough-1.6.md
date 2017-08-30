@@ -15,7 +15,7 @@ __Note: This document assumes that you've installed Service Catalog onto your cl
 If you haven't, please see the 
 [installation instructions for 1.6](./install-1.6.md).__
 
-# Step 1 - Installing the UPS Broker Server
+# Step 1 - Installing the UPS Service Broker Server
 
 In order to effectively demonstrate the service catalog, we will require a
 sample broker server. To proceed, we will deploy the [User Provided Service
