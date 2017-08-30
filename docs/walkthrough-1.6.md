@@ -11,11 +11,11 @@ deprecated and may be removed at any time.
 If you are running a Kubernetes cluster running version 1.7 or later, please 
 see [walkthrough-1.7.md](./walkthrough-1.7.md).
 
-This document assumes that you've installed Service Catalog onto your cluster.
+__Note: This document assumes that you've installed Service Catalog onto your cluster.
 If you haven't, please see the 
-[installation instructions for 1.6](./install-1.6.md).
+[installation instructions for 1.6](./install-1.6.md).__
 
-# Step 1 - Installing the UPS ServiceBroker
+# Step 1 - Installing the UPS Service Broker Server
 
 In order to effectively demonstrate the service catalog, we will require a
 sample broker server. To proceed, we will deploy the [User Provided Service
@@ -37,7 +37,7 @@ To install with defaults:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-# Step 2 - Creating a ServiceBroker Resource
+# Step 2 - Creating a `ServiceBroker` Resource
 
 Next, we'll register a broker server with the catalog by creating a new
 [`ServiceBroker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
@@ -99,7 +99,7 @@ Notice that the `status` field has been set to reflect that the broker server's
 catalog of service offerings has been successfully added to our cluster's
 service catalog.
 
-# Step 3 - Viewing ServiceClasses
+# Step 3 - Viewing `ServiceClass`es
 
 The controller created a `ServiceClass` for each service that the UPS broker
 provides. We can view the `ServiceClass` resources available in the cluster by
@@ -145,7 +145,7 @@ plans:
   externalID: 86064792-7ea2-467b-af93-ac9694d96d52
 ```
 
-# Step 4 - Provisioning a New ServiceInstance
+# Step 4 - Creating a New `ServiceInstance`
 
 Now that a `ServiceClass` named `user-provided-service` exists within our
 cluster's service catalog, we can provision an instance of that. We do so by
@@ -204,7 +204,7 @@ status:
     type: Ready
 ```
 
-# Step 5 - ServiceInstanceCredential to the ServiceInstance
+# Step 5 - Requesting a `ServiceInstanceCredential` to use the `ServiceInstance`
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
 we will create a [`ServiceInstanceCredential`](../contrib/examples/walkthrough/ups-instance-credential.yaml)
@@ -277,9 +277,9 @@ ups-instance-credential           Opaque                                2       
 
 Notice that a new `Secret` named `ups-instance-credential` has been created.
 
-# Step 6 - Unbinding from the ServiceInstance
+# Step 6 - Deleting the `ServiceInstanceCredential`
 
-Now, let's unbind from the instance.  To do this, we simply *delete* the
+Now, let's unbind from the provisioned instance. To do this, we simply *delete* the
 `ServiceInstanceCredential` resource that we previously created:
 
 ```console
@@ -295,16 +295,16 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-# Step 7 - Deprovisioning the ServiceInstance
+# Step 7 - Deleting the `ServiceInstance`
 
-Now, we can deprovision the instance.  To do this, we simply *delete* the
+Now, we can deprovision the instance. To do this, we simply *delete* the
 `ServiceInstance` resource that we previously created:
 
 ```console
 kubectl --context=service-catalog delete -n test-ns instances ups-instance
 ```
 
-# Step 8 - Deleting the ServiceBroker
+# Step 8 - Deleting the `ServiceBroker`
 
 Next, we should remove the broker server, and the services it offers, from the catalog. We can do
 so by simply deleting the broker:
