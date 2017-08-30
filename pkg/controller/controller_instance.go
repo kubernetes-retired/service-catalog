@@ -545,7 +545,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	} else {
 		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 
-		// Create/Update for Instance has completed successful, so set
+		// Create/Update for Instance has completed successfully, so set
 		// Status.ReconciledGeneration to the Generation used.
 		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
@@ -721,8 +721,8 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		} else {
-			// Create/Update for InstanceCredential has completed successful, so set Status.ReconciledGeneration to the
-			// Generation used.
+			// Create/Update for InstanceCredential has completed successfully,
+			// so set Status.ReconciledGeneration to the Generation used.
 			toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
 			c.updateServiceInstanceCondition(

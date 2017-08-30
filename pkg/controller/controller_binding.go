@@ -319,7 +319,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			return err
 		}
 
-		// The bind operation completed successful, so set
+		// The bind operation completed successfully, so set
 		// Status.ReconciledGeneration to the Generation used.
 		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
