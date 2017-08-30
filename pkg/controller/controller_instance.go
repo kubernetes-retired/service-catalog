@@ -545,8 +545,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	} else {
 		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 
-		// Create/Update for Instance has completed successful, so set Status.ReconciledGeneration to the
-		// Generation used.
+		// Create/Update for Instance has completed successful, so set
+		// Status.ReconciledGeneration to the Generation used.
 		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
 		// TODO: process response

@@ -19,6 +19,8 @@ package instance
 // this was copied from where else and edited to fit our objects
 
 import (
+	"fmt"
+
 	//apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -114,6 +116,8 @@ func (instanceRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+	fmt.Printf("Instance PrepareForUpdate")
+
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")

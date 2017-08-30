@@ -888,6 +888,9 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	binding.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 
+	binding.ObjectMeta.Generation = 1
+	binding.Status.ReconciledGeneration = 1
+
 	fakeCatalogClient.AddReactor("get", "serviceinstancecredentials", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, binding, nil
 	})
