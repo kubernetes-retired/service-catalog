@@ -39,12 +39,12 @@ script
 You *must* use [Helm](http://helm.sh/) v2.5.0 or newer in the installation steps
 below.
 
-If you already have Helm v2.5.0 or newer, execute `helm init` (if you haven't
-already) to install Tiller (the server-side component of Helm), and you should
-be done with Helm setup.
+If you already have an appropriate Helm version, execute `helm init` 
+(if you haven't already) to install Tiller (the server-side component of Helm),
+and you should be done with Helm setup.
 
-If you don't already have Helm v2.5.0, see the
-[installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
+If you don't already have an appropriate Helm version, see the
+[Helm installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
 
 ## RBAC
 
