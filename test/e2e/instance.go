@@ -32,7 +32,7 @@ import (
 
 const (
 	// how long to wait for an instance to be deleted.
-	instanceDeleteTimeout = 30 * time.Second
+	instanceDeleteTimeout = 60 * time.Second
 )
 
 func newTestInstance(name, serviceClassName, planName string) *v1alpha1.ServiceInstance {
