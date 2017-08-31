@@ -397,4 +397,6 @@ endif
 
 release-push: $(addprefix release-push-,$(ALL_ARCH))
 release-push-%:
+	$(MAKE) clean-bin
+	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* push
