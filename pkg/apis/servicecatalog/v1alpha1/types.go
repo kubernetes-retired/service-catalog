@@ -295,6 +295,12 @@ type ServiceInstanceList struct {
 // +genclient=true
 
 // ServiceInstance represents a provisioned instance of a ServiceClass.
+// Currently, the spec field cannot be changed once a ServiceInstance is
+// created.  Spec changes submitted by users will be ignored.
+//
+// In the future, this will be allowed and will represent the intention that
+// the ServiceInstance should have the plan and/or parameters updated at the
+// ServiceBroker.
 type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -420,7 +426,11 @@ type ServiceInstanceCredential struct {
 	Status ServiceInstanceCredentialStatus `json:"status"`
 }
 
-// ServiceInstanceCredentialSpec represents the desired state of a ServiceInstanceCredential.
+// ServiceInstanceCredentialSpec represents the desired state of a
+// ServiceInstanceCredential.
+//
+// The spec field cannot be changed after a ServiceInstanceCredential is
+// created.  Changes submitted to the spec field will be ignored.
 type ServiceInstanceCredentialSpec struct {
 	// ServiceInstanceRef is the reference to the Instance this ServiceInstanceCredential is to.
 	//
