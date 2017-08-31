@@ -5794,7 +5794,7 @@ func (x *ServiceInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("ReconciledGeneration"))
+				r.EncodeString(codecSelferC_UTF81234, string("reconciledGeneration"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym21 := z.EncBinary()
 				_ = yym21
@@ -5920,7 +5920,7 @@ func (x *ServiceInstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 					*((*string)(x.DashboardURL)) = r.DecodeString()
 				}
 			}
-		case "ReconciledGeneration":
+		case "reconciledGeneration":
 			if r.TryDecodeAsNil() {
 				x.ReconciledGeneration = 0
 			} else {
@@ -7711,7 +7711,7 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("ReconciledGeneration"))
+				r.EncodeString(codecSelferC_UTF81234, string("reconciledGeneration"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym8 := z.EncBinary()
 				_ = yym8
@@ -7793,7 +7793,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 					h.decSliceServiceInstanceCredentialCondition((*[]ServiceInstanceCredentialCondition)(yyv4), d)
 				}
 			}
-		case "ReconciledGeneration":
+		case "reconciledGeneration":
 			if r.TryDecodeAsNil() {
 				x.ReconciledGeneration = 0
 			} else {

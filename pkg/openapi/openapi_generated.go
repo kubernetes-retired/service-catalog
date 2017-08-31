@@ -322,7 +322,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the generation of the broker that was last successfully reconciled.",
+								Description: "ReconciledGeneration is the 'Generation' of the serviceBrokerSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
@@ -775,15 +775,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
-						"ReconciledGeneration": {
+						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the generation of the ServiceInstanceCredential that was last successfully reconciled.",
+								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceCredentialSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
 						},
 					},
-					Required: []string{"conditions", "ReconciledGeneration"},
+					Required: []string{"conditions", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
@@ -923,15 +923,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"ReconciledGeneration": {
+						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the generation of the instance that was last successfully reconciled.",
+								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "ReconciledGeneration"},
+					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{

@@ -371,7 +371,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// communicating with the broker.  In the future the same logic will
 	// result in an instance that requires update being processed by the
 	// controller.
-	if instance.Status.ReconciledGeneration != 0 && instance.DeletionTimestamp == nil {
+	if instance.DeletionTimestamp == nil {
 		if instance.Status.ReconciledGeneration == instance.Generation {
 			glog.V(4).Infof(
 				"Not processing event for ServiceInstance %v/%v because reconciled generation showed there is no work to do",

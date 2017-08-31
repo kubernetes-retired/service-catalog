@@ -114,8 +114,9 @@ const (
 type ServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition `json:"conditions"`
 
-	// ReconciledGeneration is the generation of the broker that was last
-	// successfully reconciled.
+	// ReconciledGeneration is the 'Generation' of the serviceBrokerSpec that
+	// was last processed by the controller. The reconciled generation is updated
+	// even if the controller failed to process the spec.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
 }
 
@@ -361,9 +362,10 @@ type ServiceInstanceStatus struct {
 	// the service instance.
 	DashboardURL *string `json:"dashboardURL,omitempty"`
 
-	// ReconciledGeneration is the generation of the instance that was last
-	// successfully reconciled.
-	ReconciledGeneration int64
+	// ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that
+	// was last processed by the controller. The reconciled generation is updated
+	// even if the controller failed to process the spec.
+	ReconciledGeneration int64 `json:"reconciledGeneration"`
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -458,9 +460,11 @@ type ServiceInstanceCredentialSpec struct {
 type ServiceInstanceCredentialStatus struct {
 	Conditions []ServiceInstanceCredentialCondition `json:"conditions"`
 
-	// ReconciledGeneration is the generation of the ServiceInstanceCredential that was last
-	// successfully reconciled.
-	ReconciledGeneration int64
+	// ReconciledGeneration is the 'Generation' of the
+	// serviceInstanceCredentialSpec that was last processed by the controller.
+	// The reconciled generation is updated even if the controller failed to
+	// process the spec.
+	ReconciledGeneration int64 `json:"reconciledGeneration"`
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.

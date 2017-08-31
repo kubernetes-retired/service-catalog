@@ -19,7 +19,7 @@ package binding
 // this was copied from where else and edited to fit our objects
 
 import (
-	//apiequality "k8s.io/apimachinery/pkg/api/equality"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -132,9 +132,12 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, 
 
 	// Spec updates bump the generation so that we can distinguish between
 	// spec changes and other changes to the object.
-	//if !apiequality.Semantic.DeepEqual(oldServiceInstanceCredential.Spec, newServiceInstanceCredential.Spec) {
-	//	newServiceInstanceCredential.Generation = oldServiceInstanceCredential.Generation + 1
-	//}
+	//
+	// Note that since we do not currently handle any changes to the spec,
+	// the generation will never be incremented
+	if !apiequality.Semantic.DeepEqual(oldServiceInstanceCredential.Spec, newServiceInstanceCredential.Spec) {
+		newServiceInstanceCredential.Generation = oldServiceInstanceCredential.Generation + 1
+	}
 }
 
 func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

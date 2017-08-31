@@ -114,8 +114,9 @@ const (
 type ServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
-	// ReconciledGeneration is the generation of the broker that was last
-	// successfully reconciled.
+	// ReconciledGeneration is the 'Generation' of the serviceBrokerSpec that
+	// was last processed by the controller. The reconciled generation is updated
+	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
 }
 
@@ -357,8 +358,9 @@ type ServiceInstanceStatus struct {
 	// the service instance.
 	DashboardURL *string
 
-	// ReconciledGeneration is the generation of the instance that was last
-	// successfully reconciled.
+	// ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that
+	// was last processed by the controller. The reconciled generation is updated
+	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
 }
 
@@ -454,8 +456,10 @@ type ServiceInstanceCredentialSpec struct {
 type ServiceInstanceCredentialStatus struct {
 	Conditions []ServiceInstanceCredentialCondition
 
-	// ReconciledGeneration is the generation of the ServiceInstanceCredential that was last
-	// successfully reconciled.
+	// ReconciledGeneration is the 'Generation' of the
+	// serviceInstanceCredentialSpec that was last processed by the controller.
+	// The reconciled generation is updated even if the controller failed to
+	// process the spec.
 	ReconciledGeneration int64
 }
 

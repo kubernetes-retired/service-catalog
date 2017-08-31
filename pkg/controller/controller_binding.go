@@ -110,7 +110,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 	// We only do this if the deletion timestamp is nil, because the deletion
 	// timestamp changes the object's state in a way that we must reconcile,
 	// but does not affect the generation.
-	if binding.Status.ReconciledGeneration != 0 && binding.DeletionTimestamp == nil {
+	if binding.DeletionTimestamp == nil {
 		if binding.Status.ReconciledGeneration == binding.Generation {
 			glog.V(4).Infof(
 				"Not processing event for ServiceInstanceCredential %v/%v because reconciled generation showed there is no work to do",
