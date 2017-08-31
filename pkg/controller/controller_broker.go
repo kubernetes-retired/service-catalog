@@ -365,9 +365,9 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alp
 	toUpdate.Bindable = serviceClass.Bindable
 	toUpdate.Plans = serviceClass.Plans
 	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
-	toUpdate.AlphaTags = serviceClass.AlphaTags
+	toUpdate.Tags = serviceClass.Tags
 	toUpdate.Description = serviceClass.Description
-	toUpdate.AlphaRequires = serviceClass.AlphaRequires
+	toUpdate.Requires = serviceClass.Requires
 
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating serviceClass %v from ServiceBroker %v: %v", serviceClass.Name, broker.Name, err)

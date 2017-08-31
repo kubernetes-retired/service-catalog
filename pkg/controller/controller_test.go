@@ -584,12 +584,12 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	}
 
 	plan := serviceClass.Plans[0]
-	if plan.AlphaServiceInstanceCreateParameterSchema == nil {
-		t.Fatalf("Expected plan.AlphaServiceInstanceCreateParameterSchema to be set, but was nil")
+	if plan.ServiceInstanceCreateParameterSchema == nil {
+		t.Fatalf("Expected plan.ServiceInstanceCreateParameterSchema to be set, but was nil")
 	}
 
 	cSchema := make(map[string]interface{})
-	if err := json.Unmarshal(plan.AlphaServiceInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
+	if err := json.Unmarshal(plan.ServiceInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
 		schema := make(map[string]interface{})
 		if err := json.Unmarshal([]byte(instanceParameterSchemaBytes), &schema); err != nil {
 			t.Fatalf("Error unmarshalling schema bytes: %v", err)
@@ -600,21 +600,21 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 		}
 	}
 
-	if plan.AlphaServiceInstanceUpdateParameterSchema == nil {
-		t.Fatalf("Expected plan.AlphaServiceInstanceUpdateParameterSchema to be set, but was nil")
+	if plan.ServiceInstanceUpdateParameterSchema == nil {
+		t.Fatalf("Expected plan.ServiceInstanceUpdateParameterSchema to be set, but was nil")
 	}
 	m := make(map[string]string)
-	if err := json.Unmarshal(plan.AlphaServiceInstanceUpdateParameterSchema.Raw, &m); err == nil {
+	if err := json.Unmarshal(plan.ServiceInstanceUpdateParameterSchema.Raw, &m); err == nil {
 		if e, a := "zap", m["baz"]; e != a {
 			t.Fatalf("Unexpected value of alphaServiceInstanceUpdateParameterSchema; expected %v, got %v", e, a)
 		}
 	}
 
-	if plan.AlphaServiceInstanceCredentialCreateParameterSchema == nil {
-		t.Fatalf("Expected plan.AlphaServiceInstanceCredentialCreateParameterSchema to be set, but was nil")
+	if plan.ServiceInstanceCredentialCreateParameterSchema == nil {
+		t.Fatalf("Expected plan.ServiceInstanceCredentialCreateParameterSchema to be set, but was nil")
 	}
 	m = make(map[string]string)
-	if err := json.Unmarshal(plan.AlphaServiceInstanceCredentialCreateParameterSchema.Raw, &m); err == nil {
+	if err := json.Unmarshal(plan.ServiceInstanceCredentialCreateParameterSchema.Raw, &m); err == nil {
 		if e, a := "blu", m["zoo"]; e != a {
 			t.Fatalf("Unexpected value of alphaServiceInstanceCredentialCreateParameterSchema; expected %v, got %v", e, a)
 		}

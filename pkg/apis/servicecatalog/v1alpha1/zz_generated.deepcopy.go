@@ -266,13 +266,13 @@ func DeepCopy_v1alpha1_ServiceClass(in interface{}, out interface{}, c *conversi
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.AlphaTags != nil {
-			in, out := &in.AlphaTags, &out.AlphaTags
+		if in.Tags != nil {
+			in, out := &in.Tags, &out.Tags
 			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}
-		if in.AlphaRequires != nil {
-			in, out := &in.AlphaRequires, &out.AlphaRequires
+		if in.Requires != nil {
+			in, out := &in.Requires, &out.Requires
 			*out = make([]string, len(*in))
 			copy(*out, *in)
 		}
@@ -532,24 +532,24 @@ func DeepCopy_v1alpha1_ServicePlan(in interface{}, out interface{}, c *conversio
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.AlphaServiceInstanceCreateParameterSchema != nil {
-			in, out := &in.AlphaServiceInstanceCreateParameterSchema, &out.AlphaServiceInstanceCreateParameterSchema
+		if in.ServiceInstanceCreateParameterSchema != nil {
+			in, out := &in.ServiceInstanceCreateParameterSchema, &out.ServiceInstanceCreateParameterSchema
 			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.AlphaServiceInstanceUpdateParameterSchema != nil {
-			in, out := &in.AlphaServiceInstanceUpdateParameterSchema, &out.AlphaServiceInstanceUpdateParameterSchema
+		if in.ServiceInstanceUpdateParameterSchema != nil {
+			in, out := &in.ServiceInstanceUpdateParameterSchema, &out.ServiceInstanceUpdateParameterSchema
 			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
 			} else {
 				*out = newVal.(*runtime.RawExtension)
 			}
 		}
-		if in.AlphaServiceInstanceCredentialCreateParameterSchema != nil {
-			in, out := &in.AlphaServiceInstanceCredentialCreateParameterSchema, &out.AlphaServiceInstanceCredentialCreateParameterSchema
+		if in.ServiceInstanceCredentialCreateParameterSchema != nil {
+			in, out := &in.ServiceInstanceCredentialCreateParameterSchema, &out.ServiceInstanceCredentialCreateParameterSchema
 			if newVal, err := c.DeepCopy(*in); err != nil {
 				return err
 			} else {
