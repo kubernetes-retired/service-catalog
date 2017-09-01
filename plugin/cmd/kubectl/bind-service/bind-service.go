@@ -33,9 +33,6 @@ const usage = `Usage:
 
 func main() {
 	svcURL := utils.SCUrlEnv()
-	if svcURL == "" {
-		svcURL = "192.168.99.100:30080"
-	}
 
 	if len(os.Args) != 4 {
 		utils.Exit1(usage)
