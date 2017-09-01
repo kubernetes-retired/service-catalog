@@ -40,7 +40,7 @@ func main() {
 		utils.Exit1(usage)
 	}
 
-	instance := v1alpha1.Instance{}
+	instance := v1alpha1.ServiceInstance{}
 	instance.Kind = "Instance"
 	instance.Name = os.Args[3]
 	instance.Namespace = os.Args[4]
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	fmt.Printf("Creating service instance %s in Namespace %s...\n", utils.Entity(instance.Name), utils.Entity(instance.Namespace))
-	resp, err := svcClient.Instances(instance.Namespace).Create(&instance)
+	resp, err := svcClient.ServiceInstances(instance.Namespace).Create(&instance)
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Failed to creating service instance (%s)", err))
 	}

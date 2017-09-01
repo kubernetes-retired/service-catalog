@@ -40,7 +40,7 @@ func main() {
 		utils.Exit1(usage)
 	}
 
-	broker := v1alpha1.Broker{}
+	broker := v1alpha1.ServiceBroker{}
 	broker.Kind = "Broker"
 	broker.Name = os.Args[1]
 	broker.Spec.URL = os.Args[2]
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	fmt.Printf("Creating broker %s...\n", utils.Entity(broker.Name))
-	resp, err := svcClient.Brokers().Create(&broker)
+	resp, err := svcClient.ServiceBrokers().Create(&broker)
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Creating broker resource (%s)", err))
 	}
