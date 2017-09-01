@@ -41,11 +41,11 @@ func main() {
 		utils.Exit1(usage)
 	}
 
-	binding := v1alpha1.Binding{}
+	binding := v1alpha1.ServiceInstanceCredential{}
 	binding.Kind = "binding"
 	binding.Name = os.Args[2]
 	binding.Namespace = os.Args[3]
-	binding.Spec.InstanceRef = v1.LocalObjectReference{
+	binding.Spec.ServiceInstanceRef = v1.LocalObjectReference{
 		Name: os.Args[1],
 	}
 	binding.Spec.SecretName = os.Args[2]
@@ -66,15 +66,18 @@ func main() {
 		utils.Exit1(fmt.Sprintf("Error initializing client for service catalog (%s)", err))
 	}
 
-	fmt.Printf("Creating binding %s to %s in Namespace %s...\n", utils.Entity(binding.Name), utils.Entity(binding.Spec.InstanceRef.Name), utils.Entity(binding.Namespace))
-	resp, err := svcClient.Bindings(binding.Namespace).Create(&binding)
+	fmt.Printf("Creating binding %s to %s in Namespace %s...\n",
+		utils.Entity(binding.Name),
+		utils.Entity(binding.Spec.ServiceInstanceRef.Name),
+		utils.Entity(binding.Namespace))
+	resp, err := svcClient.ServiceInstanceCredentials(binding.Namespace).Create(&binding)
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Error binding service instance (%s)", err))
 	}
 	utils.Ok()
 
 	table := utils.NewTable("BINDING NAME", "NAMESPACE", "INSTANCE NAME", "SECRET NAME")
-	table.AddRow(resp.Name, resp.Namespace, resp.Spec.InstanceRef.Name, resp.Spec.SecretName)
+	table.AddRow(resp.Name, resp.Namespace, resp.Spec.ServiceInstanceRef.Name, resp.Spec.SecretName)
 	err = table.Print()
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
