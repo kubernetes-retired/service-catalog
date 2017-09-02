@@ -9,7 +9,7 @@ of this repository.
 # Step 1 - Installing the UPS Broker Server
 
 Since the Service Catalog provides a Kubernetes-native interface to an 
-[Open Service Broker API](https://openservicebrokerapi.org/) compatible broker
+[Open Service Broker API](http://openservicebrokerapi.org/) compatible broker
 server, we'll need to install one in order to proceed with a demo.
 
 In this repository, there's a simple, "dummy" server called the User Provided 
