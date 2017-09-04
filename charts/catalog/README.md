@@ -2,7 +2,7 @@
 
 Service Catalog is a Kubernetes Incubator project that provides a
 Kubernetes-native workflow for integrating with 
-[Open Service Brokers](https://www.openservicebrokerapi.org/) 
+[Open Service Brokers](https://www.openservicebrokerapi.org/)
 to provision and bind to application dependencies like databases, object
 storage, message-oriented middleware, and more.
 
