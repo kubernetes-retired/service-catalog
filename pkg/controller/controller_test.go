@@ -18,6 +18,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"runtime/debug"
 	"testing"
@@ -38,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 
+	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	"k8s.io/apimachinery/pkg/api/meta"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
@@ -510,9 +512,6 @@ func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
 // getTestServiceInstanceAsync returns an instance in async mode
 func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstance()
-	if operation != "" {
-		instance.Status.LastOperation = &operation
-	}
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -523,6 +522,10 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 		}},
 		AsyncOpInProgress:  true,
 		OperationStartTime: &operationStartTime,
+		CurrentOperation:   v1alpha1.ServiceInstanceOperationProvision,
+	}
+	if operation != "" {
+		instance.Status.LastOperation = &operation
 	}
 
 	return instance
@@ -530,9 +533,7 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 
 func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstance()
-	if operation != "" {
-		instance.Status.LastOperation = &operation
-	}
+	instance.Generation = 2
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -541,8 +542,13 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Servi
 			Message:            "Deprovisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
-		AsyncOpInProgress:  true,
-		OperationStartTime: &operationStartTime,
+		AsyncOpInProgress:    true,
+		OperationStartTime:   &operationStartTime,
+		CurrentOperation:     v1alpha1.ServiceInstanceOperationDeprovision,
+		ReconciledGeneration: 1,
+	}
+	if operation != "" {
+		instance.Status.LastOperation = &operation
 	}
 
 	// Set the deleted timestamp to simulate deletion
@@ -1084,14 +1090,14 @@ func TestIsPlanBindable(t *testing.T) {
 // testing.T.
 func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	*clientgofake.Clientset,
-	*servicecatalogclientset.Clientset,
+	*fake.Clientset,
 	*fakeosb.FakeClient,
 	*controller,
 	v1alpha1informers.Interface) {
 	// create a fake kube client
 	fakeKubeClient := &clientgofake.Clientset{}
 	// create a fake sc client
-	fakeCatalogClient := &servicecatalogclientset.Clientset{}
+	fakeCatalogClient := &fake.Clientset{&servicecatalogclientset.Clientset{}}
 
 	fakeOSBClient := fakeosb.NewFakeClient(config) // error should always be nil
 	brokerClFunc := fakeosb.ReturnFakeClientFunc(fakeOSBClient)
@@ -1377,8 +1383,8 @@ func assertServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.Object, 
 	}
 }
 
-func assertServiceInstanceReadyTrue(t *testing.T, obj runtime.Object) {
-	assertServiceInstanceReadyCondition(t, obj, v1alpha1.ConditionTrue)
+func assertServiceInstanceReadyTrue(t *testing.T, obj runtime.Object, reason ...string) {
+	assertServiceInstanceReadyCondition(t, obj, v1alpha1.ConditionTrue, reason...)
 }
 
 func assertServiceInstanceReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
@@ -1424,6 +1430,21 @@ func assertServiceInstanceConditionsCount(t *testing.T, obj runtime.Object, coun
 	}
 }
 
+func assertServiceInstanceCurrentOperationClear(t *testing.T, obj runtime.Object) {
+	assertServiceInstanceCurrentOperation(t, obj, "")
+}
+
+func assertServiceInstanceCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1alpha1.ServiceInstanceOperation) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+
+	if e, a := currentOperation, instance.Status.CurrentOperation; e != a {
+		fatalf(t, "unexpected current operation: expected %q, got %q", e, a)
+	}
+}
+
 func assertServiceInstanceReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
 	instance, ok := obj.(*v1alpha1.ServiceInstance)
 	if !ok {
@@ -1432,6 +1453,26 @@ func assertServiceInstanceReconciledGeneration(t *testing.T, obj runtime.Object,
 
 	if e, a := reconciledGeneration, instance.Status.ReconciledGeneration; e != a {
 		fatalf(t, "unexpected reconciled generation: expected %v, got %v", e, a)
+	}
+}
+
+func assertServiceInstanceReconciliationComplete(t *testing.T, obj runtime.Object) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+	if g, rg := instance.Generation, instance.Status.ReconciledGeneration; g != rg {
+		fatalf(t, "expected Generation and ReconciledGeneration to be equal: Generation %v, ReconciledGeneration %v", g, rg)
+	}
+}
+
+func assertServiceInstanceReconciliationNotComplete(t *testing.T, obj runtime.Object) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+	if g, rg := instance.Generation, instance.Status.ReconciledGeneration; g <= rg {
+		fatalf(t, "expected ReconciledGeneration to be less than Generation: Generation %v, ReconciledGeneration %v", g, rg)
 	}
 }
 
@@ -1496,6 +1537,115 @@ func assertServiceInstanceDashboardURL(t *testing.T, obj runtime.Object, dashboa
 	}
 }
 
+func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string) {
+	assertServiceInstanceReadyFalse(t, obj, reason)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceReconciliationNotComplete(t, obj)
+	assertAsyncOpInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation) {
+	reason := ""
+	switch operation {
+	case v1alpha1.ServiceInstanceOperationProvision:
+		reason = provisioningInFlightReason
+	case v1alpha1.ServiceInstanceOperationDeprovision:
+		reason = deprovisioningInFlightReason
+	}
+	assertServiceInstanceReadyFalse(t, obj, reason)
+	assertServiceInstanceCurrentOperation(t, obj, operation)
+	assertServiceInstanceOperationStartTimeSet(t, obj, true)
+	assertServiceInstanceReconciliationNotComplete(t, obj)
+	assertAsyncOpInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation) {
+	var (
+		reason      string
+		readyStatus v1alpha1.ConditionStatus
+	)
+	switch operation {
+	case v1alpha1.ServiceInstanceOperationProvision:
+		reason = successProvisionReason
+		readyStatus = v1alpha1.ConditionTrue
+	case v1alpha1.ServiceInstanceOperationDeprovision:
+		reason = successDeprovisionReason
+		readyStatus = v1alpha1.ConditionFalse
+	}
+	assertServiceInstanceReadyCondition(t, obj, readyStatus, reason)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceReconciliationComplete(t, obj)
+	assertAsyncOpInProgressFalse(t, obj)
+	if operation == v1alpha1.ServiceInstanceOperationDeprovision {
+		assertEmptyFinalizers(t, obj)
+	}
+}
+
+func assertServiceInstanceReqeustFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
+	var readyStatus v1alpha1.ConditionStatus
+	switch operation {
+	case v1alpha1.ServiceInstanceOperationProvision:
+		readyStatus = v1alpha1.ConditionFalse
+	case v1alpha1.ServiceInstanceOperationDeprovision:
+		readyStatus = v1alpha1.ConditionUnknown
+	}
+	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
+	assertServiceInstanceCondition(t, obj, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, failureReason)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceReconciliationComplete(t, obj)
+	assertAsyncOpInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceReqeustRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string) {
+	var readyStatus v1alpha1.ConditionStatus
+	switch operation {
+	case v1alpha1.ServiceInstanceOperationProvision:
+		readyStatus = v1alpha1.ConditionFalse
+	case v1alpha1.ServiceInstanceOperationDeprovision:
+		readyStatus = v1alpha1.ConditionUnknown
+	}
+	assertServiceInstanceReadyCondition(t, obj, readyStatus, reason)
+	assertServiceInstanceCurrentOperation(t, obj, operation)
+	assertServiceInstanceOperationStartTimeSet(t, obj, true)
+	assertServiceInstanceReconciliationNotComplete(t, obj)
+}
+
+func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, operationKey string) {
+	reason := ""
+	switch operation {
+	case v1alpha1.ServiceInstanceOperationProvision:
+		reason = asyncProvisioningReason
+	case v1alpha1.ServiceInstanceOperationDeprovision:
+		reason = asyncDeprovisioningReason
+	}
+	assertServiceInstanceReadyFalse(t, obj, reason)
+	assertServiceInstanceLastOperation(t, obj, operationKey)
+	assertServiceInstanceCurrentOperation(t, obj, operation)
+	assertServiceInstanceOperationStartTimeSet(t, obj, true)
+	assertServiceInstanceReconciliationNotComplete(t, obj)
+	assertAsyncOpInProgressTrue(t, obj)
+}
+
+func assertServiceInstanceConditionHasLastOperationDescription(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, lastOperationDescription string) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+	var expected string
+	switch operation {
+	case v1alpha1.ServiceInstanceOperationProvision:
+		expected = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, lastOperationDescription)
+	case v1alpha1.ServiceInstanceOperationDeprovision:
+		expected = fmt.Sprintf("%s (%s)", asyncDeprovisioningMessage, lastOperationDescription)
+	}
+	if e, a := expected, instance.Status.Conditions[0].Message; e != a {
+
+	}
+}
+
 func assertServiceInstanceCredentialReadyTrue(t *testing.T, obj runtime.Object) {
 	assertServiceInstanceCredentialReadyCondition(t, obj, v1alpha1.ConditionTrue)
 }
@@ -1544,6 +1694,26 @@ func assertServiceInstanceCredentialReconciledGeneration(t *testing.T, obj runti
 	}
 }
 
+func assertServiceInstanceCredentialReconciliationComplete(t *testing.T, obj runtime.Object) {
+	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+	if g, rg := binding.Generation, binding.Status.ReconciledGeneration; g != rg {
+		fatalf(t, "expected Generation and ReconciledGeneration to be equal: Generation %v, ReconciledGeneration %v", g, rg)
+	}
+}
+
+func assertServiceInstanceCredentialReconciliationNotComplete(t *testing.T, obj runtime.Object) {
+	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+	if g, rg := binding.Generation, binding.Status.ReconciledGeneration; g <= rg {
+		fatalf(t, "expected ReconciledGeneration to be less than Generation: Generation %v, ReconciledGeneration %v", g, rg)
+	}
+}
+
 func assertServiceInstanceCredentialOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
 	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
 	if !ok {
@@ -1557,6 +1727,93 @@ func assertServiceInstanceCredentialOperationStartTimeSet(t *testing.T, obj runt
 			fatalf(t, "expected OperationStartTime to be nil, but was not")
 		}
 	}
+}
+
+func assertServiceInstanceCredentialCurrentOperationClear(t *testing.T, obj runtime.Object) {
+	assertServiceInstanceCredentialCurrentOperation(t, obj, "")
+}
+
+func assertServiceInstanceCredentialCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1alpha1.ServiceInstanceCredentialOperation) {
+	instance, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+
+	if e, a := currentOperation, instance.Status.CurrentOperation; e != a {
+		fatalf(t, "unexpected current operation: expected %q, got %q", e, a)
+	}
+}
+
+func assertServiceInstanceCredentialErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string) {
+	assertServiceInstanceCredentialReadyFalse(t, obj, reason)
+	assertServiceInstanceCredentialCurrentOperationClear(t, obj)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceCredentialReconciliationNotComplete(t, obj)
+}
+
+func assertServiceInstanceCredentialOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation) {
+	reason := ""
+	switch operation {
+	case v1alpha1.ServiceInstanceCredentialOperationBind:
+		reason = bindingInFlightReason
+	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+		reason = unbindingInFlightReason
+	}
+	assertServiceInstanceCredentialReadyFalse(t, obj, reason)
+	assertServiceInstanceCredentialCurrentOperation(t, obj, operation)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, true)
+	assertServiceInstanceCredentialReconciliationNotComplete(t, obj)
+}
+
+func assertServiceInstanceCredentialOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation) {
+	var (
+		reason      string
+		readyStatus v1alpha1.ConditionStatus
+	)
+	switch operation {
+	case v1alpha1.ServiceInstanceCredentialOperationBind:
+		reason = successInjectedBindResultReason
+		readyStatus = v1alpha1.ConditionTrue
+	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+		reason = successUnboundReason
+		readyStatus = v1alpha1.ConditionFalse
+	}
+	assertServiceInstanceCredentialReadyCondition(t, obj, readyStatus, reason)
+	assertServiceInstanceCredentialCurrentOperationClear(t, obj)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceCredentialReconciliationComplete(t, obj)
+	if operation == v1alpha1.ServiceInstanceCredentialOperationUnbind {
+		assertEmptyFinalizers(t, obj)
+	}
+}
+
+func assertServiceInstanceCredentialReqeustFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, readyReason string, failureReason string) {
+	var readyStatus v1alpha1.ConditionStatus
+	switch operation {
+	case v1alpha1.ServiceInstanceCredentialOperationBind:
+		readyStatus = v1alpha1.ConditionFalse
+	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+		readyStatus = v1alpha1.ConditionUnknown
+	}
+	assertServiceInstanceCredentialReadyCondition(t, obj, readyStatus, readyReason)
+	assertServiceInstanceCredentialCondition(t, obj, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue, failureReason)
+	assertServiceInstanceCredentialCurrentOperationClear(t, obj)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceCredentialReconciliationComplete(t, obj)
+}
+
+func assertServiceInstanceCredentialReqeustRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, reason string) {
+	var readyStatus v1alpha1.ConditionStatus
+	switch operation {
+	case v1alpha1.ServiceInstanceCredentialOperationBind:
+		readyStatus = v1alpha1.ConditionFalse
+	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+		readyStatus = v1alpha1.ConditionUnknown
+	}
+	assertServiceInstanceCredentialReadyCondition(t, obj, readyStatus, reason)
+	assertServiceInstanceCredentialCurrentOperation(t, obj, operation)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, true)
+	assertServiceInstanceCredentialReconciliationNotComplete(t, obj)
 }
 
 func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {

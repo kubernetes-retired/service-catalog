@@ -55,14 +55,28 @@ func validateServiceInstanceCredentialSpec(spec *sc.ServiceInstanceCredentialSpe
 	return allErrs
 }
 
+// internalValidateServiceInstanceCredentialUpdateAllowed ensures there is not a
+// pending update on-going with the spec of the binding before allowing an update
+// to the spec to go through.
+func internalValidateServiceInstanceCredentialUpdateAllowed(new *sc.ServiceInstanceCredential, old *sc.ServiceInstanceCredential) field.ErrorList {
+	errors := field.ErrorList{}
+	if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
+		errors = append(errors, field.Forbidden(field.NewPath("Spec"), "another change to the spec is in progress"))
+	}
+	return errors
+}
+
 // ValidateServiceInstanceCredentialUpdate checks that when changing from an older binding to a newer binding is okay.
 func ValidateServiceInstanceCredentialUpdate(new *sc.ServiceInstanceCredential, old *sc.ServiceInstanceCredential) field.ErrorList {
-	return internalValidateServiceInstanceCredential(new, false)
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, internalValidateServiceInstanceCredentialUpdateAllowed(new, old)...)
+	allErrs = append(allErrs, internalValidateServiceInstanceCredential(new, false)...)
+	return allErrs
 }
 
 // ValidateServiceInstanceCredentialStatusUpdate checks that when changing from an older binding to a newer binding is okay.
 func ValidateServiceInstanceCredentialStatusUpdate(new *sc.ServiceInstanceCredential, old *sc.ServiceInstanceCredential) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateServiceInstanceCredentialUpdate(new, old)...)
+	allErrs = append(allErrs, internalValidateServiceInstanceCredential(new, false)...)
 	return allErrs
 }

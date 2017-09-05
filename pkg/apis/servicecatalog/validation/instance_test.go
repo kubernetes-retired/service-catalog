@@ -125,94 +125,80 @@ func TestValidateServiceInstance(t *testing.T) {
 	}
 }
 
-func TestValidateServiceInstanceUpdate(t *testing.T) {
+func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 	cases := []struct {
-		name  string
-		old   *servicecatalog.ServiceInstance
-		new   *servicecatalog.ServiceInstance
-		valid bool
-		err   string // Error string to match against if error expected
+		name              string
+		newSpecChange     bool
+		onGoingSpecChange bool
+		valid             bool
 	}{
 		{
-			name: "no update with async op in progress",
-			old: &servicecatalog.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
-				},
-				Status: servicecatalog.ServiceInstanceStatus{
-					AsyncOpInProgress: true,
-				},
-			},
-			new: &servicecatalog.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan-2",
-				},
-				Status: servicecatalog.ServiceInstanceStatus{
-					AsyncOpInProgress: true,
-				},
-			},
-			valid: false,
-			err:   "Another operation for this service instance is in progress",
+			name:              "spec change when no on-going spec change",
+			newSpecChange:     true,
+			onGoingSpecChange: false,
+			valid:             true,
 		},
 		{
-			name: "allow update with no async op in progress",
-			old: &servicecatalog.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
-				},
-				Status: servicecatalog.ServiceInstanceStatus{
-					AsyncOpInProgress: false,
-				},
-			},
-			new: &servicecatalog.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "test-ns",
-				},
-				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					// TODO(vaikas): This does not actually update
-					// spec yet, but once it does, validate it changes.
-					PlanName: "test-plan-2",
-				},
-				Status: servicecatalog.ServiceInstanceStatus{
-					AsyncOpInProgress: false,
-				},
-			},
-			valid: true,
-			err:   "",
+			name:              "spec change when on-going spec change",
+			newSpecChange:     true,
+			onGoingSpecChange: true,
+			valid:             false,
+		},
+		{
+			name:              "meta change when no on-going spec change",
+			newSpecChange:     false,
+			onGoingSpecChange: false,
+			valid:             true,
+		},
+		{
+			name:              "meta change when on-going spec change",
+			newSpecChange:     false,
+			onGoingSpecChange: true,
+			valid:             true,
 		},
 	}
 
 	for _, tc := range cases {
-		errs := ValidateServiceInstanceUpdate(tc.new, tc.old)
+		oldInstance := &servicecatalog.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-instance",
+				Namespace: "test-ns",
+			},
+			Spec: servicecatalog.ServiceInstanceSpec{
+				ServiceClassName: "test-serviceclass",
+				PlanName:         "test-plan",
+			},
+		}
+		if tc.onGoingSpecChange {
+			oldInstance.Generation = 2
+		} else {
+			oldInstance.Generation = 1
+		}
+		oldInstance.Status.ReconciledGeneration = 1
+
+		newInstance := &servicecatalog.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-instance",
+				Namespace: "test-ns",
+			},
+			Spec: servicecatalog.ServiceInstanceSpec{
+				ServiceClassName: "test-serviceclass",
+				PlanName:         "test-plan",
+			},
+		}
+		if tc.newSpecChange {
+			newInstance.Generation = oldInstance.Generation + 1
+		} else {
+			newInstance.Generation = oldInstance.Generation
+		}
+		newInstance.Status.ReconciledGeneration = 1
+
+		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
 		} else if len(errs) == 0 && !tc.valid {
 			t.Errorf("%v: unexpected success", tc.name)
-		}
-		if !tc.valid {
-			for _, err := range errs {
-				if !strings.Contains(err.Detail, tc.err) {
-					t.Errorf("Error %q did not contain expected message %q", err.Detail, tc.err)
-				}
-			}
 		}
 	}
 }
