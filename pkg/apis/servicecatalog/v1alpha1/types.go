@@ -476,6 +476,15 @@ type ServiceInstanceStatus struct {
 
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
+
+	// InProgressProperties is the properties state of the ServiceInstance when
+	// a Provision or Update is in progress. If the current operation is a
+	// Deprovision, this will be nil.
+	InProgressProperties *ServiceInstancePropertiesState
+
+	// ExternalProperties is the properties state of the ServiceInstance which the
+	// broker knows about.
+	ExternalProperties *ServiceInstancePropertiesState
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -527,6 +536,26 @@ const (
 	// being Deprovisioned.
 	ServiceInstanceOperationDeprovision ServiceInstanceOperation = "Deprovision"
 )
+
+// ServiceInstancePropertiesState is the state of a ServiceInstance that
+// the ServiceBroker knows about.
+type ServiceInstancePropertiesState struct {
+	// ExternalServicePlanName is the name of the plan that the broker knows this
+	// ServiceInstance to be on. This is the human readable plan name from the
+	// OSB API.
+	ExternalServicePlanName string `json:"externalServicePlanName"`
+
+	// Parameters is a blob of the parameters and their values that the broker
+	// knows about for this ServiceInstance.  If a parameter was sourced from
+	// a secret, its value will be "<redacted>" in this blob.
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// ParametersChecksum is the checksum of the parameters that were sent.
+	ParametersChecksum string `json:"parameterChecksum,omitempty"`
+
+	// UserInfo is information about the user that made the request.
+	UserInfo *UserInfo `json:"userInfo,omitempty"`
+}
 
 // ServiceInstanceCredentialList is a list of ServiceInstanceCredentials.
 type ServiceInstanceCredentialList struct {
@@ -611,6 +640,15 @@ type ServiceInstanceCredentialStatus struct {
 
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
+
+	// InProgressProperties is the properties state of the
+	// ServiceInstanceCredential when a Bind is in progress. If the current
+	// operation is an Unbind, this will be nil.
+	InProgressProperties *ServiceInstanceCredentialPropertiesState
+
+	// ExternalProperties is the properties state of the
+	// ServiceInstanceCredential which the broker knows about.
+	ExternalProperties *ServiceInstanceCredentialPropertiesState
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.
@@ -663,6 +701,21 @@ const (
 const (
 	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
 )
+
+// ServiceInstanceCredentialPropertiesState is the state of a
+// ServiceInstanceCredential that the ServiceBroker knows about.
+type ServiceInstanceCredentialPropertiesState struct {
+	// Parameters is a blob of the parameters and their values that the broker
+	// knows about for this ServiceInstanceCredential.  If a parameter was
+	// sourced from a secret, its value will be "<redacted>" in this blob.
+	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// ParametersChecksum is the checksum of the parameters that were sent.
+	ParametersChecksum string `json:"parameterChecksum,omitempty"`
+
+	// UserInfo is information about the user that made the request.
+	UserInfo *UserInfo `json:"userInfo,omitempty"`
+}
 
 // ParametersFromSource represents the source of a set of Parameters
 type ParametersFromSource struct {

@@ -77,6 +77,14 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 			}
 			bs.Parameters = nil
 		},
+		func(ps *servicecatalog.ServiceInstancePropertiesState, c fuzz.Continue) {
+			c.FuzzNoCustom(ps)
+			ps.Parameters = nil
+		},
+		func(ps *servicecatalog.ServiceInstanceCredentialPropertiesState, c fuzz.Continue) {
+			c.FuzzNoCustom(ps)
+			ps.Parameters = nil
+		},
 	).Fuzz(internalObj)
 
 	item, err := api.Scheme.New(group.GroupVersion().WithKind(kind))
