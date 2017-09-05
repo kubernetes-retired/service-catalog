@@ -374,12 +374,6 @@ type ExtraValue []string
 // +genclient=true
 
 // ServiceInstance represents a provisioned instance of a ServiceClass.
-// Currently, the spec field cannot be changed once a ServiceInstance is
-// created.  Spec changes submitted by users will be ignored.
-//
-// In the future, this will be allowed and will represent the intention that
-// the ServiceInstance should have the plan and/or parameters updated at the
-// ServiceBroker.
 type ServiceInstance struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
@@ -449,6 +443,12 @@ type ServiceInstanceSpec struct {
 	// end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo
+
+	// UpdateRequests is a strictly increasing, non-negative integer counter that
+	// can be manually incremented by a user to manually trigger an update. This
+	// allows for parameters to be updated with any out-of-band changes that have
+	// been made to the secrets from which the parameters are sourced.
+	UpdateRequests int64
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.

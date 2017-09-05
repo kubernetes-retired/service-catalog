@@ -448,6 +448,12 @@ type ServiceInstanceSpec struct {
 	// end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo `json:"userInfo,omitempty"`
+
+	// UpdateRequests is a strictly increasing, non-negative integer counter that
+	// can be manually incremented by a user to manually trigger an update. This
+	// allows for parameters to be updated with any out-of-band changes that have
+	// been made to the secrets from which the parameters are sourced.
+	UpdateRequests int64 `json:"updateRequests"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.

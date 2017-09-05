@@ -1038,8 +1038,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo"),
 							},
 						},
+						"updateRequests": {
+							SchemaProps: spec.SchemaProps{
+								Description: "UpdateRequests is a strictly increasing, non-negative integer counter that can be manually incremented by a user to manually trigger an update. This allows for parameters to be updated with any out-of-band changes that have been made to the secrets from which the parameters are sourced.",
+								Type:        []string{"integer"},
+								Format:      "int64",
+							},
+						},
 					},
-					Required: []string{"externalServiceClassName", "externalID"},
+					Required: []string{"externalServiceClassName", "externalID", "updateRequests"},
 				},
 			},
 			Dependencies: []string{
