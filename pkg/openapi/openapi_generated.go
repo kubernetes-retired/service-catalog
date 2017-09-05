@@ -493,7 +493,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstance": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ServiceInstance represents a provisioned instance of a ServiceClass.",
+					Description: "ServiceInstance represents a provisioned instance of a ServiceClass. Currently, the spec field cannot be changed once a ServiceInstance is created.  Spec changes submitted by users will be ignored.\n\nIn the future, this will be allowed and will represent the intention that the ServiceInstance should have the plan and/or parameters updated at the ServiceBroker.",
 					Properties: map[string]spec.Schema{
 						"kind": {
 							SchemaProps: spec.SchemaProps{
@@ -710,7 +710,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCredentialSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ServiceInstanceCredentialSpec represents the desired state of a ServiceInstanceCredential.",
+					Description: "ServiceInstanceCredentialSpec represents the desired state of a ServiceInstanceCredential.\n\nThe spec field cannot be changed after a ServiceInstanceCredential is created.  Changes submitted to the spec field will be ignored.",
 					Properties: map[string]spec.Schema{
 						"instanceRef": {
 							SchemaProps: spec.SchemaProps{
