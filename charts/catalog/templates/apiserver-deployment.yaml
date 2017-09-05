@@ -14,6 +14,7 @@ spec:
       app: {{ template "fullname" . }}-apiserver
   template:
     metadata:
+      initializers: null
       labels:
         app: {{ template "fullname" . }}-apiserver
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -58,6 +59,8 @@ spec:
         {{- if not .Values.apiserver.auth.enabled }}
         - --disable-auth
         {{- end }}
+        - --feature-gates
+        - {{ .Values.apiserver.featureGates }}
         ports:
         - containerPort: 8443
         volumeMounts:

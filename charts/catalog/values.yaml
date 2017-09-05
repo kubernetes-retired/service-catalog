@@ -7,6 +7,7 @@ apiserver:
   # imagePullPolicy for the apiserver; valid values are "IfNotPresent",
   # "Never", and "Always"
   imagePullPolicy: Always
+  featureGates: "PodPreset=true"
   aggregator:
     # priority is the priority of the APIService. Please see
     # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61

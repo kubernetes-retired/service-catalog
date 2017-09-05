@@ -17,9 +17,14 @@ limitations under the License.
 package apiserver
 
 import (
-	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
+
+	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
 
 // ServiceCatalogAPIServer contains the base GenericAPIServer along with other
@@ -36,9 +41,12 @@ func (s ServiceCatalogAPIServer) PrepareRun() RunnableServer {
 // DefaultAPIResourceConfigSource returns a default API Resource config source
 func DefaultAPIResourceConfigSource() *serverstorage.ResourceConfig {
 	ret := serverstorage.NewResourceConfig()
-	ret.EnableVersions(
-		servicecatalogv1alpha1.SchemeGroupVersion,
-	)
+	versions := []schema.GroupVersion{servicecatalogv1alpha1.SchemeGroupVersion}
+
+	if utilfeature.DefaultFeatureGate.Enabled(features.PodPreset) {
+		versions = append(versions, settingsv1alpha1.SchemeGroupVersion)
+	}
+	ret.EnableVersions(versions...)
 
 	return ret
 }
