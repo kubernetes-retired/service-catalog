@@ -26,7 +26,6 @@ import (
 	"time"
 
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/versioned/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
@@ -46,7 +45,10 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceInstance(t *testing
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: "nothere"},
 			ExternalID:         bindingGUID,
@@ -99,7 +101,11 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -155,7 +161,11 @@ func TestReconcileServiceInstanceCredentialWithSecretConflict(t *testing.T) {
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -230,7 +240,11 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -338,7 +352,11 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T)
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestNonbindableServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -403,7 +421,11 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	}())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -483,7 +505,11 @@ func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceBindableServiceNonbindablePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -525,7 +551,11 @@ func TestReconcileServiceInstanceCredentialFailsWithServiceInstanceAsyncOngoing(
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceAsyncProvisioning(""))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -582,7 +612,11 @@ func TestReconcileServiceInstanceCredentialServiceInstanceNotReady(t *testing.T)
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -627,7 +661,11 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -673,6 +711,7 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 			Namespace:         testNamespace,
 			DeletionTimestamp: &metav1.Time{},
 			Finalizers:        []string{v1alpha1.FinalizerServiceCatalog},
+			Generation:        1,
 		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
@@ -889,8 +928,8 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	binding.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 
-	checksum := checksum.ServiceInstanceCredentialSpecChecksum(binding.Spec)
-	binding.Status.Checksum = &checksum
+	binding.ObjectMeta.Generation = 1
+	binding.Status.ReconciledGeneration = 1
 
 	fakeCatalogClient.AddReactor("get", "serviceinstancecredentials", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, binding, nil
@@ -967,7 +1006,11 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerError(t *testing.T) 
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -1010,7 +1053,11 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerHTTPError(t *testing
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
@@ -1354,6 +1401,7 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 			Name:              testServiceInstanceCredentialName,
 			Namespace:         testNamespace,
 			DeletionTimestamp: &t1,
+			Generation:        1,
 		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
@@ -1401,6 +1449,7 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 			Name:              testServiceInstanceCredentialName,
 			Namespace:         testNamespace,
 			DeletionTimestamp: &t1,
+			Generation:        1,
 		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},

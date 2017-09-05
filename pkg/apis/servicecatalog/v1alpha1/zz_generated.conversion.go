@@ -573,7 +573,7 @@ func Convert_servicecatalog_ServiceInstanceCredentialSpec_To_v1alpha1_ServiceIns
 
 func autoConvert_v1alpha1_ServiceInstanceCredentialStatus_To_servicecatalog_ServiceInstanceCredentialStatus(in *ServiceInstanceCredentialStatus, out *servicecatalog.ServiceInstanceCredentialStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.ServiceInstanceCredentialCondition)(unsafe.Pointer(&in.Conditions))
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
+	out.ReconciledGeneration = in.ReconciledGeneration
 	return nil
 }
 
@@ -588,7 +588,7 @@ func autoConvert_servicecatalog_ServiceInstanceCredentialStatus_To_v1alpha1_Serv
 	} else {
 		out.Conditions = *(*[]ServiceInstanceCredentialCondition)(unsafe.Pointer(&in.Conditions))
 	}
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
+	out.ReconciledGeneration = in.ReconciledGeneration
 	return nil
 }
 
@@ -656,7 +656,7 @@ func autoConvert_v1alpha1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanc
 	out.AsyncOpInProgress = in.AsyncOpInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
+	out.ReconciledGeneration = in.ReconciledGeneration
 	return nil
 }
 
@@ -674,7 +674,7 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanc
 	out.AsyncOpInProgress = in.AsyncOpInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
-	out.Checksum = (*string)(unsafe.Pointer(in.Checksum))
+	out.ReconciledGeneration = in.ReconciledGeneration
 	return nil
 }
 

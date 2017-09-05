@@ -396,7 +396,11 @@ func getTestCatalog() *osb.CatalogResponse {
 // instance referencing the result of getTestServiceClass()
 func getTestServiceInstance() *v1alpha1.ServiceInstance {
 	return &v1alpha1.ServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
 			PlanName:         testPlanName,
@@ -503,7 +507,11 @@ func getTestServiceInstanceAsyncDeprovisioningWithFinalizer(operation string) *v
 // binding referencing the result of getTestServiceInstance()
 func getTestServiceInstanceCredential() *v1alpha1.ServiceInstanceCredential {
 	return &v1alpha1.ServiceInstanceCredential{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
 		Spec: v1alpha1.ServiceInstanceCredentialSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,

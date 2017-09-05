@@ -424,11 +424,6 @@ func DeepCopy_v1alpha1_ServiceInstanceCredentialStatus(in interface{}, out inter
 				}
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }
@@ -501,11 +496,6 @@ func DeepCopy_v1alpha1_ServiceInstanceStatus(in interface{}, out interface{}, c 
 		}
 		if in.DashboardURL != nil {
 			in, out := &in.DashboardURL, &out.DashboardURL
-			*out = new(string)
-			**out = **in
-		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
 		}

@@ -19,6 +19,7 @@ package binding
 // this was copied from where else and edited to fit our objects
 
 import (
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -28,7 +29,6 @@ import (
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
@@ -97,6 +97,7 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 	// Fill in the first entry set to "creating"?
 	binding.Status.Conditions = []sc.ServiceInstanceCredentialCondition{}
 	binding.Finalizers = []string{sc.FinalizerServiceCatalog}
+	binding.Generation = 1
 }
 
 func (bindingRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
@@ -120,8 +121,23 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, 
 	if !ok {
 		glog.Fatal("received a non-binding object to update from")
 	}
-	newServiceInstanceCredential.Spec = oldServiceInstanceCredential.Spec
 	newServiceInstanceCredential.Status = oldServiceInstanceCredential.Status
+
+	// TODO: We currently don't handle any changes to the spec in the
+	// reconciler. Once we do that, this check needs to be removed and
+	// proper validation of allowed changes needs to be implemented in
+	// ValidateUpdate. Also, the check for whether the generation needs
+	// to be updated needs to be un-commented.
+	newServiceInstanceCredential.Spec = oldServiceInstanceCredential.Spec
+
+	// Spec updates bump the generation so that we can distinguish between
+	// spec changes and other changes to the object.
+	//
+	// Note that since we do not currently handle any changes to the spec,
+	// the generation will never be incremented
+	if !apiequality.Semantic.DeepEqual(oldServiceInstanceCredential.Spec, newServiceInstanceCredential.Spec) {
+		newServiceInstanceCredential.Generation = oldServiceInstanceCredential.Generation + 1
+	}
 }
 
 func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
@@ -148,28 +164,6 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context,
 	}
 	// status changes are not allowed to update spec
 	newServiceInstanceCredential.Spec = oldServiceInstanceCredential.Spec
-
-	foundReadyConditionTrue := false
-	for _, condition := range newServiceInstanceCredential.Status.Conditions {
-		if condition.Type == sc.ServiceInstanceCredentialConditionReady && condition.Status == sc.ConditionTrue {
-			foundReadyConditionTrue = true
-			break
-		}
-	}
-
-	if foundReadyConditionTrue {
-		glog.Infof("Found true ready condition for ServiceInstanceCredential %v/%v; updating checksum", newServiceInstanceCredential.Namespace, newServiceInstanceCredential.Name)
-		// This status update has a true ready condition; update the checksum if necessary
-		newServiceInstanceCredential.Status.Checksum = func() *string {
-			s := checksum.ServiceInstanceCredentialSpecChecksum(newServiceInstanceCredential.Spec)
-			return &s
-		}()
-		return
-	}
-
-	// if the ready condition is not true, the value of the checksum should
-	// not change.
-	newServiceInstanceCredential.Status.Checksum = oldServiceInstanceCredential.Status.Checksum
 }
 
 func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

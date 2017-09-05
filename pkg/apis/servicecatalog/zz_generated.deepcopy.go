@@ -424,11 +424,6 @@ func DeepCopy_servicecatalog_ServiceInstanceCredentialStatus(in interface{}, out
 				}
 			}
 		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
-			*out = new(string)
-			**out = **in
-		}
 		return nil
 	}
 }
@@ -501,11 +496,6 @@ func DeepCopy_servicecatalog_ServiceInstanceStatus(in interface{}, out interface
 		}
 		if in.DashboardURL != nil {
 			in, out := &in.DashboardURL, &out.DashboardURL
-			*out = new(string)
-			**out = **in
-		}
-		if in.Checksum != nil {
-			in, out := &in.Checksum, &out.Checksum
 			*out = new(string)
 			**out = **in
 		}

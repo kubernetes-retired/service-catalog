@@ -627,9 +627,6 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	if e, a := readyConditionTrue, instanceServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
 	}
-	if instanceServer.Status.Checksum == nil {
-		return fmt.Errorf("Checksum should have been set after updating ready condition to true")
-	}
 
 	// delete the instance, set its finalizers to nil, update it, then ensure it is actually
 	// deleted
@@ -797,9 +794,6 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	}
 	if e, a := readyConditionTrue, bindingServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
-	}
-	if bindingServer.Status.Checksum == nil {
-		return fmt.Errorf("Checksum should have been set after updating ready condition to true")
 	}
 
 	if err = bindingClient.Delete(name, &metav1.DeleteOptions{}); nil != err {

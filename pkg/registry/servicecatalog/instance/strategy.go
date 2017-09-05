@@ -19,6 +19,7 @@ package instance
 // this was copied from where else and edited to fit our objects
 
 import (
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -28,7 +29,6 @@ import (
 
 	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	checksum "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/checksum/unversioned"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
@@ -98,6 +98,7 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	// Fill in the first entry set to "creating"?
 	instance.Status.Conditions = []sc.ServiceInstanceCondition{}
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
+	instance.Generation = 1
 }
 
 func (instanceRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
@@ -122,14 +123,24 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 		glog.Fatal("received a non-instance object to update from")
 	}
 
+	// Do not allow any updates to the Status field while updating the Spec
+	newServiceInstance.Status = oldServiceInstance.Status
+
 	// TODO: We currently don't handle any changes to the spec in the
 	// reconciler. Once we do that, this check needs to be removed and
 	// proper validation of allowed changes needs to be implemented in
-	// ValidateUpdate
+	// ValidateUpdate. Also, the check for whether the generation needs
+	// to be updated needs to be un-commented.
 	newServiceInstance.Spec = oldServiceInstance.Spec
 
-	// Do not allow any updates to the Status field while updating the Spec
-	newServiceInstance.Status = oldServiceInstance.Status
+	// Spec updates bump the generation so that we can distinguish between
+	// spec changes and other changes to the object.
+	//
+	// Note that since we do not currently handle any changes to the spec,
+	// the generation will never be incremented
+	if !apiequality.Semantic.DeepEqual(oldServiceInstance.Spec, newServiceInstance.Spec) {
+		newServiceInstance.Generation = oldServiceInstance.Generation + 1
+	}
 }
 
 func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
@@ -156,29 +167,6 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context
 	}
 	// Status changes are not allowed to update spec
 	newServiceInstance.Spec = oldServiceInstance.Spec
-
-	foundReadyConditionTrue := false
-	for _, condition := range newServiceInstance.Status.Conditions {
-		if condition.Type == sc.ServiceInstanceConditionReady && condition.Status == sc.ConditionTrue {
-			foundReadyConditionTrue = true
-			break
-		}
-	}
-
-	if foundReadyConditionTrue {
-		glog.Infof("Found true ready condition for ServiceInstance %v/%v; updating checksum", newServiceInstance.Namespace, newServiceInstance.Name)
-		// This status update has a true ready condition; update the checksum
-		// if necessary
-		newServiceInstance.Status.Checksum = func() *string {
-			s := checksum.ServiceInstanceSpecChecksum(newServiceInstance.Spec)
-			return &s
-		}()
-		return
-	}
-
-	// if the ready condition is not true, the value of the checksum should
-	// not change.
-	newServiceInstance.Status.Checksum = oldServiceInstance.Status.Checksum
 }
 
 func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
