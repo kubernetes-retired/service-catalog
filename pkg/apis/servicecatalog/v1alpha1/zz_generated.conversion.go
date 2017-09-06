@@ -338,8 +338,8 @@ func autoConvert_v1alpha1_ServiceClass_To_servicecatalog_ServiceClass(in *Servic
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalID = in.ExternalID
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
-	out.AlphaTags = *(*[]string)(unsafe.Pointer(&in.AlphaTags))
-	out.AlphaRequires = *(*[]string)(unsafe.Pointer(&in.AlphaRequires))
+	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
+	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	return nil
 }
 
@@ -361,8 +361,8 @@ func autoConvert_servicecatalog_ServiceClass_To_v1alpha1_ServiceClass(in *servic
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalID = in.ExternalID
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
-	out.AlphaTags = *(*[]string)(unsafe.Pointer(&in.AlphaTags))
-	out.AlphaRequires = *(*[]string)(unsafe.Pointer(&in.AlphaRequires))
+	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
+	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	return nil
 }
 
@@ -690,9 +690,9 @@ func autoConvert_v1alpha1_ServicePlan_To_servicecatalog_ServicePlan(in *ServiceP
 	out.Bindable = (*bool)(unsafe.Pointer(in.Bindable))
 	out.Free = in.Free
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
-	out.AlphaServiceInstanceCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.AlphaServiceInstanceCreateParameterSchema))
-	out.AlphaServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.AlphaServiceInstanceUpdateParameterSchema))
-	out.AlphaServiceInstanceCredentialCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.AlphaServiceInstanceCredentialCreateParameterSchema))
+	out.ServiceInstanceCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceCreateParameterSchema))
+	out.ServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceUpdateParameterSchema))
+	out.ServiceInstanceCredentialCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceCredentialCreateParameterSchema))
 	return nil
 }
 
@@ -708,9 +708,9 @@ func autoConvert_servicecatalog_ServicePlan_To_v1alpha1_ServicePlan(in *servicec
 	out.Bindable = (*bool)(unsafe.Pointer(in.Bindable))
 	out.Free = in.Free
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
-	out.AlphaServiceInstanceCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.AlphaServiceInstanceCreateParameterSchema))
-	out.AlphaServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.AlphaServiceInstanceUpdateParameterSchema))
-	out.AlphaServiceInstanceCredentialCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.AlphaServiceInstanceCredentialCreateParameterSchema))
+	out.ServiceInstanceCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceCreateParameterSchema))
+	out.ServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceUpdateParameterSchema))
+	out.ServiceInstanceCredentialCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceCredentialCreateParameterSchema))
 	return nil
 }
 

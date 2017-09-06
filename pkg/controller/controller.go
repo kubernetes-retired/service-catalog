@@ -452,9 +452,9 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
 			Plans:         plans,
 			PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
 			ExternalID:    svc.ID,
-			AlphaTags:     svc.Tags,
+			Tags:          svc.Tags,
 			Description:   svc.Description,
-			AlphaRequires: svc.Requires,
+			Requires:      svc.Requires,
 		}
 
 		if svc.Metadata != nil {
@@ -506,7 +506,7 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 						glog.Error(err)
 						return nil, err
 					}
-					ret[i].AlphaServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					ret[i].ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
@@ -515,7 +515,7 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 						glog.Error(err)
 						return nil, err
 					}
-					ret[i].AlphaServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+					ret[i].ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
@@ -526,7 +526,7 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 						glog.Error(err)
 						return nil, err
 					}
-					ret[i].AlphaServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					ret[i].ServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 		}

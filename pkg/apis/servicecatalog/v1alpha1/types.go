@@ -224,16 +224,16 @@ type ServiceClass struct {
 	// attributes of the ServiceClass.  These are used in Cloud Foundry in a
 	// way similar to Kubernetes labels, but they currently have no special
 	// meaning in Kubernetes.
-	AlphaTags []string `json:"alphaTags,omitempty"`
+	Tags []string `json:"tags,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// AlphaRequires exposes a list of Cloud Foundry-specific 'permissions'
+	// Requires exposes a list of Cloud Foundry-specific 'permissions'
 	// that must be granted to an instance of this service within Cloud
 	// Foundry.  These 'permissions' have no meaning within Kubernetes and an
 	// ServiceInstance provisioned from this ServiceClass will not work correctly.
-	AlphaRequires []string `json:"alphaRequires,omitempty"`
+	Requires []string `json:"requires,omitempty"`
 }
 
 // ServicePlan represents a tier of a ServiceClass.
@@ -265,24 +265,24 @@ type ServicePlan struct {
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// AlphaServiceInstanceCreateParameterSchema is the schema for the parameters
+	// ServiceInstanceCreateParameterSchema is the schema for the parameters
 	// that may be supplied when provisioning a new ServiceInstance on this plan.
-	AlphaServiceInstanceCreateParameterSchema *runtime.RawExtension `json:"alphaInstanceCreateParameterSchema,omitempty"`
+	ServiceInstanceCreateParameterSchema *runtime.RawExtension `json:"instanceCreateParameterSchema,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// AlphaServiceInstanceUpdateParameterSchema is the schema for the parameters
+	// ServiceInstanceUpdateParameterSchema is the schema for the parameters
 	// that may be updated once an ServiceInstance has been provisioned on this plan.
 	// This field only has meaning if the ServiceClass is PlanUpdatable.
-	AlphaServiceInstanceUpdateParameterSchema *runtime.RawExtension `json:"alphaInstanceUpdateParameterSchema,omitempty"`
+	ServiceInstanceUpdateParameterSchema *runtime.RawExtension `json:"instanceUpdateParameterSchema,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// AlphaServiceInstanceCredentialCreateParameterSchema is the schema for the parameters that
+	// ServiceInstanceCredentialCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
-	AlphaServiceInstanceCredentialCreateParameterSchema *runtime.RawExtension `json:"alphaServiceInstanceCredentialCreateParameterSchema,omitempty"`
+	ServiceInstanceCredentialCreateParameterSchema *runtime.RawExtension `json:"serviceInstanceCredentialCreateParameterSchema,omitempty"`
 }
 
 // ServiceInstanceList is a list of instances.
