@@ -41,6 +41,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
 const (
@@ -510,7 +511,7 @@ func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1
 			Description:     plan.Description,
 			ServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassName},
 		}
-		servicePlans[i].SetName(plan.Name + plan.ID)
+		servicePlans[i].SetName(util.ConstructPlanName(plan.Name, plan.ID))
 
 		if plan.Bindable != nil {
 			b := *plan.Bindable

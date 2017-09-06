@@ -26,6 +26,7 @@ import (
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -213,12 +214,12 @@ func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	assertNumberOfActions(t, actions, 4)
 
 	tp := getTestServicePlan()
-	tp.Name = tp.Name + tp.ExternalID
+	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = nbtp.Name + nbtp.ExternalID
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 
@@ -259,12 +260,12 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 
 	// TODO fix name munging after decision
 	tp := getTestServicePlan()
-	tp.Name = tp.Name + tp.ExternalID
+	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = nbtp.Name + nbtp.ExternalID
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 
@@ -309,12 +310,12 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 
 	// TODO fix name munging after decision
 	tp := getTestServicePlan()
-	tp.Name = tp.Name + tp.ExternalID
+	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = nbtp.Name + nbtp.ExternalID
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 

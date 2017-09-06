@@ -48,6 +48,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	coreutil "github.com/kubernetes-incubator/service-catalog/pkg/util"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
@@ -149,7 +150,7 @@ func TestBasicFlowsSync(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName + testPlanExternalID,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -317,7 +318,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName + testPlanExternalID,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -474,7 +475,7 @@ func TestProvisionFailure(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName + testPlanExternalID,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -598,7 +599,7 @@ func TestBindingFailure(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName + testPlanExternalID,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}

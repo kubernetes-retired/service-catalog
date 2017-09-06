@@ -30,6 +30,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -614,9 +615,8 @@ func TestCatalogConversion(t *testing.T) {
 		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(servicePlans))
 	}
 
-	// TODO: Fix name munging
-	checkPlan(servicePlans[0], "fake-plan-1d3031751-XXXX-XXXX-XXXX-a42377d3320e", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
-	checkPlan(servicePlans[1], "fake-plan-20f4008b5-XXXX-XXXX-XXXX-dace631cd648", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
+	checkPlan(servicePlans[0], util.ConstructPlanName("fake-plan-1", "d3031751-XXXX-XXXX-XXXX-a42377d3320e"), "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
+	checkPlan(servicePlans[1], util.ConstructPlanName("fake-plan-2", "0f4008b5-XXXX-XXXX-XXXX-dace631cd648"), "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
@@ -898,7 +898,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 	eplans := []*v1alpha1.ServicePlan{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "bindable-bindable" + "s1_plan1_id",
+				Name: util.ConstructPlanName("bindable-bindable", "s1_plan1_id"),
 			},
 			ExternalID: "s1_plan1_id",
 			Bindable:   nil,
@@ -908,7 +908,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "bindable-unbindable" + "s1_plan2_id",
+				Name: util.ConstructPlanName("bindable-unbindable", "s1_plan2_id"),
 			},
 			ExternalID: "s1_plan2_id",
 			Bindable:   falsePtr(),
@@ -918,7 +918,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "unbindable-unbindable" + "s2_plan1_id",
+				Name: util.ConstructPlanName("unbindable-unbindable", "s2_plan1_id"),
 			},
 			ExternalID: "s2_plan1_id",
 			Bindable:   nil,
@@ -929,7 +929,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 
-				Name: "unbindable-bindable" + "s2_plan2_id",
+				Name: util.ConstructPlanName("unbindable-bindable", "s2_plan2_id"),
 			},
 			ExternalID: "s2_plan2_id",
 			Bindable:   truePtr(),
