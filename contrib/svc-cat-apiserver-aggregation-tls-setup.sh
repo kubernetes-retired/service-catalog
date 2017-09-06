@@ -16,8 +16,6 @@
 
 set -o errexit
 
-HELM_SCRIPT=helm-install.sh
-
 export HELM_RELEASE_NAME=${HELM_RELEASE_NAME:-catalog}
 export SVCCAT_NAMESPACE=${SVCCAT_NAMESPACE:-catalog}
 SVCCAT_SERVICE_NAME=${HELM_RELEASE_NAME}-catalog-apiserver
