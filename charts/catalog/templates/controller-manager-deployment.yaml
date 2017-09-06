@@ -14,7 +14,6 @@ spec:
       app: {{ template "fullname" . }}-controller-manager
   template:
     metadata:
-      initializers: null
       labels:
         app: {{ template "fullname" . }}-controller-manager
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -78,7 +77,7 @@ spec:
             port: 8080
             path: /healthz
           failureThreshold: 1
-          initialDelaySeconds: 10
+          initialDelaySeconds: 20
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
@@ -87,7 +86,7 @@ spec:
             port: 8080
             path: /healthz
           failureThreshold: 3
-          initialDelaySeconds: 10
+          initialDelaySeconds: 20
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
