@@ -1,5 +1,5 @@
-hash: 05f4625aa27fdafe2ace9772c71ac69edf0d3592dd6a247463340c88aef8bc0a
-updated: 2017-08-10T00:39:55.84973729-04:00
+hash: 8df7d820cb036d1e047cf9ac87956a8cd6e1ac9de7902e2ca87f47bf8f4aeab6
+updated: 2017-09-07T11:55:23.45296027-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -133,7 +133,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
