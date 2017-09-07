@@ -57,6 +57,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 	// internal: the time that has elapsed since now
 	// reconcile: whether or not the reconciler should run, the return of
 	// shouldReconcileServiceBroker
+	// ERIK:TODO: Test new Relist codepaths
 	cases := []struct {
 		name      string
 		broker    *v1alpha1.ServiceBroker
@@ -148,7 +149,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 		}
 
 		t.Logf("%v: now: %v, interval: %v, last transition time: %v", tc.name, tc.now, tc.interval, ltt)
-		actual := shouldReconcileServiceBroker(tc.broker, tc.now, tc.interval)
+		actual := shouldReconcileServiceBroker(tc.broker, tc.now, metav1.Duration{tc.interval})
 
 		if e, a := tc.reconcile, actual; e != a {
 			t.Errorf("%v: unexpected result: expected %v, got %v", tc.name, e, a)
@@ -556,6 +557,8 @@ func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.Service
 	}
 }
 
+// ERIK:TODO: Write up another test here to confirm an error is bubbled when
+// RelistDuration is nil, similar to this?
 // TestReconcileServiceBrokerWithReconcileError simulates broker reconciliation where
 // creation of a service class causes an error which causes ReconcileServiceBroker to
 // return an error
