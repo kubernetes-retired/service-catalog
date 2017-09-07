@@ -799,6 +799,119 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceDeleteBlockedByCredentials tests
+// deleting/deprovisioning an instance that has ServiceInstanceCredentials.
+// Instance reconcilation will set the Ready condition to false with a msg
+// indicating the delete is blocked until the credentials are removed.
+func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{},
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	credentials := getTestServiceInstanceCredential()
+	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Add(credentials)
+
+	instance := getTestServiceInstance()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	// we only invoke the broker client to deprovision if we have a reconciled generation set
+	// as that implies a previous success.
+	instance.Status.ReconciledGeneration = 1
+
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	err := testController.reconcileServiceInstance(instance)
+	if err != nil {
+		t.Fatalf("reconcileServiceInstance() returned an error:  %v", err.Error())
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+
+	// The action should be Update to Ready = false
+	assertNumberOfActions(t, actions, 1)
+	expectedMessage := "Delete instance failed. Delete instance test-ns/test-instance blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first."
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance, "DeprovisionCallFailed")
+	i, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", updatedServiceInstance)
+	}
+
+	condition := i.Status.Conditions[0]
+	if condition.Message != expectedMessage {
+		fatalf(t, "unexpected message; expected %v, got %v", expectedMessage, condition.Message)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + "DeprovisionCallFailed Delete instance test-ns/test-instance blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first."
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+
+	// delete credentials
+	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Delete(credentials)
+
+	fakeKubeClient.ClearActions()
+	fakeCatalogClient.ClearActions()
+
+	// credentials were removed, verify the next reconcilation removes
+	// the instance
+
+	err = testController.reconcileServiceInstance(instance)
+	if err != nil {
+		t.Fatalf("This should not fail")
+	}
+
+	brokerActions = fakeBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+	})
+
+	// Verify no core kube actions occurred
+	kubeActions = fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions = fakeCatalogClient.Actions()
+
+	// The three actions should be:
+	// 0. Updating the ready condition
+	// 1. Get against the instance
+	// 2. Removing the finalizer
+	assertNumberOfActions(t, actions, 3)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
+	assertGet(t, actions[1], instance)
+	updatedServiceInstance = assertUpdateStatus(t, actions[2], instance)
+	assertEmptyFinalizers(t, updatedServiceInstance)
+
+	events = getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+	expectedEvent = api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
 func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	key := osb.OperationKey(testOperation)
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
