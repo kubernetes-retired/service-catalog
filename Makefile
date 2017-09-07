@@ -288,11 +288,11 @@ test-e2e: .generate_files $(BINDIR)/e2e.test
 clean: clean-bin clean-build-image clean-generated clean-coverage
 
 clean-bin:
-	rm -rf $(BINDIR)
+	$(DOCKER_CMD) rm -rf $(BINDIR)
 	rm -f .generate_exes
 
 clean-build-image:
-	rm -rf .pkg
+	$(DOCKER_CMD) rm -rf .pkg
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
