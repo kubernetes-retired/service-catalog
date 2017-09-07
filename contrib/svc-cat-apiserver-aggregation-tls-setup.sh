@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
 
 export HELM_RELEASE_NAME=${HELM_RELEASE_NAME:-catalog}
 export SVCCAT_NAMESPACE=${SVCCAT_NAMESPACE:-catalog}
