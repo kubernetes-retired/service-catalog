@@ -34,6 +34,7 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
@@ -43,6 +44,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -56,6 +58,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/podpreset"
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -81,7 +84,10 @@ the core control loops shipped with the service catalog.`,
 const controllerManagerAgentName = "service-catalog-controller-manager"
 const controllerDiscoveryAgentName = "service-catalog-controller-discovery"
 
-var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1beta1", Resource: "clusterservicebrokers"}
+var (
+	catalogGVR   = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1beta1", Resource: "clusterservicebrokers"}
+	podPresetGVR = schema.GroupVersionResource{Group: "settings.k8s.io", Version: "v1alpha1", Resource: "podpresets"}
+)
 
 // Run runs the service-catalog controller-manager; should never exit.
 func Run(controllerManagerOptions *options.ControllerManagerServer) error {
@@ -360,7 +366,53 @@ func StartControllers(s *options.ControllerManagerServer,
 	glog.V(1).Info("Starting shared informers")
 	informerFactory.Start(stop)
 
+	if availableResources[podPresetGVR] {
+		// if PodPreset API is enabled, launch PodPreset admission control initializer
+		glog.Infof("PodPreset APIs are enabled, starting initializer for PodPresets")
+		// Build the informer factory for service-catalog resources
+		informerFactory := servicecataloginformers.NewSharedInformerFactory(
+			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
+			0,
+		)
+		// settings shared informers are v1alpha1 API level
+		settingsSharedInformers := informerFactory.Settings().V1alpha1()
+
+		podPresetController, err := podpreset.NewController(
+			coreClient,
+			recorder,
+			newPodSharedInformer(coreClient),
+			settingsSharedInformers.PodPresets(),
+		)
+		if err != nil {
+			glog.Errorf("error creating podpreset initializer : %v", err)
+			return err
+		}
+		// TODO(droot): check appropriate concurrency for initializer workers
+		go podPresetController.Run(1, stop)
+		informerFactory.Start(stop)
+	}
+
 	select {}
+}
+
+// newPodSharedInformer creates a SharedIndexInformer object that lists/watches
+// initialized as well as uninitialized Pods.
+func newPodSharedInformer(kubeClient kubernetes.Interface) cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
+		&cache.ListWatch{
+			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
+				lo.IncludeUninitialized = true
+				return kubeClient.CoreV1().Pods(v1.NamespaceAll).List(lo)
+			},
+			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
+				lo.IncludeUninitialized = true
+				return kubeClient.CoreV1().Pods(v1.NamespaceAll).Watch(lo)
+			},
+		},
+		&v1core.Pod{},
+		0,
+		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
+	)
 }
 
 // checkAPIAvailableResourcesServer is a HealthzChecker that makes sure the
