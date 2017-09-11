@@ -12,6 +12,7 @@ For more information, [visit the project on github]
 ## Prerequisites
 
 - Kubernetes 1.6+ with Beta APIs enabled
+- `charts/catalog` already exists in your local machine
 
 ## Installing the Chart
 
