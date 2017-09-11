@@ -6,8 +6,8 @@ Kubernetes-native workflow for integrating with
 to provision and bind to application dependencies like databases, object
 storage, message-oriented middleware, and more.
 
-For more information, [visit the project on github]
-(https://github.com/kubernetes-incubator/service-catalog).
+For more information,
+[visit the project on github](https://github.com/kubernetes-incubator/service-catalog).
 
 ## Prerequisites
 
