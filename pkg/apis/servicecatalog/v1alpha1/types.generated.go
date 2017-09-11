@@ -956,7 +956,7 @@ func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				x.RelistBehavior.CodecEncodeSelf(e)
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("RelistBehavior"))
+				r.EncodeString(codecSelferC_UTF81234, string("relistBehavior"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				x.RelistBehavior.CodecEncodeSelf(e)
 			}
@@ -977,7 +977,7 @@ func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("RelistDuration"))
+				r.EncodeString(codecSelferC_UTF81234, string("relistDuration"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				if x.RelistDuration == nil {
 					r.EncodeNil()
@@ -1003,7 +1003,7 @@ func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("RelistRequests"))
+				r.EncodeString(codecSelferC_UTF81234, string("relistRequests"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym23 := z.EncBinary()
 				_ = yym23
@@ -1120,14 +1120,14 @@ func (x *ServiceBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) 
 					*yyv9 = r.DecodeBytes(*(*[]byte)(yyv9), false, false)
 				}
 			}
-		case "RelistBehavior":
+		case "relistBehavior":
 			if r.TryDecodeAsNil() {
 				x.RelistBehavior = ""
 			} else {
 				yyv11 := &x.RelistBehavior
 				yyv11.CodecDecodeSelf(d)
 			}
-		case "RelistDuration":
+		case "relistDuration":
 			if r.TryDecodeAsNil() {
 				if x.RelistDuration != nil {
 					x.RelistDuration = nil
@@ -1146,7 +1146,7 @@ func (x *ServiceBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) 
 					z.DecFallback(x.RelistDuration, false)
 				}
 			}
-		case "RelistRequests":
+		case "relistRequests":
 			if r.TryDecodeAsNil() {
 				x.RelistRequests = 0
 			} else {

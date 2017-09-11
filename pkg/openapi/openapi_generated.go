@@ -296,20 +296,20 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "byte",
 							},
 						},
-						"RelistBehavior": {
+						"relistBehavior": {
 							SchemaProps: spec.SchemaProps{
 								Description: "RelistBehavior specifies the type of relist behavior the catalog should exhibit when relisting ServiceClasses available from a broker",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
-						"RelistDuration": {
+						"relistDuration": {
 							SchemaProps: spec.SchemaProps{
 								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 							},
 						},
-						"RelistRequests": {
+						"relistRequests": {
 							SchemaProps: spec.SchemaProps{
 								Description: "RelistRequests is a strictly increasing integer counter that can be manually incremented by a user to manually trigger a relist",
 								Type:        []string{"integer"},
@@ -317,7 +317,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"url", "RelistBehavior", "RelistDuration", "RelistRequests"},
+					Required: []string{"url", "relistBehavior", "relistDuration", "relistRequests"},
 				},
 			},
 			Dependencies: []string{
