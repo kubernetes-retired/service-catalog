@@ -54,7 +54,6 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 	// name: short description of the test
 	// broker: broker object to test
 	// now: what time the interval is calculated with respect to interval
-	// internal: the time that has elapsed since now
 	// reconcile: whether or not the reconciler should run, the return of
 	// shouldReconcileServiceBroker
 	// ERIK:TODO: Test new Relist codepaths
@@ -62,32 +61,34 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 		name      string
 		broker    *v1alpha1.ServiceBroker
 		now       time.Time
-		interval  time.Duration
 		reconcile bool
 	}{
 		{
-			name:      "no status",
-			broker:    getTestServiceBroker(),
+			name: "no status",
+			broker: func() *v1alpha1.ServiceBroker {
+				broker := getTestServiceBroker()
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				return broker
+			}(),
 			now:       time.Now(),
-			interval:  3 * time.Minute,
 			reconcile: true,
 		},
 		{
 			name: "deletionTimestamp set",
 			broker: func() *v1alpha1.ServiceBroker {
-				b := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
-				b.DeletionTimestamp = &metav1.Time{}
-				return b
+				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+				broker.DeletionTimestamp = &metav1.Time{}
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Hour}
+				return broker
 			}(),
 			now:       time.Now(),
-			interval:  3 * time.Hour,
 			reconcile: true,
 		},
 		{
 			name: "no ready condition",
 			broker: func() *v1alpha1.ServiceBroker {
-				b := getTestServiceBroker()
-				b.Status = v1alpha1.ServiceBrokerStatus{
+				broker := getTestServiceBroker()
+				broker.Status = v1alpha1.ServiceBrokerStatus{
 					Conditions: []v1alpha1.ServiceBrokerCondition{
 						{
 							Type:   v1alpha1.ServiceBrokerConditionType("NotARealCondition"),
@@ -95,37 +96,40 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 						},
 					},
 				}
-				return b
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				return broker
 			}(),
 			now:       time.Now(),
-			interval:  3 * time.Minute,
 			reconcile: true,
 		},
 		{
-			name:      "not ready",
-			broker:    getTestServiceBrokerWithStatus(v1alpha1.ConditionFalse),
+			name: "not ready",
+			broker: func() *v1alpha1.ServiceBroker {
+				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionFalse)
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				return broker
+			}(),
 			now:       time.Now(),
-			interval:  3 * time.Minute,
 			reconcile: true,
 		},
 		{
 			name: "ready, interval elapsed",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
 				return broker
 			}(),
 			now:       time.Now(),
-			interval:  3 * time.Minute,
 			reconcile: true,
 		},
 		{
 			name: "ready, interval not elapsed",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Hour}
 				return broker
 			}(),
 			now:       time.Now(),
-			interval:  3 * time.Hour,
 			reconcile: false,
 		},
 		{
@@ -134,10 +138,10 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
 				broker.Generation = 2
 				broker.Status.ReconciledGeneration = 1
+				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Hour}
 				return broker
 			}(),
 			now:       time.Now(),
-			interval:  3 * time.Hour,
 			reconcile: true,
 		},
 	}
@@ -148,8 +152,9 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
 		}
 
-		t.Logf("%v: now: %v, interval: %v, last transition time: %v", tc.name, tc.now, tc.interval, ltt)
-		actual := shouldReconcileServiceBroker(tc.broker, tc.now, metav1.Duration{tc.interval})
+		interval := tc.broker.Spec.RelistDuration.Duration
+		t.Logf("%v: now: %v, interval: %v, last transition time: %v", tc.name, tc.now, interval, ltt)
+		actual := shouldReconcileServiceBroker(tc.broker, tc.now)
 
 		if e, a := tc.reconcile, actual; e != a {
 			t.Errorf("%v: unexpected result: expected %v, got %v", tc.name, e, a)

@@ -99,6 +99,12 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 			)
 		}
 
+		if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
+			allErrs = append(
+				allErrs,
+				field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
+			)
+		}
 	}
 
 	if spec.InsecureSkipTLSVerify && len(spec.CABundle) > 0 {

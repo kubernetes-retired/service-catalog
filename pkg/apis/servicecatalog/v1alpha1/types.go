@@ -63,13 +63,13 @@ type ServiceBrokerSpec struct {
 
 	// RelistBehavior specifies the type of relist behavior the catalog should exhibit
 	// when relisting ServiceClasses available from a broker
-	RelistBehavior ServiceBrokerRelistBehavior
+	RelistBehavior ServiceBrokerRelistBehavior `json:"relistBehavior"`
 	//RelistDuration is the frequency by which a controller will relist the broker
 	//when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration
-	RelistDuration *metav1.Duration
+	RelistDuration *metav1.Duration `json:"relistDuration"`
 	//RelistRequests is a strictly increasing integer counter that can be manually incremented
 	//by a user to manually trigger a relist
-	RelistRequests int64
+	RelistRequests int64 `json:"relistRequests"`
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior

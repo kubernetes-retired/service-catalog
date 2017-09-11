@@ -115,8 +115,8 @@ const (
 // shouldReconcileServiceBroker determines whether a broker should be reconciled; it
 // returns true unless the broker has a ready condition with status true and
 // the controller's broker relist interval has not elapsed since the broker's
-// ready condition became true, or if the broker's RelistBehavior is set to Manual
-func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time, relistInterval metav1.Duration) bool {
+// ready condition became true, or if the broker's RelistBehavior is set to Manual.
+func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time) bool {
 	if broker.Status.ReconciledGeneration != broker.Generation {
 		// If the spec has changed, we should reconcile the broker.
 		return true
@@ -146,9 +146,17 @@ func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time,
 					return false
 				}
 
+				////////////////////////////////////////////////////////////
+				// ERIK TODO: nil?
+				//if broker.Spec.RelistDuration == nil {
+				//return false, fmt.Errorf("relistDuration is nil, cannot reconcile broker")
+				//}
+				////////////////////////////////////////////////////////////
+
 				// By default, the broker should relist if it has been longer than the
 				// RelistDuration since the broker's ready condition became true.
-				intervalPassed := now.After(condition.LastTransitionTime.Add(relistInterval.Duration))
+				duration := broker.Spec.RelistDuration.Duration
+				intervalPassed := now.After(condition.LastTransitionTime.Add(duration))
 				if intervalPassed == false {
 					glog.V(10).Infof(
 						"Not processing ServiceBroker %v because RelistDuration has not elapsed since the broker became ready",
@@ -187,16 +195,12 @@ func (c *controller) reconcileServiceBrokerKey(key string) error {
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) error {
 	glog.V(4).Infof("Processing ServiceBroker %v", broker.Name)
-	if broker.Spec.RelistDuration == nil {
-		// ERIK:TODO: Handle nil RelistDuration?
-		// Best practice for handling optional fields?
-	}
 
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
 	// elapsed, do not reconcile it.
-	if !shouldReconcileServiceBroker(broker, time.Now(), *broker.Spec.RelistDuration) {
+	if !shouldReconcileServiceBroker(broker, time.Now()) {
 		return nil
 	}
 
