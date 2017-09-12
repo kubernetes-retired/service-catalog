@@ -140,18 +140,19 @@ func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time)
 					// If a broker is configured with RelistBehaviorManual, it should
 					// ignore the Duration and only relist based on spec changes
 					glog.V(10).Infof(
-						"Not processing ServiceBroker %v because RelistBehavior is set to Manual",
+						"Not processing ServiceBroker %v: RelistBehavior is set to Manual",
 						broker.Name,
 					)
 					return false
 				}
 
-				////////////////////////////////////////////////////////////
-				// ERIK TODO: nil?
-				//if broker.Spec.RelistDuration == nil {
-				//return false, fmt.Errorf("relistDuration is nil, cannot reconcile broker")
-				//}
-				////////////////////////////////////////////////////////////
+				if broker.Spec.RelistDuration == nil {
+					glog.V(10).Infof(
+						"Unable to process ServiceBroker %v: RelistBehavior is set to Duration with a nil RelistDuration value",
+						broker.Name,
+					)
+					return false
+				}
 
 				// By default, the broker should relist if it has been longer than the
 				// RelistDuration since the broker's ready condition became true.
