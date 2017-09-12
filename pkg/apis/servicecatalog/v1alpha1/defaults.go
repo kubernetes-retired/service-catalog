@@ -32,7 +32,7 @@ func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
 		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
 	}
 
-	if spec.RelistDuration == nil {
+	if spec.RelistBehavior == ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
 		spec.RelistDuration = &metav1.Duration{15 * time.Minute}
 	}
 }
