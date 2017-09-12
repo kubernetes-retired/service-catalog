@@ -146,28 +146,37 @@ start over, check out the "Final Cleanup" section in the
 [walkthrough document](./walkthrough-1.6.md). Follow those instructions before 
 you start over.
 
-## Step 3 - Configuring `kubectl` to Talk to the API Server
+# Step 3 - Configuring `kubectl` to Talk to the API Server
 
 To configure `kubectl` to communicate with the service catalog API server, we'll have to
 get the IP address that points to the `Service` that sits in front of the API server pod(s).
 If you installed the catalog with one of the `helm install` commands above, then this service 
 will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace. 
 
-### Notes on Getting the IP Address
+## Getting the IP Address of the API server
 
 How you get this IP address is highly dependent on your Kubernetes installation
-method. Regardless of how you do it, do not use the Cluster IP of the 
+method. Regardless of how you do it, do not use the `CLUSTER-IP` of the 
 `Service`. The `Service` is created as a `NodePort` in this walkthrough, you 
 will need to use the address of one of the nodes in your cluster.
 
-### Setting up a New `kubectl` Context
+One option is to enable a cloud load balancer and get `EXTERNAL-IP` of the API server.
+```console
+# Replace "type: NodePort" with "type: LoadBalancer".
+kubectl edit service catalog-catalog-apiserver --namespace catalog
+# Watch `EXTERNAL-IP` and use it when available.
+watch kubectl get service catalog-catalog-apiserver --namespace catalog
+```
 
-When you determine the IP address of this service, set its value into the `SVC_CAT_API_SERVER_IP`
-environment variable and then run the following commands:
+## Setting up a New `kubectl` Context
+
+When you determine the IP address and port of this service, set its values into the `SVC_CAT_API_SERVER_IP`
+and `PORT` (e.g. 30443) environment variables and then run the following commands:
 
 ```console
-kubectl config set-cluster service-catalog --server=https://${SVC_CAT_API_SERVER_IP}:30443 --insecure-skip-tls-verify=true
-kubectl config set-context service-catalog --cluster=service-catalog
+kubectl config set-cluster service-catalog --server=https://${SVC_CAT_API_SERVER_IP}:${PORT} --insecure-skip-tls-verify=true
+kubectl config set-credentials service-catalog-creds --username=admin --password=admin
+kubectl config set-context service-catalog --cluster=service-catalog --user=service-catalog-creds
 ```
 
 Note: Your cloud provider may require firewall rules to allow your traffic get in.
