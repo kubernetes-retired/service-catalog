@@ -145,12 +145,18 @@ get the IP address that points to the `Service` that sits in front of the API se
 If you installed the catalog with one of the `helm install` commands above, then this service 
 will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace. 
 
-### Notes on Getting the IP Address
+### Getting the IP Address of the API Server
 
 How you get this IP address is highly dependent on your Kubernetes installation
-method. Regardless of how you do it, do not use the Cluster IP of the 
+method. Regardless of how you do it, do not use the `CLUSTER-IP` of the 
 `Service`. The `Service` is created as a `NodePort` in this walkthrough, you 
 will need to use the address of one of the nodes in your cluster.
+
+The following command might work for you:
+
+```console
+kubectl get po --namespace=catalog -o=wide | grep catalog-catalog-apiserver
+```
 
 ### Setting up a New `kubectl` Context
 
