@@ -53,6 +53,14 @@ clusters with RBAC enabled.  If you used the `--tiller-namespace` or
 in the previous command needs to be adjusted to reference the appropriate
 namespace and ServiceAccount name.
 
+### Helm Charts
+
+You need to download the
+[charts/catalog](https://github.com/kubernetes-incubator/service-catalog/tree/master/charts/catalog)
+directory to your local machine. Please refer to
+[here](https://github.com/kubernetes-incubator/service-catalog/blob/master/docs/devguide.md#2-clone-fork-to-local-storage) 
+for the guide.
+
 ## A Recent `kubectl`
 
 As with Kubernetes itself, interaction with the service catalog system is
