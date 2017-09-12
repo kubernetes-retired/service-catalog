@@ -118,6 +118,9 @@ type ServiceBrokerStatus struct {
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
+
+	// OperationStartTime is the time at which the current operation began
+	OperationStartTime *metav1.Time
 }
 
 // ServiceBrokerCondition contains condition information for a Broker.
@@ -148,6 +151,10 @@ const (
 	// ServiceBrokerConditionReady represents the fact that a given broker condition
 	// is in ready state.
 	ServiceBrokerConditionReady ServiceBrokerConditionType = "Ready"
+
+	// ServiceBrokerConditionFailed represents information about a final failure
+	// that should not be retried.
+	ServiceBrokerConditionFailed ServiceInstanceConditionType = "Failed"
 )
 
 // ConditionStatus represents a condition's status.
@@ -368,6 +375,9 @@ type ServiceInstanceStatus struct {
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
+
+	// OperationStartTime is the time at which the current operation began
+	OperationStartTime *metav1.Time
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -471,6 +481,9 @@ type ServiceInstanceCredentialStatus struct {
 	// The reconciled generation is updated even if the controller failed to
 	// process the spec.
 	ReconciledGeneration int64
+
+	// OperationStartTime is the time at which the current operation began
+	OperationStartTime *metav1.Time
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.

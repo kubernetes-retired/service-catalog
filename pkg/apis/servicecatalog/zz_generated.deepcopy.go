@@ -234,6 +234,11 @@ func DeepCopy_servicecatalog_ServiceBrokerStatus(in interface{}, out interface{}
 				}
 			}
 		}
+		if in.OperationStartTime != nil {
+			in, out := &in.OperationStartTime, &out.OperationStartTime
+			*out = new(meta_v1.Time)
+			**out = (*in).DeepCopy()
+		}
 		return nil
 	}
 }
@@ -424,6 +429,11 @@ func DeepCopy_servicecatalog_ServiceInstanceCredentialStatus(in interface{}, out
 				}
 			}
 		}
+		if in.OperationStartTime != nil {
+			in, out := &in.OperationStartTime, &out.OperationStartTime
+			*out = new(meta_v1.Time)
+			**out = (*in).DeepCopy()
+		}
 		return nil
 	}
 }
@@ -498,6 +508,11 @@ func DeepCopy_servicecatalog_ServiceInstanceStatus(in interface{}, out interface
 			in, out := &in.DashboardURL, &out.DashboardURL
 			*out = new(string)
 			**out = **in
+		}
+		if in.OperationStartTime != nil {
+			in, out := &in.OperationStartTime, &out.OperationStartTime
+			*out = new(meta_v1.Time)
+			**out = (*in).DeepCopy()
 		}
 		return nil
 	}

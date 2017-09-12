@@ -22,6 +22,7 @@ package v1alpha1
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	v1 "k8s.io/client-go/pkg/api/v1"
@@ -306,6 +307,7 @@ func Convert_servicecatalog_ServiceBrokerSpec_To_v1alpha1_ServiceBrokerSpec(in *
 func autoConvert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(in *ServiceBrokerStatus, out *servicecatalog.ServiceBrokerStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
 }
 
@@ -321,6 +323,7 @@ func autoConvert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerSta
 		out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
 	}
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
 }
 
@@ -574,6 +577,7 @@ func Convert_servicecatalog_ServiceInstanceCredentialSpec_To_v1alpha1_ServiceIns
 func autoConvert_v1alpha1_ServiceInstanceCredentialStatus_To_servicecatalog_ServiceInstanceCredentialStatus(in *ServiceInstanceCredentialStatus, out *servicecatalog.ServiceInstanceCredentialStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.ServiceInstanceCredentialCondition)(unsafe.Pointer(&in.Conditions))
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
 }
 
@@ -589,6 +593,7 @@ func autoConvert_servicecatalog_ServiceInstanceCredentialStatus_To_v1alpha1_Serv
 		out.Conditions = *(*[]ServiceInstanceCredentialCondition)(unsafe.Pointer(&in.Conditions))
 	}
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
 }
 
@@ -657,6 +662,7 @@ func autoConvert_v1alpha1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanc
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
 }
 
@@ -675,6 +681,7 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanc
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
 }
 

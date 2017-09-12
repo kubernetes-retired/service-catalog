@@ -1473,3 +1473,109 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
 	}
 }
+
+// TestReconcileBindingSuccessOnFinalRetry verifies that reconciliation can
+// succeed on the last attempt before timing out the retry loop
+func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+	addGetSecretNotFoundReaction(fakeKubeClient)
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := getTestServiceInstanceCredential()
+	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	binding.Status.OperationStartTime = &startTime
+
+	if err := testController.reconcileServiceInstanceCredential(binding); err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNsUID),
+		},
+	})
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
+	assertServiceInstanceCredentialReadyTrue(t, updatedServiceInstanceCredential)
+	assertServiceInstanceCredentialCurrentOperationTimeSet(t, updatedServiceInstanceCredential, false)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+// TestReconcileBindingFailureOnFinalRetry verifies that reconciliation
+// completes in the event of an error after the retry duration elapses.
+func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+			Error: fakeosb.UnexpectedActionError(),
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := getTestServiceInstanceCredential()
+	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	binding.Status.OperationStartTime = &startTime
+
+	if err := testController.reconcileServiceInstanceCredential(binding); err != nil {
+		t.Fatalf("Should have return no error because the retry duration has elapsed: %v", err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential)
+	assertServiceInstanceCredentialCondition(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceCredentialCurrentOperationTimeSet(t, updatedServiceInstanceCredential, false)
+
+	expectedEventPrefixes := []string{
+		api.EventTypeWarning + " " + errorBindCallReason,
+		api.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason,
+	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, len(expectedEventPrefixes))
+
+	for i, e := range expectedEventPrefixes {
+		a := events[i]
+		if !strings.HasPrefix(a, e) {
+			t.Fatalf("Received unexpected event:\n  expected prefix: %v\n  got: %v", e, a)
+		}
+	}
+}

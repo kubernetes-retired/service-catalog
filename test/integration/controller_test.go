@@ -788,7 +788,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
 
-	fakeRecorder := record.NewFakeRecorder(5)
+	fakeRecorder := record.NewFakeRecorder(10)
 
 	// create a test controller
 	testController, err := controller.NewController(
@@ -802,6 +802,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
 		fakeRecorder,
+		7*24*time.Hour,
 	)
 	t.Log("controller start")
 	if err != nil {

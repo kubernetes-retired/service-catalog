@@ -327,12 +327,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "int64",
 							},
 						},
+						"operationStartTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "OperationStartTime is the time at which the current operation began",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
 					},
 					Required: []string{"conditions", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerCondition"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClass": {
 			Schema: spec.Schema{
@@ -782,12 +788,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "int64",
 							},
 						},
+						"operationStartTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "OperationStartTime is the time at which the current operation began",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
 					},
 					Required: []string{"conditions", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCredentialCondition"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCredentialCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceList": {
 			Schema: spec.Schema{
@@ -930,12 +942,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "int64",
 							},
 						},
+						"operationStartTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "OperationStartTime is the time at which the current operation began",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
 					},
 					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCondition"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlan": {
 			Schema: spec.Schema{
