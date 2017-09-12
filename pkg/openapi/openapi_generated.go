@@ -1023,7 +1023,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "UserInfo holds information about the user that created a resource.",
+					Description: "UserInfo holds information about the user that last changed a resource's spec.",
 					Properties: map[string]spec.Schema{
 						"username": {
 							SchemaProps: spec.SchemaProps{

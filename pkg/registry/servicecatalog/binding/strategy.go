@@ -93,7 +93,9 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 		glog.Fatal("received a non-binding object to create")
 	}
 
-	setServiceInstanceCredentialUserInfo(binding, ctx)
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		setServiceInstanceCredentialUserInfo(binding, ctx)
+	}
 
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
@@ -141,7 +143,9 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, 
 	// Note that since we do not currently handle any changes to the spec,
 	// the generation will never be incremented
 	if !apiequality.Semantic.DeepEqual(oldServiceInstanceCredential.Spec, newServiceInstanceCredential.Spec) {
-		setServiceInstanceCredentialUserInfo(newServiceInstanceCredential, ctx)
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+			setServiceInstanceCredentialUserInfo(newServiceInstanceCredential, ctx)
+		}
 		newServiceInstanceCredential.Generation = oldServiceInstanceCredential.Generation + 1
 	}
 }
@@ -160,11 +164,13 @@ func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, ol
 }
 
 func (bindingRESTStrategy) CheckGracefulDelete(ctx genericapirequest.Context, obj runtime.Object, options *metav1.DeleteOptions) bool {
-	serviceInstanceCredential, ok := obj.(*sc.ServiceInstanceCredential)
-	if !ok {
-		glog.Fatal("received a non-ServiceInstanceCredential object to delete")
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		serviceInstanceCredential, ok := obj.(*sc.ServiceInstanceCredential)
+		if !ok {
+			glog.Fatal("received a non-ServiceInstanceCredential object to delete")
+		}
+		setServiceInstanceCredentialUserInfo(serviceInstanceCredential, ctx)
 	}
-	setServiceInstanceCredentialUserInfo(serviceInstanceCredential, ctx)
 	// Don't actually do graceful deletion. We are just using this strategy to set the user info prior to reconciling the delete.
 	return false
 }
@@ -198,18 +204,16 @@ func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, n
 // setServiceInstanceCredentialUserInfo injects user.Info from the request context
 func setServiceInstanceCredentialUserInfo(instanceCredential *sc.ServiceInstanceCredential, ctx genericapirequest.Context) {
 	instanceCredential.Spec.UserInfo = nil
-	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
-		if user, ok := genericapirequest.UserFrom(ctx); ok {
-			instanceCredential.Spec.UserInfo = &sc.UserInfo{
-				Username: user.GetName(),
-				UID:      user.GetUID(),
-				Groups:   user.GetGroups(),
-			}
-			if extra := user.GetExtra(); len(extra) > 0 {
-				instanceCredential.Spec.UserInfo.Extra = map[string]sc.ExtraValue{}
-				for k, v := range extra {
-					instanceCredential.Spec.UserInfo.Extra[k] = sc.ExtraValue(v)
-				}
+	if user, ok := genericapirequest.UserFrom(ctx); ok {
+		instanceCredential.Spec.UserInfo = &sc.UserInfo{
+			Username: user.GetName(),
+			UID:      user.GetUID(),
+			Groups:   user.GetGroups(),
+		}
+		if extra := user.GetExtra(); len(extra) > 0 {
+			instanceCredential.Spec.UserInfo.Extra = map[string]sc.ExtraValue{}
+			for k, v := range extra {
+				instanceCredential.Spec.UserInfo.Extra[k] = sc.ExtraValue(v)
 			}
 		}
 	}

@@ -21,9 +21,11 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -237,24 +239,26 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		AcceptsIncomplete: true,
 	}
 
-	originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
-	if err != nil {
-		s := fmt.Sprintf("Failed to prepare deprovisioning ServiceInstance originating identity\n%v\n %v", instance.Spec.UserInfo, err)
-		glog.Warning(s)
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
+		if err != nil {
+			s := fmt.Sprintf(`Error building originating identity headers for deprovisioning ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
+			glog.Warning(s)
 
-		setServiceInstanceCondition(
-			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorWithOriginatingIdentity,
-			s,
-		)
-		c.updateServiceInstanceStatus(toUpdate)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithOriginatingIdentity,
+				s,
+			)
+			c.updateServiceInstanceStatus(toUpdate)
 
-		c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
-		return err
+			c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			return err
+		}
+		request.OriginatingIdentity = originatingIdentity
 	}
-	request.OriginatingIdentity = originatingIdentity
 
 	// If the instance is not failed, deprovision it at the broker.
 	if !isServiceInstanceFailed(instance) {
@@ -516,24 +520,26 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		"namespace": instance.Namespace,
 	}
 
-	originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
-	if err != nil {
-		s := fmt.Sprintf("Failed to prepare ServiceInstance originating identity\n%v\n %v", instance.Spec.UserInfo, err)
-		glog.Warning(s)
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
+		if err != nil {
+			s := fmt.Sprintf(`Error building originating identity headers for provisioning ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
+			glog.Warning(s)
 
-		setServiceInstanceCondition(
-			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
-			errorWithOriginatingIdentity,
-			s,
-		)
-		c.updateServiceInstanceStatus(toUpdate)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithOriginatingIdentity,
+				s,
+			)
+			c.updateServiceInstanceStatus(toUpdate)
 
-		c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
-		return err
+			c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			return err
+		}
+		request.OriginatingIdentity = originatingIdentity
 	}
-	request.OriginatingIdentity = originatingIdentity
 
 	glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	response, err := brokerClient.ProvisionInstance(request)
@@ -669,15 +675,17 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		request.OperationKey = &key
 	}
 
-	originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
-	if err != nil {
-		s := fmt.Sprintf("Failed to prepare LastOperation originating identity\n%v\n %v", instance.Spec.UserInfo, err)
-		glog.Warning(s)
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
+		if err != nil {
+			s := fmt.Sprintf(`Error building originating identity headers for polling last operation of ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
+			glog.Warning(s)
 
-		c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
-		return err
+			c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			return err
+		}
+		request.OriginatingIdentity = originatingIdentity
 	}
-	request.OriginatingIdentity = originatingIdentity
 
 	glog.V(5).Infof("Polling last operation on ServiceInstance %v/%v", instance.Namespace, instance.Name)
 

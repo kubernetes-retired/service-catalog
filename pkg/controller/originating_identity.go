@@ -19,11 +19,8 @@ package controller
 import (
 	"encoding/json"
 
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 const (
@@ -35,9 +32,6 @@ const (
 
 func buildOriginatingIdentity(userInfo *v1alpha1.UserInfo) (*osb.AlphaOriginatingIdentity, error) {
 	if userInfo == nil {
-		return nil, nil
-	}
-	if !utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		return nil, nil
 	}
 	oiFields := map[string]interface{}{}

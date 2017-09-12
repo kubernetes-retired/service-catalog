@@ -78,7 +78,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Confi
 		}
 	} else {
 		// always warn when auth is disabled, since this should only be used for testing
-		glog.Infof("Authentication and authorization disabled for testing purposes")
+		glog.Warning("Authentication and authorization disabled for testing purposes")
 		genericConfig.Authenticator = &authenticator.AnyUserAuthenticator{}
 		genericConfig.Authorizer = authorizerfactory.NewAlwaysAllowAuthorizer()
 	}

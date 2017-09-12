@@ -293,7 +293,7 @@ type ServiceInstanceList struct {
 	Items []ServiceInstance `json:"items"`
 }
 
-// UserInfo holds information about the user that created a resource.
+// UserInfo holds information about the user that last changed a resource's spec.
 type UserInfo struct {
 	Username string                `json:"username"`
 	UID      string                `json:"uid"`
