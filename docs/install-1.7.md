@@ -64,7 +64,7 @@ minikube start --extra-config=apiserver.Authorization.Mode=RBAC
 If you are using `hack/local-up-cluster.sh`, ensure the
 `AUTHORIZATION_MODE` environment variable is set as follows:
 
-``console
+```console
 AUTHORIZATION_MODE=Node,RBAC hack/local-up-cluster.sh -O
 ```
 
