@@ -21,6 +21,7 @@ package externalversions
 import (
 	"fmt"
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	settings_v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -60,6 +61,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().V1alpha1().ServiceInstances().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("serviceinstancecredentials"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().V1alpha1().ServiceInstanceCredentials().Informer()}, nil
+
+		// Group=Settings, Version=V1alpha1
+	case settings_v1alpha1.SchemeGroupVersion.WithResource("podpresets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Settings().V1alpha1().PodPresets().Informer()}, nil
 
 	}
 
