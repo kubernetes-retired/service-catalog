@@ -58,6 +58,10 @@ spec:
         {{- if not .Values.apiserver.auth.enabled }}
         - --disable-auth
         {{- end }}
+        {{- if .Values.apiserver.featureGates }}
+        - --feature-gates
+        - {{ .Values.apiserver.featureGates }}
+        {{- end }}
         ports:
         - containerPort: 8443
         volumeMounts:

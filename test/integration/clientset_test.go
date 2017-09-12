@@ -29,6 +29,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/client-go/pkg/api/v1"
 
 	// TODO: fix this upstream

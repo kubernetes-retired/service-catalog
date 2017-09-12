@@ -18,22 +18,27 @@ package server
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"os"
 
+	"github.com/spf13/cobra"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/admission"
+	genericserveroptions "k8s.io/apiserver/pkg/server/options"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	clientset "k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/util/interrupt"
+
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/namespace/lifecycle"
 	siclifecycle "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceinstancecredentials/lifecycle"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/defaultserviceplan"
-	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apiserver/pkg/admission"
-	genericserveroptions "k8s.io/apiserver/pkg/server/options"
-	clientset "k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/util/interrupt"
 )
 
 const (
@@ -67,6 +72,9 @@ func NewCommandServer(
 	flags := cmd.Flags()
 	flags.AddGoFlagSet(flag.CommandLine)
 
+	//  register all features
+	features.Initialize()
+
 	stopCh := make(chan struct{})
 	opts := &ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
@@ -96,6 +104,14 @@ func NewCommandServer(
 	if err != nil {
 		glog.Fatalf("invalid storage type '%s' (%s)", storageType, err)
 		return nil, err
+	}
+
+	// PodPreset feature requires Etcd Storage. So if user has enabled PodPreset
+	// with TPR storage, we should return error
+	if utilfeature.DefaultFeatureGate.Enabled(features.PodPreset) &&
+		storageType != server.StorageTypeEtcd {
+		glog.Fatalf("PodPreset feature requires Etcd Storage, storage %s is not supported", storageType)
+		return nil, fmt.Errorf("%s storage is not compatible with PodPreset feature", storageType)
 	}
 	if storageType == server.StorageTypeEtcd {
 		glog.Infof("using etcd for storage")
