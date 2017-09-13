@@ -238,7 +238,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid broker - manual behavior with behavior",
+			name: "valid broker - manual behavior with RelistDuration",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
@@ -252,7 +252,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid broker - manual behavior without duration",
+			name: "valid broker - manual behavior without RelistDuration",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
