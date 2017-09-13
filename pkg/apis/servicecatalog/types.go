@@ -80,6 +80,7 @@ type ServiceBrokerRelistBehavior string
 const (
 	// ServiceBrokerRelistBehaviorDuration indicates that the broker will be relisted automatically after the specified duration has passed
 	ServiceBrokerRelistBehaviorDuration ServiceBrokerRelistBehavior = "Duration"
+
 	// ServiceBrokerRelistBehaviorManual indicates that the broker is only relisted when the spec of the broker changes
 	ServiceBrokerRelistBehaviorManual ServiceBrokerRelistBehavior = "Manual"
 )
