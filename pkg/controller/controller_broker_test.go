@@ -588,7 +588,6 @@ func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.Service
 	}
 }
 
-// RelistDuration is nil, similar to this?
 // TestReconcileServiceBrokerWithReconcileError simulates broker reconciliation where
 // creation of a service class causes an error which causes ReconcileServiceBroker to
 // return an error

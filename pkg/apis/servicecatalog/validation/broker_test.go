@@ -279,6 +279,32 @@ func TestValidateServiceBroker(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			name: "invalid broker - relistBehavior is invalid",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "Junk",
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid broker - relistBehavior is empty",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "",
+				},
+			},
+			valid: false,
+		},
 	}
 
 	for _, tc := range cases {

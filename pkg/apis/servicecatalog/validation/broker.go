@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"fmt"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -106,15 +107,40 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 
 	if "" == spec.RelistBehavior {
 		allErrs = append(allErrs,
-			field.Required(fldPath.Child("relistDuration"),
-				"brokers must have a relistDuration"))
+			field.Required(fldPath.Child("relistBehavior"),
+				"brokers must have a relistBehavior"))
+	}
+
+	isValidRelistBehavior := spec.RelistBehavior == "Duration" ||
+		spec.RelistBehavior == "Manual"
+	if !isValidRelistBehavior {
+		errMsg := fmt.Sprintf("unknown relistBehavior found: %v", spec.RelistBehavior)
+		allErrs = append(
+			allErrs,
+			field.Required(fldPath.Child("relistBehavior"), errMsg),
+		)
 	}
 
 	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
 		allErrs = append(
 			allErrs,
-			field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
+			field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if relistBehavior is set to Duration"),
 		)
+	}
+
+	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration {
+		if spec.RelistDuration == nil {
+			allErrs = append(
+				allErrs,
+				field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
+			)
+		}
+		if spec.RelistRequests < 0 {
+			allErrs = append(
+				allErrs,
+				field.Required(fldPath.Child("relistRequests"), "relistDuration must be greater than zero"),
+			)
+		}
 	}
 
 	return allErrs
