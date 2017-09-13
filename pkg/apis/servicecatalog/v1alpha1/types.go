@@ -69,7 +69,7 @@ type ServiceBrokerSpec struct {
 	// when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration
 	RelistDuration *metav1.Duration `json:"relistDuration"`
 
-	// RelistRequests is a strictly increasing integer counter that can be manually incremented
+	// RelistRequests is a strictly increasing, non-negative integer counter that can be manually incremented
 	// by a user to manually trigger a relist
 	RelistRequests int64 `json:"relistRequests"`
 }
