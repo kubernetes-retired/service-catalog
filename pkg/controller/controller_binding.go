@@ -292,7 +292,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 				c.updateServiceInstanceCredentialStatus(toUpdate)
 				c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
-				return err
+				return nil
 			}
 
 			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
@@ -307,7 +307,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 
 			if binding.Status.OperationStartTime == nil {
 				toUpdate.Status.OperationStartTime = &now
-			} else if binding.Status.OperationStartTime != nil && !time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+			} else if !time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 				s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstanceCredential "%v/%v" because too much time has elapsed`, binding.Namespace, binding.Name)
 				glog.Info(s)
 				c.recorder.Event(binding, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
@@ -397,7 +397,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		if err != nil {
 			httpErr, isError := osb.IsHTTPError(err)
 			if isError {
-				s := fmt.Sprintf("Error creating Unbinding \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q, %v",
+				s := fmt.Sprintf("Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s",
 					binding.Name,
 					binding.Namespace,
 					instance.Namespace,
@@ -416,7 +416,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				toUpdate.Status.OperationStartTime = nil
 				c.updateServiceInstanceCredentialStatus(toUpdate)
 				c.recorder.Event(binding, api.EventTypeWarning, errorUnbindCallReason, s)
-				return err
+				return nil
 			}
 			s := fmt.Sprintf(
 				"Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s",
@@ -439,7 +439,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 
 			if binding.Status.OperationStartTime == nil {
 				toUpdate.Status.OperationStartTime = &now
-			} else if binding.Status.OperationStartTime != nil && !time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+			} else if !time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 				s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstanceCredential "%v/%v" because too much time has elapsed`, binding.Namespace, binding.Name)
 				glog.Info(s)
 				c.recorder.Event(binding, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)

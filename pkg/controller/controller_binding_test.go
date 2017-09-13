@@ -1066,8 +1066,8 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerHTTPError(t *testing
 	}
 
 	err := testController.reconcileServiceInstanceCredential(binding)
-	if err == nil {
-		t.Fatal("reconcileServiceInstanceCredential should have returned an error")
+	if err != nil {
+		t.Fatal("reconcileServiceInstanceCredential should not have returned an error")
 	}
 
 	events := getRecordedEvents(testController)
@@ -1180,8 +1180,8 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 
 	binding := getTestServiceInstanceCredential()
 
-	if err := testController.reconcileServiceInstanceCredential(binding); err == nil {
-		t.Fatal("ServiceInstanceCredential creation should fail")
+	if err := testController.reconcileServiceInstanceCredential(binding); err != nil {
+		t.Fatal("ServiceInstanceCredential creation should complete: %v", err)
 	}
 
 	// verify one kube action occurred
@@ -1460,12 +1460,12 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 	if err := scmeta.AddFinalizer(binding, v1alpha1.FinalizerServiceCatalog); err != nil {
 		t.Fatalf("Finalizer error: %v", err)
 	}
-	if err := testController.reconcileServiceInstanceCredential(binding); err == nil {
-		t.Fatal("reconcileServiceInstanceCredential should have returned an error")
+	if err := testController.reconcileServiceInstanceCredential(binding); err != nil {
+		t.Fatal("reconcileServiceInstanceCredential should not have returned an error: %v", err)
 	}
 
 	events := getRecordedEvents(testController)
-	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error creating Unbinding "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker", Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
+	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker": Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
 	if 1 != len(events) {
 		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
 	}

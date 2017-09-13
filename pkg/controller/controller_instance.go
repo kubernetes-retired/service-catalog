@@ -298,7 +298,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 			if instance.Status.OperationStartTime == nil {
 				toUpdate.Status.OperationStartTime = &now
-			} else if instance.Status.OperationStartTime != nil && !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+			} else if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 				s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 				glog.Info(s)
 				c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
@@ -574,7 +574,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		if instance.Status.OperationStartTime == nil {
 			toUpdate.Status.OperationStartTime = &now
-		} else if instance.Status.OperationStartTime != nil && !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		} else if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
@@ -906,6 +906,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		toUpdate := clone.(*v1alpha1.ServiceInstance)
 		toUpdate.Status.AsyncOpInProgress = false
 		toUpdate.Status.OperationStartTime = nil
+		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
 		cond := v1alpha1.ConditionFalse
 		reason := errorProvisionCallFailedReason

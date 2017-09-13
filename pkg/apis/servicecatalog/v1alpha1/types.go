@@ -119,7 +119,7 @@ type ServiceBrokerStatus struct {
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
 
-	// OperationStartTime is the time at which the current operation began
+	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
 }
 
@@ -380,7 +380,7 @@ type ServiceInstanceStatus struct {
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
 
-	// OperationStartTime is the time at which the current operation began
+	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
 }
 
@@ -486,7 +486,7 @@ type ServiceInstanceCredentialStatus struct {
 	// process the spec.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
 
-	// OperationStartTime is the time at which the current operation began
+	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
 }
 

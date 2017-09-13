@@ -119,7 +119,7 @@ type ServiceBrokerStatus struct {
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
 
-	// OperationStartTime is the time at which the current operation began
+	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time
 }
 
@@ -376,7 +376,7 @@ type ServiceInstanceStatus struct {
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
 
-	// OperationStartTime is the time at which the current operation began
+	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time
 }
 
@@ -482,7 +482,7 @@ type ServiceInstanceCredentialStatus struct {
 	// process the spec.
 	ReconciledGeneration int64
 
-	// OperationStartTime is the time at which the current operation began
+	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time
 }
 

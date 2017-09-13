@@ -329,7 +329,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"operationStartTime": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OperationStartTime is the time at which the current operation began",
+								Description: "OperationStartTime is the time at which the current operation began.",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
@@ -790,7 +790,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"operationStartTime": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OperationStartTime is the time at which the current operation began",
+								Description: "OperationStartTime is the time at which the current operation began.",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
@@ -944,7 +944,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"operationStartTime": {
 							SchemaProps: spec.SchemaProps{
-								Description: "OperationStartTime is the time at which the current operation began",
+								Description: "OperationStartTime is the time at which the current operation began.",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
