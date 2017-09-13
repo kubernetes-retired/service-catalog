@@ -1696,10 +1696,10 @@ func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
 	}
 }
 
-// TestReconcileBindingWithSecretConflictDeleteAfterFinalRetry tests
+// TestReconcileBindingWithSecretConflictFailedAfterFinalRetry tests
 // reconcileBinding to ensure a binding with an existing secret not owned by the
-// bindings is deleted after the retry duration elapses.
-func TestReconcileBindingWithSecretConflictDeleteAfterFinalRetry(t *testing.T) {
+// bindings is marked as failed after the retry duration elapses.
+func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
@@ -1754,12 +1754,11 @@ func TestReconcileBindingWithSecretConflictDeleteAfterFinalRetry(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
 	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential)
-
-	assertDelete(t, actions[1], binding)
+	assertServiceInstanceCredentialCondition(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue)
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)

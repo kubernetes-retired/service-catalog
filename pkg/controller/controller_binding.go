@@ -370,17 +370,18 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					v1alpha1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
+				c.setServiceInstanceCredentialCondition(toUpdate,
+					v1alpha1.ServiceInstanceCredentialConditionFailed,
+					v1alpha1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
 				toUpdate.Status.OperationStartTime = nil
 				toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 				c.updateServiceInstanceCredentialStatus(toUpdate)
 
-				// To avoid leaving an orphan in the Broker, we need to delete
-				// the ServiceInstanceCredential since the Bind request to the
-				// Broker succeeded
-				deleteOptions := &metav1.DeleteOptions{}
-				if err = c.serviceCatalogClient.ServiceInstanceCredentials(binding.Namespace).Delete(binding.Name, deleteOptions); err != nil {
-					return err
-				}
+				// TODO: We need to delete the ServiceInstanceCredential from the
+				// Broker since the Bind request was successful. This needs to be
+				// addressed as part of orphan mitigiation.
 
 				return nil
 			}

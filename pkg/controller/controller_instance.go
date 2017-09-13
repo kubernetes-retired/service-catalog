@@ -725,6 +725,33 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		deleting = true
 	}
 
+	// OperationStartTime must be set because we are polling an in-progress
+	// operation. If it is not set, this is a logical error. Let's bail out.
+	if instance.Status.OperationStartTime == nil {
+		clone, err := api.Scheme.DeepCopy(instance)
+		if err != nil {
+			return err
+		}
+		toUpdate := clone.(*v1alpha1.ServiceInstance)
+		s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because the operation start time is not set`, instance.Namespace, instance.Name)
+		glog.Info(s)
+		c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+		setServiceInstanceCondition(toUpdate,
+			v1alpha1.ServiceInstanceConditionFailed,
+			v1alpha1.ConditionTrue,
+			errorReconciliationRetryTimeoutReason,
+			s)
+		toUpdate.Status.OperationStartTime = nil
+		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
+		if err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+			return err
+		}
+		if err := c.finishPollingServiceInstance(instance); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	request := &osb.LastOperationRequest{
 		InstanceID: instance.Spec.ExternalID,
 		ServiceID:  &serviceClass.ExternalID,
@@ -806,7 +833,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		glog.V(4).Info(s)
 		c.recorder.Event(instance, api.EventTypeWarning, errorPollingLastOperationReason, s)
 
-		if instance.Status.OperationStartTime == nil || !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			clone, err := api.Scheme.DeepCopy(instance)
 			if err != nil {
 				return err
@@ -874,7 +901,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			)
 		}
 
-		if instance.Status.OperationStartTime == nil || !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			clone, err := api.Scheme.DeepCopy(instance)
 			if err != nil {
 				return err
@@ -1004,7 +1031,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		}
 	default:
 		glog.Warningf("Got invalid state in LastOperationResponse: %q", response.State)
-		if instance.Status.OperationStartTime == nil || !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			clone, err := api.Scheme.DeepCopy(instance)
 			if err != nil {
 				return err
