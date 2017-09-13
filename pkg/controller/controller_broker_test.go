@@ -145,6 +145,27 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			now:       time.Now(),
 			reconcile: true,
 		},
+		{
+			name: "ready, duration behavior, nil duration",
+			broker: func() *v1alpha1.ServiceBroker {
+				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+				broker.Spec.RelistBehavior = "Duration"
+				broker.Spec.RelistDuration = nil
+				return broker
+			}(),
+			now:       time.Now(),
+			reconcile: false,
+		},
+		{
+			name: "ready, manual behavior",
+			broker: func() *v1alpha1.ServiceBroker {
+				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+				broker.Spec.RelistBehavior = "Manual"
+				return broker
+			}(),
+			now:       time.Now(),
+			reconcile: false,
+		},
 	}
 
 	for _, tc := range cases {
