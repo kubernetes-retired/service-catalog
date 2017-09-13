@@ -332,6 +332,7 @@ No resources found.
 # Step 9 - Final Cleanup
 
 ## Cleaning up the UPS Service Broker Server
+
 To clean up, delete the helm deployment:
 
 ```console
@@ -352,9 +353,9 @@ helm delete --purge catalog
 kubectl delete ns catalog
 ```
 
-## Troubleshooting
+# Troubleshooting
 
-### Firewall rules
+## Firewall rules
 
 If you are using Google Cloud Platform, you may need to run the following
 commands to setup proper firewall rules to allow your traffic get in.
