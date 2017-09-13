@@ -133,12 +133,13 @@ func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time)
 			// The broker has a ready condition
 
 			if condition.Status == v1alpha1.ConditionTrue {
+
 				// The broker's ready condition has status true, meaning that
 				// at some point, we successfully listed the broker's catalog.
-
 				if broker.Spec.RelistBehavior == v1alpha1.ServiceBrokerRelistBehaviorManual {
 					// If a broker is configured with RelistBehaviorManual, it should
 					// ignore the Duration and only relist based on spec changes
+
 					glog.V(10).Infof(
 						"Not processing ServiceBroker %v: RelistBehavior is set to Manual",
 						broker.Name,
@@ -147,7 +148,7 @@ func shouldReconcileServiceBroker(broker *v1alpha1.ServiceBroker, now time.Time)
 				}
 
 				if broker.Spec.RelistDuration == nil {
-					glog.V(10).Infof(
+					glog.Errorf(
 						"Unable to process ServiceBroker %v: RelistBehavior is set to Duration with a nil RelistDuration value",
 						broker.Name,
 					)
