@@ -23,5 +23,6 @@ import (
 	// Admission policies
 	_ "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/namespace/lifecycle"
 	_ "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceinstancecredentials/lifecycle"
+	_ "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/changevalidator"
 	_ "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/defaultserviceplan"
 )
