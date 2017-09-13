@@ -56,7 +56,6 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 	// now: what time the interval is calculated with respect to interval
 	// reconcile: whether or not the reconciler should run, the return of
 	// shouldReconcileServiceBroker
-	// ERIK:TODO: Test new Relist codepaths
 	cases := []struct {
 		name      string
 		broker    *v1alpha1.ServiceBroker
@@ -589,7 +588,6 @@ func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.Service
 	}
 }
 
-// ERIK:TODO: Write up another test here to confirm an error is bubbled when
 // RelistDuration is nil, similar to this?
 // TestReconcileServiceBrokerWithReconcileError simulates broker reconciliation where
 // creation of a service class causes an error which causes ReconcileServiceBroker to
