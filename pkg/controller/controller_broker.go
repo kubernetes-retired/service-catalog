@@ -92,6 +92,7 @@ const (
 	errorNonbindableServiceClassReason         string = "ErrorNonbindableServiceClass"
 	errorServiceInstanceNotReadyReason         string = "ErrorInstanceNotReady"
 	errorPollingLastOperationReason            string = "ErrorPollingLastOperation"
+	errorWithOriginatingIdentity               string = "Error with Originating Identity"
 
 	successInjectedBindResultReason    string = "InjectedBindResult"
 	successInjectedBindResultMessage   string = "Injected bind result"

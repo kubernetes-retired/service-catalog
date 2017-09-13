@@ -293,6 +293,18 @@ type ServiceInstanceList struct {
 	Items []ServiceInstance
 }
 
+// UserInfo holds information about the user that last changed a resource's spec.
+type UserInfo struct {
+	Username string
+	UID      string
+	Groups   []string
+	Extra    map[string]ExtraValue
+}
+
+// ExtraValue contains additional information about a user that may be
+// provided by the authenticator.
+type ExtraValue []string
+
 // +genclient=true
 
 // ServiceInstance represents a provisioned instance of a ServiceClass.
@@ -343,6 +355,15 @@ type ServiceInstanceSpec struct {
 	//
 	// Immutable.
 	ExternalID string
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// UserInfo contains information about the user that last modified this
+	// instance. This field is set by the API server and not settable by the
+	// end-user. User-provided values for this field are not saved.
+	// +optional
+	UserInfo *UserInfo
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -460,6 +481,15 @@ type ServiceInstanceCredentialSpec struct {
 	//
 	// Immutable.
 	ExternalID string
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// UserInfo contains information about the user that last modified this
+	// ServiceInstanceCredential. This field is set by the API server and not
+	// settable by the end-user. User-provided values for this field are not saved.
+	// +optional
+	UserInfo *UserInfo
 }
 
 // ServiceInstanceCredentialStatus represents the current status of a ServiceInstanceCredential.

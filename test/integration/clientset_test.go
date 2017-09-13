@@ -87,7 +87,7 @@ type bpStruct struct {
 func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceBroker{}
 			})
 			defer shutdownServer()
@@ -169,7 +169,7 @@ func testGroupVersion(client servicecatalogclient.Interface) error {
 func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceBroker{}
 			})
 			defer shutdownServer()
@@ -211,7 +211,7 @@ func TestBrokerClient(t *testing.T) {
 	const name = "test-broker"
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceBroker{}
 			})
 			defer shutdownServer()
@@ -375,7 +375,7 @@ func TestServiceClassClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceClass{}
 			})
 			defer shutdownServer()
@@ -498,7 +498,7 @@ func TestInstanceClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-instance"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceInstance{}
 			})
 			defer shutdownServer()
@@ -657,7 +657,7 @@ func TestBindingClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
-			client, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceInstanceCredential{}
 			})
 			defer shutdownServer()
