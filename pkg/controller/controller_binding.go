@@ -22,8 +22,10 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -258,6 +260,24 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			BindResource: &osb.BindResource{AppGUID: &appGUID},
 		}
 
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+			originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
+			if err != nil {
+				s := fmt.Sprintf(`Error building originating identity headers for binding ServiceInstanceCredential "%v/%v": %v`, binding.Namespace, binding.Name, err)
+				glog.Warning(s)
+				c.updateServiceInstanceCredentialCondition(
+					binding,
+					v1alpha1.ServiceInstanceCredentialConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithOriginatingIdentity,
+					s,
+				)
+				c.recorder.Event(binding, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+				return err
+			}
+			request.OriginatingIdentity = originatingIdentity
+		}
+
 		now := metav1.Now()
 
 		response, err := brokerClient.Bind(request)
@@ -416,6 +436,24 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			InstanceID: instance.Spec.ExternalID,
 			ServiceID:  serviceClass.ExternalID,
 			PlanID:     servicePlan.ExternalID,
+		}
+
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+			originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
+			if err != nil {
+				s := fmt.Sprintf(`Error building originating identity headers for unbinding ServiceInstanceCredential "%v/%v": %v`, binding.Namespace, binding.Name, err)
+				glog.Warning(s)
+				c.updateServiceInstanceCredentialCondition(
+					binding,
+					v1alpha1.ServiceInstanceCredentialConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithOriginatingIdentity,
+					s,
+				)
+				c.recorder.Event(binding, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+				return err
+			}
+			unbindRequest.OriginatingIdentity = originatingIdentity
 		}
 
 		now := metav1.Now()

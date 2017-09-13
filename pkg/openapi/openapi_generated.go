@@ -757,12 +757,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
+						"userInfo": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this ServiceInstanceCredential. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo"),
+							},
+						},
 					},
 					Required: []string{"instanceRef", "externalID"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource", "k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCredentialStatus": {
 			Schema: spec.Schema{
@@ -889,12 +895,18 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
+						"userInfo": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this instance. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo"),
+							},
+						},
 					},
 					Required: []string{"serviceClassName", "externalID"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceStatus": {
 			Schema: spec.Schema{
@@ -1025,6 +1037,62 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "UserInfo holds information about the user that last changed a resource's spec.",
+					Properties: map[string]spec.Schema{
+						"username": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"uid": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"groups": {
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+						"extra": {
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"object"},
+								AdditionalProperties: &spec.SchemaOrBool{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type: []string{"array"},
+											Items: &spec.SchemaOrArray{
+												Schema: &spec.Schema{
+													SchemaProps: spec.SchemaProps{
+														Type:   []string{"string"},
+														Format: "",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Required: []string{"username", "uid"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroup": {
 			Schema: spec.Schema{

@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -33,7 +34,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
@@ -1487,6 +1490,103 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 	}
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v, expecting: %v", a, e)
+	}
+}
+
+func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
+	for _, tc := range originatingIdentityTestCases {
+		func() {
+			if tc.enableOriginatingIdentity {
+				utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+			}
+
+			fakeKubeClient, _, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				BindReaction: &fakeosb.BindReaction{
+					Response: &osb.BindResponse{},
+				},
+			})
+
+			addGetNamespaceReaction(fakeKubeClient)
+			addGetSecretNotFoundReaction(fakeKubeClient)
+
+			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+
+			binding := getTestServiceInstanceCredential()
+			if tc.includeUserInfo {
+				binding.Spec.UserInfo = testUserInfo
+			}
+
+			err := testController.reconcileServiceInstanceCredential(binding)
+			if err != nil {
+				t.Fatalf("%v: a valid binding should not fail: %v", tc.name, err)
+			}
+
+			brokerActions := fakeBrokerClient.Actions()
+			assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+			actualRequest, ok := brokerActions[0].Request.(*osb.BindRequest)
+			if !ok {
+				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.BindRequest{}, actualRequest)
+				return
+			}
+			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			if tc.expectedOriginatingIdentity {
+				expectedOriginatingIdentity = testOriginatingIdentity
+			}
+			assertOriginatingIdentity(t, expectedOriginatingIdentity, actualRequest.OriginatingIdentity)
+		}()
+	}
+}
+
+func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
+	for _, tc := range originatingIdentityTestCases {
+		func() {
+			if tc.enableOriginatingIdentity {
+				err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+				if err != nil {
+					t.Fatalf("Failed to enable originating identity feature: %v", err)
+				}
+				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+			}
+
+			fakeKubeClient, _, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				UnbindReaction: &fakeosb.UnbindReaction{},
+			})
+
+			addGetNamespaceReaction(fakeKubeClient)
+			addGetSecretNotFoundReaction(fakeKubeClient)
+
+			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+
+			binding := getTestServiceInstanceCredential()
+			binding.DeletionTimestamp = &metav1.Time{}
+			binding.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+			if tc.includeUserInfo {
+				binding.Spec.UserInfo = testUserInfo
+			}
+
+			err := testController.reconcileServiceInstanceCredential(binding)
+			if err != nil {
+				t.Fatalf("%v: a valid binding should not fail: %v", tc.name, err)
+			}
+
+			brokerActions := fakeBrokerClient.Actions()
+			assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+			actualRequest, ok := brokerActions[0].Request.(*osb.UnbindRequest)
+			if !ok {
+				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.UnbindRequest{}, actualRequest)
+				return
+			}
+			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			if tc.expectedOriginatingIdentity {
+				expectedOriginatingIdentity = testOriginatingIdentity
+			}
+			assertOriginatingIdentity(t, expectedOriginatingIdentity, actualRequest.OriginatingIdentity)
+		}()
 	}
 }
 
