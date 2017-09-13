@@ -268,6 +268,13 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 					v1alpha1.ConditionUnknown,
 					errorDeprovisionCalledReason,
 					"Deprovision call failed. "+s)
+				setServiceInstanceCondition(
+					toUpdate,
+					v1alpha1.ServiceInstanceConditionFailed,
+					v1alpha1.ConditionTrue,
+					errorDeprovisionCalledReason,
+					s,
+				)
 				c.updateServiceInstanceStatus(toUpdate)
 				c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 
@@ -908,18 +915,25 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		toUpdate.Status.OperationStartTime = nil
 		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 
-		cond := v1alpha1.ConditionFalse
+		readyCond := v1alpha1.ConditionFalse
 		reason := errorProvisionCallFailedReason
 		msg := "Provision call failed: " + s
 		if deleting {
-			cond = v1alpha1.ConditionUnknown
+			readyCond = v1alpha1.ConditionUnknown
 			reason = errorDeprovisionCalledReason
 			msg = "Deprovision call failed:" + s
 		}
 		setServiceInstanceCondition(
 			toUpdate,
 			v1alpha1.ServiceInstanceConditionReady,
-			cond,
+			readyCond,
+			reason,
+			msg,
+		)
+		setServiceInstanceCondition(
+			toUpdate,
+			v1alpha1.ServiceInstanceConditionFailed,
+			v1alpha1.ConditionTrue,
 			reason,
 			msg,
 		)

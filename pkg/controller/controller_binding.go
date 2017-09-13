@@ -337,8 +337,35 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				errorInjectingBindResultReason,
 				"Error injecting bind result "+s,
 			)
-			c.updateServiceInstanceCredentialStatus(toUpdate)
 			c.recorder.Event(binding, api.EventTypeWarning, errorInjectingBindResultReason, s)
+
+			if binding.Status.OperationStartTime == nil {
+				toUpdate.Status.OperationStartTime = &now
+			} else if !time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+				s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstanceCredential "%v/%v" because too much time has elapsed`, binding.Namespace, binding.Name)
+				glog.Info(s)
+				c.recorder.Event(binding, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+				c.setServiceInstanceCredentialCondition(toUpdate,
+					v1alpha1.ServiceInstanceCredentialConditionReady,
+					v1alpha1.ConditionFalse,
+					errorReconciliationRetryTimeoutReason,
+					s)
+				toUpdate.Status.OperationStartTime = nil
+				toUpdate.Status.ReconciledGeneration = toUpdate.Generation
+				c.updateServiceInstanceCredentialStatus(toUpdate)
+
+				// To avoid leaving an orphan in the Broker, we need to delete
+				// the ServiceInstanceCredential since the Bind request to the
+				// Broker succeeded
+				deleteOptions := &metav1.DeleteOptions{}
+				if err = c.serviceCatalogClient.ServiceInstanceCredentials(binding.Namespace).Delete(binding.Name, deleteOptions); err != nil {
+					return err
+				}
+
+				return nil
+			}
+
+			c.updateServiceInstanceCredentialStatus(toUpdate)
 			return err
 		}
 
@@ -411,6 +438,12 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					toUpdate,
 					v1alpha1.ServiceInstanceCredentialConditionReady,
 					v1alpha1.ConditionFalse,
+					errorUnbindCallReason,
+					"Unbind call failed. "+s)
+				c.setServiceInstanceCredentialCondition(
+					toUpdate,
+					v1alpha1.ServiceInstanceCredentialConditionFailed,
+					v1alpha1.ConditionTrue,
 					errorUnbindCallReason,
 					"Unbind call failed. "+s)
 				toUpdate.Status.OperationStartTime = nil

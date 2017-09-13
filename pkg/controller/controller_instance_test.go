@@ -1266,6 +1266,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	// ServiceInstance should be not ready and there no longer is an async operation
 	// in place.
 	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
+	assertServiceInstanceCondition(t, updatedServiceInstance, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 }
 
@@ -1434,6 +1435,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	// ServiceInstance should be set to unknown since the operation on the broker
 	// failed.
 	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1alpha1.ConditionUnknown, errorDeprovisionCalledReason)
+	assertServiceInstanceCondition(t, updatedServiceInstance, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
