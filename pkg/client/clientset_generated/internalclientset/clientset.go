@@ -19,6 +19,7 @@ package internalclientset
 import (
 	glog "github.com/golang/glog"
 	servicecataloginternalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/typed/servicecatalog/internalversion"
+	settingsinternalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/typed/settings/internalversion"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -27,6 +28,7 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	Servicecatalog() servicecataloginternalversion.ServicecatalogInterface
+	Settings() settingsinternalversion.SettingsInterface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -34,6 +36,7 @@ type Interface interface {
 type Clientset struct {
 	*discovery.DiscoveryClient
 	*servicecataloginternalversion.ServicecatalogClient
+	*settingsinternalversion.SettingsClient
 }
 
 // Servicecatalog retrieves the ServicecatalogClient
@@ -42,6 +45,14 @@ func (c *Clientset) Servicecatalog() servicecataloginternalversion.Servicecatalo
 		return nil
 	}
 	return c.ServicecatalogClient
+}
+
+// Settings retrieves the SettingsClient
+func (c *Clientset) Settings() settingsinternalversion.SettingsInterface {
+	if c == nil {
+		return nil
+	}
+	return c.SettingsClient
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -64,6 +75,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.SettingsClient, err = settingsinternalversion.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -78,6 +93,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.ServicecatalogClient = servicecataloginternalversion.NewForConfigOrDie(c)
+	cs.SettingsClient = settingsinternalversion.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -87,6 +103,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.ServicecatalogClient = servicecataloginternalversion.New(c)
+	cs.SettingsClient = settingsinternalversion.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

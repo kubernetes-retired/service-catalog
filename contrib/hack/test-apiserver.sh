@@ -56,4 +56,9 @@ NO_TTY=1 kubectl delete -f contrib/examples/apiserver/broker.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/instance.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/binding.yaml
+
+NO_TTY=1 kubectl create -f contrib/examples/podpresets/pp-dbport-env.yaml
+NO_TTY=1 kubectl get podpresets -o yaml
+NO_TTY=1 kubectl get podpresets allow-database -o yaml
+NO_TTY=1 kubectl delete -f contrib/examples/podpresets/pp-dbport-env.yaml
 set +x

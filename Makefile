@@ -192,8 +192,37 @@ $(BINDIR)/e2e.test: .init
 	$(DOCKER_CMD) $(BINDIR)/openapi-gen \
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1,k8s.io/client-go/pkg/api/v1,k8s.io/apimachinery/pkg/apis/meta/v1" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1" \
+		--input-dirs "k8s.io/apimachinery/pkg/apis/meta/v1" \
+		--input-dirs "k8s.io/api/core/v1" \
 		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/openapi"
+	# Generate defaults
+	$(DOCKER_CMD) $(BINDIR)/defaulter-gen \
+		--v 1 --logtostderr \
+		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
+		--input-dirs "$(SC_PKG)/pkg/apis/settings" \
+		--input-dirs "$(SC_PKG)/pkg/apis/settings/v1alpha1" \
+	  	--extra-peer-dirs "$(SC_PKG)/pkg/apis/settings" \
+		--extra-peer-dirs "$(SC_PKG)/pkg/apis/settings/v1alpha1" \
+		--output-file-base "zz_generated.defaults"
+	# Generate deep copies
+	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen \
+		--v 1 --logtostderr \
+		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
+		--input-dirs "$(SC_PKG)/pkg/apis/settings" \
+		--input-dirs "$(SC_PKG)/pkg/apis/settings/v1alpha1" \
+		--bounding-dirs "github.com/kubernetes-incubator/service-catalog" \
+		--output-file-base zz_generated.deepcopy
+	# Generate conversions
+	$(DOCKER_CMD) $(BINDIR)/conversion-gen \
+		--v 1 --logtostderr \
+		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
+		--input-dirs "$(SC_PKG)/pkg/apis/settings" \
+		--input-dirs "$(SC_PKG)/pkg/apis/settings/v1alpha1" \
+		--output-file-base zz_generated.conversion
+	# generate all pkg/client contents
+	$(DOCKER_CMD) $(BUILD_DIR)/update-client-gen.sh
 	# generate codec
 	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	touch $@

@@ -19,6 +19,7 @@ package apiserver
 import (
 	servicecatalogrest "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/rest"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	settingsrest "github.com/kubernetes-incubator/service-catalog/pkg/registry/settings/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/version"
@@ -36,6 +37,11 @@ func restStorageProviders(
 ) []RESTStorageProvider {
 	return []RESTStorageProvider{
 		servicecatalogrest.StorageProvider{
+			DefaultNamespace: defaultNamespace,
+			StorageType:      storageType,
+			RESTClient:       restClient,
+		},
+		settingsrest.StorageProvider{
 			DefaultNamespace: defaultNamespace,
 			StorageType:      storageType,
 			RESTClient:       restClient,

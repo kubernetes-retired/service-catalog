@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/namespace/lifecycle"
 	siclifecycle "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceinstancecredentials/lifecycle"
@@ -67,6 +68,9 @@ func NewCommandServer(
 	// in addition to the flags that are defined above.
 	flags := cmd.Flags()
 	flags.AddGoFlagSet(flag.CommandLine)
+
+	//  register all features
+	features.Initialize()
 
 	stopCh := make(chan struct{})
 	opts := &ServiceCatalogServerOptions{
