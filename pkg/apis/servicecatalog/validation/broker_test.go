@@ -18,6 +18,7 @@ package validation
 
 import (
 	"testing"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
@@ -40,7 +41,9 @@ func TestValidateServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
-					URL: "http://example.com",
+					URL:            "http://example.com",
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: true,
@@ -61,6 +64,8 @@ func TestValidateServiceBroker(t *testing.T) {
 							},
 						},
 					},
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: true,
@@ -81,6 +86,8 @@ func TestValidateServiceBroker(t *testing.T) {
 							},
 						},
 					},
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: true,
@@ -93,7 +100,9 @@ func TestValidateServiceBroker(t *testing.T) {
 					Namespace: "oops",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
-					URL: "http://example.com",
+					URL:            "http://example.com",
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: false,
@@ -113,6 +122,8 @@ func TestValidateServiceBroker(t *testing.T) {
 							},
 						},
 					},
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: false,
@@ -132,6 +143,8 @@ func TestValidateServiceBroker(t *testing.T) {
 							},
 						},
 					},
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: false,
@@ -151,6 +164,8 @@ func TestValidateServiceBroker(t *testing.T) {
 							},
 						},
 					},
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: false,
@@ -170,6 +185,8 @@ func TestValidateServiceBroker(t *testing.T) {
 							},
 						},
 					},
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: false,
@@ -184,6 +201,8 @@ func TestValidateServiceBroker(t *testing.T) {
 					URL: "http://example.com",
 					InsecureSkipTLSVerify: true,
 					CABundle:              []byte("fake CABundle"),
+					RelistBehavior:        "Duration",
+					RelistDuration:        &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: false,
@@ -197,6 +216,8 @@ func TestValidateServiceBroker(t *testing.T) {
 				Spec: servicecatalog.ServiceBrokerSpec{
 					URL: "http://example.com",
 					InsecureSkipTLSVerify: true,
+					RelistBehavior:        "Duration",
+					RelistDuration:        &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: true,
@@ -208,11 +229,55 @@ func TestValidateServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
-					URL:      "http://example.com",
-					CABundle: []byte("fake CABundle"),
+					URL:            "http://example.com",
+					CABundle:       []byte("fake CABundle"),
+					RelistBehavior: "Duration",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
 				},
 			},
 			valid: true,
+		},
+		{
+			name: "valid broker - manual behavior with behavior",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
+					RelistDuration: &metav1.Duration{15 & time.Minute},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid broker - manual behavior without duration",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
+					RelistDuration: nil,
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "invalid broker - duration behavior without duration",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "Duration",
+					RelistDuration: nil,
+				},
+			},
+			valid: false,
 		},
 	}
 

@@ -25,6 +25,7 @@ import (
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	versioned "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/api"
@@ -69,18 +70,60 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 }
 
 func TestSetDefaultServiceBroker(t *testing.T) {
-	b := &versioned.ServiceBroker{}
-	obj2 := roundTrip(t, runtime.Object(b))
-	b2 := obj2.(*versioned.ServiceBroker)
-
-	if b2.Spec.RelistBehavior == "" {
-		t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got none")
+	cases := []struct {
+		name     string
+		broker   *versioned.ServiceBroker
+		behavior versioned.ServiceBrokerRelistBehavior
+		duration *metav1.Duration
+	}{
+		{
+			name:     "neither duration or behavior set",
+			broker:   &versioned.ServiceBroker{},
+			behavior: versioned.ServiceBrokerRelistBehaviorDuration,
+			duration: &metav1.Duration{15 * time.Minute},
+		},
+		{
+			name: "behavior set to manual",
+			broker: func() *versioned.ServiceBroker {
+				b := &versioned.ServiceBroker{}
+				b.Spec.RelistBehavior = versioned.ServiceBrokerRelistBehaviorManual
+				return b
+			}(),
+			behavior: versioned.ServiceBrokerRelistBehaviorManual,
+			duration: nil,
+		},
+		{
+			name: "behavior set to duration but no duration provided",
+			broker: func() *versioned.ServiceBroker {
+				b := &versioned.ServiceBroker{}
+				b.Spec.RelistBehavior = versioned.ServiceBrokerRelistBehaviorDuration
+				return b
+			}(),
+			behavior: versioned.ServiceBrokerRelistBehaviorDuration,
+			duration: &metav1.Duration{15 * time.Minute},
+		},
 	}
 
-	incorrectDefaultRelistBehavior := b2.Spec.RelistBehavior != "" &&
-		b2.Spec.RelistBehavior != versioned.ServiceBrokerRelistBehaviorDuration
-	if incorrectDefaultRelistBehavior {
-		t.Error("Expected a default RelistBehavior of ServiceBrokerRelistBehaviorDuration, but got something else")
+	for _, tc := range cases {
+		o := roundTrip(t, runtime.Object(tc.broker))
+		ab := o.(*versioned.ServiceBroker)
+		actualSpec := ab.Spec
+
+		if tc.behavior != actualSpec.RelistBehavior {
+			t.Errorf(
+				"%v: unexpected default RelistBehavior: expected %v, got %v",
+				tc.name, tc.behavior, actualSpec.RelistBehavior,
+			)
+		}
+
+		if tc.duration == nil && actualSpec.RelistDuration == nil {
+			continue
+		} else if *tc.duration != *actualSpec.RelistDuration {
+			t.Errorf(
+				"%v: unexpected RelistDuration: expected %v, got %v",
+				tc.name, tc.duration, actualSpec.RelistDuration,
+			)
+		}
 	}
 }
 

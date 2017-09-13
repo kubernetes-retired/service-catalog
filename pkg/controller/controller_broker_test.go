@@ -62,6 +62,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 		broker    *v1alpha1.ServiceBroker
 		now       time.Time
 		reconcile bool
+		err       error
 	}{
 		{
 			name: "no status",
@@ -152,8 +153,13 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
 		}
 
-		interval := tc.broker.Spec.RelistDuration.Duration
-		t.Logf("%v: now: %v, interval: %v, last transition time: %v", tc.name, tc.now, interval, ltt)
+		if tc.broker.Spec.RelistDuration != nil {
+			interval := tc.broker.Spec.RelistDuration.Duration
+			t.Logf("%v: now: %v, interval: %v, last transition time: %v", tc.name, tc.now, interval, ltt)
+		} else {
+			t.Logf("broker.Spec.RelistDuration set to nil")
+		}
+
 		actual := shouldReconcileServiceBroker(tc.broker, tc.now)
 
 		if e, a := tc.reconcile, actual; e != a {

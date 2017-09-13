@@ -98,17 +98,23 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 				field.Required(fldPath.Child("authInfo"), "auth config is required"),
 			)
 		}
-
-		if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
-			allErrs = append(
-				allErrs,
-				field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
-			)
-		}
 	}
 
 	if spec.InsecureSkipTLSVerify && len(spec.CABundle) > 0 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("caBundle"), spec.CABundle, "caBundle cannot be used when insecureSkipTLSVerify is true"))
+	}
+
+	if "" == spec.RelistBehavior {
+		allErrs = append(allErrs,
+			field.Required(fldPath.Child("relistDuration"),
+				"brokers must have a relistDuration"))
+	}
+
+	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
+		allErrs = append(
+			allErrs,
+			field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
+		)
 	}
 
 	return allErrs
