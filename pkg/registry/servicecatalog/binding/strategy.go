@@ -163,6 +163,11 @@ func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, ol
 	return scv.ValidateServiceInstanceCredentialUpdate(newServiceInstanceCredential, oldServiceInstanceCredential)
 }
 
+// CheckGracefulDelete sets the UserInfo on the resource to that of the user that
+// initiated the delete.
+// Note that this is a hack way of setting the UserInfo. However, there is not
+// currently any other mechanism in the Delete strategies for getting access to
+// the resource being deleted and the context.
 func (bindingRESTStrategy) CheckGracefulDelete(ctx genericapirequest.Context, obj runtime.Object, options *metav1.DeleteOptions) bool {
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		serviceInstanceCredential, ok := obj.(*sc.ServiceInstanceCredential)
