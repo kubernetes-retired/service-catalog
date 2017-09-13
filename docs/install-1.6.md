@@ -142,9 +142,12 @@ authentication and authorization](./auth.md).
 ## Do Overs
 
 If you make a mistake somewhere along the way in this walk-through and want to 
-start over, check out the "Final Cleanup" section in the 
-[walkthrough document](./walkthrough-1.6.md). Follow those instructions before 
-you start over.
+start over, please run the following commands for clean-up.
+
+```console
+helm delete --purge catalog
+kubectl delete ns catalog
+```
 
 ## Step 3 - Configuring `kubectl` to Talk to the API Server
 
