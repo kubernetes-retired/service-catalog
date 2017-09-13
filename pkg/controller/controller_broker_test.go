@@ -603,7 +603,7 @@ func TestReconcileServiceBrokerWithReconcileError(t *testing.T) {
 }
 
 // TestReconcileServiceBrokerSuccessOnFinalRetry verifies that reconciliation can
-// succeed on the last attempt before timing out the retry loop
+// succeed on the last attempt before timing out of the retry loop
 func TestReconcileServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 

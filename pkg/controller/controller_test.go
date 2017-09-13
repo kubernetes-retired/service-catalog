@@ -1397,7 +1397,7 @@ func assertServiceInstanceReconciledGeneration(t *testing.T, obj runtime.Object,
 	}
 }
 
-func assertServiceInstanceCurrentOperationTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+func assertServiceInstanceOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
 	instance, ok := obj.(*v1alpha1.ServiceInstance)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
@@ -1495,7 +1495,18 @@ func assertServiceInstanceCredentialCondition(t *testing.T, obj runtime.Object, 
 	}
 }
 
-func assertServiceInstanceCredentialCurrentOperationTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+func assertServiceInstanceCredentialReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
+	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+
+	if e, a := reconciledGeneration, binding.Status.ReconciledGeneration; e != a {
+		fatalf(t, "unexpected reconciled generation: expected %v, got %v", e, a)
+	}
+}
+
+func assertServiceInstanceCredentialOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
 	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)

@@ -1635,7 +1635,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 }
 
 // TestReconcileServiceInstanceSuccessOnFinalRetry verifies that reconciliation
-// can succeed on the last attempt before timing out the retry loop
+// can succeed on the last attempt before timing out of the retry loop
 func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -1672,7 +1672,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceReadyTrue(t, updatedServiceInstance)
-	assertServiceInstanceCurrentOperationTimeSet(t, updatedServiceInstance, false)
+	assertServiceInstanceOperationStartTimeSet(t, updatedServiceInstance, false)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -1740,7 +1740,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	updatedObject := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceReadyFalse(t, updatedObject)
 	assertServiceInstanceCondition(t, updatedObject, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, errorReconciliationRetryTimeoutReason)
-	assertServiceInstanceCurrentOperationTimeSet(t, updatedObject, false)
+	assertServiceInstanceOperationStartTimeSet(t, updatedObject, false)
 
 	expectedEventPrefixes := []string{
 		api.EventTypeWarning + " " + errorErrorCallingProvisionReason,
@@ -1758,7 +1758,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 }
 
 // TestPollServiceInstanceSuccessOnFinalRetry verifies that polling
-// can succeed on the last attempt before timing out the retry loop
+// can succeed on the last attempt before timing out of the retry loop
 func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -1810,7 +1810,7 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	// in place.
 	assertServiceInstanceReadyTrue(t, updatedServiceInstance)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
-	assertServiceInstanceCurrentOperationTimeSet(t, updatedServiceInstance, false)
+	assertServiceInstanceOperationStartTimeSet(t, updatedServiceInstance, false)
 }
 
 // TestPollServiceInstanceFailureOnFinalRetry verifies that polling
@@ -1865,7 +1865,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceCondition(t, updatedServiceInstance, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, errorReconciliationRetryTimeoutReason)
 	assertAsyncOpInProgressFalse(t, updatedServiceInstance)
-	assertServiceInstanceCurrentOperationTimeSet(t, updatedServiceInstance, false)
+	assertServiceInstanceOperationStartTimeSet(t, updatedServiceInstance, false)
 
 	// verify no kube resources created.
 	// No actions

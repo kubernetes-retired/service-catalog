@@ -1181,7 +1181,7 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 	binding := getTestServiceInstanceCredential()
 
 	if err := testController.reconcileServiceInstanceCredential(binding); err != nil {
-		t.Fatal("ServiceInstanceCredential creation should complete: %v", err)
+		t.Fatalf("ServiceInstanceCredential creation should complete: %v", err)
 	}
 
 	// verify one kube action occurred
@@ -1384,7 +1384,7 @@ func TestUpdateServiceInstanceCredentialCondition(t *testing.T) {
 // TestReconcileUnbindingWithBrokerError tests reconcileBinding to ensure an
 // unbinding request response that contains a broker error fails as expected.
 func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
-	_, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		UnbindReaction: &fakeosb.UnbindReaction{
 			Response: &osb.UnbindResponse{},
 			Error:    fakeosb.UnexpectedActionError(),
@@ -1415,6 +1415,15 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 	if err := testController.reconcileServiceInstanceCredential(binding); err == nil {
 		t.Fatal("reconcileServiceInstanceCredential should have returned an error")
 	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential)
+
+	assertServiceInstanceCredentialReconciledGeneration(t, updatedServiceInstanceCredential, 0)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, updatedServiceInstanceCredential, true)
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker": Unexpected action`
@@ -1461,7 +1470,7 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 		t.Fatalf("Finalizer error: %v", err)
 	}
 	if err := testController.reconcileServiceInstanceCredential(binding); err != nil {
-		t.Fatal("reconcileServiceInstanceCredential should not have returned an error: %v", err)
+		t.Fatalf("reconcileServiceInstanceCredential should not have returned an error: %v", err)
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1469,6 +1478,7 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
 	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential)
 	assertServiceInstanceCredentialCondition(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker": Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
@@ -1481,7 +1491,7 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 }
 
 // TestReconcileBindingSuccessOnFinalRetry verifies that reconciliation can
-// succeed on the last attempt before timing out the retry loop
+// succeed on the last attempt before timing out of the retry loop
 func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -1526,7 +1536,7 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
 	assertServiceInstanceCredentialReadyTrue(t, updatedServiceInstanceCredential)
-	assertServiceInstanceCredentialCurrentOperationTimeSet(t, updatedServiceInstanceCredential, false)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1569,7 +1579,7 @@ func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
 	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential)
 	assertServiceInstanceCredentialCondition(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue, errorReconciliationRetryTimeoutReason)
-	assertServiceInstanceCredentialCurrentOperationTimeSet(t, updatedServiceInstanceCredential, false)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, updatedServiceInstanceCredential, false)
 
 	expectedEventPrefixes := []string{
 		api.EventTypeWarning + " " + errorBindCallReason,
