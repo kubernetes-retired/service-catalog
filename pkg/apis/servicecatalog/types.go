@@ -65,12 +65,12 @@ type ServiceBrokerSpec struct {
 	// when relisting ServiceClasses available from a broker
 	RelistBehavior ServiceBrokerRelistBehavior
 
-	//RelistDuration is the frequency by which a controller will relist the broker
-	//when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration
+	// RelistDuration is the frequency by which a controller will relist the broker
+	// when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration
 	RelistDuration *metav1.Duration
 
-	//RelistRequests is a strictly increasing integer counter that can be manually incremented
-	//by a user to manually trigger a relist
+	// RelistRequests is a strictly increasing integer counter that can be manually incremented
+	// by a user to manually trigger a relist
 	RelistRequests int64
 }
 
@@ -78,10 +78,9 @@ type ServiceBrokerSpec struct {
 type ServiceBrokerRelistBehavior string
 
 const (
-	// ServiceBrokerRelistBehaviorDuration will allow the RelistDuration frequency to be configured
+	// ServiceBrokerRelistBehaviorDuration indicates that the broker will be relisted automatically after the specified duration has passed
 	ServiceBrokerRelistBehaviorDuration ServiceBrokerRelistBehavior = "Duration"
-	// ServiceBrokerRelistBehaviorManual will configure the catalog to only perform future
-	// relists based on triggering PUT /brokers/relist
+	// ServiceBrokerRelistBehaviorManual indicates that the broker is only relisted when the spec of the broker changes
 	ServiceBrokerRelistBehaviorManual ServiceBrokerRelistBehavior = "Manual"
 )
 
