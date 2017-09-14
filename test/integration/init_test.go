@@ -22,6 +22,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/crd"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/api"
 	_ "k8s.io/client-go/rest"
@@ -44,7 +45,25 @@ func serviceCatalogAPIGroup() testapi.TestGroup {
 	)
 }
 
+func crdServiceCatalogAPIGroup() testapi.TestGroup {
+	// OOPS: didn't register the right group version
+	groupVersion := schema.GroupVersion{Group: crd.CrdServiceCatalogResourceGroup, Version: "v1alpha1"}
+
+	externalGroupVersion := schema.GroupVersion{
+		Group:   crd.CrdServiceCatalogResourceGroup,
+		Version: api.Registry.GroupOrDie(crd.CrdServiceCatalogResourceGroup).GroupVersion.Version,
+	}
+
+	return testapi.NewTestGroup(
+		groupVersion,
+		crd.InternalSchemeGroupVersion,
+		api.Scheme.KnownTypes(crd.InternalSchemeGroupVersion),
+		api.Scheme.KnownTypes(externalGroupVersion),
+	)
+}
+
 func init() {
 	log.SetFlags(log.Lshortfile)
 	testapi.Groups[servicecatalog.GroupName] = serviceCatalogAPIGroup()
+	testapi.Groups[crd.CrdServiceCatalogResourceGroup] = crdServiceCatalogAPIGroup()
 }

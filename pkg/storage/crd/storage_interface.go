@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tpr
+package crd
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"bytes"
 	"github.com/golang/glog"
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -36,20 +36,16 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-var (
-	clusterTypes = []string{} // in TPR all types are namespaced
-)
-
 type store struct {
-	hasNamespace     bool
 	codec            runtime.Codec
+	copier           runtime.ObjectCopier
+	hasNamespace     bool
 	defaultNamespace string
 	cl               restclient.Interface
-	singularKind     Kind
+	resourcePlural   ResourcePlural
 	// singularShell is a function that returns a new object of the appropriate type,
 	// with the namespace (first param) and name (second param) pre-filled
 	singularShell func(string, string) runtime.Object
-	listKind      Kind
 	// listShell is a function that returns a new, empty list object of the appropriate
 	// type. The list object should hold elements that are returned by singularShell
 	listShell   func() runtime.Object
@@ -59,22 +55,23 @@ type store struct {
 	hardDelete  bool
 }
 
-// NewStorage creates a new TPR-based storage.Interface implementation
+// NewStorage creates a new CRD-based storage.Interface implementation
 func NewStorage(opts Options) (storage.Interface, factory.DestroyFunc) {
-	return &store{
-		hasNamespace:     opts.HasNamespace,
+	s := &store{
 		codec:            opts.RESTOptions.StorageConfig.Codec,
+		copier:           opts.Copier,
+		hasNamespace:     opts.HasNamespace,
 		defaultNamespace: opts.DefaultNamespace,
 		cl:               opts.RESTClient,
-		singularKind:     opts.SingularKind,
+		resourcePlural:   opts.ResourcePlural,
 		singularShell:    opts.NewSingularFunc,
-		listKind:         opts.ListKind,
 		listShell:        opts.NewListFunc,
 		checkObject:      opts.CheckObjectFunc,
 		decodeKey:        opts.Keyer.NamespaceAndNameFromKey,
 		versioner:        etcd.APIObjectVersioner{},
 		hardDelete:       opts.HardDelete,
-	}, opts.DestroyFunc
+	}
+	return newProxy(s), opts.DestroyFunc
 }
 
 // Versioned returns the versioned associated with this interface
@@ -92,7 +89,6 @@ func (t *store) Create(
 	out runtime.Object,
 	ttl uint64,
 ) error {
-
 	ns, name, err := t.decodeKey(key)
 	if err != nil {
 		glog.Errorf("decoding key %s (%s)", key, err)
@@ -107,15 +103,10 @@ func (t *store) Create(
 	if err != nil {
 		return err
 	}
-	req := t.cl.Post().AbsPath(
-		"apis",
-		groupName,
-		tprVersion,
-		"namespaces",
-		ns,
-		t.singularKind.URLName(),
-	).Body(data)
-
+	req := t.cl.Post().Resource(t.resourcePlural.String()).Body(data)
+	if t.hasNamespace {
+		req = req.Namespace(ns)
+	}
 	res := req.Do()
 	if res.Error() != nil {
 		errStr := fmt.Sprintf("executing POST for %s/%s (%s)", ns, name, res.Error())
@@ -172,16 +163,17 @@ func (t *store) Delete(
 		// after the core API server gets the DELETE call, it will set the deletion timestamp
 		// as we expect, so we should proceed to remove the deletion timestamp & update as usual
 		// (below), so that the object is removed completely
-		if err := delete(t.cl, t.singularKind, key, ns, name, http.StatusOK); err != nil {
+		if err := delete(t.cl, key, t.resourcePlural.String(), ns, name, t.hasNamespace, http.StatusOK); err != nil {
 			glog.Errorf("hard-deleting %s (%s)", key, err)
 			return err
 		}
 	}
+
 	if err := get(
 		t.cl,
 		t.codec,
-		t.singularKind,
 		key,
+		t.resourcePlural.String(),
 		ns,
 		name,
 		out,
@@ -196,12 +188,7 @@ func (t *store) Delete(
 		glog.Errorf("removing finalizer from %#v (%s)", out, err)
 		return err
 	}
-	encoded, err := runtime.Encode(t.codec, out)
-	if err != nil {
-		glog.Errorf("encoding %#v (%s)", out, err)
-		return err
-	}
-	if err := put(t.cl, t.codec, t.singularKind, ns, name, encoded, out); err != nil {
+	if err := put(t.cl, t.codec, t.resourcePlural.String(), ns, name, t.hasNamespace, out, out); err != nil {
 		glog.Errorf("putting %s (%s)", key, err)
 		return err
 	}
@@ -226,86 +213,53 @@ func (t *store) Watch(
 		return nil, err
 	}
 
-	req := t.cl.Get().AbsPath(
-		"apis",
-		groupName,
-		tprVersion,
-		"watch",
-		"namespaces",
-		ns,
-		t.singularKind.URLName(),
-		name,
-	).Param("resourceVersion", resourceVersion)
+	req := t.cl.Get().Prefix("watch").Resource(t.resourcePlural.String()).Name(name).
+		Param("resourceVersion", resourceVersion)
+	if t.hasNamespace {
+		req = req.Namespace(ns)
+	}
 	watchIface, err := req.Watch()
 	if err != nil {
 		glog.Errorf("initiating the raw watch (%s)", err)
 		return nil, err
 	}
-	filteredIFace := watch.Filter(watchIface, watchFilterer(t, ns, false))
+	filteredIFace := watch.Filter(watchIface, watchFilterer(t))
 	return filteredIFace, nil
 }
 
 // watchFilterer returns a function that can be used as an argument to watch.Filter
-func watchFilterer(t *store, ns string, list bool) func(watch.Event) (watch.Event, bool) {
+func watchFilterer(t *store) func(watch.Event) (watch.Event, bool) {
 	return func(in watch.Event) (watch.Event, bool) {
 		encodedBytes, err := runtime.Encode(t.codec, in.Object)
 		if err != nil {
 			glog.Errorf("couldn't encode watch event object (%s)", err)
 			return watch.Event{}, false
 		}
-		if list {
-			// if we're watching a list, extract to a list object
-			finalObj := t.listShell()
-			if err := decode(t.codec, encodedBytes, finalObj); err != nil {
-				glog.Errorf("couldn't decode watch event bytes (%s)", err)
-				return watch.Event{}, false
-			}
-			if !t.hasNamespace {
-				// if we're watching a list and not supposed to have a namespace, strip namespaces
-				objs, err := meta.ExtractList(finalObj)
-				if err != nil {
-					glog.Errorf("couldn't extract a list from %#v (%s)", finalObj, err)
-					return watch.Event{}, false
-				}
-				objList := make([]runtime.Object, len(objs))
-				for i, obj := range objs {
-					if err := removeNamespace(obj); err != nil {
-						glog.Errorf("couldn't remove namespace from %#v (%s)", obj, err)
-						return watch.Event{}, false
-					}
-					objList[i] = obj
-				}
-				if err := meta.SetList(finalObj, objList); err != nil {
-					glog.Errorf("setting list items (%s)", err)
-					return watch.Event{}, false
-				}
-				return watch.Event{
-					Type:   in.Type,
-					Object: finalObj,
-				}, true
-			}
-			return watch.Event{
-				Type:   in.Type,
-				Object: finalObj,
-			}, true
-		}
 		finalObj := t.singularShell("", "")
 		if err := decode(t.codec, encodedBytes, finalObj); err != nil {
 			glog.Errorf("couldn't decode watch event bytes (%s)", err)
 			return watch.Event{}, false
-		}
-		if !t.hasNamespace {
-			if err := removeNamespace(finalObj); err != nil {
-				glog.Errorf("couldn't remove namespace from %#v (%s)", finalObj, err)
-				return watch.Event{}, false
-			}
 		}
 		return watch.Event{
 			Type:   in.Type,
 			Object: finalObj,
 		}, true
 	}
+}
 
+func decode(
+	codec runtime.Codec,
+	value []byte,
+	objPtr runtime.Object,
+) error {
+	if _, err := conversion.EnforcePtr(objPtr); err != nil {
+		panic("unable to convert output object to pointer")
+	}
+	_, _, err := codec.Decode(value, nil, objPtr)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // WatchList begins watching the specified key's items. Items are decoded into API
@@ -326,22 +280,17 @@ func (t *store) WatchList(
 		return nil, err
 	}
 
-	req := t.cl.Get().AbsPath(
-		"apis",
-		groupName,
-		tprVersion,
-		"watch",
-		"namespaces",
-		ns,
-		t.singularKind.URLName(),
-	).Param("resourceVersion", resourceVersion)
-
+	req := t.cl.Get().Prefix("watch").Resource(t.resourcePlural.String()).
+		Param("resourceVersion", resourceVersion)
+	if t.hasNamespace {
+		req = req.Namespace(ns)
+	}
 	watchIface, err := req.Watch()
 	if err != nil {
 		glog.Errorf("initiating the raw watch (%s)", err)
 		return nil, err
 	}
-	return watch.Filter(watchIface, watchFilterer(t, ns, true)), nil
+	return watch.Filter(watchIface, watchFilterer(t)), nil
 }
 
 // Get unmarshals json found at key into objPtr. On a not found error, will either
@@ -361,16 +310,11 @@ func (t *store) Get(
 		glog.Errorf("decoding key %s (%s)", key, err)
 		return err
 	}
-	req := t.cl.Get().AbsPath(
-		"apis",
-		groupName,
-		tprVersion,
-		"namespaces",
-		ns,
-		t.singularKind.URLName(),
-		name,
-	)
 
+	req := t.cl.Get().Resource(t.resourcePlural.String()).Name(name)
+	if t.hasNamespace {
+		req = req.Namespace(ns)
+	}
 	res := req.Do()
 	if res.Error() != nil {
 		glog.Errorf("executing GET for %s/%s (%s)", ns, name, res.Error())
@@ -402,12 +346,7 @@ func (t *store) Get(
 	if err := decode(t.codec, unknown.Raw, objPtr); err != nil {
 		return nil
 	}
-	if !t.hasNamespace {
-		if err := removeNamespace(objPtr); err != nil {
-			glog.Errorf("removing namespace from %#v (%s)", objPtr, err)
-			return err
-		}
-	}
+
 	return nil
 }
 
@@ -443,6 +382,13 @@ func (t *store) List(
 	}
 
 	if t.hasNamespace && ns == t.defaultNamespace {
+		// TODO nilebox: The problem with distinguishing between "-n default" and "--all-namespaces"
+		// is caused by hack in Keyer replacing empty string "" with
+		// default namespace. metav1.NamespaceAll constant is also an empty string.
+		// We should fix this hack. Options:
+		// - store the information in the Key whether the original namespace was empty string or not
+		// - move the logic of replacing empty string with default namespace from Keyer to storage (here).
+
 		// if the resource is supposed to have a namespace, and the given one is the default,
 		// then assume that '--all-namespaces' was given on the kubectl command line.
 		// this assumption means that a kubectl command that specifies a namespace equal to
@@ -457,7 +403,7 @@ func (t *store) List(
 		}
 		var objList []runtime.Object
 		for _, ns := range allNamespaces.Items {
-			allObjs, err := listResource(t.cl, ns.Name, t.singularKind, listObj, t.codec)
+			allObjs, err := listResource(t.cl, t.codec, t.resourcePlural.String(), ns.Name, t.hasNamespace, listObj)
 			if err != nil {
 				glog.Errorf("error listing resources (%s)", err)
 				return err
@@ -473,18 +419,10 @@ func (t *store) List(
 
 	// otherwise, list all the resources in the given namespace. if the resource is not supposed
 	// to be namespaced, then ns will be the default namespace
-	objs, err := listResource(t.cl, ns, t.singularKind, listObj, t.codec)
+	objs, err := listResource(t.cl, t.codec, t.resourcePlural.String(), ns, t.hasNamespace, listObj)
 	if err != nil {
 		glog.Errorf("listing resources (%s)", err)
 		return err
-	}
-	if !t.hasNamespace {
-		for i, obj := range objs {
-			if err := removeNamespace(obj); err != nil {
-				glog.Errorf("removing namespace from obj %d (%s)", i, err)
-				return err
-			}
-		}
 	}
 	if err := meta.SetList(listObj, objs); err != nil {
 		glog.Errorf("setting list items (%s)", err)
@@ -528,7 +466,13 @@ func (t *store) GuaranteedUpdate(
 			return err
 		}
 		// update the object by applying the userUpdate func & encode it
-		updated, _, err := userUpdate(curState.obj, *curState.meta)
+		// make a copy to avoid curState mutations
+		curStateObjCopy, err := t.copier.Copy(curState.obj)
+		if err != nil {
+			glog.Errorf("failed to create a deep copy: (%s)", err)
+			return err
+		}
+		updated, _, err := userUpdate(curStateObjCopy, *curState.meta)
 		if err != nil {
 			glog.Errorf("applying user update: (%s)", err)
 			return err
@@ -543,10 +487,10 @@ func (t *store) GuaranteedUpdate(
 		var newCurState *objState
 		if bytes.Equal(updatedData, curState.data) {
 			// If the candidate matches what we already have, then all we need to do is
-			// decode into the out object
-			err := decode(t.codec, updatedData, out)
+			// copy into the out object
+			err := copy(updated, out)
 			if err != nil {
-				glog.Errorf("decoding to output object (%s)", err)
+				glog.Errorf("copying to output object (%s)", err)
 			}
 			newCurState = curState
 		} else {
@@ -565,11 +509,6 @@ func (t *store) GuaranteedUpdate(
 				return err
 			}
 			newCurState = ncs
-		}
-		newCurObjData, err := runtime.Encode(t.codec, newCurState.obj)
-		if err != nil {
-			glog.Errorf("encoding new obj (%s)", err)
-			return err
 		}
 		// If the new current revision of the object is the same as the last loop iteration,
 		// proceed with trying to update the object on the core API server
@@ -593,7 +532,7 @@ func (t *store) GuaranteedUpdate(
 				// if the deletion timestamp is set but there are still finalizers, then send
 				// a DELETE to the upstream server.
 				// The upstream server will do a soft delete and set the deletion timestamp
-				if err := delete(t.cl, t.singularKind, key, ns, name, http.StatusOK); err != nil {
+				if err := delete(t.cl, key, t.resourcePlural.String(), ns, name, t.hasNamespace, http.StatusOK); err != nil {
 					glog.Errorf("executing DELETE on %s (%s)", key, err)
 					return err
 				}
@@ -601,7 +540,7 @@ func (t *store) GuaranteedUpdate(
 			}
 			// otherwise, the deletion timestamp and deletion grace period are not set, so
 			// do the actual update
-			if err := put(t.cl, t.codec, t.singularKind, ns, name, newCurObjData, out); err != nil {
+			if err := put(t.cl, t.codec, t.resourcePlural.String(), ns, name, t.hasNamespace, newCurState.obj, out); err != nil {
 				glog.Errorf("PUTting object %s (%s)", key, err)
 				return err
 			}
@@ -617,26 +556,19 @@ func (t *store) GuaranteedUpdate(
 	}
 }
 
-func decode(
-	codec runtime.Codec,
-	value []byte,
-	objPtr runtime.Object,
+func copy(
+	inPtr runtime.Object,
+	outPtr runtime.Object,
 ) error {
-	if _, err := conversion.EnforcePtr(objPtr); err != nil {
+	outValuePtr, err := conversion.EnforcePtr(outPtr)
+	if err != nil {
 		panic("unable to convert output object to pointer")
 	}
-	_, _, err := codec.Decode(value, nil, objPtr)
+	inValuePtr, err := conversion.EnforcePtr(inPtr)
 	if err != nil {
-		return err
+		panic("unable to convert input object to pointer")
 	}
-	return nil
-}
-
-func removeNamespace(obj runtime.Object) error {
-	if err := scmeta.GetAccessor().SetNamespace(obj, ""); err != nil {
-		glog.Errorf("removing namespace from %#v (%s)", obj, err)
-		return err
-	}
+	outValuePtr.Set(inValuePtr)
 	return nil
 }
 

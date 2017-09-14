@@ -25,23 +25,21 @@ import (
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 )
 
-// TPROptions contains the complete configuration for an API server that
-// communicates with the core Kubernetes API server to use third party resources (TPRs)
+// CRDOptions contains the complete configuration for an API server that
+// communicates with the core Kubernetes API server to use Custom Resources (CRs)
 // as a database. It is exported so that integration tests can use it
-type TPROptions struct {
-	DefaultGlobalNamespace string
-	RESTClient             restclient.Interface
-	InstallTPRsFunc        func() error
-	GlobalNamespace        string
+type CRDOptions struct {
+	RESTClient      restclient.Interface
+	InstallCRDsFunc func() error
 }
 
-// NewTPROptions creates a new, empty TPROptions struct
-func NewTPROptions() *TPROptions {
-	return &TPROptions{}
+// NewCRDOptions creates a new, empty CRDOptions struct
+func NewCRDOptions() *CRDOptions {
+	return &CRDOptions{}
 }
 
 // NewStorageFactory returns a new StorageFactory from the config in opts
-func (s *TPROptions) storageFactory() serverstorage.StorageFactory {
+func (s *CRDOptions) storageFactory() serverstorage.StorageFactory {
 	return serverstorage.NewDefaultStorageFactory(
 		storagebackend.Config{},
 		"application/json",
@@ -51,7 +49,6 @@ func (s *TPROptions) storageFactory() serverstorage.StorageFactory {
 	)
 }
 
-func (s *TPROptions) addFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.GlobalNamespace, "tpr-global-namespace", s.DefaultGlobalNamespace, ""+
-		"The namespace in which to store all TPRs that represent global service-catalog resources.")
+func (s *CRDOptions) addFlags(fs *pflag.FlagSet) {
+	// No CRD-specific flags
 }

@@ -74,6 +74,7 @@ const (
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
+	server.StorageTypeCRD,
 	server.StorageTypeTPR,
 }
 
@@ -250,7 +251,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 
 	brokerServer, err := brokerClient.Create(broker)
 	if nil != err {
-		return fmt.Errorf("error creating the broker '%v' (%v)", broker, err)
+		return fmt.Errorf("error creating the broker '%#v' (%v)", broker, err)
 	}
 	if name != brokerServer.Name {
 		return fmt.Errorf("didn't get the same broker back from the server \n%+v\n%+v", broker, brokerServer)
@@ -297,7 +298,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	if nil != err ||
 		"test-namespace" != brokerUpdated.Spec.AuthInfo.Basic.SecretRef.Namespace ||
 		"test-name" != brokerUpdated.Spec.AuthInfo.Basic.SecretRef.Name {
-		return fmt.Errorf("broker wasn't updated, %v, %v", brokerServer, brokerUpdated)
+		return fmt.Errorf("broker wasn't updated, %#v, %#v", brokerServer, brokerUpdated)
 	}
 
 	readyConditionTrue := v1alpha1.ServiceBrokerCondition{
@@ -318,7 +319,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("broker status wasn't updated")
 	}
 	if e, a := readyConditionTrue, brokerUpdated2.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %#v\n\ngot: %#v", e, a)
 	}
 	if e, a := "https://example.com", brokerUpdated2.Spec.URL; e != a {
 		return fmt.Errorf("Should not be able to update spec from status subresource")
@@ -341,10 +342,10 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	if nil != err ||
 		"test-namespace" != brokerServer.Spec.AuthInfo.Basic.SecretRef.Namespace ||
 		"test-name" != brokerServer.Spec.AuthInfo.Basic.SecretRef.Name {
-		return fmt.Errorf("broker wasn't updated (%v)", brokerServer)
+		return fmt.Errorf("broker wasn't updated (%#v)", brokerServer)
 	}
 	if e, a := readyConditionFalse, brokerServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %#v\n\ngot: %#v", e, a)
 	}
 
 	err = brokerClient.Delete(name, &metav1.DeleteOptions{})
@@ -354,18 +355,18 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 
 	brokerDeleted, err := brokerClient.Get(name, metav1.GetOptions{})
 	if nil != err {
-		return fmt.Errorf("broker should not be deleted (%v): %v", brokerDeleted, err)
+		return fmt.Errorf("broker should not be deleted (%#v): %v", brokerDeleted, err)
 	}
 
 	brokerDeleted.ObjectMeta.Finalizers = nil
 	_, err = brokerClient.UpdateStatus(brokerDeleted)
 	if nil != err {
-		return fmt.Errorf("broker should be deleted (%v): %v", brokerDeleted, err)
+		return fmt.Errorf("broker should be deleted (%#v): %v", brokerDeleted, err)
 	}
 
 	brokerDeleted, err = brokerClient.Get("test-broker", metav1.GetOptions{})
 	if nil == err {
-		return fmt.Errorf("broker should be deleted (%v)", brokerDeleted)
+		return fmt.Errorf("broker should be deleted (%#v)", brokerDeleted)
 	}
 	return nil
 }
@@ -427,7 +428,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 
 	serviceClassAtServer, err := serviceClassClient.Create(serviceClass)
 	if nil != err {
-		return fmt.Errorf("error creating the ServiceClass (%v)", serviceClass)
+		return fmt.Errorf("error creating the ServiceClass (%#v)", serviceClass)
 	}
 	if name != serviceClassAtServer.Name {
 		return fmt.Errorf(
@@ -462,7 +463,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClassListed := &serviceClasses.Items[0]
 	if !reflect.DeepEqual(serviceClassAtServer, serviceClassListed) {
 		return fmt.Errorf(
-			"Didn't get the same instance from list and get: diff: %v",
+			"Didn't get the same instance from list and get: diff: %#v",
 			diff.ObjectReflectDiff(serviceClassAtServer, serviceClassListed),
 		)
 	}
@@ -487,7 +488,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 
 	serviceClassDeleted, err := serviceClassClient.Get(name, metav1.GetOptions{})
 	if nil == err {
-		return fmt.Errorf("serviceclass should be deleted (%v)", serviceClassDeleted)
+		return fmt.Errorf("serviceclass should be deleted (%#v)", serviceClassDeleted)
 	}
 
 	return nil
@@ -581,7 +582,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	// expect the instance in the list to be the same as the instance just fetched by name
 	instanceListed := &instances.Items[0]
 	if !reflect.DeepEqual(instanceListed, instanceServer) {
-		return fmt.Errorf("Didn't get the same instance from list and get: diff: %v", diff.ObjectReflectDiff(instanceListed, instanceServer))
+		return fmt.Errorf("Didn't get the same instance from list and get: diff: %#v", diff.ObjectReflectDiff(instanceListed, instanceServer))
 	}
 
 	// check the parameters of the fetched-by-name instance with what was expected
@@ -625,7 +626,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 		return fmt.Errorf("error getting instance (%s)", err)
 	}
 	if e, a := readyConditionTrue, instanceServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %#v\n\ngot: %#v", e, a)
 	}
 
 	// delete the instance, set its finalizers to nil, update it, then ensure it is actually
@@ -636,13 +637,13 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 
 	instanceDeleted, err := instanceClient.Get(name, metav1.GetOptions{})
 	if nil != err {
-		return fmt.Errorf("instance should still exist (%v): %v", instanceDeleted, err)
+		return fmt.Errorf("instance should still exist (%#v): %v", instanceDeleted, err)
 	}
 
 	instanceDeleted.ObjectMeta.Finalizers = nil
 	_, err = instanceClient.UpdateStatus(instanceDeleted)
 	if nil != err {
-		return fmt.Errorf("error updating status (%v): %v", instanceDeleted, err)
+		return fmt.Errorf("error updating status (%#v): %v", instanceDeleted, err)
 	}
 
 	instanceDeleted, err = instanceClient.Get("test-instance", metav1.GetOptions{})
@@ -743,7 +744,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	bindingListed := &bindings.Items[0]
 	if !reflect.DeepEqual(bindingListed, bindingServer) {
 		return fmt.Errorf(
-			"Didn't get the same binding from list and get: diff: %v",
+			"Didn't get the same binding from list and get: diff: %#v",
 			diff.ObjectReflectDiff(bindingListed, bindingServer),
 		)
 	}
@@ -793,7 +794,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		return fmt.Errorf("error getting binding: %v", err)
 	}
 	if e, a := readyConditionTrue, bindingServer.Status.Conditions[0]; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
+		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %#v\n\ngot: %#v", e, a)
 	}
 
 	if err = bindingClient.Delete(name, &metav1.DeleteOptions{}); nil != err {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tpr
+package crd
 
 import (
 	"context"
@@ -36,13 +36,18 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/etcd"
+	"k8s.io/client-go/pkg/api"
 )
 
 const (
-	globalNamespace = "globalns"
+	globalNamespace = "" // No namespace
 	namespace       = "testns"
 	name            = "testthing"
-	apiVersion      = "servicecatalog.k8s.io/v1alpha1"
+	apiVersion      = "crd.servicecatalog.k8s.io/v1alpha1"
+)
+
+var (
+	clusterTypes = []string{ServiceBrokerResourcePlural.String(), ServiceClassResourcePlural.String()}
 )
 
 func TestCreateExistingWithNoNamespace(t *testing.T) {
@@ -50,9 +55,9 @@ func TestCreateExistingWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerResourcePlural.String(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
 	inputServiceBroker := &sc.ServiceBroker{
@@ -89,9 +94,9 @@ func TestCreateExistingWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
+	fakeCl.Storage.Set(namespace, ServiceInstanceResourcePlural.String(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -136,7 +141,7 @@ func TestCreateWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	inputServiceBroker := &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: sc.ServiceBrokerSpec{
@@ -163,7 +168,7 @@ func TestCreateWithNoNamespace(t *testing.T) {
 	}
 	// Confirm the output is identical to what is in storage (nothing funny
 	// happened during encoding / decoding the response).
-	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
+	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerResourcePlural.String(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
 	}
@@ -186,7 +191,7 @@ func TestCreateWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	inputServiceInstance := &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
@@ -219,7 +224,7 @@ func TestCreateWithNamespace(t *testing.T) {
 	}
 	// Confirm the output is identical to what is in storage (nothing funny
 	// happened during encoding / decoding the response).
-	obj := fakeCl.Storage.Get(namespace, ServiceInstanceKind.URLName(), name)
+	obj := fakeCl.Storage.Get(namespace, ServiceInstanceResourcePlural.String(), name)
 	if obj == nil {
 		t.Fatal("no instance was in storage")
 	}
@@ -242,7 +247,7 @@ func TestGetNonExistentWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
@@ -286,7 +291,7 @@ func TestGetNonExistentWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key, err := keyer.Key(ctx, name)
@@ -332,9 +337,9 @@ func TestGetWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerResourcePlural.String(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
 	key, err := keyer.Key(request.NewContext(), name)
@@ -353,7 +358,7 @@ func TestGetWithNoNamespace(t *testing.T) {
 	}
 	// Confirm the output is identical to what is in storage (nothing funny
 	// happened during encoding / decoding the response).
-	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
+	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerResourcePlural.String(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
 	}
@@ -368,9 +373,9 @@ func TestGetWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
+	fakeCl.Storage.Set(namespace, ServiceInstanceResourcePlural.String(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -398,7 +403,7 @@ func TestGetWithNamespace(t *testing.T) {
 	}
 	// Confirm the output is identical to what is in storage (nothing funny
 	// happened during encoding / decoding the response).
-	obj := fakeCl.Storage.Get(namespace, ServiceInstanceKind.URLName(), name)
+	obj := fakeCl.Storage.Get(namespace, ServiceInstanceResourcePlural.String(), name)
 	if obj == nil {
 		t.Fatal("no instance was in storage")
 	}
@@ -413,7 +418,7 @@ func TestGetEmptyListWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBrokerList{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	key := keyer.KeyRoot(request.NewContext())
 	outServiceBrokerList := &sc.ServiceBrokerList{}
 	if err := iface.List(
@@ -456,7 +461,7 @@ func TestGetEmptyListWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstanceList{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key := keyer.KeyRoot(ctx)
@@ -501,9 +506,9 @@ func TestGetListWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBrokerList{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing broker
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerResourcePlural.String(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
 	list := &sc.ServiceBrokerList{}
@@ -525,7 +530,7 @@ func TestGetListWithNoNamespace(t *testing.T) {
 		)
 	}
 	// That one list item should be deeply equal to what's in storage
-	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
+	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerResourcePlural.String(), name)
 	if obj == nil {
 		t.Fatal("no broker was in storage")
 	}
@@ -544,9 +549,9 @@ func TestGetListWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstanceList{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	// Ensure an existing instance
-	fakeCl.Storage.Set(globalNamespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
+	fakeCl.Storage.Set(globalNamespace, ServiceInstanceResourcePlural.String(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
@@ -575,7 +580,7 @@ func TestGetListWithNamespace(t *testing.T) {
 		)
 	}
 	// That one list item should be deeply equal to what's in storage
-	obj := fakeCl.Storage.Get(globalNamespace, ServiceInstanceKind.URLName(), name)
+	obj := fakeCl.Storage.Get(globalNamespace, ServiceInstanceResourcePlural.String(), name)
 	if obj == nil {
 		t.Fatal("no instance was in storage")
 	}
@@ -594,7 +599,7 @@ func TestUpdateNonExistentWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	key, err := keyer.Key(request.NewContext(), name)
 	newURL := "http://your-incredible-broker.io"
 	if err != nil {
@@ -647,7 +652,7 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key, err := keyer.Key(ctx, name)
@@ -702,10 +707,10 @@ func TestUpdateWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	newURL := "http://your-incredible-broker.io"
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &sc.ServiceBroker{
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerResourcePlural.String(), name, &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
@@ -734,7 +739,7 @@ func TestUpdateWithNoNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error updating object (%s)", err)
 	}
-	updatedRev, err := iface.versioner.ObjectResourceVersion(updatedServiceBroker)
+	updatedRev, err := iface.Versioner().ObjectResourceVersion(updatedServiceBroker)
 	if err != nil {
 		t.Fatalf("error extracting resource version (%s)", err)
 	}
@@ -755,10 +760,10 @@ func TestUpdateWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	newPlanName := "my-really-awesome-plan"
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &sc.ServiceInstance{
+	fakeCl.Storage.Set(namespace, ServiceInstanceResourcePlural.String(), name, &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
 			ResourceVersion: fmt.Sprintf("%d", origRev),
@@ -810,7 +815,7 @@ func TestDeleteNonExistentWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
@@ -837,7 +842,7 @@ func TestDeleteNonExistentWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key, err := keyer.Key(ctx, name)
@@ -866,7 +871,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	brokerNoFinalizers := &sc.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
@@ -876,7 +881,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 	}
 	brokerWithFinalizers := *brokerNoFinalizers
 	brokerWithFinalizers.Finalizers = append(brokerWithFinalizers.Finalizers, sc.FinalizerServiceCatalog)
-	fakeCl.Storage.Set(globalNamespace, ServiceBrokerKind.URLName(), name, &brokerWithFinalizers)
+	fakeCl.Storage.Set(globalNamespace, ServiceBrokerResourcePlural.String(), name, &brokerWithFinalizers)
 	key, err := keyer.Key(request.NewContext(), name)
 	if err != nil {
 		t.Fatalf("error constructing key (%s)", err)
@@ -892,7 +897,7 @@ func TestDeleteWithNoNamespace(t *testing.T) {
 		t.Fatalf("unexpected error deleting object (%s)", err)
 	}
 	// Object should be removed from underlying storage
-	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerKind.URLName(), name)
+	obj := fakeCl.Storage.Get(globalNamespace, ServiceBrokerResourcePlural.String(), name)
 	finalizers, err := scmeta.GetFinalizers(obj)
 	if err != nil {
 		t.Fatalf("error getting finalizers (%s)", err)
@@ -913,7 +918,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	var origRev uint64 = 1
 	instanceNoFinalizers := &sc.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -926,7 +931,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 	}
 	instanceWithFinalizers := *instanceNoFinalizers
 	instanceWithFinalizers.Finalizers = append(instanceWithFinalizers.Finalizers, sc.FinalizerServiceCatalog)
-	fakeCl.Storage.Set(namespace, ServiceInstanceKind.URLName(), name, &instanceWithFinalizers)
+	fakeCl.Storage.Set(namespace, ServiceInstanceResourcePlural.String(), name, &instanceWithFinalizers)
 	ctx := request.NewContext()
 	ctx = request.WithNamespace(ctx, namespace)
 	key, err := keyer.Key(ctx, name)
@@ -944,7 +949,7 @@ func TestDeleteWithNamespace(t *testing.T) {
 		t.Fatalf("unexpected error deleting object (%s)", err)
 	}
 	// Object should be removed from underlying storage
-	obj := fakeCl.Storage.Get(namespace, ServiceInstanceKind.URLName(), name)
+	obj := fakeCl.Storage.Get(namespace, ServiceInstanceResourcePlural.String(), name)
 	finalizers, err := scmeta.GetFinalizers(obj)
 	if err != nil {
 		t.Fatalf("error getting finalizers (%s)", err)
@@ -965,7 +970,7 @@ func TestWatchWithNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
 	obj := &sc.ServiceInstance{
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
@@ -989,7 +994,7 @@ func TestWatchWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
 	obj := &sc.ServiceBroker{
 		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -1009,26 +1014,14 @@ func TestWatchWithNoNamespace(t *testing.T) {
 func TestWatchListWithNamespace(t *testing.T) {
 	keyer := getServiceInstanceKeyer()
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
-		return &sc.ServiceInstanceList{}
+		return &sc.ServiceInstance{}
 	})
-	iface := getServiceInstanceTPRStorageIFace(t, keyer, fakeCl)
-
-	obj := &sc.ServiceInstanceList{
-		Items: []sc.ServiceInstance{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s1", name),
-					Namespace: namespace,
-				},
-				Spec: sc.ServiceInstanceSpec{ExternalID: "b13843f9-aea7-4ef6-b276-771a5ced2c65"},
-			},
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("%s2", name),
-					Namespace: namespace,
-				},
-				Spec: sc.ServiceInstanceSpec{ExternalID: "b23843f9-aea7-4ef6-b276-771a5ced2c65"},
-			},
+	iface := getServiceInstanceCRDStorageIFace(t, keyer, fakeCl)
+	obj := &sc.ServiceInstance{
+		TypeMeta:   metav1.TypeMeta{Kind: ServiceInstanceKind.String()},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: sc.ServiceInstanceSpec{
+			ExternalID: "9ac07e7d-6c32-48f6-96ef-5a215f69df36",
 		},
 	}
 	// send an unversioned object into the watchList test. it sends this object to the
@@ -1037,7 +1030,7 @@ func TestWatchListWithNamespace(t *testing.T) {
 	// function calls listShell to get the object to decode into, and listShell returns
 	// an unversioned object. After watchFilterer decodes into the unversioned object,
 	// it simply returns it
-	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
+	if err := runWatchListTest(keyer, fakeCl, iface, true, obj); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1047,16 +1040,10 @@ func TestWatchListWithNoNamespace(t *testing.T) {
 	fakeCl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBrokerList{}
 	})
-	iface := getServiceBrokerTPRStorageIFace(t, keyer, fakeCl)
-	obj := &sc.ServiceBrokerList{
-		Items: []sc.ServiceBroker{
-			{
-				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s1", name)},
-			},
-			{
-				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s2", name)},
-			},
-		},
+	iface := getServiceBrokerCRDStorageIFace(t, keyer, fakeCl)
+	obj := &sc.ServiceBroker{
+		TypeMeta:   metav1.TypeMeta{Kind: ServiceBrokerKind.String()},
+		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
 	// send an unversioned object into the watchList test. it sends this object to the
 	// fake REST client, which encodes the unversioned object into bytes & sends them
@@ -1064,27 +1051,11 @@ func TestWatchListWithNoNamespace(t *testing.T) {
 	// function calls listShell to get the object to decode into, and listShell returns
 	// an unversioned object. After watchFilterer decodes into the unversioned object,
 	// it does necessary processing to strip the namespaces out of each object.
-	if err := runWatchListTest(keyer, fakeCl, iface, obj); err != nil {
+	if err := runWatchListTest(keyer, fakeCl, iface, false, obj); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestRemoveNamespace(t *testing.T) {
-	obj := &servicecatalog.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "testns",
-		},
-	}
-	if err := removeNamespace(obj); err != nil {
-		t.Fatalf("couldn't remove namespace (%s", err)
-	}
-	if obj.Namespace != "" {
-		t.Fatalf(
-			"couldn't remove namespace from object. it is still %s",
-			obj.Namespace,
-		)
-	}
-}
 func getServiceBrokerKeyer() Keyer {
 	return Keyer{
 		DefaultNamespace: globalNamespace,
@@ -1100,21 +1071,22 @@ func getServiceInstanceKeyer() Keyer {
 	}
 }
 
-func getServiceBrokerTPRStorageIFace(
+func getServiceBrokerCRDStorageIFace(
 	t *testing.T,
 	keyer Keyer,
 	restCl *fake.RESTClient,
-) *store {
+) storage.Interface {
 	codec, err := testapi.GetCodecForObject(&sc.ServiceBroker{})
 	if err != nil {
 		t.Fatalf("error getting codec (%s)", err)
 	}
-	return &store{
-		decodeKey:    keyer.NamespaceAndNameFromKey,
-		codec:        codec,
-		cl:           restCl,
-		singularKind: ServiceBrokerKind,
-		versioner:    etcd.APIObjectVersioner{},
+	return newProxy(&store{
+		codec:          codec,
+		copier:         api.Scheme,
+		decodeKey:      keyer.NamespaceAndNameFromKey,
+		cl:             restCl,
+		resourcePlural: ServiceBrokerResourcePlural,
+		versioner:      etcd.APIObjectVersioner{},
 		singularShell: func(ns, name string) runtime.Object {
 			return &servicecatalog.ServiceBroker{
 				TypeMeta: metav1.TypeMeta{
@@ -1129,10 +1101,10 @@ func getServiceBrokerTPRStorageIFace(
 		listShell: func() runtime.Object {
 			return &servicecatalog.ServiceBrokerList{}
 		},
-	}
+	})
 }
 
-func getServiceInstanceTPRStorageIFace(
+func getServiceInstanceCRDStorageIFace(
 	t *testing.T,
 	keyer Keyer,
 	restCl *fake.RESTClient,
@@ -1142,12 +1114,13 @@ func getServiceInstanceTPRStorageIFace(
 		t.Fatalf("error getting codec (%s)", err)
 	}
 	return &store{
-		hasNamespace: true,
-		decodeKey:    keyer.NamespaceAndNameFromKey,
-		codec:        codec,
-		cl:           restCl,
-		singularKind: ServiceInstanceKind,
-		versioner:    etcd.APIObjectVersioner{},
+		codec:          codec,
+		copier:         api.Scheme,
+		hasNamespace:   true,
+		decodeKey:      keyer.NamespaceAndNameFromKey,
+		cl:             restCl,
+		resourcePlural: ServiceInstanceResourcePlural,
+		versioner:      etcd.APIObjectVersioner{},
 		singularShell: func(ns, name string) runtime.Object {
 			return &servicecatalog.ServiceInstance{
 				TypeMeta: metav1.TypeMeta{

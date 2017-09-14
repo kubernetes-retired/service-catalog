@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tpr
+package crd
 
 import (
 	"context"
@@ -93,10 +93,11 @@ func runWatchTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface,
 	return nil
 }
 
-func runWatchListTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface, obj runtime.Object) error {
-	const timeout = 1 * time.Second
+func runWatchListTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface, hasNamespace bool, obj runtime.Object) error {
 	reqCtx := request.NewContext()
-	reqCtx = request.WithNamespace(reqCtx, namespace)
+	if hasNamespace {
+		reqCtx = request.WithNamespace(reqCtx, namespace)
+	}
 	key := keyer.KeyRoot(reqCtx)
 	resourceVsn := "1234"
 	predicate := storage.SelectionPredicate{}
@@ -128,6 +129,7 @@ func runWatchListTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interf
 			return errors.New("event type was not ADDED")
 		}
 		if err := deepCompare("expected", obj, "actual", evt.Object); err != nil {
+			fmt.Printf("expected: %#v\nactual: %#v", obj, evt.Object)
 			return fmt.Errorf("received objects aren't the same (%s)", err)
 		}
 	case <-time.After(watchTimeout):

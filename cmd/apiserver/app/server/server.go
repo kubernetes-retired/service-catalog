@@ -24,10 +24,12 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/crd"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/namespace/lifecycle"
 	siclifecycle "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceinstancecredentials/lifecycle"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/defaultserviceplan"
 	"github.com/spf13/cobra"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/admission"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
@@ -76,6 +78,7 @@ func NewCommandServer(
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 		AuditOptions:            genericserveroptions.NewAuditOptions(),
 		EtcdOptions:             NewEtcdOptions(),
+		CRDOptions:              NewCRDOptions(),
 		TPROptions:              NewTPROptions(),
 		StopCh:                  stopCh,
 		StandaloneMode:          standaloneMode(),
@@ -101,6 +104,36 @@ func NewCommandServer(
 		glog.Infof("using etcd for storage")
 		// Store resources in etcd under our special prefix
 		opts.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
+	} else if storageType == server.StorageTypeCRD {
+		// Init apiextensions client (for CRD registration)
+		apiextCfg, err := restclient.InClusterConfig()
+		if err != nil {
+			glog.Errorf("Failed to get kube client config (%s)", err)
+			return nil, err
+		}
+		apiextCfg.GroupVersion = &schema.GroupVersion{}
+		apiextClIface, err := apiextensionsclient.NewForConfig(apiextCfg)
+		if err != nil {
+			glog.Errorf("Failed to create CRD apiextensions clientset Interface (%s)", err)
+			return nil, err
+		}
+
+		// Init rest client (for CRD instances)
+		restClientCfg, err := restclient.InClusterConfig()
+		if err != nil {
+			glog.Errorf("Failed to get kube client config (%s)", err)
+			return nil, err
+		}
+		restClIface, err := crd.NewClient(restClientCfg)
+		if err != nil {
+			glog.Errorf("Failed to create CRD REST client Interface (%s)", err)
+			return nil, err
+		}
+
+		// Init CRDOptions
+		glog.Infof("using custom resources (CRD) for storage")
+		opts.CRDOptions.RESTClient = restClIface
+		opts.CRDOptions.InstallCRDsFunc = installCRDsToCore(apiextClIface)
 	} else {
 		cfg, err := restclient.InClusterConfig()
 		if err != nil {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tpr
+package crd
 
 import (
 	"testing"
@@ -26,33 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
-
-func TestStripNamespacesFromList(t *testing.T) {
-	lst := sc.ServiceBrokerList{
-		Items: []sc.ServiceBroker{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "testns1",
-					Name:      "test1",
-				},
-			},
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "testns2",
-					Name:      "test2",
-				},
-			},
-		},
-	}
-	if err := stripNamespacesFromList(&lst); err != nil {
-		t.Fatalf("removing namespaces from list (%s)", err)
-	}
-	for i, item := range lst.Items {
-		if item.Namespace != "" {
-			t.Errorf("item %d has a non-empty namespace %s", i, item.Namespace)
-		}
-	}
-}
 
 func TestGetAllNamespaces(t *testing.T) {
 	const (
@@ -81,10 +54,54 @@ func TestGetAllNamespaces(t *testing.T) {
 	}
 }
 
-func TestListResource(t *testing.T) {
+func TestListResourceWithNamespace(t *testing.T) {
 	const (
-		ns   = "testns"
-		kind = ServiceBrokerKind
+		ns             = "testns"
+		kind           = ServiceInstanceListKind
+		resourcePlural = ServiceInstanceResourcePlural
+	)
+
+	cl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
+		return &sc.ServiceInstance{}
+	})
+	listObj := sc.ServiceInstanceList{TypeMeta: newTypeMeta(kind)}
+	codec, err := testapi.GetCodecForObject(&sc.ServiceInstanceList{TypeMeta: newTypeMeta(kind)})
+	if err != nil {
+		t.Fatalf("error getting codec (%s)", err)
+	}
+	objs, err := listResource(cl, codec, resourcePlural.String(), ns, true, &listObj)
+	if err != nil {
+		t.Fatalf("error listing resource (%s)", err)
+	}
+	if len(objs) != 0 {
+		t.Fatalf("expected 0 objects returned, got %d instead", len(objs))
+	}
+	cl.Storage.Set(ns, resourcePlural.String(), "broker1", &sc.ServiceInstance{
+		TypeMeta:   newTypeMeta(kind),
+		ObjectMeta: metav1.ObjectMeta{Name: "broker1"},
+	})
+	cl.Storage.Set(ns, resourcePlural.String(), "broker2", &sc.ServiceInstance{
+		TypeMeta:   newTypeMeta(kind),
+		ObjectMeta: metav1.ObjectMeta{Name: "broker2"},
+	})
+	objs, err = listResource(cl, codec, resourcePlural.String(), ns, true, &listObj)
+	if err != nil {
+		t.Fatalf("error listing resource (%s)", err)
+	}
+	if len(objs) != len(cl.Storage[ns][resourcePlural.String()]) {
+		t.Fatalf(
+			"expected %d objects returned, got %d instead",
+			len(cl.Storage[ns][resourcePlural.String()]),
+			len(objs),
+		)
+	}
+}
+
+func TestListResourceWithNoNamespace(t *testing.T) {
+	const (
+		ns             = "" // No namespace
+		kind           = ServiceBrokerListKind
+		resourcePlural = ServiceBrokerResourcePlural
 	)
 
 	cl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
@@ -95,29 +112,29 @@ func TestListResource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting codec (%s)", err)
 	}
-	objs, err := listResource(cl, ns, kind, &listObj, codec)
+	objs, err := listResource(cl, codec, resourcePlural.String(), "", false, &listObj)
 	if err != nil {
 		t.Fatalf("error listing resource (%s)", err)
 	}
 	if len(objs) != 0 {
 		t.Fatalf("expected 0 objects returned, got %d instead", len(objs))
 	}
-	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker1", &sc.ServiceBroker{
+	cl.Storage.Set(ns, resourcePlural.String(), "broker1", &sc.ServiceBroker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker1"},
 	})
-	cl.Storage.Set(ns, ServiceBrokerKind.URLName(), "broker2", &sc.ServiceBroker{
+	cl.Storage.Set(ns, resourcePlural.String(), "broker2", &sc.ServiceBroker{
 		TypeMeta:   newTypeMeta(kind),
 		ObjectMeta: metav1.ObjectMeta{Name: "broker2"},
 	})
-	objs, err = listResource(cl, ns, kind, &listObj, codec)
+	objs, err = listResource(cl, codec, resourcePlural.String(), ns, false, &listObj)
 	if err != nil {
 		t.Fatalf("error listing resource (%s)", err)
 	}
-	if len(objs) != len(cl.Storage[ns][ServiceBrokerKind.URLName()]) {
+	if len(objs) != len(cl.Storage[ns][resourcePlural.String()]) {
 		t.Fatalf(
 			"expected %d objects returned, got %d instead",
-			len(cl.Storage[ns][ServiceBrokerKind.URLName()]),
+			len(cl.Storage[ns][resourcePlural.String()]),
 			len(objs),
 		)
 	}

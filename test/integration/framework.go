@@ -36,8 +36,10 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	serverstorage "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	crd "github.com/kubernetes-incubator/service-catalog/pkg/storage/crd"
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/pkg/api/install"
 	_ "k8s.io/client-go/pkg/apis/extensions/install"
@@ -85,14 +87,29 @@ func withConfigGetFreshApiserverAndClient(
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
 	// start the server in the background
 	go func() {
+		var crdOptions *server.CRDOptions
 		var tprOptions *server.TPROptions
 		var etcdOptions *server.EtcdOptions
 		if serverstorage.StorageTypeEtcd == serverConfig.storageType {
 			etcdOptions = server.NewEtcdOptions()
 			etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
+		} else if serverstorage.StorageTypeCRD == serverConfig.storageType {
+			clusterTypes := []string{crd.ServiceBrokerResourcePlural.String(), crd.ServiceClassResourcePlural.String()}
+			crdOptions = server.NewCRDOptions()
+			crdOptions.RESTClient = fake.NewRESTClient(
+				crd.SchemeGroupVersion.String(),
+				clusterTypes,
+				serverConfig.emptyObjFunc)
+			crdOptions.InstallCRDsFunc = func() error {
+				return nil
+			}
 		} else if serverstorage.StorageTypeTPR == serverConfig.storageType {
+			clusterTypes := []string{}
 			tprOptions = server.NewTPROptions()
-			tprOptions.RESTClient = fake.NewRESTClient(serverConfig.emptyObjFunc)
+			tprOptions.RESTClient = fake.NewRESTClient(
+				v1alpha1.SchemeGroupVersion.String(),
+				clusterTypes,
+				serverConfig.emptyObjFunc)
 			tprOptions.InstallTPRsFunc = func() error {
 				return nil
 			}
@@ -104,9 +121,10 @@ func withConfigGetFreshApiserverAndClient(
 		options := &server.ServiceCatalogServerOptions{
 			StorageTypeString:       serverConfig.storageType.String(),
 			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
-			AdmissionOptions: genericserveroptions.NewAdmissionOptions(),
+			AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
 			SecureServingOptions:    secureServingOptions,
 			EtcdOptions:             etcdOptions,
+			CRDOptions:              crdOptions,
 			TPROptions:              tprOptions,
 			AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
 			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),

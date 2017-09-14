@@ -31,12 +31,18 @@ import (
 )
 
 const (
-	ns1   = "ns1"
-	ns2   = "ns2"
-	tipe1 = "tipe1"
-	name1 = "name1"
-	name2 = "name2"
-	name3 = "name3"
+	scAPIVersion = "servicecatalog.k8s.io/v1alpha1"
+	scAPIPath    = "/apis/" + scAPIVersion
+	ns1          = "ns1"
+	ns2          = "ns2"
+	tipe1        = "tipe1"
+	name1        = "name1"
+	name2        = "name2"
+	name3        = "name3"
+)
+
+var (
+	clusterTypes = []string{"servicebrokers", "serviceclasses"}
 )
 
 //Helpers
@@ -133,8 +139,8 @@ func TestGetItem(t *testing.T) {
 		url            string
 		expectedStatus int
 	}{
-		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusNotFound},
-		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusOK},
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf(scAPIPath+"/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusNotFound},
+		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf(scAPIPath+"/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusOK},
 	}
 
 	for _, tc := range testCases {
@@ -144,7 +150,7 @@ func TestGetItem(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
+			router := getRouter(scAPIPath, scAPIVersion, tc.storage, tc.watcher, clusterTypes, func() runtime.Object {
 				return &servicecatalog.ServiceInstance{}
 			})
 
@@ -175,8 +181,8 @@ func TestGetItems(t *testing.T) {
 		url            string
 		expectedStatus int
 	}{
-		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%v/servicebrokers", ns1), http.StatusOK},
-		{"Multiple Items", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%v/servicebrokers", ns1), http.StatusOK},
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf(scAPIPath+"/namespaces/%v/servicebrokers", ns1), http.StatusOK},
+		{"Multiple Items", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf(scAPIPath+"/namespaces/%v/servicebrokers", ns1), http.StatusOK},
 	}
 
 	for _, tc := range testCases {
@@ -186,7 +192,7 @@ func TestGetItems(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
+			router := getRouter(scAPIPath, scAPIVersion, tc.storage, tc.watcher, clusterTypes, func() runtime.Object {
 				return &servicecatalog.ServiceInstance{}
 			})
 
@@ -224,7 +230,7 @@ func TestCreateItem(t *testing.T) {
 			"Create Item (empty storage)",
 			make(NamespacedStorage), NewWatcher(),
 			newResponseWriter(),
-			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1),
+			fmt.Sprintf(scAPIPath+"/namespaces/%s/%s", ns1, tipe1),
 			&servicecatalog.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: name1}, TypeMeta: metav1.TypeMeta{Kind: "ServiceBroker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
 			http.StatusCreated,
 			1,
@@ -234,7 +240,7 @@ func TestCreateItem(t *testing.T) {
 			make(NamespacedStorage),
 			NewWatcher(),
 			newResponseWriter(),
-			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1),
+			fmt.Sprintf(scAPIPath+"/namespaces/%s/%s", ns1, tipe1),
 			&servicecatalog.ServiceBroker{}, http.StatusInternalServerError,
 			0,
 		},
@@ -243,7 +249,7 @@ func TestCreateItem(t *testing.T) {
 			createMultipleItemStorage(),
 			NewWatcher(),
 			newResponseWriter(),
-			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.ServiceBroker{TypeMeta: metav1.TypeMeta{Kind: "ServiceBroker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
+			fmt.Sprintf(scAPIPath+"/namespaces/%s/%s", ns1, tipe1), &servicecatalog.ServiceBroker{TypeMeta: metav1.TypeMeta{Kind: "ServiceBroker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
 			http.StatusCreated,
 			2,
 		},
@@ -264,7 +270,7 @@ func TestCreateItem(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			router := getRouter(tc.storage, tc.watcher, func() runtime.Object {
+			router := getRouter(scAPIPath, scAPIVersion, tc.storage, tc.watcher, clusterTypes, func() runtime.Object {
 				return tc.item
 			})
 

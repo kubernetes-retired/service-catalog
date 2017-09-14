@@ -19,6 +19,7 @@ package server
 import (
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/crd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,6 +46,8 @@ type StorageType string
 // error if s names an invalid or unsupported storage type
 func StorageTypeFromString(s string) (StorageType, error) {
 	switch s {
+	case StorageTypeCRD.String():
+		return StorageTypeCRD, nil
 	case StorageTypeTPR.String():
 		return StorageTypeTPR, nil
 	case StorageTypeEtcd.String():
@@ -59,8 +62,9 @@ func (s StorageType) String() string {
 }
 
 const (
+	// StorageTypeCRD indicates a storage interface should use CRDs
+	StorageTypeCRD StorageType = "crd"
 	// StorageTypeTPR indicates a storage interface should use TPRs
-	// TPRs
 	StorageTypeTPR StorageType = "tpr"
 	// StorageTypeEtcd indicates a storage interface should use etcd
 	StorageTypeEtcd StorageType = "etcd"
@@ -70,6 +74,7 @@ const (
 // specific things
 type Options struct {
 	EtcdOptions etcd.Options
+	CRDOptions  crd.Options
 	TPROptions  tpr.Options
 	storageType StorageType
 }
@@ -77,11 +82,13 @@ type Options struct {
 // NewOptions returns a new Options with the given parameters
 func NewOptions(
 	etcdOpts etcd.Options,
+	crdOpts crd.Options,
 	tprOpts tpr.Options,
 	sType StorageType,
 ) *Options {
 	return &Options{
 		EtcdOptions: etcdOpts,
+		CRDOptions:  crdOpts,
 		TPROptions:  tprOpts,
 		storageType: sType,
 	}
@@ -91,7 +98,7 @@ func NewOptions(
 // storage type is indicated
 func (o Options) StorageType() (StorageType, error) {
 	switch o.storageType {
-	case StorageTypeTPR, StorageTypeEtcd:
+	case StorageTypeCRD, StorageTypeTPR, StorageTypeEtcd:
 		return o.storageType, nil
 	default:
 		return StorageType(""), errUnsupportedStorageType{t: o.storageType}
@@ -116,8 +123,13 @@ func (o Options) KeyRootFunc() func(genericapirequest.Context) string {
 		return func(ctx genericapirequest.Context) string {
 			return registry.NamespaceKeyRootFunc(ctx, prefix)
 		}
+	} else if sType == StorageTypeCRD {
+		return o.CRDOptions.Keyer.KeyRoot
+	} else if sType == StorageTypeTPR {
+		return o.TPROptions.Keyer.KeyRoot
 	}
-	return o.TPROptions.Keyer.KeyRoot
+
+	return nil
 }
 
 // KeyFunc returns the appropriate key function for the storage type in o.
@@ -136,8 +148,12 @@ func (o Options) KeyFunc(namespaced bool) func(genericapirequest.Context, string
 			}
 			return registry.NoNamespaceKeyFunc(ctx, prefix, name)
 		}
+	} else if sType == StorageTypeCRD {
+		return o.CRDOptions.Keyer.Key
+	} else if sType == StorageTypeTPR {
+		return o.TPROptions.Keyer.Key
 	}
-	return o.TPROptions.Keyer.Key
+	return nil
 }
 
 // GetStorage returns the storage from the given parameters
@@ -163,6 +179,12 @@ func (o Options) GetStorage(
 			getAttrsFunc,
 			trigger,
 		)
+	} else if o.storageType == StorageTypeCRD {
+		return crd.NewStorage(o.CRDOptions)
+	} else if o.storageType == StorageTypeTPR {
+		return tpr.NewStorage(o.TPROptions)
 	}
-	return tpr.NewStorage(o.TPROptions)
+
+	// TODO (nilebox): throw error on unexpected storage type?
+	return nil, nil
 }
