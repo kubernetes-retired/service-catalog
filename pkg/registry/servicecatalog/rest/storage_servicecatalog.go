@@ -17,6 +17,7 @@ limitations under the License.
 package rest
 
 import (
+	"fmt"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
@@ -24,6 +25,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/crd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -69,142 +71,86 @@ func (p StorageProvider) v1alpha1Storage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter,
 ) (map[string]rest.Storage, error) {
-	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebrokers"))
+	brokerOpts, err := p.getServerOptions(restOptionsGetter, &resourceMetaDelegate{
+		hasNamespaceVal:      false,
+		etcdResourceVal:      "servicebrokers",
+		tprResourceVal:       "servicebrokers",
+		tprKindVal:           tpr.ServiceBrokerKind,
+		tprListKindVal:       tpr.ServiceBrokerListKind,
+		crdResourceVal:       crd.ServiceBrokerResourcePlural,
+		crdKindVal:           crd.ServiceBrokerKind,
+		crdListKindVal:       crd.ServiceBrokerListKind,
+		emptyObjectFunc:      broker.EmptyObject,
+		newScopeStrategyFunc: broker.NewScopeStrategy,
+		newListFunc:          broker.NewList,
+		newSingularFunc:      broker.NewSingular,
+		getAttrsFunc:         broker.GetAttrs,
+		checkObjectFunc:      broker.CheckObject,
+	})
 	if err != nil {
 		return nil, err
 	}
-	brokerOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   brokerRESTOptions,
-			Capacity:      1000,
-			ObjectType:    broker.EmptyObject(),
-			ScopeStrategy: broker.NewScopeStrategy(),
-			NewListFunc:   broker.NewList,
-			GetAttrsFunc:  broker.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		tpr.Options{
-			HasNamespace:     false,
-			RESTOptions:      brokerRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceBrokerKind,
-			NewSingularFunc:  broker.NewSingular,
-			ListKind:         tpr.ServiceBrokerListKind,
-			NewListFunc:      broker.NewList,
-			CheckObjectFunc:  broker.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceBrokerKind.String(),
-				Separator:        "/",
-			},
-		},
-		p.StorageType,
-	)
 
-	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
+	serviceClassOpts, err := p.getServerOptions(restOptionsGetter, &resourceMetaDelegate{
+		hasNamespaceVal:      false,
+		etcdResourceVal:      "serviceclasses",
+		tprResourceVal:       "serviceclasses",
+		tprKindVal:           tpr.ServiceClassKind,
+		tprListKindVal:       tpr.ServiceClassListKind,
+		crdResourceVal:       crd.ServiceClassResourcePlural,
+		crdKindVal:           crd.ServiceBrokerKind,
+		crdListKindVal:       crd.ServiceBrokerListKind,
+		emptyObjectFunc:      serviceclass.EmptyObject,
+		newScopeStrategyFunc: serviceclass.NewScopeStrategy,
+		newListFunc:          serviceclass.NewList,
+		newSingularFunc:      serviceclass.NewSingular,
+		getAttrsFunc:         serviceclass.GetAttrs,
+		checkObjectFunc:      serviceclass.CheckObject,
+		hardDeleteVal:        true,
+	})
 	if err != nil {
 		return nil, err
 	}
-	serviceClassOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   serviceClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    serviceclass.EmptyObject(),
-			ScopeStrategy: serviceclass.NewScopeStrategy(),
-			NewListFunc:   serviceclass.NewList,
-			GetAttrsFunc:  serviceclass.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		tpr.Options{
-			HasNamespace:     false,
-			RESTOptions:      serviceClassRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceClassKind,
-			NewSingularFunc:  serviceclass.NewSingular,
-			ListKind:         tpr.ServiceClassListKind,
-			NewListFunc:      serviceclass.NewList,
-			CheckObjectFunc:  serviceclass.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceClassKind.String(),
-				Separator:        "/",
-			},
-			HardDelete: true,
-		},
-		p.StorageType,
-	)
 
-	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstances"))
+	instanceOpts, err := p.getServerOptions(restOptionsGetter, &resourceMetaDelegate{
+		hasNamespaceVal:      true,
+		etcdResourceVal:      "serviceinstances",
+		tprResourceVal:       "serviceinstances",
+		tprKindVal:           tpr.ServiceInstanceKind,
+		tprListKindVal:       tpr.ServiceInstanceListKind,
+		crdResourceVal:       crd.ServiceInstanceResourcePlural,
+		crdKindVal:           crd.ServiceInstanceKind,
+		crdListKindVal:       crd.ServiceInstanceListKind,
+		emptyObjectFunc:      instance.EmptyObject,
+		newScopeStrategyFunc: instance.NewScopeStrategy,
+		newListFunc:          instance.NewList,
+		newSingularFunc:      instance.NewSingular,
+		getAttrsFunc:         instance.GetAttrs,
+		checkObjectFunc:      instance.CheckObject,
+	})
 	if err != nil {
 		return nil, err
 	}
-	instanceOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   instanceClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    instance.EmptyObject(),
-			ScopeStrategy: instance.NewScopeStrategy(),
-			NewListFunc:   instance.NewList,
-			GetAttrsFunc:  instance.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		tpr.Options{
-			HasNamespace:     true,
-			RESTOptions:      instanceClassRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceInstanceKind,
-			NewSingularFunc:  instance.NewSingular,
-			ListKind:         tpr.ServiceInstanceListKind,
-			NewListFunc:      instance.NewList,
-			CheckObjectFunc:  instance.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceInstanceKind.String(),
-				Separator:        "/",
-			},
-		},
-		p.StorageType,
-	)
 
-	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstancecredentials"))
+	bindingsOpts, err := p.getServerOptions(restOptionsGetter, &resourceMetaDelegate{
+		hasNamespaceVal:      true,
+		etcdResourceVal:      "serviceinstancecredentials",
+		tprResourceVal:       "serviceinstancecredentials",
+		tprKindVal:           tpr.ServiceInstanceCredentialKind,
+		tprListKindVal:       tpr.ServiceInstanceCredentialListKind,
+		crdResourceVal:       crd.ServiceInstanceCredentialResourcePlural,
+		crdKindVal:           crd.ServiceInstanceCredentialKind,
+		crdListKindVal:       crd.ServiceInstanceCredentialListKind,
+		emptyObjectFunc:      binding.EmptyObject,
+		newScopeStrategyFunc: binding.NewScopeStrategy,
+		newListFunc:          binding.NewList,
+		newSingularFunc:      binding.NewSingular,
+		getAttrsFunc:         binding.GetAttrs,
+		checkObjectFunc:      binding.CheckObject,
+	})
 	if err != nil {
 		return nil, err
 	}
-	bindingsOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   bindingClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    binding.EmptyObject(),
-			ScopeStrategy: binding.NewScopeStrategy(),
-			NewListFunc:   binding.NewList,
-			GetAttrsFunc:  binding.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		tpr.Options{
-			HasNamespace:     true,
-			RESTOptions:      bindingClassRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceInstanceCredentialKind,
-			NewSingularFunc:  binding.NewSingular,
-			ListKind:         tpr.ServiceInstanceCredentialListKind,
-			NewListFunc:      binding.NewList,
-			CheckObjectFunc:  binding.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceInstanceCredentialKind.String(),
-				Separator:        "/",
-			},
-		},
-		p.StorageType,
-	)
 
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	serviceClassStorage := serviceclass.NewStorage(*serviceClassOpts)
@@ -222,6 +168,82 @@ func (p StorageProvider) v1alpha1Storage(
 		"serviceinstancecredentials":        bindingStorage,
 		"serviceinstancecredentials/status": bindingStatusStorage,
 	}, nil
+}
+
+func (p StorageProvider) getServerOptions(restOptionsGetter generic.RESTOptionsGetter, m ResourceMeta) (*server.Options, error) {
+	etcdOpts := etcd.Options{}
+	crdOpts := crd.Options{}
+	tprOpts := tpr.Options{}
+
+	restOptions, err := p.getRESTOptions(restOptionsGetter, m)
+	if err != nil {
+		return nil, err
+	}
+	switch p.StorageType {
+	case server.StorageTypeEtcd:
+		etcdOpts = etcd.Options{
+			RESTOptions:   restOptions,
+			Capacity:      1000,
+			ObjectType:    m.EmptyObject(),
+			ScopeStrategy: m.NewScopeStrategy(),
+			NewListFunc:   m.NewList,
+			GetAttrsFunc:  m.GetAttrs,
+			Trigger:       storage.NoTriggerPublisher,
+		}
+	case server.StorageTypeCRD:
+		crdOpts = crd.Options{
+			HasNamespace:     m.HasNamespace(),
+			RESTOptions:      restOptions,
+			Copier:           api.Scheme,
+			DefaultNamespace: p.DefaultNamespace,
+			RESTClient:       p.RESTClient,
+			ResourcePlural:   m.CrdResource(),
+			NewSingularFunc:  m.NewSingular,
+			NewListFunc:      m.NewList,
+			CheckObjectFunc:  m.CheckObject,
+			DestroyFunc:      func() {},
+			Keyer: crd.Keyer{
+				DefaultNamespace: p.DefaultNamespace,
+				ResourceName:     m.CrdKind().String(),
+				Separator:        "/",
+			},
+			HardDelete: m.HardDelete(),
+		}
+	case server.StorageTypeTPR:
+		tprOpts = tpr.Options{
+			HasNamespace:     m.HasNamespace(),
+			RESTOptions:      restOptions,
+			DefaultNamespace: p.DefaultNamespace,
+			RESTClient:       p.RESTClient,
+			SingularKind:     m.TprKind(),
+			NewSingularFunc:  m.NewSingular,
+			ListKind:         m.TprListKind(),
+			NewListFunc:      m.NewList,
+			CheckObjectFunc:  m.CheckObject,
+			DestroyFunc:      func() {},
+			Keyer: tpr.Keyer{
+				DefaultNamespace: p.DefaultNamespace,
+				ResourceName:     m.TprKind().String(),
+				Separator:        "/",
+			},
+			HardDelete: m.HardDelete(),
+		}
+	}
+
+	return server.NewOptions(etcdOpts, crdOpts, tprOpts, p.StorageType), nil
+}
+
+func (p StorageProvider) getRESTOptions(restOptionsGetter generic.RESTOptionsGetter, m ResourceMeta) (generic.RESTOptions, error) {
+	switch p.StorageType {
+	case server.StorageTypeEtcd:
+		return restOptionsGetter.GetRESTOptions(servicecatalog.Resource(m.EtcdResource()))
+	case server.StorageTypeCRD:
+		return restOptionsGetter.GetRESTOptions(crd.InternalResource(m.CrdResource().String()))
+	case server.StorageTypeTPR:
+		return restOptionsGetter.GetRESTOptions(servicecatalog.Resource(m.TprResource()))
+	default:
+		return generic.RESTOptions{}, fmt.Errorf("Unexpected storage type: %s", p.StorageType)
+	}
 }
 
 // GroupName returns the API group name.

@@ -54,4 +54,7 @@ func init() {
 		&metav1.APIGroup{},
 		&metav1.APIResourceList{},
 	)
+
+	ParameterCodec = runtime.NewParameterCodec(Scheme)
+	Codecs = serializer.NewCodecFactory(Scheme)
 }

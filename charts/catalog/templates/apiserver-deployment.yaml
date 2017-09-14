@@ -47,7 +47,7 @@ spec:
         - --etcd-servers
         - {{ .Values.apiserver.storage.etcd.servers }}
         {{- else if eq .Values.apiserver.storage.type "tpr" }}
-        - --global-namespace
+        - --tpr-global-namespace
         - {{ .Values.apiserver.storage.tpr.globalNamespace }}
         {{- end }}
         - -v

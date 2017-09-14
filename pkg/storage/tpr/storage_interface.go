@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	errNotImplemented = errors.New("not implemented for third party resources")
+	clusterTypes = []string{} // in TPR all types are namespaced
 )
 
 type store struct {

@@ -52,6 +52,6 @@ func (s *TPROptions) storageFactory() serverstorage.StorageFactory {
 }
 
 func (s *TPROptions) addFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.GlobalNamespace, "global-namespace", s.DefaultGlobalNamespace, ""+
+	fs.StringVar(&s.GlobalNamespace, "tpr-global-namespace", s.DefaultGlobalNamespace, ""+
 		"The namespace in which to store all TPRs that represent global service-catalog resources.")
 }

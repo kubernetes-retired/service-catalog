@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/rest/core/fake"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/endpoints/request"
@@ -32,7 +33,15 @@ import (
 const watchTimeout = 1 * time.Second
 
 func runWatchTest(keyer Keyer, fakeCl *fake.RESTClient, iface storage.Interface, obj runtime.Object) error {
-	key, err := keyer.Key(request.NewContext(), name)
+	metaObj, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	ctx := request.NewContext()
+	if metaObj.GetNamespace() != "" {
+		ctx = request.WithNamespace(ctx, metaObj.GetNamespace())
+	}
+	key, err := keyer.Key(ctx, metaObj.GetName())
 	if err != nil {
 		return fmt.Errorf("error creating new key from Keyer (%s)", err)
 	}

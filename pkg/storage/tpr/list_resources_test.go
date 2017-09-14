@@ -58,7 +58,7 @@ func TestGetAllNamespaces(t *testing.T) {
 	const (
 		ns1Name = "ns1"
 	)
-	cl := fake.NewRESTClient(func() runtime.Object {
+	cl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
 	nsList, err := getAllNamespaces(cl)
@@ -87,7 +87,7 @@ func TestListResource(t *testing.T) {
 		kind = ServiceBrokerKind
 	)
 
-	cl := fake.NewRESTClient(func() runtime.Object {
+	cl := fake.NewRESTClient(apiVersion, clusterTypes, func() runtime.Object {
 		return &sc.ServiceBroker{}
 	})
 	listObj := sc.ServiceBrokerList{TypeMeta: newTypeMeta(kind)}

@@ -106,13 +106,14 @@ type RESTClient struct {
 }
 
 // NewRESTClient returns a new FakeCoreRESTClient
-func NewRESTClient(newEmptyObj func() runtime.Object) *RESTClient {
+func NewRESTClient(apiVersion string, clusterTypes []string, newEmptyObj func() runtime.Object) *RESTClient {
 	storage := make(NamespacedStorage)
 	watcher := NewWatcher()
 
+	apiPath := "/apis/" + apiVersion
 	coreCl := &fakerestclient.RESTClient{
 		Client: fakerestclient.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
-			r := getRouter(storage, watcher, newEmptyObj)
+			r := getRouter(apiPath, apiVersion, storage, watcher, clusterTypes, newEmptyObj)
 			rw := newResponseWriter()
 			r.ServeHTTP(rw, request)
 			return rw.getResponse(), nil
@@ -120,7 +121,8 @@ func NewRESTClient(newEmptyObj func() runtime.Object) *RESTClient {
 		NegotiatedSerializer: serializer.DirectCodecFactory{
 			CodecFactory: api.Codecs,
 		},
-		APIRegistry: api.Registry,
+		APIRegistry:      api.Registry,
+		VersionedAPIPath: apiPath,
 	}
 	return &RESTClient{
 		Storage:    storage,
@@ -172,44 +174,82 @@ func (rw *responseWriter) getResponse() *http.Response {
 }
 
 func getRouter(
+	apiPath string,
+	apiVersion string,
 	storage NamespacedStorage,
 	watcher *Watcher,
+	clusterTypes []string,
 	newEmptyObj func() runtime.Object,
 ) http.Handler {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}",
-		getItems(storage),
+		apiPath+"/namespaces/{namespace}/{type}",
+		getItems(storage, apiVersion, clusterTypes),
 	).Methods("GET")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}",
-		createItem(storage, newEmptyObj),
+		apiPath+"/namespaces/{namespace}/{type}",
+		createItem(storage, clusterTypes, newEmptyObj),
 	).Methods("POST")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
-		getItem(storage),
+		apiPath+"/namespaces/{namespace}/{type}/{name}",
+		getItem(storage, clusterTypes),
 	).Methods("GET")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
-		updateItem(storage, newEmptyObj),
+		apiPath+"/namespaces/{namespace}/{type}/{name}",
+		updateItem(storage, clusterTypes, newEmptyObj),
 	).Methods("PUT")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
-		deleteItem(storage),
+		apiPath+"/namespaces/{namespace}/{type}/{name}",
+		deleteItem(storage, clusterTypes),
 	).Methods("DELETE")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}/{name}",
+		apiPath+"/watch/namespaces/{namespace}/{type}/{name}",
 		watchItem(watcher),
 	).Methods("GET")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}",
+		apiPath+"/watch/namespaces/{namespace}/{type}",
 		watchList(watcher),
 	).Methods("GET")
 	r.HandleFunc(
 		"/api/v1/namespaces",
 		listNamespaces(storage),
 	).Methods("GET")
+	if len(clusterTypes) > 0 {
+		r.HandleFunc(
+			apiPath+"/watch/{type}/{name}",
+			watchItem(watcher),
+		).Methods("GET")
+		r.HandleFunc(
+			apiPath+"/watch/{type}",
+			watchList(watcher),
+		).Methods("GET")
+		// NOTE nilebox: cluster-level /{type} wildcard conflicts with other URLs
+		// configured above. Quote from the gorilla/mux doc:
+		// "The routes are walked in the order they were added.
+		// Sub-routers are explored depth-first."
+		// So the ordering matters - more specific paths should be added first
+		r.HandleFunc(
+			apiPath+"/{type}",
+			getItems(storage, apiVersion, clusterTypes),
+		).Methods("GET")
+		r.HandleFunc(
+			apiPath+"/{type}",
+			createItem(storage, clusterTypes, newEmptyObj),
+		).Methods("POST")
+		r.HandleFunc(
+			apiPath+"/{type}/{name}",
+			getItem(storage, clusterTypes),
+		).Methods("GET")
+		r.HandleFunc(
+			apiPath+"/{type}/{name}",
+			updateItem(storage, clusterTypes, newEmptyObj),
+		).Methods("PUT")
+		r.HandleFunc(
+			apiPath+"/{type}/{name}",
+			deleteItem(storage, clusterTypes),
+		).Methods("DELETE")
+	}
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return r
 }
@@ -229,10 +269,13 @@ func watchList(watcher *Watcher) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {
+func getItems(storage NamespacedStorage, apiVersion string, clusterTypes []string) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
+		ns := ""
+		if !isClusterType(clusterTypes, tipe) {
+			ns = mux.Vars(r)["namespace"]
+		}
 		objs := storage.GetList(ns, tipe)
 		items := make([]runtime.Object, 0, len(objs))
 		for _, obj := range objs {
@@ -257,7 +300,7 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 		var err error
 		switch tipe {
 		case "servicebrokers":
-			list = &sc.ServiceBrokerList{TypeMeta: newTypeMeta("broker-list")}
+			list = &sc.ServiceBrokerList{TypeMeta: newTypeMeta(apiVersion, "ServiceBrokerList")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
@@ -265,7 +308,7 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 			}
 			codec, err = testapi.GetCodecForObject(&sc.ServiceBrokerList{})
 		case "serviceclasses":
-			list = &sc.ServiceClassList{TypeMeta: newTypeMeta("service-class-list")}
+			list = &sc.ServiceClassList{TypeMeta: newTypeMeta(apiVersion, "ServiceClassList")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
@@ -273,7 +316,7 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 			}
 			codec, err = testapi.GetCodecForObject(&sc.ServiceClassList{})
 		case "serviceinstances":
-			list = &sc.ServiceInstanceList{TypeMeta: newTypeMeta("instance-list")}
+			list = &sc.ServiceInstanceList{TypeMeta: newTypeMeta(apiVersion, "ServiceInstanceList")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
@@ -281,7 +324,7 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 			}
 			codec, err = testapi.GetCodecForObject(&sc.ServiceInstanceList{})
 		case "serviceinstancecredentials":
-			list = &sc.ServiceInstanceCredentialList{TypeMeta: newTypeMeta("binding-list")}
+			list = &sc.ServiceInstanceCredentialList{TypeMeta: newTypeMeta(apiVersion, "ServiceInstanceCredentialList")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
@@ -308,10 +351,14 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 	}
 }
 
-func createItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) func(rw http.ResponseWriter, r *http.Request) {
+func createItem(storage NamespacedStorage, clusterTypes []string, newEmptyObj func() runtime.Object) func(rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
+		ns := ""
+		if !isClusterType(clusterTypes, tipe) {
+			ns = mux.Vars(r)["namespace"]
+		}
+
 		codec, err := testapi.GetCodecForObject(newEmptyObj())
 		if err != nil {
 			errStr := fmt.Sprintf("error getting a codec for %#v (%s)", newEmptyObj(), err)
@@ -354,10 +401,13 @@ func createItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) fu
 	}
 }
 
-func getItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {
+func getItem(storage NamespacedStorage, clusterTypes []string) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
+		ns := ""
+		if !isClusterType(clusterTypes, tipe) {
+			ns = mux.Vars(r)["namespace"]
+		}
 		name := mux.Vars(r)["name"]
 		item := storage.Get(ns, tipe, name)
 		if item == nil {
@@ -381,10 +431,13 @@ func getItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Request)
 	}
 }
 
-func updateItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) func(http.ResponseWriter, *http.Request) {
+func updateItem(storage NamespacedStorage, clusterTypes []string, newEmptyObj func() runtime.Object) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
+		ns := ""
+		if !isClusterType(clusterTypes, tipe) {
+			ns = mux.Vars(r)["namespace"]
+		}
 		name := mux.Vars(r)["name"]
 		origItem := storage.Get(ns, tipe, name)
 		if origItem == nil {
@@ -485,10 +538,13 @@ func updateItem(storage NamespacedStorage, newEmptyObj func() runtime.Object) fu
 	}
 }
 
-func deleteItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {
+func deleteItem(storage NamespacedStorage, clusterTypes []string) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		ns := mux.Vars(r)["namespace"]
 		tipe := mux.Vars(r)["type"]
+		ns := ""
+		if !isClusterType(clusterTypes, tipe) {
+			ns = mux.Vars(r)["namespace"]
+		}
 		name := mux.Vars(r)["name"]
 		item := storage.Get(ns, tipe, name)
 		if item == nil {
@@ -543,6 +599,15 @@ func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusNotFound)
 }
 
-func newTypeMeta(kind string) metav1.TypeMeta {
-	return metav1.TypeMeta{Kind: kind, APIVersion: sc.GroupName + "/v1alpha1'"}
+func newTypeMeta(apiVersion, kind string) metav1.TypeMeta {
+	return metav1.TypeMeta{Kind: kind, APIVersion: apiVersion}
+}
+
+func isClusterType(clusterTypes []string, tipe string) bool {
+	for _, a := range clusterTypes {
+		if a == tipe {
+			return true
+		}
+	}
+	return false
 }

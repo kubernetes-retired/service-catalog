@@ -43,7 +43,7 @@ apiserver:
       # The TLS-enabled endpoint will be exposed here
       securePort: 30443
   storage:
-    # The storage backend to use; valid values are "etcd" and "tpr"
+    # The storage backend to use; valid values are "etcd", "crd" and "tpr"
     type: etcd
     # Further configuration for the etcd-based backend
     etcd:

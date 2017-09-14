@@ -45,6 +45,8 @@ type ServiceCatalogServerOptions struct {
 	AuditOptions *genericserveroptions.AuditOptions
 	// EtcdOptions are options for serving with etcd as the backing store
 	EtcdOptions *EtcdOptions
+	// CRDOptions are options for serving with CRD as the backing store
+	CRDOptions *CRDOptions
 	// TPROptions are options for serving with TPR as the backing store
 	TPROptions *TPROptions
 	// DisableAuth disables delegating authentication and authorization for testing scenarios
@@ -90,6 +92,7 @@ func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
 	s.AuthenticationOptions.AddFlags(flags)
 	s.AuthorizationOptions.AddFlags(flags)
 	s.EtcdOptions.addFlags(flags)
+	s.CRDOptions.addFlags(flags)
 	s.TPROptions.addFlags(flags)
 	s.AuditOptions.AddFlags(flags)
 }

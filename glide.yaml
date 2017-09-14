@@ -78,6 +78,8 @@ import:
   version: abe34e4f5b4413c282a83011892cbeea5b32223b # wanted by client-go; release-1.7 branch
 - package: k8s.io/apiserver
   version: ab57ed5a72c3b67058f665d660e23bae18339fc2 # June 23, similar to client-go. No 1.7 branch yet BUT this version is perfectly compatible it seems
+- package: k8s.io/apiextensions-apiserver
+  version: be41f5093e2b05c7a0befe35b04b715eb325ab43 # in sync with kubernetes 1.7.0
 - package: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:

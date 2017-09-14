@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
@@ -29,6 +30,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver/options"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/storage/crd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 )
 
@@ -49,7 +51,9 @@ func RunServer(opts *ServiceCatalogServerOptions) error {
 		return err
 	}
 
-	if storageType == server.StorageTypeTPR {
+	if storageType == server.StorageTypeCRD {
+		return runCRDServer(opts)
+	} else if storageType == server.StorageTypeTPR {
 		return runTPRServer(opts)
 	}
 	return runEtcdServer(opts)
@@ -63,6 +67,50 @@ func installTPRsToCore(cl clientset.Interface) func() error {
 		}
 		return nil
 	}
+}
+
+func installCRDsToCore(cl apiextensionsclient.Interface) func() error {
+	return func() error {
+		if err := crd.InstallTypes(cl.ApiextensionsV1beta1().CustomResourceDefinitions()); err != nil {
+			glog.Errorf("Failed to install TPR types (%s)", err)
+			return err
+		}
+		return nil
+	}
+}
+
+func runCRDServer(opts *ServiceCatalogServerOptions) error {
+	crdOpts := opts.CRDOptions
+	glog.Infoln("Installing CRD types to the cluster")
+	if err := crdOpts.InstallCRDsFunc(); err != nil {
+		glog.V(4).Infof("Installing CRD types failed, continuing anyway (%s)", err)
+		return err
+	}
+
+	glog.V(4).Infoln("Preparing to run API server")
+	genericConfig, scConfig, err := buildGenericConfig(opts)
+	if err != nil {
+		return err
+	}
+
+	config := apiserver.NewCRDConfig(
+		crdOpts.RESTClient,
+		genericConfig,
+		crdOpts.storageFactory(),
+	)
+	completed := config.Complete()
+	// make the server
+	glog.V(4).Infoln("Completing API server configuration")
+	server, err := completed.NewServer()
+	if err != nil {
+		return fmt.Errorf("error completing API server configuration: %v", err)
+	}
+	addPostStartHooks(server.GenericAPIServer, scConfig, opts.StopCh)
+
+	glog.Infoln("Running the API server")
+	server.GenericAPIServer.PrepareRun().Run(opts.StopCh)
+
+	return nil
 }
 
 func runTPRServer(opts *ServiceCatalogServerOptions) error {

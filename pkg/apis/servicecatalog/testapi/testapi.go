@@ -432,26 +432,29 @@ func GetCodecForObject(obj runtime.Object) (runtime.Codec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unexpected encoding error: %v", err)
 	}
-	kind := kinds[0]
+	// Versioned types
+	for _, kind := range kinds {
+		for _, group := range Groups {
+			if group.GroupVersion().Group != kind.Group {
+				continue
+			}
 
-	for _, group := range Groups {
-		if group.GroupVersion().Group != kind.Group {
-			continue
-		}
-
-		if api.Scheme.Recognizes(kind) {
-			return group.Codec(), nil
+			if api.Scheme.Recognizes(kind) {
+				return group.Codec(), nil
+			}
 		}
 	}
 	// Codec used for unversioned types
-	if api.Scheme.Recognizes(kind) {
-		serializer, ok := runtime.SerializerInfoForMediaType(api.Codecs.SupportedMediaTypes(), runtime.ContentTypeJSON)
-		if !ok {
-			return nil, fmt.Errorf("no serializer registered for json")
+	for _, kind := range kinds {
+		if api.Scheme.Recognizes(kind) {
+			serializer, ok := runtime.SerializerInfoForMediaType(api.Codecs.SupportedMediaTypes(), runtime.ContentTypeJSON)
+			if !ok {
+				return nil, fmt.Errorf("no serializer registered for json")
+			}
+			return serializer.Serializer, nil
 		}
-		return serializer.Serializer, nil
 	}
-	return nil, fmt.Errorf("unexpected kind: %v", kind)
+	return nil, fmt.Errorf("unexpected kind: %v", kinds[0])
 }
 
 // NewTestGroup returns test group
