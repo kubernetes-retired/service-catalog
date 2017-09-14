@@ -28,10 +28,7 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 }
 
 func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
-	isValidRelistBehavior := spec.RelistBehavior == "Duration" ||
-		spec.RelistBehavior == "Manual"
-
-	if !isValidRelistBehavior {
+	if spec.RelistBehavior == "" {
 		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
 	}
 

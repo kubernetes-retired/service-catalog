@@ -108,13 +108,13 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 	if "" == spec.RelistBehavior {
 		allErrs = append(allErrs,
 			field.Required(fldPath.Child("relistBehavior"),
-				"brokers must have a relistBehavior"))
+				"relist behavior is required"))
 	}
 
-	isValidRelistBehavior := spec.RelistBehavior == "Duration" ||
-		spec.RelistBehavior == "Manual"
+	isValidRelistBehavior := spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration ||
+		spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorManual
 	if !isValidRelistBehavior {
-		errMsg := fmt.Sprintf("unknown relistBehavior found: %v", spec.RelistBehavior)
+		errMsg := fmt.Sprintf("relist behavior must be \"Manual\" or \"Duration\"", spec.RelistBehavior)
 		allErrs = append(
 			allErrs,
 			field.Required(fldPath.Child("relistBehavior"), errMsg),
@@ -124,23 +124,22 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
 		allErrs = append(
 			allErrs,
-			field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if relistBehavior is set to Duration"),
+			field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
 		)
 	}
 
-	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration {
-		if spec.RelistDuration == nil {
-			allErrs = append(
-				allErrs,
-				field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if behavior is set to Duration"),
-			)
-		}
-		if spec.RelistRequests < 0 {
-			allErrs = append(
-				allErrs,
-				field.Required(fldPath.Child("relistRequests"), "relistDuration must be greater than zero"),
-			)
-		}
+	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorManual && spec.RelistDuration != nil {
+		allErrs = append(
+			allErrs,
+			field.Required(fldPath.Child("relistDuration"), "relistDuration must not be set if behavior is set to Manual"),
+		)
+	}
+
+	if spec.RelistRequests < 0 {
+		allErrs = append(
+			allErrs,
+			field.Required(fldPath.Child("relistRequests"), "relistDuration must be greater than zero"),
+		)
 	}
 
 	return allErrs

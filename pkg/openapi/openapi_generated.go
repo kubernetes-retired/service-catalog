@@ -311,7 +311,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"relistRequests": {
 							SchemaProps: spec.SchemaProps{
-								Description: "RelistRequests is a strictly increasing integer counter that can be manually incremented by a user to manually trigger a relist",
+								Description: "RelistRequests is a strictly increasing, non-negative integer counter that can be manually incremented by a user to manually trigger a relist",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
