@@ -340,7 +340,7 @@ func getTestServiceBroker() *v1alpha1.ServiceBroker {
 		Spec: v1alpha1.ServiceBrokerSpec{
 			URL:            "https://example.com",
 			RelistBehavior: v1alpha1.ServiceBrokerRelistBehaviorDuration,
-			RelistDuration: &metav1.Duration{15 * time.Minute},
+			RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
 		},
 	}
 }

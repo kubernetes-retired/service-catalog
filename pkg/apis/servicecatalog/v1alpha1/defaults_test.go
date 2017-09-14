@@ -81,7 +81,7 @@ func TestSetDefaultServiceBroker(t *testing.T) {
 			name:     "neither duration or behavior set",
 			broker:   &versioned.ServiceBroker{},
 			behavior: versioned.ServiceBrokerRelistBehaviorDuration,
-			duration: &metav1.Duration{15 * time.Minute},
+			duration: &metav1.Duration{Duration: 15 * time.Minute},
 		},
 		{
 			name: "behavior set to manual",
@@ -101,7 +101,7 @@ func TestSetDefaultServiceBroker(t *testing.T) {
 				return b
 			}(),
 			behavior: versioned.ServiceBrokerRelistBehaviorDuration,
-			duration: &metav1.Duration{15 * time.Minute},
+			duration: &metav1.Duration{Duration: 15 * time.Minute},
 		},
 	}
 

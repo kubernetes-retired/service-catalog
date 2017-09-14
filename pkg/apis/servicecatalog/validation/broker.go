@@ -17,7 +17,6 @@ limitations under the License.
 package validation
 
 import (
-	"fmt"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -114,7 +113,7 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 	isValidRelistBehavior := spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration ||
 		spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorManual
 	if !isValidRelistBehavior {
-		errMsg := fmt.Sprintf("relist behavior must be \"Manual\" or \"Duration\"", spec.RelistBehavior)
+		errMsg := "relist behavior must be \"Manual\" or \"Duration\""
 		allErrs = append(
 			allErrs,
 			field.Required(fldPath.Child("relistBehavior"), errMsg),

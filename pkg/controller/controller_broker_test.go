@@ -67,7 +67,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			name: "no status",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBroker()
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
 			}(),
 			now:       time.Now(),
@@ -78,7 +78,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
 				broker.DeletionTimestamp = &metav1.Time{}
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Hour}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Hour}
 				return broker
 			}(),
 			now:       time.Now(),
@@ -96,7 +96,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 						},
 					},
 				}
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
 			}(),
 			now:       time.Now(),
@@ -106,7 +106,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			name: "not ready",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionFalse)
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
 			}(),
 			now:       time.Now(),
@@ -116,7 +116,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			name: "ready, interval elapsed",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Minute}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
 			}(),
 			now:       time.Now(),
@@ -126,7 +126,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 			name: "ready, interval not elapsed",
 			broker: func() *v1alpha1.ServiceBroker {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Hour}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Hour}
 				return broker
 			}(),
 			now:       time.Now(),
@@ -138,7 +138,7 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 				broker := getTestServiceBrokerWithStatus(v1alpha1.ConditionTrue)
 				broker.Generation = 2
 				broker.Status.ReconciledGeneration = 1
-				broker.Spec.RelistDuration = &metav1.Duration{3 * time.Hour}
+				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Hour}
 				return broker
 			}(),
 			now:       time.Now(),
