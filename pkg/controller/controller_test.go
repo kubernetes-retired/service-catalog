@@ -513,6 +513,7 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 	if operation != "" {
 		instance.Status.LastOperation = &operation
 	}
+	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
 			Type:               v1alpha1.ServiceInstanceConditionReady,
@@ -520,7 +521,8 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 			Message:            "Provisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
-		AsyncOpInProgress: true,
+		AsyncOpInProgress:  true,
+		OperationStartTime: &operationStartTime,
 	}
 
 	return instance
@@ -531,6 +533,7 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Servi
 	if operation != "" {
 		instance.Status.LastOperation = &operation
 	}
+	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
 			Type:               v1alpha1.ServiceInstanceConditionReady,
@@ -538,7 +541,8 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Servi
 			Message:            "Deprovisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
-		AsyncOpInProgress: true,
+		AsyncOpInProgress:  true,
+		OperationStartTime: &operationStartTime,
 	}
 
 	// Set the deleted timestamp to simulate deletion
@@ -1065,6 +1069,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
 		fakeRecorder,
+		7*24*time.Hour,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1116,6 +1121,7 @@ func newTestControllerWithServiceBrokerServer(
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
 		fakeRecorder,
+		7*24*time.Hour,
 	)
 	if err != nil {
 		return nil, err
@@ -1347,22 +1353,37 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 }
 
 func assertServiceBrokerReadyTrue(t *testing.T, obj runtime.Object) {
-	assertServiceBrokerReadyCondition(t, obj, v1alpha1.ConditionTrue)
+	assertServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue)
 }
 
 func assertServiceBrokerReadyFalse(t *testing.T, obj runtime.Object) {
-	assertServiceBrokerReadyCondition(t, obj, v1alpha1.ConditionFalse)
+	assertServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse)
 }
 
-func assertServiceBrokerReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus) {
+func assertServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceBrokerConditionType, status v1alpha1.ConditionStatus) {
 	broker, ok := obj.(*v1alpha1.ServiceBroker)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBroker", obj)
 	}
 
 	for _, condition := range broker.Status.Conditions {
-		if condition.Type == v1alpha1.ServiceBrokerConditionReady && condition.Status != status {
-			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+		if condition.Type == conditionType && condition.Status != status {
+			fatalf(t, "%v condition had unexpected status; expected %v, got %v", conditionType, status, condition.Status)
+		}
+	}
+}
+
+func assertServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+	broker, ok := obj.(*v1alpha1.ServiceBroker)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBroker", obj)
+	}
+
+	if e, a := isOperationStartTimeSet, broker.Status.OperationStartTime != nil; e != a {
+		if e {
+			fatalf(t, "expected OperationStartTime to not be nil, but was")
+		} else {
+			fatalf(t, "expected OperationStartTime to be nil, but was not")
 		}
 	}
 }
@@ -1376,17 +1397,66 @@ func assertServiceInstanceReadyFalse(t *testing.T, obj runtime.Object, reason ..
 }
 
 func assertServiceInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
+	assertServiceInstanceCondition(t, obj, v1alpha1.ServiceInstanceConditionReady, status, reason...)
+}
+
+func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceInstanceConditionType, status v1alpha1.ConditionStatus, reason ...string) {
 	instance, ok := obj.(*v1alpha1.ServiceInstance)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
 	}
 
+	foundCondition := false
 	for _, condition := range instance.Status.Conditions {
-		if condition.Type == v1alpha1.ServiceInstanceConditionReady && condition.Status != status {
-			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+		if condition.Type == conditionType {
+			foundCondition = true
+			if condition.Status != status {
+				fatalf(t, "%v condition had unexpected status; expected %v, got %v", conditionType, status, condition.Status)
+			}
+			if len(reason) == 1 && condition.Reason != reason[0] {
+				fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+			}
 		}
-		if len(reason) == 1 && condition.Reason != reason[0] {
-			fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+	}
+
+	if !foundCondition {
+		fatalf(t, "%v condition not found", conditionType)
+	}
+}
+
+func assertServiceInstanceConditionsCount(t *testing.T, obj runtime.Object, count int) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+
+	if e, a := count, len(instance.Status.Conditions); e != a {
+		t.Fatalf("Expected %v condition, got %v", e, a)
+	}
+}
+
+func assertServiceInstanceReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+
+	if e, a := reconciledGeneration, instance.Status.ReconciledGeneration; e != a {
+		fatalf(t, "unexpected reconciled generation: expected %v, got %v", e, a)
+	}
+}
+
+func assertServiceInstanceOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+
+	if e, a := isOperationStartTimeSet, instance.Status.OperationStartTime != nil; e != a {
+		if e {
+			fatalf(t, "expected OperationStartTime to not be nil, but was")
+		} else {
+			fatalf(t, "expected OperationStartTime to be nil, but was not")
 		}
 	}
 }
@@ -1446,18 +1516,56 @@ func assertServiceInstanceCredentialReadyFalse(t *testing.T, obj runtime.Object,
 }
 
 func assertServiceInstanceCredentialReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
+	assertServiceInstanceCredentialCondition(t, obj, v1alpha1.ServiceInstanceCredentialConditionReady, status, reason...)
+}
+
+func assertServiceInstanceCredentialCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceInstanceCredentialConditionType, status v1alpha1.ConditionStatus, reason ...string) {
 	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
 	}
 
+	conditionFound := false
 	for _, condition := range binding.Status.Conditions {
-		if condition.Type == v1alpha1.ServiceInstanceCredentialConditionReady && condition.Status != status {
-			t.Logf("ready condition: %+v", condition)
-			fatalf(t, "ready condition had unexpected status; expected %v, got %v", status, condition.Status)
+		if condition.Type == conditionType {
+			conditionFound = true
+			if condition.Status != status {
+				t.Logf("%v condition: %+v", conditionType, condition)
+				fatalf(t, "%v condition had unexpected status; expected %v, got %v", conditionType, status, condition.Status)
+			}
+			if len(reason) == 1 && condition.Reason != reason[0] {
+				fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+			}
 		}
-		if len(reason) == 1 && condition.Reason != reason[0] {
-			fatalf(t, "unexpected reason; expected %v, got %v", reason[0], condition.Reason)
+	}
+
+	if !conditionFound {
+		fatalf(t, "unfound %v condition", conditionType)
+	}
+}
+
+func assertServiceInstanceCredentialReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
+	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+
+	if e, a := reconciledGeneration, binding.Status.ReconciledGeneration; e != a {
+		fatalf(t, "unexpected reconciled generation: expected %v, got %v", e, a)
+	}
+}
+
+func assertServiceInstanceCredentialOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+
+	if e, a := isOperationStartTimeSet, binding.Status.OperationStartTime != nil; e != a {
+		if e {
+			fatalf(t, "expected OperationStartTime to not be nil, but was")
+		} else {
+			fatalf(t, "expected OperationStartTime to be nil, but was not")
 		}
 	}
 }

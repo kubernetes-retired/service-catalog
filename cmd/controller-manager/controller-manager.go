@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// The controller manager is responsible for running the controller(s) backing
-// the service-catalog API.  The controllers list/watch the service-catalog
-// API resources and implement the behaviors backing those resources by
-// communicating with service brokers and the main Kubernetes API server.
+// The controller manager is responsible for monitoring replication
+// controllers, and creating corresponding pods to achieve the desired
+// state.  It uses the API to listen for new controllers and to create/delete
+// pods.
 package main
 
 import (
