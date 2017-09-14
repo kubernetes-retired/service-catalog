@@ -156,9 +156,8 @@ will be called `catalog-catalog-apiserver`, and be in the `catalog` namespace.
 ## Getting the IP Address of the API server
 
 How you get this IP address is highly dependent on your Kubernetes installation
-method. Regardless of how you do it, do not use the `CLUSTER-IP` of the 
-`Service`. The `Service` is created as a `NodePort` in this walkthrough, you 
-will need to use the address of one of the nodes in your cluster.
+method. Regardless of how you do it, do not use the `CLUSTER-IP` from
+`kubectl get service catalog-catalog-apiserver --namespace catalog` output.
 
 One option is to enable a cloud load balancer and get `EXTERNAL-IP` of the API server.
 ```console
@@ -167,6 +166,8 @@ kubectl edit service catalog-catalog-apiserver --namespace catalog
 # Watch `EXTERNAL-IP` and use it when available.
 watch kubectl get service catalog-catalog-apiserver --namespace catalog
 ```
+Or, you can use the address of one of the nodes in your cluster since
+the `Service` is created as a `NodePort` in this walkthrough.
 
 ## Setting up a New `kubectl` Context
 
