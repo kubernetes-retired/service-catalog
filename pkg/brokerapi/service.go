@@ -40,5 +40,5 @@ type Service struct {
 type DashboardClient struct {
 	ID          string `json:"id,omitempty"`
 	Secret      string `json:"secret,omitempty"`
-	RedirectUri string `json:"redirect_uri,omitempty"`
+	RedirectURI string `json:"redirect_uri,omitempty"`
 }
