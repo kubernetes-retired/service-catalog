@@ -195,7 +195,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		},
 		func(bs *servicecatalog.ServiceBrokerSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
-			bs.RelistBehavior = "Duration"
+			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
 			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
 		},
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
