@@ -1256,7 +1256,7 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	}
 
 	if e, a := verb, action.GetVerb(); e != a {
-		f(t, "%vUnexpected verb: expected %v, got %v", logContext, e, a)
+		f(t, "%vUnexpected verb: expected %v, got %v\n\tactual action %q", logContext, e, a, action)
 		return nil, false
 	}
 

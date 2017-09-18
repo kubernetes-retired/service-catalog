@@ -790,7 +790,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}

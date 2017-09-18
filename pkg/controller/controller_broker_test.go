@@ -682,8 +682,10 @@ func TestReconcileServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 
 	testServiceClass := getTestServiceClass()
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	broker := getTestServiceBroker()
+	// seven days ago, before the last refresh period
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	broker.Status.OperationStartTime = &startTime
 
@@ -696,17 +698,18 @@ func TestReconcileServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 3)
+	t.Log(actions)
+	assertNumberOfActions(t, actions, 5)
 
 	// first action should be an update action to clear OperationStartTime
 	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestServiceBroker())
 	assertServiceBrokerOperationStartTimeSet(t, updatedServiceBroker, false)
 
 	// first action should be an update action for a service class
-	assertUpdate(t, actions[1], testServiceClass)
+	assertUpdate(t, actions[3], testServiceClass)
 
 	// second action should be an update action for broker status subresource
-	updatedServiceBroker = assertUpdateStatus(t, actions[2], getTestServiceBroker())
+	updatedServiceBroker = assertUpdateStatus(t, actions[4], getTestServiceBroker())
 	assertServiceBrokerReadyTrue(t, updatedServiceBroker)
 
 	// verify no kube resources created

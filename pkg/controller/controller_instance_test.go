@@ -1674,6 +1674,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
@@ -1732,6 +1733,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstance()
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
@@ -1800,6 +1802,7 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1856,6 +1859,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -2242,6 +2246,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 
 			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 			instance := getTestServiceInstance()
 			if tc.includeUserInfo {
@@ -2284,6 +2289,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 
 			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 			instance := getTestServiceInstance()
 			instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -2339,6 +2345,7 @@ func TestPollInstanceUsingOriginatingIdentity(t *testing.T) {
 
 			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 			instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 			if tc.includeUserInfo {

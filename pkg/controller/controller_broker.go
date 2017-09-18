@@ -319,7 +319,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 					errorSyncingCatalogMessage+s)
 				return err
 			}
-			glog.V(5).Infof("Reconciled servicePlan %v (broker %v)", servicePlan.Name)
+			glog.V(5).Infof("Reconciled servicePlan %v (broker %v)", servicePlan.Name, broker.Name)
 		}
 
 		for _, serviceClass := range serviceClasses {

@@ -1531,6 +1531,7 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 
 			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 			sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 			binding := getTestServiceInstanceCredential()
@@ -1579,6 +1580,7 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 
 			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 			sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 			binding := getTestServiceInstanceCredential()
@@ -1628,6 +1630,7 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
@@ -1683,6 +1686,7 @@ func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
@@ -1738,6 +1742,7 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
