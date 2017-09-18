@@ -51,6 +51,7 @@ func Register(plugins *admission.Plugins) {
 type denyPlanChangeIfNotUpdatable struct {
 	*admission.Handler
 	scLister       internalversion.ServiceClassLister
+	spLister       internalversion.ServicePlanLister
 	instanceLister internalversion.ServiceInstanceLister
 }
 
@@ -75,7 +76,7 @@ func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			glog.V(5).Infof("Could not locate service class %v, can not determine if UpdateablePlan.", instance.Spec.ServiceClassName)
-			return nil
+			return nil // should this be `return err`? why would we allow the instance in if we cannot determine it is updatable?
 		}
 		glog.Error(err)
 		return admission.NewForbidden(a, err)
@@ -118,12 +119,17 @@ func (d *denyPlanChangeIfNotUpdatable) SetInternalServiceCatalogInformerFactory(
 	instanceInformer := f.Servicecatalog().InternalVersion().ServiceInstances()
 	d.instanceLister = instanceInformer.Lister()
 	d.scLister = scInformer.Lister()
+	spInformer := f.Servicecatalog().InternalVersion().ServicePlans()
+	d.spLister = spInformer.Lister()
 	d.SetReadyFunc(scInformer.Informer().HasSynced)
 }
 
 func (d *denyPlanChangeIfNotUpdatable) Validate() error {
 	if d.scLister == nil {
 		return errors.New("missing service class lister")
+	}
+	if d.spLister == nil {
+		return errors.New("missing service plan lister")
 	}
 	if d.instanceLister == nil {
 		return errors.New("missing instance lister")
