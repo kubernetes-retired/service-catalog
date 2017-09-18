@@ -237,9 +237,8 @@ verify: .init .generate_files verify-client-gen
 	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
 	@rm .out
 	@#
-	#disabled because of so many flakes during PR verifications
-	#@echo Running href checker:
-	#@$(DOCKER_CMD) verify-links.sh .
+	@echo Running href checker:
+	@$(DOCKER_CMD) verify-links.sh -t .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
