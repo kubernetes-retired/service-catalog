@@ -883,14 +883,15 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			var message string
 			var reason string
 			if deleting {
-				reason = asyncDeprovisioningMessage
+				reason = asyncDeprovisioningReason
+				message = asyncDeprovisioningMessage
 			} else {
 				reason = asyncProvisioningReason
-			}
-			if response.Description != nil {
-				message = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, *response.Description)
-			} else {
 				message = asyncProvisioningMessage
+			}
+
+			if response.Description != nil {
+				message = fmt.Sprintf("%s (%s)", message, *response.Description)
 			}
 			c.updateServiceInstanceCondition(
 				toUpdate,
