@@ -25,7 +25,6 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -550,7 +549,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// osb client handles whether or not to really send this based
 	// on the version of the client.
 	request.Context = map[string]interface{}{
-		"platform":  brokerapi.ContextProfilePlatformKubernetes,
+		"platform":  ContextProfilePlatformKubernetes,
 		"namespace": instance.Namespace,
 	}
 
