@@ -18,6 +18,8 @@ package controller
 
 import (
 	"fmt"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/golang/glog"
@@ -88,23 +90,49 @@ func isServiceInstanceCredentialFailed(binding *v1alpha1.ServiceInstanceCredenti
 	return false
 }
 
+// setAndUpdateOrphanMitigation is for setting the OrphanMitigationInProgress
+// status to true, setting the proper condition statuses, and persisting the
+// changes via updateServiceInstanceCredentialStatus.
+func (c *controller) setAndUpdateOrphanMitigation(binding *v1alpha1.ServiceInstanceCredential, toUpdate *v1alpha1.ServiceInstanceCredential, instance *v1alpha1.ServiceInstance, serviceClass *v1alpha1.ServiceClass, brokerName string, errorStr string) error {
+	s := fmt.Sprintf("Starting orphan mitgation for ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q, %v",
+		binding.Name,
+		binding.Namespace,
+		instance.Namespace,
+		instance.Name,
+		serviceClass.Name,
+		brokerName,
+		errorStr,
+	)
+	toUpdate.Status.OrphanMitigationInProgress = true
+	toUpdate.Status.OperationStartTime = nil
+	toUpdate.Status.InProgressProperties = nil
+	glog.V(5).Info(s)
+
+	c.setServiceInstanceCredentialCondition(
+		toUpdate,
+		v1alpha1.ServiceInstanceCredentialConditionReady,
+		v1alpha1.ConditionFalse,
+		errorServiceInstanceCredentialOrphanMitigation,
+		s,
+	)
+
+	c.recorder.Event(binding, apiv1.EventTypeWarning, errorServiceInstanceCredentialOrphanMitigation, s)
+	if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
+		return err
+	}
+	return nil
+}
+
 // an error is returned to indicate that the binding has not been
 // fully processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.ServiceInstanceCredential) error {
-	// TODO: this will change once we fully implement orphan mitigation, see:
-	// https://github.com/kubernetes-incubator/service-catalog/issues/988
-	if isServiceInstanceCredentialFailed(binding) && binding.ObjectMeta.DeletionTimestamp == nil {
+	if isServiceInstanceCredentialFailed(binding) && binding.ObjectMeta.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress {
 		glog.V(4).Infof(
 			"Not processing event for ServiceInstanceCredential %v/%v because status showed that it has failed",
 			binding.Namespace,
 			binding.Name,
 		)
 		return nil
-	}
-
-	toUpdate, err := makeServiceInstanceCredentialClone(binding)
-	if err != nil {
-		return err
 	}
 
 	// Determine whether there is a new generation of the object. If the binding's
@@ -123,6 +151,11 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			)
 			return nil
 		}
+	}
+
+	toUpdate, err := makeServiceInstanceCredentialClone(binding)
+	if err != nil {
+		return err
 	}
 
 	glog.V(4).Infof("Processing ServiceInstanceCredential %v/%v", binding.Namespace, binding.Name)
@@ -208,7 +241,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		return nil
 	}
 
-	if binding.DeletionTimestamp == nil { // Add or update
+	if binding.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress { // Add or update
 		glog.V(4).Infof("Adding/Updating ServiceInstanceCredential %v/%v", binding.Namespace, binding.Name)
 
 		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
@@ -358,8 +391,31 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		}
 
 		response, err := brokerClient.Bind(request)
-		if err != nil {
+		// orphan mitigation: looking for timeout
+		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			c.setServiceInstanceCredentialCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceCredentialConditionFailed,
+				v1alpha1.ConditionTrue,
+				errorBindCallReason,
+				"Communication with the ServiceBroker timed out; Bind operation will not be retried: "+err.Error(),
+			)
+			return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, netErr.Error())
+		} else if err != nil {
 			if httpErr, ok := osb.IsHTTPError(err); ok {
+				// orphan mitigation: looking for 2xx (excluding 200), 408, 5xx
+				if httpErr.StatusCode > 200 && httpErr.StatusCode < 300 ||
+					httpErr.StatusCode == http.StatusRequestTimeout ||
+					httpErr.StatusCode >= 500 && httpErr.StatusCode < 600 {
+					c.setServiceInstanceCredentialCondition(
+						toUpdate,
+						v1alpha1.ServiceInstanceCredentialConditionFailed,
+						v1alpha1.ConditionTrue,
+						errorBindCallReason,
+						"ServiceBroker returned a failure; Bind operation will not be retried: "+err.Error(),
+					)
+					return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, httpErr.Error())
+				}
 				s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q, %v",
 					binding.Name,
 					binding.Namespace,
@@ -425,7 +481,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		}
 
 		// The Bind request has returned successfully from the Broker. Continue
-		// with the sucess case of creating the ServiceInstanceCredential.
+		// with the success case of creating the ServiceInstanceCredential.
 
 		// Save off the external properties here even if the subsequent
 		// credentials injection fails. The Broker has already processed the
@@ -455,21 +511,14 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					v1alpha1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
-				c.clearServiceInstanceCredentialCurrentOperation(toUpdate)
-				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
-					return err
-				}
-
-				// TODO: We need to delete the ServiceInstanceCredential from the
-				// Broker since the Bind request was successful. This needs to be
-				// addressed as part of orphan mitigiation.
-
-				return nil
+				return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, "too much time has elapsed")
 			}
 
 			if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
 				return err
 			}
+			// TODO: solve scenario where bind request successful, credential injection fails, later reconciliations have non-failing errors
+			// with Bind request. After retry duration, reconciler gives up but will not do orphan mitigation.
 			return err
 		}
 
@@ -494,11 +543,11 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 	}
 
 	// All updates not having a DeletingTimestamp will have been handled above
-	// and returned early. If we reach this point, we're dealing with an update
-	// that's actually a soft delete-- i.e. we have some finalization to do.
-	if finalizers := sets.NewString(binding.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
-		glog.V(4).Infof("Finalizing ServiceInstanceCredential %v/%v", binding.Namespace, binding.Name)
-		err = c.ejectServiceInstanceCredential(binding)
+	// and returned early, except in the case of orphan mitigation. Otherwise,
+	// when we reach this point, we're dealing with an update that's actually
+	// a soft delete-- i.e. we have some finalization to do.
+	if finalizers := sets.NewString(binding.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) || binding.Status.OrphanMitigationInProgress {
+		err := c.ejectServiceInstanceCredential(binding)
 		if err != nil {
 			s := fmt.Sprintf("Error deleting secret: %s", err)
 			glog.Warning(s)
@@ -551,6 +600,9 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				// over with a fresh view of the binding.
 				return err
 			}
+		} else if toUpdate.Status.OrphanMitigationInProgress && toUpdate.Status.OperationStartTime == nil {
+			now := metav1.Now()
+			toUpdate.Status.OperationStartTime = &now
 		}
 
 		_, err = brokerClient.Unbind(unbindRequest)
@@ -573,12 +625,14 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					v1alpha1.ConditionUnknown,
 					errorUnbindCallReason,
 					"Unbind call failed. "+s)
-				c.setServiceInstanceCredentialCondition(
-					toUpdate,
-					v1alpha1.ServiceInstanceCredentialConditionFailed,
-					v1alpha1.ConditionTrue,
-					errorUnbindCallReason,
-					"Unbind call failed. "+s)
+				if !toUpdate.Status.OrphanMitigationInProgress {
+					c.setServiceInstanceCredentialCondition(
+						toUpdate,
+						v1alpha1.ServiceInstanceCredentialConditionFailed,
+						v1alpha1.ConditionTrue,
+						errorUnbindCallReason,
+						"Unbind call failed. "+s)
+				}
 				c.clearServiceInstanceCredentialCurrentOperation(toUpdate)
 				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
 					return err
@@ -587,8 +641,8 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			}
 			s := fmt.Sprintf(
 				"Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s",
-				binding.Name,
 				binding.Namespace,
+				binding.Name,
 				instance.Namespace,
 				instance.Name,
 				serviceClass.Spec.ExternalName,
@@ -613,6 +667,20 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					v1alpha1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
+				if toUpdate.Status.OrphanMitigationInProgress {
+					s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstanceCredential "%v/%v" because too much time has elapsed during orphan mitigation`, binding.Namespace, binding.Name)
+					glog.Info(s)
+					c.recorder.Event(binding, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+				} else {
+					s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstanceCredential "%v/%v" because too much time has elapsed`, binding.Namespace, binding.Name)
+					glog.Info(s)
+					c.recorder.Event(binding, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+					c.setServiceInstanceCredentialCondition(toUpdate,
+						v1alpha1.ServiceInstanceCredentialConditionFailed,
+						v1alpha1.ConditionTrue,
+						errorReconciliationRetryTimeoutReason,
+						s)
+				}
 				c.clearServiceInstanceCredentialCurrentOperation(toUpdate)
 				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
 					return err
@@ -626,20 +694,28 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			return err
 		}
 
-		c.setServiceInstanceCredentialCondition(
-			toUpdate,
-			v1alpha1.ServiceInstanceCredentialConditionReady,
-			v1alpha1.ConditionFalse,
-			successUnboundReason,
-			"The binding was deleted successfully",
-		)
-		c.clearServiceInstanceCredentialCurrentOperation(toUpdate)
+		if toUpdate.Status.OrphanMitigationInProgress {
+			s := fmt.Sprintf(`Orphan mitigation successful for ServiceInstanceCredential "%v/%v"`, binding.Namespace, binding.Name)
+			c.setServiceInstanceCredentialCondition(toUpdate,
+				v1alpha1.ServiceInstanceCredentialConditionReady,
+				v1alpha1.ConditionFalse,
+				successOrphanMitigationReason,
+				s)
+		} else {
+			c.setServiceInstanceCredentialCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceCredentialConditionReady,
+				v1alpha1.ConditionFalse,
+				successUnboundReason,
+				"The binding was deleted successfully",
+			)
+			// Clear the finalizer
+			finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+			toUpdate.Finalizers = finalizers.List()
+		}
 
 		toUpdate.Status.ExternalProperties = nil
-
-		// Clear the finalizer
-		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
-		toUpdate.Finalizers = finalizers.List()
+		c.clearServiceInstanceCredentialCurrentOperation(toUpdate)
 		if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
 			return err
 		}
@@ -647,7 +723,6 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		c.recorder.Event(binding, apiv1.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
 		glog.V(5).Infof("Successfully deleted ServiceInstanceCredential %v/%v of ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	}
-
 	return nil
 }
 
@@ -896,4 +971,5 @@ func (c *controller) clearServiceInstanceCredentialCurrentOperation(toUpdate *v1
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 	toUpdate.Status.InProgressProperties = nil
+	toUpdate.Status.OrphanMitigationInProgress = false
 }

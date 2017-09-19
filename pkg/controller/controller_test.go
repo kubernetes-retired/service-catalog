@@ -2213,6 +2213,17 @@ func assertServiceInstanceCredentialPropertiesStateParametersUnchanged(t *testin
 	}
 }
 
+func assertServiceInstanceCredentialOrphanMitigationSet(t *testing.T, obj runtime.Object, inProgress bool) {
+	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+	}
+
+	if e, a := inProgress, binding.Status.OrphanMitigationInProgress; e != a {
+		fatalf(t, "expected OrphanMitigationInProgress to be %v, but was not", a)
+	}
+}
+
 func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
