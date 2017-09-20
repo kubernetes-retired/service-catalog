@@ -54,6 +54,10 @@ const (
 	//
 	pollingStartInterval      = 1 * time.Second
 	pollingMaxBackoffDuration = 1 * time.Hour
+
+	// ContextProfilePlatformKubernetes is the platform name sent in the OSB
+	// ContextProfile for requests coming from Kubernetes.
+	ContextProfilePlatformKubernetes string = "kubernetes"
 )
 
 // NewController returns a new Open Service Broker catalog controller.
