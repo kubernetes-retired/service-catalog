@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apiserver/pkg/admission"
 
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
@@ -53,6 +54,7 @@ func Register(plugins *admission.Plugins) {
 type defaultServicePlan struct {
 	*admission.Handler
 	scLister internalversion.ServiceClassLister
+	spLister internalversion.ServicePlanLister
 }
 
 var _ = scadmission.WantsInternalServiceCatalogInformerFactory(&defaultServicePlan{})
@@ -77,6 +79,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		return nil
 	}
 
+	// cannot find what we're trying to create an instance of
 	sc, err := d.scLister.Get(instance.Spec.ServiceClassName)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -86,13 +89,38 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
-	if len(sc.Plans) > 1 {
-		msg := fmt.Sprintf("ServiceClass %q has more than one plan, PlanName must be specified", instance.Spec.ServiceClassName)
+	// find all the service plans that belong to the service class
+
+	// Need to be careful here. Is it possible to have only one
+	// serviceplan available while others are still in progress?
+	// Not currently. Creation of all ServicePlans before creating
+	// the ServiceClass ensures that this will work correctly. If
+	// the order changes, we will need to rethink the
+	// implementation of this controller.
+
+	// implement field selector
+
+	// loop over all service plans accumulate into slice
+	plans, err := d.spLister.List(labels.Everything())
+	// TODO filter `plans` down to only those owned by `sc`.
+
+	// check if there were any service plans
+	// TODO: in combination with not allowing classes with no plans, this should be impossible
+	if len(plans) <= 0 {
+		msg := fmt.Sprintf("no plans found at all for service class %q", instance.Spec.ServiceClassName)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
-	p := sc.Plans[0]
+	// check if more than one service plan was specified and error
+	if len(plans) > 1 {
+		msg := fmt.Sprintf("ServiceClass %q has more than one plan, PlanName must be specified", instance.Spec.ServiceClassName)
+		glog.V(4).Info(msg)
+		return admission.NewForbidden(a, errors.New(msg))
+	}
+	// otherwise, by default, pick the only plan that exists for the service class
+
+	p := plans[0]
 	glog.V(4).Infof("Using default plan %q for Service Class %q for instance %s",
 		p.Name, sc.Name, instance.Name)
 	instance.Spec.PlanName = p.Name
@@ -112,12 +140,22 @@ func NewDefaultServicePlan() (admission.Interface, error) {
 func (d *defaultServicePlan) SetInternalServiceCatalogInformerFactory(f informers.SharedInformerFactory) {
 	scInformer := f.Servicecatalog().InternalVersion().ServiceClasses()
 	d.scLister = scInformer.Lister()
-	d.SetReadyFunc(scInformer.Informer().HasSynced)
+	spInformer := f.Servicecatalog().InternalVersion().ServicePlans()
+	d.spLister = spInformer.Lister()
+
+	readyFunc := func() bool {
+		return scInformer.Informer().HasSynced() && scInformer.Informer().HasSynced()
+	}
+
+	d.SetReadyFunc(readyFunc)
 }
 
 func (d *defaultServicePlan) Validate() error {
 	if d.scLister == nil {
 		return errors.New("missing service class lister")
+	}
+	if d.spLister == nil {
+		return errors.New("missing service plan lister")
 	}
 	return nil
 }

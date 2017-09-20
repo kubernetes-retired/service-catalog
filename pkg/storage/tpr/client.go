@@ -18,6 +18,7 @@ package tpr
 
 import (
 	"fmt"
+
 	"k8s.io/client-go/dynamic"
 )
 
@@ -40,6 +41,8 @@ func GetResourceClient(cl *dynamic.Client, kind Kind, namespace string) (*dynami
 		return cl.Resource(&ServiceBrokerResource, namespace), nil
 	case ServiceClassKind, ServiceClassListKind:
 		return cl.Resource(&ServiceClassResource, namespace), nil
+	case ServicePlanKind, ServicePlanListKind:
+		return cl.Resource(&ServicePlanResource, namespace), nil
 	default:
 		return nil, errUnsupportedResource{kind: kind}
 	}

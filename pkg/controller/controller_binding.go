@@ -172,7 +172,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance, binding)
 	if err != nil {
-		return err
+		return err // retry later
 	}
 
 	if !isPlanBindable(serviceClass, servicePlan) {

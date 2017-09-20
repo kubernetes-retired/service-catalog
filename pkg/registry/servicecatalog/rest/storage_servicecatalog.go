@@ -24,6 +24,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -138,6 +139,41 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
+	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
+	if err != nil {
+		return nil, err
+	}
+	servicePlanOpts := server.NewOptions(
+		etcd.Options{
+			RESTOptions:   servicePlanRESTOptions,
+			Capacity:      1000,
+			ObjectType:    serviceplan.EmptyObject(),
+			ScopeStrategy: serviceplan.NewScopeStrategy(),
+			NewListFunc:   serviceplan.NewList,
+			GetAttrsFunc:  serviceplan.GetAttrs,
+			Trigger:       storage.NoTriggerPublisher,
+		},
+		tpr.Options{
+			HasNamespace:     false,
+			RESTOptions:      servicePlanRESTOptions,
+			DefaultNamespace: p.DefaultNamespace,
+			RESTClient:       p.RESTClient,
+			SingularKind:     tpr.ServicePlanKind,
+			NewSingularFunc:  serviceplan.NewSingular,
+			ListKind:         tpr.ServicePlanListKind,
+			NewListFunc:      serviceplan.NewList,
+			CheckObjectFunc:  serviceplan.CheckObject,
+			DestroyFunc:      func() {},
+			Keyer: tpr.Keyer{
+				DefaultNamespace: p.DefaultNamespace,
+				ResourceName:     tpr.ServicePlanKind.String(),
+				Separator:        "/",
+			},
+			HardDelete: true,
+		},
+		p.StorageType,
+	)
+
 	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstances"))
 	if err != nil {
 		return nil, err
@@ -208,6 +244,7 @@ func (p StorageProvider) v1alpha1Storage(
 
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	serviceClassStorage := serviceclass.NewStorage(*serviceClassOpts)
+	servicePlanStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage := instance.NewStorage(*instanceOpts)
 	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
 	if err != nil {
@@ -217,6 +254,7 @@ func (p StorageProvider) v1alpha1Storage(
 		"servicebrokers":                    brokerStorage,
 		"servicebrokers/status":             brokerStatusStorage,
 		"serviceclasses":                    serviceClassStorage,
+		"serviceplans":                      servicePlanStorage,
 		"serviceinstances":                  instanceStorage,
 		"serviceinstances/status":           instanceStatusStorage,
 		"serviceinstancecredentials":        bindingStorage,

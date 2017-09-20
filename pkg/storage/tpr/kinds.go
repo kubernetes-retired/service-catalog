@@ -96,6 +96,12 @@ const (
 	// ServiceClassListKind is the name of a list of service class resources
 	ServiceClassListKind Kind = "ServiceClassList"
 
+	// ServicePlanKind is the name of a Service Plan resource, a Kubernetes third party resource.
+	ServicePlanKind Kind = "ServicePlan"
+
+	// ServicePlanListKind is the name of a list of service plan resources
+	ServicePlanListKind Kind = "ServicePlanList"
+
 	// ServiceInstanceKind is the name of a Service Instance resource, a Kubernetes third party resource.
 	ServiceInstanceKind Kind = "ServiceInstance"
 

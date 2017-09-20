@@ -26,6 +26,7 @@ import (
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -188,11 +189,13 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 	}
 }
 
-// TestReconcileServiceBrokerExistingServiceClass verifies a simple, successful run
-// of reconcileServiceBroker().  This test will cause reconcileBroker() to fetch the
-// catalog from the ServiceBroker, create a Service Class for the single service that
-// it lists and reconcile the service class ensuring the name and id of the
-// relisted service matches the existing entry and updates the service catalog.
+// TestReconcileServiceBrokerExistingServiceClass verifies a simple, successful
+// run of reconcileServiceBroker().  This test will cause reconcileBroker() to
+// fetch the catalog from the ServiceBroker, create a Service Class for the
+// single service that it lists and reconcile the service class ensuring the
+// name and id of the relisted service matches the existing entry and updates
+// the service catalog. There will be two additional reconciles of plans before
+// the final broker update
 func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
@@ -208,13 +211,23 @@ func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 4)
 
-	// first action should be an update action for a service class
-	assertUpdate(t, actions[0], testServiceClass)
+	tp := getTestServicePlan()
+	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
+	// 1 create for the plan on the class
+	assertCreate(t, actions[0], tp)
 
-	// second action should be an update action for broker status subresource
-	updatedServiceBroker := assertUpdateStatus(t, actions[1], getTestServiceBroker())
+	nbtp := getTestServicePlanNonbindable()
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
+	// 2 create for the plan on the class
+	assertCreate(t, actions[1], nbtp)
+
+	// 3 update action for existing service class
+	assertUpdate(t, actions[2], testServiceClass)
+
+	// 4 update action for broker status subresource
+	updatedServiceBroker := assertUpdateStatus(t, actions[3], getTestServiceBroker())
 	assertServiceBrokerReadyTrue(t, updatedServiceBroker)
 
 	// verify no kube resources created
@@ -231,6 +244,8 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 	testServiceClass := getTestServiceClass()
 	testServiceClass.ExternalID = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlanNonbindable())
 
 	if err := testController.reconcileServiceBroker(getTestServiceBroker()); err == nil {
 		t.Fatal("The same service class should not be allowed with a different ID")
@@ -241,9 +256,20 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 3)
 
-	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestServiceBroker())
+	// TODO fix name munging after decision
+	tp := getTestServicePlan()
+	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
+	// 1 create for the plan on the class
+	assertCreate(t, actions[0], tp)
+
+	nbtp := getTestServicePlanNonbindable()
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
+	// 2 create for the plan on the class
+	assertCreate(t, actions[1], nbtp)
+
+	updatedServiceBroker := assertUpdateStatus(t, actions[2], getTestServiceBroker())
 	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	// verify no kube resources created
@@ -268,6 +294,8 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 	testServiceClass := getTestServiceClass()
 	testServiceClass.ServiceBrokerName = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlanNonbindable())
 
 	if err := testController.reconcileServiceBroker(getTestServiceBroker()); err == nil {
 		t.Fatal("The same service class should not belong to two different brokers.")
@@ -278,9 +306,20 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 3)
 
-	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestServiceBroker())
+	// TODO fix name munging after decision
+	tp := getTestServicePlan()
+	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
+	// 1 create for the plan on the class
+	assertCreate(t, actions[0], tp)
+
+	nbtp := getTestServicePlanNonbindable()
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
+	// 2 create for the plan on the class
+	assertCreate(t, actions[1], nbtp)
+
+	updatedServiceBroker := assertUpdateStatus(t, actions[2], getTestServiceBroker())
 	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	// verify no kube resources created
@@ -609,9 +648,11 @@ func TestReconcileServiceBrokerWithReconcileError(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 4)
 
-	createSCAction := actions[0].(clientgotesting.CreateAction)
+	// the two plans in the catalog as two separate actions
+
+	createSCAction := actions[2].(clientgotesting.CreateAction)
 	createdSC, ok := createSCAction.GetObject().(*v1alpha1.ServiceClass)
 	if !ok {
 		t.Fatalf("couldn't convert to a ServiceClass: %+v", createSCAction.GetObject())
@@ -619,7 +660,7 @@ func TestReconcileServiceBrokerWithReconcileError(t *testing.T) {
 	if e, a := getTestServiceClass(), createdSC; !reflect.DeepEqual(e, a) {
 		t.Fatalf("unexpected diff for created ServiceClass: %v,\n\nEXPECTED: %+v\n\nACTUAL:  %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
-	updatedServiceBroker := assertUpdateStatus(t, actions[1], broker)
+	updatedServiceBroker := assertUpdateStatus(t, actions[3], broker)
 	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
 
 	kubeActions := fakeKubeClient.Actions()
@@ -641,8 +682,10 @@ func TestReconcileServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 
 	testServiceClass := getTestServiceClass()
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	broker := getTestServiceBroker()
+	// seven days ago, before the last refresh period
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	broker.Status.OperationStartTime = &startTime
 
@@ -655,17 +698,18 @@ func TestReconcileServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 3)
+	t.Log(actions)
+	assertNumberOfActions(t, actions, 5)
 
 	// first action should be an update action to clear OperationStartTime
 	updatedServiceBroker := assertUpdateStatus(t, actions[0], getTestServiceBroker())
 	assertServiceBrokerOperationStartTimeSet(t, updatedServiceBroker, false)
 
 	// first action should be an update action for a service class
-	assertUpdate(t, actions[1], testServiceClass)
+	assertUpdate(t, actions[3], testServiceClass)
 
 	// second action should be an update action for broker status subresource
-	updatedServiceBroker = assertUpdateStatus(t, actions[2], getTestServiceBroker())
+	updatedServiceBroker = assertUpdateStatus(t, actions[4], getTestServiceBroker())
 	assertServiceBrokerReadyTrue(t, updatedServiceBroker)
 
 	// verify no kube resources created

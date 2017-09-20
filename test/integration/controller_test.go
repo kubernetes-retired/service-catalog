@@ -48,6 +48,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	coreutil "github.com/kubernetes-incubator/service-catalog/pkg/util"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
@@ -56,6 +57,7 @@ const (
 	testBrokerName       = "test-broker"
 	testServiceClassName = "test-service"
 	testPlanName         = "test-plan"
+	testPlanExternalID   = "34567"
 	testInstanceName     = "test-instance"
 	testBindingName      = "test-binding"
 	testSecretName       = "test-secret"
@@ -86,24 +88,7 @@ func truePtr() *bool {
 func TestBasicFlowsSync(t *testing.T) {
 	_, catalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
-			Response: &osb.CatalogResponse{
-				Services: []osb.Service{
-					{
-						Name:        testServiceClassName,
-						ID:          "12345",
-						Description: "a test service",
-						Bindable:    true,
-						Plans: []osb.Plan{
-							{
-								Name:        testPlanName,
-								Free:        truePtr(),
-								ID:          "34567",
-								Description: "a test plan",
-							},
-						},
-					},
-				},
-			},
+			Response: getTestCatalogResponse(),
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{
@@ -165,7 +150,7 @@ func TestBasicFlowsSync(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -266,24 +251,7 @@ func TestBasicFlowsSync(t *testing.T) {
 func TestBasicFlowsAsync(t *testing.T) {
 	_, catalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
-			Response: &osb.CatalogResponse{
-				Services: []osb.Service{
-					{
-						Name:        testServiceClassName,
-						ID:          "12345",
-						Description: "a test service",
-						Bindable:    true,
-						Plans: []osb.Plan{
-							{
-								Name:        testPlanName,
-								Free:        truePtr(),
-								ID:          "34567",
-								Description: "a test plan",
-							},
-						},
-					},
-				},
-			},
+			Response: getTestCatalogResponse(),
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{
@@ -350,7 +318,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -454,24 +422,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 func TestProvisionFailure(t *testing.T) {
 	_, catalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
-			Response: &osb.CatalogResponse{
-				Services: []osb.Service{
-					{
-						Name:        testServiceClassName,
-						ID:          "12345",
-						Description: "a test service",
-						Bindable:    true,
-						Plans: []osb.Plan{
-							{
-								Name:        testPlanName,
-								Free:        truePtr(),
-								ID:          "34567",
-								Description: "a test plan",
-							},
-						},
-					},
-				},
-			},
+			Response: getTestCatalogResponse(),
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Error: osb.HTTPStatusCodeError{
@@ -524,7 +475,7 @@ func TestProvisionFailure(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -587,24 +538,7 @@ func TestProvisionFailure(t *testing.T) {
 func TestBindingFailure(t *testing.T) {
 	_, fakeCatalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
-			Response: &osb.CatalogResponse{
-				Services: []osb.Service{
-					{
-						Name:        testServiceClassName,
-						ID:          "12345",
-						Description: "a test service",
-						Bindable:    true,
-						Plans: []osb.Plan{
-							{
-								Name:        testPlanName,
-								Free:        truePtr(),
-								ID:          "34567",
-								Description: "a test plan",
-							},
-						},
-					},
-				},
-			},
+			Response: getTestCatalogResponse(),
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Error: osb.HTTPStatusCodeError{
@@ -665,7 +599,7 @@ func TestBindingFailure(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -856,7 +790,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ServiceClassName: testServiceClassName,
-			PlanName:         testPlanName,
+			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
 			ExternalID:       testExternalID,
 		},
 	}
@@ -1057,6 +991,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		serviceCatalogSharedInformers.ServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
+		serviceCatalogSharedInformers.ServicePlans(),
 		brokerClFunc,
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
@@ -1089,4 +1024,25 @@ func addGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), action.(clientgotesting.GetAction).GetName())
 	})
+}
+
+func getTestCatalogResponse() *osb.CatalogResponse {
+	return &osb.CatalogResponse{
+		Services: []osb.Service{
+			{
+				Name:        testServiceClassName,
+				ID:          "12345",
+				Description: "a test service",
+				Bindable:    true,
+				Plans: []osb.Plan{
+					{
+						Name:        testPlanName,
+						Free:        truePtr(),
+						ID:          testPlanExternalID,
+						Description: "a test plan",
+					},
+				},
+			},
+		},
+	}
 }

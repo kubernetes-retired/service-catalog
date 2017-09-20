@@ -33,13 +33,6 @@ func validServiceClass() *servicecatalog.ServiceClass {
 		ServiceBrokerName: "test-broker",
 		ExternalID:        "1234-4354a-49b",
 		Description:       "service description",
-		Plans: []servicecatalog.ServicePlan{
-			{
-				Name:        "test-plan",
-				ExternalID:  "40d-0983-1b89",
-				Description: "plan description",
-			},
-		},
 	}
 }
 
@@ -53,15 +46,6 @@ func TestValidateServiceClass(t *testing.T) {
 			name:         "valid serviceClass",
 			serviceClass: validServiceClass(),
 			valid:        true,
-		},
-		{
-			name: "valid serviceClass - plan with underscore in name",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Plans[0].Name = "test_plan"
-				return s
-			}(),
-			valid: true,
 		},
 		{
 			name: "valid serviceClass - uppercase in GUID",
@@ -113,51 +97,6 @@ func TestValidateServiceClass(t *testing.T) {
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
 				s.Description = ""
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - invalid plan name",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Plans[0].Name = "test-plan.oops"
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - invalid plan guid",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Plans[0].ExternalID = "40d-0983-1b89-★"
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - missing plan guid",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Plans[0].ExternalID = "40d-0983-1b89-★"
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - missing plan description",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Plans[0].Description = ""
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - no plans",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Plans = nil
 				return s
 			}(),
 			valid: false,

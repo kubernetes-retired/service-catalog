@@ -40,7 +40,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
 					ServiceClassName: "test-serviceclass",
-					PlanName:         "Test-Plan",
+					PlanName:         "test-plan",
 				},
 			},
 			valid: true,
@@ -142,7 +142,7 @@ func TestValidateServiceInstanceUpdate(t *testing.T) {
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
 					ServiceClassName: "test-serviceclass",
-					PlanName:         "Test-Plan",
+					PlanName:         "test-plan",
 				},
 				Status: servicecatalog.ServiceInstanceStatus{
 					AsyncOpInProgress: true,
@@ -155,7 +155,7 @@ func TestValidateServiceInstanceUpdate(t *testing.T) {
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
 					ServiceClassName: "test-serviceclass",
-					PlanName:         "Test-Plan-2",
+					PlanName:         "test-plan-2",
 				},
 				Status: servicecatalog.ServiceInstanceStatus{
 					AsyncOpInProgress: true,
@@ -173,7 +173,7 @@ func TestValidateServiceInstanceUpdate(t *testing.T) {
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
 					ServiceClassName: "test-serviceclass",
-					PlanName:         "Test-Plan",
+					PlanName:         "test-plan",
 				},
 				Status: servicecatalog.ServiceInstanceStatus{
 					AsyncOpInProgress: false,
@@ -188,7 +188,7 @@ func TestValidateServiceInstanceUpdate(t *testing.T) {
 					ServiceClassName: "test-serviceclass",
 					// TODO(vaikas): This does not actually update
 					// spec yet, but once it does, validate it changes.
-					PlanName: "Test-Plan-2",
+					PlanName: "test-plan-2",
 				},
 				Status: servicecatalog.ServiceInstanceStatus{
 					AsyncOpInProgress: false,
@@ -334,7 +334,7 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
 				ServiceClassName: "test-serviceclass",
-				PlanName:         "Test-Plan",
+				PlanName:         "test-plan",
 			},
 			Status: *tc.old,
 		}
@@ -345,7 +345,7 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
 				ServiceClassName: "test-serviceclass",
-				PlanName:         "Test-Plan",
+				PlanName:         "test-plan",
 			},
 			Status: *tc.new,
 		}

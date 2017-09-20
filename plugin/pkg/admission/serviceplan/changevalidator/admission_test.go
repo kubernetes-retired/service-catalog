@@ -78,7 +78,6 @@ func newServiceInstance(namespace string, serviceClassName string, planName stri
 // UpdateablePlan attribute
 func newServiceClass(name string, plan string, updateablePlan bool) *servicecatalog.ServiceClass {
 	sc := &servicecatalog.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: name}, PlanUpdatable: updateablePlan}
-	sc.Plans = append(sc.Plans, servicecatalog.ServicePlan{Name: plan})
 	return sc
 }
 

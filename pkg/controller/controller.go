@@ -41,6 +41,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
 const (
@@ -63,6 +64,7 @@ func NewController(
 	serviceClassInformer informers.ServiceClassInformer,
 	instanceInformer informers.ServiceInstanceInformer,
 	bindingInformer informers.ServiceInstanceCredentialInformer,
+	servicePlanInformer informers.ServicePlanInformer,
 	brokerClientCreateFunc osb.CreateFunc,
 	brokerRelistInterval time.Duration,
 	osbAPIPreferredVersion string,
@@ -79,6 +81,7 @@ func NewController(
 		reconciliationRetryDuration: reconciliationRetryDuration,
 		brokerQueue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-broker"),
 		serviceClassQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
+		servicePlanQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-plan"),
 		instanceQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance"),
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance-credential"),
 		pollingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
@@ -97,6 +100,13 @@ func NewController(
 		DeleteFunc: controller.serviceClassDelete,
 	})
 	controller.serviceClassLister = serviceClassInformer.Lister()
+
+	servicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    controller.servicePlanAdd,
+		UpdateFunc: controller.servicePlanUpdate,
+		DeleteFunc: controller.servicePlanDelete,
+	})
+	controller.servicePlanLister = servicePlanInformer.Lister()
 
 	instanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.instanceAdd,
@@ -133,12 +143,14 @@ type controller struct {
 	serviceClassLister          listers.ServiceClassLister
 	instanceLister              listers.ServiceInstanceLister
 	bindingLister               listers.ServiceInstanceCredentialLister
+	servicePlanLister           listers.ServicePlanLister
 	brokerRelistInterval        time.Duration
 	OSBAPIPreferredVersion      string
 	recorder                    record.EventRecorder
 	reconciliationRetryDuration time.Duration
 	brokerQueue                 workqueue.RateLimitingInterface
 	serviceClassQueue           workqueue.RateLimitingInterface
+	servicePlanQueue            workqueue.RateLimitingInterface
 	instanceQueue               workqueue.RateLimitingInterface
 	bindingQueue                workqueue.RateLimitingInterface
 	// pollingQueue is separate from instanceQueue because we want
@@ -157,6 +169,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	for i := 0; i < workers; i++ {
 		go wait.Until(worker(c.brokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey), time.Second, stopCh)
 		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey), time.Second, stopCh)
+		go wait.Until(worker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey), time.Second, stopCh)
 		go wait.Until(worker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey), time.Second, stopCh)
 		go wait.Until(worker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey), time.Second, stopCh)
 		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll), time.Second, stopCh)
@@ -167,6 +180,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	c.brokerQueue.ShutDown()
 	c.serviceClassQueue.ShutDown()
+	c.servicePlanQueue.ShutDown()
 	c.instanceQueue.ShutDown()
 	c.bindingQueue.ShutDown()
 	c.pollingQueue.ShutDown()
@@ -229,8 +243,8 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
-	if servicePlan == nil {
+	servicePlan, err := c.getServicePlan(instance.Spec.PlanName)
+	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
@@ -304,8 +318,8 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan := findServicePlan(instance.Spec.PlanName, serviceClass.Plans)
-	if servicePlan == nil {
+	servicePlan, err := c.getServicePlan(instance.Spec.PlanName)
+	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.PlanName, serviceClass.Name)
 		glog.Warning(s)
 		c.updateServiceInstanceCredentialCondition(
@@ -360,8 +374,15 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 	return serviceClass, servicePlan, broker.Name, brokerClient, nil
 }
 
-// ServiceBroker utility methods - move?
+// getServicePlan gets a service-catalog ServicePlan by name.
+//
+// TODO: create a version of this function with a new argument of the
+// serviceclass that ought to own the serviceplan.
+func (c *controller) getServicePlan(name string) (*v1alpha1.ServicePlan, error) {
+	return c.servicePlanLister.Get(name)
+}
 
+// Broker utility methods - move?
 // getAuthCredentialsFromServiceBroker returns the auth credentials, if any, or
 // returns an error. If the AuthInfo field is nil, empty values are
 // returned.
@@ -443,16 +464,12 @@ func getBearerConfig(secret *apiv1.Secret) (*osb.BearerConfig, error) {
 }
 
 // convertCatalog converts a service broker catalog into an array of ServiceClasses
-func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
-	ret := make([]*v1alpha1.ServiceClass, len(in.Services))
+func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, []*v1alpha1.ServicePlan, error) {
+	serviceClasses := make([]*v1alpha1.ServiceClass, len(in.Services))
+	servicePlans := []*v1alpha1.ServicePlan{}
 	for i, svc := range in.Services {
-		plans, err := convertServicePlans(svc.Plans)
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = &v1alpha1.ServiceClass{
+		serviceClasses[i] = &v1alpha1.ServiceClass{
 			Bindable:      svc.Bindable,
-			Plans:         plans,
 			PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
 			ExternalID:    svc.ID,
 			Tags:          svc.Tags,
@@ -465,42 +482,53 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, error) {
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
 				glog.Error(err)
-				return nil, err
+				return nil, nil, err
 			}
-			ret[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+			serviceClasses[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
-		ret[i].SetName(svc.Name)
+		serviceClasses[i].SetName(svc.Name)
+
+		// set up the plans using the ServiceClass Name
+		plans, err := convertServicePlans(svc.Plans, svc.Name)
+		if err != nil {
+			return nil, nil, err
+		}
+		servicePlans = append(servicePlans, plans...)
 	}
-	return ret, nil
+	return serviceClasses, servicePlans, nil
 }
 
-func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
-	ret := make([]v1alpha1.ServicePlan, len(plans))
-	for i := range plans {
-		ret[i] = v1alpha1.ServicePlan{
-			Name:        plans[i].Name,
-			ExternalID:  plans[i].ID,
-			Free:        (plans[i].Free != nil && *plans[i].Free),
-			Description: plans[i].Description,
+func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1.ServicePlan, error) {
+	if 0 == len(plans) {
+		return nil, fmt.Errorf("ServiceClass %q must have at least one plan", serviceClassName)
+	}
+	servicePlans := make([]*v1alpha1.ServicePlan, len(plans))
+	for i, plan := range plans {
+		servicePlans[i] = &v1alpha1.ServicePlan{
+			ExternalID:      plan.ID,
+			Free:            (plan.Free != nil && *plan.Free),
+			Description:     plan.Description,
+			ServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassName},
+		}
+		servicePlans[i].SetName(util.ConstructPlanName(plan.Name, plan.ID))
+
+		if plan.Bindable != nil {
+			b := *plan.Bindable
+			servicePlans[i].Bindable = &b
 		}
 
-		if plans[i].Bindable != nil {
-			b := *plans[i].Bindable
-			ret[i].Bindable = &b
-		}
-
-		if plans[i].Metadata != nil {
-			metadata, err := json.Marshal(plans[i].Metadata)
+		if plan.Metadata != nil {
+			metadata, err := json.Marshal(plan.Metadata)
 			if err != nil {
-				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plans[i].Metadata, err)
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
 				glog.Error(err)
 				return nil, err
 			}
-			ret[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+			servicePlans[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
-		if schemas := plans[i].AlphaParameterSchemas; schemas != nil {
+		if schemas := plan.AlphaParameterSchemas; schemas != nil {
 			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
 				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil && instanceCreateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceCreateSchema.Parameters)
@@ -509,7 +537,7 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 						glog.Error(err)
 						return nil, err
 					}
-					ret[i].ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
@@ -518,7 +546,7 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 						glog.Error(err)
 						return nil, err
 					}
-					ret[i].ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
@@ -529,13 +557,13 @@ func convertServicePlans(plans []osb.Plan) ([]v1alpha1.ServicePlan, error) {
 						glog.Error(err)
 						return nil, err
 					}
-					ret[i].ServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].ServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 		}
 
 	}
-	return ret, nil
+	return servicePlans, nil
 }
 
 // isServiceInstanceReady returns whether the given instance has a ready condition
