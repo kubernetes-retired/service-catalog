@@ -115,10 +115,6 @@ func validateServicePlan(plan sc.ServicePlan, fldPath *field.Path) field.ErrorLi
 		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
 	}
 
-	for _, msg := range validateExternalID(plan.ExternalID) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), plan.ExternalID, msg))
-	}
-
 	return allErrs
 }
 
