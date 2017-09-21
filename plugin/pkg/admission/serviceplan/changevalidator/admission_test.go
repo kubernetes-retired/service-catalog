@@ -77,7 +77,10 @@ func newServiceInstance(namespace string, serviceClassName string, planName stri
 // newServiceClass returns a new instance with the specified plan and
 // UpdateablePlan attribute
 func newServiceClass(name string, plan string, updateablePlan bool) *servicecatalog.ServiceClass {
-	sc := &servicecatalog.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: name}, PlanUpdatable: updateablePlan}
+	sc := &servicecatalog.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec:       servicecatalog.ServiceClassSpec{PlanUpdatable: updateablePlan},
+	}
 	return sc
 }
 

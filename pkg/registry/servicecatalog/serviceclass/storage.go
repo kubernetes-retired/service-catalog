@@ -93,8 +93,9 @@ func toSelectableFields(serviceClass *servicecatalog.ServiceClass) fields.Set {
 	// amount of allocations needed to create the fields.Set. If you add any
 	// field here or the number of object-meta related fields changes, this should
 	// be adjusted.
-	scSpecificFieldsSet := make(fields.Set, 1)
+	scSpecificFieldsSet := make(fields.Set, 2)
 	scSpecificFieldsSet["spec.externalName"] = serviceClass.Spec.ExternalName
+	scSpecificFieldsSet["spec.externalID"] = serviceClass.Spec.ExternalID
 	return generic.AddObjectMetaFieldsSet(scSpecificFieldsSet, &serviceClass.ObjectMeta, true)
 }
 
