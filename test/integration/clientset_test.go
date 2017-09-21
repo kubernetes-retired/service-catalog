@@ -403,11 +403,14 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClassClient := client.Servicecatalog().ServiceClasses()
 
 	serviceClass := &v1alpha1.ServiceClass{
-		ObjectMeta:        metav1.ObjectMeta{Name: name},
-		ServiceBrokerName: "test-broker",
-		Bindable:          true,
-		ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-		Description:       "test description",
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.ServiceClassSpec{
+			ServiceBrokerName: "test-broker",
+			Bindable:          true,
+			ExternalName:      name,
+			ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:       "test description",
+		},
 	}
 
 	// start from scratch
@@ -467,7 +470,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	serviceClassAtServer.Bindable = false
+	serviceClassAtServer.Spec.Bindable = false
 	_, err = serviceClassClient.Update(serviceClassAtServer)
 	if err != nil {
 		return fmt.Errorf("Error updating serviceClass: %v", err)
@@ -476,7 +479,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	if err != nil {
 		return fmt.Errorf("Error getting serviceClass: %v", err)
 	}
-	if updated.Bindable {
+	if updated.Spec.Bindable {
 		return errors.New("Failed to update service class")
 	}
 
