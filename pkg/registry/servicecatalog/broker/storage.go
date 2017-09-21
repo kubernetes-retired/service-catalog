@@ -103,9 +103,19 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 	return labels.Set(broker.ObjectMeta.Labels), toSelectableFields(broker), broker.Initializers != nil, nil
 }
 
+type RelistREST struct {
+	store *registry.Store
+}
+
+var _ rest.Updater = &RelistREST{}
+
+func (r *RelistREST) New() runtime.Object {
+	return r.store.New()
+}
+
 // NewStorage creates a new rest.Storage responsible for accessing ServiceInstance
 // resources
-func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
+func NewStorage(opts server.Options) (brokers, brokersStatus, brokersRelist rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
@@ -144,7 +154,10 @@ func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 	statusStore := store
 	statusStore.UpdateStrategy = brokerStatusUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}
+	relistStore := store
+	relistStore.UpdateStrategy = brokerRelistUpdateStrategy
+
+	return &store, &statusStore, &RelistREST{&relistStore}
 }
 
 // StatusREST defines the REST operations for the status subresource via

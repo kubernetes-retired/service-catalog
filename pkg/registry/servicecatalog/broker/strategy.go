@@ -49,6 +49,11 @@ type brokerStatusRESTStrategy struct {
 	brokerRESTStrategy
 }
 
+// implements interface RESTUpdateStrategy
+type brokerRelistRESTStrategy struct {
+	brokerRESTStrategy
+}
+
 var (
 	brokerRESTStrategies = brokerRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
@@ -66,7 +71,11 @@ var (
 	brokerStatusUpdateStrategy = brokerStatusRESTStrategy{
 		brokerRESTStrategies,
 	}
-	_ rest.RESTUpdateStrategy = brokerStatusUpdateStrategy
+
+	brokerRelistUpdateStrategy = brokerRelistRESTStrategy{
+		brokerRESTStrategies,
+	}
+	_ rest.RESTUpdateStrategy = brokerRelistUpdateStrategy
 )
 
 // Canonicalize does not transform a broker.
@@ -169,4 +178,36 @@ func (brokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, ne
 	}
 
 	return scv.ValidateServiceBrokerStatusUpdate(newServiceBroker, oldServiceBroker)
+}
+
+func (r *RelistREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
+	return r.store.Update(ctx, name, objInfo)
+}
+
+func (brokerRelistRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+	newServiceBroker, ok := new.(*sc.ServiceBroker)
+	if !ok {
+		glog.Fatal("received a non-broker object to update to")
+	}
+	oldServiceBroker, ok := old.(*sc.ServiceBroker)
+	if !ok {
+		glog.Fatal("received a non-broker object to update from")
+	}
+
+	newServiceBroker.Spec = oldServiceBroker.Spec
+	newServiceBroker.Status = oldServiceBroker.Status
+	newServiceBroker.Spec.RelistRequests = oldServiceBroker.Spec.RelistRequests + 1
+}
+
+func (brokerRelistRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+	newServiceBroker, ok := new.(*sc.ServiceBroker)
+	if !ok {
+		glog.Fatal("received a non-broker object to validate to")
+	}
+	oldServiceBroker, ok := old.(*sc.ServiceBroker)
+	if !ok {
+		glog.Fatal("received a non-broker object to validate from")
+	}
+
+	return scv.ValidateServiceBrokerRelistUpdate(newServiceBroker, oldServiceBroker)
 }
