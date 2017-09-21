@@ -19,8 +19,8 @@ package server
 import (
 	"net/http/httptest"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker"
 )
 
 // NewCreateFunc creates a new brokerapi.CreateFunc according to a broker server running

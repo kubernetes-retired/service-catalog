@@ -17,11 +17,11 @@ limitations under the License.
 package server
 
 import (
-	pkgbrokerapi "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
+	pkgbrokerapi "github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
 	pivbrokerapi "github.com/pivotal-cf/brokerapi"
 )
 
-// ConvertCatalog converts a (github.com/kubernetes-incubator/service-catalog/pkg/brokerapi).Catalog
+// ConvertCatalog converts a (github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi).Catalog
 // to an array of brokerapi.Services
 func ConvertCatalog(cat *pkgbrokerapi.Catalog) []pivbrokerapi.Service {
 	ret := make([]pivbrokerapi.Service, len(cat.Services))

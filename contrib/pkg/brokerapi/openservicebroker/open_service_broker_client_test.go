@@ -23,9 +23,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/util"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker/util"
 )
 
 const (
