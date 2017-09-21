@@ -242,7 +242,7 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
-	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
+	brokerStorage, brokerStatusStorage, brokerRelistStorage := broker.NewStorage(*brokerOpts)
 	serviceClassStorage := serviceclass.NewStorage(*serviceClassOpts)
 	servicePlanStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage := instance.NewStorage(*instanceOpts)
@@ -253,6 +253,7 @@ func (p StorageProvider) v1alpha1Storage(
 	return map[string]rest.Storage{
 		"servicebrokers":                    brokerStorage,
 		"servicebrokers/status":             brokerStatusStorage,
+		"servicebrokers/relist":             brokerRelistStorage,
 		"serviceclasses":                    serviceClassStorage,
 		"serviceplans":                      servicePlanStorage,
 		"serviceinstances":                  instanceStorage,
