@@ -54,9 +54,11 @@ for the guide.
 
 ## RBAC
 
-Your Kubernetes cluster must have RBAC enabled, and your Tiller pod needs to
-have `cluster-admin` access. If you are using Minikube, make sure to run
-your `minikube start` command with this flag:
+If your Kubernetes cluster must have RBAC enabled, then your Tiller pod needs to
+have `cluster-admin` access.
+
+If you are using Minikube, make sure to run your `minikube start` command with
+this flag:
 
 ```console
 minikube start --extra-config=apiserver.Authorization.Mode=RBAC
