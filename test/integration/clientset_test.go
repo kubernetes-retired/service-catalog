@@ -622,6 +622,134 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	return nil
 }
 
+// TestServicePlanClient exercises the ServicePlan client.
+func TestServicePlanClient(t *testing.T) {
+	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+		return func(t *testing.T) {
+			const name = "test-serviceplan"
+			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+				return &servicecatalog.ServicePlan{}
+			})
+			defer shutdownServer()
+
+			if err := testServicePlanClient(sType, client, name); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	for _, sType := range storageTypes {
+		if !t.Run(sType.String(), rootTestFunc(sType)) {
+			t.Errorf("%s test failed", sType)
+		}
+	}
+}
+
+func testServicePlanClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+	fmt.Printf("-----\nGetting a ServicePlan client\n")
+	servicePlanClient := client.Servicecatalog().ServicePlans()
+
+	bindable := true
+	servicePlan := &v1alpha1.ServicePlan{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.ServicePlanSpec{
+			//			Bindable:     &bindable,
+			ExternalName: name,
+			ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:  "test description",
+			//			ServiceClassRef: v1.LocalObjectReference{
+			//				Name: scName,
+			//			},
+		},
+	}
+
+	fmt.Printf("-----\nListing ServicePlans\n")
+
+	// start from scratch
+	servicePlans, err := servicePlanClient.List(metav1.ListOptions{})
+	fmt.Printf("-----\nDone listing ServicePlans\n")
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if servicePlans.Items == nil {
+		return fmt.Errorf("Items field should not be set to nil")
+	}
+	if len(servicePlans.Items) > 0 {
+		return fmt.Errorf(
+			"servicePlans should not exist on start, had %v servicePlans",
+			len(servicePlans.Items),
+		)
+	}
+
+	fmt.Printf("-----\nDone Creating ServicePlans\n")
+	servicePlanAtServer, err := servicePlanClient.Create(servicePlan)
+	if nil != err {
+		return fmt.Errorf("error creating the Serviceplan (%v)", servicePlan)
+	}
+	if name != servicePlanAtServer.Name {
+		return fmt.Errorf(
+			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			servicePlan,
+			servicePlanAtServer,
+		)
+	}
+
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 1 != len(servicePlans.Items) {
+		return fmt.Errorf("should have exactly one ServiceClass, had %v ServiceClasses", len(servicePlans.Items))
+	}
+
+	servicePlanAtServer, err = servicePlanClient.Get(name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if servicePlanAtServer.Name != name &&
+		servicePlan.ResourceVersion == servicePlanAtServer.ResourceVersion {
+		return fmt.Errorf(
+			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			servicePlan,
+			servicePlanAtServer,
+		)
+	}
+
+	// check that the broker is the same from get and list
+	servicePlanListed := &servicePlans.Items[0]
+	if !reflect.DeepEqual(servicePlanAtServer, servicePlanListed) {
+		return fmt.Errorf(
+			"Didn't get the same instance from list and get: diff: %v",
+			diff.ObjectReflectDiff(servicePlanAtServer, servicePlanListed),
+		)
+	}
+
+	bindable = false
+	servicePlanAtServer.Spec.Bindable = &bindable
+	_, err = servicePlanClient.Update(servicePlanAtServer)
+	if err != nil {
+		return fmt.Errorf("Error updating servicePlan: %v", err)
+	}
+	updated, err := servicePlanClient.Get(name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("Error getting servicePlan: %v", err)
+	}
+	if *updated.Spec.Bindable {
+		return errors.New("Failed to update service class")
+	}
+
+	err = servicePlanClient.Delete(name, &metav1.DeleteOptions{})
+	if nil != err {
+		return fmt.Errorf("serviceplan should be deleted (%s)", err)
+	}
+
+	servicePlanDeleted, err := servicePlanClient.Get(name, metav1.GetOptions{})
+	if nil == err {
+		return fmt.Errorf("serviceplan should be deleted (%v)", servicePlanDeleted)
+	}
+
+	return nil
+}
+
 // TestInstanceClient exercises the Instance client.
 func TestInstanceClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
