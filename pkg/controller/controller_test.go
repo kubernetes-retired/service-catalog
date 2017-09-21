@@ -849,6 +849,7 @@ const testCatalogForServicePlanBindableOverride = `{
     {
       "name": "bindable",
       "bindable": true,
+      "id
       "plans": [{
         "name": "bindable-bindable",
         "id": "s1_plan1_id"
