@@ -194,8 +194,8 @@ func TestCreateWithNamespace(t *testing.T) {
 			Name:      name,
 		},
 		Spec: sc.ServiceInstanceSpec{
-			ExternalID: "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
-			PlanName:   "some-awesome-plan",
+			ExternalID:              "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
+			ExternalServicePlanName: "some-awesome-plan",
 		},
 	}
 	ctx := request.NewContext()
@@ -380,8 +380,8 @@ func TestGetWithNamespace(t *testing.T) {
 			Name:      name,
 		},
 		Spec: sc.ServiceInstanceSpec{
-			ExternalID: "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
-			PlanName:   "some-awesome-plan",
+			ExternalID:              "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
+			ExternalServicePlanName: "some-awesome-plan",
 		},
 	})
 	ctx := request.NewContext()
@@ -559,8 +559,8 @@ func TestGetListWithNamespace(t *testing.T) {
 			Name:      name,
 		},
 		Spec: sc.ServiceInstanceSpec{
-			ExternalID: "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
-			PlanName:   "some-awesome-plan",
+			ExternalID:              "e6a8edad-145a-47f1-aaba-c0eb20b233a3",
+			ExternalServicePlanName: "some-awesome-plan",
 		},
 	})
 	list := &sc.ServiceInstanceList{}
@@ -672,7 +672,7 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 		nil,  // No preconditions for the update
 		storage.SimpleUpdate(func(obj runtime.Object) (runtime.Object, error) {
 			instance := obj.(*sc.ServiceInstance)
-			instance.Spec.PlanName = newPlanName
+			instance.Spec.ExternalServicePlanName = newPlanName
 			return instance, nil
 		}),
 	)
@@ -690,7 +690,7 @@ func TestUpdateNonExistentWithNamespace(t *testing.T) {
 		nil,   // No preconditions for the update
 		storage.SimpleUpdate(func(obj runtime.Object) (runtime.Object, error) {
 			instance := obj.(*sc.ServiceInstance)
-			instance.Spec.PlanName = newPlanName
+			instance.Spec.ExternalServicePlanName = newPlanName
 			return instance, nil
 		}),
 	)
@@ -771,7 +771,7 @@ func TestUpdateWithNamespace(t *testing.T) {
 			ResourceVersion: fmt.Sprintf("%d", origRev),
 		},
 		Spec: sc.ServiceInstanceSpec{
-			PlanName: "my-awesome-plan",
+			ExternalServicePlanName: "my-awesome-plan",
 		},
 	})
 	ctx := request.NewContext()
@@ -789,7 +789,7 @@ func TestUpdateWithNamespace(t *testing.T) {
 		nil,   // No preconditions for the update
 		storage.SimpleUpdate(func(obj runtime.Object) (runtime.Object, error) {
 			instance := obj.(*sc.ServiceInstance)
-			instance.Spec.PlanName = newPlanName
+			instance.Spec.ExternalServicePlanName = newPlanName
 			return instance, nil
 		}),
 	)
@@ -807,7 +807,7 @@ func TestUpdateWithNamespace(t *testing.T) {
 			updatedRev,
 		)
 	}
-	if updatedServiceInstance.Spec.PlanName != newPlanName {
+	if updatedServiceInstance.Spec.ExternalServicePlanName != newPlanName {
 		t.Fatal("expectd plan name to have been updated, but it was not")
 	}
 }

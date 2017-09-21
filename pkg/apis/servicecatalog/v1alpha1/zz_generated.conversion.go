@@ -667,8 +667,10 @@ func Convert_servicecatalog_ServiceInstanceList_To_v1alpha1_ServiceInstanceList(
 }
 
 func autoConvert_v1alpha1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSpec(in *ServiceInstanceSpec, out *servicecatalog.ServiceInstanceSpec, s conversion.Scope) error {
-	out.ServiceClassName = in.ServiceClassName
-	out.PlanName = in.PlanName
+	out.ExternalServiceClassName = in.ExternalServiceClassName
+	out.ExternalServicePlanName = in.ExternalServicePlanName
+	out.ServiceClassRef = (*v1.ObjectReference)(unsafe.Pointer(in.ServiceClassRef))
+	out.ServicePlanRef = (*v1.ObjectReference)(unsafe.Pointer(in.ServicePlanRef))
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersFrom = *(*[]servicecatalog.ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
 	out.ExternalID = in.ExternalID
@@ -682,8 +684,10 @@ func Convert_v1alpha1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSpec(
 }
 
 func autoConvert_servicecatalog_ServiceInstanceSpec_To_v1alpha1_ServiceInstanceSpec(in *servicecatalog.ServiceInstanceSpec, out *ServiceInstanceSpec, s conversion.Scope) error {
-	out.ServiceClassName = in.ServiceClassName
-	out.PlanName = in.PlanName
+	out.ExternalServiceClassName = in.ExternalServiceClassName
+	out.ExternalServicePlanName = in.ExternalServicePlanName
+	out.ServiceClassRef = (*v1.ObjectReference)(unsafe.Pointer(in.ServiceClassRef))
+	out.ServicePlanRef = (*v1.ObjectReference)(unsafe.Pointer(in.ServicePlanRef))
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersFrom = *(*[]ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
 	out.ExternalID = in.ExternalID

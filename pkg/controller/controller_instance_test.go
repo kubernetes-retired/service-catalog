@@ -57,9 +57,9 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: "nothere",
-			PlanName:         "nothere",
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: "nothere",
+			ExternalServicePlanName:  "nothere",
+			ExternalID:               instanceGUID,
 		},
 	}
 
@@ -190,9 +190,9 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         "nothere",
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  "nothere",
+			ExternalID:               instanceGUID,
 		},
 	}
 

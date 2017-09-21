@@ -39,8 +39,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan",
 				},
 			},
 			valid: true,
@@ -52,8 +52,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Name: "test-instance",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan",
 				},
 			},
 			valid: false,
@@ -66,7 +66,7 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					PlanName: "test-plan",
+					ExternalServicePlanName: "test-plan",
 				},
 			},
 			valid: false,
@@ -79,8 +79,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "oing20&)*^&",
-					PlanName:         "test-plan",
+					ExternalServiceClassName: "oing20&)*^&",
+					ExternalServicePlanName:  "test-plan",
 				},
 			},
 			valid: false,
@@ -93,7 +93,7 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
+					ExternalServiceClassName: "test-serviceclass",
 				},
 			},
 			valid: false,
@@ -106,8 +106,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "9651.JVHbebe",
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "9651.JVHbebe",
 				},
 			},
 			valid: false,
@@ -133,28 +133,68 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 		valid             bool
 	}{
 		{
-			name:              "spec change when no on-going spec change",
-			newSpecChange:     true,
-			onGoingSpecChange: false,
-			valid:             true,
+			name: "no update with async op in progress",
+			old: &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan",
+				},
+				Status: servicecatalog.ServiceInstanceStatus{
+					AsyncOpInProgress: true,
+				},
+			},
+			new: &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan-2",
+				},
+				Status: servicecatalog.ServiceInstanceStatus{
+					AsyncOpInProgress: true,
+				},
+			},
+			valid: false,
+			err:   "Another operation for this service instance is in progress",
 		},
 		{
-			name:              "spec change when on-going spec change",
-			newSpecChange:     true,
-			onGoingSpecChange: true,
-			valid:             false,
-		},
-		{
-			name:              "meta change when no on-going spec change",
-			newSpecChange:     false,
-			onGoingSpecChange: false,
-			valid:             true,
-		},
-		{
-			name:              "meta change when on-going spec change",
-			newSpecChange:     false,
-			onGoingSpecChange: true,
-			valid:             true,
+			name: "allow update with no async op in progress",
+			old: &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan",
+				},
+				Status: servicecatalog.ServiceInstanceStatus{
+					AsyncOpInProgress: false,
+				},
+			},
+			new: &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					ExternalServiceClassName: "test-serviceclass",
+					// TODO(vaikas): This does not actually update
+					// spec yet, but once it does, validate it changes.
+					ExternalServicePlanName: "test-plan-2",
+				},
+				Status: servicecatalog.ServiceInstanceStatus{
+					AsyncOpInProgress: false,
+				},
+			},
+			valid: true,
+			err:   "",
 		},
 	}
 
@@ -319,8 +359,8 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ServiceClassName: "test-serviceclass",
-				PlanName:         "test-plan",
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  "test-plan",
 			},
 			Status: *tc.old,
 		}
@@ -330,8 +370,8 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ServiceClassName: "test-serviceclass",
-				PlanName:         "test-plan",
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  "test-plan",
 			},
 			Status: *tc.new,
 		}

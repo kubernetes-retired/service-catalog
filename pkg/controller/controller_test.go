@@ -30,7 +30,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -453,9 +452,9 @@ func getTestServiceInstance() *v1alpha1.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testServicePlanName,
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testServicePlanName,
+			ExternalID:               instanceGUID,
 		},
 	}
 }
@@ -463,8 +462,8 @@ func getTestServiceInstance() *v1alpha1.ServiceInstance {
 // an instance referencing the result of getTestNonbindableServiceClass, on the non-bindable plan.
 func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstance()
-	i.Spec.ServiceClassName = testNonbindableServiceClassName
-	i.Spec.PlanName = testNonbindableServicePlanName
+	i.Spec.ExternalServiceClassName = testNonbindableServiceClassName
+	i.Spec.ExternalServicePlanName = testNonbindableServicePlanName
 
 	return i
 }
@@ -472,14 +471,14 @@ func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 // an instance referencing the result of getTestNonbindableServiceClass, on the bindable plan.
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
-	i.Spec.PlanName = testServicePlanName
+	i.Spec.ExternalServicePlanName = testServicePlanName
 
 	return i
 }
 
 func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstance()
-	i.Spec.PlanName = testNonbindableServicePlanName
+	i.Spec.ExternalServicePlanName = testNonbindableServicePlanName
 
 	return i
 }
@@ -630,8 +629,8 @@ func TestCatalogConversion(t *testing.T) {
 		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(servicePlans))
 	}
 
-	checkPlan(servicePlans[0], util.ConstructPlanName("fake-plan-1", "d3031751-XXXX-XXXX-XXXX-a42377d3320e"), "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
-	checkPlan(servicePlans[1], util.ConstructPlanName("fake-plan-2", "0f4008b5-XXXX-XXXX-XXXX-dace631cd648"), "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
+	checkPlan(servicePlans[0], "d3031751-XXXX-XXXX-XXXX-a42377d3320e", "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
+	checkPlan(servicePlans[1], "0f4008b5-XXXX-XXXX-XXXX-dace631cd648", "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
@@ -689,9 +688,15 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	}
 }
 
-func checkPlan(plan *v1alpha1.ServicePlan, planName, planDescription string, t *testing.T) {
-	if plan.Name != planName {
-		t.Errorf("Expected plan name to be %q, but was: %q", planName, plan.Name)
+func checkPlan(plan *v1alpha1.ServicePlan, planID, planName, planDescription string, t *testing.T) {
+	if plan.Name != planID {
+		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
+	}
+	if plan.ExternalID != planID {
+		t.Errorf("Expected plan ExternalID to be %q, but was: %q", planID, plan.ExternalID)
+	}
+	if plan.ExternalName != planName {
+		t.Errorf("Expected plan ExternalName to be %q, but was: %q", planName, plan.ExternalName)
 	}
 	if plan.Spec.Description != planDescription {
 		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Spec.Description)
@@ -919,7 +924,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 	eplans := []*v1alpha1.ServicePlan{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("bindable-bindable", "s1_plan1_id"),
+				Name: "s1_plan1_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalID:   "s1_plan1_id",
@@ -932,7 +937,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("bindable-unbindable", "s1_plan2_id"),
+				Name: "s1_plan2_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalName: "bindable-unbindable",
@@ -945,7 +950,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("unbindable-unbindable", "s2_plan1_id"),
+				Name: "s2_plan1_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalName: "unbindable-unbindable",

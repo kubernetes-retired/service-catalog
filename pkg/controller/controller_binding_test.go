@@ -96,9 +96,9 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: "nothere",
-			PlanName:         testServicePlanName,
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: "nothere",
+			ExternalServicePlanName:  testServicePlanName,
+			ExternalID:               instanceGUID,
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)

@@ -75,17 +75,17 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 	// If the plan is specified, let it through and have the controller
 	// deal with finding the right plan, etc.
-	if len(instance.Spec.PlanName) > 0 {
+	if len(instance.Spec.ExternalServicePlanName) > 0 {
 		return nil
 	}
 
 	// cannot find what we're trying to create an instance of
-	sc, err := d.scLister.Get(instance.Spec.ServiceClassName)
+	sc, err := d.scLister.Get(instance.Spec.ExternalServiceClassName)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
 		}
-		msg := fmt.Sprintf("ServiceClass %q does not exist, can not figure out the default Service Plan.", instance.Spec.ServiceClassName)
+		msg := fmt.Sprintf("ServiceClass %q does not exist, can not figure out the default Service Plan.", instance.Spec.ExternalServiceClassName)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
@@ -107,14 +107,14 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	// check if there were any service plans
 	// TODO: in combination with not allowing classes with no plans, this should be impossible
 	if len(plans) <= 0 {
-		msg := fmt.Sprintf("no plans found at all for service class %q", instance.Spec.ServiceClassName)
+		msg := fmt.Sprintf("no plans found at all for service class %q", instance.Spec.ExternalServiceClassName)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
 	// check if more than one service plan was specified and error
 	if len(plans) > 1 {
-		msg := fmt.Sprintf("ServiceClass %q has more than one plan, PlanName must be specified", instance.Spec.ServiceClassName)
+		msg := fmt.Sprintf("ServiceClass %q has more than one plan, PlanName must be specified", instance.Spec.ExternalServiceClassName)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
@@ -123,7 +123,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	p := plans[0]
 	glog.V(4).Infof("Using default plan %q for Service Class %q for instance %s",
 		p.Name, sc.Name, instance.Name)
-	instance.Spec.PlanName = p.Name
+	instance.Spec.ExternalServicePlanName = p.Name
 	return nil
 }
 

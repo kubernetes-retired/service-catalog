@@ -483,6 +483,16 @@ func DeepCopy_v1alpha1_ServiceInstanceSpec(in interface{}, out interface{}, c *c
 		in := in.(*ServiceInstanceSpec)
 		out := out.(*ServiceInstanceSpec)
 		*out = *in
+		if in.ServiceClassRef != nil {
+			in, out := &in.ServiceClassRef, &out.ServiceClassRef
+			*out = new(v1.ObjectReference)
+			**out = **in
+		}
+		if in.ServicePlanRef != nil {
+			in, out := &in.ServicePlanRef, &out.ServicePlanRef
+			*out = new(v1.ObjectReference)
+			**out = **in
+		}
 		if in.Parameters != nil {
 			in, out := &in.Parameters, &out.Parameters
 			if newVal, err := c.DeepCopy(*in); err != nil {

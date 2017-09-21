@@ -136,7 +136,7 @@ func TestWithListFailure(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
@@ -155,8 +155,8 @@ func TestWithPlanWorks(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
-	instance.Spec.PlanName = "bar"
+	instance.Spec.ExternalServiceClassName = "foo"
+	instance.Spec.ExternalServicePlanName = "bar"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
@@ -177,7 +177,7 @@ func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
@@ -201,7 +201,7 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
@@ -212,7 +212,7 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 		t.Errorf("unexpected error %q returned from admission handler: %v", err, actions)
 	}
 	// Make sure the ServiceInstance has been mutated to include the service plan name
-	if instance.Spec.PlanName != "bar" {
+	if instance.Spec.ExternalServicePlanName != "bar" {
 		t.Errorf("PlanName was not modified for the default plan")
 	}
 }
@@ -230,7 +230,7 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {

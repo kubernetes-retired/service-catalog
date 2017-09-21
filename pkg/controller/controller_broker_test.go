@@ -26,7 +26,6 @@ import (
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -258,7 +257,6 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 3)
 
-	// TODO fix name munging after decision
 	tp := getTestServicePlan()
 	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
 	// 1 create for the plan on the class
@@ -308,7 +306,6 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 3)
 
-	// TODO fix name munging after decision
 	tp := getTestServicePlan()
 	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
 	// 1 create for the plan on the class

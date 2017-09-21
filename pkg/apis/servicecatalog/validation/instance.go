@@ -45,20 +45,20 @@ func internalValidateServiceInstance(instance *sc.ServiceInstance, create bool) 
 func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if "" == spec.ServiceClassName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassName"), "serviceClassName is required"))
+	if "" == spec.ExternalServiceClassName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalServiceClassName"), "externalServiceClassName is required"))
 	}
 
-	for _, msg := range validateServiceClassName(spec.ServiceClassName, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassName"), spec.ServiceClassName, msg))
+	for _, msg := range validateServiceClassName(spec.ExternalServiceClassName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalServiceClassName"), spec.ExternalServiceClassName, msg))
 	}
 
-	if "" == spec.PlanName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("planName"), "planName is required"))
+	if "" == spec.ExternalServicePlanName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalServicePlanName"), "externalServicePlanName is required"))
 	}
 
-	for _, msg := range validateServicePlanName(spec.PlanName, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("planName"), spec.PlanName, msg))
+	for _, msg := range validateServicePlanName(spec.ExternalServicePlanName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalServicePlanName"), spec.ExternalServicePlanName, msg))
 	}
 
 	if spec.ParametersFrom != nil {

@@ -138,11 +138,3 @@ func FetchObject(u string, object interface{}) error {
 	}
 	return nil
 }
-
-// ConstructPlanName is a tweak for plan names in the interim of
-// sig-service-catalog deciding on a final plan name. This function
-// also serves as a good point for future users to know exactly where
-// plan name needs to be modified.
-func ConstructPlanName(names ...string) string {
-	return strings.Join(names, "-")
-}

@@ -184,8 +184,8 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			"ServiceInstanceCredential \"%s/%s\" references a non-bindable ServiceClass (%q) and Plan (%q) combination",
 			binding.Namespace,
 			binding.Name,
-			instance.Spec.ServiceClassName,
-			instance.Spec.PlanName,
+			instance.Spec.ExternalServiceClassName,
+			instance.Spec.ExternalServicePlanName,
 		)
 		glog.Warning(s)
 		c.recorder.Event(binding, api.EventTypeWarning, errorNonbindableServiceClassReason, s)
