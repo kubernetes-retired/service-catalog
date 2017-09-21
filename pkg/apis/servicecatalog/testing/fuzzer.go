@@ -231,9 +231,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			if err != nil {
 				t.Errorf("Failed to create metadata object: %v", err)
 				return
-			}	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&serviceClass.ObjectMeta, true)
-	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
-
+			}
 			sc.Spec.ExternalMetadata = metadata
 		},
 		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
