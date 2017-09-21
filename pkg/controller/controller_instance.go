@@ -188,10 +188,10 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				errorDeprovisionCalledReason,
+				errorDeprovisionBlockedByCredentialsReason,
 				"Delete instance failed. "+s)
 			c.updateServiceInstanceStatus(toUpdate)
-			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionBlockedByCredentialsReason, s)
 			return nil
 		}
 	}
