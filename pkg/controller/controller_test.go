@@ -18,7 +18,6 @@ package controller
 
 import (
 	"encoding/json"
-	"net/http/httptest"
 	"reflect"
 	"runtime/debug"
 	"testing"
@@ -39,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 
-	fakebrokerserver "github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/fake/server"
 	"k8s.io/apimachinery/pkg/api/meta"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
@@ -1094,66 +1092,6 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	}
 
 	return fakeKubeClient, fakeCatalogClient, fakeOSBClient, testController.(*controller), serviceCatalogSharedInformers
-}
-
-type testControllerWithServiceBrokerServer struct {
-	FakeKubeClient             *clientgofake.Clientset
-	FakeCatalogClient          *servicecatalogclientset.Clientset
-	Controller                 *controller
-	Informers                  v1alpha1informers.Interface
-	ServiceBrokerServerHandler *fakebrokerserver.Handler
-	ServiceBrokerServer        *httptest.Server
-}
-
-func (t *testControllerWithServiceBrokerServer) Close() {
-	t.ServiceBrokerServer.Close()
-}
-
-func newTestControllerWithServiceBrokerServer(
-	brokerUsername,
-	brokerPassword string,
-) (*testControllerWithServiceBrokerServer, error) {
-	// create a fake kube client
-	fakeKubeClient := &clientgofake.Clientset{}
-	// create a fake sc client
-	fakeCatalogClient := &servicecatalogclientset.Clientset{}
-
-	brokerHandler := fakebrokerserver.NewHandler()
-	brokerServer := fakebrokerserver.Run(brokerHandler, brokerUsername, brokerPassword)
-
-	// create informers
-	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
-	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
-
-	fakeRecorder := record.NewFakeRecorder(5)
-
-	// create a test controller
-	testController, err := NewController(
-		fakeKubeClient,
-		fakeCatalogClient.ServicecatalogV1alpha1(),
-		serviceCatalogSharedInformers.ServiceBrokers(),
-		serviceCatalogSharedInformers.ServiceClasses(),
-		serviceCatalogSharedInformers.ServiceInstances(),
-		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
-		serviceCatalogSharedInformers.ServicePlans(),
-		osb.NewClient,
-		24*time.Hour,
-		osb.LatestAPIVersion().HeaderValue(),
-		fakeRecorder,
-		7*24*time.Hour,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &testControllerWithServiceBrokerServer{
-		FakeKubeClient:             fakeKubeClient,
-		FakeCatalogClient:          fakeCatalogClient,
-		Controller:                 testController.(*controller),
-		Informers:                  serviceCatalogSharedInformers,
-		ServiceBrokerServerHandler: brokerHandler,
-		ServiceBrokerServer:        brokerServer,
-	}, nil
 }
 
 func getRecordedEvents(testController *controller) []string {
