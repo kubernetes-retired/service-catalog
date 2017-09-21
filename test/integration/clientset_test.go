@@ -509,6 +509,7 @@ func TestServicePlanClient(t *testing.T) {
 		}
 	}
 	// TODO: Fix this for TPR.
+	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
 	//	for _, sType := range storageTypes {
 	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
 	//			t.Errorf("%s test failed", sType)
