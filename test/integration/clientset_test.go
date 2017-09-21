@@ -496,7 +496,6 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	return nil
 }
 
-/*
 // TestServicePlanClient exercises the ServicePlan client.
 func TestServicePlanClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
@@ -638,15 +637,20 @@ func TestServicePlanClient(t *testing.T) {
 			}
 		}
 	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
+	// TODO: Fix this for TPR.
+	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
+	//	for _, sType := range storageTypes {
+	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
+	//			t.Errorf("%s test failed", sType)
+	//		}
+	//	}
+	sType := server.StorageTypeEtcd
+	if !t.Run(sType.String(), rootTestFunc(sType)) {
+		t.Errorf("%s test failed", sType)
 	}
 }
 
 func testServicePlanClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	fmt.Printf("-----\nGetting a ServicePlan client\n")
 	servicePlanClient := client.Servicecatalog().ServicePlans()
 
 	bindable := true
@@ -663,11 +667,8 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		},
 	}
 
-	fmt.Printf("-----\nListing ServicePlans\n")
-
 	// start from scratch
 	servicePlans, err := servicePlanClient.List(metav1.ListOptions{})
-	fmt.Printf("-----\nDone listing ServicePlans\n")
 	if err != nil {
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
@@ -680,8 +681,8 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 			len(servicePlans.Items),
 		)
 	}
-	fmt.Printf("-----\nDone Creating ServicePlans\n")
-	servicePlanAtServer, err = servicePlanClient.Create(servicePlan)
+
+	servicePlanAtServer, err := servicePlanClient.Create(servicePlan)
 	if nil != err {
 		return fmt.Errorf("error creating the Serviceplan (%v)", servicePlan)
 	}
@@ -749,7 +750,6 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 
 	return nil
 }
-*/
 
 // TestInstanceClient exercises the Instance client.
 func TestInstanceClient(t *testing.T) {
