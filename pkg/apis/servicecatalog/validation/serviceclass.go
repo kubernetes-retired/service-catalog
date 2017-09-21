@@ -55,6 +55,10 @@ func validateExternalID(value string) []string {
 
 // ValidateServiceClass validates a ServiceClass and returns a list of errors.
 func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
+	return internalValidateServiceClass(serviceclass)
+}
+
+func internalValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs,
@@ -64,20 +68,27 @@ func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 			validateServiceClassName,
 			field.NewPath("metadata"))...)
 
-	if "" == serviceclass.ServiceBrokerName {
-		allErrs = append(allErrs, field.Required(field.NewPath("brokerName"), "brokerName is required"))
+	allErrs = append(allErrs, validateServiceClassSpec(&serviceclass.Spec, field.NewPath("Spec"), true)...)
+	return allErrs
+}
+
+func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, create bool) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if "" == spec.ServiceBrokerName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("brokerName"), "brokerName is required"))
 	}
 
-	if "" == serviceclass.ExternalID {
-		allErrs = append(allErrs, field.Required(field.NewPath("externalID"), "externalID is required"))
+	if "" == spec.ExternalID {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalID"), "externalID is required"))
 	}
 
-	if "" == serviceclass.Description {
-		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
+	if "" == spec.Description {
+		allErrs = append(allErrs, field.Required(fldPath.Child("description"), "description is required"))
 	}
 
-	for _, msg := range validateExternalID(serviceclass.ExternalID) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("externalID"), serviceclass.ExternalID, msg))
+	for _, msg := range validateExternalID(spec.ExternalID) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), spec.ExternalID, msg))
 	}
 
 	return allErrs
@@ -87,8 +98,8 @@ func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
 // ServiceClass to a newer ServiceClass is okay.
 func ValidateServiceClassUpdate(new *sc.ServiceClass, old *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateServiceClass(new)...)
-	allErrs = append(allErrs, ValidateServiceClass(old)...)
+	allErrs = append(allErrs, internalValidateServiceClass(new)...)
+	allErrs = append(allErrs, internalValidateServiceClass(old)...)
 
 	return allErrs
 }

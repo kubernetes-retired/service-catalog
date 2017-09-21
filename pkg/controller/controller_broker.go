@@ -368,7 +368,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 
 		// Delete ServiceClasses that are for THIS ServiceBroker.
 		for _, svcClass := range svcClasses {
-			if svcClass.ServiceBrokerName == broker.Name {
+			if svcClass.Spec.ServiceBrokerName == broker.Name {
 				// TODO : implement and switch to filter
 				// selectors. This is horrifyingly inefficient
 				// otherwise with lots of plans.
@@ -388,7 +388,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 				}
 				for _, plan := range plans {
 					// only process the plans this class owns
-					if svcClass.Name == plan.ServiceClassRef.Name {
+					if svcClass.Name == plan.Spec.ServiceClassRef.Name {
 						err := c.serviceCatalogClient.ServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
 						if err != nil && !errors.IsNotFound(err) {
 							s := fmt.Sprintf(
@@ -455,7 +455,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 // reconcileServiceClassFromServiceBrokerCatalog reconciles a ServiceClass after the
 // ServiceBroker's catalog has been re-listed.
 func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alpha1.ServiceBroker, serviceClass *v1alpha1.ServiceClass) error {
-	serviceClass.ServiceBrokerName = broker.Name
+	serviceClass.Spec.ServiceBrokerName = broker.Name
 
 	existingServiceClass, err := c.serviceClassLister.Get(serviceClass.Name)
 	if errors.IsNotFound(err) {
@@ -473,14 +473,14 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alp
 		return err
 	}
 
-	if existingServiceClass.ServiceBrokerName != broker.Name {
-		errMsg := fmt.Sprintf("ServiceClass %q for ServiceBroker %q already exists for Broker %q", serviceClass.Name, broker.Name, existingServiceClass.ServiceBrokerName)
+	if existingServiceClass.Spec.ServiceBrokerName != broker.Name {
+		errMsg := fmt.Sprintf("ServiceClass %q for ServiceBroker %q already exists for Broker %q", serviceClass.Name, broker.Name, existingServiceClass.Spec.ServiceBrokerName)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
-	if existingServiceClass.ExternalID != serviceClass.ExternalID {
-		errMsg := fmt.Sprintf("ServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Name, existingServiceClass.ExternalID, serviceClass.ExternalID)
+	if existingServiceClass.Spec.ExternalID != serviceClass.Spec.ExternalID {
+		errMsg := fmt.Sprintf("ServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Name, existingServiceClass.Spec.ExternalID, serviceClass.Spec.ExternalID)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -495,11 +495,11 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alp
 	}
 
 	toUpdate := clone.(*v1alpha1.ServiceClass)
-	toUpdate.Bindable = serviceClass.Bindable
-	toUpdate.PlanUpdatable = serviceClass.PlanUpdatable
-	toUpdate.Tags = serviceClass.Tags
-	toUpdate.Description = serviceClass.Description
-	toUpdate.Requires = serviceClass.Requires
+	toUpdate.Spec.Bindable = serviceClass.Spec.Bindable
+	toUpdate.Spec.PlanUpdatable = serviceClass.Spec.PlanUpdatable
+	toUpdate.Spec.Tags = serviceClass.Spec.Tags
+	toUpdate.Spec.Description = serviceClass.Spec.Description
+	toUpdate.Spec.Requires = serviceClass.Spec.Requires
 
 	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating ServiceClass %q from ServiceBroker %q: %v", serviceClass.Name, broker.Name, err)
@@ -527,8 +527,8 @@ func (c *controller) reconcileServicePlan(servicePlan *v1alpha1.ServicePlan) err
 		return err
 	}
 
-	if existingServicePlan.ExternalID != servicePlan.ExternalID {
-		errMsg := fmt.Sprintf("ServicePlan %q already exists with OSB guid %q, received different guid %q", servicePlan.Name, existingServicePlan.ExternalID, servicePlan.ExternalID)
+	if existingServicePlan.Spec.ExternalID != servicePlan.Spec.ExternalID {
+		errMsg := fmt.Sprintf("ServicePlan %q already exists with OSB guid %q, received different guid %q", servicePlan.Name, existingServicePlan.Spec.ExternalID, servicePlan.Spec.ExternalID)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
@@ -543,12 +543,12 @@ func (c *controller) reconcileServicePlan(servicePlan *v1alpha1.ServicePlan) err
 	}
 
 	toUpdate := clone.(*v1alpha1.ServicePlan)
-	toUpdate.Description = servicePlan.Description
-	toUpdate.Bindable = servicePlan.Bindable
-	toUpdate.Free = servicePlan.Free
-	toUpdate.ServiceInstanceCreateParameterSchema = servicePlan.ServiceInstanceCreateParameterSchema
-	toUpdate.ServiceInstanceUpdateParameterSchema = servicePlan.ServiceInstanceUpdateParameterSchema
-	toUpdate.ServiceInstanceCredentialCreateParameterSchema = servicePlan.ServiceInstanceCredentialCreateParameterSchema
+	toUpdate.Spec.Description = servicePlan.Spec.Description
+	toUpdate.Spec.Bindable = servicePlan.Spec.Bindable
+	toUpdate.Spec.Free = servicePlan.Spec.Free
+	toUpdate.Spec.ServiceInstanceCreateParameterSchema = servicePlan.Spec.ServiceInstanceCreateParameterSchema
+	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
+	toUpdate.Spec.ServiceInstanceCredentialCreateParameterSchema = servicePlan.Spec.ServiceInstanceCredentialCreateParameterSchema
 
 	if _, err := c.serviceCatalogClient.ServicePlans().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating ServicePlan %q: %v", servicePlan.Name, err)

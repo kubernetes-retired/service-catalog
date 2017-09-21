@@ -89,8 +89,13 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
 func toSelectableFields(serviceClass *servicecatalog.ServiceClass) fields.Set {
-	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&serviceClass.ObjectMeta, true)
-	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
+	// The purpose of allocation with a given number of elements is to reduce
+	// amount of allocations needed to create the fields.Set. If you add any
+	// field here or the number of object-meta related fields changes, this should
+	// be adjusted.
+	scSpecificFieldsSet := make(fields.Set, 1)
+	scSpecificFieldsSet["spec.externalName"] = serviceClass.Spec.ExternalName
+	return generic.AddObjectMetaFieldsSet(scSpecificFieldsSet, &serviceClass.ObjectMeta, true)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.

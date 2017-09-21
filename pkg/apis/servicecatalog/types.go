@@ -217,6 +217,11 @@ type ServiceClass struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
+	Spec ServiceClassSpec
+}
+
+// ServiceClassSpec represents details about a ServicePlan
+type ServiceClassSpec struct {
 	// ServiceBrokerName is the reference to the Broker that provides this
 	// ServiceClass.
 	//
@@ -234,6 +239,10 @@ type ServiceClass struct {
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ServiceClass may change ServicePlans after being provisioned.
 	PlanUpdatable bool
+
+	// ExternalName is the name of this object that the Service Broker
+	// exposed this Service Class as. Mutable.
+	ExternalName string
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
@@ -279,6 +288,15 @@ type ServicePlanList struct {
 type ServicePlan struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
+
+	Spec ServicePlanSpec
+}
+
+// ServicePlanSpec represents details about the ServicePlan
+type ServicePlanSpec struct {
+	// ExternalName is the name of this object that the Service Broker
+	// exposed this Service Plan as. Mutable.
+	ExternalName string
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
