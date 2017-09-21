@@ -496,6 +496,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	return nil
 }
 
+/*
 // TestServicePlanClient exercises the ServicePlan client.
 func TestServicePlanClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
@@ -652,13 +653,13 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	servicePlan := &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServicePlanSpec{
-			//			Bindable:     &bindable,
+			Bindable:     &bindable,
 			ExternalName: name,
 			ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 			Description:  "test description",
-			//			ServiceClassRef: v1.LocalObjectReference{
-			//				Name: scName,
-			//			},
+			ServiceClassRef: v1.LocalObjectReference{
+				Name: "test-serviceclass",
+			},
 		},
 	}
 
@@ -679,9 +680,8 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 			len(servicePlans.Items),
 		)
 	}
-
 	fmt.Printf("-----\nDone Creating ServicePlans\n")
-	servicePlanAtServer, err := servicePlanClient.Create(servicePlan)
+	servicePlanAtServer, err = servicePlanClient.Create(servicePlan)
 	if nil != err {
 		return fmt.Errorf("error creating the Serviceplan (%v)", servicePlan)
 	}
@@ -749,6 +749,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 
 	return nil
 }
+*/
 
 // TestInstanceClient exercises the Instance client.
 func TestInstanceClient(t *testing.T) {
