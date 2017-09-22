@@ -71,6 +71,24 @@ func TestValidateServicePlan(t *testing.T) {
 			valid: false,
 		},
 		{
+			name: "bad externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = "X"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
 			name: "missing external id",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()

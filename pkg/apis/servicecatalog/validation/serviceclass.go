@@ -68,7 +68,7 @@ func internalValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList
 			validateServiceClassName,
 			field.NewPath("metadata"))...)
 
-	allErrs = append(allErrs, validateServiceClassSpec(&serviceclass.Spec, field.NewPath("Spec"), true)...)
+	allErrs = append(allErrs, validateServiceClassSpec(&serviceclass.Spec, field.NewPath("spec"), true)...)
 	return allErrs
 }
 
@@ -87,6 +87,9 @@ func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, cr
 		allErrs = append(allErrs, field.Required(fldPath.Child("description"), "description is required"))
 	}
 
+	for _, msg := range validateServiceClassName(spec.ExternalName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalName"), spec.ExternalName, msg))
+	}
 	for _, msg := range validateExternalID(spec.ExternalID) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), spec.ExternalID, msg))
 	}

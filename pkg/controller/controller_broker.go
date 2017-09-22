@@ -367,6 +367,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		}
 
 		// Delete ServiceClasses that are for THIS ServiceBroker.
+		// TODO: Change this to use field selectors.
 		for _, svcClass := range svcClasses {
 			if svcClass.Spec.ServiceBrokerName == broker.Name {
 				// TODO : implement and switch to filter

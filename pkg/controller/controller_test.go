@@ -384,7 +384,6 @@ func getTestServicePlan() *v1alpha1.ServicePlan {
 			ExternalID:   planGUID,
 			ExternalName: testServicePlanName,
 			Bindable:     truePtr(),
-			// ref to serviceclass
 		},
 	}
 }

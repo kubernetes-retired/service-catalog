@@ -110,7 +110,7 @@ func validateServiceInstanceStatus(spec *sc.ServiceInstanceStatus, fldPath *fiel
 func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	errors := field.ErrorList{}
 	if old.Status.AsyncOpInProgress {
-		errors = append(errors, field.Forbidden(field.NewPath("Spec"), "Another operation for this service instance is in progress"))
+		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another operation for this service instance is in progress"))
 	}
 	return errors
 }

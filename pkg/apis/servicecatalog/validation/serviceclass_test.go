@@ -104,6 +104,24 @@ func TestValidateServiceClass(t *testing.T) {
 			}(),
 			valid: false,
 		},
+		{
+			name: "invalid serviceClass - invalid externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "****"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = ""
+				return s
+			}(),
+			valid: false,
+		},
 	}
 
 	for _, tc := range cases {
