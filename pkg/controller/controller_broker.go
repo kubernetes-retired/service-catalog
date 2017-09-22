@@ -86,6 +86,7 @@ const (
 	errorProvisionCallFailedReason             string = "ProvisionCallFailed"
 	errorErrorCallingProvisionReason           string = "ErrorCallingProvision"
 	errorDeprovisionCalledReason               string = "DeprovisionCallFailed"
+	errorDeprovisionBlockedByCredentialsReason string = "DeprovisionBlockedByExistingCredentials"
 	errorBindCallReason                        string = "BindCallFailed"
 	errorInjectingBindResultReason             string = "ErrorInjectingBindResult"
 	errorEjectingBindReason                    string = "ErrorEjectingServiceInstanceCredential"
