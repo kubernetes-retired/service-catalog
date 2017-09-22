@@ -29,10 +29,13 @@ func validServiceClass() *servicecatalog.ServiceClass {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-serviceclass",
 		},
-		Bindable:          true,
-		ServiceBrokerName: "test-broker",
-		ExternalID:        "1234-4354a-49b",
-		Description:       "service description",
+		Spec: servicecatalog.ServiceClassSpec{
+			Bindable:          true,
+			ServiceBrokerName: "test-broker",
+			ExternalName:      "test-serviceclass",
+			ExternalID:        "1234-4354a-49b",
+			Description:       "service description",
+		},
 	}
 }
 
@@ -51,7 +54,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "valid serviceClass - uppercase in GUID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.ExternalID = "40D-0983-1b89"
+				s.Spec.ExternalID = "40D-0983-1b89"
 				return s
 			}(),
 			valid: true,
@@ -60,7 +63,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "valid serviceClass - period in GUID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a.plan-name"
+				s.Spec.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a.plan-name"
 				return s
 			}(),
 			valid: true,
@@ -78,7 +81,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - missing guid",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.ExternalID = ""
+				s.Spec.ExternalID = ""
 				return s
 			}(),
 			valid: false,
@@ -87,7 +90,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - invalid guid",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.ExternalID = "1234-4354a\\%-49b"
+				s.Spec.ExternalID = "1234-4354a\\%-49b"
 				return s
 			}(),
 			valid: false,
@@ -96,7 +99,25 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - missing description",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.Description = ""
+				s.Spec.Description = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - invalid externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "****"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = ""
 				return s
 			}(),
 			valid: false,

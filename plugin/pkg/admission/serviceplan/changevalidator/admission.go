@@ -82,7 +82,7 @@ func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
 		return admission.NewForbidden(a, err)
 	}
 
-	if sc.PlanUpdatable {
+	if sc.Spec.PlanUpdatable {
 		return nil
 	}
 

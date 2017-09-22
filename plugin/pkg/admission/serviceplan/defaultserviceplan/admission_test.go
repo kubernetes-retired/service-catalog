@@ -98,12 +98,18 @@ func newServiceClass(name string) *servicecatalog.ServiceClass {
 func newServicePlans(count uint) []*servicecatalog.ServicePlan {
 	sp1 := &servicecatalog.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: "bar"},
-		ExternalID: "12345",
+		Spec: servicecatalog.ServicePlanSpec{
+			ExternalName: "bar",
+			ExternalID:   "12345",
+		},
 	}
 
 	sp2 := &servicecatalog.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: "baz"},
-		ExternalID: "23456",
+		Spec: servicecatalog.ServicePlanSpec{
+			ExternalName: "baz",
+			ExternalID:   "23456",
+		},
 	}
 
 	if 0 == count {

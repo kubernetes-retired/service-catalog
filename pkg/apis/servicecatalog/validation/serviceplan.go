@@ -46,6 +46,10 @@ func validateServicePlanName(value string, prefix bool) []string {
 
 // ValidateServicePlan validates a ServicePlan and returns a list of errors.
 func ValidateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
+	return internalValidateServicePlan(serviceplan)
+}
+
+func internalValidateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs,
@@ -55,24 +59,34 @@ func ValidateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
 			validateServicePlanName,
 			field.NewPath("metadata"))...)
 
-	if "" == serviceplan.ExternalID {
-		allErrs = append(allErrs, field.Required(field.NewPath("externalID"), "externalID is required"))
+	allErrs = append(allErrs, validateServicePlanSpec(&serviceplan.Spec, field.NewPath("spec"))...)
+	return allErrs
+}
+
+func validateServicePlanSpec(spec *sc.ServicePlanSpec, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if "" == spec.ExternalID {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalID"), "externalID is required"))
 	}
 
-	if "" == serviceplan.Description {
-		allErrs = append(allErrs, field.Required(field.NewPath("description"), "description is required"))
+	if "" == spec.Description {
+		allErrs = append(allErrs, field.Required(fldPath.Child("description"), "description is required"))
 	}
 
-	if "" == serviceplan.ServiceClassRef.Name {
-		allErrs = append(allErrs, field.Required(field.NewPath("serviceClassRef"), "an owning serviceclass is required"))
+	if "" == spec.ServiceClassRef.Name {
+		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassRef"), "an owning serviceclass is required"))
 	}
 
-	for _, msg := range validateExternalID(serviceplan.ExternalID) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("externalID"), serviceplan.ExternalID, msg))
+	for _, msg := range validateServicePlanName(spec.ExternalName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalName"), spec.ExternalName, msg))
 	}
 
-	for _, msg := range validateServiceClassName(serviceplan.ServiceClassRef.Name, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("serviceClassRef", "name"), serviceplan.ServiceClassRef.Name, msg))
+	for _, msg := range validateExternalID(spec.ExternalID) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), spec.ExternalID, msg))
+	}
+
+	for _, msg := range validateServiceClassName(spec.ServiceClassRef.Name, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassRef", "name"), spec.ServiceClassRef.Name, msg))
 	}
 
 	return allErrs
@@ -82,10 +96,10 @@ func ValidateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
 // ServicePlan to a newer ServicePlan is okay.
 func ValidateServicePlanUpdate(new *sc.ServicePlan, old *sc.ServicePlan) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, ValidateServicePlan(new)...)
-	allErrs = append(allErrs, ValidateServicePlan(old)...)
-	if new.ExternalID != old.ExternalID {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("externalID"), new.ExternalID, "externalID cannot change when updating a ServicePlan"))
+	allErrs = append(allErrs, internalValidateServicePlan(new)...)
+	allErrs = append(allErrs, internalValidateServicePlan(old)...)
+	if new.Spec.ExternalID != old.Spec.ExternalID {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("externalID"), new.Spec.ExternalID, "externalID cannot change when updating a ServicePlan"))
 	}
 	return allErrs
 }

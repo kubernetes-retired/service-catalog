@@ -234,8 +234,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 	request := &osb.DeprovisionRequest{
 		InstanceID:        instance.Spec.ExternalID,
-		ServiceID:         serviceClass.ExternalID,
-		PlanID:            servicePlan.ExternalID,
+		ServiceID:         serviceClass.Spec.ExternalID,
+		PlanID:            servicePlan.Spec.ExternalID,
 		AcceptsIncomplete: true,
 	}
 
@@ -535,8 +535,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	request := &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
 		InstanceID:        instance.Spec.ExternalID,
-		ServiceID:         serviceClass.ExternalID,
-		PlanID:            servicePlan.ExternalID,
+		ServiceID:         serviceClass.Spec.ExternalID,
+		PlanID:            servicePlan.Spec.ExternalID,
 		Parameters:        parameters,
 		OrganizationGUID:  string(ns.UID),
 		SpaceGUID:         string(ns.UID),
@@ -746,8 +746,8 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 
 	request := &osb.LastOperationRequest{
 		InstanceID: instance.Spec.ExternalID,
-		ServiceID:  &serviceClass.ExternalID,
-		PlanID:     &servicePlan.ExternalID,
+		ServiceID:  &serviceClass.Spec.ExternalID,
+		PlanID:     &servicePlan.Spec.ExternalID,
 	}
 	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
 		key := osb.OperationKey(*instance.Status.LastOperation)

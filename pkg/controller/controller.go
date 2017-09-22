@@ -262,9 +262,9 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
-	broker, err := c.brokerLister.Get(serviceClass.ServiceBrokerName)
+	broker, err := c.brokerLister.Get(serviceClass.Spec.ServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.ServiceBrokerName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.Spec.ServiceBrokerName)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
@@ -337,9 +337,9 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
-	broker, err := c.brokerLister.Get(serviceClass.ServiceBrokerName)
+	broker, err := c.brokerLister.Get(serviceClass.Spec.ServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceBroker %q", binding.Namespace, binding.Name, serviceClass.ServiceBrokerName)
+		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceBroker %q", binding.Namespace, binding.Name, serviceClass.Spec.ServiceBrokerName)
 		glog.Warning(s)
 		c.updateServiceInstanceCredentialCondition(
 			binding,
@@ -473,12 +473,15 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, []*v1alp
 	servicePlans := []*v1alpha1.ServicePlan{}
 	for i, svc := range in.Services {
 		serviceClasses[i] = &v1alpha1.ServiceClass{
-			Bindable:      svc.Bindable,
-			PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
-			ExternalID:    svc.ID,
-			Tags:          svc.Tags,
-			Description:   svc.Description,
-			Requires:      svc.Requires,
+			Spec: v1alpha1.ServiceClassSpec{
+				Bindable:      svc.Bindable,
+				PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
+				ExternalID:    svc.ID,
+				ExternalName:  svc.Name,
+				Tags:          svc.Tags,
+				Description:   svc.Description,
+				Requires:      svc.Requires,
+			},
 		}
 
 		if svc.Metadata != nil {
@@ -488,7 +491,7 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, []*v1alp
 				glog.Error(err)
 				return nil, nil, err
 			}
-			serviceClasses[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+			serviceClasses[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
 		serviceClasses[i].SetName(svc.Name)
@@ -510,16 +513,19 @@ func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1
 	servicePlans := make([]*v1alpha1.ServicePlan, len(plans))
 	for i, plan := range plans {
 		servicePlans[i] = &v1alpha1.ServicePlan{
-			ExternalID:      plan.ID,
-			Free:            (plan.Free != nil && *plan.Free),
-			Description:     plan.Description,
-			ServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassName},
+			Spec: v1alpha1.ServicePlanSpec{
+				ExternalName:    plan.Name,
+				ExternalID:      plan.ID,
+				Free:            (plan.Free != nil && *plan.Free),
+				Description:     plan.Description,
+				ServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassName},
+			},
 		}
 		servicePlans[i].SetName(util.ConstructPlanName(plan.Name, plan.ID))
 
 		if plan.Bindable != nil {
 			b := *plan.Bindable
-			servicePlans[i].Bindable = &b
+			servicePlans[i].Spec.Bindable = &b
 		}
 
 		if plan.Metadata != nil {
@@ -529,7 +535,7 @@ func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1
 				glog.Error(err)
 				return nil, err
 			}
-			servicePlans[i].ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+			servicePlans[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
 		if schemas := plan.AlphaParameterSchemas; schemas != nil {
@@ -541,7 +547,7 @@ func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1
 						glog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
@@ -550,7 +556,7 @@ func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1
 						glog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
@@ -561,7 +567,7 @@ func convertServicePlans(plans []osb.Plan, serviceClassName string) ([]*v1alpha1
 						glog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].ServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.ServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 		}

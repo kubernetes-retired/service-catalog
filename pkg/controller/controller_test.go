@@ -366,38 +366,49 @@ func getTestServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1a
 // a bindable service class wired to the result of getTestServiceBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
-		ObjectMeta:        metav1.ObjectMeta{Name: testServiceClassName},
-		ServiceBrokerName: testServiceBrokerName,
-		Description:       "a test service",
-		ExternalID:        serviceClassGUID,
-		Bindable:          true,
+		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
+		Spec: v1alpha1.ServiceClassSpec{
+			ServiceBrokerName: testServiceBrokerName,
+			Description:       "a test service",
+			ExternalName:      testServiceClassName,
+			ExternalID:        serviceClassGUID,
+			Bindable:          true,
+		},
 	}
 }
 
 func getTestServicePlan() *v1alpha1.ServicePlan {
 	return &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testServicePlanName},
-		ExternalID: planGUID,
-		Bindable:   truePtr(),
-		// ref to serviceclass
+		Spec: v1alpha1.ServicePlanSpec{
+			ExternalID:   planGUID,
+			ExternalName: testServicePlanName,
+			Bindable:     truePtr(),
+		},
 	}
 }
 
 func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
 	return &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableServicePlanName},
-		ExternalID: nonbindablePlanGUID,
-		Bindable:   falsePtr(),
+		Spec: v1alpha1.ServicePlanSpec{
+			ExternalName: testNonbindableServicePlanName,
+			ExternalID:   nonbindablePlanGUID,
+			Bindable:     falsePtr(),
+		},
 	}
 }
 
 // an unbindable service class wired to the result of getTestServiceBroker()
 func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
-		ObjectMeta:        metav1.ObjectMeta{Name: testNonbindableServiceClassName},
-		ServiceBrokerName: testServiceBrokerName,
-		ExternalID:        nonbindableServiceClassGUID,
-		Bindable:          false,
+		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableServiceClassName},
+		Spec: v1alpha1.ServiceClassSpec{
+			ServiceBrokerName: testServiceBrokerName,
+			ExternalName:      testNonbindableServiceClassName,
+			ExternalID:        nonbindableServiceClassGUID,
+			Bindable:          false,
+		},
 	}
 }
 
@@ -635,12 +646,12 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	}
 
 	plan := servicePlans[0]
-	if plan.ServiceInstanceCreateParameterSchema == nil {
+	if plan.Spec.ServiceInstanceCreateParameterSchema == nil {
 		t.Fatalf("Expected plan.ServiceInstanceCreateParameterSchema to be set, but was nil")
 	}
 
 	cSchema := make(map[string]interface{})
-	if err := json.Unmarshal(plan.ServiceInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
+	if err := json.Unmarshal(plan.Spec.ServiceInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
 		schema := make(map[string]interface{})
 		if err := json.Unmarshal([]byte(instanceParameterSchemaBytes), &schema); err != nil {
 			t.Fatalf("Error unmarshalling schema bytes: %v", err)
@@ -651,21 +662,21 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 		}
 	}
 
-	if plan.ServiceInstanceUpdateParameterSchema == nil {
+	if plan.Spec.ServiceInstanceUpdateParameterSchema == nil {
 		t.Fatalf("Expected plan.ServiceInstanceUpdateParameterSchema to be set, but was nil")
 	}
 	m := make(map[string]string)
-	if err := json.Unmarshal(plan.ServiceInstanceUpdateParameterSchema.Raw, &m); err == nil {
+	if err := json.Unmarshal(plan.Spec.ServiceInstanceUpdateParameterSchema.Raw, &m); err == nil {
 		if e, a := "zap", m["baz"]; e != a {
 			t.Fatalf("Unexpected value of alphaInstanceUpdateParameterSchema; expected %v, got %v", e, a)
 		}
 	}
 
-	if plan.ServiceInstanceCredentialCreateParameterSchema == nil {
+	if plan.Spec.ServiceInstanceCredentialCreateParameterSchema == nil {
 		t.Fatalf("Expected plan.ServiceInstanceCredentialCreateParameterSchema to be set, but was nil")
 	}
 	m = make(map[string]string)
-	if err := json.Unmarshal(plan.ServiceInstanceCredentialCreateParameterSchema.Raw, &m); err == nil {
+	if err := json.Unmarshal(plan.Spec.ServiceInstanceCredentialCreateParameterSchema.Raw, &m); err == nil {
 		if e, a := "blu", m["zoo"]; e != a {
 			t.Fatalf("Unexpected value of alphaServiceInstanceCredentialCreateParameterSchema; expected %v, got %v", e, a)
 		}
@@ -676,8 +687,8 @@ func checkPlan(plan *v1alpha1.ServicePlan, planName, planDescription string, t *
 	if plan.Name != planName {
 		t.Errorf("Expected plan name to be %q, but was: %q", planName, plan.Name)
 	}
-	if plan.Description != planDescription {
-		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Description)
+	if plan.Spec.Description != planDescription {
+		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Spec.Description)
 	}
 }
 
@@ -883,13 +894,19 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "bindable",
 			},
-			Bindable: true,
+			Spec: v1alpha1.ServiceClassSpec{
+				ExternalName: "bindable",
+				Bindable:     true,
+			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "unbindable",
 			},
-			Bindable: false,
+			Spec: v1alpha1.ServiceClassSpec{
+				ExternalName: "unbindable",
+				Bindable:     false,
+			},
 		},
 	}
 
@@ -898,41 +915,52 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: util.ConstructPlanName("bindable-bindable", "s1_plan1_id"),
 			},
-			ExternalID: "s1_plan1_id",
-			Bindable:   nil,
-			ServiceClassRef: v1.LocalObjectReference{
-				Name: "bindable",
+			Spec: v1alpha1.ServicePlanSpec{
+				ExternalID:   "s1_plan1_id",
+				ExternalName: "bindable-bindable",
+				Bindable:     nil,
+				ServiceClassRef: v1.LocalObjectReference{
+					Name: "bindable",
+				},
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: util.ConstructPlanName("bindable-unbindable", "s1_plan2_id"),
 			},
-			ExternalID: "s1_plan2_id",
-			Bindable:   falsePtr(),
-			ServiceClassRef: v1.LocalObjectReference{
-				Name: "bindable",
+			Spec: v1alpha1.ServicePlanSpec{
+				ExternalName: "bindable-unbindable",
+				ExternalID:   "s1_plan2_id",
+				Bindable:     falsePtr(),
+				ServiceClassRef: v1.LocalObjectReference{
+					Name: "bindable",
+				},
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: util.ConstructPlanName("unbindable-unbindable", "s2_plan1_id"),
 			},
-			ExternalID: "s2_plan1_id",
-			Bindable:   nil,
-			ServiceClassRef: v1.LocalObjectReference{
-				Name: "unbindable",
+			Spec: v1alpha1.ServicePlanSpec{
+				ExternalName: "unbindable-unbindable",
+				ExternalID:   "s2_plan1_id",
+				Bindable:     nil,
+				ServiceClassRef: v1.LocalObjectReference{
+					Name: "unbindable",
+				},
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-
 				Name: util.ConstructPlanName("unbindable-bindable", "s2_plan2_id"),
 			},
-			ExternalID: "s2_plan2_id",
-			Bindable:   truePtr(),
-			ServiceClassRef: v1.LocalObjectReference{
-				Name: "unbindable",
+			Spec: v1alpha1.ServicePlanSpec{
+				ExternalName: "unbindable-bindable",
+				ExternalID:   "s2_plan2_id",
+				Bindable:     truePtr(),
+				ServiceClassRef: v1.LocalObjectReference{
+					Name: "unbindable",
+				},
 			},
 		},
 	}
@@ -979,13 +1007,15 @@ func TestIsServiceBrokerReady(t *testing.T) {
 func TestIsPlanBindable(t *testing.T) {
 	serviceClass := func(bindable bool) *v1alpha1.ServiceClass {
 		serviceClass := getTestServiceClass()
-		serviceClass.Bindable = bindable
+		serviceClass.Spec.Bindable = bindable
 		return serviceClass
 	}
 
 	servicePlan := func(bindable *bool) *v1alpha1.ServicePlan {
 		return &v1alpha1.ServicePlan{
-			Bindable: bindable,
+			Spec: v1alpha1.ServicePlanSpec{
+				Bindable: bindable,
+			},
 		}
 	}
 

@@ -214,12 +214,12 @@ func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	assertNumberOfActions(t, actions, 4)
 
 	tp := getTestServicePlan()
-	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
+	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.Spec.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 
@@ -242,7 +242,7 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
 	testServiceClass := getTestServiceClass()
-	testServiceClass.ExternalID = "notTheSame"
+	testServiceClass.Spec.ExternalID = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlanNonbindable())
@@ -260,12 +260,12 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testin
 
 	// TODO fix name munging after decision
 	tp := getTestServicePlan()
-	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
+	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.Spec.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 
@@ -292,7 +292,7 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
 	testServiceClass := getTestServiceClass()
-	testServiceClass.ServiceBrokerName = "notTheSame"
+	testServiceClass.Spec.ServiceBrokerName = "notTheSame"
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlanNonbindable())
@@ -310,12 +310,12 @@ func TestReconcileServiceBrokerExistingServiceClassDifferentBroker(t *testing.T)
 
 	// TODO fix name munging after decision
 	tp := getTestServicePlan()
-	tp.Name = util.ConstructPlanName(tp.Name, tp.ExternalID)
+	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.ExternalID)
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.Spec.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 
@@ -568,7 +568,7 @@ func testReconcileServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.Service
 		Response: &osb.CatalogResponse{
 			Services: []osb.Service{
 				{
-					ID:   testServiceClass.ExternalID,
+					ID:   testServiceClass.Spec.ExternalID,
 					Name: testServiceClass.Name,
 				},
 			},

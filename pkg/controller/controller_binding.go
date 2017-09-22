@@ -253,8 +253,8 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		request := &osb.BindRequest{
 			BindingID:    binding.Spec.ExternalID,
 			InstanceID:   instance.Spec.ExternalID,
-			ServiceID:    serviceClass.ExternalID,
-			PlanID:       servicePlan.ExternalID,
+			ServiceID:    serviceClass.Spec.ExternalID,
+			PlanID:       servicePlan.Spec.ExternalID,
 			AppGUID:      &appGUID,
 			Parameters:   parameters,
 			BindResource: &osb.BindResource{AppGUID: &appGUID},
@@ -435,8 +435,8 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		unbindRequest := &osb.UnbindRequest{
 			BindingID:  binding.Spec.ExternalID,
 			InstanceID: instance.Spec.ExternalID,
-			ServiceID:  serviceClass.ExternalID,
-			PlanID:     servicePlan.ExternalID,
+			ServiceID:  serviceClass.Spec.ExternalID,
+			PlanID:     servicePlan.Spec.ExternalID,
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
@@ -559,11 +559,11 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 // Note: enforcing that the plan belongs to the given service class is the
 // responsibility of the caller.
 func isPlanBindable(serviceClass *v1alpha1.ServiceClass, plan *v1alpha1.ServicePlan) bool {
-	if plan.Bindable != nil {
-		return *plan.Bindable
+	if plan.Spec.Bindable != nil {
+		return *plan.Spec.Bindable
 	}
 
-	return serviceClass.Bindable
+	return serviceClass.Spec.Bindable
 }
 
 func (c *controller) injectServiceInstanceCredential(binding *v1alpha1.ServiceInstanceCredential, credentials map[string]interface{}) error {

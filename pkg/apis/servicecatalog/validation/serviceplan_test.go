@@ -30,10 +30,13 @@ func validServicePlan() *servicecatalog.ServicePlan {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-plan",
 		},
-		ExternalID:  "40d-0983-1b89",
-		Description: "plan description",
-		ServiceClassRef: v1.LocalObjectReference{
-			Name: "test-service-class",
+		Spec: servicecatalog.ServicePlanSpec{
+			ExternalName: "test-plan",
+			ExternalID:   "40d-0983-1b89",
+			Description:  "plan description",
+			ServiceClassRef: v1.LocalObjectReference{
+				Name: "test-service-class",
+			},
 		},
 	}
 }
@@ -68,10 +71,28 @@ func TestValidateServicePlan(t *testing.T) {
 			valid: false,
 		},
 		{
+			name: "bad externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = "X"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
 			name: "missing external id",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.ExternalID = ""
+				s.Spec.ExternalID = ""
 				return s
 			}(),
 			valid: false,
@@ -80,7 +101,7 @@ func TestValidateServicePlan(t *testing.T) {
 			name: "external id too long",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.ExternalID = "1234567890123456789012345678901234567890123456789012345678901234"
+				s.Spec.ExternalID = "1234567890123456789012345678901234567890123456789012345678901234"
 				return s
 			}(),
 			valid: false,
@@ -89,7 +110,7 @@ func TestValidateServicePlan(t *testing.T) {
 			name: "missing description",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.Description = ""
+				s.Spec.Description = ""
 				return s
 			}(),
 			valid: false,
@@ -98,7 +119,7 @@ func TestValidateServicePlan(t *testing.T) {
 			name: "missing serviceclass reference",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.ServiceClassRef.Name = ""
+				s.Spec.ServiceClassRef.Name = ""
 				return s
 			}(),
 			valid: false,
@@ -107,7 +128,7 @@ func TestValidateServicePlan(t *testing.T) {
 			name: "bad serviceclass reference name",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.ServiceClassRef.Name = "%"
+				s.Spec.ServiceClassRef.Name = "%"
 				return s
 			}(),
 			valid: false,
@@ -146,7 +167,7 @@ func TestValidateServicePlanUpdate(t *testing.T) {
 			old:  validServicePlan(),
 			new: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.Description = "a new description cause it changed"
+				s.Spec.Description = "a new description cause it changed"
 				return s
 			}(),
 			valid: true,
@@ -156,7 +177,7 @@ func TestValidateServicePlanUpdate(t *testing.T) {
 			old:  validServicePlan(),
 			new: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.ExternalID = "something-else"
+				s.Spec.ExternalID = "something-else"
 				return s
 			}(),
 			valid: false,

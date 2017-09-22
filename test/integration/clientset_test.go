@@ -403,11 +403,14 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClassClient := client.Servicecatalog().ServiceClasses()
 
 	serviceClass := &v1alpha1.ServiceClass{
-		ObjectMeta:        metav1.ObjectMeta{Name: name},
-		ServiceBrokerName: "test-broker",
-		Bindable:          true,
-		ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-		Description:       "test description",
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.ServiceClassSpec{
+			ServiceBrokerName: "test-broker",
+			Bindable:          true,
+			ExternalName:      name,
+			ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:       "test description",
+		},
 	}
 
 	// start from scratch
@@ -467,7 +470,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		)
 	}
 
-	serviceClassAtServer.Bindable = false
+	serviceClassAtServer.Spec.Bindable = false
 	_, err = serviceClassClient.Update(serviceClassAtServer)
 	if err != nil {
 		return fmt.Errorf("Error updating serviceClass: %v", err)
@@ -476,7 +479,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	if err != nil {
 		return fmt.Errorf("Error getting serviceClass: %v", err)
 	}
-	if updated.Bindable {
+	if updated.Spec.Bindable {
 		return errors.New("Failed to update service class")
 	}
 
@@ -526,12 +529,15 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 
 	bindable := true
 	servicePlan := &v1alpha1.ServicePlan{
-		ObjectMeta:  metav1.ObjectMeta{Name: name},
-		Bindable:    &bindable,
-		ExternalID:  "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-		Description: "test description",
-		ServiceClassRef: v1.LocalObjectReference{
-			Name: "test-serviceclass",
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.ServicePlanSpec{
+			Bindable:     &bindable,
+			ExternalName: name,
+			ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:  "test description",
+			ServiceClassRef: v1.LocalObjectReference{
+				Name: "test-serviceclass",
+			},
 		},
 	}
 
@@ -593,7 +599,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	}
 
 	bindable = false
-	servicePlanAtServer.Bindable = &bindable
+	servicePlanAtServer.Spec.Bindable = &bindable
 	_, err = servicePlanClient.Update(servicePlanAtServer)
 	if err != nil {
 		return fmt.Errorf("Error updating servicePlan: %v", err)
@@ -602,7 +608,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	if err != nil {
 		return fmt.Errorf("Error getting servicePlan: %v", err)
 	}
-	if *updated.Bindable {
+	if *updated.Spec.Bindable {
 		return errors.New("Failed to update service class")
 	}
 
