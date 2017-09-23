@@ -392,10 +392,21 @@ func TestServiceClassClient(t *testing.T) {
 			}
 		}
 	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
+	// TODO: Fix this for TPR.
+	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
+	//	for _, sType := range storageTypes {
+	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
+	//			t.Errorf("%s test failed", sType)
+	//		}
+	//	}
+	//	for _, sType := range storageTypes {
+	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
+	//			t.Errorf("%s test failed", sType)
+	//		}
+	//	}
+	sType := server.StorageTypeEtcd
+	if !t.Run(sType.String(), rootTestFunc(sType)) {
+		t.Errorf("%s test failed", sType)
 	}
 }
 
@@ -483,6 +494,64 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return errors.New("Failed to update service class")
 	}
 
+	// Ok, let's verify the field selectors
+	sc2Name := name + "2"
+	sc2ID := "someotheridhere"
+	serviceClass2 := &v1alpha1.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: sc2Name},
+		Spec: v1alpha1.ServiceClassSpec{
+			ServiceBrokerName: "test-broker",
+			Bindable:          true,
+			ExternalName:      sc2Name,
+			ExternalID:        sc2ID,
+			Description:       "test description 2",
+		},
+	}
+	_, err = serviceClassClient.Create(serviceClass2)
+	if nil != err {
+		return fmt.Errorf("error creating the ServiceClass (%v) : %s", serviceClass2, err)
+	}
+
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 2 != len(serviceClasses.Items) {
+		return fmt.Errorf("should have two ServiceClasses, had %v ServiceClasses", len(serviceClasses.Items))
+	}
+
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{FieldSelector: "spec.externalName==" + sc2Name})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 1 != len(serviceClasses.Items) {
+		return fmt.Errorf("*should have one ServiceClass, had %v ServiceClassess : %+v", len(serviceClasses.Items), serviceClasses.Items)
+	}
+
+	if serviceClasses.Items[0].Spec.ExternalID != sc2ID {
+		return fmt.Errorf("should have same externalID: %q, got %q", sc2ID, serviceClasses.Items[0].Spec.ExternalID)
+	}
+
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{FieldSelector: "spec.externalID==" + "b8269ab4-7d2d-456d-8c8b-5aab63b321d1"})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 1 != len(serviceClasses.Items) {
+		return fmt.Errorf("**should have one ServiceClass, had %v ServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
+	}
+
+	if serviceClasses.Items[0].Spec.ExternalName != name {
+		return fmt.Errorf("should have same externalName: %q, got %q", name, serviceClasses.Items[0].Spec.ExternalName)
+	}
+
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{FieldSelector: "spec.externalName==" + "crap"})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 0 != len(serviceClasses.Items) {
+		return fmt.Errorf("should have zero ServiceClasses, had %v ServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
+	}
+
 	err = serviceClassClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("serviceclass should be deleted (%s)", err)
@@ -493,6 +562,10 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("serviceclass should be deleted (%v)", serviceClassDeleted)
 	}
 
+	err = serviceClassClient.Delete(sc2Name, &metav1.DeleteOptions{})
+	if nil != err {
+		return fmt.Errorf("serviceclass should be deleted (%s)", err)
+	}
 	return nil
 }
 
@@ -544,7 +617,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	// start from scratch
 	servicePlans, err := servicePlanClient.List(metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("error listing service classes (%s)", err)
+		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if servicePlans.Items == nil {
 		return fmt.Errorf("Items field should not be set to nil")
@@ -562,7 +635,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	}
 	if name != servicePlanAtServer.Name {
 		return fmt.Errorf(
-			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			"didn't get the same ServicePlan back from the server \n%+v\n%+v",
 			servicePlan,
 			servicePlanAtServer,
 		)
@@ -570,26 +643,26 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 
 	servicePlans, err = servicePlanClient.List(metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("error listing service classes (%s)", err)
+		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 1 != len(servicePlans.Items) {
-		return fmt.Errorf("should have exactly one ServiceClass, had %v ServiceClasses", len(servicePlans.Items))
+		return fmt.Errorf("should have exactly one ServicePlan, had %v ServicePlans", len(servicePlans.Items))
 	}
 
 	servicePlanAtServer, err = servicePlanClient.Get(name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("error listing service classes (%s)", err)
+		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if servicePlanAtServer.Name != name &&
 		servicePlan.ResourceVersion == servicePlanAtServer.ResourceVersion {
 		return fmt.Errorf(
-			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			"didn't get the same ServicePlan back from the server \n%+v\n%+v",
 			servicePlan,
 			servicePlanAtServer,
 		)
 	}
 
-	// check that the broker is the same from get and list
+	// check that the plan is the same from get and list
 	servicePlanListed := &servicePlans.Items[0]
 	if !reflect.DeepEqual(servicePlanAtServer, servicePlanListed) {
 		return fmt.Errorf(
@@ -612,6 +685,66 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return errors.New("Failed to update service class")
 	}
 
+	// Verify that field selectors work by listing.
+	sp2Name := name + "2"
+	sp2ID := "anotheridhere"
+	servicePlan2 := &v1alpha1.ServicePlan{
+		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
+		Spec: v1alpha1.ServicePlanSpec{
+			Bindable:     &bindable,
+			ExternalName: sp2Name,
+			ExternalID:   sp2ID,
+			Description:  "test description 2",
+			ServiceClassRef: v1.LocalObjectReference{
+				Name: "test-serviceclass",
+			},
+		},
+	}
+	_, err = servicePlanClient.Create(servicePlan2)
+	if nil != err {
+		return fmt.Errorf("error creating the second Serviceplan (%v)", servicePlan2)
+	}
+
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("error listing service plans (%s)", err)
+	}
+	if 2 != len(servicePlans.Items) {
+		return fmt.Errorf("should have two ServicePlans, had %v ServicePlans", len(servicePlans.Items))
+	}
+
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.externalName==" + sp2Name})
+	if err != nil {
+		return fmt.Errorf("error listing service plans (%s)", err)
+	}
+	if 1 != len(servicePlans.Items) {
+		return fmt.Errorf("should have one ServicePlan, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+	}
+
+	if servicePlans.Items[0].Spec.ExternalID != sp2ID {
+		return fmt.Errorf("should have same externalID: %q, got %q", sp2ID, servicePlans.Items[0].Spec.ExternalID)
+	}
+
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.externalID==" + "b8269ab4-7d2d-456d-8c8b-5aab63b321d1"})
+	if err != nil {
+		return fmt.Errorf("error listing service plans (%s)", err)
+	}
+	if 1 != len(servicePlans.Items) {
+		return fmt.Errorf("should have one ServicePlan, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+	}
+
+	if servicePlans.Items[0].Spec.ExternalName != name {
+		return fmt.Errorf("should have same externalName: %q, got %q", name, servicePlans.Items[0].Spec.ExternalName)
+	}
+
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.externalName==" + "crap"})
+	if err != nil {
+		return fmt.Errorf("error listing service plans (%s)", err)
+	}
+	if 0 != len(servicePlans.Items) {
+		return fmt.Errorf("should have zero ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+	}
+
 	err = servicePlanClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("serviceplan should be deleted (%s)", err)
@@ -620,6 +753,11 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	servicePlanDeleted, err := servicePlanClient.Get(name, metav1.GetOptions{})
 	if nil == err {
 		return fmt.Errorf("serviceplan should be deleted (%v)", servicePlanDeleted)
+	}
+
+	err = servicePlanClient.Delete(sp2Name, &metav1.DeleteOptions{})
+	if nil != err {
+		return fmt.Errorf("serviceplan should be deleted (%s)", err)
 	}
 
 	return nil
