@@ -144,7 +144,7 @@ func (d *defaultServicePlan) SetInternalServiceCatalogInformerFactory(f informer
 	d.spLister = spInformer.Lister()
 
 	readyFunc := func() bool {
-		return scInformer.Informer().HasSynced() && scInformer.Informer().HasSynced()
+		return scInformer.Informer().HasSynced() && spInformer.Informer().HasSynced()
 	}
 
 	d.SetReadyFunc(readyFunc)

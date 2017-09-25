@@ -121,7 +121,12 @@ func (d *denyPlanChangeIfNotUpdatable) SetInternalServiceCatalogInformerFactory(
 	d.scLister = scInformer.Lister()
 	spInformer := f.Servicecatalog().InternalVersion().ServicePlans()
 	d.spLister = spInformer.Lister()
-	d.SetReadyFunc(scInformer.Informer().HasSynced)
+
+	readyFunc := func() bool {
+		return scInformer.Informer().HasSynced() && instanceInformer.Informer().HasSynced() && spInformer.Informer().HasSynced()
+	}
+
+	d.SetReadyFunc(readyFunc)
 }
 
 func (d *denyPlanChangeIfNotUpdatable) Validate() error {
