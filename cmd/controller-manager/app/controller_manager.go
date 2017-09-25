@@ -260,7 +260,7 @@ func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.G
 			return false, nil
 		}
 
-		glog.V(4).Info("Created client for discovery")
+		glog.V(4).Info("Created client for API discovery")
 
 		discoveryClient = client.Discovery()
 		return true, nil
@@ -277,7 +277,6 @@ func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.G
 
 	allResources := map[schema.GroupVersionResource]bool{}
 	for _, apiResourceList := range resourceMap {
-		glog.V(4).Infof("Resource: %#v", apiResourceList)
 		version, err := schema.ParseGroupVersion(apiResourceList.GroupVersion)
 		if err != nil {
 			return nil, err
@@ -348,7 +347,7 @@ func StartControllers(s *options.ControllerManagerServer,
 		glog.V(1).Info("Starting shared informers")
 		informerFactory.Start(stop)
 	} else {
-		return fmt.Errorf("unable to start service-catalog controller: servicecatalog/v1alpha1 is not available")
+		return fmt.Errorf("unable to start service-catalog controller: API GroupVersion %q is not available; found %#v", catalogGVR, availableResources)
 	}
 
 	select {}
@@ -365,13 +364,13 @@ func (c checkAPIAvailableResources) Name() string {
 }
 
 func (c checkAPIAvailableResources) Check(_ *http.Request) error {
-	glog.Info("available resources health checker called")
+	glog.Info("Health-checking connection with service-catalog API server")
 	availableResources, err := getAvailableResources(c.serviceCatalogClientBuilder)
 	if err != nil {
 		return err
 	}
 	if !availableResources[catalogGVR] {
-		return fmt.Errorf("failed to get %q, the apiserver does not seem to be ready", catalogGVR)
+		return fmt.Errorf("failed to get API GroupVersion %q; found: %#v", catalogGVR, availableResources)
 	}
 	return nil
 }
