@@ -98,7 +98,7 @@ func TestGroupVersion(t *testing.T) {
 	}
 	for _, sType := range storageTypes {
 		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
+			t.Errorf("%q test failed", sType)
 		}
 	}
 }
@@ -185,7 +185,7 @@ func TestNoName(t *testing.T) {
 
 	for _, sType := range storageTypes {
 		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
+			t.Errorf("%q test failed", sType)
 		}
 	}
 }
@@ -229,7 +229,7 @@ func TestBrokerClient(t *testing.T) {
 	}
 	for _, sType := range storageTypes {
 		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
+			t.Errorf("%q test failed", sType)
 		}
 	}
 }
@@ -396,17 +396,17 @@ func TestServiceClassClient(t *testing.T) {
 	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
 	//	for _, sType := range storageTypes {
 	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
-	//			t.Errorf("%s test failed", sType)
+	//			t.Errorf("%q test failed", sType)
 	//		}
 	//	}
 	//	for _, sType := range storageTypes {
 	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
-	//			t.Errorf("%s test failed", sType)
+	//			t.Errorf("%q test failed", sType)
 	//		}
 	//	}
 	sType := server.StorageTypeEtcd
 	if !t.Run(sType.String(), rootTestFunc(sType)) {
-		t.Errorf("%s test failed", sType)
+		t.Errorf("%q test failed", sType)
 	}
 }
 
@@ -588,12 +588,12 @@ func TestServicePlanClient(t *testing.T) {
 	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
 	//	for _, sType := range storageTypes {
 	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
-	//			t.Errorf("%s test failed", sType)
+	//			t.Errorf("%q test failed", sType)
 	//		}
 	//	}
 	sType := server.StorageTypeEtcd
 	if !t.Run(sType.String(), rootTestFunc(sType)) {
-		t.Errorf("%s test failed", sType)
+		t.Errorf("%q test failed", sType)
 	}
 }
 
@@ -779,7 +779,7 @@ func TestInstanceClient(t *testing.T) {
 	}
 	for _, sType := range storageTypes {
 		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
+			t.Errorf("%q test failed", sType)
 		}
 	}
 }
@@ -939,7 +939,7 @@ func TestBindingClient(t *testing.T) {
 	}
 	for _, sType := range storageTypes {
 		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
+			t.Errorf("%q test failed", sType)
 		}
 
 	}

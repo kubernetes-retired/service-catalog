@@ -16,6 +16,11 @@ limitations under the License.
 
 package v1alpha1
 
+// These functions are used for field selectors. They are only needed if
+// field selection is made available for types, hence we only have them for
+// ServicePlan and ServiceClass. While they are identical, it's clearer to
+// use different functions from the get go.
+
 // ServicePlanFieldLabelConversionFunc does not convert anything, just returns
 // what it's given.
 func ServicePlanFieldLabelConversionFunc(label, value string) (string, string, error) {
