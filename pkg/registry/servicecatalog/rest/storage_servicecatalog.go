@@ -19,11 +19,11 @@ package rest
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceinstancecredential"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
@@ -208,30 +208,30 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
-	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstancecredentials"))
+	serviceinstancecredentialClassRestOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstancecredentials"))
 	if err != nil {
 		return nil, err
 	}
 	bindingsOpts := server.NewOptions(
 		etcd.Options{
-			RESTOptions:   bindingClassRESTOptions,
+			RESTOptions:   serviceinstancecredentialClassRestOptions,
 			Capacity:      1000,
-			ObjectType:    binding.EmptyObject(),
-			ScopeStrategy: binding.NewScopeStrategy(),
-			NewListFunc:   binding.NewList,
-			GetAttrsFunc:  binding.GetAttrs,
+			ObjectType:    serviceinstancecredential.EmptyObject(),
+			ScopeStrategy: serviceinstancecredential.NewScopeStrategy(),
+			NewListFunc:   serviceinstancecredential.NewList,
+			GetAttrsFunc:  serviceinstancecredential.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
 		tpr.Options{
 			HasNamespace:     true,
-			RESTOptions:      bindingClassRESTOptions,
+			RESTOptions:      serviceinstancecredentialClassRestOptions,
 			DefaultNamespace: p.DefaultNamespace,
 			RESTClient:       p.RESTClient,
 			SingularKind:     tpr.ServiceInstanceCredentialKind,
-			NewSingularFunc:  binding.NewSingular,
+			NewSingularFunc:  serviceinstancecredential.NewSingular,
 			ListKind:         tpr.ServiceInstanceCredentialListKind,
-			NewListFunc:      binding.NewList,
-			CheckObjectFunc:  binding.CheckObject,
+			NewListFunc:      serviceinstancecredential.NewList,
+			CheckObjectFunc:  serviceinstancecredential.CheckObject,
 			DestroyFunc:      func() {},
 			Keyer: tpr.Keyer{
 				DefaultNamespace: p.DefaultNamespace,
@@ -246,7 +246,7 @@ func (p StorageProvider) v1alpha1Storage(
 	serviceClassStorage := serviceclass.NewStorage(*serviceClassOpts)
 	servicePlanStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage := instance.NewStorage(*instanceOpts)
-	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
+	bindingStorage, bindingStatusStorage, err := serviceinstancecredential.NewStorage(*bindingsOpts)
 	if err != nil {
 		return nil, err
 	}
