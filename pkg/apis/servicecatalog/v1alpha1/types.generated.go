@@ -4037,7 +4037,7 @@ func (x *ServiceClassSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder)
 		_ = yym34
 		if false {
 		} else {
-			*((*string)(yyv35)) = r.DecodeString()
+			*((*string)(yyv33)) = r.DecodeString()
 		}
 	}
 	yyj22++
@@ -4898,17 +4898,17 @@ func (x *ServicePlanSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym7
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalName))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("externalName"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym8 := z.EncBinary()
 				_ = yym8
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalName))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -4917,33 +4917,14 @@ func (x *ServicePlanSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym10
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
-				}
-			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("externalID"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym11 := z.EncBinary()
-				_ = yym11
-				if false {
-				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ExternalID))
-				}
-			}
-			if yyr2 || yy2arr2 {
-				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				yym21 := z.EncBinary()
-				_ = yym21
-				if false {
-				} else {
 					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
 				r.EncodeString(codecSelferC_UTF81234, string("description"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				yym22 := z.EncBinary()
-				_ = yym22
+				yym11 := z.EncBinary()
+				_ = yym11
 				if false {
 				} else {
 					r.EncodeString(codecSelferC_UTF81234, string(x.Description))
@@ -5251,7 +5232,7 @@ func (x *ServicePlanSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 			}
 		case "description":
 			if r.TryDecodeAsNil() {
-				x.ExternalID = ""
+				x.Description = ""
 			} else {
 				yyv8 := &x.Description
 				yym9 := z.DecBinary()
@@ -5259,18 +5240,6 @@ func (x *ServicePlanSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 				if false {
 				} else {
 					*((*string)(yyv8)) = r.DecodeString()
-				}
-			}
-		case "description":
-			if r.TryDecodeAsNil() {
-				x.Description = ""
-			} else {
-				yyv14 := &x.Description
-				yym15 := z.DecBinary()
-				_ = yym15
-				if false {
-				} else {
-					*((*string)(yyv14)) = r.DecodeString()
 				}
 			}
 		case "bindable":
