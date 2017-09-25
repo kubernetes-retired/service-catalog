@@ -46,6 +46,10 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		By("Creating a ups-broker service")
 		_, err = f.KubeClientSet.CoreV1().Services(f.Namespace.Name).Create(NewUPSBrokerService(upsbrokername))
 		Expect(err).NotTo(HaveOccurred(), "failed to create upsbroker service")
+
+		By("Waiting for service endpoint")
+		err = framework.WaitForEndpoint(f.KubeClientSet, f.Namespace.Name, upsbrokername)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
