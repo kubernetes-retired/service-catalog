@@ -23,8 +23,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/brokerapi/openservicebroker/constants"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 )
 
