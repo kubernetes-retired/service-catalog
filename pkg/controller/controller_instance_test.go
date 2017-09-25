@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -485,6 +486,9 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, "ServiceBrokerReturnedFailure")
+	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
+	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
+	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1277,6 +1281,9 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, errorProvisionCallFailedReason)
+	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
+	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
+	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
 }
 
 // TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer tests
@@ -1450,6 +1457,9 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, errorDeprovisionCalledReason, errorDeprovisionCalledReason)
+	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
+	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
+	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1754,6 +1764,9 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
+	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
+	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
 
 	expectedEventPrefixes := []string{
 		api.EventTypeWarning + " " + errorErrorCallingProvisionReason,
@@ -1873,6 +1886,8 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, asyncProvisioningReason, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceCurrentOperation(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision)
+	assertOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
@@ -2386,5 +2401,320 @@ func TestPollInstanceUsingOriginatingIdentity(t *testing.T) {
 			}
 			assertOriginatingIdentity(t, expectedOriginatingIdentity, actualRequest.OriginatingIdentity)
 		}()
+	}
+}
+
+func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *testing.T) {
+	cases := []struct {
+		name                     string
+		statusCode               int
+		triggersOrphanMitigation bool
+	}{
+		{
+			name:                     "Status OK",
+			statusCode:               200,
+			triggersOrphanMitigation: false,
+		},
+		{
+			name:                     "other 2XX",
+			statusCode:               201,
+			triggersOrphanMitigation: true,
+		},
+		{
+			name:                     "3XX",
+			statusCode:               300,
+			triggersOrphanMitigation: false,
+		},
+		{
+			name:                     "408",
+			statusCode:               408,
+			triggersOrphanMitigation: true,
+		},
+		{
+			name:                     "other 4XX",
+			statusCode:               400,
+			triggersOrphanMitigation: false,
+		},
+		{
+			name:                     "5XX",
+			statusCode:               500,
+			triggersOrphanMitigation: true,
+		},
+	}
+
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+			ProvisionReaction: &fakeosb.ProvisionReaction{
+				Error: osb.HTTPStatusCodeError{
+					StatusCode: tc.statusCode,
+				},
+			},
+		})
+
+		sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+		sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+		sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+		instance := getTestServiceInstanceWithRefs()
+
+		err := testController.reconcileServiceInstance(instance)
+
+		// The action should be:
+		// 0. Updating the status
+		actions := fakeCatalogClient.Actions()
+		if ok := expectNumberOfActions(t, tc.name, actions, 2); !ok {
+			continue
+		}
+
+		updatedObject, ok := expectUpdateStatus(t, tc.name, actions[1], instance)
+		if !ok {
+			continue
+		}
+		updatedServiceInstance, _ := updatedObject.(*v1alpha1.ServiceInstance)
+
+		if ok := testOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, tc.triggersOrphanMitigation); !ok {
+			continue
+		}
+
+		if tc.triggersOrphanMitigation && err == nil {
+			t.Errorf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
+			continue
+		}
+
+		if !tc.triggersOrphanMitigation && err != nil {
+			t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
+			continue
+		}
+	}
+}
+
+func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Error: &url.Error{
+				Err: getTestTimeoutError(),
+			},
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatal("Reconciler should return error for timeout so that instance is orphan mitigated")
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedObject := assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance, ok := updatedObject.(*v1alpha1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", updatedObject)
+	}
+
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
+	assertOrphanMitigationInProgressTrue(t, updatedServiceInstance)
+}
+
+func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
+	key := osb.OperationKey(testOperation)
+	description := "description"
+	// invalidState := "invalid state"
+
+	cases := []struct {
+		name                     string
+		deprovReaction           *fakeosb.DeprovisionReaction
+		pollReaction             *fakeosb.PollLastOperationReaction
+		async                    bool
+		finishedOrphanMitigation bool
+		shouldError              bool
+		retryDurationExceeded    bool
+	}{
+		// Synchronous
+		{
+			name: "sync - success",
+			deprovReaction: &fakeosb.DeprovisionReaction{
+				Response: &osb.DeprovisionResponse{},
+			},
+			finishedOrphanMitigation: true,
+		},
+		{
+			name: "sync - 202 accepted",
+			deprovReaction: &fakeosb.DeprovisionReaction{
+				Response: &osb.DeprovisionResponse{
+					Async:        true,
+					OperationKey: &key,
+				},
+			},
+			finishedOrphanMitigation: false,
+		},
+		{
+			name: "sync - http error",
+			deprovReaction: &fakeosb.DeprovisionReaction{
+				Error: fakeosb.AsyncRequiredError(),
+			},
+			finishedOrphanMitigation: true,
+		},
+		{
+			name: "sync - other error",
+			deprovReaction: &fakeosb.DeprovisionReaction{
+				Error: fmt.Errorf("other error"),
+			},
+			finishedOrphanMitigation: false,
+			shouldError:              true,
+		},
+		{
+			name: "sync - other error - retry duration exceeded",
+			deprovReaction: &fakeosb.DeprovisionReaction{
+				Error: fmt.Errorf("other error"),
+			},
+			finishedOrphanMitigation: true,
+			retryDurationExceeded:    true,
+		},
+		// Asynchronous (Polling)
+		{
+			name: "poll - success",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State: osb.StateSucceeded,
+				},
+			},
+			async: true,
+			finishedOrphanMitigation: true,
+		},
+		{
+			name: "poll - gone",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Error: osb.HTTPStatusCodeError{
+					StatusCode: http.StatusGone,
+				},
+			},
+			async: true,
+			finishedOrphanMitigation: true,
+		},
+		{
+			name: "poll - in progress",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: &description,
+				},
+			},
+			async: true,
+			finishedOrphanMitigation: false,
+		},
+		{
+			name: "poll - failed",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State: osb.StateFailed,
+				},
+			},
+			async: true,
+			finishedOrphanMitigation: true,
+		},
+		// TODO (mkibbe): poll - error
+		// TODO (mkibbe): invalid state
+		{
+			name: "poll - error - retry duration exceeded",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Error: fmt.Errorf("other error"),
+			},
+			async: true,
+			finishedOrphanMitigation: true,
+			retryDurationExceeded:    true,
+		},
+		{
+			name: "poll - in progress - retry duration exceeded",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State: osb.StateInProgress,
+				},
+			},
+			async: true,
+			finishedOrphanMitigation: true,
+			retryDurationExceeded:    true,
+		},
+		{
+			name: "poll - invalid state - retry duration exceeded",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State: "invalid state",
+				},
+			},
+			async: true,
+			finishedOrphanMitigation: true,
+			retryDurationExceeded:    true,
+		},
+	}
+
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+			DeprovisionReaction:       tc.deprovReaction,
+			PollLastOperationReaction: tc.pollReaction,
+		})
+
+		sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+		sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+		sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+		instance := getTestServiceInstanceWithRefs()
+		instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+		instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
+		instance.Status.OrphanMitigationInProgress = true
+
+		if tc.async {
+			instance.Status.AsyncOpInProgress = true
+		}
+
+		var startTime metav1.Time
+		if tc.retryDurationExceeded {
+			startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+		} else {
+			startTime = metav1.NewTime(time.Now())
+		}
+		instance.Status.OperationStartTime = &startTime
+
+		fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+			return true, instance, nil
+		})
+
+		err := testController.reconcileServiceInstance(instance)
+
+		// The action should be:
+		// 0. Updating the status
+		actions := fakeCatalogClient.Actions()
+		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
+			continue
+		}
+
+		updatedObject, ok := expectUpdateStatus(t, tc.name, actions[0], instance)
+		if !ok {
+			continue
+		}
+		updatedServiceInstance, _ := updatedObject.(*v1alpha1.ServiceInstance)
+
+		if ok := testOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
+			continue
+		}
+
+		// validate reconciliation error response
+		if tc.shouldError {
+			if err == nil {
+				t.Errorf("%v: Expected error; this should not be a terminal state", tc.name)
+				continue
+			}
+		} else {
+			if err != nil {
+				t.Errorf("%v: Unexpected error; this should be a terminal state", tc.name)
+				continue
+			}
+		}
+
+		expectCatalogFinalizerExists(t, tc.name, updatedServiceInstance)
 	}
 }
