@@ -57,6 +57,7 @@ type ServiceBrokerSpec struct {
 	// This is strongly discouraged.  You should use the CABundle instead.
 	// +optional
 	InsecureSkipTLSVerify bool
+
 	// CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.
 	// +optional
 	CABundle []byte
@@ -446,6 +447,10 @@ type ServiceInstanceStatus struct {
 	// the service instance.
 	DashboardURL *string
 
+	// CurrentOperation is the operation the Controller is currently performing
+	// on the ServiceInstance.
+	CurrentOperation ServiceInstanceOperation
+
 	// ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
@@ -487,6 +492,22 @@ const (
 	// ServiceInstanceConditionFailed represents information about a final failure
 	// that should not be retried.
 	ServiceInstanceConditionFailed ServiceInstanceConditionType = "Failed"
+)
+
+// ServiceInstanceOperation represents a type of operation the controller can
+// be performing for a service instance in the OSB API.
+type ServiceInstanceOperation string
+
+const (
+	// ServiceInstanceOperationProvision indicates that the ServiceInstance is
+	// being Provisioned.
+	ServiceInstanceOperationProvision ServiceInstanceOperation = "Provision"
+	// ServiceInstanceOperationUpdate indicates that the ServiceInstance is
+	// being Updated.
+	ServiceInstanceOperationUpdate ServiceInstanceOperation = "Update"
+	// ServiceInstanceOperationDeprovision indicates that the ServiceInstance is
+	// being Deprovisioned.
+	ServiceInstanceOperationDeprovision ServiceInstanceOperation = "Deprovision"
 )
 
 // ServiceInstanceCredentialList is a list of ServiceInstanceCredentials.
@@ -560,6 +581,10 @@ type ServiceInstanceCredentialSpec struct {
 type ServiceInstanceCredentialStatus struct {
 	Conditions []ServiceInstanceCredentialCondition
 
+	// CurrentOperation is the operation the Controller is currently performing
+	// on the ServiceInstanceCredential.
+	CurrentOperation ServiceInstanceCredentialOperation
+
 	// ReconciledGeneration is the 'Generation' of the
 	// serviceInstanceCredentialSpec that was last processed by the controller.
 	// The reconciled generation is updated even if the controller failed to
@@ -601,6 +626,19 @@ const (
 	// ServiceInstanceCredentialConditionFailed represents a ServiceInstanceCredentialCondition that has failed
 	// completely and should not be retried.
 	ServiceInstanceCredentialConditionFailed ServiceInstanceCredentialConditionType = "Failed"
+)
+
+// ServiceInstanceCredentialOperation represents a type of operation
+// the controller can be performing for a binding in the OSB API.
+type ServiceInstanceCredentialOperation string
+
+const (
+	// ServiceInstanceCredentialOperationBind indicates that the
+	// ServiceInstanceCredential is being bound.
+	ServiceInstanceCredentialOperationBind ServiceInstanceCredentialOperation = "Bind"
+	// ServiceInstanceCredentialOperationUnbind indicates that the
+	// ServiceInstanceCredential is being unbound.
+	ServiceInstanceCredentialOperationUnbind ServiceInstanceCredentialOperation = "Unbind"
 )
 
 // These are internal finalizer values to service catalog, must be qualified name.

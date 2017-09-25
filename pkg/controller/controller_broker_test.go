@@ -698,7 +698,6 @@ func TestReconcileServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
-	t.Log(actions)
 	assertNumberOfActions(t, actions, 5)
 
 	// first action should be an update action to clear OperationStartTime
@@ -763,6 +762,59 @@ func TestReconcileServiceBrokerFailureOnFinalRetry(t *testing.T) {
 			t.Fatalf("Received unexpected event:\n  expected prefix: %v\n  got: %v", e, a)
 		}
 	}
+}
+
+// TestReconcileServiceBrokerWithStatusUpdateError verifies that the reconciler
+// returns an error when there is a conflict updating the status of the resource.
+// This is an otherwise successful scenario where the update to set the
+// ready condition fails.
+func TestReconcileServiceBrokerWithStatusUpdateError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
+
+	testServiceClass := getTestServiceClass()
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	broker := getTestServiceBroker()
+
+	fakeCatalogClient.AddReactor("update", "servicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("update error")
+	})
+
+	err := testController.reconcileServiceBroker(broker)
+	if err == nil {
+		t.Fatalf("expected error from but got none")
+	}
+	if e, a := "update error", err.Error(); e != a {
+		t.Fatalf("unexpected error returned: expected %q, got %q", e, a)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertGetCatalog(t, brokerActions[0])
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 4)
+
+	tp := getTestServicePlan()
+	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
+	// 1 create for the plan on the class
+	assertCreate(t, actions[0], tp)
+
+	nbtp := getTestServicePlanNonbindable()
+	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.Spec.ExternalID)
+	// 2 create for the plan on the class
+	assertCreate(t, actions[1], nbtp)
+
+	// 3 update action for existing service class
+	assertUpdate(t, actions[2], testServiceClass)
+
+	// 4 update action for broker status subresource
+	updatedServiceBroker := assertUpdateStatus(t, actions[3], getTestServiceBroker())
+	assertServiceBrokerReadyTrue(t, updatedServiceBroker)
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
 }
 
 // TestUpdateServiceBrokerCondition ensures that with specific conditions

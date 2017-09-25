@@ -105,12 +105,13 @@ func validateServiceInstanceStatus(spec *sc.ServiceInstanceStatus, fldPath *fiel
 	return errors
 }
 
-// internalValidateServiceInstanceUpdateAllowed ensures there is not an asynchronous
-// operation ongoing with the instance before allowing an update to go through.
+// internalValidateServiceInstanceUpdateAllowed ensures there is not a
+// pending update on-going with the spec of the instance before allowing an update
+// to the spec to go through.
 func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	errors := field.ErrorList{}
-	if old.Status.AsyncOpInProgress {
-		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another operation for this service instance is in progress"))
+	if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
+		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
 	}
 	return errors
 }

@@ -108,3 +108,63 @@ func TestValidateServiceInstanceCredential(t *testing.T) {
 		}
 	}
 }
+
+func TestInternalValidateServiceInstanceCredentialUpdateAllowed(t *testing.T) {
+	cases := []struct {
+		name              string
+		newSpecChange     bool
+		onGoingSpecChange bool
+		valid             bool
+	}{
+		{
+			name:              "spec change when no on-going spec change",
+			newSpecChange:     true,
+			onGoingSpecChange: false,
+			valid:             true,
+		},
+		{
+			name:              "spec change when on-going spec change",
+			newSpecChange:     true,
+			onGoingSpecChange: true,
+			valid:             false,
+		},
+		{
+			name:              "meta change when no on-going spec change",
+			newSpecChange:     false,
+			onGoingSpecChange: false,
+			valid:             true,
+		},
+		{
+			name:              "meta change when on-going spec change",
+			newSpecChange:     false,
+			onGoingSpecChange: true,
+			valid:             true,
+		},
+	}
+
+	for _, tc := range cases {
+		oldBinding := validServiceInstanceCredential()
+		if tc.onGoingSpecChange {
+			oldBinding.Generation = 2
+		} else {
+			oldBinding.Generation = 1
+		}
+		oldBinding.Status.ReconciledGeneration = 1
+
+		newBinding := validServiceInstanceCredential()
+		if tc.newSpecChange {
+			newBinding.Generation = oldBinding.Generation + 1
+		} else {
+			newBinding.Generation = oldBinding.Generation
+		}
+		newBinding.Status.ReconciledGeneration = 1
+
+		errs := internalValidateServiceInstanceCredentialUpdateAllowed(newBinding, oldBinding)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
+	}
+}

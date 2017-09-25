@@ -818,6 +818,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								},
 							},
 						},
+						"currentOperation": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CurrentOperation is the operation the Controller is currently performing on the ServiceInstanceCredential.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceCredentialSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
@@ -974,6 +981,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						"dashboardURL": {
 							SchemaProps: spec.SchemaProps{
 								Description: "DashboardURL is the URL of a web-based management user interface for the service instance.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"currentOperation": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CurrentOperation is the operation the Controller is currently performing on the ServiceInstance.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
