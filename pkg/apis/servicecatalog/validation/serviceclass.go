@@ -102,7 +102,6 @@ func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, cr
 func ValidateServiceClassUpdate(new *sc.ServiceClass, old *sc.ServiceClass) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, internalValidateServiceClass(new)...)
-	allErrs = append(allErrs, internalValidateServiceClass(old)...)
 
 	return allErrs
 }
