@@ -331,6 +331,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 				errorDeprovisionCalledReason,
 				s,
 			)
+			c.clearServiceInstanceCurrentOperation(toUpdate)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
 			}
@@ -1011,10 +1012,6 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 
 			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 		} else {
-			// Create/Update for InstanceCredential has completed successfully,
-			// so set Status.ReconciledGeneration to the Generation used.
-			toUpdate.Status.ReconciledGeneration = toUpdate.Generation
-
 			setServiceInstanceCondition(
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionReady,

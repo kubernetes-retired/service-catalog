@@ -29,7 +29,7 @@ import (
 // ServiceInstanceCredentials is a wrapper around the generated fake
 // ServiceInstanceCredentials that clones the ServiceInstanceCredential objects
 // being passed to UpdateStatus. This is a workaround until the generated fake
-// clientset does it own copying.
+// clientset does its own copying.
 type ServiceInstanceCredentials struct {
 	v1alpha1typed.ServiceInstanceCredentialInterface
 }

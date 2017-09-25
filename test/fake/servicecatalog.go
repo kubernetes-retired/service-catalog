@@ -26,7 +26,7 @@ import (
 // ServicecatalogV1alpha1 is a wrapper around the generated fake service catalog
 // that clones the ServiceInstance and ServiceInstanceCredential objects being
 // passed to UpdateStatus. This is a workaround until the generated fake clientset
-// does it own copying.
+// does its own copying.
 type ServicecatalogV1alpha1 struct {
 	servicecatalogv1alpha1.ServicecatalogV1alpha1Interface
 }

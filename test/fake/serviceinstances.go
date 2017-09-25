@@ -28,7 +28,7 @@ import (
 
 // ServiceInstances is a wrapper around the generated fake ServiceInstances
 // that clones the ServiceInstance objects being passed to UpdateStatus. This is a
-// workaround until the generated fake clientset does it own copying.
+// workaround until the generated fake clientset does its own copying.
 type ServiceInstances struct {
 	v1alpha1typed.ServiceInstanceInterface
 }

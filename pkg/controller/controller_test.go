@@ -1583,7 +1583,7 @@ func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, ope
 	}
 }
 
-func assertServiceInstanceReqeustFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
+func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
 	case v1alpha1.ServiceInstanceOperationProvision:
@@ -1599,7 +1599,7 @@ func assertServiceInstanceReqeustFailingError(t *testing.T, obj runtime.Object, 
 	assertAsyncOpInProgressFalse(t, obj)
 }
 
-func assertServiceInstanceReqeustRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string) {
+func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
 	case v1alpha1.ServiceInstanceOperationProvision:
@@ -1787,7 +1787,7 @@ func assertServiceInstanceCredentialOperationSuccess(t *testing.T, obj runtime.O
 	}
 }
 
-func assertServiceInstanceCredentialReqeustFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, readyReason string, failureReason string) {
+func assertServiceInstanceCredentialRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, readyReason string, failureReason string) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
 	case v1alpha1.ServiceInstanceCredentialOperationBind:
@@ -1802,7 +1802,7 @@ func assertServiceInstanceCredentialReqeustFailingError(t *testing.T, obj runtim
 	assertServiceInstanceCredentialReconciliationComplete(t, obj)
 }
 
-func assertServiceInstanceCredentialReqeustRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, reason string) {
+func assertServiceInstanceCredentialRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, reason string) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
 	case v1alpha1.ServiceInstanceCredentialOperationBind:

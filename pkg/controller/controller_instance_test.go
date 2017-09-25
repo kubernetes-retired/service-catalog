@@ -404,7 +404,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceReqeustRetriableError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason)
+	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -467,7 +467,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceReqeustFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, "ServiceBrokerReturnedFailure")
+	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, "ServiceBrokerReturnedFailure")
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1259,7 +1259,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReqeustFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, errorProvisionCallFailedReason)
+	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, errorProvisionCallFailedReason)
 }
 
 // TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer tests
@@ -1432,7 +1432,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReqeustFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, errorDeprovisionCalledReason, errorDeprovisionCalledReason)
+	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, errorDeprovisionCalledReason, errorDeprovisionCalledReason)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1735,7 +1735,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReqeustFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, errorReconciliationRetryTimeoutReason)
 
 	expectedEventPrefixes := []string{
 		api.EventTypeWarning + " " + errorErrorCallingProvisionReason,
@@ -1854,7 +1854,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceReqeustFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, asyncProvisioningReason, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, asyncProvisioningReason, errorReconciliationRetryTimeoutReason)
 	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
