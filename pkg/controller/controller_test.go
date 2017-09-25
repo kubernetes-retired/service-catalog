@@ -692,11 +692,11 @@ func checkPlan(plan *v1alpha1.ServicePlan, planID, planName, planDescription str
 	if plan.Name != planID {
 		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
 	}
-	if plan.ExternalID != planID {
-		t.Errorf("Expected plan ExternalID to be %q, but was: %q", planID, plan.ExternalID)
+	if plan.Spec.ExternalID != planID {
+		t.Errorf("Expected plan ExternalID to be %q, but was: %q", planID, plan.Spec.ExternalID)
 	}
-	if plan.ExternalName != planName {
-		t.Errorf("Expected plan ExternalName to be %q, but was: %q", planName, plan.ExternalName)
+	if plan.Spec.ExternalName != planName {
+		t.Errorf("Expected plan ExternalName to be %q, but was: %q", planName, plan.Spec.ExternalName)
 	}
 	if plan.Spec.Description != planDescription {
 		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Spec.Description)
@@ -964,7 +964,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("unbindable-bindable", "s2_plan2_id"),
+				Name: "s2_plan2_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalName: "unbindable-bindable",
