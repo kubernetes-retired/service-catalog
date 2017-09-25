@@ -304,8 +304,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 
 		response, err := brokerClient.Bind(request)
 		if err != nil {
-			httpErr, isError := osb.IsHTTPError(err)
-			if isError {
+			if httpErr, ok := osb.IsHTTPError(err); ok {
 				s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q, %v",
 					binding.Name,
 					binding.Namespace,
@@ -492,8 +491,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 
 		_, err = brokerClient.Unbind(unbindRequest)
 		if err != nil {
-			httpErr, isError := osb.IsHTTPError(err)
-			if isError {
+			if httpErr, ok := osb.IsHTTPError(err); ok {
 				s := fmt.Sprintf("Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s",
 					binding.Name,
 					binding.Namespace,
