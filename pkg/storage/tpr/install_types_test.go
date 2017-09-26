@@ -144,7 +144,10 @@ func TestInstallTypesErrors(t *testing.T) {
 	}
 }
 
-//make sure we don't poll on resource that was failed on install
+//make sure we don't poll on resource that was failed on install.
+//
+// This test depends on the order of installation of the
+// thirdPartyResources
 func TestInstallTypesPolling(t *testing.T) {
 	getCallCount := 0
 	createCallCount := 0
@@ -165,7 +168,7 @@ func TestInstallTypesPolling(t *testing.T) {
 		func(action core.Action) (bool, runtime.Object, error) {
 			createCallCount++
 			name := action.(core.CreateAction).GetObject().(*v1beta1.ThirdPartyResource).Name
-			if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {
+			if name == serviceBrokerTPR.Name || name == serviceClassTPR.Name {
 				return true, nil, fmt.Errorf("Error creatingTPR : %v", name)
 			}
 			return true, nil, nil
@@ -178,7 +181,7 @@ func TestInstallTypesPolling(t *testing.T) {
 
 	for _, action := range getCallActions {
 		name := action.GetName()
-		if name == serviceBrokerTPR.Name || name == serviceInstanceTPR.Name {
+		if name == serviceBrokerTPR.Name || name == serviceClassTPR.Name {
 			t.Errorf("Failed to skip polling for resource that failed to install: %q", action)
 		}
 	}
