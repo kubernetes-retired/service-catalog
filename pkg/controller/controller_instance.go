@@ -303,8 +303,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	glog.V(4).Infof("Deprovisioning ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
+		if httpErr, ok := osb.IsHTTPError(err); ok {
 			s := fmt.Sprintf(
 				"Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q with status code %d: ErrorMessage: %v, Description: %v",
 				instance.Namespace,
@@ -339,14 +338,12 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		}
 
 		s := fmt.Sprintf(
-			"Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q with status code %d: ErrorMessage: %v, Description: %v",
+			"Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %v",
 			instance.Namespace,
 			instance.Name,
 			serviceClass.Name,
 			brokerName,
-			httpErr.StatusCode,
-			httpErr.ErrorMessage,
-			httpErr.Description,
+			err,
 		)
 		glog.Warning(s)
 		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
@@ -868,8 +865,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		// condition false; it should be sufficient to create an event for
 		// the instance.
 		errText := ""
-		httpErr, isError := osb.IsHTTPError(err)
-		if isError {
+		if httpErr, ok := osb.IsHTTPError(err); ok {
 			errText = fmt.Sprintf("Status code: %d; ErrorMessage: %q; description: %q", httpErr.StatusCode, httpErr.ErrorMessage, httpErr.Description)
 		} else {
 			errText = err.Error()
