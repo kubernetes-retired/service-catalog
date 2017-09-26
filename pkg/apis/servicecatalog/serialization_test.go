@@ -101,7 +101,7 @@ func doRoundTripTest(group testapi.TestGroup, kind string, t *testing.T) {
 	if !nonInternalRoundTrippableTypes.Has(kind) && api.Scheme.Recognizes(gvk) {
 		roundTrip(t, group.Codec(), fuzzInternalObject(t, group.InternalGroupVersion(), item, rand.Int63()))
 	} else {
-		fmt.Printf("skipped roundTrip for gvk: %v\n", gvk)
+		t.Logf("skipped roundTrip for gvk: %v\n", gvk)
 	}
 }
 
@@ -207,7 +207,7 @@ func TestSpecificKind(t *testing.T) {
 	group := serviceCatalogAPIGroup()
 
 	for _, kind := range group.InternalTypes() {
-		fmt.Println(kind)
+		t.Log(kind)
 	}
 
 	kind := "ServiceClass"
