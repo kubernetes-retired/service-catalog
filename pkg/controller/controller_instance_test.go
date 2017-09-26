@@ -94,7 +94,7 @@ func TestReconcileServiceInstanceNonExistentServiceBroker(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatal("The broker referenced by the instance exists when it should not.")
@@ -137,7 +137,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("no secret defined")
@@ -233,7 +233,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
@@ -315,7 +315,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
@@ -369,7 +369,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance.")
@@ -433,7 +433,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -494,7 +494,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
@@ -571,7 +571,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -638,7 +638,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -699,7 +699,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("There should not be a namespace for the ServiceInstance to be created in.")
@@ -744,7 +744,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
@@ -809,7 +809,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	credentials := getTestServiceInstanceCredential()
 	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Add(credentials)
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
@@ -910,7 +910,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
@@ -1025,7 +1025,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeServiceBroker(t *testing.T) 
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	instance.Generation = 1
@@ -1641,8 +1641,9 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
+
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 
@@ -1700,7 +1701,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
@@ -1922,7 +1923,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 //   Failed=True  and reflects Ready=False, Failed=True, new timestamp
 func TestSetServiceInstanceCondition(t *testing.T) {
 	instanceWithCondition := func(condition *v1alpha1.ServiceInstanceCondition) *v1alpha1.ServiceInstance {
-		instance := getTestServiceInstance()
+		instance := getTestServiceInstanceWithRefs()
 		instance.Status = v1alpha1.ServiceInstanceStatus{
 			Conditions: []v1alpha1.ServiceInstanceCondition{*condition},
 		}
@@ -2245,7 +2246,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-			instance := getTestServiceInstance()
+			instance := getTestServiceInstanceWithRefs()
 			if tc.includeUserInfo {
 				instance.Spec.UserInfo = testUserInfo
 			}
@@ -2288,7 +2289,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-			instance := getTestServiceInstance()
+			instance := getTestServiceInstanceWithRefs()
 			instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 			instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 			// we only invoke the broker client to deprovision if we have a
