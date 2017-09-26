@@ -273,8 +273,10 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		request.OriginatingIdentity = originatingIdentity
 	}
 
-	// it is arguable we should perform an extract-method refactor on this
-	// code block
+	if instance.Status.OrphanMitigationInProgress && instance.Status.OperationStartTime == nil {
+		now := metav1.Now()
+		toUpdate.Status.OperationStartTime = &now
+	}
 
 	if toUpdate.Status.CurrentOperation == "" {
 		toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1alpha1.ServiceInstanceOperationDeprovision)
@@ -478,10 +480,6 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// async op in progress, we need to keep polling, hence do not bail if
 	// there is not a new generation.
 	//
-	// We only do this if the deletion timestamp is nil, because the deletion
-	// timestamp changes the object's state in a way that we must reconcile,
-	// but does not affect the generation.
-	//
 	// Note: currently the instance spec is immutable because we do not yet
 	// support plan or parameter updates.  This logic is currently meant only
 	// to facilitate re-trying provision requests where there was a problem
@@ -664,7 +662,13 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				errorErrorCallingProvisionReason,
-				"Communication with ServiceBroker timed out; operation will not be retried: "+s)
+				"Communication with the ServiceBroker timed out; operation will not be retried: "+s)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionFailed,
+				v1alpha1.ConditionTrue,
+				errorErrorCallingProvisionReason,
+				"Communication with the ServiceBroker timed out; operation will not be retried: "+s)
 			setServiceInstanceStartOrphanMitigation(toUpdate)
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {

@@ -485,10 +485,13 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, "ServiceBrokerReturnedFailure")
-	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
-	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
-	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
+	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1alpha1.ServiceInstanceOperationProvision,
+		errorProvisionCallFailedReason,
+		"ServiceBrokerReturnedFailure",
+	)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1280,10 +1283,13 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorProvisionCallFailedReason, errorProvisionCallFailedReason)
-	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
-	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
-	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
+	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1alpha1.ServiceInstanceOperationProvision,
+		errorProvisionCallFailedReason,
+		errorProvisionCallFailedReason,
+	)
 }
 
 // TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer tests
@@ -1456,10 +1462,13 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, errorDeprovisionCalledReason, errorDeprovisionCalledReason)
-	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
-	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
-	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
+	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1alpha1.ServiceInstanceOperationDeprovision,
+		errorDeprovisionCalledReason,
+		errorDeprovisionCalledReason,
+	)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1763,10 +1772,13 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, errorReconciliationRetryTimeoutReason)
-	assertServiceInstanceCurrentOperationClear(t, updatedServiceInstance)
-	assertServiceInstanceReconciliationComplete(t, updatedServiceInstance)
-	assertOrphanMitigationInProgressFalse(t, updatedServiceInstance)
+	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1alpha1.ServiceInstanceOperationProvision,
+		errorErrorCallingProvisionReason,
+		errorReconciliationRetryTimeoutReason,
+	)
 
 	expectedEventPrefixes := []string{
 		api.EventTypeWarning + " " + errorErrorCallingProvisionReason,
@@ -1885,9 +1897,13 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, asyncProvisioningReason, errorReconciliationRetryTimeoutReason)
-	assertServiceInstanceCurrentOperation(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision)
-	assertOrphanMitigationInProgressTrue(t, updatedServiceInstance)
+	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1alpha1.ServiceInstanceOperationProvision,
+		asyncProvisioningReason,
+		errorReconciliationRetryTimeoutReason,
+	)
 	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
@@ -2472,7 +2488,7 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 		}
 		updatedServiceInstance, _ := updatedObject.(*v1alpha1.ServiceInstance)
 
-		if ok := testOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, tc.triggersOrphanMitigation); !ok {
+		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, tc.triggersOrphanMitigation); !ok {
 			continue
 		}
 
@@ -2517,7 +2533,7 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 	}
 
 	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
-	assertOrphanMitigationInProgressTrue(t, updatedServiceInstance)
+	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
 func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
@@ -2698,7 +2714,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 		}
 		updatedServiceInstance, _ := updatedObject.(*v1alpha1.ServiceInstance)
 
-		if ok := testOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
+		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
 			continue
 		}
 

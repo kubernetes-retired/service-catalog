@@ -1579,23 +1579,23 @@ func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
 	}
 }
 
-func assertOrphanMitigationInProgressTrue(t *testing.T, obj runtime.Object) {
-	testOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, true)
+func assertServiceInstanceOrphanMitigationInProgressTrue(t *testing.T, obj runtime.Object) {
+	testServiceInstanceOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, true)
 }
 
-func assertOrphanMitigationInProgressFalse(t *testing.T, obj runtime.Object) {
-	testOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, false)
+func assertServiceInstanceOrphanMitigationInProgressFalse(t *testing.T, obj runtime.Object) {
+	testServiceInstanceOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, false)
 }
 
-func expectOrphanMitigationInProgressTrue(t *testing.T, name string, obj runtime.Object) bool {
-	return testOrphanMitigationInProgress(t, name, fatalf, obj, true)
+func expectServiceInstanceOrphanMitigationInProgressTrue(t *testing.T, name string, obj runtime.Object) bool {
+	return testServiceInstanceOrphanMitigationInProgress(t, name, fatalf, obj, true)
 }
 
-func expectOrphanMitigationInProgressFalse(t *testing.T, name string, obj runtime.Object) bool {
-	return testOrphanMitigationInProgress(t, name, fatalf, obj, false)
+func expectServiceInstanceOrphanMitigationInProgressFalse(t *testing.T, name string, obj runtime.Object) bool {
+	return testServiceInstanceOrphanMitigationInProgress(t, name, fatalf, obj, false)
 }
 
-func testOrphanMitigationInProgress(t *testing.T, name string, f failfFunc, obj runtime.Object, expected bool) bool {
+func testServiceInstanceOrphanMitigationInProgress(t *testing.T, name string, f failfFunc, obj runtime.Object, expected bool) bool {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "
@@ -1647,7 +1647,7 @@ func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, r
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertServiceInstanceReconciliationNotComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
-	assertOrphanMitigationInProgressFalse(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 }
 
 func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation) {
@@ -1663,7 +1663,7 @@ func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, 
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciliationNotComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
-	assertOrphanMitigationInProgressFalse(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 }
 
 func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation) {
@@ -1684,7 +1684,7 @@ func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, ope
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertServiceInstanceReconciliationComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
-	assertOrphanMitigationInProgressFalse(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 	if operation == v1alpha1.ServiceInstanceOperationDeprovision {
 		assertEmptyFinalizers(t, obj)
 	}
@@ -1702,6 +1702,19 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	assertServiceInstanceCondition(t, obj, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, failureReason)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceReconciliationComplete(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason)
+	assertServiceInstanceCurrentOperation(t, obj, v1alpha1.ServiceInstanceOperationProvision)
+	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 
 func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string) {
