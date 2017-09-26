@@ -6788,11 +6788,12 @@ func (x *ServiceInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[1] = x.PlanName != ""
 			yyq2[2] = x.Parameters != nil
 			yyq2[3] = len(x.ParametersFrom) != 0
+			yyq2[5] = x.UserInfo != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(6)
 			} else {
-				yynn2 = 3
+				yynn2 = 2
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -6938,19 +6939,25 @@ func (x *ServiceInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.UserInfo == nil {
-					r.EncodeNil()
+				if yyq2[5] {
+					if x.UserInfo == nil {
+						r.EncodeNil()
+					} else {
+						x.UserInfo.CodecEncodeSelf(e)
+					}
 				} else {
-					x.UserInfo.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("userInfo"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.UserInfo == nil {
-					r.EncodeNil()
-				} else {
-					x.UserInfo.CodecEncodeSelf(e)
+				if yyq2[5] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("userInfo"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.UserInfo == nil {
+						r.EncodeNil()
+					} else {
+						x.UserInfo.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -9025,11 +9032,12 @@ func (x *ServiceInstanceCredentialSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[1] = x.Parameters != nil
 			yyq2[2] = len(x.ParametersFrom) != 0
 			yyq2[3] = x.SecretName != ""
+			yyq2[5] = x.UserInfo != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(6)
 			} else {
-				yynn2 = 3
+				yynn2 = 2
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -9167,19 +9175,25 @@ func (x *ServiceInstanceCredentialSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.UserInfo == nil {
-					r.EncodeNil()
+				if yyq2[5] {
+					if x.UserInfo == nil {
+						r.EncodeNil()
+					} else {
+						x.UserInfo.CodecEncodeSelf(e)
+					}
 				} else {
-					x.UserInfo.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("userInfo"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.UserInfo == nil {
-					r.EncodeNil()
-				} else {
-					x.UserInfo.CodecEncodeSelf(e)
+				if yyq2[5] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("userInfo"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.UserInfo == nil {
+						r.EncodeNil()
+					} else {
+						x.UserInfo.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {

@@ -429,7 +429,7 @@ type ServiceInstanceSpec struct {
 	// instance. This field is set by the API server and not settable by the
 	// end-user. User-provided values for this field are not saved.
 	// +optional
-	UserInfo *UserInfo `json:"userInfo"`
+	UserInfo *UserInfo `json:"userInfo,omitempty"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -578,7 +578,7 @@ type ServiceInstanceCredentialSpec struct {
 	// ServiceInstanceCredential. This field is set by the API server and not
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
-	UserInfo *UserInfo `json:"userInfo"`
+	UserInfo *UserInfo `json:"userInfo,omitempty"`
 }
 
 // ServiceInstanceCredentialStatus represents the current status of a ServiceInstanceCredential.
