@@ -90,7 +90,7 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance \"/test-instance\" references a non-existent ServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -123,7 +123,7 @@ func TestReconcileServiceInstanceNonExistentServiceBroker(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceBrokerReason + " " + "ServiceInstance \"test-ns/test-instance\" references a non-existent broker \"test-broker\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -330,7 +330,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -379,7 +379,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to prepare ServiceInstance parameters"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -502,7 +502,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "Error provisioning ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -574,7 +574,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -756,7 +756,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceServiceInstanceReason + " " + "Failed to get namespace \"test-ns\" during instance create: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -816,7 +816,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -872,7 +872,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + "DeprovisionBlockedByExistingCredentials Delete instance test-ns/test-instance blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first."
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 
 	// delete credentials
@@ -919,7 +919,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	assertNumEvents(t, events, 1)
 	expectedEvent = api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -994,7 +994,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + asyncDeprovisioningReason + " " + "The instance is being deprovisioned asynchronously"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1405,7 +1405,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %vExpected: %v", a, e)
 	}
 }
 
@@ -1466,7 +1466,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "Error deprovisioning ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": \"\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 
 }
@@ -1528,7 +1528,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1586,7 +1586,7 @@ func TestPollServiceInstanceServiceBrokerError(t *testing.T) {
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation for instance test-ns/test-instance: Status code: 403; ErrorMessage: %!q(*string=<nil>); description: %!q(*string=<nil>)"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1652,7 +1652,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1712,7 +1712,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1951,7 +1951,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 //   Failed=True  and reflects Ready=False, Failed=True, new timestamp
 func TestSetServiceInstanceCondition(t *testing.T) {
 	instanceWithCondition := func(condition *v1alpha1.ServiceInstanceCondition) *v1alpha1.ServiceInstance {
-		instance := getTestServiceInstanceWithRefs()
+		instance := getTestServiceInstance()
 		instance.Status = v1alpha1.ServiceInstanceStatus{
 			Conditions: []v1alpha1.ServiceInstanceCondition{*condition},
 		}

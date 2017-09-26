@@ -493,7 +493,7 @@ func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
 	i.Spec.ExternalServicePlanName = testServicePlanName
-	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
+	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: planGUID}
 
 	return i
 }

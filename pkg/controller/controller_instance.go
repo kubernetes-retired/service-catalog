@@ -308,7 +308,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 				"Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q with status code %d: ErrorMessage: %v, Description: %v",
 				instance.Namespace,
 				instance.Name,
-				serviceClass.Name,
+				serviceClass.Spec.ExternalName,
 				brokerName,
 				httpErr.StatusCode,
 				httpErr.ErrorMessage,
@@ -613,7 +613,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		}
 	}
 
-	glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+	glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 	response, err := brokerClient.ProvisionInstance(request)
 	if err != nil {
 		// There are two buckets of errors to handle:
@@ -690,8 +690,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// optionally return 'Operation' that will then need to be
 	// passed back to the broker during polling of last_operation.
 	if response.Async {
-		glog.V(5).Infof("Received asynchronous provisioning response for ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
-
+		glog.V(5).Infof("Received asynchronous provisioning response for ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
 		if response.OperationKey != nil && *response.OperationKey != "" {
 			key := string(*response.OperationKey)
 			toUpdate.Status.LastOperation = &key
@@ -718,7 +717,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		c.recorder.Eventf(instance, api.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
 	} else {
-		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
 		c.clearServiceInstanceCurrentOperation(toUpdate)
 
@@ -852,7 +851,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			}
 
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 
 			return c.finishPollingServiceInstance(instance)
 		}
@@ -1005,8 +1004,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			}
 
 			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-
-			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 		} else {
 			setServiceInstanceCondition(
 				toUpdate,
@@ -1029,7 +1027,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		if response.Description != nil {
 			description = *response.Description
 		}
-		s := fmt.Sprintf("Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %q", instance.Namespace, instance.Name, serviceClass.Name, brokerName, description)
+		s := fmt.Sprintf("Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %q", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
 		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		clone, err := api.Scheme.DeepCopy(instance)

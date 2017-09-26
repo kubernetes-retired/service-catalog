@@ -337,7 +337,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				return nil
 			}
 
-			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
+			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
 			glog.Warning(s)
 			c.recorder.Event(binding, api.EventTypeWarning, errorBindCallReason, s)
 			c.setServiceInstanceCredentialCondition(
@@ -497,7 +497,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					binding.Namespace,
 					instance.Namespace,
 					instance.Name,
-					serviceClass.Name,
+					serviceClass.Spec.ExternalName,
 					brokerName,
 					httpErr.Error(),
 				)
@@ -527,7 +527,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				binding.Namespace,
 				instance.Namespace,
 				instance.Name,
-				serviceClass.Name,
+				serviceClass.Spec.ExternalName,
 				brokerName,
 				err,
 			)
