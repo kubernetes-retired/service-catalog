@@ -622,7 +622,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if httpErr, ok := osb.IsHTTPError(err); ok {
 			// An error from the broker represents a permanent failure and
 			// should not be retried; set the Failed condition.
-			s := fmt.Sprintf("Error provisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, httpErr)
+			s := fmt.Sprintf("Error provisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, httpErr)
 			glog.Warning(s)
 			c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCallFailedReason, s)
 
@@ -645,7 +645,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			return nil
 		}
 
-		s := fmt.Sprintf("Error provisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", instance.Namespace, instance.Name, serviceClass.Name, brokerName, err)
+		s := fmt.Sprintf("Error provisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
 		glog.Warning(s)
 		c.recorder.Event(instance, api.EventTypeWarning, errorErrorCallingProvisionReason, s)
 

@@ -32,6 +32,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -71,10 +73,16 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	// There should only be one action that says it failed because no such class exists.
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("externalName", instance.Spec.ExternalServiceClassName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+
+	// There should be an action that says it failed because no such class exists.
+	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentServiceClassReason)
 
 	events := getRecordedEvents(testController)
@@ -191,8 +199,11 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  "nothere",
-			ExternalID:               instanceGUID,
+			ServiceClassRef: &v1.ObjectReference{
+				Name: serviceClassGUID,
+			},
+			ExternalServicePlanName: "nothere",
+			ExternalID:              instanceGUID,
 		},
 	}
 
@@ -203,14 +214,31 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
-	// ensure that the only action made on the catalog client was to set the condition on the
-	// instance to indicate that the service plan doesn't exist
+	// ensure that there are two actions, one to list plans and an action
+	// to set the condition on the instance to indicate that the service
+	// plan doesn't exist
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
 
-	// There should only be one action that says it failed because no such broker exists.
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertNumberOfActions(t, actions, 2)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("externalName", instance.Spec.ExternalServicePlanName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
 	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentServicePlanReason)
+
+	if err := checkCatalogClientActions(actions[1:], []catalogClientAction{
+		{
+			verb:             "update",
+			getRuntimeObject: getRuntimeObjectFromUpdateAction,
+			checkObject: checkServiceInstance(instanceDescription{
+				name:             testServiceInstanceName,
+				conditionReasons: []string{errorNonexistentServicePlanReason},
+			}),
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
@@ -411,7 +439,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorErrorCallingProvisionReason + " " + "Error provisioning ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": fake creation failure"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 

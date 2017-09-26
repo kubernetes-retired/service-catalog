@@ -249,7 +249,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 
 	servicePlan, err := c.getServicePlanByExternalNameOrRef(&instance.Spec)
 	if nil != err {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Name)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
@@ -324,7 +324,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 
 	servicePlan, err := c.getServicePlanByExternalNameOrRef(&instance.Spec)
 	if nil != err {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Name)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
 		c.updateServiceInstanceCredentialCondition(
 			binding,

@@ -310,7 +310,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					binding.Namespace,
 					instance.Namespace,
 					instance.Name,
-					serviceClass.Name,
+					serviceClass.Spec.ExternalName,
 					brokerName,
 					httpErr.Error(),
 				)

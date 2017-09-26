@@ -232,53 +232,6 @@ func TestReconcileServiceBrokerExistingServiceClass(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 }
 
-// TestReconcileServiceBrokerExistingServiceClassDifferentExternalID simulates catalog
-// refresh where broker lists an existing service but there is a mismatch on the
-// service class ID which should result in an error
-func TestReconcileServiceBrokerExistingServiceClassDifferentExternalID(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
-
-	testServiceClass := getTestServiceClass()
-	testServiceClass.Spec.ExternalID = "notTheSame"
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlan())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServicePlanNonbindable())
-
-	if err := testController.reconcileServiceBroker(getTestServiceBroker()); err == nil {
-		t.Fatal("The same service class should not be allowed with a different ID")
-	}
-
-	brokerActions := fakeServiceBrokerClient.Actions()
-	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
-	assertGetCatalog(t, brokerActions[0])
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 3)
-
-	tp := getTestServicePlan()
-	// 1 create for the plan on the class
-	assertCreate(t, actions[0], tp)
-
-	nbtp := getTestServicePlanNonbindable()
-	// 2 create for the plan on the class
-	assertCreate(t, actions[1], nbtp)
-
-	updatedServiceBroker := assertUpdateStatus(t, actions[2], getTestServiceBroker())
-	assertServiceBrokerReadyFalse(t, updatedServiceBroker)
-
-	// verify no kube resources created
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
-
-	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
-
-	expectedEvent := api.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling serviceClass "test-serviceclass" (broker "test-broker"): ServiceClass "test-serviceclass" already exists with OSB guid "notTheSame", received different guid "SCGUID"`
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
-	}
-}
-
 // TestReconcileServiceBrokerExistingServiceClassDifferentBroker simulates catalog
 // refresh where broker lists a service which matches an existing, already
 // cataloged service but the service points to a different ServiceBroker.  Results in an error.
