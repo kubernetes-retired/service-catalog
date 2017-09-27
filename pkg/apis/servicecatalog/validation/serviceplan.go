@@ -97,7 +97,6 @@ func validateServicePlanSpec(spec *sc.ServicePlanSpec, fldPath *field.Path) fiel
 func ValidateServicePlanUpdate(new *sc.ServicePlan, old *sc.ServicePlan) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, internalValidateServicePlan(new)...)
-	allErrs = append(allErrs, internalValidateServicePlan(old)...)
 	if new.Spec.ExternalID != old.Spec.ExternalID {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("externalID"), new.Spec.ExternalID, "externalID cannot change when updating a ServicePlan"))
 	}
