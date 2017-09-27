@@ -24,9 +24,12 @@ import (
 	"github.com/golang/glog"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apiserver/pkg/admission"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
+	servicecataloginternalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/typed/servicecatalog/internalversion"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
 	internalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion"
 
@@ -53,11 +56,12 @@ func Register(plugins *admission.Plugins) {
 // that the cluster actually has support for it.
 type defaultServicePlan struct {
 	*admission.Handler
-	scLister internalversion.ServiceClassLister
+	scClient servicecataloginternalversion.ServiceClassInterface
 	spLister internalversion.ServicePlanLister
 }
 
 var _ = scadmission.WantsInternalServiceCatalogInformerFactory(&defaultServicePlan{})
+var _ = scadmission.WantsInternalServiceCatalogClientSet(&defaultServicePlan{})
 
 func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	// we need to wait for our caches to warm
@@ -80,7 +84,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 
 	// cannot find what we're trying to create an instance of
-	sc, err := d.scLister.Get(instance.Spec.ExternalServiceClassName)
+	sc, err := d.getServiceClassByExternalName(a, instance.Spec.ExternalServiceClassName)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
@@ -122,8 +126,8 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	p := plans[0]
 	glog.V(4).Infof("Using default plan %q for Service Class %q for instance %s",
-		p.Name, sc.Name, instance.Name)
-	instance.Spec.ExternalServicePlanName = p.Name
+		p.Spec.ExternalName, sc.Spec.ExternalName, instance.Name)
+	instance.Spec.ExternalServicePlanName = p.Spec.ExternalName
 	return nil
 }
 
@@ -137,25 +141,44 @@ func NewDefaultServicePlan() (admission.Interface, error) {
 	}, nil
 }
 
+func (d *defaultServicePlan) SetInternalServiceCatalogClientSet(f internalclientset.Interface) {
+	d.scClient = f.Servicecatalog().ServiceClasses()
+}
+
 func (d *defaultServicePlan) SetInternalServiceCatalogInformerFactory(f informers.SharedInformerFactory) {
-	scInformer := f.Servicecatalog().InternalVersion().ServiceClasses()
-	d.scLister = scInformer.Lister()
 	spInformer := f.Servicecatalog().InternalVersion().ServicePlans()
 	d.spLister = spInformer.Lister()
 
 	readyFunc := func() bool {
-		return scInformer.Informer().HasSynced() && spInformer.Informer().HasSynced()
+		return spInformer.Informer().HasSynced()
 	}
 
 	d.SetReadyFunc(readyFunc)
 }
 
 func (d *defaultServicePlan) Validate() error {
-	if d.scLister == nil {
-		return errors.New("missing service class lister")
+	if d.scClient == nil {
+		return errors.New("missing service class interface")
 	}
 	if d.spLister == nil {
 		return errors.New("missing service plan lister")
 	}
 	return nil
+}
+
+func (d *defaultServicePlan) getServiceClassByExternalName(a admission.Attributes, scName string) (*servicecatalog.ServiceClass, error) {
+	glog.V(4).Infof("Fetching serviceclass as %q", scName)
+	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + scName}
+	servicePlans, err := d.scClient.List(listOpts)
+	if err != nil {
+		glog.V(4).Infof("List failed %q", err)
+		return nil, err
+	}
+	if len(servicePlans.Items) == 1 {
+		glog.V(4).Infof("Found Single item as %+v", servicePlans.Items[0])
+		return &servicePlans.Items[0], nil
+	}
+	msg := fmt.Sprintf("Could not find a single ServiceClass with name %q", scName)
+	glog.V(4).Info(msg)
+	return nil, admission.NewNotFound(a)
 }

@@ -231,6 +231,7 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // getServiceClassPlanAndServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
+// Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
 func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.getServiceClassByExternalNameOrRef(&instance.Spec)
 	if err != nil {
@@ -306,6 +307,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 // getServiceClassPlanAndServiceBrokerForServiceInstanceCredential is a sequence of operations that's
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given ServiceInstance.
+// Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
 func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.getServiceClassByExternalNameOrRef(&instance.Spec)
 	if err != nil {
