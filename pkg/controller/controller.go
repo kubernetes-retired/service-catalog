@@ -388,7 +388,7 @@ func (c *controller) getServicePlanByExternalNameOrRef(spec *v1alpha1.ServiceIns
 		return c.servicePlanLister.Get(spec.ServicePlanRef.Name)
 	}
 
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "externalName==" + spec.ExternalServicePlanName}
+	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + spec.ExternalServicePlanName}
 	servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
 	if err != nil {
 		return nil, err
@@ -421,9 +421,10 @@ func (c *controller) getServiceClassByExternalNameOrRef(spec *v1alpha1.ServiceIn
 	}
 
 	glog.V(4).Infof("looking up a ServiceClass from externalName: %q", spec.ExternalServiceClassName)
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "externalName==" + spec.ExternalServiceClassName}
+	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + spec.ExternalServiceClassName}
 	serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
 	if err != nil {
+		glog.V(4).Infof("****** failed to look up a ServiceClass from name: %q", err)
 		return nil, err
 	}
 	glog.V(4).Infof("Found %d ServiceClasses based on externalName %q", len(serviceClasses.Items), spec.ExternalServiceClassName)
@@ -437,6 +438,7 @@ func (c *controller) getServiceClassByExternalNameOrRef(spec *v1alpha1.ServiceIn
 			APIVersion:      sc.APIVersion,
 			ResourceVersion: sc.ResourceVersion,
 		}
+		glog.V(4).Infof("******  ServiceClassRef instance: %q", spec)
 		return sc, nil
 	}
 	return nil, fmt.Errorf("Could not find a single ServiceClass for %q, found %d", spec.ExternalServiceClassName, len(serviceClasses.Items))

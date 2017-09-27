@@ -740,12 +740,10 @@ func TestReconcileServiceBrokerWithStatusUpdateError(t *testing.T) {
 	assertNumberOfActions(t, actions, 4)
 
 	tp := getTestServicePlan()
-	tp.Name = util.ConstructPlanName(tp.Name, tp.Spec.ExternalID)
 	// 1 create for the plan on the class
 	assertCreate(t, actions[0], tp)
 
 	nbtp := getTestServicePlanNonbindable()
-	nbtp.Name = util.ConstructPlanName(nbtp.Name, nbtp.Spec.ExternalID)
 	// 2 create for the plan on the class
 	assertCreate(t, actions[1], nbtp)
 

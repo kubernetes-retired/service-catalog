@@ -77,7 +77,7 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("externalName", instance.Spec.ExternalServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
 	}
 	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
 
@@ -222,23 +222,12 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("externalName", instance.Spec.ExternalServicePlanName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServicePlanName),
 	}
 	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
-	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentServicePlanReason)
 
-	if err := checkCatalogClientActions(actions[1:], []catalogClientAction{
-		{
-			verb:             "update",
-			getRuntimeObject: getRuntimeObjectFromUpdateAction,
-			checkObject: checkServiceInstance(instanceDescription{
-				name:             testServiceInstanceName,
-				conditionReasons: []string{errorNonexistentServicePlanReason},
-			}),
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
+	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentServicePlanReason)
 
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
@@ -1905,7 +1894,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	fakeCatalogClient.AddReactor("update", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("update error")

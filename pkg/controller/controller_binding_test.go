@@ -134,7 +134,7 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("externalName", instance.Spec.ExternalServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
 	}
 	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
 
