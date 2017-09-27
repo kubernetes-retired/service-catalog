@@ -6786,6 +6786,8 @@ func (x *ServiceInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			_, _, _ = yysep2, yyq2, yy2arr2
 			const yyr2 bool = false
 			yyq2[1] = x.ExternalServicePlanName != ""
+			yyq2[2] = x.ServiceClassRef != nil
+			yyq2[3] = x.ServicePlanRef != nil
 			yyq2[4] = x.Parameters != nil
 			yyq2[5] = len(x.ParametersFrom) != 0
 			yyq2[7] = x.UserInfo != nil
@@ -6793,7 +6795,7 @@ func (x *ServiceInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(8)
 			} else {
-				yynn2 = 4
+				yynn2 = 2
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -6848,36 +6850,48 @@ func (x *ServiceInstanceSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.ServiceClassRef == nil {
-					r.EncodeNil()
+				if yyq2[2] {
+					if x.ServiceClassRef == nil {
+						r.EncodeNil()
+					} else {
+						x.ServiceClassRef.CodecEncodeSelf(e)
+					}
 				} else {
-					x.ServiceClassRef.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("ServiceClassRef"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.ServiceClassRef == nil {
-					r.EncodeNil()
-				} else {
-					x.ServiceClassRef.CodecEncodeSelf(e)
+				if yyq2[2] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("serviceClassRef"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.ServiceClassRef == nil {
+						r.EncodeNil()
+					} else {
+						x.ServiceClassRef.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.ServicePlanRef == nil {
-					r.EncodeNil()
+				if yyq2[3] {
+					if x.ServicePlanRef == nil {
+						r.EncodeNil()
+					} else {
+						x.ServicePlanRef.CodecEncodeSelf(e)
+					}
 				} else {
-					x.ServicePlanRef.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("ServicePlanRef"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.ServicePlanRef == nil {
-					r.EncodeNil()
-				} else {
-					x.ServicePlanRef.CodecEncodeSelf(e)
+				if yyq2[3] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("servicePlanRef"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.ServicePlanRef == nil {
+						r.EncodeNil()
+					} else {
+						x.ServicePlanRef.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -7079,7 +7093,7 @@ func (x *ServiceInstanceSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder
 					*((*string)(yyv6)) = r.DecodeString()
 				}
 			}
-		case "ServiceClassRef":
+		case "serviceClassRef":
 			if r.TryDecodeAsNil() {
 				if x.ServiceClassRef != nil {
 					x.ServiceClassRef = nil
@@ -7090,7 +7104,7 @@ func (x *ServiceInstanceSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder
 				}
 				x.ServiceClassRef.CodecDecodeSelf(d)
 			}
-		case "ServicePlanRef":
+		case "servicePlanRef":
 			if r.TryDecodeAsNil() {
 				if x.ServicePlanRef != nil {
 					x.ServicePlanRef = nil

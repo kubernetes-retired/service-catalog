@@ -907,13 +907,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
-						"ServiceClassRef": {
+						"serviceClassRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on ExternalServiceClassName",
 								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
 							},
 						},
-						"ServicePlanRef": {
+						"servicePlanRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on ExternalServicePlanName",
 								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
@@ -952,7 +952,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"externalServiceClassName", "ServiceClassRef", "ServicePlanRef", "externalID"},
+					Required: []string{"externalServiceClassName", "externalID"},
 				},
 			},
 			Dependencies: []string{
