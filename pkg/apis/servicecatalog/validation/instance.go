@@ -246,11 +246,26 @@ func internalValidateServiceInstanceStatusUpdateAllowed(new *sc.ServiceInstance,
 	return errors
 }
 
+func internalValidateServiceInstanceReferencesUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
+	errors := field.ErrorList{}
+	// TODO what would be errors?
+	return errors
+}
+
 // ValidateServiceInstanceStatusUpdate checks that when changing from an older
 // instance to a newer instance is okay. This only checks the instance.Status field.
 func ValidateServiceInstanceStatusUpdate(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, internalValidateServiceInstanceStatusUpdateAllowed(new, old)...)
+	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
+	return allErrs
+}
+
+// ValidateServiceInstanceReferencesUpdate checks that when changing from an older
+// instance to a newer instance is okay.
+func ValidateServiceInstanceReferencesUpdate(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, internalValidateServiceInstanceReferencesUpdateAllowed(new, old)...)
 	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
 	return allErrs
 }

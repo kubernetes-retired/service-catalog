@@ -54,6 +54,13 @@ type instanceStatusRESTStrategy struct {
 	instanceRESTStrategy
 }
 
+// implements interface RESTUpdateStrategy. This implementation validates updates to
+// instance.Spec.ServicePlanRef and instance.Spec.ServiceClassRef only and disallows
+// any modifications to the remaining instance.Spec or Status fields.
+type instanceReferencesRESTStrategy struct {
+	instanceRESTStrategy
+}
+
 var (
 	instanceRESTStrategies = instanceRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
@@ -72,6 +79,11 @@ var (
 		instanceRESTStrategies,
 	}
 	_ rest.RESTUpdateStrategy = instanceStatusUpdateStrategy
+
+	instanceReferencesUpdateStrategy = instanceStatusRESTStrategy{
+		instanceRESTStrategies,
+	}
+	_ rest.RESTUpdateStrategy = instanceReferencesUpdateStrategy
 )
 
 // Canonicalize does not transform a instance.
@@ -208,6 +220,39 @@ func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, 
 	}
 
 	return scv.ValidateServiceInstanceStatusUpdate(newServiceInstance, oldServiceInstance)
+}
+
+func (instanceReferencesRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+	newServiceInstance, ok := new.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-instance object to update to")
+	}
+	oldServiceInstance, ok := old.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-instance object to update from")
+	}
+	// Reference changes are not allowed to update spec, so stash the new
+	// ones away and overwrite with all the old ones and then update them
+	// again.
+	newServiceClassRef := newServiceInstance.Spec.ServiceClassRef
+	newServicePlanRef := newServiceInstance.Spec.ServicePlanRef
+	newServiceInstance.Spec = oldServiceInstance.Spec
+	newServiceInstance.Spec.ServiceClassRef = newServiceClassRef
+	newServiceInstance.Spec.ServicePlanRef = newServicePlanRef
+	newServiceInstance.Status = oldServiceInstance.Status
+}
+
+func (instanceReferencesRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+	newServiceInstance, ok := new.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-instance object to validate to")
+	}
+	oldServiceInstance, ok := old.(*sc.ServiceInstance)
+	if !ok {
+		glog.Fatal("received a non-instance object to validate from")
+	}
+
+	return scv.ValidateServiceInstanceReferencesUpdate(newServiceInstance, oldServiceInstance)
 }
 
 // setServiceInstanceUserInfo injects user.Info from the request context

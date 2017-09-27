@@ -245,7 +245,7 @@ func (p StorageProvider) v1alpha1Storage(
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	serviceClassStorage := serviceclass.NewStorage(*serviceClassOpts)
 	servicePlanStorage := serviceplan.NewStorage(*servicePlanOpts)
-	instanceStorage, instanceStatusStorage := instance.NewStorage(*instanceOpts)
+	instanceStorage, instanceStatusStorage, instanceReferencesStorage := instance.NewStorage(*instanceOpts)
 	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
 	if err != nil {
 		return nil, err
@@ -257,6 +257,7 @@ func (p StorageProvider) v1alpha1Storage(
 		"serviceplans":                      servicePlanStorage,
 		"serviceinstances":                  instanceStorage,
 		"serviceinstances/status":           instanceStatusStorage,
+		"serviceinstances/setReferences":    instanceReferencesStorage,
 		"serviceinstancecredentials":        bindingStorage,
 		"serviceinstancecredentials/status": bindingStatusStorage,
 	}, nil
