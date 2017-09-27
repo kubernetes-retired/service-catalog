@@ -126,7 +126,7 @@ echo 'Creating broker...'
 
 # This is the ID of the user-provided-service
 # Defined in ../pkg/broker/user_provided/controller/controller.go
-USER_PROVIDED_SERVICE_ID=4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+USER_PROVIDED_SERVICE_ID="4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
 
 kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthrough/ups-broker.yaml" \
   || error_exit 'Error when creating ups-broker.'

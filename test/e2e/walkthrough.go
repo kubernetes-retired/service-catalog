@@ -63,6 +63,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		var (
 			brokerName       = upsbrokername
 			serviceclassName = "user-provided-service"
+			serviceclassID   = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
 			testns           = "test-ns"
 			instanceName     = "ups-instance"
 			bindingName      = "ups-instance-credential"
@@ -103,7 +104,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(err).NotTo(HaveOccurred(), "failed to wait ServiceBroker to be ready")
 
 		By("Waiting for ServiceClass to be ready")
-		err = util.WaitForServiceClassToExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassName)
+		err = util.WaitForServiceClassToExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassID)
 		Expect(err).NotTo(HaveOccurred(), "failed to wait serviceclass to be ready")
 
 		// Provisioning a ServiceInstance and binding to it
@@ -118,8 +119,8 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				ServiceClassName: serviceclassName,
-				PlanName:         coreutil.ConstructPlanName("default", "86064792-7ea2-467b-af93-ac9694d96d52"),
+				ExternalServiceClassName: serviceclassName,
+				ExternalServicePlanName:  "default",
 			},
 		}
 		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instance)
@@ -206,7 +207,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Waiting for ServiceClass to not exist")
-		err = util.WaitForServiceClassToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassName)
+		err = util.WaitForServiceClassToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassID)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
