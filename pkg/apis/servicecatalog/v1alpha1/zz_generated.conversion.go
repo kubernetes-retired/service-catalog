@@ -703,6 +703,7 @@ func Convert_servicecatalog_ServiceInstanceSpec_To_v1alpha1_ServiceInstanceSpec(
 func autoConvert_v1alpha1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanceStatus(in *ServiceInstanceStatus, out *servicecatalog.ServiceInstanceStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.ServiceInstanceCondition)(unsafe.Pointer(&in.Conditions))
 	out.AsyncOpInProgress = in.AsyncOpInProgress
+	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	out.CurrentOperation = servicecatalog.ServiceInstanceOperation(in.CurrentOperation)
@@ -723,6 +724,7 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanc
 		out.Conditions = *(*[]ServiceInstanceCondition)(unsafe.Pointer(&in.Conditions))
 	}
 	out.AsyncOpInProgress = in.AsyncOpInProgress
+	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	out.CurrentOperation = ServiceInstanceOperation(in.CurrentOperation)
