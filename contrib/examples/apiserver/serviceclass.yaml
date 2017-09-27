@@ -1,7 +1,7 @@
 apiVersion: servicecatalog.k8s.io/v1alpha1
 kind: ServiceClass
 metadata:
-  name: test-serviceclass
+  name: d35b55b2-b1fd-4123-8045-5b9c619cb629
 spec:
   brokerName: test-broker
   bindable: true

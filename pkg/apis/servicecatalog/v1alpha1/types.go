@@ -242,7 +242,7 @@ type ServiceClassSpec struct {
 	PlanUpdatable bool `json:"planUpdatable"`
 
 	// ExternalName is the name of this object that the Service Broker
-	// exposed this Service Plan as. Mutable.
+	// exposed this Service Class as. Mutable.
 	ExternalName string `json:"externalName"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
@@ -386,19 +386,29 @@ type ServiceInstance struct {
 
 // ServiceInstanceSpec represents the desired state of an Instance.
 type ServiceInstanceSpec struct {
-	// ServiceClassName is the reference to the ServiceClass this ServiceInstance
-	// should be provisioned from.
+	// ExternalServiceClassName is the human-readable name of the service
+	// as reported by the broker. Note that if the broker changes
+	// the name of the ServiceClass, it will not be reflected here,
+	// and to see the current name of the ServiceClass, you should
+	// follow the ServiceClassRef below.
 	//
 	// Immutable.
-	ServiceClassName string `json:"serviceClassName"`
+	ExternalServiceClassName string `json:"externalServiceClassName"`
+	// ExternalServicePlanName is the human-readable name of the plan
+	// as reported by the broker. Note that if the broker changes
+	// the name of the ServicePlan, it will not be reflected here,
+	// and to see the current name of the ServicePlan, you should
+	// follow the ServicePlanRef below.
+	ExternalServicePlanName string `json:"externalServicePlanName,omitempty"`
 
-	// PlanName is the name of the ServicePlan this ServiceInstance should be
-	// provisioned from.
-	// If omitted and there is only one plan in the specified ServiceClass
-	// it will be used.
-	// If omitted and there are more than one plan in the specified ServiceClass
-	// the request will be rejected.
-	PlanName string `json:"planName,omitempty"`
+	// ServiceClassRef is a reference to the ServiceClass
+	// that the user selected.
+	// This is set by the controller based on ExternalServiceClassName
+	ServiceClassRef *v1.ObjectReference `json:"serviceClassRef,omitempty"`
+	// ServicePlanRef is a reference to the ServicePlan
+	// that the user selected.
+	// This is set by the controller based on ExternalServicePlanName
+	ServicePlanRef *v1.ObjectReference `json:"servicePlanRef,omitempty"`
 
 	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.

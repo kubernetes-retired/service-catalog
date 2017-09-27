@@ -48,7 +48,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	coreutil "github.com/kubernetes-incubator/service-catalog/pkg/util"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
@@ -56,6 +55,7 @@ const (
 	testNamespace        = "test-namespace"
 	testBrokerName       = "test-broker"
 	testServiceClassName = "test-service"
+	testServiceClassID   = "12345"
 	testPlanName         = "test-plan"
 	testPlanExternalID   = "34567"
 	testInstanceName     = "test-instance"
@@ -136,7 +136,7 @@ func TestBasicFlowsSync(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	err = util.WaitForServiceClassToExist(client, testServiceClassID)
 	if nil != err {
 		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
@@ -149,9 +149,9 @@ func TestBasicFlowsSync(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
-			ExternalID:       testExternalID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testPlanName,
+			ExternalID:               testExternalID,
 		},
 	}
 
@@ -304,7 +304,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	err = util.WaitForServiceClassToExist(client, testServiceClassID)
 	if nil != err {
 		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
@@ -317,9 +317,9 @@ func TestBasicFlowsAsync(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
-			ExternalID:       testExternalID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testPlanName,
+			ExternalID:               testExternalID,
 		},
 	}
 
@@ -461,7 +461,7 @@ func TestProvisionFailure(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	err = util.WaitForServiceClassToExist(client, testServiceClassID)
 	if nil != err {
 		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
@@ -474,9 +474,9 @@ func TestProvisionFailure(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
-			ExternalID:       testExternalID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testPlanName,
+			ExternalID:               testExternalID,
 		},
 	}
 
@@ -585,7 +585,7 @@ func TestBindingFailure(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	err = util.WaitForServiceClassToExist(client, testServiceClassID)
 	if nil != err {
 		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
@@ -598,9 +598,9 @@ func TestBindingFailure(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
-			ExternalID:       testExternalID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testPlanName,
+			ExternalID:               testExternalID,
 		},
 	}
 
@@ -769,7 +769,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassName)
+	err = util.WaitForServiceClassToExist(client, testServiceClassID)
 	if nil != err {
 		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
 	}
@@ -789,9 +789,9 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         coreutil.ConstructPlanName(testPlanName, testPlanExternalID),
-			ExternalID:       testExternalID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testPlanName,
+			ExternalID:               testExternalID,
 		},
 	}
 

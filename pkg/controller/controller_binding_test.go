@@ -32,6 +32,8 @@ import (
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -96,9 +98,9 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: "nothere",
-			PlanName:         testServicePlanName,
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: "nothere",
+			ExternalServicePlanName:  testServicePlanName,
+			ExternalID:               instanceGUID,
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
@@ -125,11 +127,20 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	// There are two actions, one to list to try to find the ServiceClass
+	// and one to update to failed status because there's no such service
+	// class.
+	assertNumberOfActions(t, actions, 2)
 
-	// There should only be one action that says it failed because no such service class.
-	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+
+	// There should be one action that says it failed because no such service class.
+	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[1], binding)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -631,7 +642,7 @@ func TestReconcileServiceInstanceCredentialServiceInstanceNotReady(t *testing.T)
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -681,7 +692,7 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -728,7 +739,7 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -948,7 +959,7 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstance())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()

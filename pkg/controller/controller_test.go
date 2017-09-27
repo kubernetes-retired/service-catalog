@@ -30,7 +30,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -368,7 +367,7 @@ func getTestServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1a
 // a bindable service class wired to the result of getTestServiceBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassName},
+		ObjectMeta: metav1.ObjectMeta{Name: serviceClassGUID},
 		Spec: v1alpha1.ServiceClassSpec{
 			ServiceBrokerName: testServiceBrokerName,
 			Description:       "a test service",
@@ -381,7 +380,7 @@ func getTestServiceClass() *v1alpha1.ServiceClass {
 
 func getTestServicePlan() *v1alpha1.ServicePlan {
 	return &v1alpha1.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: testServicePlanName},
+		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
 		Spec: v1alpha1.ServicePlanSpec{
 			ExternalID:   planGUID,
 			ExternalName: testServicePlanName,
@@ -392,7 +391,7 @@ func getTestServicePlan() *v1alpha1.ServicePlan {
 
 func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
 	return &v1alpha1.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableServicePlanName},
+		ObjectMeta: metav1.ObjectMeta{Name: nonbindablePlanGUID},
 		Spec: v1alpha1.ServicePlanSpec{
 			ExternalName: testNonbindableServicePlanName,
 			ExternalID:   nonbindablePlanGUID,
@@ -404,7 +403,7 @@ func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
 // an unbindable service class wired to the result of getTestServiceBroker()
 func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableServiceClassName},
+		ObjectMeta: metav1.ObjectMeta{Name: nonbindableServiceClassGUID},
 		Spec: v1alpha1.ServiceClassSpec{
 			ServiceBrokerName: testServiceBrokerName,
 			ExternalName:      testNonbindableServiceClassName,
@@ -445,6 +444,25 @@ func getTestCatalog() *osb.CatalogResponse {
 }
 
 // instance referencing the result of getTestServiceClass()
+// and getTestServicePlan()
+// This version sets:
+// ExternalServiceClassName and ExternalServicePlanName as well
+// as ServiceClassRef and ServicePlanRef which means that the
+// ServiceClass and ServicePlan are fetched using
+// Service[Class|Plan]Lister.get(spec.Service[Class|Plan]Ref.Name)
+func getTestServiceInstanceWithRefs() *v1alpha1.ServiceInstance {
+	sc := getTestServiceInstance()
+	sc.Spec.ServiceClassRef = &v1.ObjectReference{Name: serviceClassGUID}
+	sc.Spec.ServicePlanRef = &v1.ObjectReference{Name: planGUID}
+	return sc
+}
+
+// instance referencing the result of getTestServiceClass()
+// and getTestServicePlan()
+// This version sets:
+// ExternalServiceClassName and ExternalServicePlanName, so depending on the
+// test, you may need to add reactors that deal with List due to the need
+// to resolve Names to IDs for both ServiceClass and ServicePlan
 func getTestServiceInstance() *v1alpha1.ServiceInstance {
 	return &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -453,9 +471,9 @@ func getTestServiceInstance() *v1alpha1.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         testServicePlanName,
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  testServicePlanName,
+			ExternalID:               instanceGUID,
 		},
 	}
 }
@@ -463,8 +481,10 @@ func getTestServiceInstance() *v1alpha1.ServiceInstance {
 // an instance referencing the result of getTestNonbindableServiceClass, on the non-bindable plan.
 func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstance()
-	i.Spec.ServiceClassName = testNonbindableServiceClassName
-	i.Spec.PlanName = testNonbindableServicePlanName
+	i.Spec.ExternalServiceClassName = testNonbindableServiceClassName
+	i.Spec.ExternalServicePlanName = testNonbindableServicePlanName
+	i.Spec.ServiceClassRef = &v1.ObjectReference{Name: nonbindableServiceClassGUID}
+	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
 
 	return i
 }
@@ -472,20 +492,22 @@ func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 // an instance referencing the result of getTestNonbindableServiceClass, on the bindable plan.
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
-	i.Spec.PlanName = testServicePlanName
+	i.Spec.ExternalServicePlanName = testServicePlanName
+	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: planGUID}
 
 	return i
 }
 
 func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.ServiceInstance {
-	i := getTestServiceInstance()
-	i.Spec.PlanName = testNonbindableServicePlanName
+	i := getTestServiceInstanceWithRefs()
+	i.Spec.ExternalServicePlanName = testNonbindableServicePlanName
+	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
 
 	return i
 }
 
 func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ServiceInstance {
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
 			Type:               v1alpha1.ServiceInstanceConditionReady,
@@ -498,7 +520,7 @@ func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1
 }
 
 func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
 			Type:   v1alpha1.ServiceInstanceConditionFailed,
@@ -511,7 +533,11 @@ func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
 
 // getTestServiceInstanceAsync returns an instance in async mode
 func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.ServiceInstance {
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
+	if operation != "" {
+		instance.Status.LastOperation = &operation
+	}
+
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -532,8 +558,12 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 }
 
 func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.ServiceInstance {
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Generation = 2
+	if operation != "" {
+		instance.Status.LastOperation = &operation
+	}
+
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
 		Conditions: []v1alpha1.ServiceInstanceCondition{{
@@ -630,8 +660,8 @@ func TestCatalogConversion(t *testing.T) {
 		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(servicePlans))
 	}
 
-	checkPlan(servicePlans[0], util.ConstructPlanName("fake-plan-1", "d3031751-XXXX-XXXX-XXXX-a42377d3320e"), "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
-	checkPlan(servicePlans[1], util.ConstructPlanName("fake-plan-2", "0f4008b5-XXXX-XXXX-XXXX-dace631cd648"), "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
+	checkPlan(servicePlans[0], "d3031751-XXXX-XXXX-XXXX-a42377d3320e", "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
+	checkPlan(servicePlans[1], "0f4008b5-XXXX-XXXX-XXXX-dace631cd648", "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
 
 func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
@@ -689,9 +719,15 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	}
 }
 
-func checkPlan(plan *v1alpha1.ServicePlan, planName, planDescription string, t *testing.T) {
-	if plan.Name != planName {
-		t.Errorf("Expected plan name to be %q, but was: %q", planName, plan.Name)
+func checkPlan(plan *v1alpha1.ServicePlan, planID, planName, planDescription string, t *testing.T) {
+	if plan.Name != planID {
+		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
+	}
+	if plan.Spec.ExternalID != planID {
+		t.Errorf("Expected plan ExternalID to be %q, but was: %q", planID, plan.Spec.ExternalID)
+	}
+	if plan.Spec.ExternalName != planName {
+		t.Errorf("Expected plan ExternalName to be %q, but was: %q", planName, plan.Spec.ExternalName)
 	}
 	if plan.Spec.Description != planDescription {
 		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Spec.Description)
@@ -843,6 +879,7 @@ const testCatalogForServicePlanBindableOverride = `{
   "services": [
     {
       "name": "bindable",
+      "id": "bindable-id",
       "bindable": true,
       "plans": [{
         "name": "bindable-bindable",
@@ -856,6 +893,7 @@ const testCatalogForServicePlanBindableOverride = `{
     },
     {
       "name": "unbindable",
+      "id": "unbindable-id",
       "bindable": false,
       "plans": [{
         "name": "unbindable-unbindable",
@@ -898,19 +936,21 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 	eclasses := []*v1alpha1.ServiceClass{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "bindable",
+				Name: "bindable-id",
 			},
 			Spec: v1alpha1.ServiceClassSpec{
 				ExternalName: "bindable",
+				ExternalID:   "bindable-id",
 				Bindable:     true,
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "unbindable",
+				Name: "unbindable-id",
 			},
 			Spec: v1alpha1.ServiceClassSpec{
 				ExternalName: "unbindable",
+				ExternalID:   "unbindable-id",
 				Bindable:     false,
 			},
 		},
@@ -919,53 +959,53 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 	eplans := []*v1alpha1.ServicePlan{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("bindable-bindable", "s1_plan1_id"),
+				Name: "s1_plan1_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalID:   "s1_plan1_id",
 				ExternalName: "bindable-bindable",
 				Bindable:     nil,
 				ServiceClassRef: v1.LocalObjectReference{
-					Name: "bindable",
+					Name: "bindable-id",
 				},
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("bindable-unbindable", "s1_plan2_id"),
+				Name: "s1_plan2_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalName: "bindable-unbindable",
 				ExternalID:   "s1_plan2_id",
 				Bindable:     falsePtr(),
 				ServiceClassRef: v1.LocalObjectReference{
-					Name: "bindable",
+					Name: "bindable-id",
 				},
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("unbindable-unbindable", "s2_plan1_id"),
+				Name: "s2_plan1_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalName: "unbindable-unbindable",
 				ExternalID:   "s2_plan1_id",
 				Bindable:     nil,
 				ServiceClassRef: v1.LocalObjectReference{
-					Name: "unbindable",
+					Name: "unbindable-id",
 				},
 			},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: util.ConstructPlanName("unbindable-bindable", "s2_plan2_id"),
+				Name: "s2_plan2_id",
 			},
 			Spec: v1alpha1.ServicePlanSpec{
 				ExternalName: "unbindable-bindable",
 				ExternalID:   "s2_plan2_id",
 				Bindable:     truePtr(),
 				ServiceClassRef: v1.LocalObjectReference{
-					Name: "unbindable",
+					Name: "unbindable-id",
 				},
 			},
 		},
@@ -1198,6 +1238,12 @@ func assertGet(t *testing.T, action clientgotesting.Action, obj interface{}) {
 	assertActionFor(t, action, "get", "" /* subresource */, obj)
 }
 
+func assertList(t *testing.T, action clientgotesting.Action, obj interface{}, listRestrictions clientgotesting.ListRestrictions) {
+	assertActionFor(t, action, "list", "" /* subresource */, obj)
+	// Cast is ok since in the method above it's checked to be ListAction
+	assertListRestrictions(t, listRestrictions, action.(clientgotesting.ListAction).GetListRestrictions())
+}
+
 func assertCreate(t *testing.T, action clientgotesting.Action, obj interface{}) runtime.Object {
 	return assertActionFor(t, action, "create", "" /* subresource */, obj)
 }
@@ -1289,6 +1335,13 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 			return nil, false
 		}
 
+		return nil, true
+	case "list":
+		_, ok := action.(clientgotesting.ListAction)
+		if !ok {
+			f(t, "%vUnexpected type; failed to convert action %+v to ListAction", logContext, action)
+			return nil, false
+		}
 		return nil, true
 	case "delete":
 		deleteAction, ok := action.(clientgotesting.DeleteAction)
@@ -1829,6 +1882,16 @@ func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 
 func assertNumberOfServiceBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
 	testNumberOfServiceBrokerActions(t, "" /* name */, fatalf, actions, number)
+}
+
+// assertListRestrictions compares expected Fields / Labels on a list options.
+func assertListRestrictions(t *testing.T, e, a clientgotesting.ListRestrictions) {
+	if el, al := e.Labels.String(), a.Labels.String(); el != al {
+		fatalf(t, "ListRestrictions.Labels don't match, expected %q got %q", el, al)
+	}
+	if ef, af := e.Fields.String(), a.Fields.String(); ef != af {
+		fatalf(t, "ListRestrictions.Fields don't match, expected %q got %q", ef, af)
+	}
 }
 
 func expectNumberOfServiceBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {

@@ -39,8 +39,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan",
 				},
 			},
 			valid: true,
@@ -52,8 +52,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Name: "test-instance",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "test-plan",
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "test-plan",
 				},
 			},
 			valid: false,
@@ -66,7 +66,7 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					PlanName: "test-plan",
+					ExternalServicePlanName: "test-plan",
 				},
 			},
 			valid: false,
@@ -79,8 +79,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "oing20&)*^&",
-					PlanName:         "test-plan",
+					ExternalServiceClassName: "oing20&)*^&",
+					ExternalServicePlanName:  "test-plan",
 				},
 			},
 			valid: false,
@@ -93,7 +93,7 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
+					ExternalServiceClassName: "test-serviceclass",
 				},
 			},
 			valid: false,
@@ -106,8 +106,8 @@ func TestValidateServiceInstance(t *testing.T) {
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceInstanceSpec{
-					ServiceClassName: "test-serviceclass",
-					PlanName:         "9651.JVHbebe",
+					ExternalServiceClassName: "test-serviceclass",
+					ExternalServicePlanName:  "9651.JVHbebe",
 				},
 			},
 			valid: false,
@@ -165,8 +165,8 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ServiceClassName: "test-serviceclass",
-				PlanName:         "test-plan",
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  "test-plan",
 			},
 		}
 		if tc.onGoingSpecChange {
@@ -182,8 +182,8 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ServiceClassName: "test-serviceclass",
-				PlanName:         "test-plan",
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  "test-plan",
 			},
 		}
 		if tc.newSpecChange {
@@ -319,8 +319,8 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ServiceClassName: "test-serviceclass",
-				PlanName:         "test-plan",
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  "test-plan",
 			},
 			Status: *tc.old,
 		}
@@ -330,8 +330,8 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ServiceClassName: "test-serviceclass",
-				PlanName:         "test-plan",
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  "test-plan",
 			},
 			Status: *tc.new,
 		}

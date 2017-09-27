@@ -474,7 +474,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 						},
 						"externalName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Plan as. Mutable.",
+								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -893,18 +893,30 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				SchemaProps: spec.SchemaProps{
 					Description: "ServiceInstanceSpec represents the desired state of an Instance.",
 					Properties: map[string]spec.Schema{
-						"serviceClassName": {
+						"externalServiceClassName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ServiceClassName is the reference to the ServiceClass this ServiceInstance should be provisioned from.\n\nImmutable.",
+								Description: "ExternalServiceClassName is the human-readable name of the service as reported by the broker. Note that if the broker changes the name of the ServiceClass, it will not be reflected here, and to see the current name of the ServiceClass, you should follow the ServiceClassRef below.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
-						"planName": {
+						"externalServicePlanName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "PlanName is the name of the ServicePlan this ServiceInstance should be provisioned from. If omitted and there is only one plan in the specified ServiceClass it will be used. If omitted and there are more than one plan in the specified ServiceClass the request will be rejected.",
+								Description: "ExternalServicePlanName is the human-readable name of the plan as reported by the broker. Note that if the broker changes the name of the ServicePlan, it will not be reflected here, and to see the current name of the ServicePlan, you should follow the ServicePlanRef below.",
 								Type:        []string{"string"},
 								Format:      "",
+							},
+						},
+						"serviceClassRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on ExternalServiceClassName",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
+							},
+						},
+						"servicePlanRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on ExternalServicePlanName",
+								Ref:         ref("k8s.io/client-go/pkg/api/v1.ObjectReference"),
 							},
 						},
 						"parameters": {
@@ -940,11 +952,11 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"serviceClassName", "externalID"},
+					Required: []string{"externalServiceClassName", "externalID"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceStatus": {
 			Schema: spec.Schema{

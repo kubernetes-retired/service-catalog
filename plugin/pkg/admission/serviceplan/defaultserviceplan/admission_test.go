@@ -60,7 +60,9 @@ func newFakeServiceCatalogClientForTest(sc *servicecatalog.ServiceClass, sps []*
 		ListMeta: metav1.ListMeta{
 			ResourceVersion: "1",
 		}}
-	scList.Items = append(scList.Items, *sc)
+	if sc != nil {
+		scList.Items = append(scList.Items, *sc)
+	}
 
 	fakeClient.AddReactor("list", "serviceclasses", func(action core.Action) (bool, runtime.Object, error) {
 		return true, scList, nil
@@ -89,15 +91,23 @@ func newServiceInstance(namespace string) servicecatalog.ServiceInstance {
 }
 
 // newServiceClass returns a new serviceclass.
-func newServiceClass(name string) *servicecatalog.ServiceClass {
-	sc := &servicecatalog.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: name}}
+func newServiceClass(id string, name string) *servicecatalog.ServiceClass {
+	sc := &servicecatalog.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: id,
+		},
+		Spec: servicecatalog.ServiceClassSpec{
+			ExternalID:   id,
+			ExternalName: name,
+		},
+	}
 	return sc
 }
 
 // newServiceClass returns a new serviceclass.
 func newServicePlans(count uint) []*servicecatalog.ServicePlan {
 	sp1 := &servicecatalog.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: "bar"},
+		ObjectMeta: metav1.ObjectMeta{Name: "bar-id"},
 		Spec: servicecatalog.ServicePlanSpec{
 			ExternalName: "bar",
 			ExternalID:   "12345",
@@ -105,7 +115,7 @@ func newServicePlans(count uint) []*servicecatalog.ServicePlan {
 	}
 
 	sp2 := &servicecatalog.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: "baz"},
+		ObjectMeta: metav1.ObjectMeta{Name: "baz-id"},
 		Spec: servicecatalog.ServicePlanSpec{
 			ExternalName: "baz",
 			ExternalID:   "23456",
@@ -136,18 +146,18 @@ func TestWithListFailure(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
 		t.Errorf("unexpected success with no ServiceClasses.List succeeding")
-	} else if !strings.Contains(err.Error(), "not yet ready to handle request") {
+	} else if !strings.Contains(err.Error(), "simulated test failure") {
 		t.Errorf("did not find expected error, got %q", err)
 	}
 }
 
 func TestWithPlanWorks(t *testing.T) {
-	fakeClient := newFakeServiceCatalogClientForTest(&servicecatalog.ServiceClass{}, newServicePlans(1))
+	fakeClient := newFakeServiceCatalogClientForTest(nil, newServicePlans(1))
 	handler, informerFactory, err := newHandlerForTest(fakeClient)
 	if err != nil {
 		t.Errorf("unexpected error initializing handler: %v", err)
@@ -155,8 +165,8 @@ func TestWithPlanWorks(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
-	instance.Spec.PlanName = "bar"
+	instance.Spec.ExternalServiceClassName = "foo"
+	instance.Spec.ExternalServicePlanName = "bar"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
@@ -169,7 +179,7 @@ func TestWithPlanWorks(t *testing.T) {
 }
 
 func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
-	fakeClient := newFakeServiceCatalogClientForTest(&servicecatalog.ServiceClass{}, newServicePlans(1))
+	fakeClient := newFakeServiceCatalogClientForTest(nil, newServicePlans(1))
 	handler, informerFactory, err := newHandlerForTest(fakeClient)
 	if err != nil {
 		t.Errorf("unexpected error initializing handler: %v", err)
@@ -177,7 +187,7 @@ func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foobar"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
@@ -189,7 +199,7 @@ func TestWithNoPlanFailsWithNoServiceClass(t *testing.T) {
 
 // checks that the defaulting action works when a service class only provides a single plan.
 func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
-	sc := newServiceClass("foo")
+	sc := newServiceClass("foo-id", "foo")
 	sps := newServicePlans(1)
 	glog.V(4).Infof("Created Service as %+v", sc)
 	fakeClient := newFakeServiceCatalogClientForTest(sc, sps)
@@ -201,7 +211,7 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
@@ -212,14 +222,14 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 		t.Errorf("unexpected error %q returned from admission handler: %v", err, actions)
 	}
 	// Make sure the ServiceInstance has been mutated to include the service plan name
-	if instance.Spec.PlanName != "bar" {
+	if instance.Spec.ExternalServicePlanName != "bar" {
 		t.Errorf("PlanName was not modified for the default plan")
 	}
 }
 
 // checks that defaulting fails when there are multiple plans to choose from.
 func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
-	sc := newServiceClass("foo")
+	sc := newServiceClass("foo-id", "foo")
 	sps := newServicePlans(2)
 	glog.V(4).Infof("Created Service as %+v", sc)
 	fakeClient := newFakeServiceCatalogClientForTest(sc, sps)
@@ -230,7 +240,7 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	instance := newServiceInstance("dummy")
-	instance.Spec.ServiceClassName = "foo"
+	instance.Spec.ExternalServiceClassName = "foo"
 
 	err = handler.Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {

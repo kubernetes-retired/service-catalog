@@ -386,15 +386,30 @@ type ServiceInstance struct {
 
 // ServiceInstanceSpec represents the desired state of an Instance.
 type ServiceInstanceSpec struct {
-	// ServiceClassName is the name of the ServiceClass this ServiceInstance
-	// should be provisioned from.
+	// ExternalServiceClassName is the human-readable name of the service
+	// as reported by the broker. Note that if the broker changes
+	// the name of the ServiceClass, it will not be reflected here,
+	// and to see the current name of the ServiceClass, you should
+	// follow the ServiceClassRef below.
 	//
 	// Immutable.
-	ServiceClassName string
+	ExternalServiceClassName string
 
-	// PlanName is the name of the ServicePlan this ServiceInstance should be
-	// provisioned from.
-	PlanName string
+	// ExternalServicePlanName is the human-readable name of the plan
+	// as reported by the broker. Note that if the broker changes
+	// the name of the ServicePlan, it will not be reflected here,
+	// and to see the current name of the ServicePlan, you should
+	// follow the ServicePlanRef below.
+	ExternalServicePlanName string
+
+	// ServiceClassRef is a reference to the ServiceClass
+	// that the user selected.
+	// This is set by the controller based on ExternalServiceClassName
+	ServiceClassRef *v1.ObjectReference
+	// ServicePlanRef is a reference to the ServicePlan
+	// that the user selected.
+	// This is set by the controller based on ExternalServicePlanName
+	ServicePlanRef *v1.ObjectReference
 
 	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.

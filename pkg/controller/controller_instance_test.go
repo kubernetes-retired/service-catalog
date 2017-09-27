@@ -32,6 +32,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -57,9 +59,9 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: "nothere",
-			PlanName:         "nothere",
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: "nothere",
+			ExternalServicePlanName:  "nothere",
+			ExternalID:               instanceGUID,
 		},
 	}
 
@@ -71,10 +73,16 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	// There should only be one action that says it failed because no such class exists.
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+
+	// There should be an action that says it failed because no such class exists.
+	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentServiceClassReason)
 
 	events := getRecordedEvents(testController)
@@ -82,7 +90,7 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance \"/test-instance\" references a non-existent ServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -94,7 +102,7 @@ func TestReconcileServiceInstanceNonExistentServiceBroker(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatal("The broker referenced by the instance exists when it should not.")
@@ -115,7 +123,7 @@ func TestReconcileServiceInstanceNonExistentServiceBroker(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceBrokerReason + " " + "ServiceInstance \"test-ns/test-instance\" references a non-existent broker \"test-broker\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -137,7 +145,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("no secret defined")
@@ -190,9 +198,12 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ServiceClassName: testServiceClassName,
-			PlanName:         "nothere",
-			ExternalID:       instanceGUID,
+			ExternalServiceClassName: testServiceClassName,
+			ServiceClassRef: &v1.ObjectReference{
+				Name: serviceClassGUID,
+			},
+			ExternalServicePlanName: "nothere",
+			ExternalID:              instanceGUID,
 		},
 	}
 
@@ -203,13 +214,19 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
-	// ensure that the only action made on the catalog client was to set the condition on the
-	// instance to indicate that the service plan doesn't exist
+	// ensure that there are two actions, one to list plans and an action
+	// to set the condition on the instance to indicate that the service
+	// plan doesn't exist
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
 
-	// There should only be one action that says it failed because no such broker exists.
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertNumberOfActions(t, actions, 2)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServicePlanName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentServicePlanReason)
 
 	// check to make sure the only event sent indicated that the instance references a non-existent
@@ -233,7 +250,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
@@ -302,7 +319,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -315,7 +332,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
 	parameters.Args["second"] = "second-arg"
@@ -351,7 +368,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorWithParameters + " " + "Failed to prepare ServiceInstance parameters"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -369,7 +386,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance.")
@@ -411,7 +428,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorErrorCallingProvisionReason + " " + "Error provisioning ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": fake creation failure"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -433,7 +450,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -474,7 +491,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "Error provisioning ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -494,7 +511,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
@@ -546,7 +563,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -571,7 +588,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -638,7 +655,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -699,7 +716,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("There should not be a namespace for the ServiceInstance to be created in.")
@@ -728,7 +745,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + errorFindingNamespaceServiceInstanceReason + " " + "Failed to get namespace \"test-ns\" during instance create: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -744,7 +761,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
@@ -788,7 +805,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -809,7 +826,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	credentials := getTestServiceInstanceCredential()
 	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Add(credentials)
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
@@ -844,7 +861,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 
 	expectedEvent := api.EventTypeWarning + " " + "DeprovisionBlockedByExistingCredentials Delete instance test-ns/test-instance blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first."
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 
 	// delete credentials
@@ -891,7 +908,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	assertNumEvents(t, events, 1)
 	expectedEvent = api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -910,7 +927,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
@@ -966,7 +983,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + asyncDeprovisioningReason + " " + "The instance is being deprovisioned asynchronously"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1025,7 +1042,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeServiceBroker(t *testing.T) 
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	instance.Generation = 1
@@ -1377,7 +1394,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %vExpected: %v", a, e)
 	}
 }
 
@@ -1438,7 +1455,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "Error deprovisioning ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": \"\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 
 }
@@ -1500,7 +1517,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1558,7 +1575,7 @@ func TestPollServiceInstanceServiceBrokerError(t *testing.T) {
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation for instance test-ns/test-instance: Status code: 403; ErrorMessage: %!q(*string=<nil>); description: %!q(*string=<nil>)"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1624,7 +1641,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	assertNumEvents(t, events, 1)
 	expectedEvent := api.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1641,8 +1658,9 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
+
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 
@@ -1683,7 +1701,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 }
 
@@ -1700,7 +1718,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
@@ -1876,7 +1894,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-	instance := getTestServiceInstance()
+	instance := getTestServiceInstanceWithRefs()
 
 	fakeCatalogClient.AddReactor("update", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("update error")
@@ -2245,7 +2263,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-			instance := getTestServiceInstance()
+			instance := getTestServiceInstanceWithRefs()
 			if tc.includeUserInfo {
 				instance.Spec.UserInfo = testUserInfo
 			}
@@ -2288,7 +2306,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
-			instance := getTestServiceInstance()
+			instance := getTestServiceInstanceWithRefs()
 			instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 			instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 			// we only invoke the broker client to deprovision if we have a
