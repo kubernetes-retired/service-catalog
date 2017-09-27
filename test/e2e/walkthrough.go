@@ -66,6 +66,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			testns           = "test-ns"
 			instanceName     = "ups-instance"
 			bindingName      = "ups-instance-credential"
+			instanceNameDef  = "ups-instance-def"
 		)
 
 		// Broker and ServiceClass should become ready
@@ -190,6 +191,40 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		By("Waiting for ServiceInstance to not exist")
 		err = util.WaitForInstanceToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), testnamespace.Name, instanceName)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("Creating a ServiceInstance using a default plan")
+		instanceDef := &v1alpha1.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      instanceNameDef,
+				Namespace: testnamespace.Name,
+			},
+			Spec: v1alpha1.ServiceInstanceSpec{
+				ExternalServiceClassName: serviceclassName,
+			},
+		}
+		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instanceDef)
+		Expect(err).NotTo(HaveOccurred(), "failed to create instance with default plan")
+		Expect(instanceDef).NotTo(BeNil())
+
+		By("Waiting for ServiceInstance to be ready")
+		err = util.WaitForInstanceCondition(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(),
+			testnamespace.Name,
+			instanceNameDef,
+			v1alpha1.ServiceInstanceCondition{
+				Type:   v1alpha1.ServiceInstanceConditionReady,
+				Status: v1alpha1.ConditionTrue,
+			},
+		)
+		Expect(err).NotTo(HaveOccurred(), "failed to wait instance with default plan to be ready")
+
+		// Deprovisioning the ServiceInstance with default plan
+		By("Deleting the ServiceInstance with default plan")
+		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Delete(instanceNameDef, nil)
+		Expect(err).NotTo(HaveOccurred(), "failed to delete the instance with default plan")
+
+		By("Waiting for ServiceInstance with default plan to not exist")
+		err = util.WaitForInstanceToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), testnamespace.Name, instanceNameDef)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Deleting the test namespace")
