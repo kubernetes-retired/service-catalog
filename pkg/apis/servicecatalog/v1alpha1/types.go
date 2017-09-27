@@ -404,11 +404,11 @@ type ServiceInstanceSpec struct {
 	// ServiceClassRef is a reference to the ServiceClass
 	// that the user selected.
 	// This is set by the controller based on ExternalServiceClassName
-	ServiceClassRef *v1.ObjectReference
+	ServiceClassRef *v1.ObjectReference `json:"serviceClassRef,omitempty"`
 	// ServicePlanRef is a reference to the ServicePlan
 	// that the user selected.
 	// This is set by the controller based on ExternalServicePlanName
-	ServicePlanRef *v1.ObjectReference
+	ServicePlanRef *v1.ObjectReference `json:"servicePlanRef,omitempty"`
 
 	// Parameters is a set of the parameters to be
 	// passed to the underlying broker.
