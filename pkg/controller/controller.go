@@ -170,13 +170,22 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	glog.Info("Starting service-catalog controller")
 
+	totalNumberOfWorkers := 0
+	done := make(chan struct{})
+
 	for i := 0; i < workers; i++ {
-		go wait.Until(worker(c.brokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey), time.Second, stopCh)
-		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey), time.Second, stopCh)
-		go wait.Until(worker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey), time.Second, stopCh)
-		go wait.Until(worker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey), time.Second, stopCh)
-		go wait.Until(worker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey), time.Second, stopCh)
-		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll), time.Second, stopCh)
+		createWorker(c.brokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey, stopCh, done)
+		totalNumberOfWorkers++
+		createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, done)
+		totalNumberOfWorkers++
+		createWorker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey, stopCh, done)
+		totalNumberOfWorkers++
+		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, done)
+		totalNumberOfWorkers++
+		createWorker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey, stopCh, done)
+		totalNumberOfWorkers++
+		createWorker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, done)
+		totalNumberOfWorkers++
 	}
 
 	<-stopCh
@@ -188,6 +197,20 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.instanceQueue.ShutDown()
 	c.bindingQueue.ShutDown()
 	c.pollingQueue.ShutDown()
+
+	for i := 0; i < totalNumberOfWorkers; i++ {
+		<-done
+	}
+}
+
+// createWorker creates and runs a worker thread that just processes items in the
+// specified queue. The worker will run until stopCh is closed. When the worker
+// stops, a token will be added to the done channel.
+func createWorker(queue workqueue.RateLimitingInterface, resourceType string, maxRetries int, forgetAfterSuccess bool, reconciler func(key string) error, stopCh <-chan struct{}, done chan<- struct{}) {
+	go func() {
+		wait.Until(worker(queue, resourceType, maxRetries, forgetAfterSuccess, reconciler), time.Second, stopCh)
+		done <- struct{}{}
+	}()
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
