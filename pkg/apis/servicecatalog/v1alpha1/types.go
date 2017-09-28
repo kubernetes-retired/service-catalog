@@ -410,13 +410,17 @@ type ServiceInstanceSpec struct {
 	// This is set by the controller based on ExternalServicePlanName
 	ServicePlanRef *v1.ObjectReference `json:"servicePlanRef,omitempty"`
 
-	// Parameters is a set of the parameters to be
-	// passed to the underlying broker.
-	// The inline YAML/JSON payload to be translated into equivalent
-	// JSON object.
-	// If a top-level parameter name exists in multiples sources among
-	// `Parameters` and `ParametersFrom` fields, it is
-	// considered to be a user error in the specification
+	// Parameters is a set of the parameters to be passed to the underlying
+	// broker. The inline YAML/JSON payload to be translated into equivalent
+	// JSON object. If a top-level parameter name exists in multiples sources
+	// among `Parameters` and `ParametersFrom` fields, it is considered to be
+	// a user error in the specification.
+	//
+	// The Parameters field is NOT secret or secured in any way and should
+	// NEVER be used to hold sensitive information. To set parameters that
+	// contain secret information, you should ALWAYS store that information
+	// in a Secret and use the ParametersFrom field.
+	//
 	// +optional
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
@@ -555,20 +559,24 @@ type ServiceInstanceCredentialSpec struct {
 	// Immutable.
 	ServiceInstanceRef v1.LocalObjectReference `json:"instanceRef"`
 
-	// Parameters is a set of the parameters to be
-	// passed to the underlying broker.
-	// The inline YAML/JSON payload to be translated into equivalent
-	// JSON object.
-	// If a top-level parameter name exists in multiples sources among
-	// `Parameters` and `ParametersFrom` fields, it is
-	// considered to be a user error in the specification
+	// Parameters is a set of the parameters to be passed to the underlying
+	// broker. The inline YAML/JSON payload to be translated into equivalent
+	// JSON object. If a top-level parameter name exists in multiples sources
+	// among `Parameters` and `ParametersFrom` fields, it is considered to be
+	// a user error in the specification.
+	//
+	// The Parameters field is NOT secret or secured in any way and should
+	// NEVER be used to hold sensitive information. To set parameters that
+	// contain secret information, you should ALWAYS store that information
+	// in a Secret and use the ParametersFrom field.
+	//
 	// +optional
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
 	// List of sources to populate parameters.
 	// If a top-level parameter name exists in multiples sources among
 	// `Parameters` and `ParametersFrom` fields, it is
-	// considered to be a user error in the specification
+	// considered to be a user error in the specification.
 	// +optional
 	ParametersFrom []ParametersFromSource `json:"parametersFrom,omitempty"`
 
