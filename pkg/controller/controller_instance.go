@@ -1287,6 +1287,17 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	toUpdate.Status.Conditions = append(toUpdate.Status.Conditions, newCondition)
 }
 
+// updateServiceInstanceReferences updates the refs for the given instance.
+func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+	glog.V(4).Infof("Updating references for ServiceInstance %v/%v", toUpdate.Namespace, toUpdate.Name)
+	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).SetReferences(toUpdate)
+	if err != nil {
+		glog.Errorf("Failed to update references for ServiceInstance %v/%v: %v", toUpdate.Namespace, toUpdate.Name, err)
+	}
+
+	return updatedInstance, err
+}
+
 // updateServiceInstanceStatus updates the status for the given instance.
 //
 // Note: objects coming from informers should never be mutated; the instance

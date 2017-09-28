@@ -28,7 +28,7 @@ type ServiceInstanceExpansion interface {
 
 func (c *serviceInstances) SetReferences(serviceInstance *v1alpha1.ServiceInstance) (result *v1alpha1.ServiceInstance, err error) {
 	result = &v1alpha1.ServiceInstance{}
-	err = c.client.Post().
+	err = c.client.Put().
 		Namespace(serviceInstance.Namespace).
 		Resource("serviceinstances").
 		Name(serviceInstance.Name).

@@ -224,6 +224,7 @@ func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, 
 
 func (instanceReferencesRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
+	glog.Fatal("**********UPDATING REFERENCES**************")
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")
 	}
