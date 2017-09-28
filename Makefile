@@ -118,7 +118,8 @@ build: .init .generate_files \
 
 user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
-	  $(shell find contrib/cmd/user-broker -type f)
+	  $(shell find contrib/cmd/user-broker -type f) \
+	  $(shell find contrib/pkg/broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
 # We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
