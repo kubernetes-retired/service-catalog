@@ -45,6 +45,10 @@ endif
 
 NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
+
+NEWEST_E2ETEST_SOURCE = $(shell find test/e2e -name \*.go -exec $(STAT) {} \; \
+                   | sort -r | head -n 1 | sed "s/.* //")
+
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION     = 1.9
 
@@ -158,7 +162,7 @@ $(BINDIR)/informer-gen: .init
 $(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
-$(BINDIR)/e2e.test: .init
+$(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
