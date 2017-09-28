@@ -257,7 +257,7 @@ func (p StorageProvider) v1alpha1Storage(
 		"serviceplans":                      servicePlanStorage,
 		"serviceinstances":                  instanceStorage,
 		"serviceinstances/status":           instanceStatusStorage,
-		"serviceinstances/setReferences":    instanceReferencesStorage,
+		"serviceinstances/reference":        instanceReferencesStorage,
 		"serviceinstancecredentials":        bindingStorage,
 		"serviceinstancecredentials/status": bindingStatusStorage,
 	}, nil

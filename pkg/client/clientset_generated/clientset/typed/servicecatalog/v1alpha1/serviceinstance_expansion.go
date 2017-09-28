@@ -32,7 +32,7 @@ func (c *serviceInstances) SetReferences(serviceInstance *v1alpha1.ServiceInstan
 		Namespace(serviceInstance.Namespace).
 		Resource("serviceinstances").
 		Name(serviceInstance.Name).
-		SubResource("setReferences").
+		SubResource("reference").
 		Body(serviceInstance).
 		Do().
 		Into(result)
