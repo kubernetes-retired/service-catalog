@@ -453,6 +453,10 @@ type ServiceInstanceStatus struct {
 	// against this ServiceInstance in progress.
 	AsyncOpInProgress bool
 
+	// OrphanMitigationInProgress is set to true if there is an ongoing orphan
+	// mitigation operation against this ServiceInstance in progress.
+	OrphanMitigationInProgress bool
+
 	// LastOperation is the string that the broker may have returned when
 	// an async operation started, it should be sent back to the broker
 	// on poll requests as a query param.

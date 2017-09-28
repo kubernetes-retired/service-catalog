@@ -40,6 +40,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/util/sets"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
@@ -283,6 +284,20 @@ const instanceParameterSchemaBytes = `{
     "protocol"
   ]
 }`
+
+type testTimeoutError struct{}
+
+func (e testTimeoutError) Error() string {
+	return "timed out"
+}
+
+func (e testTimeoutError) Timeout() bool {
+	return true
+}
+
+func getTestTimeoutError() error {
+	return testTimeoutError{}
+}
 
 type originatingIdentityTestCase struct {
 	name                        string
@@ -1564,6 +1579,42 @@ func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
 	}
 }
 
+func assertServiceInstanceOrphanMitigationInProgressTrue(t *testing.T, obj runtime.Object) {
+	testServiceInstanceOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, true)
+}
+
+func assertServiceInstanceOrphanMitigationInProgressFalse(t *testing.T, obj runtime.Object) {
+	testServiceInstanceOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, false)
+}
+
+func expectServiceInstanceOrphanMitigationInProgressTrue(t *testing.T, name string, obj runtime.Object) bool {
+	return testServiceInstanceOrphanMitigationInProgress(t, name, fatalf, obj, true)
+}
+
+func expectServiceInstanceOrphanMitigationInProgressFalse(t *testing.T, name string, obj runtime.Object) bool {
+	return testServiceInstanceOrphanMitigationInProgress(t, name, fatalf, obj, false)
+}
+
+func testServiceInstanceOrphanMitigationInProgress(t *testing.T, name string, f failfFunc, obj runtime.Object, expected bool) bool {
+	logContext := ""
+	if len(name) > 0 {
+		logContext = name + ": "
+	}
+
+	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	if !ok {
+		f(t, "%vCouldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+	}
+
+	actual := instance.Status.OrphanMitigationInProgress
+	if actual != expected {
+		f(t, "%vexpected OrphanMitigationInProgress to be %v but was %v", logContext, expected, actual)
+		return false
+	}
+
+	return true
+}
+
 func assertServiceInstanceLastOperation(t *testing.T, obj runtime.Object, operation string) {
 	instance, ok := obj.(*v1alpha1.ServiceInstance)
 	if !ok {
@@ -1596,6 +1647,7 @@ func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, r
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertServiceInstanceReconciliationNotComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 }
 
 func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation) {
@@ -1611,6 +1663,7 @@ func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, 
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciliationNotComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 }
 
 func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation) {
@@ -1631,6 +1684,7 @@ func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, ope
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertServiceInstanceReconciliationComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 	if operation == v1alpha1.ServiceInstanceOperationDeprovision {
 		assertEmptyFinalizers(t, obj)
 	}
@@ -1646,10 +1700,21 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
 	assertServiceInstanceCondition(t, obj, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, failureReason)
-	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
-	assertServiceInstanceReconciliationComplete(t, obj)
 	assertAsyncOpInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceReconciliationComplete(t, obj)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
+}
+
+func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason)
+	assertServiceInstanceCurrentOperation(t, obj, v1alpha1.ServiceInstanceOperationProvision)
+	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 
 func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string) {
@@ -1878,6 +1943,35 @@ func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 	if len(accessor.GetFinalizers()) != 0 {
 		fatalf(t, "Unexpected number of finalizers; expected 0, got %v", len(accessor.GetFinalizers()))
 	}
+}
+
+func assertCatalogFinalizerExists(t *testing.T, obj runtime.Object) {
+	testCatalogFinalizerExists(t, "" /* name */, fatalf, obj)
+}
+
+func expectCatalogFinalizerExists(t *testing.T, name string, obj runtime.Object) bool {
+	return testCatalogFinalizerExists(t, name, errorf, obj)
+}
+
+func testCatalogFinalizerExists(t *testing.T, name string, f failfFunc, obj runtime.Object) bool {
+	logContext := ""
+	if len(name) > 0 {
+		logContext = name + ": "
+	}
+
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		f(t, "%vError creating ObjectMetaAccessor for param object %+v: %v", logContext, obj, err)
+		return false
+	}
+
+	finalizers := sets.NewString(accessor.GetFinalizers()...)
+	if !finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
+		f(t, "%vExpected Service Catalog finalizer but was not there", logContext)
+		return false
+	}
+
+	return true
 }
 
 func assertNumberOfServiceBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {

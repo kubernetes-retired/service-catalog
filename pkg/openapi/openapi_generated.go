@@ -983,6 +983,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
+						"orphanMitigationInProgress": {
+							SchemaProps: spec.SchemaProps{
+								Description: "OrphanMitigationInProgress is set to true if there is an ongoing orphan mitigation operation against this ServiceInstance in progress.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 						"lastOperation": {
 							SchemaProps: spec.SchemaProps{
 								Description: "LastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param.",
@@ -1018,7 +1025,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration"},
+					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
