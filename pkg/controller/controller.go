@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -170,13 +171,15 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	glog.Info("Starting service-catalog controller")
 
+	var waitGroup sync.WaitGroup
+
 	for i := 0; i < workers; i++ {
-		go wait.Until(worker(c.brokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey), time.Second, stopCh)
-		go wait.Until(worker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey), time.Second, stopCh)
-		go wait.Until(worker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey), time.Second, stopCh)
-		go wait.Until(worker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey), time.Second, stopCh)
-		go wait.Until(worker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey), time.Second, stopCh)
-		go wait.Until(worker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll), time.Second, stopCh)
+		createWorker(c.brokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey, stopCh, &waitGroup)
+		createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, &waitGroup)
+		createWorker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey, stopCh, &waitGroup)
+		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
+		createWorker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey, stopCh, &waitGroup)
+		createWorker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, &waitGroup)
 	}
 
 	<-stopCh
@@ -188,6 +191,19 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.instanceQueue.ShutDown()
 	c.bindingQueue.ShutDown()
 	c.pollingQueue.ShutDown()
+
+	waitGroup.Wait()
+}
+
+// createWorker creates and runs a worker thread that just processes items in the
+// specified queue. The worker will run until stopCh is closed. The worker will be
+// added to the wait group when started and marked done when finished.
+func createWorker(queue workqueue.RateLimitingInterface, resourceType string, maxRetries int, forgetAfterSuccess bool, reconciler func(key string) error, stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
+	waitGroup.Add(1)
+	go func() {
+		wait.Until(worker(queue, resourceType, maxRetries, forgetAfterSuccess, reconciler), time.Second, stopCh)
+		waitGroup.Done()
+	}()
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.

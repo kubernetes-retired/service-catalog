@@ -86,7 +86,7 @@ func truePtr() *bool {
 //
 // ...using purely synchronous provision/deprovision.
 func TestBasicFlowsSync(t *testing.T) {
-	_, catalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+	_, catalogClient, _, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
 			Response: getTestCatalogResponse(),
 		},
@@ -110,6 +110,7 @@ func TestBasicFlowsSync(t *testing.T) {
 			},
 		},
 	})
+	defer shutdownController()
 	defer shutdownServer()
 
 	client := catalogClient.ServicecatalogV1alpha1()
@@ -249,7 +250,7 @@ func TestBasicFlowsSync(t *testing.T) {
 // TestBasicFlowsAsync tests the same flows as TestBasicFlowsSync, using
 // asynchronous provision/deprovision.
 func TestBasicFlowsAsync(t *testing.T) {
-	_, catalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+	_, catalogClient, _, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
 			Response: getTestCatalogResponse(),
 		},
@@ -278,6 +279,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 			},
 		},
 	})
+	defer shutdownController()
 	defer shutdownServer()
 
 	client := catalogClient.ServicecatalogV1alpha1()
@@ -420,7 +422,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 // TODO: additional tests for scenarios like this will be needed once we
 // implement orphan mitigation.
 func TestProvisionFailure(t *testing.T) {
-	_, catalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+	_, catalogClient, _, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
 			Response: getTestCatalogResponse(),
 		},
@@ -435,6 +437,7 @@ func TestProvisionFailure(t *testing.T) {
 		// return an unexpected call error message if deprovision is called on
 		// the broker.
 	})
+	defer shutdownController()
 	defer shutdownServer()
 
 	client := catalogClient.ServicecatalogV1alpha1()
@@ -536,7 +539,7 @@ func TestProvisionFailure(t *testing.T) {
 // TestBindingFailure tests that a binding gets a failure condition when the
 // broker returns a failure response for a bind operation.
 func TestBindingFailure(t *testing.T) {
-	_, fakeCatalogClient, _, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+	_, fakeCatalogClient, _, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
 			Response: getTestCatalogResponse(),
 		},
@@ -559,6 +562,7 @@ func TestBindingFailure(t *testing.T) {
 			},
 		},
 	})
+	defer shutdownController()
 	defer shutdownServer()
 
 	client := fakeCatalogClient.ServicecatalogV1alpha1()
@@ -702,7 +706,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
 	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
 
-	_, catalogClient, catalogClientConfig, _, _, _, shutdownServer := newTestController(t, fakeosb.FakeClientConfiguration{
+	_, catalogClient, catalogClientConfig, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
 			Response: &osb.CatalogResponse{
 				Services: []osb.Service{
@@ -743,6 +747,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 			},
 		},
 	})
+	defer shutdownController()
 	defer shutdownServer()
 
 	client := catalogClient.ServicecatalogV1alpha1()
@@ -963,6 +968,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	*fakeosb.FakeClient,
 	controller.Controller,
 	informers.Interface,
+	func(),
 	func()) {
 
 	// create a fake kube client
@@ -1004,10 +1010,20 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	}
 
 	stopCh := make(chan struct{})
-	go testController.Run(1, stopCh)
+	controllerStopped := make(chan struct{})
+	go func() {
+		testController.Run(1, stopCh)
+		controllerStopped <- struct{}{}
+	}()
 	informerFactory.Start(stopCh)
 	t.Log("informers start")
-	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer
+
+	shutdownController := func() {
+		close(stopCh)
+		<-controllerStopped
+	}
+
+	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer, shutdownController
 }
 
 func changeUsernameForCatalogClient(catalogClient clientset.Interface, catalogClientConfig *restclient.Config, username string) (clientset.Interface, error) {
