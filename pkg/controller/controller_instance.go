@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -411,6 +412,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	glog.V(5).Infof("Deprovision call to broker succeeded for ServiceInstance %v/%v, finalizing", instance.Namespace, instance.Name)
 
 	c.clearServiceInstanceCurrentOperation(toUpdate)
+	toUpdate.Status.ExternalProperties = nil
 
 	setServiceInstanceCondition(
 		toUpdate,
@@ -512,29 +514,6 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	}
 	toUpdate := clone.(*v1alpha1.ServiceInstance)
 
-	var parameters map[string]interface{}
-	if instance.Spec.Parameters != nil || instance.Spec.ParametersFrom != nil {
-		parameters, err = buildParameters(c.kubeClient, instance.Namespace, instance.Spec.ParametersFrom, instance.Spec.Parameters)
-		if err != nil {
-			s := fmt.Sprintf("Failed to prepare ServiceInstance parameters\n%s\n %s", instance.Spec.Parameters, err)
-			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
-
-			setServiceInstanceCondition(
-				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
-				errorWithParameters,
-				s,
-			)
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-
-			return err
-		}
-	}
-
 	ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 	if err != nil {
 		s := fmt.Sprintf("Failed to get namespace %q during instance create: %s", instance.Namespace, err)
@@ -553,6 +532,79 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		}
 
 		return err
+	}
+
+	var (
+		parameters                 map[string]interface{}
+		parametersChecksum         string
+		rawParametersWithRedaction *runtime.RawExtension
+	)
+	if instance.Spec.Parameters != nil || instance.Spec.ParametersFrom != nil {
+		var parametersWithSecretsRedacted map[string]interface{}
+		parameters, parametersWithSecretsRedacted, err = buildParameters(c.kubeClient, instance.Namespace, instance.Spec.ParametersFrom, instance.Spec.Parameters)
+		if err != nil {
+			s := fmt.Sprintf("Failed to prepare ServiceInstance parameters\n%s\n %s", instance.Spec.Parameters, err)
+			glog.Warning(s)
+			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				s,
+			)
+			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+				return err
+			}
+
+			return err
+		}
+
+		parametersChecksum, err = generateChecksumOfParameters(parameters)
+		if err != nil {
+			s := fmt.Sprintf(`Failed to generate the parameters checksum to store in the Status of ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, err)
+			glog.Info(s)
+			c.recorder.Eventf(instance, api.EventTypeWarning, errorWithParameters, s)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				s)
+			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+				return err
+			}
+			return err
+		}
+
+		marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
+		if err != nil {
+			s := fmt.Sprintf(`Failed to marshal the parameters to store in the Status of ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, err)
+			glog.Info(s)
+			c.recorder.Eventf(instance, api.EventTypeWarning, errorWithParameters, s)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorWithParameters,
+				s)
+			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+				return err
+			}
+			return err
+		}
+
+		rawParametersWithRedaction = &runtime.RawExtension{
+			Raw: marshalledParametersWithRedaction,
+		}
+	}
+
+	toUpdate.Status.InProgressProperties = &v1alpha1.ServiceInstancePropertiesState{
+		ExternalServicePlanName: servicePlan.Spec.ExternalName,
+		Parameters:              rawParametersWithRedaction,
+		ParametersChecksum:      parametersChecksum,
+		UserInfo:                instance.Spec.UserInfo,
 	}
 
 	request := &osb.ProvisionRequest{
@@ -748,6 +800,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	} else {
 		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
+		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		c.clearServiceInstanceCurrentOperation(toUpdate)
 
 		// TODO: process response
@@ -874,6 +927,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
 
 			c.clearServiceInstanceCurrentOperation(toUpdate)
+			toUpdate.Status.ExternalProperties = nil
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -1043,6 +1097,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			return err
 		}
 		toUpdate := clone.(*v1alpha1.ServiceInstance)
+		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		c.clearServiceInstanceCurrentOperation(toUpdate)
 
 		// If we were asynchronously deleting a Service Instance, finish
@@ -1315,6 +1370,7 @@ func (c *controller) clearServiceInstanceCurrentOperation(toUpdate *v1alpha1.Ser
 	toUpdate.Status.AsyncOpInProgress = false
 	toUpdate.Status.OrphanMitigationInProgress = false
 	toUpdate.Status.LastOperation = nil
+	toUpdate.Status.InProgressProperties = nil
 	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 }
 
@@ -1325,6 +1381,7 @@ func setServiceInstanceStartOrphanMitigation(toUpdate *v1alpha1.ServiceInstance)
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.AsyncOpInProgress = false
 	toUpdate.Status.OrphanMitigationInProgress = true
+	toUpdate.Status.InProgressProperties = nil
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status

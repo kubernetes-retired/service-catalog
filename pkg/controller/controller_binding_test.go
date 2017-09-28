@@ -31,6 +31,7 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -77,7 +78,7 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceInstance(t *testing
 		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
 	}
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonexistentServiceInstanceReason)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonexistentServiceInstanceReason, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -140,7 +141,7 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 
 	// There should be one action that says it failed because no such service class.
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -211,10 +212,16 @@ func TestReconcileServiceInstanceCredentialWithSecretConflict(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorInjectingBindResultReason)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorInjectingBindResultReason)
+	assertServiceInstanceCredentialCurrentOperation(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, updatedServiceInstanceCredential, true)
+	assertServiceInstanceCredentialReconciledGeneration(t, updatedServiceInstanceCredential, binding.Status.ReconciledGeneration)
+	assertServiceInstanceCredentialInProgressPropertiesParameters(t, updatedServiceInstanceCredential, nil, "")
+	// External properties are updated because the bind request with the Broker was successful
+	assertServiceInstanceCredentialExternalPropertiesParameters(t, updatedServiceInstanceCredential, nil, "")
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)
@@ -307,14 +314,26 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 		},
 	})
 
+	expectedParameters := map[string]interface{}{
+		"args": []interface{}{
+			"first-arg",
+			"second-arg",
+		},
+		"name": "test-param",
+	}
+	expectedParametersChecksum, err := generateChecksumOfParameters(expectedParameters)
+	if err != nil {
+		t.Fatalf("Failed to generate parameters checksum: %v", err)
+	}
+
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgressWithParameters(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, expectedParameters, expectedParametersChecksum, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationSuccessWithParameters(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, expectedParameters, expectedParametersChecksum, binding)
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 3)
@@ -402,7 +421,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T)
 
 	// There should only be one action that says binding was created
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableServiceClassReason)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableServiceClassReason, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -482,10 +501,10 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 3)
@@ -561,7 +580,7 @@ func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t
 
 	// There should only be one action that says binding was created
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableServiceClassReason)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableServiceClassReason, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -617,7 +636,7 @@ func TestReconcileServiceInstanceCredentialFailsWithServiceInstanceAsyncOngoing(
 
 	// There should only be one action that says binding was created
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorWithOngoingAsyncOperation)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorWithOngoingAsyncOperation, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -670,7 +689,7 @@ func TestReconcileServiceInstanceCredentialServiceInstanceNotReady(t *testing.T)
 
 	// There should only be one action that says binding was created
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorServiceInstanceNotReadyReason)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorServiceInstanceNotReadyReason, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -719,7 +738,7 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorFindingNamespaceServiceInstanceReason)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorFindingNamespaceServiceInstanceReason, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -757,6 +776,7 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 		},
 		Status: v1alpha1.ServiceInstanceCredentialStatus{
 			ReconciledGeneration: 1,
+			ExternalProperties:   &v1alpha1.ServiceInstanceCredentialPropertiesState{},
 		},
 	}
 
@@ -798,10 +818,10 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind)
+	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -965,6 +985,7 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	binding.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	binding.Status.ExternalProperties = &v1alpha1.ServiceInstanceCredentialPropertiesState{}
 
 	binding.ObjectMeta.Generation = 2
 	binding.Status.ReconciledGeneration = 1
@@ -1007,10 +1028,10 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind)
+	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1063,10 +1084,10 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerError(t *testing.T) 
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason)
+	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, binding)
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker": Unexpected action`
@@ -1120,10 +1141,10 @@ func TestReconcileServiceInstanceCredentialWithServiceBrokerHTTPError(t *testing
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, "ServiceInstanceCredentialReturnedFailure")
+	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, "ServiceInstanceCredentialReturnedFailure", binding)
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker", Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
@@ -1196,10 +1217,10 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialCallFail
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason)
+	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, binding)
 
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
@@ -1260,10 +1281,10 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, "ServiceInstanceCredentialReturnedFailure")
+	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, "ServiceInstanceCredentialReturnedFailure", binding)
 
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
@@ -1469,6 +1490,9 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
+		Status: v1alpha1.ServiceInstanceCredentialStatus{
+			ExternalProperties: &v1alpha1.ServiceInstanceCredentialPropertiesState{},
+		},
 	}
 	if err := scmeta.AddFinalizer(binding, v1alpha1.FinalizerServiceCatalog); err != nil {
 		t.Fatalf("Finalizer error: %v", err)
@@ -1481,10 +1505,10 @@ func TestReconcileUnbindingWithServiceBrokerError(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, errorUnbindCallReason)
+	assertServiceInstanceCredentialRequestRetriableError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, errorUnbindCallReason, binding)
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker": Unexpected action`
@@ -1527,6 +1551,9 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 			ExternalID:         bindingGUID,
 			SecretName:         testServiceInstanceCredentialSecretName,
 		},
+		Status: v1alpha1.ServiceInstanceCredentialStatus{
+			ExternalProperties: &v1alpha1.ServiceInstanceCredentialPropertiesState{},
+		},
 	}
 	if err := scmeta.AddFinalizer(binding, v1alpha1.FinalizerServiceCatalog); err != nil {
 		t.Fatalf("Finalizer error: %v", err)
@@ -1539,10 +1566,10 @@ func TestReconcileUnbindingWithServiceBrokerHTTPError(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, binding)
 
 	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, errorUnbindCallReason, errorUnbindCallReason)
+	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationUnbind, errorUnbindCallReason, errorUnbindCallReason, binding)
 
 	events := getRecordedEvents(testController)
 	expectedEvent := api.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ServiceBroker "test-broker": Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
@@ -1701,7 +1728,7 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationSuccess(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1745,7 +1772,7 @@ func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorBindCallReason, errorReconciliationRetryTimeoutReason, binding)
 
 	expectedEventPrefixes := []string{
 		api.EventTypeWarning + " " + errorBindCallReason,
@@ -1827,7 +1854,14 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding).(*v1alpha1.ServiceInstanceCredential)
-	assertServiceInstanceCredentialRequestFailingError(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, errorInjectingBindResultReason, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorInjectingBindResultReason)
+	assertServiceInstanceCredentialCondition(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue, errorReconciliationRetryTimeoutReason)
+	assertServiceInstanceCredentialCurrentOperationClear(t, updatedServiceInstanceCredential)
+	assertServiceInstanceCredentialOperationStartTimeSet(t, updatedServiceInstanceCredential, false)
+	assertServiceInstanceCredentialReconciledGeneration(t, updatedServiceInstanceCredential, binding.Generation)
+	assertServiceInstanceCredentialInProgressPropertiesNil(t, updatedServiceInstanceCredential)
+	// External properties are updated because the bind request with the Broker was successful
+	assertServiceInstanceCredentialExternalPropertiesParameters(t, updatedServiceInstanceCredential, nil, "")
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)
@@ -1855,7 +1889,7 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	}
 }
 
-// TestReconcileServiceInstanceCrednetialWithStatusUpdateError verifies that the
+// TestReconcileServiceInstanceCredentialWithStatusUpdateError verifies that the
 // reconciler returns an error when there is a conflict updating the status of
 // the resource. This is an otherwise successful scenario where the update to set
 // the in-progress operation fails.
@@ -1891,8 +1925,142 @@ func TestReconcileServiceInstanceCredentialWithStatusUpdateError(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind)
+	assertServiceInstanceCredentialOperationInProgress(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, binding)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
+}
+
+// TestReconcileServiceInstanceCredentailWithSecretParameters tests reconciling a
+// binding that has parameters obtained from secrets.
+func TestReconcileServiceInstanceCredentialWithSecretParameters(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	paramSecret := &v1.Secret{
+		Data: map[string][]byte{
+			"param-secret-key": []byte("{\"b\":\"2\"}"),
+		},
+	}
+	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		switch name := action.(clientgotesting.GetAction).GetName(); name {
+		case "param-secret-name":
+			return true, paramSecret, nil
+		default:
+			return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), name)
+		}
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
+
+	binding := &v1alpha1.ServiceInstanceCredential{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         bindingGUID,
+			SecretName:         testServiceInstanceCredentialSecretName,
+		},
+	}
+
+	parameters := map[string]interface{}{
+		"a": "1",
+	}
+	b, err := json.Marshal(parameters)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	}
+	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+	binding.Spec.ParametersFrom = []v1alpha1.ParametersFromSource{
+		{
+			SecretKeyRef: &v1alpha1.SecretKeyReference{
+				Name: "param-secret-name",
+				Key:  "param-secret-key",
+			},
+		},
+	}
+
+	err = testController.reconcileServiceInstanceCredential(binding)
+	if err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  bindingGUID,
+		InstanceID: instanceGUID,
+		ServiceID:  serviceClassGUID,
+		PlanID:     planGUID,
+		AppGUID:    strPtr(testNsUID),
+		Parameters: map[string]interface{}{
+			"a": "1",
+			"b": "2",
+		},
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNsUID),
+		},
+	})
+
+	expectedParameters := map[string]interface{}{
+		"a": "1",
+		"b": "<redacted>",
+	}
+	expectedParametersChecksum, err := generateChecksumOfParameters(map[string]interface{}{
+		"a": "1",
+		"b": "2",
+	})
+	if err != nil {
+		t.Fatalf("Failed to generate parameters checksum: %v", err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
+	assertServiceInstanceCredentialOperationInProgressWithParameters(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, expectedParameters, expectedParametersChecksum, binding)
+
+	updatedServiceInstanceCredential = assertUpdateStatus(t, actions[1], binding)
+	assertServiceInstanceCredentialOperationSuccessWithParameters(t, updatedServiceInstanceCredential, v1alpha1.ServiceInstanceCredentialOperationBind, expectedParameters, expectedParametersChecksum, binding)
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 4)
+
+	// first action is a get on the namespace
+	// second action is a get on the secret, to build the parameters
+	action, ok := kubeActions[1].(clientgotesting.GetAction)
+	if !ok {
+		t.Fatalf("unexpected type of action: expected a GetAction, got %T", kubeActions[0])
+	}
+	if e, a := "secrets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action: expected %q, got %q", e, a)
+	}
+	if e, a := "param-secret-name", action.GetName(); e != a {
+		t.Fatalf("Unexpected name of secret fetched: expected %q, got %q", e, a)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
+	}
 }

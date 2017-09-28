@@ -225,6 +225,24 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			}
 			bs.Parameters = parameters
 		},
+		func(bs *servicecatalog.ServiceInstancePropertiesState, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			parameters, err := createParameter(c)
+			if err != nil {
+				t.Errorf("Failed to create parameter object: %v", err)
+				return
+			}
+			bs.Parameters = parameters
+		},
+		func(bs *servicecatalog.ServiceInstanceCredentialPropertiesState, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			parameters, err := createParameter(c)
+			if err != nil {
+				t.Errorf("Failed to create parameter object: %v", err)
+				return
+			}
+			bs.Parameters = parameters
+		},
 		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
 			c.FuzzNoCustom(sc)
 			metadata, err := createServiceMetadata(c)

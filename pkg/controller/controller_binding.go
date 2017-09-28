@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
@@ -205,27 +206,6 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 	if binding.DeletionTimestamp == nil { // Add or update
 		glog.V(4).Infof("Adding/Updating ServiceInstanceCredential %v/%v", binding.Namespace, binding.Name)
 
-		var parameters map[string]interface{}
-		if binding.Spec.Parameters != nil || binding.Spec.ParametersFrom != nil {
-			parameters, err = buildParameters(c.kubeClient, binding.Namespace, binding.Spec.ParametersFrom, binding.Spec.Parameters)
-			if err != nil {
-				s := fmt.Sprintf("Failed to prepare ServiceInstanceCredential parameters\n%s\n %s", binding.Spec.Parameters, err)
-				glog.Warning(s)
-				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
-				c.setServiceInstanceCredentialCondition(
-					toUpdate,
-					v1alpha1.ServiceInstanceCredentialConditionReady,
-					v1alpha1.ConditionFalse,
-					errorWithParameters,
-					s,
-				)
-				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
-					return err
-				}
-				return err
-			}
-		}
-
 		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 		if err != nil {
 			s := fmt.Sprintf("Failed to get namespace %q during binding: %s", instance.Namespace, err)
@@ -259,6 +239,76 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				return err
 			}
 			return nil
+		}
+
+		var (
+			parameters                 map[string]interface{}
+			parametersChecksum         string
+			rawParametersWithRedaction *runtime.RawExtension
+		)
+		if binding.Spec.Parameters != nil || binding.Spec.ParametersFrom != nil {
+			var parametersWithSecretsRedacted map[string]interface{}
+			parameters, parametersWithSecretsRedacted, err = buildParameters(c.kubeClient, binding.Namespace, binding.Spec.ParametersFrom, binding.Spec.Parameters)
+			if err != nil {
+				s := fmt.Sprintf("Failed to prepare ServiceInstanceCredential parameters\n%s\n %s", binding.Spec.Parameters, err)
+				glog.Warning(s)
+				c.recorder.Event(binding, api.EventTypeWarning, errorWithParameters, s)
+				c.setServiceInstanceCredentialCondition(
+					toUpdate,
+					v1alpha1.ServiceInstanceCredentialConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithParameters,
+					s,
+				)
+				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
+					return err
+				}
+				return err
+			}
+
+			parametersChecksum, err = generateChecksumOfParameters(parameters)
+			if err != nil {
+				s := fmt.Sprintf(`Failed to generate the parameters checksum to store in the Status of ServiceInstanceCredential "%s/%s": %s`, binding.Namespace, binding.Name, err)
+				glog.Info(s)
+				c.recorder.Eventf(binding, api.EventTypeWarning, errorWithParameters, s)
+				c.setServiceInstanceCredentialCondition(
+					toUpdate,
+					v1alpha1.ServiceInstanceCredentialConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithParameters,
+					s)
+				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
+					return err
+				}
+				return err
+			}
+
+			marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
+			if err != nil {
+				s := fmt.Sprintf(`Failed to marshal the parameters to store in the Status of ServiceInstanceCredential "%s/%s": %s`, binding.Namespace, binding.Name, err)
+				glog.Info(s)
+				c.recorder.Eventf(binding, api.EventTypeWarning, errorWithParameters, s)
+				c.setServiceInstanceCredentialCondition(
+					toUpdate,
+					v1alpha1.ServiceInstanceCredentialConditionReady,
+					v1alpha1.ConditionFalse,
+					errorWithParameters,
+					s)
+				if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
+					return err
+				}
+				return err
+			}
+
+			rawParametersWithRedaction = &runtime.RawExtension{
+				Raw: marshalledParametersWithRedaction,
+			}
+		}
+
+		toUpdate.Status.InProgressProperties = &v1alpha1.ServiceInstanceCredentialPropertiesState{
+			Parameters:         rawParametersWithRedaction,
+			ParametersChecksum: parametersChecksum,
+			UserInfo:           toUpdate.Spec.UserInfo,
 		}
 
 		appGUID := string(ns.UID)
@@ -368,6 +418,15 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			}
 			return err
 		}
+
+		// The Bind request has returned successfully from the Broker. Continue
+		// with the sucess case of creating the ServiceInstanceCredential.
+
+		// Save off the external properties here even if the subsequent
+		// credentials injection fails. The Broker has already processed the
+		// request, so this is what the Broker knows about the state of the
+		// binding.
+		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 
 		err = c.injectServiceInstanceCredential(binding, response.Credentials)
 		if err != nil {
@@ -570,6 +629,9 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 			"The binding was deleted successfully",
 		)
 		c.clearServiceInstanceCredentialCurrentOperation(toUpdate)
+
+		toUpdate.Status.ExternalProperties = nil
+
 		// Clear the finalizer
 		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
 		toUpdate.Finalizers = finalizers.List()
@@ -828,4 +890,5 @@ func (c *controller) clearServiceInstanceCredentialCurrentOperation(toUpdate *v1
 	toUpdate.Status.CurrentOperation = ""
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
+	toUpdate.Status.InProgressProperties = nil
 }
