@@ -901,11 +901,24 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	// Update the ServiceClassRef
 	classRef := &v1.ObjectReference{Name: "service-class-ref"}
 	instanceServer.Spec.ServiceClassRef = classRef
-	_, err = instanceClient.SetReferences(instanceServer)
+	returnedInstance, err := instanceClient.SetReferences(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}
 	oldGeneration := instanceServer.Generation
+	// check the returned object we got back from the reference subresource
+	if returnedInstance.Spec.ServiceClassRef == nil {
+		return fmt.Errorf("ServiceClassRef was not updated, instance: %+v", returnedInstance)
+	}
+	if returnedInstance.Spec.ServicePlanRef != nil {
+		return fmt.Errorf("ServicePlanRef was unexpectedly updated, instance: %+v", returnedInstance)
+	}
+	if e, a := classRef, returnedInstance.Spec.ServiceClassRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ServiceClassRef was not set correctly, expected: %v got: %v", e, a)
+	}
+	if oldGeneration != returnedInstance.Generation {
+		return fmt.Errorf("Generation was changed, expected: %q got: %q", oldGeneration, returnedInstance.Generation)
+	}
 
 	// re-fetch the instance by name and check its conditions
 	instanceServer, err = instanceClient.Get(name, metav1.GetOptions{})
@@ -928,11 +941,30 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	// Update the ServicePlanRef
 	planRef := &v1.ObjectReference{Name: "service-plan-ref"}
 	instanceServer.Spec.ServicePlanRef = planRef
-	_, err = instanceClient.SetReferences(instanceServer)
+	returnedInstance, err = instanceClient.SetReferences(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}
 	oldGeneration = instanceServer.Generation
+
+	// check the object returned from the reference endpoint
+	if returnedInstance.Spec.ServicePlanRef == nil {
+		return fmt.Errorf("ServicePlanRef was not updated, instance: %+v", returnedInstance)
+	}
+	if e, a := planRef, returnedInstance.Spec.ServicePlanRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ServicePlanRef was not set correctly, expected: %v got: %v", e, a)
+	}
+	// Make sure ServiceClassRef was not changed
+	if returnedInstance.Spec.ServiceClassRef == nil {
+		return fmt.Errorf("ServiceClassRef was cleared, instance: %+v", returnedInstance)
+	}
+	if e, a := classRef, returnedInstance.Spec.ServiceClassRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ServiceClassRef was modified unexpectedly, expected: %v got: %v", e, a)
+	}
+
+	if oldGeneration != returnedInstance.Generation {
+		return fmt.Errorf("Generation was changed, expected: %q got: %q", oldGeneration, returnedInstance.Generation)
+	}
 
 	// re-fetch the instance by name and check its conditions
 	instanceServer, err = instanceClient.Get(name, metav1.GetOptions{})

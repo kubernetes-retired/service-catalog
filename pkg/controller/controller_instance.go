@@ -457,13 +457,6 @@ func isServiceInstanceFailed(instance *v1alpha1.ServiceInstance) bool {
 // error is returned to indicate that the instance has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance) error {
-	// Update references to ServicePlan / ServiceClass if necessary.
-	updated, err := c.resolveReferences(instance)
-	if err != nil {
-		return err
-	}
-	instance = updated
-
 	if instance.Status.AsyncOpInProgress {
 		return c.pollServiceInstanceInternal(instance)
 	}
@@ -507,6 +500,21 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		return nil
 	}
 
+	// we will definitely update the instance's status - make a deep copy now
+	// for use later in this method.
+	clone, err := api.Scheme.DeepCopy(instance)
+	if err != nil {
+		return err
+	}
+	toUpdate := clone.(*v1alpha1.ServiceInstance)
+
+	// Update references to ServicePlan / ServiceClass if necessary.
+	updated, err := c.resolveReferences(toUpdate)
+	if err != nil {
+		return err
+	}
+	toUpdate = updated
+
 	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
 
 	glog.V(4).Infof("Adding/Updating ServiceInstance %v/%v", instance.Namespace, instance.Name)
@@ -515,14 +523,6 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	if err != nil {
 		return err
 	}
-
-	// we will definitely update the instance's status - make a deep copy now
-	// for use later in this method.
-	clone, err := api.Scheme.DeepCopy(instance)
-	if err != nil {
-		return err
-	}
-	toUpdate := clone.(*v1alpha1.ServiceInstance)
 
 	ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 	if err != nil {
