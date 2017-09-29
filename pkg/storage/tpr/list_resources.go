@@ -20,8 +20,8 @@ import (
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/api/v1"
 )
 
 // listResource uses cl to get resources of the given kind from the given namespace, and decodes
@@ -60,9 +60,9 @@ func listResource(
 }
 
 // getAllNamespaces uses cl to get all namespaces
-func getAllNamespaces(cl restclient.Interface) (*v1.NamespaceList, error) {
+func getAllNamespaces(cl restclient.Interface) (*apiv1.NamespaceList, error) {
 	req := cl.Get().AbsPath("api", "v1", "namespaces")
-	var nsList v1.NamespaceList
+	var nsList apiv1.NamespaceList
 	if err := req.Do().Into(&nsList); err != nil {
 		glog.Errorf("getting all namespaces (%s)", err)
 		return nil, err

@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -259,7 +258,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 			errorNonexistentServiceClassReason,
 			"The instance references a ServiceClass that does not exist. "+s,
 		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServiceClassReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -274,7 +273,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 			"ReferencesNonexistentServicePlan",
 			"The instance references a ServicePlan that does not exist. "+s,
 		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
@@ -289,7 +288,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 			errorNonexistentServiceBrokerReason,
 			"The instance references a ServiceBroker that does not exist. "+s,
 		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceBrokerReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServiceBrokerReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -304,7 +303,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
-		c.recorder.Event(instance, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -335,7 +334,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 			errorNonexistentServiceClassReason,
 			"The binding references a ServiceClass that does not exist. "+s,
 		)
-		c.recorder.Event(binding, api.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
 		return nil, nil, "", nil, err
 	}
 
@@ -350,7 +349,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 			errorNonexistentServicePlanReason,
 			"The ServiceInstanceCredential references an ServiceInstance which references ServicePlan that does not exist. "+s,
 		)
-		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
@@ -365,7 +364,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 			errorNonexistentServiceBrokerReason,
 			"The binding references a ServiceBroker that does not exist. "+s,
 		)
-		c.recorder.Event(binding, api.EventTypeWarning, errorNonexistentServiceBrokerReason, s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentServiceBrokerReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -380,7 +379,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
-		c.recorder.Event(binding, api.EventTypeWarning, errorAuthCredentialsReason, s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
 		return nil, nil, "", nil, err
 	}
 

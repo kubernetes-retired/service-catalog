@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/gofuzz"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	sctesting "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testing"
@@ -33,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/client-go/pkg/api"
 )
 
 // doUnstructuredRoundTrip performs the following round-tripping on a fuzzed
