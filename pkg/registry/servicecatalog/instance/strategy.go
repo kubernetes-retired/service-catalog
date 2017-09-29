@@ -57,7 +57,7 @@ type instanceStatusRESTStrategy struct {
 // implements interface RESTUpdateStrategy. This implementation validates updates to
 // instance.Spec.ServicePlanRef and instance.Spec.ServiceClassRef only and disallows
 // any modifications to the remaining instance.Spec or Status fields.
-type instanceReferencesRESTStrategy struct {
+type instanceReferenceRESTStrategy struct {
 	instanceRESTStrategy
 }
 
@@ -80,10 +80,10 @@ var (
 	}
 	_ rest.RESTUpdateStrategy = instanceStatusUpdateStrategy
 
-	instanceReferencesUpdateStrategy = instanceStatusRESTStrategy{
+	instanceReferenceUpdateStrategy = instanceReferenceRESTStrategy{
 		instanceRESTStrategies,
 	}
-	_ rest.RESTUpdateStrategy = instanceReferencesUpdateStrategy
+	_ rest.RESTUpdateStrategy = instanceReferenceUpdateStrategy
 )
 
 // Canonicalize does not transform a instance.
@@ -222,9 +222,8 @@ func (instanceStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, 
 	return scv.ValidateServiceInstanceStatusUpdate(newServiceInstance, oldServiceInstance)
 }
 
-func (instanceReferencesRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (instanceReferenceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
-	glog.Fatal("**********UPDATING REFERENCES**************")
 	if !ok {
 		glog.Fatal("received a non-instance object to update to")
 	}
@@ -243,7 +242,7 @@ func (instanceReferencesRESTStrategy) PrepareForUpdate(ctx genericapirequest.Con
 	newServiceInstance.Status = oldServiceInstance.Status
 }
 
-func (instanceReferencesRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (instanceReferenceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
 		glog.Fatal("received a non-instance object to validate to")

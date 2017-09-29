@@ -454,6 +454,13 @@ func isServiceInstanceFailed(instance *v1alpha1.ServiceInstance) bool {
 // error is returned to indicate that the instance has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance) error {
+	// Update references to ServicePlan / ServiceClass if necessary.
+	updated, err := c.resolveReferences(instance)
+	if err != nil {
+		return err
+	}
+	instance = updated
+
 	if instance.Status.AsyncOpInProgress {
 		return c.pollServiceInstanceInternal(instance)
 	}

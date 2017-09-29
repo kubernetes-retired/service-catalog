@@ -175,6 +175,11 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
 
+	if instance.Spec.ServiceClassRef == nil || instance.Spec.ServicePlanRef == nil {
+		// retry later
+		return fmt.Errorf("ServiceClass or ServicePlan references for Instance have not been resolved yet")
+	}
+
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance, binding)
 	if err != nil {
 		return err // retry later

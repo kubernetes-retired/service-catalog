@@ -244,12 +244,80 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 	}
 }
 
+// resolveReferences checks to see if ServiceClassRef and/or ServicePlanRef are
+// nil and if so, will resolve the references and update the instance.
+func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+	if instance.Spec.ServiceClassRef != nil && instance.Spec.ServicePlanRef != nil {
+		return instance, nil
+	}
+
+	if instance.Spec.ServiceClassRef == nil {
+		glog.V(4).Infof("looking up a ServiceClass from externalName: %q", instance.Spec.ExternalServiceClassName)
+		listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
+		serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
+		if err == nil && len(serviceClasses.Items) == 1 {
+			sc := &serviceClasses.Items[0]
+			instance.Spec.ServiceClassRef = &apiv1.ObjectReference{
+				Kind:            sc.Kind,
+				Namespace:       sc.Namespace,
+				Name:            sc.Name,
+				UID:             sc.UID,
+				APIVersion:      sc.APIVersion,
+				ResourceVersion: sc.ResourceVersion,
+			}
+			glog.V(4).Infof("Resolve ServiceClass %q to %q", instance.Spec.ExternalServiceClassName, instance.Spec.ServiceClassRef)
+		} else {
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
+			glog.Warning(s)
+			c.updateServiceInstanceCondition(
+				instance,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorNonexistentServiceClassReason,
+				"The instance references a ServiceClass that does not exist. "+s,
+			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
+			return nil, fmt.Errorf(s)
+		}
+	}
+
+	if instance.Spec.ServicePlanRef == nil {
+		listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServicePlanName}
+		servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
+		if err == nil && len(servicePlans.Items) == 1 {
+			sp := &servicePlans.Items[0]
+			instance.Spec.ServicePlanRef = &apiv1.ObjectReference{
+				Kind:            sp.Kind,
+				Namespace:       sp.Namespace,
+				Name:            sp.Name,
+				UID:             sp.UID,
+				APIVersion:      sp.APIVersion,
+				ResourceVersion: sp.ResourceVersion,
+			}
+			glog.V(4).Infof("Resolve ServicePlan %q to %q", instance.Spec.ExternalServicePlanName, instance.Spec.ServicePlanRef)
+		} else {
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, instance.Spec.ExternalServiceClassName)
+			glog.Warning(s)
+			c.updateServiceInstanceCondition(
+				instance,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				"ReferencesNonexistentServicePlan",
+				"The instance references a ServicePlan that does not exist. "+s,
+			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+			return nil, fmt.Errorf(s)
+		}
+	}
+	return c.updateServiceInstanceReferences(instance)
+}
+
 // getServiceClassPlanAndServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
 // Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
 func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
-	serviceClass, err := c.getServiceClassByExternalNameOrRef(instance)
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
 		glog.Info(s)
@@ -264,7 +332,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan, err := c.getServicePlanByExternalNameOrRef(instance)
+	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
@@ -325,7 +393,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 // a brokerclient to use for a given ServiceInstance.
 // Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
 func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
-	serviceClass, err := c.getServiceClassByExternalNameOrRef(instance)
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalServiceClassName)
 		glog.Warning(s)
@@ -340,7 +408,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan, err := c.getServicePlanByExternalNameOrRef(instance)
+	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
@@ -394,82 +462,6 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 	}
 
 	return serviceClass, servicePlan, broker.Name, brokerClient, nil
-}
-
-// getServicePlanByExternalName finds the ServicePlan based on the
-// ServicePlanRef if it has been set, otherwise uses
-// ExternalServicePlanName. If ServicePlanRef is nil
-// and ServicePlan is found, updates the spec with a
-// ref to it.
-func (c *controller) getServicePlanByExternalNameOrRef(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServicePlan, error) {
-	if instance.Spec.ServicePlanRef != nil {
-		return c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
-	}
-
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServicePlanName}
-	servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
-	if err != nil {
-		return nil, err
-	}
-	glog.V(4).Infof("Found %d ServicePlans based on externalName %q", len(servicePlans.Items), instance.Spec.ExternalServicePlanName)
-	if len(servicePlans.Items) == 1 {
-		sp := &servicePlans.Items[0]
-		instance.Spec.ServicePlanRef = &apiv1.ObjectReference{
-			Kind:            sp.Kind,
-			Namespace:       sp.Namespace,
-			Name:            sp.Name,
-			UID:             sp.UID,
-			APIVersion:      sp.APIVersion,
-			ResourceVersion: sp.ResourceVersion,
-		}
-		_, err = c.updateServiceInstanceReferences(instance)
-		if err != nil {
-			// Since we found it and only failed to update, just log the
-			// error but don't return an error
-			glog.V(4).Infof("Failed to update ServicePlanRef for %q : %q", instance.Name, err)
-		}
-		return sp, nil
-	}
-	return nil, fmt.Errorf("Could not find a single ServicePlan for %q, found %d", instance.Spec.ExternalServicePlanName, len(servicePlans.Items))
-}
-
-// getServiceClassByExternalName finds the ServiceClass based on the
-// ServiceClassRef if it has been set, otherwise uses
-// ExternalServiceClassName. If ServiceClassRef is nil
-// and ServiceClass is found, updates the spec with a
-// ref to it.
-func (c *controller) getServiceClassByExternalNameOrRef(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, error) {
-	if instance.Spec.ServiceClassRef != nil {
-		glog.V(4).Infof("looking up a ServiceClass from Ref: %q", instance.Spec.ServiceClassRef.Name)
-		return c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
-	}
-
-	glog.V(4).Infof("looking up a ServiceClass from externalName: %q", instance.Spec.ExternalServiceClassName)
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
-	serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
-	if err != nil {
-		return nil, err
-	}
-	glog.V(4).Infof("Found %d ServiceClasses based on externalName %q", len(serviceClasses.Items), instance.Spec.ExternalServiceClassName)
-	if len(serviceClasses.Items) == 1 {
-		sc := &serviceClasses.Items[0]
-		instance.Spec.ServiceClassRef = &apiv1.ObjectReference{
-			Kind:            sc.Kind,
-			Namespace:       sc.Namespace,
-			Name:            sc.Name,
-			UID:             sc.UID,
-			APIVersion:      sc.APIVersion,
-			ResourceVersion: sc.ResourceVersion,
-		}
-		_, err = c.updateServiceInstanceReferences(instance)
-		if err != nil {
-			// Since we found it and only failed to update, just log the
-			// error but don't return an error
-			glog.V(4).Infof("Failed to update ServiceClassRef for %q : %q", instance.Name, err)
-		}
-		return sc, nil
-	}
-	return nil, fmt.Errorf("Could not find a single ServiceClass for %q, found %d", instance.Spec.ExternalServiceClassName, len(serviceClasses.Items))
 }
 
 // Broker utility methods - move?
