@@ -932,7 +932,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}
-	oldGeneration := instanceServer.Generation
+	oldGeneration = instanceServer.Generation
 
 	// re-fetch the instance by name and check its conditions
 	instanceServer, err = instanceClient.Get(name, metav1.GetOptions{})
