@@ -317,7 +317,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"url", "relistBehavior", "relistDuration", "relistRequests"},
+					Required: []string{"url", "relistBehavior", "relistRequests"},
 				},
 			},
 			Dependencies: []string{
@@ -881,7 +881,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"conditions", "reconciledGeneration", "inProgressProperties", "externalProperties"},
+					Required: []string{"conditions", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
@@ -1104,20 +1104,20 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
-						"InProgressProperties": {
+						"inProgressProperties": {
 							SchemaProps: spec.SchemaProps{
 								Description: "InProgressProperties is the properties state of the ServiceInstance when a Provision or Update is in progress. If the current operation is a Deprovision, this will be nil.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstancePropertiesState"),
 							},
 						},
-						"ExternalProperties": {
+						"externalProperties": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalProperties is the properties state of the ServiceInstance which the broker knows about.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstancePropertiesState"),
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "InProgressProperties", "ExternalProperties"},
+					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration"},
 				},
 			},
 			Dependencies: []string{
@@ -1675,7 +1675,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Description: "Duration is a wrapper around time.Duration which supports correct marshaling to YAML and JSON. In particular, it marshals into strings, which can be used as map keys in json.",
-					Properties:  map[string]spec.Schema{},
+					Properties: map[string]spec.Schema{
+						"Duration": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"integer"},
+								Format: "int64",
+							},
+						},
+					},
+					Required: []string{"Duration"},
 				},
 			},
 			Dependencies: []string{},
