@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
@@ -1276,7 +1277,8 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 	}
 
 	if instance.Spec.ServicePlanRef == nil {
-		listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServicePlanName}
+		fieldSelector := fields.SelectorFromSet(fields.Set{"spec.externalName": instance.Spec.ExternalServicePlanName, "spec.serviceClassRef.name": instance.Spec.ServiceClassRef.Name}).String()
+		listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 		servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]

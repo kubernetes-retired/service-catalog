@@ -223,7 +223,7 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServicePlanName),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.serviceClassRef.name=SCGUID"),
 	}
 	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
 
