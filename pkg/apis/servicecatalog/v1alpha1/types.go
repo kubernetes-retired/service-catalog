@@ -68,7 +68,7 @@ type ServiceBrokerSpec struct {
 
 	// RelistDuration is the frequency by which a controller will relist the
 	// broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration.
-	RelistDuration *metav1.Duration `json:"relistDuration"`
+	RelistDuration *metav1.Duration `json:"relistDuration,omitempty"`
 
 	// RelistRequests is a strictly increasing, non-negative integer counter that
 	// can be manually incremented by a user to manually trigger a relist.
@@ -484,11 +484,11 @@ type ServiceInstanceStatus struct {
 	// InProgressProperties is the properties state of the ServiceInstance when
 	// a Provision or Update is in progress. If the current operation is a
 	// Deprovision, this will be nil.
-	InProgressProperties *ServiceInstancePropertiesState
+	InProgressProperties *ServiceInstancePropertiesState `json:"inProgressProperties,omitempty"`
 
 	// ExternalProperties is the properties state of the ServiceInstance which the
 	// broker knows about.
-	ExternalProperties *ServiceInstancePropertiesState
+	ExternalProperties *ServiceInstancePropertiesState `json:"externalProperties,omitempty"`
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -652,11 +652,11 @@ type ServiceInstanceCredentialStatus struct {
 	// InProgressProperties is the properties state of the
 	// ServiceInstanceCredential when a Bind is in progress. If the current
 	// operation is an Unbind, this will be nil.
-	InProgressProperties *ServiceInstanceCredentialPropertiesState `json:"inProgressProperties"`
+	InProgressProperties *ServiceInstanceCredentialPropertiesState `json:"inProgressProperties,omitempty"`
 
 	// ExternalProperties is the properties state of the
 	// ServiceInstanceCredential which the broker knows about.
-	ExternalProperties *ServiceInstanceCredentialPropertiesState `json:"externalProperties"`
+	ExternalProperties *ServiceInstanceCredentialPropertiesState `json:"externalProperties,omitempty"`
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.

@@ -838,11 +838,12 @@ func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[1] = x.AuthInfo != nil
 			yyq2[2] = x.InsecureSkipTLSVerify != false
 			yyq2[3] = len(x.CABundle) != 0
+			yyq2[5] = x.RelistDuration != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(7)
 			} else {
-				yynn2 = 4
+				yynn2 = 3
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -962,34 +963,40 @@ func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.RelistDuration == nil {
-					r.EncodeNil()
-				} else {
-					yym19 := z.EncBinary()
-					_ = yym19
-					if false {
-					} else if z.HasExtensions() && z.EncExt(x.RelistDuration) {
-					} else if !yym19 && z.IsJSONHandle() {
-						z.EncJSONMarshal(x.RelistDuration)
+				if yyq2[5] {
+					if x.RelistDuration == nil {
+						r.EncodeNil()
 					} else {
-						z.EncFallback(x.RelistDuration)
+						yym19 := z.EncBinary()
+						_ = yym19
+						if false {
+						} else if z.HasExtensions() && z.EncExt(x.RelistDuration) {
+						} else if !yym19 && z.IsJSONHandle() {
+							z.EncJSONMarshal(x.RelistDuration)
+						} else {
+							z.EncFallback(x.RelistDuration)
+						}
 					}
+				} else {
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("relistDuration"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.RelistDuration == nil {
-					r.EncodeNil()
-				} else {
-					yym20 := z.EncBinary()
-					_ = yym20
-					if false {
-					} else if z.HasExtensions() && z.EncExt(x.RelistDuration) {
-					} else if !yym20 && z.IsJSONHandle() {
-						z.EncJSONMarshal(x.RelistDuration)
+				if yyq2[5] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("relistDuration"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.RelistDuration == nil {
+						r.EncodeNil()
 					} else {
-						z.EncFallback(x.RelistDuration)
+						yym20 := z.EncBinary()
+						_ = yym20
+						if false {
+						} else if z.HasExtensions() && z.EncExt(x.RelistDuration) {
+						} else if !yym20 && z.IsJSONHandle() {
+							z.EncJSONMarshal(x.RelistDuration)
+						} else {
+							z.EncFallback(x.RelistDuration)
+						}
 					}
 				}
 			}
@@ -7400,11 +7407,13 @@ func (x *ServiceInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[4] = x.DashboardURL != nil
 			yyq2[5] = x.CurrentOperation != ""
 			yyq2[7] = x.OperationStartTime != nil
+			yyq2[8] = x.InProgressProperties != nil
+			yyq2[9] = x.ExternalProperties != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(10)
 			} else {
-				yynn2 = 6
+				yynn2 = 4
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -7627,36 +7636,48 @@ func (x *ServiceInstanceStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.InProgressProperties == nil {
-					r.EncodeNil()
+				if yyq2[8] {
+					if x.InProgressProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.InProgressProperties.CodecEncodeSelf(e)
+					}
 				} else {
-					x.InProgressProperties.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("InProgressProperties"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.InProgressProperties == nil {
-					r.EncodeNil()
-				} else {
-					x.InProgressProperties.CodecEncodeSelf(e)
+				if yyq2[8] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("inProgressProperties"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.InProgressProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.InProgressProperties.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.ExternalProperties == nil {
-					r.EncodeNil()
+				if yyq2[9] {
+					if x.ExternalProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.ExternalProperties.CodecEncodeSelf(e)
+					}
 				} else {
-					x.ExternalProperties.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("ExternalProperties"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.ExternalProperties == nil {
-					r.EncodeNil()
-				} else {
-					x.ExternalProperties.CodecEncodeSelf(e)
+				if yyq2[9] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("externalProperties"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.ExternalProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.ExternalProperties.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -7828,7 +7849,7 @@ func (x *ServiceInstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 					z.DecFallback(x.OperationStartTime, false)
 				}
 			}
-		case "InProgressProperties":
+		case "inProgressProperties":
 			if r.TryDecodeAsNil() {
 				if x.InProgressProperties != nil {
 					x.InProgressProperties = nil
@@ -7839,7 +7860,7 @@ func (x *ServiceInstanceStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decod
 				}
 				x.InProgressProperties.CodecDecodeSelf(d)
 			}
-		case "ExternalProperties":
+		case "externalProperties":
 			if r.TryDecodeAsNil() {
 				if x.ExternalProperties != nil {
 					x.ExternalProperties = nil
@@ -10153,11 +10174,13 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 			const yyr2 bool = false
 			yyq2[1] = x.CurrentOperation != ""
 			yyq2[3] = x.OperationStartTime != nil
+			yyq2[4] = x.InProgressProperties != nil
+			yyq2[5] = x.ExternalProperties != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(6)
 			} else {
-				yynn2 = 4
+				yynn2 = 2
 				for _, b := range yyq2 {
 					if b {
 						yynn2++
@@ -10272,36 +10295,48 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.InProgressProperties == nil {
-					r.EncodeNil()
+				if yyq2[4] {
+					if x.InProgressProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.InProgressProperties.CodecEncodeSelf(e)
+					}
 				} else {
-					x.InProgressProperties.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("inProgressProperties"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.InProgressProperties == nil {
-					r.EncodeNil()
-				} else {
-					x.InProgressProperties.CodecEncodeSelf(e)
+				if yyq2[4] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("inProgressProperties"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.InProgressProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.InProgressProperties.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
-				if x.ExternalProperties == nil {
-					r.EncodeNil()
+				if yyq2[5] {
+					if x.ExternalProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.ExternalProperties.CodecEncodeSelf(e)
+					}
 				} else {
-					x.ExternalProperties.CodecEncodeSelf(e)
+					r.EncodeNil()
 				}
 			} else {
-				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("externalProperties"))
-				z.EncSendContainerState(codecSelfer_containerMapValue1234)
-				if x.ExternalProperties == nil {
-					r.EncodeNil()
-				} else {
-					x.ExternalProperties.CodecEncodeSelf(e)
+				if yyq2[5] {
+					z.EncSendContainerState(codecSelfer_containerMapKey1234)
+					r.EncodeString(codecSelferC_UTF81234, string("externalProperties"))
+					z.EncSendContainerState(codecSelfer_containerMapValue1234)
+					if x.ExternalProperties == nil {
+						r.EncodeNil()
+					} else {
+						x.ExternalProperties.CodecEncodeSelf(e)
+					}
 				}
 			}
 			if yyr2 || yy2arr2 {

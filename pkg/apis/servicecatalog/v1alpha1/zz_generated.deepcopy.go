@@ -239,7 +239,11 @@ func DeepCopy_v1alpha1_ServiceBrokerStatus(in interface{}, out interface{}, c *c
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]ServiceBrokerCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_ServiceBrokerCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		if in.OperationStartTime != nil {
 			in, out := &in.OperationStartTime, &out.OperationStartTime
@@ -466,7 +470,11 @@ func DeepCopy_v1alpha1_ServiceInstanceCredentialStatus(in interface{}, out inter
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]ServiceInstanceCredentialCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_ServiceInstanceCredentialCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		if in.OperationStartTime != nil {
 			in, out := &in.OperationStartTime, &out.OperationStartTime
@@ -588,7 +596,11 @@ func DeepCopy_v1alpha1_ServiceInstanceStatus(in interface{}, out interface{}, c 
 		if in.Conditions != nil {
 			in, out := &in.Conditions, &out.Conditions
 			*out = make([]ServiceInstanceCondition, len(*in))
-			copy(*out, *in)
+			for i := range *in {
+				if err := DeepCopy_v1alpha1_ServiceInstanceCondition(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
 		}
 		if in.LastOperation != nil {
 			in, out := &in.LastOperation, &out.LastOperation
