@@ -27,6 +27,7 @@ import (
 
 	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -397,16 +398,22 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 }
 
 // getServicePlanByExternalName finds the ServicePlan based on the
-// ServicePlanRef if it has been set, otherwise uses
-// ExternalServicePlanName. If ServicePlanRef is nil
-// and ServicePlan is found, updates the spec with a
-// ref to it.
+// ServicePlanRef if it has been set, otherwise uses ExternalServicePlanName.
+// If ServicePlanRef is nil and ServicePlan is found, updates the spec with a
+// ref to it. The spec.serviceClassRef field must be set or this method will
+// return an error.
 func (c *controller) getServicePlanByExternalNameOrRef(spec *v1alpha1.ServiceInstanceSpec) (*v1alpha1.ServicePlan, error) {
+	if spec.ServiceClassRef == nil {
+		return nil, fmt.Errorf("Cannot find ServicePlan because ServiceClassRef is not set.")
+	}
+
 	if spec.ServicePlanRef != nil {
 		return c.servicePlanLister.Get(spec.ServicePlanRef.Name)
 	}
 
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + spec.ExternalServicePlanName}
+	fieldSelector := fields.SelectorFromSet(fields.Set{"spec.externalName": spec.ExternalServicePlanName, "spec.serviceClassRef.name": spec.ServiceClassRef.Name}).String()
+
+	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
 	if err != nil {
 		return nil, err
@@ -424,7 +431,8 @@ func (c *controller) getServicePlanByExternalNameOrRef(spec *v1alpha1.ServiceIns
 		}
 		return sp, nil
 	}
-	return nil, fmt.Errorf("Could not find a single ServicePlan for %q, found %d", spec.ExternalServicePlanName, len(servicePlans.Items))
+
+	return nil, fmt.Errorf("Could not find a single ServicePlan %q for ServiceClass %q, found %d", spec.ExternalServicePlanName, spec.ServiceClassRef.Name, len(servicePlans.Items))
 }
 
 // getServiceClassByExternalName finds the ServiceClass based on the
