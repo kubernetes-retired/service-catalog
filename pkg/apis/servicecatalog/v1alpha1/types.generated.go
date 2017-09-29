@@ -10279,7 +10279,7 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("InProgressProperties"))
+				r.EncodeString(codecSelferC_UTF81234, string("inProgressProperties"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				if x.InProgressProperties == nil {
 					r.EncodeNil()
@@ -10296,7 +10296,7 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("ExternalProperties"))
+				r.EncodeString(codecSelferC_UTF81234, string("externalProperties"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				if x.ExternalProperties == nil {
 					r.EncodeNil()
@@ -10417,7 +10417,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 					z.DecFallback(x.OperationStartTime, false)
 				}
 			}
-		case "InProgressProperties":
+		case "inProgressProperties":
 			if r.TryDecodeAsNil() {
 				if x.InProgressProperties != nil {
 					x.InProgressProperties = nil
@@ -10428,7 +10428,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 				}
 				x.InProgressProperties.CodecDecodeSelf(d)
 			}
-		case "ExternalProperties":
+		case "externalProperties":
 			if r.TryDecodeAsNil() {
 				if x.ExternalProperties != nil {
 					x.ExternalProperties = nil

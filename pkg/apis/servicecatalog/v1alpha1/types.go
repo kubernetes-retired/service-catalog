@@ -652,11 +652,11 @@ type ServiceInstanceCredentialStatus struct {
 	// InProgressProperties is the properties state of the
 	// ServiceInstanceCredential when a Bind is in progress. If the current
 	// operation is an Unbind, this will be nil.
-	InProgressProperties *ServiceInstanceCredentialPropertiesState
+	InProgressProperties *ServiceInstanceCredentialPropertiesState `json:"inProgressProperties"`
 
 	// ExternalProperties is the properties state of the
 	// ServiceInstanceCredential which the broker knows about.
-	ExternalProperties *ServiceInstanceCredentialPropertiesState
+	ExternalProperties *ServiceInstanceCredentialPropertiesState `json:"externalProperties"`
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.
