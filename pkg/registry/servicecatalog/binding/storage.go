@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -144,5 +145,27 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 	statusStore := store
 	statusStore.UpdateStrategy = bindingStatusUpdateStrategy
 
-	return &store, &statusStore, nil
+	return &store, &StatusREST{&statusStore}, nil
+}
+
+// StatusREST defines the REST operations for the status subresource.
+type StatusREST struct {
+	store *registry.Store
+}
+
+// New returns a new ServiceBinding.
+func (r *StatusREST) New() runtime.Object {
+	return EmptyObject()
+}
+
+// Get retrieves the object from the storage. It is required to support Patch
+// and to implement the rest.Getter interface.
+func (r *StatusREST) Get(ctx genericapirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+	return r.store.Get(ctx, name, options)
+}
+
+// Update alters the status subset of an object and implements the rest.Updater
+// interface.
+func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
+	return r.store.Update(ctx, name, objInfo)
 }
