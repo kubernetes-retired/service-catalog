@@ -100,7 +100,7 @@ func (instanceRESTStrategy) NamespaceScoped() bool {
 }
 
 // PrepareForCreate receives a the incoming ServiceInstance and clears it's
-// Status. Status is not a user settable field.
+// Status and Service[Class|Plan]Ref fields. These are not user settable fields.
 func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	instance, ok := obj.(*sc.ServiceInstance)
 	if !ok {
@@ -115,6 +115,9 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
 	instance.Status = sc.ServiceInstanceStatus{}
+
+	instance.Spec.ServiceClassRef = nil
+	instance.Spec.ServicePlanRef = nil
 	// Fill in the first entry set to "creating"?
 	instance.Status.Conditions = []sc.ServiceInstanceCondition{}
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
@@ -145,6 +148,10 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 
 	// Do not allow any updates to the Status field while updating the Spec
 	newServiceInstance.Status = oldServiceInstance.Status
+
+	// Do not allow updates to Service[Class|Plan]Ref fields
+	newServiceInstance.Spec.ServiceClassRef = oldServiceInstance.Spec.ServiceClassRef
+	newServiceInstance.Spec.ServicePlanRef = oldServiceInstance.Spec.ServicePlanRef
 
 	// TODO: We currently don't handle any changes to the spec in the
 	// reconciler. Once we do that, this check needs to be removed and
