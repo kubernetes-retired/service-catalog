@@ -880,8 +880,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCredentialPropertiesState"),
 							},
 						},
+						"orphanMitigationInProgress": {
+							SchemaProps: spec.SchemaProps{
+								Description: "OrphanMitigationInProgress is a flag that represents whether orphan mitigation is in progress.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 					},
-					Required: []string{"conditions", "reconciledGeneration"},
+					Required: []string{"conditions", "reconciledGeneration", "orphanMitigationInProgress"},
 				},
 			},
 			Dependencies: []string{
