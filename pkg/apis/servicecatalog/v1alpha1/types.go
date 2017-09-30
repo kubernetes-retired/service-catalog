@@ -218,7 +218,8 @@ type ServiceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ServiceClassSpec `json:"spec"`
+	Spec   ServiceClassSpec   `json:"spec"`
+	Status ServiceClassStatus `json:"status"`
 }
 
 // ServiceClassSpec represents details about the ServicePlan
@@ -274,6 +275,13 @@ type ServiceClassSpec struct {
 	Requires []string `json:"requires,omitempty"`
 }
 
+// ServiceClassStatus represents status information about a ServiceClass.
+type ServiceClassStatus struct {
+	// PresentInCatalog indicates that the ServiceClass is present in the
+	// broker's catalog.
+	PresentInCatalog bool `json:"presentInCatalog"`
+}
+
 // ServicePlanList is a list of ServicePlans.
 type ServicePlanList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -290,7 +298,8 @@ type ServicePlan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ServicePlanSpec `json:"spec"`
+	Spec   ServicePlanSpec   `json:"spec"`
+	Status ServicePlanStatus `json:"status"`
 }
 
 // ServicePlanSpec represents details about a ServicePlan.
@@ -349,6 +358,13 @@ type ServicePlanSpec struct {
 	// ServiceClassRef is a reference to the service class that
 	// owns this plan.
 	ServiceClassRef v1.LocalObjectReference `json:"serviceClassRef"`
+}
+
+// ServicePlanStatus represents status information about a ServicePlan.
+type ServicePlanStatus struct {
+	// PresentInCatalog indicates that the ServicePlan is present in the
+	// broker's catalog.
+	PresentInCatalog bool `json:"presentInCatalog"`
 }
 
 // ServiceInstanceList is a list of instances.

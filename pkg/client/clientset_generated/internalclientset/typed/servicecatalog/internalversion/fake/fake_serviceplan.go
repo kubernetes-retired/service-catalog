@@ -53,6 +53,15 @@ func (c *FakeServicePlans) Update(servicePlan *servicecatalog.ServicePlan) (resu
 	return obj.(*servicecatalog.ServicePlan), err
 }
 
+func (c *FakeServicePlans) UpdateStatus(servicePlan *servicecatalog.ServicePlan) (*servicecatalog.ServicePlan, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewRootUpdateSubresourceAction(serviceplansResource, "status", servicePlan), &servicecatalog.ServicePlan{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*servicecatalog.ServicePlan), err
+}
+
 func (c *FakeServicePlans) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(serviceplansResource, name), &servicecatalog.ServicePlan{})

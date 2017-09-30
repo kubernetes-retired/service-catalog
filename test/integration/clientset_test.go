@@ -493,6 +493,16 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return errors.New("Failed to update service class")
 	}
 
+	// Test status subresource
+	updated.Status.PresentInCatalog = true
+	updated, err = serviceClassClient.UpdateStatus(updated)
+	if err != nil {
+		return fmt.Errorf("Error updating serviceClass status: %v", err)
+	}
+	if !updated.Status.PresentInCatalog {
+		return errors.New("Expected status.presentInCatalog = true, got false")
+	}
+
 	// Ok, let's verify the field selectors
 	sc2Name := name + "2"
 	sc2ID := "someotheridhere"
@@ -683,6 +693,16 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	}
 	if *updated.Spec.Bindable {
 		return errors.New("Failed to update service class")
+	}
+
+	// Test status subresource
+	updated.Status.PresentInCatalog = true
+	updated, err = servicePlanClient.UpdateStatus(updated)
+	if err != nil {
+		return fmt.Errorf("Error updating servicePlan status: %v", err)
+	}
+	if !updated.Status.PresentInCatalog {
+		return errors.New("Expected status.presentInCatalog = true, got false")
 	}
 
 	// Verify that field selectors work by listing.
