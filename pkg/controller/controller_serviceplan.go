@@ -19,7 +19,6 @@ package controller
 import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -34,18 +33,14 @@ func (c *controller) servicePlanAdd(obj interface{}) {
 	c.servicePlanQueue.Add(key)
 }
 
+// reconcileServicePlanKey reconciles a ServicePlan due to resync or an event
+// on the ServicePlan.  Note that this is NOT the main reconciliation loop for
+// ServicePlans. ServicePlans are primarily reconciled in a separate flow when
+// a ServiceBroker is reconciled.
 func (c *controller) reconcileServicePlanKey(key string) error {
-	servicePlan, err := c.servicePlanLister.Get(key)
-	if errors.IsNotFound(err) {
-		glog.Infof("Not doing work for ServicePlan %v because it has been deleted", key)
-		return nil
-	}
-	if err != nil {
-		glog.Errorf("Unable to retrieve ServicePlan %v from store: %v", key, err)
-		return err
-	}
-
-	return c.reconcileServicePlan(servicePlan)
+	// currently, this is a no-op.  In the future, we'll maintain status
+	// information here.
+	return nil
 }
 
 func (c *controller) servicePlanUpdate(oldObj, newObj interface{}) {

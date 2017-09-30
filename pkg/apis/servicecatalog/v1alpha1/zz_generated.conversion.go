@@ -404,11 +404,11 @@ func Convert_servicecatalog_ServiceClassList_To_v1alpha1_ServiceClassList(in *se
 
 func autoConvert_v1alpha1_ServiceClassSpec_To_servicecatalog_ServiceClassSpec(in *ServiceClassSpec, out *servicecatalog.ServiceClassSpec, s conversion.Scope) error {
 	out.ServiceBrokerName = in.ServiceBrokerName
+	out.ExternalName = in.ExternalName
+	out.ExternalID = in.ExternalID
 	out.Description = in.Description
 	out.Bindable = in.Bindable
 	out.PlanUpdatable = in.PlanUpdatable
-	out.ExternalName = in.ExternalName
-	out.ExternalID = in.ExternalID
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
@@ -422,11 +422,11 @@ func Convert_v1alpha1_ServiceClassSpec_To_servicecatalog_ServiceClassSpec(in *Se
 
 func autoConvert_servicecatalog_ServiceClassSpec_To_v1alpha1_ServiceClassSpec(in *servicecatalog.ServiceClassSpec, out *ServiceClassSpec, s conversion.Scope) error {
 	out.ServiceBrokerName = in.ServiceBrokerName
+	out.ExternalName = in.ExternalName
+	out.ExternalID = in.ExternalID
 	out.Description = in.Description
 	out.Bindable = in.Bindable
 	out.PlanUpdatable = in.PlanUpdatable
-	out.ExternalName = in.ExternalName
-	out.ExternalID = in.ExternalID
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
@@ -853,6 +853,7 @@ func Convert_servicecatalog_ServicePlanList_To_v1alpha1_ServicePlanList(in *serv
 }
 
 func autoConvert_v1alpha1_ServicePlanSpec_To_servicecatalog_ServicePlanSpec(in *ServicePlanSpec, out *servicecatalog.ServicePlanSpec, s conversion.Scope) error {
+	out.ServiceBrokerName = in.ServiceBrokerName
 	out.ExternalName = in.ExternalName
 	out.ExternalID = in.ExternalID
 	out.Description = in.Description
@@ -872,6 +873,7 @@ func Convert_v1alpha1_ServicePlanSpec_To_servicecatalog_ServicePlanSpec(in *Serv
 }
 
 func autoConvert_servicecatalog_ServicePlanSpec_To_v1alpha1_ServicePlanSpec(in *servicecatalog.ServicePlanSpec, out *ServicePlanSpec, s conversion.Scope) error {
+	out.ServiceBrokerName = in.ServiceBrokerName
 	out.ExternalName = in.ExternalName
 	out.ExternalID = in.ExternalID
 	out.Description = in.Description

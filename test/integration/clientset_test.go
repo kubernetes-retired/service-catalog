@@ -604,10 +604,11 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	servicePlan := &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServicePlanSpec{
-			Bindable:     &bindable,
-			ExternalName: name,
-			ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-			Description:  "test description",
+			ServiceBrokerName: "test-broker",
+			Bindable:          &bindable,
+			ExternalName:      name,
+			ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:       "test description",
 			ServiceClassRef: v1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
@@ -691,10 +692,11 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	servicePlan2 := &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
 		Spec: v1alpha1.ServicePlanSpec{
-			Bindable:     &bindable,
-			ExternalName: sp2Name,
-			ExternalID:   sp2ID,
-			Description:  "test description 2",
+			ServiceBrokerName: "test-broker",
+			Bindable:          &bindable,
+			ExternalName:      sp2Name,
+			ExternalID:        sp2ID,
+			Description:       "test description 2",
 			ServiceClassRef: v1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
@@ -742,6 +744,14 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 0 != len(servicePlans.Items) {
+		return fmt.Errorf("should have zero ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+	}
+
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.serviceBrokerName=" + "test-broker"})
+	if err != nil {
+		return fmt.Errorf("error listing service plans (%s)", err)
+	}
+	if 2 != len(servicePlans.Items) {
 		return fmt.Errorf("should have zero ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 

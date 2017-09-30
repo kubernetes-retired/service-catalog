@@ -326,7 +326,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 
 		for _, servicePlan := range servicePlans {
 			glog.V(4).Infof("Reconciling servicePlan %q (broker %q)", servicePlan.Spec.ExternalName, broker.Name)
-			if err := c.reconcileServicePlan(servicePlan); err != nil {
+			if err := c.reconcileServicePlan(broker, servicePlan); err != nil {
 				s := fmt.Sprintf(
 					"Error reconciling servicePlan %q (broker %q): %s",
 					servicePlan.Spec.ExternalName,
@@ -544,7 +544,9 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1alp
 
 // reconcileServicePlan reconciles a ServicePlan after the
 // ServiceClass's catalog has been re-listed.
-func (c *controller) reconcileServicePlan(servicePlan *v1alpha1.ServicePlan) error {
+func (c *controller) reconcileServicePlan(broker *v1alpha1.ServiceBroker, servicePlan *v1alpha1.ServicePlan) error {
+	servicePlan.Spec.ServiceBrokerName = broker.Name
+
 	existingServicePlan, err := c.servicePlanLister.Get(servicePlan.Name)
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
