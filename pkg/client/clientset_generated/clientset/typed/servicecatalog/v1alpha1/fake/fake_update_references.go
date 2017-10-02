@@ -21,7 +21,7 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-func (c *FakeServiceInstances) SetReferences(serviceInstance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+func (c *FakeServiceInstances) UpdateReferences(serviceInstance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(serviceinstancesResource, "reference", c.ns, serviceInstance), serviceInstance)
 

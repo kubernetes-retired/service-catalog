@@ -901,7 +901,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	// Update the ServiceClassRef
 	classRef := &v1.ObjectReference{Name: "service-class-ref"}
 	instanceServer.Spec.ServiceClassRef = classRef
-	returnedInstance, err := instanceClient.SetReferences(instanceServer)
+	returnedInstance, err := instanceClient.UpdateReferences(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}
@@ -941,7 +941,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	// Update the ServicePlanRef
 	planRef := &v1.ObjectReference{Name: "service-plan-ref"}
 	instanceServer.Spec.ServicePlanRef = planRef
-	returnedInstance, err = instanceClient.SetReferences(instanceServer)
+	returnedInstance, err = instanceClient.UpdateReferences(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}

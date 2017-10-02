@@ -23,10 +23,10 @@ import (
 // The ReferencesExtension interface allows setting the References
 // to ServiceClasses and ServicePlans.
 type ServiceInstanceExpansion interface {
-	SetReferences(serviceInstance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error)
+	UpdateReferences(serviceInstance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error)
 }
 
-func (c *serviceInstances) SetReferences(serviceInstance *v1alpha1.ServiceInstance) (result *v1alpha1.ServiceInstance, err error) {
+func (c *serviceInstances) UpdateReferences(serviceInstance *v1alpha1.ServiceInstance) (result *v1alpha1.ServiceInstance, err error) {
 	result = &v1alpha1.ServiceInstance{}
 	err = c.client.Put().
 		Namespace(serviceInstance.Namespace).
