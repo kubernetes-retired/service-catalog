@@ -147,7 +147,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) 
 	referenceStore := store
 	referenceStore.UpdateStrategy = instanceReferenceUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}, &referencesStore
+	return &store, &StatusREST{&statusStore}, &referenceStore
 
 }
 
