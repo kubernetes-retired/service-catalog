@@ -223,7 +223,7 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServicePlanName),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.serviceClassRef.name=SCGUID"),
 	}
 	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
 
@@ -237,6 +237,100 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// TestGetServicePlanByExternalNameOrRefNoServiceClassRef tests the scenario
+// where getServicePlanByExternalNameOrRef is called with a
+// ServiceInstanceSpec that does not have a set serviceClassRef.
+func TestGetServicePlanByExternalNameOrRefNoServiceClassRef(t *testing.T) {
+	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := &v1alpha1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Generation: 1,
+		},
+		Spec: v1alpha1.ServiceInstanceSpec{
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  "nothere",
+			ExternalID:               instanceGUID,
+		},
+	}
+
+	_, err := testController.getServicePlanByExternalNameOrRef(&instance.Spec)
+	if err == nil {
+		t.Fatal("Expected an error")
+	} else if err.Error() != "Cannot find ServicePlan because ServiceClassRef is not set." {
+		t.Fatalf("Unexpected error: %v", err.Error())
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
+}
+
+// TestGetServicePlanByExternalNameOrRefMultiplePlans tests the scenario where
+// getServicePlanByExternalNameOrRef finds multiple ServicePlans that have the
+// same ServiceClass k8s name and plan name.  This should not be a scenario
+// that it is possible to hit, but we will test it here for completeness.
+func TestGetServicePlanByExternalNameOrRefMultiplePlans(t *testing.T) {
+	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := &v1alpha1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Generation: 1,
+		},
+		Spec: v1alpha1.ServiceInstanceSpec{
+			ExternalServiceClassName: testServiceClassName,
+			ExternalServicePlanName:  "nothere",
+			ExternalID:               instanceGUID,
+			ServiceClassRef: &v1.ObjectReference{
+				Name: serviceClassGUID,
+			},
+		},
+	}
+
+	// returning two service plans is sufficient to exercise the logic we're
+	// testing.
+
+	fakeCatalogClient.AddReactor("list", "serviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		list := &v1alpha1.ServicePlanList{
+			Items: []v1alpha1.ServicePlan{
+				*getTestServicePlan(),
+				*getTestServicePlan(),
+			},
+		}
+		return true, list, nil
+	})
+
+	_, err := testController.getServicePlanByExternalNameOrRef(&instance.Spec)
+	if err == nil {
+		t.Fatal("Expected an error")
+	} else if err.Error() != `Could not find a single ServicePlan "nothere" for ServiceClass "SCGUID", found 2` {
+		t.Fatalf("Unexpected error: %v", err.Error())
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.serviceClassRef.name=SCGUID"),
+	}
+	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 }
 
 // TestReconcileServiceInstanceWithParameters tests a simple successful reconciliation
