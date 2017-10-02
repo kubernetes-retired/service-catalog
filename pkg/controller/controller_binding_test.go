@@ -33,8 +33,6 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -89,9 +87,9 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceInstance(t *testing
 	}
 }
 
-// TestReconcileBindingNonExistingServiceClass tests reconcileBinding to ensure a
-// binding fails as expected when a serviceclass does not exist.
-func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T) {
+// TestReconcileServiceInstanceCredentialUnresolvedServiceClassReference
+// tests reconcileBinding to ensure a binding fails when a ServiceClassRef has not been resolved.
+func TestReconcileServiceInstanceCredentialUnresolvedServiceClassReference(t *testing.T) {
 	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
@@ -121,6 +119,102 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 
 	err := testController.reconcileServiceInstanceCredential(binding)
 	if err == nil {
+		t.Fatal("serviceclassref was nil and reconcile should return an error")
+	}
+	if !strings.Contains(err.Error(), "not been resolved yet") {
+		t.Fatalf("Did not get the expected error %q : got %q", "not been resolved yet", err)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// There are no actions.
+	assertNumberOfActions(t, actions, 0)
+}
+
+// TestReconcileServiceInstanceCredentialUnresolvedServicePlanReference
+// tests reconcileBinding to ensure a binding fails when a ServiceClassRef has not been resolved.
+func TestReconcileServiceInstanceCredentialUnresolvedServicePlanReference(t *testing.T) {
+	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	instance := &v1alpha1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
+		Spec: v1alpha1.ServiceInstanceSpec{
+			ExternalServiceClassName: "nothere",
+			ExternalServicePlanName:  testServicePlanName,
+			ExternalID:               instanceGUID,
+			ServiceClassRef:          &v1.ObjectReference{Name: "Some Ref"},
+		},
+	}
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	binding := &v1alpha1.ServiceInstanceCredential{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         bindingGUID,
+		},
+	}
+
+	err := testController.reconcileServiceInstanceCredential(binding)
+	if err == nil {
+		t.Fatal("serviceclass nothere was found and it should not be found")
+	}
+
+	if !strings.Contains(err.Error(), "not been resolved yet") {
+		t.Fatalf("Did not get the expected error %q : got %q", "not been resolved yet", err)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// There are no actions.
+	assertNumberOfActions(t, actions, 0)
+}
+
+// TestReconcileBindingNonExistingServiceClass tests reconcileBinding to ensure a
+// binding fails as expected when a serviceclass does not exist.
+func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T) {
+	_, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	instance := &v1alpha1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
+		Spec: v1alpha1.ServiceInstanceSpec{
+			ExternalServiceClassName: "nothere",
+			ExternalServicePlanName:  testServicePlanName,
+			ExternalID:               instanceGUID,
+			ServiceClassRef:          &v1.ObjectReference{Name: "nosuchclassid"},
+			ServicePlanRef:           &v1.ObjectReference{Name: "nosuchplanid"},
+		},
+	}
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	binding := &v1alpha1.ServiceInstanceCredential{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceCredentialName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         bindingGUID,
+		},
+	}
+
+	err := testController.reconcileServiceInstanceCredential(binding)
+	if err == nil {
 		t.Fatal("serviceclass nothere was found and it should not be found")
 	}
 
@@ -128,20 +222,13 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 	assertNumberOfServiceBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	// There are two actions, one to list to try to find the ServiceClass
-	// and one to update to failed status because there's no such service
-	// class.
-	assertNumberOfActions(t, actions, 2)
-
-	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
-	}
-	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+	// There is one action to update to failed status because there's
+	// no such service
+	assertNumberOfActions(t, actions, 1)
 
 	// There should be one action that says it failed because no such service class.
-	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[1], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage, binding)
+	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)

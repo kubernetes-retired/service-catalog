@@ -105,7 +105,7 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 
 // NewStorage creates a new rest.Storage responsible for accessing ServiceInstance
 // resources
-func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
+func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
@@ -144,7 +144,11 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	statusStore := store
 	statusStore.UpdateStrategy = instanceStatusUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}
+	referenceStore := store
+	referenceStore.UpdateStrategy = instanceReferenceUpdateStrategy
+
+	return &store, &StatusREST{&statusStore}, &ReferenceREST{&referenceStore}
+
 }
 
 // StatusREST defines the REST operations for the status subresource via
@@ -168,5 +172,27 @@ func (r *StatusREST) Get(ctx genericapirequest.Context, name string, options *me
 // Update alters the status subset of an object and it
 // implements rest.Updater interface
 func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
+	return r.store.Update(ctx, name, objInfo)
+}
+
+// ReferenceREST defines the REST operations for the reference subresource.
+type ReferenceREST struct {
+	store *registry.Store
+}
+
+// New returns a new ServiceInstance
+func (r *ReferenceREST) New() runtime.Object {
+	return &servicecatalog.ServiceInstance{}
+}
+
+// Get retrieves the object from the storage. It is required to support Patch
+// and to implement the rest.Getter interface.
+func (r *ReferenceREST) Get(ctx genericapirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+	return r.store.Get(ctx, name, options)
+}
+
+// Update alters the reference subset of an object and it
+// implements rest.Updater interface
+func (r *ReferenceREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
 	return r.store.Update(ctx, name, objInfo)
 }

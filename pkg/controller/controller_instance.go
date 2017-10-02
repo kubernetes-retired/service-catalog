@@ -30,10 +30,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -497,15 +500,6 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		return nil
 	}
 
-	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
-
-	glog.V(4).Infof("Adding/Updating ServiceInstance %v/%v", instance.Namespace, instance.Name)
-
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndServiceBroker(instance)
-	if err != nil {
-		return err
-	}
-
 	// we will definitely update the instance's status - make a deep copy now
 	// for use later in this method.
 	clone, err := api.Scheme.DeepCopy(instance)
@@ -513,6 +507,21 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		return err
 	}
 	toUpdate := clone.(*v1alpha1.ServiceInstance)
+
+	// Update references to ServicePlan / ServiceClass if necessary.
+	toUpdate, err = c.resolveReferences(toUpdate)
+	if err != nil {
+		return err
+	}
+
+	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
+
+	glog.V(4).Infof("Adding/Updating ServiceInstance %v/%v", instance.Namespace, instance.Name)
+
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndServiceBroker(toUpdate)
+	if err != nil {
+		return err
+	}
 
 	ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 	if err != nil {
@@ -1227,6 +1236,77 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 	return nil
 }
 
+// resolveReferences checks to see if ServiceClassRef and/or ServicePlanRef are
+// nil and if so, will resolve the references and update the instance.
+// If either can not be resolved, returns an error and sets the InstanceCondition
+// with the appropriate error message.
+func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+	if instance.Spec.ServiceClassRef != nil && instance.Spec.ServicePlanRef != nil {
+		return instance, nil
+	}
+
+	if instance.Spec.ServiceClassRef == nil {
+		glog.V(4).Infof("looking up a ServiceClass from externalName: %q", instance.Spec.ExternalServiceClassName)
+		listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
+		serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
+		if err == nil && len(serviceClasses.Items) == 1 {
+			sc := &serviceClasses.Items[0]
+			instance.Spec.ServiceClassRef = &apiv1.ObjectReference{
+				Kind:            sc.Kind,
+				Namespace:       sc.Namespace,
+				Name:            sc.Name,
+				UID:             sc.UID,
+				APIVersion:      sc.APIVersion,
+				ResourceVersion: sc.ResourceVersion,
+			}
+			glog.V(4).Infof("Resolve ServiceClass %q to %q", instance.Spec.ExternalServiceClassName, instance.Spec.ServiceClassRef)
+		} else {
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
+			glog.Warning(s)
+			c.updateServiceInstanceCondition(
+				instance,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorNonexistentServiceClassReason,
+				"The instance references a ServiceClass that does not exist. "+s,
+			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
+			return nil, fmt.Errorf(s)
+		}
+	}
+
+	if instance.Spec.ServicePlanRef == nil {
+		fieldSelector := fields.SelectorFromSet(fields.Set{"spec.externalName": instance.Spec.ExternalServicePlanName, "spec.serviceClassRef.name": instance.Spec.ServiceClassRef.Name}).String()
+		listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
+		servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
+		if err == nil && len(servicePlans.Items) == 1 {
+			sp := &servicePlans.Items[0]
+			instance.Spec.ServicePlanRef = &apiv1.ObjectReference{
+				Kind:            sp.Kind,
+				Namespace:       sp.Namespace,
+				Name:            sp.Name,
+				UID:             sp.UID,
+				APIVersion:      sp.APIVersion,
+				ResourceVersion: sp.ResourceVersion,
+			}
+			glog.V(4).Infof("Resolve ServicePlan %q to %q", instance.Spec.ExternalServicePlanName, instance.Spec.ServicePlanRef)
+		} else {
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, instance.Spec.ExternalServiceClassName)
+			glog.Warning(s)
+			c.updateServiceInstanceCondition(
+				instance,
+				v1alpha1.ServiceInstanceConditionReady,
+				v1alpha1.ConditionFalse,
+				errorNonexistentServicePlanReason,
+				"The instance references a ServicePlan that does not exist. "+s,
+			)
+			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+			return nil, fmt.Errorf(s)
+		}
+	}
+	return c.updateServiceInstanceReferences(instance)
+}
+
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
 // the condition already exists in the status, it is mutated; if the condition
 // does not already exist in the status, it is added.  Other conditions in the
@@ -1285,6 +1365,16 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	glog.V(3).Infof(`Setting lastTransitionTime for ServiceInstance "%v/%v" condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, t)
 	newCondition.LastTransitionTime = t
 	toUpdate.Status.Conditions = append(toUpdate.Status.Conditions, newCondition)
+}
+
+// updateServiceInstanceReferences updates the refs for the given instance.
+func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+	glog.V(4).Infof("Updating references for ServiceInstance %v/%v", toUpdate.Namespace, toUpdate.Name)
+	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
+	if err != nil {
+		glog.Errorf("Failed to update references for ServiceInstance %v/%v: %v", toUpdate.Namespace, toUpdate.Name, err)
+	}
+	return updatedInstance, err
 }
 
 // updateServiceInstanceStatus updates the status for the given instance.

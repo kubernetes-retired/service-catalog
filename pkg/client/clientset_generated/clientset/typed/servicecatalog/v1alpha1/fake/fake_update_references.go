@@ -14,12 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package fake
 
-type ServiceBrokerExpansion interface{}
+import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	testing "k8s.io/client-go/testing"
+)
 
-type ServiceClassExpansion interface{}
+func (c *FakeServiceInstances) UpdateReferences(serviceInstance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(serviceinstancesResource, "reference", c.ns, serviceInstance), serviceInstance)
 
-type ServiceInstanceCredentialExpansion interface{}
-
-type ServicePlanExpansion interface{}
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.ServiceInstance), err
+}

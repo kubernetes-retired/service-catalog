@@ -25,7 +25,6 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
-	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -249,7 +248,7 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // a brokerClient to use for that method given an ServiceInstance.
 // Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
 func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
-	serviceClass, err := c.getServiceClassByExternalNameOrRef(&instance.Spec)
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
 		glog.Info(s)
@@ -264,7 +263,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan, err := c.getServicePlanByExternalNameOrRef(&instance.Spec)
+	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
@@ -325,7 +324,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 // a brokerclient to use for a given ServiceInstance.
 // Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
 func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
-	serviceClass, err := c.getServiceClassByExternalNameOrRef(&instance.Spec)
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalServiceClassName)
 		glog.Warning(s)
@@ -340,7 +339,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan, err := c.getServicePlanByExternalNameOrRef(&instance.Spec)
+	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
@@ -394,72 +393,6 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 	}
 
 	return serviceClass, servicePlan, broker.Name, brokerClient, nil
-}
-
-// getServicePlanByExternalName finds the ServicePlan based on the
-// ServicePlanRef if it has been set, otherwise uses
-// ExternalServicePlanName. If ServicePlanRef is nil
-// and ServicePlan is found, updates the spec with a
-// ref to it.
-func (c *controller) getServicePlanByExternalNameOrRef(spec *v1alpha1.ServiceInstanceSpec) (*v1alpha1.ServicePlan, error) {
-	if spec.ServicePlanRef != nil {
-		return c.servicePlanLister.Get(spec.ServicePlanRef.Name)
-	}
-
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + spec.ExternalServicePlanName}
-	servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
-	if err != nil {
-		return nil, err
-	}
-	glog.V(4).Infof("Found %d ServicePlans based on externalName %q", len(servicePlans.Items), spec.ExternalServicePlanName)
-	if len(servicePlans.Items) == 1 {
-		sp := &servicePlans.Items[0]
-		spec.ServicePlanRef = &apiv1.ObjectReference{
-			Kind:            sp.Kind,
-			Namespace:       sp.Namespace,
-			Name:            sp.Name,
-			UID:             sp.UID,
-			APIVersion:      sp.APIVersion,
-			ResourceVersion: sp.ResourceVersion,
-		}
-		return sp, nil
-	}
-	return nil, fmt.Errorf("Could not find a single ServicePlan for %q, found %d", spec.ExternalServicePlanName, len(servicePlans.Items))
-}
-
-// getServiceClassByExternalName finds the ServiceClass based on the
-// ServiceClassRef if it has been set, otherwise uses
-// ExternalServiceClassName. If ServiceClassRef is nil
-// and ServiceClass is found, updates the spec with a
-// ref to it.
-func (c *controller) getServiceClassByExternalNameOrRef(spec *v1alpha1.ServiceInstanceSpec) (*v1alpha1.ServiceClass, error) {
-	if spec.ServiceClassRef != nil {
-		glog.V(4).Infof("looking up a ServiceClass from Ref: %q", spec.ServiceClassRef.Name)
-		return c.serviceClassLister.Get(spec.ServiceClassRef.Name)
-	}
-
-	glog.V(4).Infof("looking up a ServiceClass from externalName: %q", spec.ExternalServiceClassName)
-	listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + spec.ExternalServiceClassName}
-	serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
-	if err != nil {
-		glog.V(4).Infof("****** failed to look up a ServiceClass from name: %q", err)
-		return nil, err
-	}
-	glog.V(4).Infof("Found %d ServiceClasses based on externalName %q", len(serviceClasses.Items), spec.ExternalServiceClassName)
-	if len(serviceClasses.Items) == 1 {
-		sc := &serviceClasses.Items[0]
-		spec.ServiceClassRef = &apiv1.ObjectReference{
-			Kind:            sc.Kind,
-			Namespace:       sc.Namespace,
-			Name:            sc.Name,
-			UID:             sc.UID,
-			APIVersion:      sc.APIVersion,
-			ResourceVersion: sc.ResourceVersion,
-		}
-		glog.V(4).Infof("******  ServiceClassRef instance: %q", spec)
-		return sc, nil
-	}
-	return nil, fmt.Errorf("Could not find a single ServiceClass for %q, found %d", spec.ExternalServiceClassName, len(serviceClasses.Items))
 }
 
 // Broker utility methods - move?

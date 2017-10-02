@@ -67,6 +67,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			brokerName       = upsbrokername
 			serviceclassName = "user-provided-service"
 			serviceclassID   = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+			serviceplanID    = "86064792-7ea2-467b-af93-ac9694d96d52"
 			testns           = "test-ns"
 			instanceName     = "ups-instance"
 			bindingName      = "ups-instance-credential"
@@ -141,6 +142,15 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			},
 		)
 		Expect(err).NotTo(HaveOccurred(), "failed to wait instance to be ready")
+
+		// Make sure references have been resolved
+		By("References should have been resolved before ServiceInstance is ready ")
+		sc, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Get(instanceName, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred(), "failed to get ServiceInstance after binding")
+		Expect(sc.Spec.ServiceClassRef).NotTo(BeNil())
+		Expect(sc.Spec.ServicePlanRef).NotTo(BeNil())
+		Expect(sc.Spec.ServiceClassRef.Name).To(Equal(serviceclassID))
+		Expect(sc.Spec.ServicePlanRef.Name).To(Equal(serviceplanID))
 
 		// Binding to the ServiceInstance
 		By("Creating a ServiceInstanceCredential")
