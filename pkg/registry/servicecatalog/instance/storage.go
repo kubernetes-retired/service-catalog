@@ -147,7 +147,9 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	return &store, &StatusREST{&statusStore}
 }
 
-// StatusREST defines the REST operations for the status subresource.
+// StatusREST defines the REST operations for the status subresource via
+// implementation of various rest interfaces.  It supports the http verbs GET,
+// PATCH, and PUT.
 type StatusREST struct {
 	store *registry.Store
 }
