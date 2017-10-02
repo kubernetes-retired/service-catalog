@@ -509,11 +509,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	toUpdate := clone.(*v1alpha1.ServiceInstance)
 
 	// Update references to ServicePlan / ServiceClass if necessary.
-	updated, err := c.resolveReferences(toUpdate)
+	toUpdate, err = c.resolveReferences(toUpdate)
 	if err != nil {
 		return err
 	}
-	toUpdate = updated
 
 	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
 
@@ -1298,7 +1297,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 				instance,
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				"ReferencesNonexistentServicePlan",
+				errorNonexistentServicePlanReason,
 				"The instance references a ServicePlan that does not exist. "+s,
 			)
 			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
@@ -1375,7 +1374,6 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceI
 	if err != nil {
 		glog.Errorf("Failed to update references for ServiceInstance %v/%v: %v", toUpdate.Namespace, toUpdate.Name, err)
 	}
-
 	return updatedInstance, err
 }
 

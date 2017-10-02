@@ -18,16 +18,15 @@ package fake
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	core "k8s.io/client-go/testing"
+	testing "k8s.io/client-go/testing"
 )
 
 func (c *FakeServiceInstances) SetReferences(serviceInstance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
-	action := core.GetActionImpl{}
-	action.Verb = "post"
-	action.Namespace = c.ns
-	action.Resource = schema.GroupVersionResource{Group: "", Version: "", Resource: "serviceinstances"}
-	action.Subresource = "setReferences"
-	ret, err := c.Fake.Invokes(action, serviceInstance)
-	return ret.(*v1alpha1.ServiceInstance), err
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(serviceinstancesResource, "reference", c.ns, serviceInstance), serviceInstance)
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.ServiceInstance), err
 }

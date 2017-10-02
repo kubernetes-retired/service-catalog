@@ -1278,6 +1278,10 @@ func assertUpdateStatus(t *testing.T, action clientgotesting.Action, obj interfa
 	return assertActionFor(t, action, "update", "status", obj)
 }
 
+func assertUpdateReference(t *testing.T, action clientgotesting.Action, obj interface{}) runtime.Object {
+	return assertActionFor(t, action, "update", "reference", obj)
+}
+
 func expectUpdateStatus(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
 	return testActionFor(t, name, errorf, action, "update", "status", obj)
 }
