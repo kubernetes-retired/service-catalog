@@ -8,5 +8,5 @@ spec:
   externalServicePlanName: default
   parameters:
     credentials:
-      name: root
-      password: letmein
+      param-1: value-1
+      param-2: value-2
