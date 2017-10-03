@@ -398,9 +398,13 @@ func getTestServicePlan() *v1alpha1.ServicePlan {
 	return &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
 		Spec: v1alpha1.ServicePlanSpec{
-			ExternalID:   planGUID,
-			ExternalName: testServicePlanName,
-			Bindable:     truePtr(),
+			ServiceBrokerName: testServiceBrokerName,
+			ExternalID:        planGUID,
+			ExternalName:      testServicePlanName,
+			Bindable:          truePtr(),
+			ServiceClassRef: v1.LocalObjectReference{
+				Name: serviceClassGUID,
+			},
 		},
 	}
 }
@@ -412,6 +416,9 @@ func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
 			ExternalName: testNonbindableServicePlanName,
 			ExternalID:   nonbindablePlanGUID,
 			Bindable:     falsePtr(),
+			ServiceClassRef: v1.LocalObjectReference{
+				Name: serviceClassGUID,
+			},
 		},
 	}
 }

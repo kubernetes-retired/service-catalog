@@ -1245,21 +1245,22 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 		return instance, nil
 	}
 
+	var sc *v1alpha1.ServiceClass
+
 	if instance.Spec.ServiceClassRef == nil {
-		glog.V(4).Infof("looking up a ServiceClass from externalName: %q", instance.Spec.ExternalServiceClassName)
+		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
 		listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
 		serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
 		if err == nil && len(serviceClasses.Items) == 1 {
-			sc := &serviceClasses.Items[0]
+			sc = &serviceClasses.Items[0]
 			instance.Spec.ServiceClassRef = &apiv1.ObjectReference{
 				Kind:            sc.Kind,
-				Namespace:       sc.Namespace,
 				Name:            sc.Name,
 				UID:             sc.UID,
 				APIVersion:      sc.APIVersion,
 				ResourceVersion: sc.ResourceVersion,
 			}
-			glog.V(4).Infof("Resolve ServiceClass %q to %q", instance.Spec.ExternalServiceClassName, instance.Spec.ServiceClassRef)
+			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ServiceClass with externalName %q to K8S ServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName, sc.Name)
 		} else {
 			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
 			glog.Warning(s)
@@ -1276,20 +1277,32 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 	}
 
 	if instance.Spec.ServicePlanRef == nil {
-		fieldSelector := fields.SelectorFromSet(fields.Set{"spec.externalName": instance.Spec.ExternalServicePlanName, "spec.serviceClassRef.name": instance.Spec.ServiceClassRef.Name}).String()
+		if sc == nil {
+			var scErr error
+			sc, scErr = c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
+			if scErr != nil {
+				return nil, fmt.Errorf(`Couldn't find ServiceClass (K8S: %s) associated with Instance "%s/%s": %v`, instance.Spec.ServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
+			}
+		}
+
+		fieldSet := fields.Set{
+			"spec.externalName":         instance.Spec.ExternalServicePlanName,
+			"spec.serviceClassRef.name": instance.Spec.ServiceClassRef.Name,
+			"spec.serviceBrokerName":    sc.Spec.ServiceBrokerName,
+		}
+		fieldSelector := fields.SelectorFromSet(fieldSet).String()
 		listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 		servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]
 			instance.Spec.ServicePlanRef = &apiv1.ObjectReference{
 				Kind:            sp.Kind,
-				Namespace:       sp.Namespace,
 				Name:            sp.Name,
 				UID:             sp.UID,
 				APIVersion:      sp.APIVersion,
 				ResourceVersion: sp.ResourceVersion,
 			}
-			glog.V(4).Infof("Resolve ServicePlan %q to %q", instance.Spec.ExternalServicePlanName, instance.Spec.ServicePlanRef)
+			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ServicePlan with externalName %q to K8S ServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, sp.Name)
 		} else {
 			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, instance.Spec.ExternalServiceClassName)
 			glog.Warning(s)
