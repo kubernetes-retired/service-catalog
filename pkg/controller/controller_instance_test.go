@@ -275,9 +275,9 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -377,9 +377,9 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -618,9 +618,9 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -682,9 +682,9 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -750,11 +750,11 @@ func TestReconcileServiceInstance(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
-		OrganizationGUID:  testNsUID,
-		SpaceGUID:         testNsUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
+		OrganizationGUID:  testNamespaceGUID,
+		SpaceGUID:         testNamespaceGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -832,11 +832,11 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
-		OrganizationGUID:  testNsUID,
-		SpaceGUID:         testNsUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
+		OrganizationGUID:  testNamespaceGUID,
+		SpaceGUID:         testNamespaceGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": testNamespace,
@@ -899,11 +899,11 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
-		OrganizationGUID:  testNsUID,
-		SpaceGUID:         testNsUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
+		OrganizationGUID:  testNamespaceGUID,
+		SpaceGUID:         testNamespaceGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -1012,9 +1012,9 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 	})
 
 	// Verify no core kube actions occurred
@@ -1113,9 +1113,9 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 	})
 
 	// Verify no core kube actions occurred
@@ -1192,9 +1192,9 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 	})
 
 	// Verify no core kube actions occurred
@@ -1381,9 +1381,9 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1438,9 +1438,9 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1492,9 +1492,9 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1554,9 +1554,9 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1611,9 +1611,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1672,9 +1672,9 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1741,9 +1741,9 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1802,9 +1802,9 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1865,9 +1865,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -1917,9 +1917,9 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -1976,9 +1976,9 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
@@ -2059,9 +2059,9 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -2114,9 +2114,9 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	operationKey := osb.OperationKey(testOperation)
 	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   instanceGUID,
-		ServiceID:    strPtr(serviceClassGUID),
-		PlanID:       strPtr(planGUID),
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
 		OperationKey: &operationKey,
 	})
 
@@ -3011,9 +3011,9 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
-		InstanceID:        instanceGUID,
-		ServiceID:         serviceClassGUID,
-		PlanID:            planGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",

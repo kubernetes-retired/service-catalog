@@ -59,29 +59,28 @@ import (
 // loops for the different catalog API resources.
 
 const (
-	serviceClassGUID                   = "SCGUID"
-	planGUID                           = "PGUID"
-	nonbindableClusterServiceClassGUID = "UNBINDABLE-SERVICE"
-	nonbindablePlanGUID                = "UNBINDABLE-PLAN"
-	instanceGUID                       = "IGUID"
-	bindingGUID                        = "BGUID"
+	testClusterServiceClassGUID            = "SCGUID"
+	testClusterServicePlanGUID             = "PGUID"
+	testNonbindableClusterServiceClassGUID = "UNBINDABLE-SERVICE"
+	testNonbindableClusterServicePlanGUID  = "UNBINDABLE-PLAN"
+	testServiceInstanceGUID                = "IGUID"
+	testServiceBindingGUID                 = "BGUID"
+	testNamespaceGUID                      = "test-ns-uid"
+	testRemovedClusterServiceClassGUID     = "REMOVED-SERVICE"
+	testRemovedClusterServicePlanGUID      = "REMOVED-PLAN"
 
-	removedClusterServiceClassGUID = "REMOVED-SERVICE"
-	removedClusterServicePlanGUID  = "REMOVED-PLAN"
-
-	testClusterServiceBrokerName           = "test-broker"
-	testClusterServiceClassName            = "test-serviceclass"
-	testRemovedClusterServiceClassName     = "removed-test-serviceclass"
-	testNonbindableClusterServiceClassName = "test-unbindable-serviceclass"
-	testClusterServicePlanName             = "test-plan"
-	testRemovedClusterServicePlanName      = "removed-test-plan"
-	testNonbindableClusterServicePlanName  = "test-unbindable-plan"
-	testServiceInstanceName                = "test-instance"
-	testServiceBindingName                 = "test-binding"
-	testNamespace                          = "test-ns"
-	testServiceBindingSecretName           = "test-secret"
-	testOperation                          = "test-operation"
-	testNsUID                              = "test-ns-uid"
+	testClusterServiceBrokerName            = "test-broker"
+	testClusterServiceClassName             = "test-serviceclass"
+	testClusterServicePlanName              = "test-plan"
+	testNonbindableClusterServiceClassName  = "test-unbindable-serviceclass"
+	testNonbindableClusterServicePlanName   = "test-unbindable-plan"
+	testRemovedClusterServiceClassName      = "removed-test-serviceclass"
+	testRemovedClusterServicePlanName       = "removed-test-plan"
+	testServiceInstanceName                 = "test-instance"
+	testServiceBindingSecretName            = "test-secret"
+	testNamespace                           = "test-ns"
+	testServiceInstanceCredentialSecretName = "test-secret"
+	testOperation                           = "test-operation"
 )
 
 var testDashboardURL = "http://dashboard"
@@ -482,13 +481,13 @@ func getTestCatalog() *osb.CatalogResponse {
 					{
 						Name:        testClusterServicePlanName,
 						Free:        truePtr(),
-						ID:          planGUID,
+						ID:          testServicePlanGUID,
 						Description: "a test plan",
 					},
 					{
 						Name:        testNonbindableClusterServicePlanName,
 						Free:        truePtr(),
-						ID:          nonbindablePlanGUID,
+						ID:          testNonbindableServicePlanGUID,
 						Description: "a test plan",
 						Bindable:    falsePtr(),
 					},
@@ -692,7 +691,7 @@ func getTestServiceBinding() *v1beta1.ServiceBinding {
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         bindingGUID,
+			ExternalID:         testServiceBindingGUID,
 		},
 	}
 }
@@ -2486,7 +2485,7 @@ func addGetNamespaceReaction(fakeKubeClient *clientgofake.Clientset) {
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				UID: types.UID(testNsUID),
+				UID: types.UID(testNamespaceGUID),
 			},
 		}, nil
 	})
