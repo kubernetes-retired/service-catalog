@@ -2969,3 +2969,229 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
+
+// TestResolveReferencesReferencesAlreadySet tests that resolveReferences does
+// nothing if references have already been set.
+func TestResolveReferencesReferencesAlreadySet(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+	instance := getTestServiceInstanceWithRefs()
+	updatedInstance, err := testController.resolveReferences(instance)
+	if err != nil {
+		t.Fatalf("resolveReferences failed unexpectedly: %q", err)
+	}
+	if e, a := instance, updatedInstance; !reflect.DeepEqual(instance, updatedInstance) {
+		t.Fatalf("Instance was modified, expected\n%v\nGot\n%v", e, a)
+	}
+
+	// No kube actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	// There should be no actions for catalog
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 0)
+}
+
+// TestResolveReferencesNoServiceClass tests that resolveReferences fails
+// with the expected failure case when no ServiceClass exists
+func TestResolveReferencesNoServiceClass(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+
+	instance := getTestServiceInstance()
+
+	updatedInstance, err := testController.resolveReferences(instance)
+	if err == nil {
+		t.Fatalf("Should have failed with no service class")
+	}
+
+	if e, a := "a non-existent ServiceClass", err.Error(); !strings.Contains(a, e) {
+		t.Fatalf("Did not get the expected error message %q got %q", e, a)
+	}
+	if updatedInstance != nil {
+		t.Fatalf("updatedInstance retuend was non-nil: %+v", updatedInstance)
+	}
+
+	// We should get the following actions:
+	// list call for ServiceClass
+	// update service instance condition for failure
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+
+	updatedObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+	}
+	if updatedObject.Spec.ServiceClassRef != nil {
+		t.Fatalf("ServiceClassRef was unexpectedly set: %+v", updatedObject)
+	}
+	if updatedObject.Spec.ServicePlanRef != nil {
+		t.Fatalf("ServicePlanRef was unexpectedly set: %+v", updatedObject)
+	}
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance" + " \"test-ns/test-instance\" references a non-existent ServiceClass \"test-serviceclass\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestResolveReferencesNoServicePlan tests that resolveReferences fails
+// with the expected failure case when no ServicePlan exists
+func TestResolveReferencesNoServicePlan(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+
+	instance := getTestServiceInstance()
+
+	sc := getTestServiceClass()
+	var scItems []v1alpha1.ServiceClass
+	scItems = append(scItems, *sc)
+	fakeCatalogClient.AddReactor("list", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ServiceClassList{Items: scItems}, nil
+	})
+
+	updatedInstance, err := testController.resolveReferences(instance)
+	if err == nil {
+		t.Fatalf("Should have failed with no service plan")
+	}
+
+	if e, a := "a non-existent ServicePlan", err.Error(); !strings.Contains(a, e) {
+		t.Fatalf("Did not get the expected error message %q got %q", e, a)
+	}
+
+	if updatedInstance != nil {
+		t.Fatalf("updatedInstance retuend was non-nil: %+v", updatedInstance)
+	}
+
+	// We should get the following actions:
+	// list call for ServiceClass
+	// list call for ServicePlan
+	// update service instance condition for failure
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 3)
+
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+
+	listRestrictions = clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceClassRef.name=SCGUID"),
+	}
+	assertList(t, actions[1], &v1alpha1.ServicePlan{}, listRestrictions)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[2], instance)
+
+	updatedObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+	}
+	if updatedObject.Spec.ServiceClassRef == nil || updatedObject.Spec.ServiceClassRef.Name != serviceClassGUID {
+		t.Fatalf("ServiceClassRef.Name was not set correctly, expected %q got: %+v", serviceClassGUID, updatedObject.Spec.ServiceClassRef.Name)
+	}
+	if updatedObject.Spec.ServicePlanRef != nil {
+		t.Fatalf("ServicePlanRef was unexpectedly set: %+v", updatedObject)
+	}
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "ServiceInstance" + " \"test-ns/test-instance\" references a non-existent ServicePlan \"test-plan\" on ServiceClass \"test-serviceclass\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestResolveReferences tests that resolveReferences works
+// correctly and resolves references.
+func TestResolveReferencesWorks(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+
+	instance := getTestServiceInstance()
+
+	sc := getTestServiceClass()
+	var scItems []v1alpha1.ServiceClass
+	scItems = append(scItems, *sc)
+	fakeCatalogClient.AddReactor("list", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ServiceClassList{Items: scItems}, nil
+	})
+	sp := getTestServicePlan()
+	var spItems []v1alpha1.ServicePlan
+	spItems = append(spItems, *sp)
+	fakeCatalogClient.AddReactor("list", "serviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ServicePlanList{Items: spItems}, nil
+	})
+
+	updatedInstance, err := testController.resolveReferences(instance)
+	if err != nil {
+		t.Fatalf("Should not have failed, but failed with: %q", err)
+	}
+
+	if updatedInstance.Spec.ServiceClassRef == nil || updatedInstance.Spec.ServiceClassRef.Name != serviceClassGUID {
+		t.Fatalf("Did not find expected ServiceClassRef, expected %q got %+v", serviceClassGUID, updatedInstance.Spec.ServiceClassRef)
+	}
+
+	if updatedInstance.Spec.ServicePlanRef == nil || updatedInstance.Spec.ServicePlanRef.Name != planGUID {
+		t.Fatalf("Did not find expected ServicePlanRef, expected %q got %+v", planGUID, updatedInstance.Spec.ServicePlanRef.Name)
+	}
+
+	// We should get the following actions:
+	// list call for ServiceClass
+	// list call for ServicePlan
+	// updating references
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 3)
+
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalServiceClassName),
+	}
+	assertList(t, actions[0], &v1alpha1.ServiceClass{}, listRestrictions)
+
+	listRestrictions = clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceClassRef.name=SCGUID"),
+	}
+	assertList(t, actions[1], &v1alpha1.ServicePlan{}, listRestrictions)
+
+	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
+	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+	}
+	if updateObject.Spec.ServiceClassRef == nil || updateObject.Spec.ServiceClassRef.Name != serviceClassGUID {
+		t.Fatalf("ServiceClassRef was not resolved correctly during reconcile")
+	}
+	if updateObject.Spec.ServicePlanRef == nil || updateObject.Spec.ServicePlanRef.Name != planGUID {
+		t.Fatalf("ServicePlanRef was not resolved correctly during reconcile")
+	}
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
+}
