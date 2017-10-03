@@ -223,7 +223,7 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.serviceBrokerName=test-broker,spec.serviceClassRef.name=SCGUID"),
 	}
 	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
 
@@ -399,7 +399,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceBrokerName=test-broker,spec.serviceClassRef.name=SCGUID"),
 	}
 	assertList(t, actions[1], &v1alpha1.ServicePlan{}, listRestrictions)
 
@@ -420,6 +420,107 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[4], instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testServicePlanName, instance)
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := api.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestReconcileServiceInstanceResolvesReferences tests a simple successful
+// reconciliation and making sure that the ServicePlanRef is correctly
+// resolved if the ServiceClassRef is already set.
+func TestReconcileServiceInstanceResolvesReferencesServiceClassRefAlreadySet(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{},
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sc := getTestServiceClass()
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(sc)
+	sp := getTestServicePlan()
+	sharedInformers.ServicePlans().Informer().GetStore().Add(sp)
+
+	instance := getTestServiceInstance()
+	instance.Spec.ServiceClassRef = &v1.ObjectReference{
+		Name: serviceClassGUID,
+	}
+
+	var scItems []v1alpha1.ServiceClass
+	scItems = append(scItems, *sc)
+	fakeCatalogClient.AddReactor("list", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ServiceClassList{Items: scItems}, nil
+	})
+
+	var spItems []v1alpha1.ServicePlan
+	spItems = append(spItems, *sp)
+	fakeCatalogClient.AddReactor("list", "serviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ServicePlanList{Items: spItems}, nil
+	})
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        instanceGUID,
+		ServiceID:         serviceClassGUID,
+		PlanID:            planGUID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
+
+	// We should get the following actions:
+	// list call for ServicePlan
+	// setReferences on ServiceInstance
+	// updateStatus for inprogress
+	// updateStatus for success
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 4)
+
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceBrokerName=test-broker,spec.serviceClassRef.name=SCGUID"),
+	}
+	assertList(t, actions[0], &v1alpha1.ServicePlan{}, listRestrictions)
+
+	updatedServiceInstance := assertUpdateReference(t, actions[1], instance)
+
+	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+	}
+	if updateObject.Spec.ServiceClassRef == nil || updateObject.Spec.ServiceClassRef.Name != "SCGUID" {
+		t.Fatalf("ServiceClassRef was not resolved correctly during reconcile")
+	}
+	if updateObject.Spec.ServicePlanRef == nil || updateObject.Spec.ServicePlanRef.Name != "PGUID" {
+		t.Fatalf("ServicePlanRef was not resolved correctly during reconcile")
+	}
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[2], instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testServicePlanName, instance)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[3], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testServicePlanName, instance)
 
 	// verify no kube resources created
@@ -3092,7 +3193,7 @@ func TestResolveReferencesNoServicePlan(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceBrokerName=test-broker,spec.serviceClassRef.name=SCGUID"),
 	}
 	assertList(t, actions[1], &v1alpha1.ServicePlan{}, listRestrictions)
 
@@ -3171,7 +3272,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.serviceBrokerName=test-broker,spec.serviceClassRef.name=SCGUID"),
 	}
 	assertList(t, actions[1], &v1alpha1.ServicePlan{}, listRestrictions)
 
