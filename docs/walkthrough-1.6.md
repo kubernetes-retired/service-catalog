@@ -141,7 +141,7 @@ metadata:
   uid: c46d4496-a77f-11e7-8b18-0242ac110005
 spec:
   bindable: true
-  brokerName: ups-broker
+  serviceBrokerName: ups-broker
   description: A user provided service
   externalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
   externalMetadata: null

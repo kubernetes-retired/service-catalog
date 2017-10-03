@@ -227,7 +227,7 @@ type ServiceClassSpec struct {
 	// ServiceClass.
 	//
 	// Immutable.
-	ServiceBrokerName string `json:"brokerName"`
+	ServiceBrokerName string `json:"serviceBrokerName"`
 
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Class as. Mutable.
