@@ -253,7 +253,7 @@ type ServiceClassSpec struct {
 	// ExternalMetadata is a blob of information about the ServiceClass, meant
 	// to be user-facing content and display instructions.  This field may
 	// contain platform-specific conventional values.
-	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
+	ExternalMetadata *runtime.RawExtension `json:"externalMetadata,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
@@ -322,7 +322,7 @@ type ServicePlanSpec struct {
 	// ExternalMetadata is a blob of information about the plan, meant to be
 	// user-facing content and display instructions.  This field may contain
 	// platform-specific conventional values.
-	ExternalMetadata *runtime.RawExtension `json:"externalMetadata, omitempty"`
+	ExternalMetadata *runtime.RawExtension `json:"externalMetadata,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
