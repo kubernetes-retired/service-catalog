@@ -6,6 +6,30 @@ import (
 	"testing"
 )
 
+func TestOAuthConfigForTenant(t *testing.T) {
+	az := PublicCloud
+
+	config, err := az.OAuthConfigForTenant("tenant-id-test")
+	if err != nil {
+		t.Fatalf("autorest/azure: Unexpected error while retrieving oauth configuration for tenant: %v.", err)
+	}
+
+	expected := "https://login.microsoftonline.com/tenant-id-test/oauth2/authorize?api-version=1.0"
+	if config.AuthorizeEndpoint.String() != expected {
+		t.Fatalf("autorest/azure: Incorrect authorize url for Tenant from Environment. expected(%s). actual(%v).", expected, config.AuthorizeEndpoint)
+	}
+
+	expected = "https://login.microsoftonline.com/tenant-id-test/oauth2/token?api-version=1.0"
+	if config.TokenEndpoint.String() != expected {
+		t.Fatalf("autorest/azure: Incorrect authorize url for Tenant from Environment. expected(%s). actual(%v).", expected, config.TokenEndpoint)
+	}
+
+	expected = "https://login.microsoftonline.com/tenant-id-test/oauth2/devicecode?api-version=1.0"
+	if config.DeviceCodeEndpoint.String() != expected {
+		t.Fatalf("autorest/azure: Incorrect devicecode url for Tenant from Environment. expected(%s). actual(%v).", expected, config.DeviceCodeEndpoint)
+	}
+}
+
 func TestEnvironmentFromName(t *testing.T) {
 	name := "azurechinacloud"
 	if env, _ := EnvironmentFromName(name); env != ChinaCloud {
@@ -70,8 +94,7 @@ func TestDeserializeEnvironment(t *testing.T) {
 		"storageEndpointSuffix": "--storage-endpoint-suffix--",
 		"trafficManagerDNSSuffix": "--traffic-manager-dns-suffix--",
 		"serviceManagementVMDNSSuffix": "--asm-vm-dns-suffix--",
-		"resourceManagerVMDNSSuffix": "--arm-vm-dns-suffix--",
-		"containerRegistryDNSSuffix": "--container-registry-dns-suffix--"
+		"resourceManagerVMDNSSuffix": "--arm-vm-dns-suffix--"
 	}`
 
 	testSubject := Environment{}
@@ -125,9 +148,6 @@ func TestDeserializeEnvironment(t *testing.T) {
 	if "--arm-vm-dns-suffix--" != testSubject.ResourceManagerVMDNSSuffix {
 		t.Errorf("Expected ResourceManagerVMDNSSuffix to be \"--arm-vm-dns-suffix--\", but got %q", testSubject.ResourceManagerVMDNSSuffix)
 	}
-	if "--container-registry-dns-suffix--" != testSubject.ContainerRegistryDNSSuffix {
-		t.Errorf("Expected ContainerRegistryDNSSuffix to be \"--container-registry-dns-suffix--\", but got %q", testSubject.ContainerRegistryDNSSuffix)
-	}
 }
 
 func TestRoundTripSerialization(t *testing.T) {
@@ -148,7 +168,6 @@ func TestRoundTripSerialization(t *testing.T) {
 		ServiceBusEndpointSuffix:     "--service-bus-endpoint-suffix--",
 		ServiceManagementVMDNSSuffix: "--asm-vm-dns-suffix--",
 		ResourceManagerVMDNSSuffix:   "--arm-vm-dns-suffix--",
-		ContainerRegistryDNSSuffix:   "--container-registry-dns-suffix--",
 	}
 
 	bytes, err := json.Marshal(env)
@@ -209,8 +228,5 @@ func TestRoundTripSerialization(t *testing.T) {
 	}
 	if env.ResourceManagerVMDNSSuffix != testSubject.ResourceManagerVMDNSSuffix {
 		t.Errorf("Expected ResourceManagerVMDNSSuffix to be %q, but got %q", env.ResourceManagerVMDNSSuffix, testSubject.ResourceManagerVMDNSSuffix)
-	}
-	if env.ContainerRegistryDNSSuffix != testSubject.ContainerRegistryDNSSuffix {
-		t.Errorf("Expected ContainerRegistryDNSSuffix to be %q, but got %q", env.ContainerRegistryDNSSuffix, testSubject.ContainerRegistryDNSSuffix)
 	}
 }

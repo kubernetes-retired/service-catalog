@@ -20,7 +20,6 @@ import (
 	"sort"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -84,17 +83,6 @@ func (s ByVersionPriority) Less(i, j int) bool {
 func APIServiceNameToGroupVersion(apiServiceName string) schema.GroupVersion {
 	tokens := strings.SplitN(apiServiceName, ".", 2)
 	return schema.GroupVersion{Group: tokens[1], Version: tokens[0]}
-}
-
-// NewLocalAvailableAPIServiceCondition returns a condition for an available local APIService.
-func NewLocalAvailableAPIServiceCondition() APIServiceCondition {
-	return APIServiceCondition{
-		Type:               Available,
-		Status:             ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		Reason:             "Local",
-		Message:            "Local APIServices are always available",
-	}
 }
 
 // SetAPIServiceCondition sets the status condition.  It either overwrites the existing one or

@@ -194,22 +194,18 @@ func podUsageHelper(requests api.ResourceList, limits api.ResourceList) api.Reso
 }
 
 func toInternalPodOrError(obj runtime.Object) (*api.Pod, error) {
+	pod := &api.Pod{}
 	switch t := obj.(type) {
 	case *v1.Pod:
-		converted, err := api.Scheme.ConvertToVersion(obj, api.SchemeGroupVersion)
-		if err != nil {
+		if err := v1.Convert_v1_Pod_To_api_Pod(t, pod, nil); err != nil {
 			return nil, err
 		}
-		if pod, ok := converted.(*api.Pod); ok {
-			return pod, nil
-		} else {
-			return nil, fmt.Errorf("expect *api.Pod, got %v", converted)
-		}
 	case *api.Pod:
-		return t, nil
+		pod = t
 	default:
 		return nil, fmt.Errorf("expect *api.Pod or *v1.Pod, got %v", t)
 	}
+	return pod, nil
 }
 
 // podMatchesScopeFunc is a function that knows how to evaluate if a pod matches a scope

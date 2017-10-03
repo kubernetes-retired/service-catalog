@@ -116,10 +116,6 @@ func (o *SelectorOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, args [
 	mapper, _ := f.Object()
 	o.mapper = mapper
 	o.encoder = f.JSONEncoder()
-	o.resources, o.selector, err = getResourcesAndSelector(args)
-	if err != nil {
-		return err
-	}
 
 	o.builder = f.NewBuilder(!o.local).
 		ContinueOnError().
@@ -139,6 +135,8 @@ func (o *SelectorOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, args [
 	o.ClientForMapping = func(mapping *meta.RESTMapping) (resource.RESTClient, error) {
 		return f.ClientForMapping(mapping)
 	}
+
+	o.resources, o.selector, err = getResourcesAndSelector(args)
 	return err
 }
 

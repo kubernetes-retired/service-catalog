@@ -116,7 +116,6 @@ func TestScheduler(t *testing.T) {
 		sendPod          *v1.Pod
 		algo             algorithm.ScheduleAlgorithm
 		expectErrorPod   *v1.Pod
-		expectForgetPod  *v1.Pod
 		expectAssumedPod *v1.Pod
 		expectError      error
 		expectBind       *v1.Binding
@@ -141,8 +140,7 @@ func TestScheduler(t *testing.T) {
 			expectAssumedPod: podWithID("foo", testNode.Name),
 			injectBindError:  errB,
 			expectError:      errB,
-			expectErrorPod:   podWithID("foo", testNode.Name),
-			expectForgetPod:  podWithID("foo", testNode.Name),
+			expectErrorPod:   podWithID("foo", ""),
 			eventReason:      "FailedScheduling",
 		}, {
 			sendPod:     deletingPod("foo"),
@@ -154,15 +152,11 @@ func TestScheduler(t *testing.T) {
 	for i, item := range table {
 		var gotError error
 		var gotPod *v1.Pod
-		var gotForgetPod *v1.Pod
 		var gotAssumedPod *v1.Pod
 		var gotBinding *v1.Binding
 		configurator := &FakeConfigurator{
 			Config: &Config{
 				SchedulerCache: &schedulertesting.FakeCache{
-					ForgetFunc: func(pod *v1.Pod) {
-						gotForgetPod = pod
-					},
 					AssumeFunc: func(pod *v1.Pod) {
 						gotAssumedPod = pod
 					},
@@ -202,9 +196,6 @@ func TestScheduler(t *testing.T) {
 		}
 		if e, a := item.expectErrorPod, gotPod; !reflect.DeepEqual(e, a) {
 			t.Errorf("%v: error pod: wanted %v, got %v", i, e, a)
-		}
-		if e, a := item.expectForgetPod, gotForgetPod; !reflect.DeepEqual(e, a) {
-			t.Errorf("%v: forget pod: wanted %v, got %v", i, e, a)
 		}
 		if e, a := item.expectError, gotError; !reflect.DeepEqual(e, a) {
 			t.Errorf("%v: error: wanted %v, got %v", i, e, a)

@@ -36,7 +36,6 @@ import (
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	rbacapiv1alpha1 "k8s.io/kubernetes/pkg/apis/rbac/v1alpha1"
 	rbacapiv1beta1 "k8s.io/kubernetes/pkg/apis/rbac/v1beta1"
-	coreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 	rbacclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/rbac/internalversion"
 	"k8s.io/kubernetes/pkg/client/retry"
 	"k8s.io/kubernetes/pkg/registry/rbac/clusterrole"
@@ -135,13 +134,6 @@ func PostStartHook(hookContext genericapiserver.PostStartHookContext) error {
 	// intializing roles is really important.  On some e2e runs, we've seen cases where etcd is down when the server
 	// starts, the roles don't initialize, and nothing works.
 	err := wait.Poll(1*time.Second, 30*time.Second, func() (done bool, err error) {
-
-		coreclientset, err := coreclient.NewForConfig(hookContext.LoopbackClientConfig)
-		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("unable to initialize client: %v", err))
-			return false, nil
-		}
-
 		clientset, err := rbacclient.NewForConfig(hookContext.LoopbackClientConfig)
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("unable to initialize client: %v", err))
@@ -220,7 +212,7 @@ func PostStartHook(hookContext genericapiserver.PostStartHookContext) error {
 			for _, role := range roles {
 				opts := reconciliation.ReconcileRoleOptions{
 					Role:    reconciliation.RoleRuleOwner{Role: &role},
-					Client:  reconciliation.RoleModifier{Client: clientset, NamespaceClient: coreclientset.Namespaces()},
+					Client:  reconciliation.RoleModifier{Client: clientset},
 					Confirm: true,
 				}
 				err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -250,7 +242,7 @@ func PostStartHook(hookContext genericapiserver.PostStartHookContext) error {
 			for _, roleBinding := range roleBindings {
 				opts := reconciliation.ReconcileRoleBindingOptions{
 					RoleBinding: reconciliation.RoleBindingAdapter{RoleBinding: &roleBinding},
-					Client:      reconciliation.RoleBindingClientAdapter{Client: clientset, NamespaceClient: coreclientset.Namespaces()},
+					Client:      reconciliation.RoleBindingClientAdapter{Client: clientset},
 					Confirm:     true,
 				}
 				err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {

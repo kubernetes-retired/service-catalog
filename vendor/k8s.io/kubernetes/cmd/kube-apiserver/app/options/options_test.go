@@ -34,7 +34,6 @@ func TestAddFlagsFlag(t *testing.T) {
 
 	args := []string{
 		"--enable-swagger-ui=true",
-		"--request-timeout=2m",
 	}
 	f.Parse(args)
 	if !s.Features.EnableSwaggerUI {

@@ -68,13 +68,11 @@ var (
 	nsSep       = "%"
 	sdcRootPath = "/opt/emc/scaleio/sdc/bin"
 
-	secretNotFoundErr              = errors.New("secret not found")
-	configMapNotFoundErr           = errors.New("configMap not found")
-	gatewayNotProvidedErr          = errors.New("ScaleIO gateway not provided")
-	secretRefNotProvidedErr        = errors.New("secret ref not provided")
-	systemNotProvidedErr           = errors.New("ScaleIO system not provided")
-	storagePoolNotProvidedErr      = errors.New("ScaleIO storage pool not provided")
-	protectionDomainNotProvidedErr = errors.New("ScaleIO protection domain not provided")
+	secretNotFoundErr       = errors.New("secret not found")
+	configMapNotFoundErr    = errors.New("configMap not found")
+	gatewayNotProvidedErr   = errors.New("gateway not provided")
+	secretRefNotProvidedErr = errors.New("secret ref not provided")
+	systemNotProvidedErr    = errors.New("secret not provided")
 )
 
 // mapScaleIOVolumeSource maps attributes from a ScaleIOVolumeSource to config
@@ -109,12 +107,6 @@ func validateConfigs(config map[string]string) error {
 	if config[confKey.system] == "" {
 		return systemNotProvidedErr
 	}
-	if config[confKey.storagePool] == "" {
-		return storagePoolNotProvidedErr
-	}
-	if config[confKey.protectionDomain] == "" {
-		return protectionDomainNotProvidedErr
-	}
 
 	return nil
 }
@@ -127,6 +119,8 @@ func applyConfigDefaults(config map[string]string) {
 		b = false
 	}
 	config[confKey.sslEnabled] = strconv.FormatBool(b)
+	config[confKey.protectionDomain] = defaultString(config[confKey.protectionDomain], "default")
+	config[confKey.storagePool] = defaultString(config[confKey.storagePool], "default")
 	config[confKey.storageMode] = defaultString(config[confKey.storageMode], "ThinProvisioned")
 	config[confKey.fsType] = defaultString(config[confKey.fsType], "xfs")
 	b, err = strconv.ParseBool(config[confKey.readOnly])

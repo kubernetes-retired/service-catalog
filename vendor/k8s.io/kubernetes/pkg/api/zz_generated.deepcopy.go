@@ -21,7 +21,6 @@ limitations under the License.
 package api
 
 import (
-	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	fields "k8s.io/apimachinery/pkg/fields"
@@ -861,11 +860,7 @@ func DeepCopy_api_EmptyDirVolumeSource(in interface{}, out interface{}, c *conve
 		in := in.(*EmptyDirVolumeSource)
 		out := out.(*EmptyDirVolumeSource)
 		*out = *in
-		if in.SizeLimit != nil {
-			in, out := &in.SizeLimit, &out.SizeLimit
-			*out = new(resource.Quantity)
-			**out = (*in).DeepCopy()
-		}
+		out.SizeLimit = in.SizeLimit.DeepCopy()
 		return nil
 	}
 }

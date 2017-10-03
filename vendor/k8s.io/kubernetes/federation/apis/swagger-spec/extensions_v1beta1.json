@@ -1902,8 +1902,8 @@
      {
       "type": "v1beta1.DeploymentRollback",
       "method": "POST",
-      "summary": "create rollback of a Deployment",
-      "nickname": "createNamespacedDeploymentRollback",
+      "summary": "create rollback of a DeploymentRollback",
+      "nickname": "createNamespacedDeploymentRollbackRollback",
       "parameters": [
        {
         "type": "string",
@@ -1963,8 +1963,8 @@
      {
       "type": "v1beta1.Scale",
       "method": "GET",
-      "summary": "read scale of the specified Deployment",
-      "nickname": "readNamespacedDeploymentScale",
+      "summary": "read scale of the specified Scale",
+      "nickname": "readNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -2010,8 +2010,8 @@
      {
       "type": "v1beta1.Scale",
       "method": "PUT",
-      "summary": "replace scale of the specified Deployment",
-      "nickname": "replaceNamespacedDeploymentScale",
+      "summary": "replace scale of the specified Scale",
+      "nickname": "replaceNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -2065,8 +2065,8 @@
      {
       "type": "v1beta1.Scale",
       "method": "PATCH",
-      "summary": "partially update scale of the specified Deployment",
-      "nickname": "patchNamespacedDeploymentScale",
+      "summary": "partially update scale of the specified Scale",
+      "nickname": "patchNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -4180,8 +4180,8 @@
      {
       "type": "v1beta1.Scale",
       "method": "GET",
-      "summary": "read scale of the specified ReplicaSet",
-      "nickname": "readNamespacedReplicaSetScale",
+      "summary": "read scale of the specified Scale",
+      "nickname": "readNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -4227,8 +4227,8 @@
      {
       "type": "v1beta1.Scale",
       "method": "PUT",
-      "summary": "replace scale of the specified ReplicaSet",
-      "nickname": "replaceNamespacedReplicaSetScale",
+      "summary": "replace scale of the specified Scale",
+      "nickname": "replaceNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -4282,8 +4282,8 @@
      {
       "type": "v1beta1.Scale",
       "method": "PATCH",
-      "summary": "partially update scale of the specified ReplicaSet",
-      "nickname": "patchNamespacedReplicaSetScale",
+      "summary": "partially update scale of the specified Scale",
+      "nickname": "patchNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",

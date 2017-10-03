@@ -248,7 +248,11 @@ func TestServeHTTP(t *testing.T) {
 			responder := &fakeResponder{t: t}
 			backendURL, _ := url.Parse(backendServer.URL)
 			backendURL.Path = test.requestPath
-			proxyHandler := NewUpgradeAwareProxyHandler(backendURL, nil, false, test.upgradeRequired, responder)
+			proxyHandler := &UpgradeAwareProxyHandler{
+				Location:        backendURL,
+				Responder:       responder,
+				UpgradeRequired: test.upgradeRequired,
+			}
 			proxyServer := httptest.NewServer(proxyHandler)
 			defer proxyServer.Close()
 			proxyURL, _ := url.Parse(proxyServer.URL)
@@ -424,8 +428,12 @@ func TestProxyUpgrade(t *testing.T) {
 
 				serverURL, _ := url.Parse(backendServer.URL)
 				serverURL.Path = backendPath
-				proxyHandler := NewUpgradeAwareProxyHandler(serverURL, tc.ProxyTransport, false, false, &noErrorsAllowed{t: t})
-				proxyHandler.InterceptRedirects = redirect
+				proxyHandler := &UpgradeAwareProxyHandler{
+					Location:           serverURL,
+					Transport:          tc.ProxyTransport,
+					InterceptRedirects: redirect,
+					Responder:          &noErrorsAllowed{t: t},
+				}
 				proxy := httptest.NewServer(proxyHandler)
 				defer proxy.Close()
 
@@ -471,15 +479,14 @@ func TestProxyUpgradeErrorResponse(t *testing.T) {
 			return &fakeConn{err: expectedErr}, nil
 		}
 		responder = &fakeResponder{t: t, w: w}
-		proxyHandler := NewUpgradeAwareProxyHandler(
-			&url.URL{
+		proxyHandler := &UpgradeAwareProxyHandler{
+			Location: &url.URL{
 				Host: "fake-backend",
 			},
-			transport,
-			false,
-			true,
-			responder,
-		)
+			UpgradeRequired: true,
+			Responder:       responder,
+			Transport:       transport,
+		}
 		proxyHandler.ServeHTTP(w, r)
 	}))
 	defer proxy.Close()
@@ -538,7 +545,9 @@ func TestDefaultProxyTransport(t *testing.T) {
 	for _, test := range tests {
 		locURL, _ := url.Parse(test.location)
 		URL, _ := url.Parse(test.url)
-		h := NewUpgradeAwareProxyHandler(locURL, nil, false, false, nil)
+		h := UpgradeAwareProxyHandler{
+			Location: locURL,
+		}
 		result := h.defaultProxyTransport(URL, nil)
 		transport := result.(*corsRemovingTransport).RoundTripper.(*proxy.Transport)
 		if transport.Scheme != test.expectedScheme {
@@ -712,7 +721,11 @@ func TestProxyRequestContentLengthAndTransferEncoding(t *testing.T) {
 
 		responder := &fakeResponder{t: t}
 		backendURL, _ := url.Parse(downstreamServer.URL)
-		proxyHandler := NewUpgradeAwareProxyHandler(backendURL, nil, false, false, responder)
+		proxyHandler := &UpgradeAwareProxyHandler{
+			Location:        backendURL,
+			Responder:       responder,
+			UpgradeRequired: false,
+		}
 		proxyServer := httptest.NewServer(proxyHandler)
 		defer proxyServer.Close()
 

@@ -11488,7 +11488,7 @@ func (x *EmptyDirVolumeSource) CodecEncodeSelf(e *codec1978.Encoder) {
 			_, _, _ = yysep2, yyq2, yy2arr2
 			const yyr2 bool = false
 			yyq2[0] = x.Medium != ""
-			yyq2[1] = x.SizeLimit != nil
+			yyq2[1] = true
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(2)
@@ -11520,18 +11520,15 @@ func (x *EmptyDirVolumeSource) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
 				if yyq2[1] {
-					if x.SizeLimit == nil {
-						r.EncodeNil()
+					yy7 := &x.SizeLimit
+					yym8 := z.EncBinary()
+					_ = yym8
+					if false {
+					} else if z.HasExtensions() && z.EncExt(yy7) {
+					} else if !yym8 && z.IsJSONHandle() {
+						z.EncJSONMarshal(yy7)
 					} else {
-						yym7 := z.EncBinary()
-						_ = yym7
-						if false {
-						} else if z.HasExtensions() && z.EncExt(x.SizeLimit) {
-						} else if !yym7 && z.IsJSONHandle() {
-							z.EncJSONMarshal(x.SizeLimit)
-						} else {
-							z.EncFallback(x.SizeLimit)
-						}
+						z.EncFallback(yy7)
 					}
 				} else {
 					r.EncodeNil()
@@ -11541,18 +11538,15 @@ func (x *EmptyDirVolumeSource) CodecEncodeSelf(e *codec1978.Encoder) {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
 					r.EncodeString(codecSelferC_UTF81234, string("sizeLimit"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.SizeLimit == nil {
-						r.EncodeNil()
+					yy9 := &x.SizeLimit
+					yym10 := z.EncBinary()
+					_ = yym10
+					if false {
+					} else if z.HasExtensions() && z.EncExt(yy9) {
+					} else if !yym10 && z.IsJSONHandle() {
+						z.EncJSONMarshal(yy9)
 					} else {
-						yym8 := z.EncBinary()
-						_ = yym8
-						if false {
-						} else if z.HasExtensions() && z.EncExt(x.SizeLimit) {
-						} else if !yym8 && z.IsJSONHandle() {
-							z.EncJSONMarshal(x.SizeLimit)
-						} else {
-							z.EncFallback(x.SizeLimit)
-						}
+						z.EncFallback(yy9)
 					}
 				}
 			}
@@ -11626,21 +11620,17 @@ func (x *EmptyDirVolumeSource) codecDecodeSelfFromMap(l int, d *codec1978.Decode
 			}
 		case "sizeLimit":
 			if r.TryDecodeAsNil() {
-				if x.SizeLimit != nil {
-					x.SizeLimit = nil
-				}
+				x.SizeLimit = pkg3_resource.Quantity{}
 			} else {
-				if x.SizeLimit == nil {
-					x.SizeLimit = new(pkg3_resource.Quantity)
-				}
+				yyv5 := &x.SizeLimit
 				yym6 := z.DecBinary()
 				_ = yym6
 				if false {
-				} else if z.HasExtensions() && z.DecExt(x.SizeLimit) {
+				} else if z.HasExtensions() && z.DecExt(yyv5) {
 				} else if !yym6 && z.IsJSONHandle() {
-					z.DecJSONUnmarshal(x.SizeLimit)
+					z.DecJSONUnmarshal(yyv5)
 				} else {
-					z.DecFallback(x.SizeLimit, false)
+					z.DecFallback(yyv5, false)
 				}
 			}
 		default:
@@ -11686,21 +11676,17 @@ func (x *EmptyDirVolumeSource) codecDecodeSelfFromArray(l int, d *codec1978.Deco
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.SizeLimit != nil {
-			x.SizeLimit = nil
-		}
+		x.SizeLimit = pkg3_resource.Quantity{}
 	} else {
-		if x.SizeLimit == nil {
-			x.SizeLimit = new(pkg3_resource.Quantity)
-		}
+		yyv9 := &x.SizeLimit
 		yym10 := z.DecBinary()
 		_ = yym10
 		if false {
-		} else if z.HasExtensions() && z.DecExt(x.SizeLimit) {
+		} else if z.HasExtensions() && z.DecExt(yyv9) {
 		} else if !yym10 && z.IsJSONHandle() {
-			z.DecJSONUnmarshal(x.SizeLimit)
+			z.DecJSONUnmarshal(yyv9)
 		} else {
-			z.DecFallback(x.SizeLimit, false)
+			z.DecFallback(yyv9, false)
 		}
 	}
 	for {

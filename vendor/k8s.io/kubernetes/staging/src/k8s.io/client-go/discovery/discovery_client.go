@@ -183,7 +183,7 @@ func (d *DiscoveryClient) ServerResourcesForGroupVersion(groupVersion string) (r
 }
 
 // serverResources returns the supported resources for all groups and versions.
-func (d *DiscoveryClient) serverResources() ([]*metav1.APIResourceList, error) {
+func (d *DiscoveryClient) serverResources(failEarly bool) ([]*metav1.APIResourceList, error) {
 	apiGroups, err := d.ServerGroups()
 	if err != nil {
 		return nil, err
@@ -199,6 +199,9 @@ func (d *DiscoveryClient) serverResources() ([]*metav1.APIResourceList, error) {
 			if err != nil {
 				// TODO: maybe restrict this to NotFound errors
 				failedGroups[gv] = err
+				if failEarly {
+					return nil, &ErrGroupDiscoveryFailed{Groups: failedGroups}
+				}
 				continue
 			}
 
@@ -242,7 +245,7 @@ func IsGroupDiscoveryFailedError(err error) bool {
 }
 
 // serverPreferredResources returns the supported resources with the version preferred by the server.
-func (d *DiscoveryClient) serverPreferredResources() ([]*metav1.APIResourceList, error) {
+func (d *DiscoveryClient) serverPreferredResources(failEarly bool) ([]*metav1.APIResourceList, error) {
 	serverGroupList, err := d.ServerGroups()
 	if err != nil {
 		return nil, err
@@ -262,6 +265,9 @@ func (d *DiscoveryClient) serverPreferredResources() ([]*metav1.APIResourceList,
 			if err != nil {
 				// TODO: maybe restrict this to NotFound errors
 				failedGroups[groupVersion] = err
+				if failEarly {
+					return nil, &ErrGroupDiscoveryFailed{Groups: failedGroups}
+				}
 				continue
 			}
 
@@ -306,7 +312,9 @@ func (d *DiscoveryClient) serverPreferredResources() ([]*metav1.APIResourceList,
 // ServerPreferredResources returns the supported resources with the version preferred by the
 // server.
 func (d *DiscoveryClient) ServerPreferredResources() ([]*metav1.APIResourceList, error) {
-	return withRetries(defaultRetries, d.serverPreferredResources)
+	return withRetries(defaultRetries, func(retryEarly bool) ([]*metav1.APIResourceList, error) {
+		return d.serverPreferredResources(retryEarly)
+	})
 }
 
 // ServerPreferredNamespacedResources returns the supported namespaced resources with the
@@ -383,11 +391,12 @@ func (d *DiscoveryClient) OpenAPISchema() (*spec.Swagger, error) {
 }
 
 // withRetries retries the given recovery function in case the groups supported by the server change after ServerGroup() returns.
-func withRetries(maxRetries int, f func() ([]*metav1.APIResourceList, error)) ([]*metav1.APIResourceList, error) {
+func withRetries(maxRetries int, f func(failEarly bool) ([]*metav1.APIResourceList, error)) ([]*metav1.APIResourceList, error) {
 	var result []*metav1.APIResourceList
 	var err error
 	for i := 0; i < maxRetries; i++ {
-		result, err = f()
+		failEarly := i < maxRetries-1
+		result, err = f(failEarly)
 		if err == nil {
 			return result, nil
 		}

@@ -24,7 +24,6 @@ import (
 	"sync"
 
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/golang/glog"
 
@@ -138,7 +137,7 @@ func (r *azureRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 }
 
 type azureToken struct {
-	token       adal.Token
+	token       azure.Token
 	clientID    string
 	tenantID    string
 	apiserverID string
@@ -235,7 +234,7 @@ func (ts *azureTokenSource) retrieveTokenFromCfg() (*azureToken, error) {
 	}
 
 	return &azureToken{
-		token: adal.Token{
+		token: azure.Token{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			ExpiresIn:    expiresIn,
@@ -269,15 +268,15 @@ func (ts *azureTokenSource) storeTokenInCfg(token *azureToken) error {
 }
 
 func (ts *azureTokenSource) refreshToken(token *azureToken) (*azureToken, error) {
-	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, token.tenantID)
+	oauthConfig, err := azure.PublicCloud.OAuthConfigForTenant(token.tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("building the OAuth configuration for token refresh: %v", err)
 	}
 
-	callback := func(t adal.Token) error {
+	callback := func(t azure.Token) error {
 		return nil
 	}
-	spt, err := adal.NewServicePrincipalTokenFromManualToken(
+	spt, err := azure.NewServicePrincipalTokenFromManualToken(
 		*oauthConfig,
 		token.clientID,
 		token.apiserverID,
@@ -325,12 +324,12 @@ func newAzureTokenSourceDeviceCode(environment azure.Environment, clientID strin
 }
 
 func (ts *azureTokenSourceDeviceCode) Token() (*azureToken, error) {
-	oauthConfig, err := adal.NewOAuthConfig(ts.environment.ActiveDirectoryEndpoint, ts.tenantID)
+	oauthConfig, err := ts.environment.OAuthConfigForTenant(ts.tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("building the OAuth configuration for device code authentication: %v", err)
 	}
 	client := &autorest.Client{}
-	deviceCode, err := adal.InitiateDeviceAuth(client, *oauthConfig, ts.clientID, ts.apiserverID)
+	deviceCode, err := azure.InitiateDeviceAuth(client, *oauthConfig, ts.clientID, ts.apiserverID)
 	if err != nil {
 		return nil, fmt.Errorf("initialing the device code authentication: %v", err)
 	}
@@ -340,7 +339,7 @@ func (ts *azureTokenSourceDeviceCode) Token() (*azureToken, error) {
 		return nil, fmt.Errorf("prompting the device code message: %v", err)
 	}
 
-	token, err := adal.WaitForUserCompletion(client, deviceCode)
+	token, err := azure.WaitForUserCompletion(client, deviceCode)
 	if err != nil {
 		return nil, fmt.Errorf("waiting for device code authentication to complete: %v", err)
 	}

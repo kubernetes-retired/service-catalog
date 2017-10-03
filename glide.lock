@@ -1,5 +1,5 @@
-hash: 4dd7a13dc71255c263954495f63c817a0850b9b38485eb5af0dc1947de542320
-updated: 2017-09-22T12:10:04.079095342+10:00
+hash: 5d26c3e65e6f7e51810c5c664a2c3a34b8cab6c16fd1557ac4b8fc8a1145dc7d
+updated: 2017-09-07T15:57:30.299401518-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -11,10 +11,9 @@ imports:
 - name: code.cloudfoundry.org/lager
   version: dfcbcba2dd4a5228c43b0292d219d5c010daed3a
 - name: github.com/Azure/go-autorest
-  version: 58f6f26e200fa5dfb40c9cd1c83f3e2c860d779d
+  version: d7c034a8af24eda120dd6460bfcd6d9ed14e43ca
   subpackages:
   - autorest
-  - autorest/adal
   - autorest/azure
   - autorest/date
 - name: github.com/beorn7/perks
@@ -353,7 +352,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/apimachinery
-  version: 8ab5f3d8a330c2e9baaf84e39042db8d49034ae2
+  version: abe34e4f5b4413c282a83011892cbeea5b32223b
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -410,7 +409,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: a7f02eb8e3920e446965036c9610ec52a7ede92f
+  version: ab57ed5a72c3b67058f665d660e23bae18339fc2
   subpackages:
   - pkg/admission
   - pkg/admission/initializer
@@ -485,7 +484,7 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
-  version: 031a3824a2d20f74ef80e43724a189799f1a1c42
+  version: e356aa2e77ab4a5914c216c12ba14cce25a25ab0
   subpackages:
   - discovery
   - discovery/fake
@@ -657,7 +656,7 @@ imports:
   subpackages:
   - args
 - name: k8s.io/kubernetes
-  version: 4bc5e7f9a6c25dc4c03d4d656f2cefd21540e28c
+  version: ebb8d6e0fadfc95f3d64ccecc36c8ed2ac9224ef
   subpackages:
   - cmd/kube-apiserver/app/preflight
   - pkg/api

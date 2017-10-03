@@ -101,7 +101,7 @@ func (t *IngressUpgradeTest) Teardown(f *framework.Framework) {
 	}
 	if t.jig.Ingress != nil {
 		By("Deleting ingress")
-		t.jig.TryDeleteIngress()
+		t.jig.DeleteIngress()
 	} else {
 		By("No ingress created, no cleanup necessary")
 	}

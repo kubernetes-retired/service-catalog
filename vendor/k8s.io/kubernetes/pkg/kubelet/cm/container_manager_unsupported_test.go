@@ -40,14 +40,6 @@ func (mi *fakeMountInterface) List() ([]mount.MountPoint, error) {
 	return mi.mountPoints, nil
 }
 
-func (f *fakeMountInterface) IsMountPointMatch(mp mount.MountPoint, dir string) bool {
-	return (mp.Path == dir)
-}
-
-func (f *fakeMountInterface) IsNotMountPoint(dir string) (bool, error) {
-	return false, fmt.Errorf("unsupported")
-}
-
 func (mi *fakeMountInterface) IsLikelyNotMountPoint(file string) (bool, error) {
 	return false, fmt.Errorf("unsupported")
 }

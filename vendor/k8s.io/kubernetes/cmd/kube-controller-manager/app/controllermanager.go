@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -366,10 +365,7 @@ func GetAvailableResources(clientBuilder controller.ControllerClientBuilder) (ma
 
 	resourceMap, err := discoveryClient.ServerResources()
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("unable to get all supported resources from server: %v", err))
-	}
-	if len(resourceMap) == 0 {
-		return nil, fmt.Errorf("unable to get any supported resources from server")
+		return nil, fmt.Errorf("failed to get supported resources from server: %v", err)
 	}
 
 	allResources := map[schema.GroupVersionResource]bool{}

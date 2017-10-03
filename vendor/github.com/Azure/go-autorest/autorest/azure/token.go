@@ -1,4 +1,4 @@
-package adal
+package azure
 
 import (
 	"crypto/rand"
@@ -6,15 +6,13 @@ import (
 	"crypto/sha1"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -30,27 +28,12 @@ const (
 
 	// OAuthGrantTypeRefreshToken is the "grant_type" identifier used in refresh token flows
 	OAuthGrantTypeRefreshToken = "refresh_token"
-
-	// managedIdentitySettingsPath is the path to the MSI Extension settings file (to discover the endpoint)
-	managedIdentitySettingsPath = "/var/lib/waagent/ManagedIdentity-Settings"
 )
 
 var expirationBase time.Time
 
 func init() {
 	expirationBase, _ = time.Parse(time.RFC3339, tokenBaseDate)
-}
-
-// OAuthTokenProvider is an interface which should be implemented by an access token retriever
-type OAuthTokenProvider interface {
-	OAuthToken() string
-}
-
-// Refresher is an interface for token refresh functionality
-type Refresher interface {
-	Refresh() error
-	RefreshExchange(resource string) error
-	EnsureFresh() error
 }
 
 // TokenRefreshCallback is the type representing callbacks that will be called after
@@ -90,9 +73,14 @@ func (t Token) WillExpireIn(d time.Duration) bool {
 	return !t.Expires().After(time.Now().Add(d))
 }
 
-//OAuthToken return the current access token
-func (t *Token) OAuthToken() string {
-	return t.AccessToken
+// WithAuthorization returns a PrepareDecorator that adds an HTTP Authorization header whose
+// value is "Bearer " followed by the AccessToken of the Token.
+func (t *Token) WithAuthorization() autorest.PrepareDecorator {
+	return func(p autorest.Preparer) autorest.Preparer {
+		return autorest.PreparerFunc(func(r *http.Request) (*http.Request, error) {
+			return (autorest.WithBearerAuthorization(t.AccessToken)(p)).Prepare(r)
+		})
+	}
 }
 
 // ServicePrincipalNoSecret represents a secret type that contains no secret
@@ -128,17 +116,6 @@ func (tokenSecret *ServicePrincipalTokenSecret) SetAuthenticationValues(spt *Ser
 type ServicePrincipalCertificateSecret struct {
 	Certificate *x509.Certificate
 	PrivateKey  *rsa.PrivateKey
-}
-
-// ServicePrincipalMSISecret implements ServicePrincipalSecret for machines running the MSI Extension.
-type ServicePrincipalMSISecret struct {
-}
-
-// SetAuthenticationValues is a method of the interface ServicePrincipalSecret.
-// MSI extension requires the authority field to be set to the real tenant authority endpoint
-func (msiSecret *ServicePrincipalMSISecret) SetAuthenticationValues(spt *ServicePrincipalToken, v *url.Values) error {
-	v.Set("authority", spt.oauthConfig.AuthorityEndpoint.String())
-	return nil
 }
 
 // SignJwt returns the JWT signed with the certificate's private key.
@@ -196,7 +173,7 @@ type ServicePrincipalToken struct {
 	resource      string
 	autoRefresh   bool
 	refreshWithin time.Duration
-	sender        Sender
+	sender        autorest.Sender
 
 	refreshCallbacks []TokenRefreshCallback
 }
@@ -261,56 +238,10 @@ func NewServicePrincipalTokenFromCertificate(oauthConfig OAuthConfig, clientID s
 	)
 }
 
-// NewServicePrincipalTokenFromMSI creates a ServicePrincipalToken via the MSI VM Extension.
-func NewServicePrincipalTokenFromMSI(oauthConfig OAuthConfig, resource string, callbacks ...TokenRefreshCallback) (*ServicePrincipalToken, error) {
-	return newServicePrincipalTokenFromMSI(oauthConfig, resource, managedIdentitySettingsPath, callbacks...)
-}
-
-func newServicePrincipalTokenFromMSI(oauthConfig OAuthConfig, resource, settingsPath string, callbacks ...TokenRefreshCallback) (*ServicePrincipalToken, error) {
-	// Read MSI settings
-	bytes, err := ioutil.ReadFile(settingsPath)
-	if err != nil {
-		return nil, err
-	}
-	msiSettings := struct {
-		URL string `json:"url"`
-	}{}
-	err = json.Unmarshal(bytes, &msiSettings)
-	if err != nil {
-		return nil, err
-	}
-
-	// We set the oauth config token endpoint to be MSI's endpoint
-	// We leave the authority as-is so MSI can POST it with the token request
-	msiEndpointURL, err := url.Parse(msiSettings.URL)
-	if err != nil {
-		return nil, err
-	}
-
-	msiTokenEndpointURL, err := msiEndpointURL.Parse("/oauth2/token")
-	if err != nil {
-		return nil, err
-	}
-
-	oauthConfig.TokenEndpoint = *msiTokenEndpointURL
-
-	spt := &ServicePrincipalToken{
-		oauthConfig:      oauthConfig,
-		secret:           &ServicePrincipalMSISecret{},
-		resource:         resource,
-		autoRefresh:      true,
-		refreshWithin:    defaultRefresh,
-		sender:           &http.Client{},
-		refreshCallbacks: callbacks,
-	}
-
-	return spt, nil
-}
-
 // EnsureFresh will refresh the token if it will expire within the refresh window (as set by
-// RefreshWithin) and autoRefresh flag is on.
+// RefreshWithin).
 func (spt *ServicePrincipalToken) EnsureFresh() error {
-	if spt.autoRefresh && spt.WillExpireIn(spt.refreshWithin) {
+	if spt.WillExpireIn(spt.refreshWithin) {
 		return spt.Refresh()
 	}
 	return nil
@@ -322,7 +253,8 @@ func (spt *ServicePrincipalToken) InvokeRefreshCallbacks(token Token) error {
 		for _, callback := range spt.refreshCallbacks {
 			err := callback(spt.Token)
 			if err != nil {
-				return fmt.Errorf("adal: TokenRefreshCallback handler failed. Error = '%v'", err)
+				return autorest.NewErrorWithError(err,
+					"azure.ServicePrincipalToken", "InvokeRefreshCallbacks", nil, "A TokenRefreshCallback handler returned an error")
 			}
 		}
 	}
@@ -355,40 +287,39 @@ func (spt *ServicePrincipalToken) refreshInternal(resource string) error {
 		}
 	}
 
-	s := v.Encode()
-	body := ioutil.NopCloser(strings.NewReader(s))
-	req, err := http.NewRequest(http.MethodPost, spt.oauthConfig.TokenEndpoint.String(), body)
+	req, _ := autorest.Prepare(&http.Request{},
+		autorest.AsPost(),
+		autorest.AsFormURLEncoded(),
+		autorest.WithBaseURL(spt.oauthConfig.TokenEndpoint.String()),
+		autorest.WithFormData(v))
+
+	resp, err := autorest.SendWithSender(spt.sender, req)
 	if err != nil {
-		return fmt.Errorf("adal: Failed to build the refresh request. Error = '%v'", err)
+		return autorest.NewErrorWithError(err,
+			"azure.ServicePrincipalToken", "Refresh", resp, "Failure sending request for Service Principal %s",
+			spt.clientID)
 	}
 
-	req.ContentLength = int64(len(s))
-	req.Header.Set(contentType, mimeTypeFormPost)
-	resp, err := spt.sender.Do(req)
+	var newToken Token
+	err = autorest.Respond(resp,
+		autorest.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&newToken),
+		autorest.ByClosing())
 	if err != nil {
-		return fmt.Errorf("adal: Failed to execute the refresh request. Error = '%v'", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("adal: Refresh request failed. Status Code = '%d'", resp.StatusCode)
+		return autorest.NewErrorWithError(err,
+			"azure.ServicePrincipalToken", "Refresh", resp, "Failure handling response to Service Principal %s request",
+			spt.clientID)
 	}
 
-	rb, err := ioutil.ReadAll(resp.Body)
+	spt.Token = newToken
+
+	err = spt.InvokeRefreshCallbacks(newToken)
 	if err != nil {
-		return fmt.Errorf("adal: Failed to read a new service principal token during refresh. Error = '%v'", err)
-	}
-	if len(strings.Trim(string(rb), " ")) == 0 {
-		return fmt.Errorf("adal: Empty service principal token received during refresh")
-	}
-	var token Token
-	err = json.Unmarshal(rb, &token)
-	if err != nil {
-		return fmt.Errorf("adal: Failed to unmarshal the service principal token during refresh. Error = '%v' JSON = '%s'", err, string(rb))
+		// its already wrapped inside InvokeRefreshCallbacks
+		return err
 	}
 
-	spt.Token = token
-
-	return spt.InvokeRefreshCallbacks(token)
+	return nil
 }
 
 // SetAutoRefresh enables or disables automatic refreshing of stale tokens.
@@ -403,6 +334,30 @@ func (spt *ServicePrincipalToken) SetRefreshWithin(d time.Duration) {
 	return
 }
 
-// SetSender sets the http.Client used when obtaining the Service Principal token. An
+// SetSender sets the autorest.Sender used when obtaining the Service Principal token. An
 // undecorated http.Client is used by default.
-func (spt *ServicePrincipalToken) SetSender(s Sender) { spt.sender = s }
+func (spt *ServicePrincipalToken) SetSender(s autorest.Sender) {
+	spt.sender = s
+}
+
+// WithAuthorization returns a PrepareDecorator that adds an HTTP Authorization header whose
+// value is "Bearer " followed by the AccessToken of the ServicePrincipalToken.
+//
+// By default, the token will automatically refresh if nearly expired (as determined by the
+// RefreshWithin interval). Use the AutoRefresh method to enable or disable automatically refreshing
+// tokens.
+func (spt *ServicePrincipalToken) WithAuthorization() autorest.PrepareDecorator {
+	return func(p autorest.Preparer) autorest.Preparer {
+		return autorest.PreparerFunc(func(r *http.Request) (*http.Request, error) {
+			if spt.autoRefresh {
+				err := spt.EnsureFresh()
+				if err != nil {
+					return r, autorest.NewErrorWithError(err,
+						"azure.ServicePrincipalToken", "WithAuthorization", nil, "Failed to refresh Service Principal Token for request to %s",
+						r.URL)
+				}
+			}
+			return (autorest.WithBearerAuthorization(spt.AccessToken)(p)).Prepare(r)
+		})
+	}
+}

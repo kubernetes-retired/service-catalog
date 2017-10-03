@@ -17,12 +17,9 @@ limitations under the License.
 package reconciliation
 
 import (
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/rbac"
-	core "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/rbac/internalversion"
 )
 
@@ -71,8 +68,7 @@ func (o RoleBindingAdapter) SetSubjects(in []rbac.Subject) {
 }
 
 type RoleBindingClientAdapter struct {
-	Client          internalversion.RoleBindingsGetter
-	NamespaceClient core.NamespaceInterface
+	Client internalversion.RoleBindingsGetter
 }
 
 func (c RoleBindingClientAdapter) Get(namespace, name string) (RoleBinding, error) {
@@ -84,11 +80,6 @@ func (c RoleBindingClientAdapter) Get(namespace, name string) (RoleBinding, erro
 }
 
 func (c RoleBindingClientAdapter) Create(in RoleBinding) (RoleBinding, error) {
-	ns := &api.Namespace{ObjectMeta: metav1.ObjectMeta{Name: in.GetNamespace()}}
-	if _, err := c.NamespaceClient.Create(ns); err != nil && !apierrors.IsAlreadyExists(err) {
-		return nil, err
-	}
-
 	ret, err := c.Client.RoleBindings(in.GetNamespace()).Create(in.(RoleBindingAdapter).RoleBinding)
 	if err != nil {
 		return nil, err

@@ -88,7 +88,7 @@ func (v *sioVolume) SetUpAt(dir string, fsGroup *int64) error {
 	v.plugin.volumeMtx.LockKey(v.volSpecName)
 	defer v.plugin.volumeMtx.UnlockKey(v.volSpecName)
 
-	glog.V(4).Info(log("setting up volume for PV.spec %s", v.volSpecName))
+	glog.V(4).Info(log("setting up volume %s", v.volSpecName))
 	if err := v.setSioMgr(); err != nil {
 		glog.Error(log("setup failed to create scalio manager: %v", err))
 		return err
@@ -104,36 +104,18 @@ func (v *sioVolume) SetUpAt(dir string, fsGroup *int64) error {
 		return nil
 	}
 
-	// should multiple-mapping be enabled
-	enableMultiMaps := false
-	isROM := false
-	if v.spec.PersistentVolume != nil {
-		ams := v.spec.PersistentVolume.Spec.AccessModes
-		for _, am := range ams {
-			if am == api.ReadOnlyMany {
-				enableMultiMaps = true
-				isROM = true
-			}
-		}
-	}
-	glog.V(4).Info(log("multiple mapping enabled = %v", enableMultiMaps))
-
+	// attach the volume and mount
 	volName := v.volName
-	devicePath, err := v.sioMgr.AttachVolume(volName, enableMultiMaps)
+	devicePath, err := v.sioMgr.AttachVolume(volName)
 	if err != nil {
 		glog.Error(log("setup of volume %v:  %v", v.volSpecName, err))
 		return err
 	}
 	options := []string{}
-	switch {
-	default:
-		options = append(options, "rw")
-	case isROM && !v.source.ReadOnly:
-		options = append(options, "rw")
-	case isROM:
+	if v.source.ReadOnly {
 		options = append(options, "ro")
-	case v.source.ReadOnly:
-		options = append(options, "ro")
+	} else {
+		options = append(options, "rw")
 	}
 
 	glog.V(4).Info(log("mounting device  %s -> %s", devicePath, dir))
@@ -158,12 +140,7 @@ func (v *sioVolume) SetUpAt(dir string, fsGroup *int64) error {
 		return err
 	}
 
-	if !v.readOnly && fsGroup != nil {
-		glog.V(4).Info(log("applying  value FSGroup ownership"))
-		volume.SetVolumeOwnership(v, fsGroup)
-	}
-
-	glog.V(4).Info(log("successfully setup PV %s: volume %s mapped as %s mounted at %s", v.volSpecName, v.volName, devicePath, dir))
+	glog.V(4).Info(log("successfully setup volume %s attached %s:%s as %s", v.volSpecName, v.volName, devicePath, dir))
 	return nil
 }
 
@@ -214,7 +191,7 @@ func (v *sioVolume) TearDownAt(dir string) error {
 	// use "last attempt wins" strategy to detach volume from node
 	// only allow volume to detach when it is not busy (not being used by other pods)
 	if !deviceBusy {
-		glog.V(4).Info(log("teardown is attempting to detach/unmap volume for PV %s", v.volSpecName))
+		glog.V(4).Info(log("teardown is attempting to detach/unmap volume for %s", v.volSpecName))
 		if err := v.resetSioMgr(); err != nil {
 			glog.Error(log("teardown failed, unable to reset scalio mgr: %v", err))
 		}
@@ -247,7 +224,7 @@ func (v *sioVolume) Delete() error {
 		return err
 	}
 
-	glog.V(4).Info(log("successfully deleted PV %s with volume %s", v.volSpecName, v.volName))
+	glog.V(4).Info(log("successfully deleted pvc %s", v.volSpecName))
 	return nil
 }
 
@@ -257,30 +234,17 @@ func (v *sioVolume) Delete() error {
 var _ volume.Provisioner = &sioVolume{}
 
 func (v *sioVolume) Provision() (*api.PersistentVolume, error) {
-	glog.V(4).Info(log("attempting to dynamically provision pvc %v", v.options.PVC.Name))
+	glog.V(4).Info(log("attempting to dynamically provision pvc %v", v.options.PVName))
 
 	if !volume.AccessModesContainedInAll(v.plugin.GetAccessModes(), v.options.PVC.Spec.AccessModes) {
 		return nil, fmt.Errorf("invalid AccessModes %v: only AccessModes %v are supported", v.options.PVC.Spec.AccessModes, v.plugin.GetAccessModes())
 	}
 
 	// setup volume attrributes
-	genName := v.generateName("k8svol", 11)
-	var oneGig int64 = 1024 * 1024 * 1024
-	var eightGig int64 = 8 * oneGig
-
+	name := v.generateVolName()
 	capacity := v.options.PVC.Spec.Resources.Requests[api.ResourceName(api.ResourceStorage)]
 	volSizeBytes := capacity.Value()
-	volSizeGB := int64(volume.RoundUpSize(volSizeBytes, oneGig))
-
-	if volSizeBytes == 0 {
-		return nil, fmt.Errorf("invalid volume size of 0 specified")
-	}
-
-	if volSizeBytes < eightGig {
-		volSizeGB = int64(volume.RoundUpSize(eightGig, oneGig))
-		glog.V(4).Info(log("capacity less than 8Gi found, adjusted to %dGi", volSizeGB))
-
-	}
+	volSizeGB := int64(volume.RoundUpSize(volSizeBytes, 1024*1024*1024))
 
 	// create sio manager
 	if err := v.setSioMgrFromConfig(); err != nil {
@@ -289,15 +253,14 @@ func (v *sioVolume) Provision() (*api.PersistentVolume, error) {
 	}
 
 	// create volume
-	volName := genName
-	vol, err := v.sioMgr.CreateVolume(volName, volSizeGB)
+	vol, err := v.sioMgr.CreateVolume(name, volSizeGB)
 	if err != nil {
 		glog.Error(log("provision failed while creating volume: %v", err))
 		return nil, err
 	}
 
 	// prepare data for pv
-	v.configData[confKey.volumeName] = volName
+	v.configData[confKey.volumeName] = name
 	sslEnabled, err := strconv.ParseBool(v.configData[confKey.sslEnabled])
 	if err != nil {
 		glog.Warning(log("failed to parse parameter sslEnabled, setting to false"))
@@ -310,10 +273,9 @@ func (v *sioVolume) Provision() (*api.PersistentVolume, error) {
 	}
 
 	// describe created pv
-	pvName := genName
 	pv := &api.PersistentVolume{
 		ObjectMeta: meta.ObjectMeta{
-			Name:      pvName,
+			Name:      v.options.PVName,
 			Namespace: v.options.PVC.Namespace,
 			Labels:    map[string]string{},
 			Annotations: map[string]string{
@@ -337,7 +299,7 @@ func (v *sioVolume) Provision() (*api.PersistentVolume, error) {
 					ProtectionDomain: v.configData[confKey.protectionDomain],
 					StoragePool:      v.configData[confKey.storagePool],
 					StorageMode:      v.configData[confKey.storageMode],
-					VolumeName:       volName,
+					VolumeName:       name,
 					FSType:           v.configData[confKey.fsType],
 					ReadOnly:         readOnly,
 				},
@@ -348,14 +310,14 @@ func (v *sioVolume) Provision() (*api.PersistentVolume, error) {
 		pv.Spec.AccessModes = v.plugin.GetAccessModes()
 	}
 
-	glog.V(4).Info(log("provisioner created pv %v and volume %s successfully", pvName, vol.Name))
+	glog.V(4).Info(log("provisioner dynamically created pvc %v with volume %s successfully", pv.Name, vol.Name))
 	return pv, nil
 }
 
 // setSioMgr creates scaleio mgr from cached config data if found
 // otherwise, setups new config data and create mgr
 func (v *sioVolume) setSioMgr() error {
-	glog.V(4).Info(log("setting up sio mgr for spec  %s", v.volSpecName))
+	glog.V(4).Info(log("setting up sio mgr for vol  %s", v.volSpecName))
 	podDir := v.plugin.host.GetPodPluginDir(v.podUID, sioPluginName)
 	configName := path.Join(podDir, sioConfigFileName)
 	if v.sioMgr == nil {
@@ -493,6 +455,6 @@ func (v *sioVolume) setSioMgrFromSpec() error {
 	return nil
 }
 
-func (v *sioVolume) generateName(prefix string, size int) string {
-	return fmt.Sprintf("%s-%s", prefix, strings.Replace(string(uuid.NewUUID()), "-", "", -1)[0:size])
+func (v *sioVolume) generateVolName() string {
+	return "sio-" + strings.Replace(string(uuid.NewUUID()), "-", "", -1)[0:25]
 }

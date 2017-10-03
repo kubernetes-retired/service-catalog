@@ -21,7 +21,6 @@ and Responding. A typical pattern is:
     DoRetryForAttempts(5, time.Second))
 
   err = Respond(resp,
-		ByDiscardingBody(),
     ByClosing())
 ```
 
