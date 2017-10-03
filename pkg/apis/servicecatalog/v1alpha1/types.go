@@ -229,6 +229,15 @@ type ServiceClassSpec struct {
 	// Immutable.
 	ServiceBrokerName string `json:"brokerName"`
 
+	// ExternalName is the name of this object that the Service Broker
+	// exposed this Service Class as. Mutable.
+	ExternalName string `json:"externalName"`
+
+	// ExternalID is the identity of this object for use with the OSB API.
+	//
+	// Immutable.
+	ExternalID string `json:"externalID"`
+
 	// Description is a short description of this ServiceClass.
 	Description string `json:"description"`
 
@@ -240,15 +249,6 @@ type ServiceClassSpec struct {
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ServiceClass may change ServicePlans after being provisioned.
 	PlanUpdatable bool `json:"planUpdatable"`
-
-	// ExternalName is the name of this object that the Service Broker
-	// exposed this Service Class as. Mutable.
-	ExternalName string `json:"externalName"`
-
-	// ExternalID is the identity of this object for use with the OSB API.
-	//
-	// Immutable.
-	ExternalID string `json:"externalID"`
 
 	// ExternalMetadata is a blob of information about the ServiceClass, meant
 	// to be user-facing content and display instructions.  This field may
@@ -295,6 +295,10 @@ type ServicePlan struct {
 
 // ServicePlanSpec represents details about a ServicePlan.
 type ServicePlanSpec struct {
+	// ServiceBrokerName is the name of the ServiceBroker that offers this
+	// ServicePlan.
+	ServiceBrokerName string `json:"serviceBrokerName"`
+
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string `json:"externalName"`

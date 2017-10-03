@@ -89,7 +89,8 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
 func toSelectableFields(servicePlan *servicecatalog.ServicePlan) fields.Set {
-	spSpecificFieldsSet := make(fields.Set, 3)
+	spSpecificFieldsSet := make(fields.Set, 4)
+	spSpecificFieldsSet["spec.serviceBrokerName"] = servicePlan.Spec.ServiceBrokerName
 	spSpecificFieldsSet["spec.serviceClassRef.name"] = servicePlan.Spec.ServiceClassRef.Name
 	spSpecificFieldsSet["spec.externalName"] = servicePlan.Spec.ExternalName
 	spSpecificFieldsSet["spec.externalID"] = servicePlan.Spec.ExternalID

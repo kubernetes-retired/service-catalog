@@ -229,6 +229,15 @@ type ServiceClassSpec struct {
 	// Immutable.
 	ServiceBrokerName string
 
+	// ExternalName is the name of this object that the Service Broker
+	// exposed this Service Class as. Mutable.
+	ExternalName string
+
+	// ExternalID is the identity of this object for use with the OSB API.
+	//
+	// Immutable.
+	ExternalID string
+
 	// Description is a short description of this ServiceClass.
 	Description string
 
@@ -240,15 +249,6 @@ type ServiceClassSpec struct {
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ServiceClass may change ServicePlans after being provisioned.
 	PlanUpdatable bool
-
-	// ExternalName is the name of this object that the Service Broker
-	// exposed this Service Class as. Mutable.
-	ExternalName string
-
-	// ExternalID is the identity of this object for use with the OSB API.
-	//
-	// Immutable.
-	ExternalID string
 
 	// ExternalMetadata is a blob of information about the ServiceClass, meant
 	// to be user-facing content and display instructions.  This field may
@@ -295,6 +295,10 @@ type ServicePlan struct {
 
 // ServicePlanSpec represents details about the ServicePlan
 type ServicePlanSpec struct {
+	// ServiceBrokerName is the name of the ServiceBroker that offers this
+	// ServicePlan.
+	ServiceBrokerName string
+
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string

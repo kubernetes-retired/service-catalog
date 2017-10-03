@@ -451,6 +451,20 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Format:      "",
 							},
 						},
+						"externalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"externalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Description is a short description of this ServiceClass.",
@@ -469,20 +483,6 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							SchemaProps: spec.SchemaProps{
 								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
 								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-						"externalName": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"externalID": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
-								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
@@ -521,7 +521,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"brokerName", "description", "bindable", "planUpdatable", "externalName", "externalID"},
+					Required: []string{"brokerName", "externalName", "externalID", "description", "bindable", "planUpdatable"},
 				},
 			},
 			Dependencies: []string{
@@ -1207,6 +1207,13 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				SchemaProps: spec.SchemaProps{
 					Description: "ServicePlanSpec represents details about a ServicePlan.",
 					Properties: map[string]spec.Schema{
+						"serviceBrokerName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceBrokerName is the name of the ServiceBroker that offers this ServicePlan.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"externalName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Plan as. Mutable.",
@@ -1273,7 +1280,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"externalName", "externalID", "description", "free", "serviceClassRef"},
+					Required: []string{"serviceBrokerName", "externalName", "externalID", "description", "free", "serviceClassRef"},
 				},
 			},
 			Dependencies: []string{
