@@ -255,14 +255,14 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 		var codec runtime.Codec
 		var err error
 		switch tipe {
-		case "servicebrokers":
-			list = &sc.ServiceBrokerList{TypeMeta: newTypeMeta("broker-list")}
+		case "clusterservicebrokers":
+			list = &sc.ClusterServiceBrokerList{TypeMeta: newTypeMeta("cluster-broker-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.ServiceBrokerList{})
+			codec, err = testapi.GetCodecForObject(&sc.ClusterServiceBrokerList{})
 		case "serviceclasses":
 			list = &sc.ServiceClassList{TypeMeta: newTypeMeta("service-class-list")}
 			if err := meta.SetList(list, items); err != nil {

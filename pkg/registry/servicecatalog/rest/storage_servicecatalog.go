@@ -69,7 +69,7 @@ func (p StorageProvider) v1alpha1Storage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter,
 ) (map[string]rest.Storage, error) {
-	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebrokers"))
+	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterservicebrokers"))
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +163,8 @@ func (p StorageProvider) v1alpha1Storage(
 		return nil, err
 	}
 	return map[string]rest.Storage{
-		"servicebrokers":                    brokerStorage,
-		"servicebrokers/status":             brokerStatusStorage,
+		"clusterservicebrokers":             brokerStorage,
+		"clusterservicebrokers/status":      brokerStatusStorage,
 		"serviceclasses":                    serviceClassStorage,
 		"serviceplans":                      servicePlanStorage,
 		"serviceinstances":                  instanceStorage,

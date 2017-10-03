@@ -30,28 +30,28 @@ import (
 	time "time"
 )
 
-// ServiceBrokerInformer provides access to a shared informer and lister for
-// ServiceBrokers.
-type ServiceBrokerInformer interface {
+// ClusterServiceBrokerInformer provides access to a shared informer and lister for
+// ClusterServiceBrokers.
+type ClusterServiceBrokerInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() internalversion.ServiceBrokerLister
+	Lister() internalversion.ClusterServiceBrokerLister
 }
 
-type serviceBrokerInformer struct {
+type clusterServiceBrokerInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServiceBrokerInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func newClusterServiceBrokerInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.Servicecatalog().ServiceBrokers().List(options)
+				return client.Servicecatalog().ClusterServiceBrokers().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.Servicecatalog().ServiceBrokers().Watch(options)
+				return client.Servicecatalog().ClusterServiceBrokers().Watch(options)
 			},
 		},
-		&servicecatalog.ServiceBroker{},
+		&servicecatalog.ClusterServiceBroker{},
 		resyncPeriod,
 		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
@@ -59,10 +59,10 @@ func newServiceBrokerInformer(client internalclientset.Interface, resyncPeriod t
 	return sharedIndexInformer
 }
 
-func (f *serviceBrokerInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog.ServiceBroker{}, newServiceBrokerInformer)
+func (f *clusterServiceBrokerInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&servicecatalog.ClusterServiceBroker{}, newClusterServiceBrokerInformer)
 }
 
-func (f *serviceBrokerInformer) Lister() internalversion.ServiceBrokerLister {
-	return internalversion.NewServiceBrokerLister(f.Informer().GetIndexer())
+func (f *clusterServiceBrokerInformer) Lister() internalversion.ClusterServiceBrokerLister {
+	return internalversion.NewClusterServiceBrokerLister(f.Informer().GetIndexer())
 }

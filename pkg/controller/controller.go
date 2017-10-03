@@ -63,7 +63,7 @@ const (
 func NewController(
 	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
-	brokerInformer informers.ServiceBrokerInformer,
+	brokerInformer informers.ClusterServiceBrokerInformer,
 	serviceClassInformer informers.ServiceClassInformer,
 	instanceInformer informers.ServiceInstanceInformer,
 	bindingInformer informers.ServiceInstanceCredentialInformer,
@@ -142,7 +142,7 @@ type controller struct {
 	kubeClient                  kubernetes.Interface
 	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1alpha1Interface
 	brokerClientCreateFunc      osb.CreateFunc
-	brokerLister                listers.ServiceBrokerLister
+	brokerLister                listers.ClusterServiceBrokerLister
 	serviceClassLister          listers.ServiceClassLister
 	instanceLister              listers.ServiceInstanceLister
 	bindingLister               listers.ServiceInstanceCredentialLister
@@ -172,7 +172,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	var waitGroup sync.WaitGroup
 
 	for i := 0; i < workers; i++ {
-		createWorker(c.brokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey, stopCh, &waitGroup)
+		createWorker(c.brokerQueue, "ClusterServiceBroker", maxRetries, true, c.reconcileClusterServiceBrokerKey, stopCh, &waitGroup)
 		createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, &waitGroup)
 		createWorker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey, stopCh, &waitGroup)
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
@@ -242,11 +242,11 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 	}
 }
 
-// getServiceClassPlanAndServiceBroker is a sequence of operations that's done in couple of
+// getServiceClassPlanAndClusterServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
 // Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
-func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
+func (c *controller) getServiceClassPlanAndClusterServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
@@ -277,22 +277,22 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
-	broker, err := c.brokerLister.Get(serviceClass.Spec.ServiceBrokerName)
+	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.Spec.ServiceBrokerName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.Spec.ClusterServiceBrokerName)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
 			v1alpha1.ServiceInstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonexistentServiceBrokerReason,
-			"The instance references a ServiceBroker that does not exist. "+s,
+			errorNonexistentClusterServiceBrokerReason,
+			"The instance references a ClusterServiceBroker that does not exist. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServiceBrokerReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
 		return nil, nil, "", nil, err
 	}
 
-	authConfig, err := getAuthCredentialsFromServiceBroker(c.kubeClient, broker)
+	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Info(s)
@@ -309,7 +309,7 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
-	glog.V(4).Infof("Creating client for ServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
+	glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -318,11 +318,11 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1alpha1.Serv
 	return serviceClass, servicePlan, broker.Name, brokerClient, nil
 }
 
-// getServiceClassPlanAndServiceBrokerForServiceInstanceCredential is a sequence of operations that's
+// getServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential is a sequence of operations that's
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given ServiceInstance.
 // Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
-func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
+func (c *controller) getServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalServiceClassName)
@@ -353,22 +353,22 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
-	broker, err := c.brokerLister.Get(serviceClass.Spec.ServiceBrokerName)
+	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceBroker %q", binding.Namespace, binding.Name, serviceClass.Spec.ServiceBrokerName)
+		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ClusterServiceBroker %q", binding.Namespace, binding.Name, serviceClass.Spec.ClusterServiceBrokerName)
 		glog.Warning(s)
 		c.updateServiceInstanceCredentialCondition(
 			binding,
 			v1alpha1.ServiceInstanceCredentialConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonexistentServiceBrokerReason,
-			"The binding references a ServiceBroker that does not exist. "+s,
+			errorNonexistentClusterServiceBrokerReason,
+			"The binding references a ClusterServiceBroker that does not exist. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentServiceBrokerReason, s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
 		return nil, nil, "", nil, err
 	}
 
-	authConfig, err := getAuthCredentialsFromServiceBroker(c.kubeClient, broker)
+	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Warning(s)
@@ -385,7 +385,7 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
-	glog.V(4).Infof("Creating client for ServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
+	glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -395,10 +395,10 @@ func (c *controller) getServiceClassPlanAndServiceBrokerForServiceInstanceCreden
 }
 
 // Broker utility methods - move?
-// getAuthCredentialsFromServiceBroker returns the auth credentials, if any, or
+// getAuthCredentialsFromClusterServiceBroker returns the auth credentials, if any, or
 // returns an error. If the AuthInfo field is nil, empty values are
 // returned.
-func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1alpha1.ServiceBroker) (*osb.AuthConfig, error) {
+func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, broker *v1alpha1.ClusterServiceBroker) (*osb.AuthConfig, error) {
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
@@ -636,7 +636,7 @@ func NewControllerRef(owner metav1.Object, gvk schema.GroupVersionKind) *metav1.
 
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
 // to the specified Broker
-func NewClientConfigurationForBroker(broker *v1alpha1.ServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
+func NewClientConfigurationForBroker(broker *v1alpha1.ClusterServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
 	clientConfig := osb.DefaultClientConfiguration()
 	clientConfig.Name = broker.Name
 	clientConfig.URL = broker.Spec.URL

@@ -33,8 +33,8 @@ type ServicecatalogV1alpha1 struct {
 
 var _ servicecatalogv1alpha1.ServicecatalogV1alpha1Interface = &ServicecatalogV1alpha1{}
 
-func (c *ServicecatalogV1alpha1) ServiceBrokers() v1alpha1.ServiceBrokerInterface {
-	return c.ServicecatalogV1alpha1Interface.ServiceBrokers()
+func (c *ServicecatalogV1alpha1) ClusterServiceBrokers() v1alpha1.ClusterServiceBrokerInterface {
+	return c.ServicecatalogV1alpha1Interface.ClusterServiceBrokers()
 }
 
 func (c *ServicecatalogV1alpha1) ServiceClasses() v1alpha1.ServiceClassInterface {

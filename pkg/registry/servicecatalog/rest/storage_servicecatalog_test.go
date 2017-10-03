@@ -71,12 +71,12 @@ func TestV1Alpha1Storage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting v1alpha1 storage (%s)", err)
 	}
-	_, brokerStorageExists := storageMap["servicebrokers"]
+	_, brokerStorageExists := storageMap["clusterservicebrokers"]
 	if !brokerStorageExists {
 		t.Fatalf("no broker storage found")
 	}
 	// TODO: do stuff with broker storage
-	_, brokerStatusStorageExists := storageMap["servicebrokers/status"]
+	_, brokerStatusStorageExists := storageMap["clusterservicebrokers/status"]
 	if !brokerStatusStorageExists {
 		t.Fatalf("no service broker status storage found")
 	}

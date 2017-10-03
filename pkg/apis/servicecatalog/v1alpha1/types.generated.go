@@ -73,7 +73,7 @@ func init() {
 	}
 }
 
-func (x *ServiceBroker) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ClusterServiceBroker) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -216,7 +216,7 @@ func (x *ServiceBroker) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceBroker) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ClusterServiceBroker) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -246,7 +246,7 @@ func (x *ServiceBroker) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ClusterServiceBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -307,7 +307,7 @@ func (x *ServiceBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 			}
 		case "spec":
 			if r.TryDecodeAsNil() {
-				x.Spec = ServiceBrokerSpec{}
+				x.Spec = ClusterServiceBrokerSpec{}
 			} else {
 				yyv10 := &x.Spec
 				yyv10.CodecDecodeSelf(d)
@@ -326,7 +326,7 @@ func (x *ServiceBroker) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceBroker) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ClusterServiceBroker) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -412,7 +412,7 @@ func (x *ServiceBroker) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Spec = ServiceBrokerSpec{}
+		x.Spec = ClusterServiceBrokerSpec{}
 	} else {
 		yyv19 := &x.Spec
 		yyv19.CodecDecodeSelf(d)
@@ -450,7 +450,7 @@ func (x *ServiceBroker) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ClusterServiceBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -571,7 +571,7 @@ func (x *ServiceBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym15
 					if false {
 					} else {
-						h.encSliceServiceBroker(([]ServiceBroker)(x.Items), e)
+						h.encSliceClusterServiceBroker(([]ClusterServiceBroker)(x.Items), e)
 					}
 				}
 			} else {
@@ -585,7 +585,7 @@ func (x *ServiceBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym16
 					if false {
 					} else {
-						h.encSliceServiceBroker(([]ServiceBroker)(x.Items), e)
+						h.encSliceClusterServiceBroker(([]ClusterServiceBroker)(x.Items), e)
 					}
 				}
 			}
@@ -598,7 +598,7 @@ func (x *ServiceBrokerList) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceBrokerList) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ClusterServiceBrokerList) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -628,7 +628,7 @@ func (x *ServiceBrokerList) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ClusterServiceBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -696,7 +696,7 @@ func (x *ServiceBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) 
 				_ = yym11
 				if false {
 				} else {
-					h.decSliceServiceBroker((*[]ServiceBroker)(yyv10), d)
+					h.decSliceClusterServiceBroker((*[]ClusterServiceBroker)(yyv10), d)
 				}
 			}
 		default:
@@ -706,7 +706,7 @@ func (x *ServiceBrokerList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) 
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ClusterServiceBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -799,7 +799,7 @@ func (x *ServiceBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder
 		_ = yym20
 		if false {
 		} else {
-			h.decSliceServiceBroker((*[]ServiceBroker)(yyv19), d)
+			h.decSliceClusterServiceBroker((*[]ClusterServiceBroker)(yyv19), d)
 		}
 	}
 	for {
@@ -818,7 +818,7 @@ func (x *ServiceBrokerList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ClusterServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -1028,7 +1028,7 @@ func (x *ServiceBrokerSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceBrokerSpec) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ClusterServiceBrokerSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -1058,7 +1058,7 @@ func (x *ServiceBrokerSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ClusterServiceBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -1172,7 +1172,7 @@ func (x *ServiceBrokerSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) 
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceBrokerSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ClusterServiceBrokerSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -3519,17 +3519,17 @@ func (x *ServiceClassSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym4
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ServiceBrokerName))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ClusterServiceBrokerName))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("brokerName"))
+				r.EncodeString(codecSelferC_UTF81234, string("clusterServiceBrokerName"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym5 := z.EncBinary()
 				_ = yym5
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ServiceBrokerName))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ClusterServiceBrokerName))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -3793,11 +3793,11 @@ func (x *ServiceClassSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 		yys3 := string(yys3Slc)
 		z.DecSendContainerState(codecSelfer_containerMapValue1234)
 		switch yys3 {
-		case "brokerName":
+		case "clusterServiceBrokerName":
 			if r.TryDecodeAsNil() {
-				x.ServiceBrokerName = ""
+				x.ClusterServiceBrokerName = ""
 			} else {
-				yyv4 := &x.ServiceBrokerName
+				yyv4 := &x.ClusterServiceBrokerName
 				yym5 := z.DecBinary()
 				_ = yym5
 				if false {
@@ -3934,9 +3934,9 @@ func (x *ServiceClassSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder)
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.ServiceBrokerName = ""
+		x.ClusterServiceBrokerName = ""
 	} else {
-		yyv23 := &x.ServiceBrokerName
+		yyv23 := &x.ClusterServiceBrokerName
 		yym24 := z.DecBinary()
 		_ = yym24
 		if false {
@@ -4894,17 +4894,17 @@ func (x *ServicePlanSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym4
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ServiceBrokerName))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ClusterServiceBrokerName))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("serviceBrokerName"))
+				r.EncodeString(codecSelferC_UTF81234, string("clusterServiceBrokerName"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym5 := z.EncBinary()
 				_ = yym5
 				if false {
 				} else {
-					r.EncodeString(codecSelferC_UTF81234, string(x.ServiceBrokerName))
+					r.EncodeString(codecSelferC_UTF81234, string(x.ClusterServiceBrokerName))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -5246,11 +5246,11 @@ func (x *ServicePlanSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 		yys3 := string(yys3Slc)
 		z.DecSendContainerState(codecSelfer_containerMapValue1234)
 		switch yys3 {
-		case "serviceBrokerName":
+		case "clusterServiceBrokerName":
 			if r.TryDecodeAsNil() {
-				x.ServiceBrokerName = ""
+				x.ClusterServiceBrokerName = ""
 			} else {
-				yyv4 := &x.ServiceBrokerName
+				yyv4 := &x.ClusterServiceBrokerName
 				yym5 := z.DecBinary()
 				_ = yym5
 				if false {
@@ -5431,9 +5431,9 @@ func (x *ServicePlanSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) 
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.ServiceBrokerName = ""
+		x.ClusterServiceBrokerName = ""
 	} else {
-		yyv26 := &x.ServiceBrokerName
+		yyv26 := &x.ClusterServiceBrokerName
 		yym27 := z.DecBinary()
 		_ = yym27
 		if false {
@@ -11907,7 +11907,7 @@ func (x *SecretKeyReference) codecDecodeSelfFromArray(l int, d *codec1978.Decode
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) encSliceServiceBroker(v []ServiceBroker, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceClusterServiceBroker(v []ClusterServiceBroker, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -11920,7 +11920,7 @@ func (x codecSelfer1234) encSliceServiceBroker(v []ServiceBroker, e *codec1978.E
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceClusterServiceBroker(v *[]ClusterServiceBroker, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11931,7 +11931,7 @@ func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceBroker{}
+			yyv1 = []ClusterServiceBroker{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -11951,10 +11951,10 @@ func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceBroker, yyrl1)
+					yyv1 = make([]ClusterServiceBroker, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceBroker, yyrl1)
+				yyv1 = make([]ClusterServiceBroker, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -11969,7 +11969,7 @@ func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceBroker{}
+				yyv1[yyj1] = ClusterServiceBroker{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -11978,10 +11978,10 @@ func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceBroker{})
+				yyv1 = append(yyv1, ClusterServiceBroker{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceBroker{}
+					yyv1[yyj1] = ClusterServiceBroker{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -11995,13 +11995,13 @@ func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceBroker{}) // var yyz1 ServiceBroker
+				yyv1 = append(yyv1, ClusterServiceBroker{}) // var yyz1 ClusterServiceBroker
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceBroker{}
+					yyv1[yyj1] = ClusterServiceBroker{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -12016,7 +12016,7 @@ func (x codecSelfer1234) decSliceServiceBroker(v *[]ServiceBroker, d *codec1978.
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceBroker{}
+			yyv1 = []ClusterServiceBroker{}
 			yyc1 = true
 		}
 	}

@@ -41,7 +41,7 @@ var guidRegexp = regexp.MustCompile("^" + guidFmt + "$")
 // GUIDs, so we will retain that form until there is another provider
 // that desires a different form.  In the case of the OSBAPI we
 // generate GUIDs for ServiceInstances and ServiceInstanceCredentials, but for ServiceClass and
-// ServicePlan, they are part of the payload returned from the ServiceBroker.
+// ServicePlan, they are part of the payload returned from the ClusterServiceBroker.
 func validateExternalID(value string) []string {
 	var errs []string
 	if len(value) > guidMaxLength {
@@ -75,8 +75,8 @@ func internalValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList
 func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if "" == spec.ServiceBrokerName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("brokerName"), "brokerName is required"))
+	if "" == spec.ClusterServiceBrokerName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceBrokerName"), "clusterServiceBrokerName is required"))
 	}
 
 	if "" == spec.ExternalID {

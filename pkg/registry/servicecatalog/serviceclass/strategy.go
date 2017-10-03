@@ -101,7 +101,7 @@ func (serviceclassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 		glog.Fatal("received a non-serviceclass object to update from")
 	}
 	// copy all fields individually?
-	newServiceclass.Spec.ServiceBrokerName = oldServiceclass.Spec.ServiceBrokerName
+	newServiceclass.Spec.ClusterServiceBrokerName = oldServiceclass.Spec.ClusterServiceBrokerName
 }
 
 func (serviceclassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

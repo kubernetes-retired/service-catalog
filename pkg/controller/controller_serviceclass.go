@@ -36,7 +36,7 @@ func (c *controller) serviceClassAdd(obj interface{}) {
 // reconcileServiceClassKey reconciles a ServiceClass due to controller resync
 // or an event on the ServiceClass.  Note that this is NOT the main
 // reconciliation loop for ServiceClass. ServiceClasses are primarily
-// reconciled in a separate flow when a ServiceBroker is reconciled.
+// reconciled in a separate flow when a ClusterServiceBroker is reconciled.
 func (c *controller) reconcileServiceClassKey(key string) error {
 	// currently, this is a no-op.  In the future, we'll maintain status
 	// information here.

@@ -34,7 +34,7 @@ func Install(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *r
 			GroupName:                  servicecatalog.GroupName,
 			VersionPreferenceOrder:     []string{v1alpha1.SchemeGroupVersion.Version},
 			ImportPrefix:               "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog",
-			RootScopedKinds:            sets.NewString("ServiceBroker", "ServiceClass", "ServicePlan"),
+			RootScopedKinds:            sets.NewString("ClusterServiceBroker", "ServiceClass", "ServicePlan"),
 			AddInternalObjectsToScheme: servicecatalog.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{

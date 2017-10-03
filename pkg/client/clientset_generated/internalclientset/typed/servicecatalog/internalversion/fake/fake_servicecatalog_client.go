@@ -26,8 +26,8 @@ type FakeServicecatalog struct {
 	*testing.Fake
 }
 
-func (c *FakeServicecatalog) ServiceBrokers() internalversion.ServiceBrokerInterface {
-	return &FakeServiceBrokers{c}
+func (c *FakeServicecatalog) ClusterServiceBrokers() internalversion.ClusterServiceBrokerInterface {
+	return &FakeClusterServiceBrokers{c}
 }
 
 func (c *FakeServicecatalog) ServiceClasses() internalversion.ServiceClassInterface {

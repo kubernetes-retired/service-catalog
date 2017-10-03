@@ -31,10 +31,10 @@ func validServicePlan() *servicecatalog.ServicePlan {
 			Name: "test-plan",
 		},
 		Spec: servicecatalog.ServicePlanSpec{
-			ServiceBrokerName: "test-broker",
-			ExternalName:      "test-plan",
-			ExternalID:        "40d-0983-1b89",
-			Description:       "plan description",
+			ClusterServiceBrokerName: "test-broker",
+			ExternalName:             "test-plan",
+			ExternalID:               "40d-0983-1b89",
+			Description:              "plan description",
 			ServiceClassRef: v1.LocalObjectReference{
 				Name: "test-service-class",
 			},
@@ -81,10 +81,10 @@ func TestValidateServicePlan(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "missing serviceBrokerName",
+			name: "missing clusterServiceBrokerName",
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
-				s.Spec.ServiceBrokerName = ""
+				s.Spec.ClusterServiceBrokerName = ""
 				return s
 			}(),
 			valid: false,

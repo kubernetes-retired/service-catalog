@@ -66,7 +66,7 @@ const (
 	instanceGUID                = "IGUID"
 	bindingGUID                 = "BGUID"
 
-	testServiceBrokerName                   = "test-broker"
+	testClusterServiceBrokerName            = "test-broker"
 	testServiceClassName                    = "test-serviceclass"
 	testNonbindableServiceClassName         = "test-unbindable-serviceclass"
 	testServicePlanName                     = "test-plan"
@@ -99,7 +99,7 @@ const testCatalog = `{
         "blurb": "Add a blurb here",
         "longDescription": "A long time ago, in a galaxy far far away..."
       },
-      "displayName": "The Fake ServiceBroker"
+      "displayName": "The Fake ClusterServiceBroker"
     },
     "dashboard_client": {
       "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
@@ -350,10 +350,10 @@ var testOriginatingIdentity = &osb.AlphaOriginatingIdentity{
 }
 
 // broker used in most of the tests that need a broker
-func getTestServiceBroker() *v1alpha1.ServiceBroker {
-	return &v1alpha1.ServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceBrokerName},
-		Spec: v1alpha1.ServiceBrokerSpec{
+func getTestClusterServiceBroker() *v1alpha1.ClusterServiceBroker {
+	return &v1alpha1.ClusterServiceBroker{
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL:            "https://example.com",
 			RelistBehavior: v1alpha1.ServiceBrokerRelistBehaviorDuration,
 			RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
@@ -361,8 +361,8 @@ func getTestServiceBroker() *v1alpha1.ServiceBroker {
 	}
 }
 
-func getTestServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ServiceBroker {
-	broker := getTestServiceBroker()
+func getTestClusterServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ClusterServiceBroker {
+	broker := getTestClusterServiceBroker()
 	broker.Status = v1alpha1.ServiceBrokerStatus{
 		Conditions: []v1alpha1.ServiceBrokerCondition{{
 			Type:               v1alpha1.ServiceBrokerConditionReady,
@@ -374,22 +374,22 @@ func getTestServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.S
 	return broker
 }
 
-func getTestServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1alpha1.ServiceBroker {
-	broker := getTestServiceBroker()
+func getTestClusterServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1alpha1.ClusterServiceBroker {
+	broker := getTestClusterServiceBroker()
 	broker.Spec.AuthInfo = authInfo
 	return broker
 }
 
-// a bindable service class wired to the result of getTestServiceBroker()
+// a bindable service class wired to the result of getTestClusterServiceBroker()
 func getTestServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: serviceClassGUID},
 		Spec: v1alpha1.ServiceClassSpec{
-			ServiceBrokerName: testServiceBrokerName,
-			Description:       "a test service",
-			ExternalName:      testServiceClassName,
-			ExternalID:        serviceClassGUID,
-			Bindable:          true,
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			Description:              "a test service",
+			ExternalName:             testServiceClassName,
+			ExternalID:               serviceClassGUID,
+			Bindable:                 true,
 		},
 	}
 }
@@ -398,10 +398,10 @@ func getTestServicePlan() *v1alpha1.ServicePlan {
 	return &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
 		Spec: v1alpha1.ServicePlanSpec{
-			ServiceBrokerName: testServiceBrokerName,
-			ExternalID:        planGUID,
-			ExternalName:      testServicePlanName,
-			Bindable:          truePtr(),
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			ExternalID:               planGUID,
+			ExternalName:             testServicePlanName,
+			Bindable:                 truePtr(),
 			ServiceClassRef: v1.LocalObjectReference{
 				Name: serviceClassGUID,
 			},
@@ -423,15 +423,15 @@ func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
 	}
 }
 
-// an unbindable service class wired to the result of getTestServiceBroker()
+// an unbindable service class wired to the result of getTestClusterServiceBroker()
 func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
 	return &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: nonbindableServiceClassGUID},
 		Spec: v1alpha1.ServiceClassSpec{
-			ServiceBrokerName: testServiceBrokerName,
-			ExternalName:      testNonbindableServiceClassName,
-			ExternalID:        nonbindableServiceClassGUID,
-			Bindable:          false,
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			ExternalName:             testNonbindableServiceClassName,
+			ExternalID:               nonbindableServiceClassGUID,
+			Bindable:                 false,
 		},
 	}
 }
@@ -1049,7 +1049,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 
 }
 
-func TestIsServiceBrokerReady(t *testing.T) {
+func TestIsClusterServiceBrokerReady(t *testing.T) {
 	cases := []struct {
 		name  string
 		input *v1alpha1.ServiceInstance
@@ -1181,7 +1181,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	testController, err := NewController(
 		fakeKubeClient,
 		fakeCatalogClient.ServicecatalogV1alpha1(),
-		serviceCatalogSharedInformers.ServiceBrokers(),
+		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
@@ -1316,8 +1316,8 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	var resource string
 
 	switch obj.(type) {
-	case *v1alpha1.ServiceBroker:
-		resource = "servicebrokers"
+	case *v1alpha1.ClusterServiceBroker:
+		resource = "clusterservicebrokers"
 	case *v1alpha1.ServiceClass:
 		resource = "serviceclasses"
 	case *v1alpha1.ServicePlan:
@@ -1418,7 +1418,7 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	}
 
 	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
-		f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
+		f(t, "%vUnexpected name: expected %q, got %q", logContext, e, a)
 		return nil, false
 	}
 
@@ -1433,18 +1433,18 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	return fakeRtObject, true
 }
 
-func assertServiceBrokerReadyTrue(t *testing.T, obj runtime.Object) {
-	assertServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue)
+func assertClusterServiceBrokerReadyTrue(t *testing.T, obj runtime.Object) {
+	assertClusterServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue)
 }
 
-func assertServiceBrokerReadyFalse(t *testing.T, obj runtime.Object) {
-	assertServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse)
+func assertClusterServiceBrokerReadyFalse(t *testing.T, obj runtime.Object) {
+	assertClusterServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse)
 }
 
-func assertServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceBrokerConditionType, status v1alpha1.ConditionStatus) {
-	broker, ok := obj.(*v1alpha1.ServiceBroker)
+func assertClusterServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceBrokerConditionType, status v1alpha1.ConditionStatus) {
+	broker, ok := obj.(*v1alpha1.ClusterServiceBroker)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBroker", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ClusterServiceBroker", obj)
 	}
 
 	for _, condition := range broker.Status.Conditions {
@@ -1454,10 +1454,10 @@ func assertServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionTyp
 	}
 }
 
-func assertServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
-	broker, ok := obj.(*v1alpha1.ServiceBroker)
+func assertClusterServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+	broker, ok := obj.(*v1alpha1.ClusterServiceBroker)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBroker", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ClusterServiceBroker", obj)
 	}
 
 	if e, a := isOperationStartTimeSet, broker.Status.OperationStartTime != nil; e != a {
@@ -2264,8 +2264,8 @@ func testCatalogFinalizerExists(t *testing.T, name string, f failfFunc, obj runt
 	return true
 }
 
-func assertNumberOfServiceBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
-	testNumberOfServiceBrokerActions(t, "" /* name */, fatalf, actions, number)
+func assertNumberOfClusterServiceBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
+	testNumberOfClusterServiceBrokerActions(t, "" /* name */, fatalf, actions, number)
 }
 
 // assertListRestrictions compares expected Fields / Labels on a list options.
@@ -2278,11 +2278,11 @@ func assertListRestrictions(t *testing.T, e, a clientgotesting.ListRestrictions)
 	}
 }
 
-func expectNumberOfServiceBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {
-	return testNumberOfServiceBrokerActions(t, name, errorf, actions, number)
+func expectNumberOfClusterServiceBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {
+	return testNumberOfClusterServiceBrokerActions(t, name, errorf, actions, number)
 }
 
-func testNumberOfServiceBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
+func testNumberOfClusterServiceBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "

@@ -18,9 +18,9 @@ limitations under the License.
 
 package v1alpha1
 
-// ServiceBrokerListerExpansion allows custom methods to be added to
-// ServiceBrokerLister.
-type ServiceBrokerListerExpansion interface{}
+// ClusterServiceBrokerListerExpansion allows custom methods to be added to
+// ClusterServiceBrokerLister.
+type ClusterServiceBrokerListerExpansion interface{}
 
 // ServiceClassListerExpansion allows custom methods to be added to
 // ServiceClassLister.

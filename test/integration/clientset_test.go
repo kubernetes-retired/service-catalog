@@ -87,7 +87,7 @@ func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceBroker{}
+				return &servicecatalog.ClusterServiceBroker{}
 			})
 			defer shutdownServer()
 			if err := testGroupVersion(client); err != nil {
@@ -173,7 +173,7 @@ func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceBroker{}
+				return &servicecatalog.ClusterServiceBroker{}
 			})
 			defer shutdownServer()
 			if err := testNoName(client); err != nil {
@@ -194,7 +194,7 @@ func testNoName(client servicecatalogclient.Interface) error {
 
 	ns := "namespace"
 
-	if br, e := scClient.ServiceBrokers().Create(&v1alpha1.ServiceBroker{}); nil == e {
+	if br, e := scClient.ClusterServiceBrokers().Create(&v1alpha1.ClusterServiceBroker{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", br.Name)
 	}
 	if sc, e := scClient.ServiceClasses().Create(&v1alpha1.ServiceClass{}); nil == e {
@@ -218,7 +218,7 @@ func TestBrokerClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceBroker{}
+				return &servicecatalog.ClusterServiceBroker{}
 			})
 			defer shutdownServer()
 			if err := testBrokerClient(sType, client, name); err != nil {
@@ -234,10 +234,10 @@ func TestBrokerClient(t *testing.T) {
 }
 
 func testBrokerClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	brokerClient := client.Servicecatalog().ServiceBrokers()
-	broker := &v1alpha1.ServiceBroker{
+	brokerClient := client.Servicecatalog().ClusterServiceBrokers()
+	broker := &v1alpha1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ServiceBrokerSpec{
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL: "https://example.com",
 		},
 	}
@@ -415,11 +415,11 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClass := &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServiceClassSpec{
-			ServiceBrokerName: "test-broker",
-			Bindable:          true,
-			ExternalName:      name,
-			ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-			Description:       "test description",
+			ClusterServiceBrokerName: "test-broker",
+			Bindable:                 true,
+			ExternalName:             name,
+			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:              "test description",
 		},
 	}
 
@@ -499,11 +499,11 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	serviceClass2 := &v1alpha1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: sc2Name},
 		Spec: v1alpha1.ServiceClassSpec{
-			ServiceBrokerName: "test-broker",
-			Bindable:          true,
-			ExternalName:      sc2Name,
-			ExternalID:        sc2ID,
-			Description:       "test description 2",
+			ClusterServiceBrokerName: "test-broker",
+			Bindable:                 true,
+			ExternalName:             sc2Name,
+			ExternalID:               sc2ID,
+			Description:              "test description 2",
 		},
 	}
 	_, err = serviceClassClient.Create(serviceClass2)
@@ -603,11 +603,11 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	servicePlan := &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServicePlanSpec{
-			ServiceBrokerName: "test-broker",
-			Bindable:          &bindable,
-			ExternalName:      name,
-			ExternalID:        "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-			Description:       "test description",
+			ClusterServiceBrokerName: "test-broker",
+			Bindable:                 &bindable,
+			ExternalName:             name,
+			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+			Description:              "test description",
 			ServiceClassRef: v1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
@@ -691,11 +691,11 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	servicePlan2 := &v1alpha1.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
 		Spec: v1alpha1.ServicePlanSpec{
-			ServiceBrokerName: "test-broker",
-			Bindable:          &bindable,
-			ExternalName:      sp2Name,
-			ExternalID:        sp2ID,
-			Description:       "test description 2",
+			ClusterServiceBrokerName: "test-broker",
+			Bindable:                 &bindable,
+			ExternalName:             sp2Name,
+			ExternalID:               sp2ID,
+			Description:              "test description 2",
 			ServiceClassRef: v1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
@@ -746,12 +746,12 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("should have zero ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 
-	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.serviceBrokerName=" + "test-broker"})
+	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServiceBrokerName=" + "test-broker"})
 	if err != nil {
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 2 != len(servicePlans.Items) {
-		return fmt.Errorf("should have zero ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+		return fmt.Errorf("should have two ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 
 	err = servicePlanClient.Delete(name, &metav1.DeleteOptions{})

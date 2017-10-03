@@ -70,23 +70,23 @@ func roundTrip(t *testing.T, obj runtime.Object) runtime.Object {
 	return obj3
 }
 
-func TestSetDefaultServiceBroker(t *testing.T) {
+func TestSetDefaultClusterServiceBroker(t *testing.T) {
 	cases := []struct {
 		name     string
-		broker   *versioned.ServiceBroker
+		broker   *versioned.ClusterServiceBroker
 		behavior versioned.ServiceBrokerRelistBehavior
 		duration *metav1.Duration
 	}{
 		{
 			name:     "neither duration or behavior set",
-			broker:   &versioned.ServiceBroker{},
+			broker:   &versioned.ClusterServiceBroker{},
 			behavior: versioned.ServiceBrokerRelistBehaviorDuration,
 			duration: &metav1.Duration{Duration: 15 * time.Minute},
 		},
 		{
 			name: "behavior set to manual",
-			broker: func() *versioned.ServiceBroker {
-				b := &versioned.ServiceBroker{}
+			broker: func() *versioned.ClusterServiceBroker {
+				b := &versioned.ClusterServiceBroker{}
 				b.Spec.RelistBehavior = versioned.ServiceBrokerRelistBehaviorManual
 				return b
 			}(),
@@ -95,8 +95,8 @@ func TestSetDefaultServiceBroker(t *testing.T) {
 		},
 		{
 			name: "behavior set to duration but no duration provided",
-			broker: func() *versioned.ServiceBroker {
-				b := &versioned.ServiceBroker{}
+			broker: func() *versioned.ClusterServiceBroker {
+				b := &versioned.ClusterServiceBroker{}
 				b.Spec.RelistBehavior = versioned.ServiceBrokerRelistBehaviorDuration
 				return b
 			}(),
@@ -107,7 +107,7 @@ func TestSetDefaultServiceBroker(t *testing.T) {
 
 	for _, tc := range cases {
 		o := roundTrip(t, runtime.Object(tc.broker))
-		ab := o.(*versioned.ServiceBroker)
+		ab := o.(*versioned.ClusterServiceBroker)
 		actualSpec := ab.Spec
 
 		if tc.behavior != actualSpec.RelistBehavior {
