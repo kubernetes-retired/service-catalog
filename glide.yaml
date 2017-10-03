@@ -71,13 +71,13 @@ import:
 - package: github.com/kubernetes/repo-infra
   version: 4c4ae2e2e6994e887da16f3c31f495e10062b810
 - package: k8s.io/kubernetes
-  version: 4bc5e7f9a6c25dc4c03d4d656f2cefd21540e28c # kubernetes 1.7.6
+  version: ebb8d6e0fadfc95f3d64ccecc36c8ed2ac9224ef # client-go origin version
 - package: k8s.io/client-go
-  version: 031a3824a2d20f74ef80e43724a189799f1a1c42 # in sync with kubernetes 1.7.5-beta.0 // TODO update once 1.7.6 is synced
+  version: e356aa2e77ab4a5914c216c12ba14cce25a25ab0 # in sync with kubernetes 1.7.0
 - package: k8s.io/apimachinery
-  version: 8ab5f3d8a330c2e9baaf84e39042db8d49034ae2 # release-1.7 branch
+  version: abe34e4f5b4413c282a83011892cbeea5b32223b # wanted by client-go; release-1.7 branch
 - package: k8s.io/apiserver
-  version: a7f02eb8e3920e446965036c9610ec52a7ede92f # release-1.7 branch
+  version: ab57ed5a72c3b67058f665d660e23bae18339fc2 # June 23, similar to client-go. No 1.7 branch yet BUT this version is perfectly compatible it seems
 - package: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:

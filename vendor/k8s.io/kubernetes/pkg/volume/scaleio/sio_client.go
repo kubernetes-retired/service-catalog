@@ -45,7 +45,7 @@ type sioInterface interface {
 	FindVolume(name string) (*siotypes.Volume, error)
 	Volume(sioVolumeID) (*siotypes.Volume, error)
 	CreateVolume(name string, sizeGB int64) (*siotypes.Volume, error)
-	AttachVolume(sioVolumeID, bool) error
+	AttachVolume(sioVolumeID) error
 	DetachVolume(sioVolumeID) error
 	DeleteVolume(sioVolumeID) error
 	IID() (string, error)
@@ -217,9 +217,8 @@ func (c *sioClient) CreateVolume(name string, sizeGB int64) (*siotypes.Volume, e
 	return c.Volume(sioVolumeID(createResponse.ID))
 }
 
-// AttachVolume maps the scaleio volume to an sdc node.  If the multipleMappings flag
-// is true, ScaleIO will allow other SDC to map to that volume.
-func (c *sioClient) AttachVolume(id sioVolumeID, multipleMappings bool) error {
+// AttachVolume maps the scaleio volume to an sdc node.
+func (c *sioClient) AttachVolume(id sioVolumeID) error {
 	if err := c.init(); err != nil {
 		glog.Error(log("failed to init'd client in attach volume: %v", err))
 		return err
@@ -233,7 +232,7 @@ func (c *sioClient) AttachVolume(id sioVolumeID, multipleMappings bool) error {
 
 	params := &siotypes.MapVolumeSdcParam{
 		SdcID: iid,
-		AllowMultipleMappings: strconv.FormatBool(multipleMappings),
+		AllowMultipleMappings: "false",
 		AllSdcs:               "",
 	}
 	volClient := sio.NewVolume(c.client)

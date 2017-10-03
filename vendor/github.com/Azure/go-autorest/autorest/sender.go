@@ -97,7 +97,7 @@ func DoCloseIfError() SendDecorator {
 		return SenderFunc(func(r *http.Request) (*http.Response, error) {
 			resp, err := s.Do(r)
 			if err != nil {
-				Respond(resp, ByDiscardingBody(), ByClosing())
+				Respond(resp, ByClosing())
 			}
 			return resp, err
 		})
@@ -156,7 +156,6 @@ func DoPollForStatusCodes(duration time.Duration, delay time.Duration, codes ...
 
 				for err == nil && ResponseHasStatusCode(resp, codes...) {
 					Respond(resp,
-						ByDiscardingBody(),
 						ByClosing())
 					resp, err = SendWithSender(s, r,
 						AfterDelay(GetRetryAfter(resp, delay)))

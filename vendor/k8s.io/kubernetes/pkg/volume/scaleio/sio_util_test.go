@@ -115,10 +115,10 @@ func TestUtilApplyConfigDefaults(t *testing.T) {
 	if data[confKey.system] != "sio" {
 		t.Error("Unexpected system value")
 	}
-	if data[confKey.protectionDomain] != "" {
+	if data[confKey.protectionDomain] != "default" {
 		t.Error("Unexpected protection domain value")
 	}
-	if data[confKey.storagePool] != "" {
+	if data[confKey.storagePool] != "default" {
 		t.Error("Unexpected storage pool value")
 	}
 	if data[confKey.volumeName] != "sio-vol" {

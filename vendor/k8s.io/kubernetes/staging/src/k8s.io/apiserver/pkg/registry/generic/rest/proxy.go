@@ -64,20 +64,11 @@ type ErrorResponder interface {
 	Error(err error)
 }
 
-// normalizeLocation returns the result of parsing the full URL, with scheme set to http if missing
-func normalizeLocation(location *url.URL) *url.URL {
-	normalized, _ := url.Parse(location.String())
-	if len(normalized.Scheme) == 0 {
-		normalized.Scheme = "http"
-	}
-	return normalized
-}
-
 // NewUpgradeAwareProxyHandler creates a new proxy handler with a default flush interval. Responder is required for returning
 // errors to the caller.
 func NewUpgradeAwareProxyHandler(location *url.URL, transport http.RoundTripper, wrapTransport, upgradeRequired bool, responder ErrorResponder) *UpgradeAwareProxyHandler {
 	return &UpgradeAwareProxyHandler{
-		Location:        normalizeLocation(location),
+		Location:        location,
 		Transport:       transport,
 		WrapTransport:   wrapTransport,
 		UpgradeRequired: upgradeRequired,
@@ -88,6 +79,9 @@ func NewUpgradeAwareProxyHandler(location *url.URL, transport http.RoundTripper,
 
 // ServeHTTP handles the proxy request
 func (h *UpgradeAwareProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if len(h.Location.Scheme) == 0 {
+		h.Location.Scheme = "http"
+	}
 	if h.tryUpgrade(w, req) {
 		return
 	}

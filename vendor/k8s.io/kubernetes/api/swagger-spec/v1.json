@@ -9271,8 +9271,8 @@
      {
       "type": "v1.Binding",
       "method": "POST",
-      "summary": "create binding of a Pod",
-      "nickname": "createNamespacedPodBinding",
+      "summary": "create binding of a Binding",
+      "nickname": "createNamespacedBindingBinding",
       "parameters": [
        {
         "type": "string",
@@ -9332,8 +9332,8 @@
      {
       "type": "v1beta1.Eviction",
       "method": "POST",
-      "summary": "create eviction of a Pod",
-      "nickname": "createNamespacedPodEviction",
+      "summary": "create eviction of an Eviction",
+      "nickname": "createNamespacedEvictionEviction",
       "parameters": [
        {
         "type": "string",
@@ -12234,8 +12234,8 @@
      {
       "type": "v1.Scale",
       "method": "GET",
-      "summary": "read scale of the specified ReplicationController",
-      "nickname": "readNamespacedReplicationControllerScale",
+      "summary": "read scale of the specified Scale",
+      "nickname": "readNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -12281,8 +12281,8 @@
      {
       "type": "v1.Scale",
       "method": "PUT",
-      "summary": "replace scale of the specified ReplicationController",
-      "nickname": "replaceNamespacedReplicationControllerScale",
+      "summary": "replace scale of the specified Scale",
+      "nickname": "replaceNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",
@@ -12336,8 +12336,8 @@
      {
       "type": "v1.Scale",
       "method": "PATCH",
-      "summary": "partially update scale of the specified ReplicationController",
-      "nickname": "patchNamespacedReplicationControllerScale",
+      "summary": "partially update scale of the specified Scale",
+      "nickname": "patchNamespacedScaleScale",
       "parameters": [
        {
         "type": "string",

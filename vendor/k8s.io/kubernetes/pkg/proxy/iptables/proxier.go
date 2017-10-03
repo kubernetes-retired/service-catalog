@@ -250,17 +250,6 @@ type serviceChangeMap struct {
 	items map[types.NamespacedName]*serviceChange
 }
 
-type updateEndpointMapResult struct {
-	hcEndpoints       map[types.NamespacedName]int
-	staleEndpoints    map[endpointServicePair]bool
-	staleServiceNames map[proxy.ServicePortName]bool
-}
-
-type updateServiceMapResult struct {
-	hcServices    map[types.NamespacedName]uint16
-	staleServices sets.String
-}
-
 type proxyServiceMap map[proxy.ServicePortName]*serviceInfo
 type proxyEndpointsMap map[proxy.ServicePortName][]*endpointsInfo
 
@@ -705,29 +694,29 @@ func shouldSkipService(svcName types.NamespacedName, service *api.Service) bool 
 // <changes> map is cleared after applying them.
 func updateServiceMap(
 	serviceMap proxyServiceMap,
-	changes *serviceChangeMap) (result updateServiceMapResult) {
-	result.staleServices = sets.NewString()
+	changes *serviceChangeMap) (hcServices map[types.NamespacedName]uint16, staleServices sets.String) {
+	staleServices = sets.NewString()
 
 	func() {
 		changes.lock.Lock()
 		defer changes.lock.Unlock()
 		for _, change := range changes.items {
 			existingPorts := serviceMap.merge(change.current)
-			serviceMap.unmerge(change.previous, existingPorts, result.staleServices)
+			serviceMap.unmerge(change.previous, existingPorts, staleServices)
 		}
 		changes.items = make(map[types.NamespacedName]*serviceChange)
 	}()
 
 	// TODO: If this will appear to be computationally expensive, consider
 	// computing this incrementally similarly to serviceMap.
-	result.hcServices = make(map[types.NamespacedName]uint16)
+	hcServices = make(map[types.NamespacedName]uint16)
 	for svcPortName, info := range serviceMap {
 		if info.healthCheckNodePort != 0 {
-			result.hcServices[svcPortName.NamespacedName] = uint16(info.healthCheckNodePort)
+			hcServices[svcPortName.NamespacedName] = uint16(info.healthCheckNodePort)
 		}
 	}
 
-	return result
+	return hcServices, staleServices
 }
 
 func (proxier *Proxier) OnEndpointsAdd(endpoints *api.Endpoints) {
@@ -766,9 +755,8 @@ func (proxier *Proxier) OnEndpointsSynced() {
 func updateEndpointsMap(
 	endpointsMap proxyEndpointsMap,
 	changes *endpointsChangeMap,
-	hostname string) (result updateEndpointMapResult) {
-	result.staleEndpoints = make(map[endpointServicePair]bool)
-	result.staleServiceNames = make(map[proxy.ServicePortName]bool)
+	hostname string) (hcEndpoints map[types.NamespacedName]int, staleSet map[endpointServicePair]bool) {
+	staleSet = make(map[endpointServicePair]bool)
 
 	func() {
 		changes.lock.Lock()
@@ -776,7 +764,7 @@ func updateEndpointsMap(
 		for _, change := range changes.items {
 			endpointsMap.unmerge(change.previous)
 			endpointsMap.merge(change.current)
-			detectStaleConnections(change.previous, change.current, result.staleEndpoints, result.staleServiceNames)
+			detectStaleConnections(change.previous, change.current, staleSet)
 		}
 		changes.items = make(map[types.NamespacedName]*endpointsChange)
 	}()
@@ -787,17 +775,18 @@ func updateEndpointsMap(
 
 	// TODO: If this will appear to be computationally expensive, consider
 	// computing this incrementally similarly to endpointsMap.
-	result.hcEndpoints = make(map[types.NamespacedName]int)
+	hcEndpoints = make(map[types.NamespacedName]int)
 	localIPs := getLocalIPs(endpointsMap)
 	for nsn, ips := range localIPs {
-		result.hcEndpoints[nsn] = len(ips)
+		hcEndpoints[nsn] = len(ips)
 	}
 
-	return result
+	return hcEndpoints, staleSet
 }
 
-// <staleEndpoints> and <staleServices> are modified by this function with detected stale connections.
-func detectStaleConnections(oldEndpointsMap, newEndpointsMap proxyEndpointsMap, staleEndpoints map[endpointServicePair]bool, staleServiceNames map[proxy.ServicePortName]bool) {
+// <staleEndpoints> are modified by this function with detected stale
+// connections.
+func detectStaleConnections(oldEndpointsMap, newEndpointsMap proxyEndpointsMap, staleEndpoints map[endpointServicePair]bool) {
 	for svcPortName, epList := range oldEndpointsMap {
 		for _, ep := range epList {
 			stale := true
@@ -811,13 +800,6 @@ func detectStaleConnections(oldEndpointsMap, newEndpointsMap proxyEndpointsMap, 
 				glog.V(4).Infof("Stale endpoint %v -> %v", svcPortName, ep.endpoint)
 				staleEndpoints[endpointServicePair{endpoint: ep.endpoint, servicePortName: svcPortName}] = true
 			}
-		}
-	}
-
-	for svcPortName, epList := range newEndpointsMap {
-		// For udp service, if its backend changes from 0 to non-0. There may exist a conntrack entry that could blackhole traffic to the service.
-		if len(epList) > 0 && len(oldEndpointsMap[svcPortName]) == 0 {
-			staleServiceNames[svcPortName] = true
 		}
 	}
 }
@@ -1001,19 +983,10 @@ func (proxier *Proxier) syncProxyRules() {
 	// We assume that if this was called, we really want to sync them,
 	// even if nothing changed in the meantime. In other words, callers are
 	// responsible for detecting no-op changes and not calling this function.
-	serviceUpdateResult := updateServiceMap(
+	hcServices, staleServices := updateServiceMap(
 		proxier.serviceMap, &proxier.serviceChanges)
-	endpointUpdateResult := updateEndpointsMap(
+	hcEndpoints, staleEndpoints := updateEndpointsMap(
 		proxier.endpointsMap, &proxier.endpointsChanges, proxier.hostname)
-
-	staleServices := serviceUpdateResult.staleServices
-	// merge stale services gathered from updateEndpointsMap
-	for svcPortName := range endpointUpdateResult.staleServiceNames {
-		if svcInfo, ok := proxier.serviceMap[svcPortName]; ok && svcInfo != nil && svcInfo.protocol == api.ProtocolUDP {
-			glog.V(2).Infof("Stale udp service %v -> %s", svcPortName, svcInfo.clusterIP.String())
-			staleServices.Insert(svcInfo.clusterIP.String())
-		}
-	}
 
 	glog.V(3).Infof("Syncing iptables rules")
 
@@ -1621,17 +1594,17 @@ func (proxier *Proxier) syncProxyRules() {
 	// Update healthchecks.  The endpoints list might include services that are
 	// not "OnlyLocal", but the services list will not, and the healthChecker
 	// will just drop those endpoints.
-	if err := proxier.healthChecker.SyncServices(serviceUpdateResult.hcServices); err != nil {
+	if err := proxier.healthChecker.SyncServices(hcServices); err != nil {
 		glog.Errorf("Error syncing healtcheck services: %v", err)
 	}
-	if err := proxier.healthChecker.SyncEndpoints(endpointUpdateResult.hcEndpoints); err != nil {
+	if err := proxier.healthChecker.SyncEndpoints(hcEndpoints); err != nil {
 		glog.Errorf("Error syncing healthcheck endoints: %v", err)
 	}
 
 	// Finish housekeeping.
 	// TODO: these and clearUDPConntrackForPort() could be made more consistent.
 	utilproxy.DeleteServiceConnections(proxier.exec, staleServices.List())
-	proxier.deleteEndpointConnections(endpointUpdateResult.staleEndpoints)
+	proxier.deleteEndpointConnections(staleEndpoints)
 }
 
 // Clear UDP conntrack for port or all conntrack entries when port equal zero.

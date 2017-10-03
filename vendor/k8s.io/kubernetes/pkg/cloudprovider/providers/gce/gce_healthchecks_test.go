@@ -27,9 +27,8 @@ func TestIsAtLeastMinNodesHealthCheckVersion(t *testing.T) {
 		version string
 		expect  bool
 	}{
-		{"v1.7.3", true},
-		{"v1.7.2", true},
-		{"v1.7.2-alpha.2.597+276d289b90d322", true},
+		{"v1.7.1", true},
+		{"v1.7.0-alpha.2.597+276d289b90d322", true},
 		{"v1.6.0-beta.3.472+831q821c907t31a", false},
 		{"v1.5.2", false},
 	}
@@ -53,14 +52,14 @@ func TestSupportsNodesHealthCheck(t *testing.T) {
 				{
 					Status: v1.NodeStatus{
 						NodeInfo: v1.NodeSystemInfo{
-							KubeProxyVersion: "v1.7.2",
+							KubeProxyVersion: "v1.7.1",
 						},
 					},
 				},
 				{
 					Status: v1.NodeStatus{
 						NodeInfo: v1.NodeSystemInfo{
-							KubeProxyVersion: "v1.7.2-alpha.2.597+276d289b90d322",
+							KubeProxyVersion: "v1.7.0-alpha.2.597+276d289b90d322",
 						},
 					},
 				},
@@ -93,14 +92,14 @@ func TestSupportsNodesHealthCheck(t *testing.T) {
 				{
 					Status: v1.NodeStatus{
 						NodeInfo: v1.NodeSystemInfo{
-							KubeProxyVersion: "v1.7.3",
+							KubeProxyVersion: "v1.7.1",
 						},
 					},
 				},
 				{
 					Status: v1.NodeStatus{
 						NodeInfo: v1.NodeSystemInfo{
-							KubeProxyVersion: "v1.7.2-alpha.2.597+276d289b90d322",
+							KubeProxyVersion: "v1.7.0-alpha.2.597+276d289b90d322",
 						},
 					},
 				},

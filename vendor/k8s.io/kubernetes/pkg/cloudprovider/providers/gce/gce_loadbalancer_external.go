@@ -807,7 +807,7 @@ func (gce *GCECloud) ensureHttpHealthCheckFirewall(serviceName, ipAddress, regio
 	if fw.Description != desc ||
 		len(fw.Allowed) != 1 ||
 		fw.Allowed[0].IPProtocol != string(ports[0].Protocol) ||
-		!equalStringSets(fw.Allowed[0].Ports, []string{strconv.Itoa(int(ports[0].Port))}) ||
+		!equalStringSets(fw.Allowed[0].Ports, []string{string(ports[0].Port)}) ||
 		!equalStringSets(fw.SourceRanges, sourceRanges.StringSlice()) {
 		glog.Warningf("Firewall %v exists but parameters have drifted - updating...", fwName)
 		if err := gce.updateFirewall(fwName, region, desc, sourceRanges, ports, hosts); err != nil {
@@ -939,7 +939,8 @@ func (gce *GCECloud) ensureStaticIP(name, serviceName, region, existingIP string
 		addressObj.Address = existingIP
 	}
 
-	if err = gce.ReserveRegionAddress(addressObj, region); err != nil {
+	address, err := gce.ReserveRegionAddress(addressObj, region)
+	if err != nil {
 		if !isHTTPErrorCode(err, http.StatusConflict) {
 			return "", false, fmt.Errorf("error creating gce static IP address: %v", err)
 		}
@@ -947,10 +948,5 @@ func (gce *GCECloud) ensureStaticIP(name, serviceName, region, existingIP string
 		existed = true
 	}
 
-	addr, err := gce.GetRegionAddress(name, region)
-	if err != nil {
-		return "", false, fmt.Errorf("error getting static IP address: %v", err)
-	}
-
-	return addr.Address, existed, nil
+	return address.Address, existed, nil
 }

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -33,14 +34,13 @@ import (
 	dockernat "github.com/docker/go-connections/nat"
 	"github.com/golang/glog"
 
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/credentialprovider"
 	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/v1alpha1/runtime"
-	"k8s.io/kubernetes/pkg/kubelet/dockershim/libdocker"
 	"k8s.io/kubernetes/pkg/kubelet/types"
 	"k8s.io/kubernetes/pkg/security/apparmor"
-	"k8s.io/kubernetes/pkg/util/parsers"
+
+	"k8s.io/kubernetes/pkg/kubelet/dockershim/libdocker"
 )
 
 const (
@@ -393,6 +393,11 @@ func getSecurityOptSeparator(v *semver.Version) rune {
 
 // ensureSandboxImageExists pulls the sandbox image when it's not present.
 func ensureSandboxImageExists(client libdocker.Interface, image string) error {
+	dockerCfgSearchPath := []string{"/.docker", filepath.Join(os.Getenv("HOME"), ".docker")}
+	return ensureSandboxImageExistsDockerCfg(client, image, dockerCfgSearchPath)
+}
+
+func ensureSandboxImageExistsDockerCfg(client libdocker.Interface, image string, dockerCfgSearchPath []string) error {
 	_, err := client.InspectImageByRef(image)
 	if err == nil {
 		return nil
@@ -401,37 +406,34 @@ func ensureSandboxImageExists(client libdocker.Interface, image string) error {
 		return fmt.Errorf("failed to inspect sandbox image %q: %v", image, err)
 	}
 
-	repoToPull, _, _, err := parsers.ParseImageName(image)
+	// To support images in private registries, try to read docker config
+	authConfig := dockertypes.AuthConfig{}
+	keyring := &credentialprovider.BasicDockerKeyring{}
+	var cfgLoadErr error
+	if cfg, err := credentialprovider.ReadDockerConfigJSONFile(dockerCfgSearchPath); err == nil {
+		keyring.Add(cfg)
+	} else if cfg, err := credentialprovider.ReadDockercfgFile(dockerCfgSearchPath); err == nil {
+		keyring.Add(cfg)
+	} else {
+		cfgLoadErr = err
+	}
+	if creds, withCredentials := keyring.Lookup(image); withCredentials {
+		// Use the first one that matched our image
+		for _, cred := range creds {
+			authConfig.Username = cred.Username
+			authConfig.Password = cred.Password
+			break
+		}
+	}
+
+	err = client.PullImage(image, authConfig, dockertypes.ImagePullOptions{})
 	if err != nil {
-		return err
-	}
-
-	keyring := credentialprovider.NewDockerKeyring()
-	creds, withCredentials := keyring.Lookup(repoToPull)
-	if !withCredentials {
-		glog.V(3).Infof("Pulling image %q without credentials", image)
-
-		err := client.PullImage(image, dockertypes.AuthConfig{}, dockertypes.ImagePullOptions{})
-		if err != nil {
-			return fmt.Errorf("failed pulling image %q: %v", image, err)
+		if cfgLoadErr != nil {
+			glog.Warningf("Couldn't load Docker cofig. If sandbox image %q is in a private registry, this will cause further errors. Error: %v", image, cfgLoadErr)
 		}
-
-		return nil
+		return fmt.Errorf("unable to pull sandbox image %q: %v", image, err)
 	}
-
-	var pullErrs []error
-	for _, currentCreds := range creds {
-		authConfig := credentialprovider.LazyProvide(currentCreds)
-		err := client.PullImage(image, authConfig, dockertypes.ImagePullOptions{})
-		// If there was no error, return success
-		if err == nil {
-			return nil
-		}
-
-		pullErrs = append(pullErrs, err)
-	}
-
-	return utilerrors.NewAggregate(pullErrs)
+	return nil
 }
 
 func getAppArmorOpts(profile string) ([]dockerOpt, error) {

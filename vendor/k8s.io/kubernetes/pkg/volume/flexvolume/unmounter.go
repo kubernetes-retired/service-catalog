@@ -51,14 +51,22 @@ func (f *flexVolumeUnmounter) TearDownAt(dir string) error {
 		return nil
 	}
 
-	call := f.plugin.NewDriverCall(unmountCmd)
-	call.Append(dir)
-	_, err := call.Run()
-	if isCmdNotSupportedErr(err) {
-		err = (*unmounterDefaults)(f).TearDownAt(dir)
-	}
+	notmnt, err := isNotMounted(f.mounter, dir)
 	if err != nil {
 		return err
+	}
+	if notmnt {
+		glog.Warningf("Warning: Path: %v already unmounted", dir)
+	} else {
+		call := f.plugin.NewDriverCall(unmountCmd)
+		call.Append(dir)
+		_, err := call.Run()
+		if isCmdNotSupportedErr(err) {
+			err = (*unmounterDefaults)(f).TearDownAt(dir)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	// Flexvolume driver may remove the directory. Ignore if it does.

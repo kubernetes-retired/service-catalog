@@ -30,10 +30,12 @@ import (
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 )
 
+const globalTimeout = time.Minute
+
 var errConnKilled = fmt.Errorf("kill connection/stream")
 
-// WithTimeoutForNonLongRunningRequests times out non-long-running requests after the time given by timeout.
-func WithTimeoutForNonLongRunningRequests(handler http.Handler, requestContextMapper apirequest.RequestContextMapper, longRunning apirequest.LongRunningRequestCheck, timeout time.Duration) http.Handler {
+// WithTimeoutForNonLongRunningRequests times out non-long-running requests after the time given by globalTimeout.
+func WithTimeoutForNonLongRunningRequests(handler http.Handler, requestContextMapper apirequest.RequestContextMapper, longRunning apirequest.LongRunningRequestCheck) http.Handler {
 	if longRunning == nil {
 		return handler
 	}
@@ -42,19 +44,19 @@ func WithTimeoutForNonLongRunningRequests(handler http.Handler, requestContextMa
 		ctx, ok := requestContextMapper.Get(req)
 		if !ok {
 			// if this happens, the handler chain isn't setup correctly because there is no context mapper
-			return time.After(timeout), apierrors.NewInternalError(fmt.Errorf("no context found for request during timeout"))
+			return time.After(globalTimeout), apierrors.NewInternalError(fmt.Errorf("no context found for request during timeout"))
 		}
 
 		requestInfo, ok := apirequest.RequestInfoFrom(ctx)
 		if !ok {
 			// if this happens, the handler chain isn't setup correctly because there is no request info
-			return time.After(timeout), apierrors.NewInternalError(fmt.Errorf("no request info found for request during timeout"))
+			return time.After(globalTimeout), apierrors.NewInternalError(fmt.Errorf("no request info found for request during timeout"))
 		}
 
 		if longRunning(req, requestInfo) {
 			return nil, nil
 		}
-		return time.After(timeout), apierrors.NewServerTimeout(schema.GroupResource{Group: requestInfo.APIGroup, Resource: requestInfo.Resource}, requestInfo.Verb, 0)
+		return time.After(globalTimeout), apierrors.NewServerTimeout(schema.GroupResource{Group: requestInfo.APIGroup, Resource: requestInfo.Resource}, requestInfo.Verb, 0)
 	}
 	return WithTimeout(handler, timeoutFunc)
 }

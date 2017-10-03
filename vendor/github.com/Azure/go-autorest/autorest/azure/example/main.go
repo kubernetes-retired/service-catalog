@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"golang.org/x/crypto/pkcs12"
 )
@@ -74,13 +73,13 @@ func init() {
 	}
 }
 
-func getSptFromCachedToken(oauthConfig adal.OAuthConfig, clientID, resource string, callbacks ...adal.TokenRefreshCallback) (*adal.ServicePrincipalToken, error) {
-	token, err := adal.LoadToken(tokenCachePath)
+func getSptFromCachedToken(oauthConfig azure.OAuthConfig, clientID, resource string, callbacks ...azure.TokenRefreshCallback) (*azure.ServicePrincipalToken, error) {
+	token, err := azure.LoadToken(tokenCachePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load token from cache: %v", err)
 	}
 
-	spt, _ := adal.NewServicePrincipalTokenFromManualToken(
+	spt, _ := azure.NewServicePrincipalTokenFromManualToken(
 		oauthConfig,
 		clientID,
 		resource,
@@ -104,7 +103,7 @@ func decodePkcs12(pkcs []byte, password string) (*x509.Certificate, *rsa.Private
 	return certificate, rsaPrivateKey, nil
 }
 
-func getSptFromCertificate(oauthConfig adal.OAuthConfig, clientID, resource, certicatePath string, callbacks ...adal.TokenRefreshCallback) (*adal.ServicePrincipalToken, error) {
+func getSptFromCertificate(oauthConfig azure.OAuthConfig, clientID, resource, certicatePath string, callbacks ...azure.TokenRefreshCallback) (*azure.ServicePrincipalToken, error) {
 	certData, err := ioutil.ReadFile(certificatePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read the certificate file (%s): %v", certificatePath, err)
@@ -115,7 +114,7 @@ func getSptFromCertificate(oauthConfig adal.OAuthConfig, clientID, resource, cer
 		return nil, fmt.Errorf("failed to decode pkcs12 certificate while creating spt: %v", err)
 	}
 
-	spt, _ := adal.NewServicePrincipalTokenFromCertificate(
+	spt, _ := azure.NewServicePrincipalTokenFromCertificate(
 		oauthConfig,
 		clientID,
 		certificate,
@@ -126,21 +125,21 @@ func getSptFromCertificate(oauthConfig adal.OAuthConfig, clientID, resource, cer
 	return spt, nil
 }
 
-func getSptFromDeviceFlow(oauthConfig adal.OAuthConfig, clientID, resource string, callbacks ...adal.TokenRefreshCallback) (*adal.ServicePrincipalToken, error) {
+func getSptFromDeviceFlow(oauthConfig azure.OAuthConfig, clientID, resource string, callbacks ...azure.TokenRefreshCallback) (*azure.ServicePrincipalToken, error) {
 	oauthClient := &autorest.Client{}
-	deviceCode, err := adal.InitiateDeviceAuth(oauthClient, oauthConfig, clientID, resource)
+	deviceCode, err := azure.InitiateDeviceAuth(oauthClient, oauthConfig, clientID, resource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start device auth flow: %s", err)
 	}
 
 	fmt.Println(*deviceCode.Message)
 
-	token, err := adal.WaitForUserCompletion(oauthClient, deviceCode)
+	token, err := azure.WaitForUserCompletion(oauthClient, deviceCode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to finish device auth flow: %s", err)
 	}
 
-	spt, err := adal.NewServicePrincipalTokenFromManualToken(
+	spt, err := azure.NewServicePrincipalTokenFromManualToken(
 		oauthConfig,
 		clientID,
 		resource,
@@ -190,9 +189,9 @@ func printResourceGroups(client *autorest.Client) error {
 	return err
 }
 
-func saveToken(spt adal.Token) {
+func saveToken(spt azure.Token) {
 	if tokenCachePath != "" {
-		err := adal.SaveToken(tokenCachePath, 0600, spt)
+		err := azure.SaveToken(tokenCachePath, 0600, spt)
 		if err != nil {
 			log.Println("error saving token", err)
 		} else {
@@ -202,16 +201,16 @@ func saveToken(spt adal.Token) {
 }
 
 func main() {
-	var spt *adal.ServicePrincipalToken
+	var spt *azure.ServicePrincipalToken
 	var err error
 
-	callback := func(t adal.Token) error {
+	callback := func(t azure.Token) error {
 		log.Println("refresh callback was called")
 		saveToken(t)
 		return nil
 	}
 
-	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, tenantID)
+	oauthConfig, err := azure.PublicCloud.OAuthConfigForTenant(tenantID)
 	if err != nil {
 		panic(err)
 	}
@@ -244,7 +243,7 @@ func main() {
 	}
 
 	client := &autorest.Client{}
-	client.Authorizer = autorest.NewBearerAuthorizer(spt)
+	client.Authorizer = spt
 
 	printResourceGroups(client)
 

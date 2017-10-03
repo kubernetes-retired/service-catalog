@@ -17,6 +17,7 @@ limitations under the License.
 package dockershim
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -33,8 +34,9 @@ import (
 	"k8s.io/kubernetes/pkg/api/v1"
 
 	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/v1alpha1/runtime"
-	"k8s.io/kubernetes/pkg/kubelet/dockershim/libdocker"
 	"k8s.io/kubernetes/pkg/security/apparmor"
+
+	"k8s.io/kubernetes/pkg/kubelet/dockershim/libdocker"
 )
 
 func TestLabelsAndAnnotationsRoundTrip(t *testing.T) {
@@ -265,7 +267,10 @@ func writeDockerConfig(cfg string) (string, error) {
 
 func TestEnsureSandboxImageExists(t *testing.T) {
 	sandboxImage := "gcr.io/test/image"
+	registryHost := "https://gcr.io/"
 	authConfig := dockertypes.AuthConfig{Username: "user", Password: "pass"}
+	authB64 := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authConfig.Username, authConfig.Password)))
+	authJSON := fmt.Sprintf("{\"auths\": {\"%s\": {\"auth\": \"%s\"} } }", registryHost, authB64)
 	for desc, test := range map[string]struct {
 		injectImage  bool
 		imgNeedsAuth bool
@@ -297,6 +302,14 @@ func TestEnsureSandboxImageExists(t *testing.T) {
 			calls:        []string{"inspect_image", "pull"},
 			err:          true,
 		},
+		"should pull private image using dockerauth if image doesn't exist": {
+			injectImage:  true,
+			imgNeedsAuth: true,
+			injectErr:    libdocker.ImageNotFoundError{ID: "image_id"},
+			calls:        []string{"inspect_image", "pull"},
+			configJSON:   authJSON,
+			err:          false,
+		},
 	} {
 		t.Logf("TestCase: %q", desc)
 		_, fakeDocker, _ := newTestDockerService()
@@ -309,7 +322,15 @@ func TestEnsureSandboxImageExists(t *testing.T) {
 		}
 		fakeDocker.InjectError("inspect_image", test.injectErr)
 
-		err := ensureSandboxImageExists(fakeDocker, sandboxImage)
+		var dockerCfgSearchPath []string
+		if test.configJSON != "" {
+			tmpdir, err := writeDockerConfig(test.configJSON)
+			require.NoError(t, err, "could not create a temp docker config file")
+			dockerCfgSearchPath = append(dockerCfgSearchPath, filepath.Join(tmpdir, ".docker"))
+			defer os.RemoveAll(tmpdir)
+		}
+
+		err := ensureSandboxImageExistsDockerCfg(fakeDocker, sandboxImage, dockerCfgSearchPath)
 		assert.NoError(t, fakeDocker.AssertCalls(test.calls))
 		assert.Equal(t, test.err, err != nil)
 	}

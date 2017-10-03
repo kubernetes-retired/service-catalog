@@ -34,14 +34,6 @@ func (mounter *Mounter) List() ([]MountPoint, error) {
 	return []MountPoint{}, nil
 }
 
-func (mounter *Mounter) IsMountPointMatch(mp MountPoint, dir string) bool {
-	return (mp.Path == dir)
-}
-
-func (mounter *Mounter) IsNotMountPoint(dir string) (bool, error) {
-	return IsNotMountPoint(mounter, dir)
-}
-
 func (mounter *Mounter) IsLikelyNotMountPoint(file string) (bool, error) {
 	return true, nil
 }
@@ -63,5 +55,9 @@ func (mounter *SafeFormatAndMount) formatAndMount(source string, target string, 
 }
 
 func (mounter *SafeFormatAndMount) diskLooksUnformatted(disk string) (bool, error) {
+	return true, nil
+}
+
+func IsNotMountPoint(file string) (bool, error) {
 	return true, nil
 }

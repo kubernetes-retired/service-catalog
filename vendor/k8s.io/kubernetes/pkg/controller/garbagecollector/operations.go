@@ -115,7 +115,7 @@ func (gc *GarbageCollector) removeFinalizer(owner *node, targetFinalizer string)
 		for _, f := range finalizers {
 			if f == targetFinalizer {
 				found = true
-				continue
+				break
 			}
 			newFinalizers = append(newFinalizers, f)
 		}

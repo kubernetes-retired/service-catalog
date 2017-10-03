@@ -412,9 +412,7 @@ func (w *watchCache) SetOnEvent(onEvent func(*watchCacheEvent)) {
 
 func (w *watchCache) GetAllEventsSinceThreadUnsafe(resourceVersion uint64) ([]*watchCacheEvent, error) {
 	size := w.endIndex - w.startIndex
-	// if we have no watch events in our cache, the oldest one we can successfully deliver to a watcher
-	// is the *next* event we'll receive, which will be at least one greater than our current resourceVersion
-	oldest := w.resourceVersion + 1
+	oldest := w.resourceVersion
 	if size > 0 {
 		oldest = w.cache[w.startIndex%w.capacity].resourceVersion
 	}

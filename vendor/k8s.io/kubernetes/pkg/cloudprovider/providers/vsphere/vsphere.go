@@ -19,7 +19,6 @@ package vsphere
 import (
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"io"
 	"io/ioutil"
 	"net"
@@ -333,8 +332,8 @@ func newVSphere(cfg VSphereConfig) (*VSphere, error) {
 	if cfg.Global.RoundTripperCount == 0 {
 		cfg.Global.RoundTripperCount = RoundTripperDefaultCount
 	}
-	if cfg.Global.VCenterPort == "" {
-		cfg.Global.VCenterPort = "443"
+	if cfg.Global.VCenterPort != "" {
+		glog.Warningf("port is a deprecated field in vsphere.conf and will be removed in future release.")
 	}
 
 	var c *govmomi.Client
@@ -383,7 +382,7 @@ func logout(vs *VSphere) {
 
 func newClient(ctx context.Context, cfg *VSphereConfig) (*govmomi.Client, error) {
 	// Parse URL from string
-	u, err := url.Parse(fmt.Sprintf("https://%s:%s/sdk", cfg.Global.VCenterIP, cfg.Global.VCenterPort))
+	u, err := url.Parse(fmt.Sprintf("https://%s/sdk", cfg.Global.VCenterIP))
 	if err != nil {
 		return nil, err
 	}
@@ -807,7 +806,7 @@ func (vs *VSphere) AttachDisk(vmDiskPath string, storagePolicyID string, nodeNam
 			}
 
 			scsiControllersOfRequiredType := getSCSIControllersOfType(vmDevices, diskControllerType)
-			scsiController = getAvailableSCSIController(scsiControllersOfRequiredType)
+			scsiController := getAvailableSCSIController(scsiControllersOfRequiredType)
 			if scsiController == nil {
 				glog.Errorf("cannot find SCSI controller in VM")
 				// attempt clean up of scsi controller
@@ -1402,9 +1401,7 @@ func (vs *VSphere) CreateVolume(volumeOptions *VolumeOptions) (volumePath string
 
 			// Check if the VM exists in kubernetes cluster folder.
 			// The kubernetes cluster folder - vs.cfg.Global.WorkingDir is where all the nodes in the kubernetes cluster are created.
-			fnvHash := fnv.New32a()
-			fnvHash.Write([]byte(volumeOptions.Name))
-			dummyVMFullName := DummyVMPrefixName + "-" + fmt.Sprint(fnvHash.Sum32())
+			dummyVMFullName := DummyVMPrefixName + "-" + volumeOptions.Name
 			vmRegex := vs.cfg.Global.WorkingDir + dummyVMFullName
 			dummyVM, err := f.VirtualMachine(ctx, vmRegex)
 			if err != nil {

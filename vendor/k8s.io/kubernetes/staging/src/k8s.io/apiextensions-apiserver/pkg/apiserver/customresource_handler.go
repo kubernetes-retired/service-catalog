@@ -343,17 +343,8 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 		storage:      storage,
 		requestScope: requestScope,
 	}
-
-	storageMap2 := make(crdStorageMap, len(storageMap))
-
-	// Copy because we cannot write to storageMap without a race
-	// as it is used without locking elsewhere
-	for k, v := range storageMap {
-		storageMap2[k] = v
-	}
-
-	storageMap2[crd.UID] = ret
-	r.customStorage.Store(storageMap2)
+	storageMap[crd.UID] = ret
+	r.customStorage.Store(storageMap)
 	return ret
 }
 

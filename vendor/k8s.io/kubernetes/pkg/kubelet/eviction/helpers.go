@@ -658,11 +658,16 @@ func (a byEvictionPriority) Less(i, j int) bool {
 }
 
 // makeSignalObservations derives observations using the specified summary provider.
-func makeSignalObservations(summaryProvider stats.SummaryProvider, capacityProvider CapacityProvider, pods []*v1.Pod, withImageFs bool) (signalObservations, statsFunc, error) {
+func makeSignalObservations(summaryProvider stats.SummaryProvider, nodeProvider NodeProvider, pods []*v1.Pod, withImageFs bool) (signalObservations, statsFunc, error) {
 	summary, err := summaryProvider.Get()
 	if err != nil {
 		return nil, nil, err
 	}
+	node, err := nodeProvider.GetNode()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// build the function to work against for pod stats
 	statsFunc := cachedStatsFunc(summary.Pods)
 	// build an evaluation context for current eviction signals
@@ -709,12 +714,8 @@ func makeSignalObservations(summaryProvider stats.SummaryProvider, capacityProvi
 			}
 		}
 	}
-
-	nodeCapacity := capacityProvider.GetCapacity()
-	allocatableReservation := capacityProvider.GetNodeAllocatableReservation()
-
-	memoryAllocatableCapacity, memoryAllocatableAvailable, exist := getResourceAllocatable(nodeCapacity, allocatableReservation, v1.ResourceMemory)
-	if exist {
+	if memoryAllocatableCapacity, ok := node.Status.Allocatable[v1.ResourceMemory]; ok {
+		memoryAllocatableAvailable := memoryAllocatableCapacity.Copy()
 		for _, pod := range summary.Pods {
 			mu, err := podMemoryUsage(pod)
 			if err == nil {
@@ -723,12 +724,12 @@ func makeSignalObservations(summaryProvider stats.SummaryProvider, capacityProvi
 		}
 		result[evictionapi.SignalAllocatableMemoryAvailable] = signalObservation{
 			available: memoryAllocatableAvailable,
-			capacity:  memoryAllocatableCapacity,
+			capacity:  memoryAllocatableCapacity.Copy(),
 		}
 	}
 
-	storageScratchCapacity, storageScratchAllocatable, exist := getResourceAllocatable(nodeCapacity, allocatableReservation, v1.ResourceStorageScratch)
-	if exist {
+	if storageScratchAllocatableCapacity, ok := node.Status.Allocatable[v1.ResourceStorage]; ok {
+		storageScratchAllocatable := storageScratchAllocatableCapacity.Copy()
 		for _, pod := range pods {
 			podStat, ok := statsFunc(pod)
 			if !ok {
@@ -753,23 +754,11 @@ func makeSignalObservations(summaryProvider stats.SummaryProvider, capacityProvi
 		}
 		result[evictionapi.SignalAllocatableNodeFsAvailable] = signalObservation{
 			available: storageScratchAllocatable,
-			capacity:  storageScratchCapacity,
+			capacity:  storageScratchAllocatableCapacity.Copy(),
 		}
 	}
 
 	return result, statsFunc, nil
-}
-
-func getResourceAllocatable(capacity v1.ResourceList, reservation v1.ResourceList, resourceName v1.ResourceName) (*resource.Quantity, *resource.Quantity, bool) {
-	if capacity, ok := capacity[resourceName]; ok {
-		allocate := capacity.Copy()
-		if reserved, exists := reservation[resourceName]; exists {
-			allocate.Sub(reserved)
-		}
-		return capacity.Copy(), allocate, true
-	}
-	glog.Errorf("Could not find capacity information for resource %v", resourceName)
-	return nil, nil, false
 }
 
 // thresholdsMet returns the set of thresholds that were met independent of grace period
