@@ -1156,7 +1156,12 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		if response.Description != nil {
 			description = *response.Description
 		}
-		s := fmt.Sprintf("Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %q", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
+		op := "provisioning"
+		if deleting {
+			op = "deprovisioning"
+		}
+
+		s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %q", op, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
 		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		clone, err := api.Scheme.DeepCopy(instance)
