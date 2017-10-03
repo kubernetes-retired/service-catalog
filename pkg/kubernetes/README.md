@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Kubernetes Code Copy Area
 
 This directory is the copy of original types from the main 

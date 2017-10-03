@@ -1,4 +1,4 @@
-# Copyright 2016 The Kubernetes Authors.
+# Copyright 2017 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install ca-certificates -y && \
     rm -rf /var/lib/apt/lists/*
 
-ADD apiserver /opt/services/
+ADD service-catalog opt/services/
 
-ENTRYPOINT ["/opt/services/apiserver"]
-CMD ["--etcd-servers" , "localhost"]
+ENTRYPOINT ["/opt/services/service-catalog"]

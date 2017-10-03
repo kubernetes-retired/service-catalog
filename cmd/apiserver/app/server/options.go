@@ -26,6 +26,22 @@ import (
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 )
 
+const (
+	// Store generated SSL certificates in a place that won't collide with the
+	// k8s core API server.
+	certDirectory = "/var/run/kubernetes-service-catalog"
+
+	// I made this up to match some existing paths. I am not sure if there
+	// are any restrictions on the format or structure beyond text
+	// separated by slashes.
+	etcdPathPrefix = "/k8s.io/service-catalog"
+
+	// GroupName I made this up. Maybe we'll need it.
+	GroupName = "service-catalog.k8s.io"
+
+	storageTypeFlagName = "storageType"
+)
+
 // ServiceCatalogServerOptions contains the aggregation of configuration structs for
 // the service-catalog server. It contains everything needed to configure a basic API server.
 // It is public so that integration tests can access it.
@@ -47,7 +63,6 @@ type ServiceCatalogServerOptions struct {
 	EtcdOptions *EtcdOptions
 	// DisableAuth disables delegating authentication and authorization for testing scenarios
 	DisableAuth bool
-	StopCh      <-chan struct{}
 	// StandaloneMode if true asserts that we will not depend on a kube-apiserver
 	StandaloneMode bool
 }
@@ -55,7 +70,7 @@ type ServiceCatalogServerOptions struct {
 // NewServiceCatalogServerOptions creates a new instances of
 // ServiceCatalogServerOptions with all sub-options filled in.
 func NewServiceCatalogServerOptions() *ServiceCatalogServerOptions {
-	return &ServiceCatalogServerOptions{
+	opts := &ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
 		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
@@ -63,10 +78,17 @@ func NewServiceCatalogServerOptions() *ServiceCatalogServerOptions {
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 		AuditOptions:            genericserveroptions.NewAuditOptions(),
 		EtcdOptions:             NewEtcdOptions(),
+		StandaloneMode:          standaloneMode(),
 	}
+	// register all admission plugins
+	registerAllAdmissionPlugins(opts.AdmissionOptions.Plugins)
+	// Set generated SSL cert path correctly
+	opts.SecureServingOptions.ServerCert.CertDirectory = certDirectory
+	return opts
 }
 
-func (s *ServiceCatalogServerOptions) addFlags(flags *pflag.FlagSet) {
+// AddFlags adds to the flag set the flags to configure the API Server.
+func (s *ServiceCatalogServerOptions) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVar(
 		&s.StorageTypeString,
 		"storage-type",

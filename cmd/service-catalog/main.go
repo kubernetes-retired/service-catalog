@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,19 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pkg
+// A binary that can morph into all of the other kubernetes service-catalog
+// binaries. You can also soft-link to it busybox style.
+//
+package main
 
 import (
-	"fmt"
 	"os"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/hyperkube"
 )
 
-// VERSION is the version string for built artifacts. It's set by the build system, and should
-// not be changed in this codebase
-var VERSION = "UNKNOWN"
+func main() {
+	hk := hyperkube.HyperKube{
+		Name: "service-catalog",
+		Long: "This is an all-in-one binary that can run any of the various Kubernetes service-catalog servers.",
+	}
 
-// PrintAndExit will print the version and exit.
-func PrintAndExit() {
-	fmt.Println(VERSION)
-	os.Exit(0)
+	hk.AddServer(NewAPIServer())
+	hk.AddServer(NewControllerManager())
+
+	hk.RunToExit(os.Args)
 }
