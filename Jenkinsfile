@@ -66,11 +66,13 @@ def test_zone    = params.TEST_ZONE ?: 'us-west1-b'
 def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
 def timeoutMin   = 30
+def certFolder   = '/tmp/sc-certs'
 
 node {
   echo "Service Catalog end-to-end test"
 
   sh "sudo rm -rf ${env.WORKSPACE}/*"
+  sh "rm -rf ${certFolder} && mkdir ${certFolder}"
 
   updatePullRequest('run')
 
@@ -139,6 +141,7 @@ node {
       archiveArtifacts artifacts: 'walkthrough*.txt', fingerprint: true
       archiveArtifacts artifacts: 'e2e*.txt', fingerprint: true
       try {
+        sh "rm -rf ${certFolder}"
         sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
       } catch (Exception e) {
         echo 'Exception caught during cleanup.'
