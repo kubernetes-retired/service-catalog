@@ -3523,7 +3523,7 @@ func (x *ServiceClassSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("brokerName"))
+				r.EncodeString(codecSelferC_UTF81234, string("serviceBrokerName"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym5 := z.EncBinary()
 				_ = yym5
@@ -3793,7 +3793,7 @@ func (x *ServiceClassSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 		yys3 := string(yys3Slc)
 		z.DecSendContainerState(codecSelfer_containerMapValue1234)
 		switch yys3 {
-		case "brokerName":
+		case "serviceBrokerName":
 			if r.TryDecodeAsNil() {
 				x.ServiceBrokerName = ""
 			} else {

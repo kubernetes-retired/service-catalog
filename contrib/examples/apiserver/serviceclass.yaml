@@ -3,7 +3,7 @@ kind: ServiceClass
 metadata:
   name: d35b55b2-b1fd-4123-8045-5b9c619cb629
 spec:
-  brokerName: test-broker
+  serviceBrokerName: test-broker
   description: "service description"
   bindable: true
   externalName: test-serviceclass

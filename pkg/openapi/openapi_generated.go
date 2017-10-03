@@ -444,7 +444,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				SchemaProps: spec.SchemaProps{
 					Description: "ServiceClassSpec represents details about the ServicePlan",
 					Properties: map[string]spec.Schema{
-						"brokerName": {
+						"serviceBrokerName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ServiceBrokerName is the reference to the Broker that provides this ServiceClass.\n\nImmutable.",
 								Type:        []string{"string"},
@@ -521,7 +521,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 							},
 						},
 					},
-					Required: []string{"brokerName", "externalName", "externalID", "description", "bindable", "planUpdatable"},
+					Required: []string{"serviceBrokerName", "externalName", "externalID", "description", "bindable", "planUpdatable"},
 				},
 			},
 			Dependencies: []string{

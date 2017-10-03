@@ -123,19 +123,19 @@ We should see something like:
 apiVersion: servicecatalog.k8s.io/v1alpha1
 kind: ServiceClass
 metadata:
-  creationTimestamp: 2017-03-03T04:11:17Z
-  name: user-provided-service
-  resourceVersion: "7"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/serviceclasses/user-provided-service
-  uid: 72fef5ce-ffc7-11e6-b111-0242ac110005
-brokerName: ups-broker
-externalID: 4F6E6CF6-FFDD-425F-A2C7-3C9258AD2468
-bindable: false
-planUpdatable: false
-plans:
-- name: default
-  free: true
-  externalID: 86064792-7ea2-467b-af93-ac9694d96d52
+  creationTimestamp: 2017-10-02T14:41:25Z
+  name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  resourceVersion: "5"
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/serviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  uid: c46d4496-a77f-11e7-8b18-0242ac110005
+spec:
+  bindable: true
+  serviceBrokerName: ups-broker
+  description: A user provided service
+  externalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  externalMetadata: null
+  externalName: user-provided-service
+  planUpdatable: false
 ```
 
 # Step 4 - Creating a New `ServiceInstance`
