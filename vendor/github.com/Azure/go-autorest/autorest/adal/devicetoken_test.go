@@ -1,4 +1,4 @@
-package azure
+package adal
 
 import (
 	"encoding/json"
@@ -7,18 +7,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/mocks"
 )
 
 const (
-	TestResource = "SomeResource"
-	TestClientID = "SomeClientID"
-	TestTenantID = "SomeTenantID"
+	TestResource                = "SomeResource"
+	TestClientID                = "SomeClientID"
+	TestTenantID                = "SomeTenantID"
+	TestActiveDirectoryEndpoint = "https://login.test.com/"
 )
 
 var (
-	testOAuthConfig, _ = PublicCloud.OAuthConfigForTenant(TestTenantID)
+	testOAuthConfig, _ = NewOAuthConfig(TestActiveDirectoryEndpoint, TestTenantID)
 	TestOAuthConfig    = *testOAuthConfig
 )
 
@@ -46,38 +46,35 @@ const MockDeviceTokenResponse = `{
 func TestDeviceCodeIncludesResource(t *testing.T) {
 	sender := mocks.NewSender()
 	sender.AppendResponse(mocks.NewResponseWithContent(MockDeviceCodeResponse))
-	client := &autorest.Client{Sender: sender}
 
-	code, err := InitiateDeviceAuth(client, TestOAuthConfig, TestClientID, TestResource)
+	code, err := InitiateDeviceAuth(sender, TestOAuthConfig, TestClientID, TestResource)
 	if err != nil {
-		t.Fatalf("azure: unexpected error initiating device auth")
+		t.Fatalf("adal: unexpected error initiating device auth")
 	}
 
 	if code.Resource != TestResource {
-		t.Fatalf("azure: InitiateDeviceAuth failed to stash the resource in the DeviceCode struct")
+		t.Fatalf("adal: InitiateDeviceAuth failed to stash the resource in the DeviceCode struct")
 	}
 }
 
 func TestDeviceCodeReturnsErrorIfSendingFails(t *testing.T) {
 	sender := mocks.NewSender()
 	sender.SetError(fmt.Errorf("this is an error"))
-	client := &autorest.Client{Sender: sender}
 
-	_, err := InitiateDeviceAuth(client, TestOAuthConfig, TestClientID, TestResource)
+	_, err := InitiateDeviceAuth(sender, TestOAuthConfig, TestClientID, TestResource)
 	if err == nil || !strings.Contains(err.Error(), errCodeSendingFails) {
-		t.Fatalf("azure: failed to get correct error expected(%s) actual(%s)", errCodeSendingFails, err.Error())
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", errCodeSendingFails, err.Error())
 	}
 }
 
 func TestDeviceCodeReturnsErrorIfBadRequest(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody("doesn't matter")
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 400, "Bad Request"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusBadRequest, "Bad Request"))
 
-	_, err := InitiateDeviceAuth(client, TestOAuthConfig, TestClientID, TestResource)
+	_, err := InitiateDeviceAuth(sender, TestOAuthConfig, TestClientID, TestResource)
 	if err == nil || !strings.Contains(err.Error(), errCodeHandlingFails) {
-		t.Fatalf("azure: failed to get correct error expected(%s) actual(%s)", errCodeHandlingFails, err.Error())
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", errCodeHandlingFails, err.Error())
 	}
 
 	if body.IsOpen() {
@@ -89,12 +86,26 @@ func TestDeviceCodeReturnsErrorIfCannotDeserializeDeviceCode(t *testing.T) {
 	gibberishJSON := strings.Replace(MockDeviceCodeResponse, "expires_in", "\":, :gibberish", -1)
 	sender := mocks.NewSender()
 	body := mocks.NewBody(gibberishJSON)
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 200, "OK"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusOK, "OK"))
 
-	_, err := InitiateDeviceAuth(client, TestOAuthConfig, TestClientID, TestResource)
+	_, err := InitiateDeviceAuth(sender, TestOAuthConfig, TestClientID, TestResource)
 	if err == nil || !strings.Contains(err.Error(), errCodeHandlingFails) {
-		t.Fatalf("azure: failed to get correct error expected(%s) actual(%s)", errCodeHandlingFails, err.Error())
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", errCodeHandlingFails, err.Error())
+	}
+
+	if body.IsOpen() {
+		t.Fatalf("response body was left open!")
+	}
+}
+
+func TestDeviceCodeReturnsErrorIfEmptyDeviceCode(t *testing.T) {
+	sender := mocks.NewSender()
+	body := mocks.NewBody("")
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusOK, "OK"))
+
+	_, err := InitiateDeviceAuth(sender, TestOAuthConfig, TestClientID, TestResource)
+	if err != ErrDeviceCodeEmpty {
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", ErrDeviceCodeEmpty, err.Error())
 	}
 
 	if body.IsOpen() {
@@ -104,7 +115,7 @@ func TestDeviceCodeReturnsErrorIfCannotDeserializeDeviceCode(t *testing.T) {
 
 func deviceCode() *DeviceCode {
 	var deviceCode DeviceCode
-	json.Unmarshal([]byte(MockDeviceCodeResponse), &deviceCode)
+	_ = json.Unmarshal([]byte(MockDeviceCodeResponse), &deviceCode)
 	deviceCode.Resource = TestResource
 	deviceCode.ClientID = TestClientID
 	return &deviceCode
@@ -113,12 +124,11 @@ func deviceCode() *DeviceCode {
 func TestDeviceTokenReturns(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody(MockDeviceTokenResponse)
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 200, "OK"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusOK, "OK"))
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err != nil {
-		t.Fatalf("azure: got error unexpectedly")
+		t.Fatalf("adal: got error unexpectedly")
 	}
 
 	if body.IsOpen() {
@@ -129,23 +139,21 @@ func TestDeviceTokenReturns(t *testing.T) {
 func TestDeviceTokenReturnsErrorIfSendingFails(t *testing.T) {
 	sender := mocks.NewSender()
 	sender.SetError(fmt.Errorf("this is an error"))
-	client := &autorest.Client{Sender: sender}
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err == nil || !strings.Contains(err.Error(), errTokenSendingFails) {
-		t.Fatalf("azure: failed to get correct error expected(%s) actual(%s)", errTokenSendingFails, err.Error())
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", errTokenSendingFails, err.Error())
 	}
 }
 
 func TestDeviceTokenReturnsErrorIfServerError(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody("")
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 500, "Internal Server Error"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusInternalServerError, "Internal Server Error"))
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err == nil || !strings.Contains(err.Error(), errTokenHandlingFails) {
-		t.Fatalf("azure: failed to get correct error expected(%s) actual(%s)", errTokenHandlingFails, err.Error())
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", errTokenHandlingFails, err.Error())
 	}
 
 	if body.IsOpen() {
@@ -157,12 +165,11 @@ func TestDeviceTokenReturnsErrorIfCannotDeserializeDeviceToken(t *testing.T) {
 	gibberishJSON := strings.Replace(MockDeviceTokenResponse, "expires_in", ";:\"gibberish", -1)
 	sender := mocks.NewSender()
 	body := mocks.NewBody(gibberishJSON)
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 200, "OK"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusOK, "OK"))
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err == nil || !strings.Contains(err.Error(), errTokenHandlingFails) {
-		t.Fatalf("azure: failed to get correct error expected(%s) actual(%s)", errTokenHandlingFails, err.Error())
+		t.Fatalf("adal: failed to get correct error expected(%s) actual(%s)", errTokenHandlingFails, err.Error())
 	}
 
 	if body.IsOpen() {
@@ -177,10 +184,9 @@ func errorDeviceTokenResponse(message string) string {
 func TestDeviceTokenReturnsErrorIfAuthorizationPending(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody(errorDeviceTokenResponse("authorization_pending"))
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 400, "Bad Request"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusBadRequest, "Bad Request"))
 
-	_, err := CheckForUserCompletion(client, deviceCode())
+	_, err := CheckForUserCompletion(sender, deviceCode())
 	if err != ErrDeviceAuthorizationPending {
 		t.Fatalf("!!!")
 	}
@@ -193,10 +199,9 @@ func TestDeviceTokenReturnsErrorIfAuthorizationPending(t *testing.T) {
 func TestDeviceTokenReturnsErrorIfSlowDown(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody(errorDeviceTokenResponse("slow_down"))
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 400, "Bad Request"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusBadRequest, "Bad Request"))
 
-	_, err := CheckForUserCompletion(client, deviceCode())
+	_, err := CheckForUserCompletion(sender, deviceCode())
 	if err != ErrDeviceSlowDown {
 		t.Fatalf("!!!")
 	}
@@ -230,9 +235,8 @@ func (s *deviceTokenSender) Do(req *http.Request) (*http.Response, error) {
 // but with the intent of showing that WaitForUserCompletion loops properly.
 func TestDeviceTokenSucceedsWithIntermediateAuthPending(t *testing.T) {
 	sender := newDeviceTokenSender("authorization_pending")
-	client := &autorest.Client{Sender: sender}
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err != nil {
 		t.Fatalf("unexpected error occurred")
 	}
@@ -241,9 +245,8 @@ func TestDeviceTokenSucceedsWithIntermediateAuthPending(t *testing.T) {
 // same as above but with SlowDown now
 func TestDeviceTokenSucceedsWithIntermediateSlowDown(t *testing.T) {
 	sender := newDeviceTokenSender("slow_down")
-	client := &autorest.Client{Sender: sender}
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err != nil {
 		t.Fatalf("unexpected error occurred")
 	}
@@ -252,12 +255,11 @@ func TestDeviceTokenSucceedsWithIntermediateSlowDown(t *testing.T) {
 func TestDeviceTokenReturnsErrorIfAccessDenied(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody(errorDeviceTokenResponse("access_denied"))
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 400, "Bad Request"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusBadRequest, "Bad Request"))
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err != ErrDeviceAccessDenied {
-		t.Fatalf("azure: got wrong error expected(%s) actual(%s)", ErrDeviceAccessDenied.Error(), err.Error())
+		t.Fatalf("adal: got wrong error expected(%s) actual(%s)", ErrDeviceAccessDenied.Error(), err.Error())
 	}
 
 	if body.IsOpen() {
@@ -268,12 +270,11 @@ func TestDeviceTokenReturnsErrorIfAccessDenied(t *testing.T) {
 func TestDeviceTokenReturnsErrorIfCodeExpired(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody(errorDeviceTokenResponse("code_expired"))
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 400, "Bad Request"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusBadRequest, "Bad Request"))
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err != ErrDeviceCodeExpired {
-		t.Fatalf("azure: got wrong error expected(%s) actual(%s)", ErrDeviceCodeExpired.Error(), err.Error())
+		t.Fatalf("adal: got wrong error expected(%s) actual(%s)", ErrDeviceCodeExpired.Error(), err.Error())
 	}
 
 	if body.IsOpen() {
@@ -284,15 +285,29 @@ func TestDeviceTokenReturnsErrorIfCodeExpired(t *testing.T) {
 func TestDeviceTokenReturnsErrorForUnknownError(t *testing.T) {
 	sender := mocks.NewSender()
 	body := mocks.NewBody(errorDeviceTokenResponse("unknown_error"))
-	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, 400, "Bad Request"))
-	client := &autorest.Client{Sender: sender}
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusBadRequest, "Bad Request"))
 
-	_, err := WaitForUserCompletion(client, deviceCode())
+	_, err := WaitForUserCompletion(sender, deviceCode())
 	if err == nil {
 		t.Fatalf("failed to get error")
 	}
 	if err != ErrDeviceGeneric {
-		t.Fatalf("azure: got wrong error expected(%s) actual(%s)", ErrDeviceGeneric.Error(), err.Error())
+		t.Fatalf("adal: got wrong error expected(%s) actual(%s)", ErrDeviceGeneric.Error(), err.Error())
+	}
+
+	if body.IsOpen() {
+		t.Fatalf("response body was left open!")
+	}
+}
+
+func TestDeviceTokenReturnsErrorIfTokenEmptyAndStatusOK(t *testing.T) {
+	sender := mocks.NewSender()
+	body := mocks.NewBody("")
+	sender.AppendResponse(mocks.NewResponseWithBodyAndStatus(body, http.StatusOK, "OK"))
+
+	_, err := WaitForUserCompletion(sender, deviceCode())
+	if err != ErrOAuthTokenEmpty {
+		t.Fatalf("adal: got wrong error expected(%s) actual(%s)", ErrOAuthTokenEmpty.Error(), err.Error())
 	}
 
 	if body.IsOpen() {
