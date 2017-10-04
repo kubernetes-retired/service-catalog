@@ -1261,7 +1261,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			}
 			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ServiceClass with externalName %q to K8S ServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName, sc.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName, len(serviceClasses.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
@@ -1303,7 +1303,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			}
 			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ServicePlan with externalName %q to K8S ServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, sp.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, instance.Spec.ExternalServiceClassName)
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, instance.Spec.ExternalServiceClassName, len(servicePlans.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,

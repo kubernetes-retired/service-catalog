@@ -89,7 +89,7 @@ func TestReconcileServiceInstanceNonExistentServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance \"/test-instance\" references a non-existent ServiceClass \"nothere\""
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance \"/test-instance\" references a non-existent ServiceClass \"nothere\" or there is more than one (found: 0)."
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -233,7 +233,7 @@ func TestReconcileServiceInstanceNonExistentServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "ServiceInstance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\""
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "ServiceInstance \"/test-instance\" references a non-existent ServicePlan \"nothere\" on ServiceClass \"test-serviceclass\" or there is more than one (found: 0)."
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -3145,7 +3145,7 @@ func TestResolveReferencesNoServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance" + " \"test-ns/test-instance\" references a non-existent ServiceClass \"test-serviceclass\""
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServiceClassReason + " " + "ServiceInstance" + " \"test-ns/test-instance\" references a non-existent ServiceClass \"test-serviceclass\" or there is more than one (found: 0)."
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3218,7 +3218,7 @@ func TestResolveReferencesNoServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "ServiceInstance" + " \"test-ns/test-instance\" references a non-existent ServicePlan \"test-plan\" on ServiceClass \"test-serviceclass\""
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServicePlanReason + " " + "ServiceInstance" + " \"test-ns/test-instance\" references a non-existent ServicePlan \"test-plan\" on ServiceClass \"test-serviceclass\" or there is more than one (found: 0)."
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
