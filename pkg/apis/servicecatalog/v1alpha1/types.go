@@ -661,6 +661,10 @@ type ServiceInstanceCredentialStatus struct {
 	// ExternalProperties is the properties state of the
 	// ServiceInstanceCredential which the broker knows about.
 	ExternalProperties *ServiceInstanceCredentialPropertiesState `json:"externalProperties,omitempty"`
+
+	// OrphanMitigationInProgress is a flag that represents whether orphan
+	// mitigation is in progress.
+	OrphanMitigationInProgress bool `json:"orphanMitigationInProgress"`
 }
 
 // ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.

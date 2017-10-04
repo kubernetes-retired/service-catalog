@@ -645,6 +645,7 @@ func autoConvert_v1alpha1_ServiceInstanceCredentialStatus_To_servicecatalog_Serv
 	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.InProgressProperties = (*servicecatalog.ServiceInstanceCredentialPropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*servicecatalog.ServiceInstanceCredentialPropertiesState)(unsafe.Pointer(in.ExternalProperties))
+	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	return nil
 }
 
@@ -664,6 +665,7 @@ func autoConvert_servicecatalog_ServiceInstanceCredentialStatus_To_v1alpha1_Serv
 	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.InProgressProperties = (*ServiceInstanceCredentialPropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*ServiceInstanceCredentialPropertiesState)(unsafe.Pointer(in.ExternalProperties))
+	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	return nil
 }
 
