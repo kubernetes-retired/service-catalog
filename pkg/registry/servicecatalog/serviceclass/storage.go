@@ -23,7 +23,6 @@ import (
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -44,7 +43,7 @@ var (
 func NewSingular(ns, name string) runtime.Object {
 	return &servicecatalog.ServiceClass{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceClassKind.String(),
+			Kind: "ServiceClass",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -62,7 +61,7 @@ func EmptyObject() runtime.Object {
 func NewList() runtime.Object {
 	return &servicecatalog.ServiceClassList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: tpr.ServiceClassListKind.String(),
+			Kind: "ServiceClassList",
 		},
 		Items: []servicecatalog.ServiceClass{},
 	}

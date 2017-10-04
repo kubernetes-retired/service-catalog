@@ -27,7 +27,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/tpr"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -84,23 +83,6 @@ func (p StorageProvider) v1alpha1Storage(
 			GetAttrsFunc:  broker.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		tpr.Options{
-			HasNamespace:     false,
-			RESTOptions:      brokerRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceBrokerKind,
-			NewSingularFunc:  broker.NewSingular,
-			ListKind:         tpr.ServiceBrokerListKind,
-			NewListFunc:      broker.NewList,
-			CheckObjectFunc:  broker.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceBrokerKind.String(),
-				Separator:        "/",
-			},
-		},
 		p.StorageType,
 	)
 
@@ -117,24 +99,6 @@ func (p StorageProvider) v1alpha1Storage(
 			NewListFunc:   serviceclass.NewList,
 			GetAttrsFunc:  serviceclass.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
-		},
-		tpr.Options{
-			HasNamespace:     false,
-			RESTOptions:      serviceClassRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceClassKind,
-			NewSingularFunc:  serviceclass.NewSingular,
-			ListKind:         tpr.ServiceClassListKind,
-			NewListFunc:      serviceclass.NewList,
-			CheckObjectFunc:  serviceclass.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceClassKind.String(),
-				Separator:        "/",
-			},
-			HardDelete: true,
 		},
 		p.StorageType,
 	)
@@ -153,24 +117,6 @@ func (p StorageProvider) v1alpha1Storage(
 			GetAttrsFunc:  serviceplan.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		tpr.Options{
-			HasNamespace:     false,
-			RESTOptions:      servicePlanRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServicePlanKind,
-			NewSingularFunc:  serviceplan.NewSingular,
-			ListKind:         tpr.ServicePlanListKind,
-			NewListFunc:      serviceplan.NewList,
-			CheckObjectFunc:  serviceplan.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServicePlanKind.String(),
-				Separator:        "/",
-			},
-			HardDelete: true,
-		},
 		p.StorageType,
 	)
 
@@ -188,23 +134,6 @@ func (p StorageProvider) v1alpha1Storage(
 			GetAttrsFunc:  instance.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		tpr.Options{
-			HasNamespace:     true,
-			RESTOptions:      instanceClassRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceInstanceKind,
-			NewSingularFunc:  instance.NewSingular,
-			ListKind:         tpr.ServiceInstanceListKind,
-			NewListFunc:      instance.NewList,
-			CheckObjectFunc:  instance.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceInstanceKind.String(),
-				Separator:        "/",
-			},
-		},
 		p.StorageType,
 	)
 
@@ -221,23 +150,6 @@ func (p StorageProvider) v1alpha1Storage(
 			NewListFunc:   binding.NewList,
 			GetAttrsFunc:  binding.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
-		},
-		tpr.Options{
-			HasNamespace:     true,
-			RESTOptions:      bindingClassRESTOptions,
-			DefaultNamespace: p.DefaultNamespace,
-			RESTClient:       p.RESTClient,
-			SingularKind:     tpr.ServiceInstanceCredentialKind,
-			NewSingularFunc:  binding.NewSingular,
-			ListKind:         tpr.ServiceInstanceCredentialListKind,
-			NewListFunc:      binding.NewList,
-			CheckObjectFunc:  binding.CheckObject,
-			DestroyFunc:      func() {},
-			Keyer: tpr.Keyer{
-				DefaultNamespace: p.DefaultNamespace,
-				ResourceName:     tpr.ServiceInstanceCredentialKind.String(),
-				Separator:        "/",
-			},
 		},
 		p.StorageType,
 	)

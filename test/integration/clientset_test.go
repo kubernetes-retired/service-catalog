@@ -74,7 +74,6 @@ const (
 
 var storageTypes = []server.StorageType{
 	server.StorageTypeEtcd,
-	server.StorageTypeTPR,
 }
 
 // Used for testing binding parameters
@@ -392,7 +391,7 @@ func TestServiceClassClient(t *testing.T) {
 			}
 		}
 	}
-	// TODO: Fix this for TPR.
+	// TODO: Fix this for CRD.
 	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
 	//	for _, sType := range storageTypes {
 	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
@@ -584,7 +583,7 @@ func TestServicePlanClient(t *testing.T) {
 			}
 		}
 	}
-	// TODO: Fix this for TPR.
+	// TODO: Fix this for CRD.
 	// https://github.com/kubernetes-incubator/service-catalog/issues/1256
 	//	for _, sType := range storageTypes {
 	//		if !t.Run(sType.String(), rootTestFunc(sType)) {
