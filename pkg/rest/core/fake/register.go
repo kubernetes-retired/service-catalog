@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package server
+package fake
 
 import (
 	"k8s.io/apimachinery/pkg/apimachinery/announced"
@@ -25,11 +25,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	coreinstall "k8s.io/client-go/pkg/api/install"
 )
 
 var (
 	groupFactoryRegistry = make(announced.APIGroupFactoryRegistry)
-	registrationManager  = registered.NewOrDie("")
+	// Registry is an instance of an API registry.
+	Registry = registered.NewOrDie("")
 	// Scheme for API object types
 	Scheme = runtime.NewScheme()
 	// ParameterCodec handles versioning of objects that are converted to query parameters.
@@ -39,7 +41,11 @@ var (
 )
 
 func init() {
-	install.Install(groupFactoryRegistry, registrationManager, Scheme)
+	install.Install(groupFactoryRegistry, Registry, Scheme)
+	// NOTE: We need this because fake REST client is used for both
+	// Service Catalog resources and core API server resources
+	// For example, "list all namespaces" is part of the core API
+	coreinstall.Install(groupFactoryRegistry, Registry, Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this

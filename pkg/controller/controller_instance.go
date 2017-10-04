@@ -27,15 +27,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"k8s.io/apimachinery/pkg/api/errors"
-	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/pkg/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -187,7 +186,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 				instance.Namespace,
 				instance.Name)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionBlockedByCredentialsReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionBlockedByCredentialsReason, s)
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -259,7 +258,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		if err != nil {
 			s := fmt.Sprintf(`Error building originating identity headers for deprovisioning ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -306,7 +305,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 				httpErr.Description,
 			)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -344,7 +343,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			err,
 		)
 		glog.Warning(s)
-		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		setServiceInstanceCondition(
 			toUpdate,
@@ -356,7 +355,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if !instance.Status.OrphanMitigationInProgress {
 				setServiceInstanceCondition(toUpdate,
@@ -407,7 +406,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			return err
 		}
 
-		c.recorder.Eventf(instance, api.EventTypeNormal, asyncDeprovisioningReason, asyncDeprovisioningMessage)
+		c.recorder.Eventf(instance, apiv1.EventTypeNormal, asyncDeprovisioningReason, asyncDeprovisioningMessage)
 
 		return nil
 	}
@@ -435,7 +434,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		return err
 	}
 
-	c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+	c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 	glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 
 	return nil
@@ -527,7 +526,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	if err != nil {
 		s := fmt.Sprintf("Failed to get namespace %q during instance create: %s", instance.Namespace, err)
 		glog.Info(s)
-		c.recorder.Event(instance, api.EventTypeWarning, errorFindingNamespaceServiceInstanceReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorFindingNamespaceServiceInstanceReason, s)
 
 		setServiceInstanceCondition(
 			toUpdate,
@@ -554,7 +553,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if err != nil {
 			s := fmt.Sprintf("Failed to prepare ServiceInstance parameters\n%s\n %s", instance.Spec.Parameters, err)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorWithParameters, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -574,7 +573,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if err != nil {
 			s := fmt.Sprintf(`Failed to generate the parameters checksum to store in the Status of ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, err)
 			glog.Info(s)
-			c.recorder.Eventf(instance, api.EventTypeWarning, errorWithParameters, s)
+			c.recorder.Eventf(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionReady,
@@ -591,7 +590,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if err != nil {
 			s := fmt.Sprintf(`Failed to marshal the parameters to store in the Status of ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, err)
 			glog.Info(s)
-			c.recorder.Eventf(instance, api.EventTypeWarning, errorWithParameters, s)
+			c.recorder.Eventf(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionReady,
@@ -638,7 +637,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if err != nil {
 			s := fmt.Sprintf(`Error building originating identity headers for provisioning ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -676,7 +675,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			// should not be retried; set the Failed condition.
 			s := fmt.Sprintf("Error provisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, httpErr)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorProvisionCallFailedReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorProvisionCallFailedReason, s)
 
 			setServiceInstanceCondition(
 				toUpdate,
@@ -712,7 +711,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		s := fmt.Sprintf("Error provisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %s", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
 		glog.Warning(s)
-		c.recorder.Event(instance, api.EventTypeWarning, errorErrorCallingProvisionReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorErrorCallingProvisionReason, s)
 
 		urlErr, ok := err.(*url.Error)
 		if ok && urlErr.Timeout() {
@@ -749,7 +748,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 			setServiceInstanceCondition(toUpdate,
 				v1alpha1.ServiceInstanceConditionFailed,
 				v1alpha1.ConditionTrue,
@@ -805,7 +804,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			return err
 		}
 
-		c.recorder.Eventf(instance, api.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
+		c.recorder.Eventf(instance, apiv1.EventTypeNormal, asyncProvisioningReason, asyncProvisioningMessage)
 	} else {
 		glog.V(5).Infof("Successfully provisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
@@ -824,7 +823,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			return err
 		}
 
-		c.recorder.Eventf(instance, api.EventTypeNormal, successProvisionReason, successProvisionMessage)
+		c.recorder.Eventf(instance, apiv1.EventTypeNormal, successProvisionReason, successProvisionMessage)
 	}
 	return nil
 }
@@ -864,7 +863,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		toUpdate := clone.(*v1alpha1.ServiceInstance)
 		s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because the operation start time is not set`, instance.Namespace, instance.Name)
 		glog.Info(s)
-		c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 		if !mitigatingOrphan {
 			setServiceInstanceCondition(toUpdate,
@@ -901,7 +900,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		if err != nil {
 			s := fmt.Sprintf(`Error building originating identity headers for polling last operation of ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorWithOriginatingIdentity, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
 			clone, cloneErr := api.Scheme.DeepCopy(instance)
 			if cloneErr != nil {
@@ -958,7 +957,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 				return err
 			}
 
-			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+			c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 
 			return c.finishPollingServiceInstance(instance)
@@ -980,7 +979,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 
 		s := fmt.Sprintf("Error polling last operation for instance %v/%v: %v", instance.Namespace, instance.Name, errText)
 		glog.V(4).Info(s)
-		c.recorder.Event(instance, api.EventTypeWarning, errorPollingLastOperationReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorPollingLastOperationReason, s)
 
 		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			clone, err := api.Scheme.DeepCopy(instance)
@@ -990,7 +989,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
 			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if !mitigatingOrphan {
 				setServiceInstanceCondition(toUpdate,
@@ -1064,7 +1063,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			}
 			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if !mitigatingOrphan {
 				setServiceInstanceCondition(toUpdate,
@@ -1132,7 +1131,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 				return err
 			}
 
-			c.recorder.Event(instance, api.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+			c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 		} else {
 			setServiceInstanceCondition(
@@ -1157,7 +1156,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			description = *response.Description
 		}
 		s := fmt.Sprintf("Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q: %q", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
-		c.recorder.Event(instance, api.EventTypeWarning, errorDeprovisionCalledReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		clone, err := api.Scheme.DeepCopy(instance)
 		if err != nil {
@@ -1210,7 +1209,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
 			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
-			c.recorder.Event(instance, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if !mitigatingOrphan {
 				setServiceInstanceCondition(toUpdate,
@@ -1249,7 +1248,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 
 	if instance.Spec.ServiceClassRef == nil {
 		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
-		listOpts := apimachineryv1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
+		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
 		serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
 		if err == nil && len(serviceClasses.Items) == 1 {
 			sc = &serviceClasses.Items[0]
@@ -1271,7 +1270,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 				errorNonexistentServiceClassReason,
 				"The instance references a ServiceClass that does not exist. "+s,
 			)
-			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServiceClassReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServiceClassReason, s)
 			return nil, fmt.Errorf(s)
 		}
 	}
@@ -1291,7 +1290,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			"spec.serviceBrokerName":    sc.Spec.ServiceBrokerName,
 		}
 		fieldSelector := fields.SelectorFromSet(fieldSet).String()
-		listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
+		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
 		servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]
@@ -1313,7 +1312,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 				errorNonexistentServicePlanReason,
 				"The instance references a ServicePlan that does not exist. "+s,
 			)
-			c.recorder.Event(instance, api.EventTypeWarning, errorNonexistentServicePlanReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServicePlanReason, s)
 			return nil, fmt.Errorf(s)
 		}
 	}

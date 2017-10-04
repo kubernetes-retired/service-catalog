@@ -30,8 +30,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -50,7 +50,7 @@ import (
 	// client to work with them.  This needs to be done once per process; this
 	// is the point at which we handle this for the controller-manager
 	// process.  Please do not remove.
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	_ "github.com/kubernetes-incubator/service-catalog/pkg/api"
 	// The core API has to be installed in order for the client to understand
 	// error messages from the API server.  Please do not remove.
 	_ "k8s.io/client-go/pkg/api/install"

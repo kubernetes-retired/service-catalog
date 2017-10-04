@@ -33,7 +33,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage"
-	"k8s.io/client-go/pkg/api"
+	coreapi "k8s.io/client-go/pkg/api"
 )
 
 var (
@@ -131,7 +131,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// QualifiedResource should always be plural
-		QualifiedResource: api.Resource("serviceinstancecredentials"),
+		QualifiedResource: coreapi.Resource("serviceinstancecredentials"),
 
 		CreateStrategy:          bindingRESTStrategies,
 		UpdateStrategy:          bindingRESTStrategies,

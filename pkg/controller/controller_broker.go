@@ -23,12 +23,13 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/pkg/api"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -224,7 +225,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		if err != nil {
 			s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 			glog.Info(s)
-			c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
+			c.recorder.Event(broker, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
 			if err := c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -238,7 +239,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		if err != nil {
 			s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
 			glog.Info(s)
-			c.recorder.Event(broker, api.EventTypeWarning, errorAuthCredentialsReason, s)
+			c.recorder.Event(broker, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
 			if err := c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -251,7 +252,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		if err != nil {
 			s := fmt.Sprintf("Error getting broker catalog for broker %q: %s", broker.Name, err)
 			glog.Warning(s)
-			c.recorder.Eventf(broker, api.EventTypeWarning, errorFetchingCatalogReason, s)
+			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorFetchingCatalogReason, s)
 			if err := c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -268,7 +269,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 			} else if !time.Now().Before(broker.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 				s := fmt.Sprintf("Stopping reconciliation retries on ServiceBroker %q because too much time has elapsed", broker.Name)
 				glog.Info(s)
-				c.recorder.Event(broker, api.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+				c.recorder.Event(broker, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 				clone, err := api.Scheme.DeepCopy(broker)
 				if err == nil {
 					toUpdate := clone.(*v1alpha1.ServiceBroker)
@@ -306,7 +307,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(s)
-			c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
 			if err := c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -317,7 +318,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		if len(serviceClasses) == 0 {
 			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
 			glog.Warning(s)
-			c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
 			if err := c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -334,7 +335,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 					err,
 				)
 				glog.Warning(s)
-				c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
 				c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s)
 				return err
@@ -352,7 +353,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 					err,
 				)
 				glog.Warning(s)
-				c.recorder.Eventf(broker, api.EventTypeWarning, errorSyncingCatalogReason, s)
+				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
 				if err := c.updateServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s); err != nil {
 					return err
@@ -367,7 +368,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 			return err
 		}
 
-		c.recorder.Event(broker, api.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
+		c.recorder.Event(broker, apiv1.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
 
 		return nil
 	}
@@ -381,7 +382,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		// Get ALL ServiceClasses. Remove those that reference this ServiceBroker.
 		svcClasses, err := c.serviceClassLister.List(labels.Everything())
 		if err != nil {
-			c.recorder.Eventf(broker, api.EventTypeWarning, errorListingServiceClassesReason, "%v %v", errorListingServiceClassesMessage, err)
+			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingServiceClassesReason, "%v %v", errorListingServiceClassesMessage, err)
 			if err := c.updateServiceBrokerCondition(
 				broker,
 				v1alpha1.ServiceBrokerConditionReady,
@@ -412,7 +413,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 						errorListingServicePlansReason,
 						errorListingServicePlansMessage,
 					)
-					c.recorder.Eventf(broker, api.EventTypeWarning, errorListingServicePlansReason, "%v %v", errorListingServicePlansMessage, err)
+					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingServicePlansReason, "%v %v", errorListingServicePlansMessage, err)
 					return err
 				}
 				for _, plan := range plans {
@@ -434,7 +435,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 								errorDeletingServicePlanMessage,
 								errorDeletingServicePlanReason+s,
 							)
-							c.recorder.Eventf(broker, api.EventTypeWarning, errorDeletingServicePlanReason, "%v %v", errorDeletingServicePlanMessage, s)
+							c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingServicePlanReason, "%v %v", errorDeletingServicePlanMessage, s)
 							return err
 						}
 					}
@@ -449,7 +450,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 						err,
 					)
 					glog.Warning(s)
-					c.recorder.Eventf(broker, api.EventTypeWarning, errorDeletingServiceClassReason, "%v %v", errorDeletingServiceClassMessage, s)
+					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingServiceClassReason, "%v %v", errorDeletingServiceClassMessage, s)
 					if err := c.updateServiceBrokerCondition(
 						broker,
 						v1alpha1.ServiceBrokerConditionReady,
@@ -477,7 +478,7 @@ func (c *controller) reconcileServiceBroker(broker *v1alpha1.ServiceBroker) erro
 		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
 		c.updateServiceBrokerFinalizers(broker, finalizers.List())
 
-		c.recorder.Eventf(broker, api.EventTypeNormal, successServiceBrokerDeletedReason, successServiceBrokerDeletedMessage, broker.Name)
+		c.recorder.Eventf(broker, apiv1.EventTypeNormal, successServiceBrokerDeletedReason, successServiceBrokerDeletedMessage, broker.Name)
 		glog.V(5).Infof("Successfully deleted ServiceBroker %v", broker.Name)
 		return nil
 	}

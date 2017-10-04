@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
 	"k8s.io/kubernetes/cmd/kube-apiserver/app/preflight"
 
 	"github.com/golang/glog"
