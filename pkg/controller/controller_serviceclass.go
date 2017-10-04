@@ -37,13 +37,13 @@ func (c *controller) serviceClassAdd(obj interface{}) {
 // or an event on the ServiceClass.  Note that this is NOT the main
 // reconciliation loop for ServiceClass. ServiceClasses are primarily
 // reconciled in a separate flow when a ClusterServiceBroker is reconciled.
-func (c *controller) reconcileServiceClassKey(key string) error {
+func (c *controller) reconcileClusterServiceClassKey(key string) error {
 	// currently, this is a no-op.  In the future, we'll maintain status
 	// information here.
 	return nil
 }
 
-func (c *controller) reconcileServiceClass(serviceClass *v1alpha1.ServiceClass) error {
+func (c *controller) reconcileClusterServiceClass(serviceClass *v1alpha1.ClusterServiceClass) error {
 	glog.V(4).Infof("Processing ServiceClass %v", serviceClass.Name)
 	return nil
 }
@@ -53,7 +53,7 @@ func (c *controller) serviceClassUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) serviceClassDelete(obj interface{}) {
-	serviceClass, ok := obj.(*v1alpha1.ServiceClass)
+	serviceClass, ok := obj.(*v1alpha1.ClusterServiceClass)
 	if serviceClass == nil || !ok {
 		return
 	}

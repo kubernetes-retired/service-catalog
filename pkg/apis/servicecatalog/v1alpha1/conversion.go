@@ -21,14 +21,14 @@ package v1alpha1
 // ServicePlan and ServiceClass. While they are identical, it's clearer to
 // use different functions from the get go.
 
-// ServicePlanFieldLabelConversionFunc does not convert anything, just returns
+// ClusterServicePlanFieldLabelConversionFunc does not convert anything, just returns
 // what it's given.
-func ServicePlanFieldLabelConversionFunc(label, value string) (string, string, error) {
+func ClusterServicePlanFieldLabelConversionFunc(label, value string) (string, string, error) {
 	return label, value, nil
 }
 
-// ServiceClassFieldLabelConversionFunc does not convert anything, just returns
+// ClusterServiceClassFieldLabelConversionFunc does not convert anything, just returns
 // what it's given.
-func ServiceClassFieldLabelConversionFunc(label, value string) (string, string, error) {
+func ClusterServiceClassFieldLabelConversionFunc(label, value string) (string, string, error) {
 	return label, value, nil
 }

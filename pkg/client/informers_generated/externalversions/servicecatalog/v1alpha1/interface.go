@@ -26,14 +26,14 @@ import (
 type Interface interface {
 	// ClusterServiceBrokers returns a ClusterServiceBrokerInformer.
 	ClusterServiceBrokers() ClusterServiceBrokerInformer
-	// ServiceClasses returns a ServiceClassInformer.
-	ServiceClasses() ServiceClassInformer
+	// ClusterServiceClasses returns a ClusterServiceClassInformer.
+	ClusterServiceClasses() ClusterServiceClassInformer
+	// ClusterServicePlans returns a ClusterServicePlanInformer.
+	ClusterServicePlans() ClusterServicePlanInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
 	ServiceInstances() ServiceInstanceInformer
 	// ServiceInstanceCredentials returns a ServiceInstanceCredentialInformer.
 	ServiceInstanceCredentials() ServiceInstanceCredentialInformer
-	// ServicePlans returns a ServicePlanInformer.
-	ServicePlans() ServicePlanInformer
 }
 
 type version struct {
@@ -50,9 +50,14 @@ func (v *version) ClusterServiceBrokers() ClusterServiceBrokerInformer {
 	return &clusterServiceBrokerInformer{factory: v.SharedInformerFactory}
 }
 
-// ServiceClasses returns a ServiceClassInformer.
-func (v *version) ServiceClasses() ServiceClassInformer {
-	return &serviceClassInformer{factory: v.SharedInformerFactory}
+// ClusterServiceClasses returns a ClusterServiceClassInformer.
+func (v *version) ClusterServiceClasses() ClusterServiceClassInformer {
+	return &clusterServiceClassInformer{factory: v.SharedInformerFactory}
+}
+
+// ClusterServicePlans returns a ClusterServicePlanInformer.
+func (v *version) ClusterServicePlans() ClusterServicePlanInformer {
+	return &clusterServicePlanInformer{factory: v.SharedInformerFactory}
 }
 
 // ServiceInstances returns a ServiceInstanceInformer.
@@ -63,9 +68,4 @@ func (v *version) ServiceInstances() ServiceInstanceInformer {
 // ServiceInstanceCredentials returns a ServiceInstanceCredentialInformer.
 func (v *version) ServiceInstanceCredentials() ServiceInstanceCredentialInformer {
 	return &serviceInstanceCredentialInformer{factory: v.SharedInformerFactory}
-}
-
-// ServicePlans returns a ServicePlanInformer.
-func (v *version) ServicePlans() ServicePlanInformer {
-	return &servicePlanInformer{factory: v.SharedInformerFactory}
 }

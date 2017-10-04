@@ -37,8 +37,8 @@ func (c *ServicecatalogV1alpha1) ClusterServiceBrokers() v1alpha1.ClusterService
 	return c.ServicecatalogV1alpha1Interface.ClusterServiceBrokers()
 }
 
-func (c *ServicecatalogV1alpha1) ServiceClasses() v1alpha1.ServiceClassInterface {
-	return c.ServicecatalogV1alpha1Interface.ServiceClasses()
+func (c *ServicecatalogV1alpha1) ClusterServiceClasses() v1alpha1.ClusterServiceClassInterface {
+	return c.ServicecatalogV1alpha1Interface.ClusterServiceClasses()
 }
 
 func (c *ServicecatalogV1alpha1) ServiceInstances(namespace string) v1alpha1.ServiceInstanceInterface {
@@ -51,8 +51,8 @@ func (c *ServicecatalogV1alpha1) ServiceInstanceCredentials(namespace string) v1
 	return &ServiceInstanceCredentials{serviceInstanceCredentials}
 }
 
-func (c *ServicecatalogV1alpha1) ServicePlans() v1alpha1.ServicePlanInterface {
-	return c.ServicecatalogV1alpha1Interface.ServicePlans()
+func (c *ServicecatalogV1alpha1) ClusterServicePlans() v1alpha1.ClusterServicePlanInterface {
+	return c.ServicecatalogV1alpha1Interface.ClusterServicePlans()
 }
 
 func (c *ServicecatalogV1alpha1) RESTClient() rest.Interface {

@@ -69,17 +69,17 @@ const (
 	errorSyncingCatalogReason                      string = "ErrorSyncingCatalog"
 	errorSyncingCatalogMessage                     string = "Error syncing catalog from ServiceBroker. "
 	errorWithParameters                            string = "ErrorWithParameters"
-	errorListingServiceClassesReason               string = "ErrorListingServiceClasses"
-	errorListingServiceClassesMessage              string = "Error listing service classes."
-	errorListingServicePlansReason                 string = "ErrorListingServicePlans"
-	errorListingServicePlansMessage                string = "Error listing service plans."
-	errorDeletingServiceClassReason                string = "ErrorDeletingServiceClass"
-	errorDeletingServiceClassMessage               string = "Error deleting service class."
-	errorDeletingServicePlanReason                 string = "ErrorDeletingServicePlan"
-	errorDeletingServicePlanMessage                string = "Error deleting service plan."
-	errorNonexistentServiceClassReason             string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServiceClassMessage            string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServicePlanReason              string = "ReferencesNonexistentServicePlan"
+	errorListingClusterServiceClassesReason        string = "ErrorListingServiceClasses"
+	errorListingClusterServiceClassesMessage       string = "Error listing service classes."
+	errorListingClusterServicePlansReason          string = "ErrorListingServicePlans"
+	errorListingClusterServicePlansMessage         string = "Error listing service plans."
+	errorDeletingClusterServiceClassReason         string = "ErrorDeletingServiceClass"
+	errorDeletingClusterServiceClassMessage        string = "Error deleting service class."
+	errorDeletingClusterServicePlanReason          string = "ErrorDeletingServicePlan"
+	errorDeletingClusterServicePlanMessage         string = "Error deleting service plan."
+	errorNonexistentClusterServiceClassReason      string = "ReferencesNonexistentServiceClass"
+	errorNonexistentClusterServiceClassMessage     string = "ReferencesNonexistentServiceClass"
+	errorNonexistentClusterServicePlanReason       string = "ReferencesNonexistentServicePlan"
 	errorNonexistentClusterServiceBrokerReason     string = "ReferencesNonexistentBroker"
 	errorNonexistentServiceInstanceReason          string = "ReferencesNonexistentInstance"
 	errorAuthCredentialsReason                     string = "ErrorGettingAuthCredentials"
@@ -97,7 +97,7 @@ const (
 	errorUnbindCallReason                          string = "UnbindCallFailed"
 	errorWithOngoingAsyncOperation                 string = "ErrorAsyncOperationInProgress"
 	errorWithOngoingAsyncOperationMessage          string = "Another operation for this service instance is in progress. "
-	errorNonbindableServiceClassReason             string = "ErrorNonbindableServiceClass"
+	errorNonbindableClusterServiceClassReason      string = "ErrorNonbindableServiceClass"
 	errorServiceInstanceNotReadyReason             string = "ErrorInstanceNotReady"
 	errorPollingLastOperationReason                string = "ErrorPollingLastOperation"
 	errorWithOriginatingIdentity                   string = "Error with Originating Identity"
@@ -355,10 +355,10 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		}
 
 		for _, serviceClass := range serviceClasses {
-			glog.V(4).Infof("Reconciling serviceClass %v (broker %v)", serviceClass.Spec.ExternalName, broker.Name)
-			if err := c.reconcileServiceClassFromClusterServiceBrokerCatalog(broker, serviceClass); err != nil {
+			glog.V(4).Infof("Reconciling ClusterServiceClass %v (broker %v)", serviceClass.Spec.ExternalName, broker.Name)
+			if err := c.reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker, serviceClass); err != nil {
 				s := fmt.Sprintf(
-					"Error reconciling serviceClass %q (broker %q): %s",
+					"Error reconciling ClusterServiceClass %q (broker %q): %s",
 					serviceClass.Spec.ExternalName,
 					broker.Name,
 					err,
@@ -372,7 +372,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				return err
 			}
 
-			glog.V(5).Infof("Reconciled serviceClass %v (broker %v)", serviceClass.Spec.ExternalName, broker.Name)
+			glog.V(5).Infof("Reconciled ClusterServiceClass %v (broker %v)", serviceClass.Spec.ExternalName, broker.Name)
 		}
 
 		if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue, successFetchedCatalogReason, successFetchedCatalogMessage); err != nil {
@@ -393,20 +393,20 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		// Get ALL ServiceClasses. Remove those that reference this ClusterServiceBroker.
 		svcClasses, err := c.serviceClassLister.List(labels.Everything())
 		if err != nil {
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingServiceClassesReason, "%v %v", errorListingServiceClassesMessage, err)
+			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
 			if err := c.updateClusterServiceBrokerCondition(
 				broker,
 				v1alpha1.ServiceBrokerConditionReady,
 				v1alpha1.ConditionUnknown,
-				errorListingServiceClassesReason,
-				errorListingServiceClassesMessage,
+				errorListingClusterServiceClassesReason,
+				errorListingClusterServiceClassesMessage,
 			); err != nil {
 				return err
 			}
 			return err
 		}
 
-		// Delete ServiceClasses that are for THIS ClusterServiceBroker.
+		// Delete ClusterServiceClasses that are for THIS ClusterServiceBroker.
 		// TODO: Change this to use field selectors.
 		for _, svcClass := range svcClasses {
 			if svcClass.Spec.ClusterServiceBrokerName == broker.Name {
@@ -421,19 +421,19 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 						broker,
 						v1alpha1.ServiceBrokerConditionReady,
 						v1alpha1.ConditionUnknown,
-						errorListingServicePlansReason,
-						errorListingServicePlansMessage,
+						errorListingClusterServicePlansReason,
+						errorListingClusterServicePlansMessage,
 					)
-					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingServicePlansReason, "%v %v", errorListingServicePlansMessage, err)
+					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
 					return err
 				}
 				for _, plan := range plans {
 					// only process the plans this class owns
-					if svcClass.Name == plan.Spec.ServiceClassRef.Name {
-						err := c.serviceCatalogClient.ServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
+					if svcClass.Name == plan.Spec.ClusterServiceClassRef.Name {
+						err := c.serviceCatalogClient.ClusterServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
 						if err != nil && !errors.IsNotFound(err) {
 							s := fmt.Sprintf(
-								"Error deleting ServicePlan %q (ServiceClass %q): %s",
+								"Error deleting ServicePlan %q (ClusterServiceClass %q): %s",
 								plan.Name,
 								svcClass.Spec.ExternalName,
 								err,
@@ -443,31 +443,31 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 								broker,
 								v1alpha1.ServiceBrokerConditionReady,
 								v1alpha1.ConditionUnknown,
-								errorDeletingServicePlanMessage,
-								errorDeletingServicePlanReason+s,
+								errorDeletingClusterServicePlanMessage,
+								errorDeletingClusterServicePlanReason+s,
 							)
-							c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingServicePlanReason, "%v %v", errorDeletingServicePlanMessage, s)
+							c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
 							return err
 						}
 					}
 				}
 
-				err = c.serviceCatalogClient.ServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
+				err = c.serviceCatalogClient.ClusterServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 				if err != nil && !errors.IsNotFound(err) {
 					s := fmt.Sprintf(
-						"Error deleting ServiceClass %q (ClusterServiceBroker %q): %s",
+						"Error deleting ClusterServiceClass %q (ClusterServiceBroker %q): %s",
 						svcClass.Spec.ExternalName,
 						broker.Name,
 						err,
 					)
 					glog.Warning(s)
-					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingServiceClassReason, "%v %v", errorDeletingServiceClassMessage, s)
+					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServiceClassReason, "%v %v", errorDeletingClusterServiceClassMessage, s)
 					if err := c.updateClusterServiceBrokerCondition(
 						broker,
 						v1alpha1.ServiceBrokerConditionReady,
 						v1alpha1.ConditionUnknown,
-						errorDeletingServiceClassMessage,
-						errorDeletingServiceClassReason+s,
+						errorDeletingClusterServiceClassMessage,
+						errorDeletingClusterServiceClassReason+s,
 					); err != nil {
 						return err
 					}
@@ -497,40 +497,40 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 	return nil
 }
 
-// reconcileServiceClassFromClusterServiceBrokerCatalog reconciles a ServiceClass after the
+// reconcileClusterServiceClassFromClusterServiceBrokerCatalog reconciles a ClusterServiceClass after the
 // ClusterServiceBroker's catalog has been re-listed.
-func (c *controller) reconcileServiceClassFromClusterServiceBrokerCatalog(broker *v1alpha1.ClusterServiceBroker, serviceClass *v1alpha1.ServiceClass) error {
+func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker *v1alpha1.ClusterServiceBroker, serviceClass *v1alpha1.ClusterServiceClass) error {
 	serviceClass.Spec.ClusterServiceBrokerName = broker.Name
 
 	existingServiceClass, err := c.serviceClassLister.Get(serviceClass.Name)
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServiceClass.
-		glog.V(5).Infof("Fresh serviceClass %q; creating", serviceClass.Spec.ExternalName)
-		if _, err := c.serviceCatalogClient.ServiceClasses().Create(serviceClass); err != nil {
-			glog.Errorf("Error creating serviceClass %q from ClusterServiceBroker %q: %v", serviceClass.Spec.ExternalName, broker.Name, err)
+		glog.V(5).Infof("Fresh ClusterServiceClass %q; creating", serviceClass.Spec.ExternalName)
+		if _, err := c.serviceCatalogClient.ClusterServiceClasses().Create(serviceClass); err != nil {
+			glog.Errorf("Error creating ClusterServiceClass %q from ClusterServiceBroker %q: %v", serviceClass.Spec.ExternalName, broker.Name, err)
 			return err
 		}
 
 		return nil
 	} else if err != nil {
-		glog.Errorf("Error getting serviceClass %q: %v", serviceClass.Spec.ExternalName, err)
+		glog.Errorf("Error getting ClusterServiceClass %q: %v", serviceClass.Spec.ExternalName, err)
 		return err
 	}
 
 	if existingServiceClass.Spec.ClusterServiceBrokerName != broker.Name {
-		errMsg := fmt.Sprintf("ServiceClass %q for ClusterServiceBroker %q already exists for Broker %q", serviceClass.Spec.ExternalName, broker.Name, existingServiceClass.Spec.ClusterServiceBrokerName)
+		errMsg := fmt.Sprintf("ClusterServiceClass %q for ClusterServiceBroker %q already exists for Broker %q", serviceClass.Spec.ExternalName, broker.Name, existingServiceClass.Spec.ClusterServiceBrokerName)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
 	if existingServiceClass.Spec.ExternalID != serviceClass.Spec.ExternalID {
-		errMsg := fmt.Sprintf("ServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Spec.ExternalName, existingServiceClass.Name, serviceClass.Name)
+		errMsg := fmt.Sprintf("ClusterServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Spec.ExternalName, existingServiceClass.Name, serviceClass.Name)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Infof("Found existing serviceClass %v; updating", serviceClass.Spec.ExternalName)
+	glog.V(5).Infof("Found existing ClusterServiceClass %v; updating", serviceClass.Spec.ExternalName)
 
 	// There was an existing service class -- project the update onto it and
 	// update it.
@@ -539,15 +539,15 @@ func (c *controller) reconcileServiceClassFromClusterServiceBrokerCatalog(broker
 		return err
 	}
 
-	toUpdate := clone.(*v1alpha1.ServiceClass)
+	toUpdate := clone.(*v1alpha1.ClusterServiceClass)
 	toUpdate.Spec.Bindable = serviceClass.Spec.Bindable
 	toUpdate.Spec.PlanUpdatable = serviceClass.Spec.PlanUpdatable
 	toUpdate.Spec.Tags = serviceClass.Spec.Tags
 	toUpdate.Spec.Description = serviceClass.Spec.Description
 	toUpdate.Spec.Requires = serviceClass.Spec.Requires
 
-	if _, err := c.serviceCatalogClient.ServiceClasses().Update(toUpdate); err != nil {
-		glog.Errorf("Error updating ServiceClass %q from ClusterServiceBroker %q: %v", serviceClass.Spec.ExternalName, broker.Name, err)
+	if _, err := c.serviceCatalogClient.ClusterServiceClasses().Update(toUpdate); err != nil {
+		glog.Errorf("Error updating ClusterServiceClass %q from ClusterServiceBroker %q: %v", serviceClass.Spec.ExternalName, broker.Name, err)
 		return err
 	}
 
@@ -555,15 +555,15 @@ func (c *controller) reconcileServiceClassFromClusterServiceBrokerCatalog(broker
 }
 
 // reconcileServicePlan reconciles a ServicePlan after the
-// ServiceClass's catalog has been re-listed.
-func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker, servicePlan *v1alpha1.ServicePlan) error {
+// ClusterServiceClass's catalog has been re-listed.
+func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker, servicePlan *v1alpha1.ClusterServicePlan) error {
 	servicePlan.Spec.ClusterServiceBrokerName = broker.Name
 
 	existingServicePlan, err := c.servicePlanLister.Get(servicePlan.Name)
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServicePlan.
-		if _, err := c.serviceCatalogClient.ServicePlans().Create(servicePlan); err != nil {
+		if _, err := c.serviceCatalogClient.ClusterServicePlans().Create(servicePlan); err != nil {
 			glog.Errorf("Error creating servicePlan %q: %v", servicePlan.Name, err)
 			return err
 		}
@@ -589,7 +589,7 @@ func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker,
 		return err
 	}
 
-	toUpdate := clone.(*v1alpha1.ServicePlan)
+	toUpdate := clone.(*v1alpha1.ClusterServicePlan)
 	toUpdate.Spec.Description = servicePlan.Spec.Description
 	toUpdate.Spec.Bindable = servicePlan.Spec.Bindable
 	toUpdate.Spec.Free = servicePlan.Spec.Free
@@ -597,7 +597,7 @@ func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker,
 	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
 	toUpdate.Spec.ServiceInstanceCredentialCreateParameterSchema = servicePlan.Spec.ServiceInstanceCredentialCreateParameterSchema
 
-	if _, err := c.serviceCatalogClient.ServicePlans().Update(toUpdate); err != nil {
+	if _, err := c.serviceCatalogClient.ClusterServicePlans().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating ServicePlan %q: %v", servicePlan.Name, err)
 		return err
 	}

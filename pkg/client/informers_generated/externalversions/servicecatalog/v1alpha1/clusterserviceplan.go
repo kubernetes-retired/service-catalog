@@ -30,28 +30,28 @@ import (
 	time "time"
 )
 
-// ServicePlanInformer provides access to a shared informer and lister for
-// ServicePlans.
-type ServicePlanInformer interface {
+// ClusterServicePlanInformer provides access to a shared informer and lister for
+// ClusterServicePlans.
+type ClusterServicePlanInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ServicePlanLister
+	Lister() v1alpha1.ClusterServicePlanLister
 }
 
-type servicePlanInformer struct {
+type clusterServicePlanInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServicePlanInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func newClusterServicePlanInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.ServicecatalogV1alpha1().ServicePlans().List(options)
+				return client.ServicecatalogV1alpha1().ClusterServicePlans().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.ServicecatalogV1alpha1().ServicePlans().Watch(options)
+				return client.ServicecatalogV1alpha1().ClusterServicePlans().Watch(options)
 			},
 		},
-		&servicecatalog_v1alpha1.ServicePlan{},
+		&servicecatalog_v1alpha1.ClusterServicePlan{},
 		resyncPeriod,
 		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
@@ -59,10 +59,10 @@ func newServicePlanInformer(client clientset.Interface, resyncPeriod time.Durati
 	return sharedIndexInformer
 }
 
-func (f *servicePlanInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServicePlan{}, newServicePlanInformer)
+func (f *clusterServicePlanInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&servicecatalog_v1alpha1.ClusterServicePlan{}, newClusterServicePlanInformer)
 }
 
-func (f *servicePlanInformer) Lister() v1alpha1.ServicePlanLister {
-	return v1alpha1.NewServicePlanLister(f.Informer().GetIndexer())
+func (f *clusterServicePlanInformer) Lister() v1alpha1.ClusterServicePlanLister {
+	return v1alpha1.NewClusterServicePlanLister(f.Informer().GetIndexer())
 }

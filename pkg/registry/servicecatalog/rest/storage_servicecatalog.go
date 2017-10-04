@@ -86,7 +86,7 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
-	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
+	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceclasses"))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
-	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
+	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
 	if err != nil {
 		return nil, err
 	}
@@ -166,10 +166,10 @@ func (p StorageProvider) v1alpha1Storage(
 	return map[string]rest.Storage{
 		"clusterservicebrokers":             brokerStorage,
 		"clusterservicebrokers/status":      brokerStatusStorage,
-		"serviceclasses":                    serviceClassStorage,
-		"serviceclasses/status":             serviceClassStatusStorage,
-		"serviceplans":                      servicePlanStorage,
-		"serviceplans/status":               servicePlanStatusStorage,
+		"clusterserviceclasses":             serviceClassStorage,
+		"clusterserviceclasses/status":      serviceClassStatusStorage,
+		"clusterserviceplans":               servicePlanStorage,
+		"clusterserviceplans/status":        servicePlanStatusStorage,
 		"serviceinstances":                  instanceStorage,
 		"serviceinstances/status":           instanceStatusStorage,
 		"serviceinstances/reference":        instanceReferencesStorage,

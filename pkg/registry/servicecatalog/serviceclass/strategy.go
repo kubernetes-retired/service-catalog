@@ -70,7 +70,7 @@ var (
 
 // Canonicalize does not transform a serviceclass.
 func (serviceClassRESTStrategy) Canonicalize(obj runtime.Object) {
-	_, ok := obj.(*sc.ServiceClass)
+	_, ok := obj.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
 	}
@@ -83,7 +83,7 @@ func (serviceClassRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives the incoming Serviceclass.
 func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	serviceClass, ok := obj.(*sc.ServiceClass)
+	serviceClass, ok := obj.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
 	}
@@ -91,7 +91,7 @@ func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, 
 }
 
 func (serviceClassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateServiceClass(obj.(*sc.ServiceClass))
+	return scv.ValidateClusterServiceClass(obj.(*sc.ClusterServiceClass))
 }
 
 func (serviceClassRESTStrategy) AllowCreateOnUpdate() bool {
@@ -103,11 +103,11 @@ func (serviceClassRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newServiceClass, ok := new.(*sc.ServiceClass)
+	newServiceClass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update to")
 	}
-	oldServiceClass, ok := old.(*sc.ServiceClass)
+	oldServiceClass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update from")
 	}
@@ -119,24 +119,24 @@ func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 }
 
 func (serviceClassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newServiceclass, ok := new.(*sc.ServiceClass)
+	newServiceclass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate to")
 	}
-	oldServiceclass, ok := old.(*sc.ServiceClass)
+	oldServiceclass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate from")
 	}
 
-	return scv.ValidateServiceClassUpdate(newServiceclass, oldServiceclass)
+	return scv.ValidateClusterServiceClassUpdate(newServiceclass, oldServiceclass)
 }
 
 func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newServiceClass, ok := new.(*sc.ServiceClass)
+	newServiceClass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceClass object to update to")
 	}
-	oldServiceClass, ok := old.(*sc.ServiceClass)
+	oldServiceClass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceClass object to update from")
 	}

@@ -18,8 +18,8 @@ package v1alpha1
 
 type ClusterServiceBrokerExpansion interface{}
 
-type ServiceClassExpansion interface{}
+type ClusterServiceClassExpansion interface{}
+
+type ClusterServicePlanExpansion interface{}
 
 type ServiceInstanceCredentialExpansion interface{}
-
-type ServicePlanExpansion interface{}

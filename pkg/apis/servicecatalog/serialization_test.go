@@ -209,7 +209,7 @@ func TestSpecificKind(t *testing.T) {
 		t.Log(kind)
 	}
 
-	kind := "ServiceClass"
+	kind := "ClusterServiceClass"
 	for i := 0; i < *fuzzIters; i++ {
 		doRoundTripTest(serviceCatalogAPIGroup(), kind, t)
 		if t.Failed() {

@@ -24,10 +24,10 @@ import (
 type ServicecatalogInterface interface {
 	RESTClient() rest.Interface
 	ClusterServiceBrokersGetter
-	ServiceClassesGetter
+	ClusterServiceClassesGetter
+	ClusterServicePlansGetter
 	ServiceInstancesGetter
 	ServiceInstanceCredentialsGetter
-	ServicePlansGetter
 }
 
 // ServicecatalogClient is used to interact with features provided by the servicecatalog.k8s.io group.
@@ -39,8 +39,12 @@ func (c *ServicecatalogClient) ClusterServiceBrokers() ClusterServiceBrokerInter
 	return newClusterServiceBrokers(c)
 }
 
-func (c *ServicecatalogClient) ServiceClasses() ServiceClassInterface {
-	return newServiceClasses(c)
+func (c *ServicecatalogClient) ClusterServiceClasses() ClusterServiceClassInterface {
+	return newClusterServiceClasses(c)
+}
+
+func (c *ServicecatalogClient) ClusterServicePlans() ClusterServicePlanInterface {
+	return newClusterServicePlans(c)
 }
 
 func (c *ServicecatalogClient) ServiceInstances(namespace string) ServiceInstanceInterface {
@@ -49,10 +53,6 @@ func (c *ServicecatalogClient) ServiceInstances(namespace string) ServiceInstanc
 
 func (c *ServicecatalogClient) ServiceInstanceCredentials(namespace string) ServiceInstanceCredentialInterface {
 	return newServiceInstanceCredentials(c, namespace)
-}
-
-func (c *ServicecatalogClient) ServicePlans() ServicePlanInterface {
-	return newServicePlans(c)
 }
 
 // NewForConfig creates a new ServicecatalogClient for the given config.

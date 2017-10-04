@@ -52,21 +52,21 @@ import (
 )
 
 const (
-	testNamespace        = "test-namespace"
-	testBrokerName       = "test-broker"
-	testServiceClassName = "test-service"
-	testServiceClassID   = "12345"
-	testPlanName         = "test-plan"
-	testPlanExternalID   = "34567"
-	testInstanceName     = "test-instance"
-	testBindingName      = "test-binding"
-	testSecretName       = "test-secret"
-	testBrokerURL        = "https://example.com"
-	testExternalID       = "9737b6ed-ca95-4439-8219-c53fcad118ab"
-	testDashboardURL     = "http://test-dashboard.example.com"
-	testCreatorUsername  = "create-username"
-	testUpdaterUsername  = "update-username"
-	testDeleterUsername  = "delete-username"
+	testNamespace               = "test-namespace"
+	testBrokerName              = "test-broker"
+	testClusterServiceClassName = "test-service"
+	testClusterServiceClassID   = "12345"
+	testPlanName                = "test-plan"
+	testPlanExternalID          = "34567"
+	testInstanceName            = "test-instance"
+	testBindingName             = "test-binding"
+	testSecretName              = "test-secret"
+	testBrokerURL               = "https://example.com"
+	testExternalID              = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+	testDashboardURL            = "http://test-dashboard.example.com"
+	testCreatorUsername         = "create-username"
+	testUpdaterUsername         = "update-username"
+	testDeleterUsername         = "delete-username"
 )
 
 func truePtr() *bool {
@@ -77,7 +77,7 @@ func truePtr() *bool {
 // TestBasicFlowsSync tests:
 //
 // - add Broker
-// - verify ServiceClasses added
+// - verify ClusterServiceClasses added
 // - provision Instance
 // - update Instance
 // - make Binding
@@ -143,9 +143,9 @@ func TestBasicFlowsSync(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
 	if nil != err {
-		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
 	// TODO: find some way to compose scenarios; extract method here for real
@@ -156,9 +156,9 @@ func TestBasicFlowsSync(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  testPlanName,
-			ExternalID:               testExternalID,
+			ExternalClusterServiceClassName: testClusterServiceClassName,
+			ExternalClusterServicePlanName:  testPlanName,
+			ExternalID:                      testExternalID,
 		},
 	}
 
@@ -264,9 +264,9 @@ func TestBasicFlowsSync(t *testing.T) {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	err = util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName)
 	if err != nil {
-		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
 	err = util.WaitForBrokerToNotExist(client, testBrokerName)
@@ -339,9 +339,9 @@ func TestBasicFlowsAsync(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
 	if nil != err {
-		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
 	// TODO: find some way to compose scenarios; extract method here for real
@@ -352,9 +352,9 @@ func TestBasicFlowsAsync(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  testPlanName,
-			ExternalID:               testExternalID,
+			ExternalClusterServiceClassName: testClusterServiceClassName,
+			ExternalClusterServicePlanName:  testPlanName,
+			ExternalID:                      testExternalID,
 		},
 	}
 
@@ -460,9 +460,9 @@ func TestBasicFlowsAsync(t *testing.T) {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	err = util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName)
 	if err != nil {
-		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
 	err = util.WaitForBrokerToNotExist(client, testBrokerName)
@@ -519,9 +519,9 @@ func TestProvisionFailure(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
 	if nil != err {
-		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
 	// TODO: find some way to compose scenarios; extract method here for real
@@ -532,9 +532,9 @@ func TestProvisionFailure(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  testPlanName,
-			ExternalID:               testExternalID,
+			ExternalClusterServiceClassName: testClusterServiceClassName,
+			ExternalClusterServicePlanName:  testPlanName,
+			ExternalID:                      testExternalID,
 		},
 	}
 
@@ -580,9 +580,9 @@ func TestProvisionFailure(t *testing.T) {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	err = util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName)
 	if err != nil {
-		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
 	err = util.WaitForBrokerToNotExist(client, testBrokerName)
@@ -644,9 +644,9 @@ func TestBindingFailure(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
 	if nil != err {
-		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
 	// TODO: find some way to compose scenarios; extract method here for real
@@ -657,9 +657,9 @@ func TestBindingFailure(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  testPlanName,
-			ExternalID:               testExternalID,
+			ExternalClusterServiceClassName: testClusterServiceClassName,
+			ExternalClusterServicePlanName:  testPlanName,
+			ExternalID:                      testExternalID,
 		},
 	}
 
@@ -743,9 +743,9 @@ func TestBindingFailure(t *testing.T) {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	err = util.WaitForServiceClassToNotExist(client, testServiceClassName)
+	err = util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName)
 	if err != nil {
-		t.Fatalf("error waiting for ServiceClass to not exist: %v", err)
+		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
 	err = util.WaitForBrokerToNotExist(client, testBrokerName)
@@ -766,7 +766,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 			Response: &osb.CatalogResponse{
 				Services: []osb.Service{
 					{
-						Name:        testServiceClassName,
+						Name:        testClusterServiceClassName,
 						ID:          "12345",
 						Description: "a test service",
 						Bindable:    true,
@@ -834,9 +834,9 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForServiceClassToExist(client, testServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
 	if nil != err {
-		t.Fatalf("error waiting from ServiceClass to exist: %v", err)
+		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
 	// TODO: find some way to compose scenarios; extract method here for real
@@ -854,9 +854,9 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  testPlanName,
-			ExternalID:               testExternalID,
+			ExternalClusterServiceClassName: testClusterServiceClassName,
+			ExternalClusterServicePlanName:  testPlanName,
+			ExternalID:                      testExternalID,
 		},
 	}
 
@@ -1054,10 +1054,10 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeKubeClient,
 		catalogClient.ServicecatalogV1alpha1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
-		serviceCatalogSharedInformers.ServiceClasses(),
+		serviceCatalogSharedInformers.ClusterServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
-		serviceCatalogSharedInformers.ServicePlans(),
+		serviceCatalogSharedInformers.ClusterServicePlans(),
 		brokerClFunc,
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
@@ -1106,7 +1106,7 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 	return &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:        testServiceClassName,
+				Name:        testClusterServiceClassName,
 				ID:          "12345",
 				Description: "a test service",
 				Bindable:    true,

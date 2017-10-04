@@ -25,8 +25,8 @@ import (
 // +genclient=true
 // +nonNamespaced=true
 
-// ClusterServiceBroker represents an entity that provides ServiceClasses for use in the
-// service catalog.
+// ClusterServiceBroker represents an entity that provides
+// ClusterServiceClasses for use in the service catalog.
 type ClusterServiceBroker struct {
 	metav1.TypeMeta `json:",inline"`
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
@@ -63,7 +63,7 @@ type ClusterServiceBrokerSpec struct {
 	CABundle []byte `json:"caBundle,omitempty"`
 
 	// RelistBehavior specifies the type of relist behavior the catalog should
-	// exhibit when relisting ServiceClasses available from a broker.
+	// exhibit when relisting ClusterServiceClasses available from a broker.
 	RelistBehavior ServiceBrokerRelistBehavior `json:"relistBehavior"`
 
 	// RelistDuration is the frequency by which a controller will relist the
@@ -202,30 +202,30 @@ const (
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
-// ServiceClassList is a list of ServiceClasses.
-type ServiceClassList struct {
+// ClusterServiceClassList is a list of ClusterServiceClasses.
+type ClusterServiceClassList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []ServiceClass `json:"items"`
+	Items []ClusterServiceClass `json:"items"`
 }
 
 // +genclient=true
 // +nonNamespaced=true
 
-// ServiceClass represents an offering in the service catalog.
-type ServiceClass struct {
+// ClusterServiceClass represents an offering in the service catalog.
+type ClusterServiceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceClassSpec   `json:"spec"`
-	Status ServiceClassStatus `json:"status"`
+	Spec   ClusterServiceClassSpec `json:"spec"`
+	Status ServiceClassStatus      `json:"status"`
 }
 
-// ServiceClassSpec represents details about the ServicePlan
-type ServiceClassSpec struct {
+// ClusterServiceClassSpec represents details about the ClusterServicePlan
+type ClusterServiceClassSpec struct {
 	// ClusterServiceBrokerName is the reference to the Broker that provides this
-	// ServiceClass.
+	// ClusterServiceClass.
 	//
 	// Immutable.
 	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
@@ -239,30 +239,33 @@ type ServiceClassSpec struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// Description is a short description of this ServiceClass.
+	// Description is a short description of this ClusterServiceClass.
 	Description string `json:"description"`
 
-	// Bindable indicates whether a user can create bindings to an ServiceInstance
-	// provisioned from this service. ServicePlan has an optional field called
-	// Bindable which overrides the value of this field.
+	// Bindable indicates whether a user can create bindings to an
+	// ServiceInstance provisioned from this service. ClusterServicePlan
+	// has an optional field called Bindable which overrides the value of
+	// this field.
 	Bindable bool `json:"bindable"`
 
 	// PlanUpdatable indicates whether instances provisioned from this
-	// ServiceClass may change ServicePlans after being provisioned.
+	// ClusterServiceClass may change ClusterServicePlans after being
+	// provisioned.
 	PlanUpdatable bool `json:"planUpdatable"`
 
-	// ExternalMetadata is a blob of information about the ServiceClass, meant
-	// to be user-facing content and display instructions.  This field may
-	// contain platform-specific conventional values.
+	// ExternalMetadata is a blob of information about the
+	// ClusterServiceClass, meant to be user-facing content and display
+	// instructions. This field may contain platform-specific conventional
+	// values.
 	ExternalMetadata *runtime.RawExtension `json:"externalMetadata,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
 	// Tags is a list of strings that represent different classification
-	// attributes of the ServiceClass.  These are used in Cloud Foundry in a
-	// way similar to Kubernetes labels, but they currently have no special
-	// meaning in Kubernetes.
+	// attributes of the ClusterServiceClass.  These are used in Cloud
+	// Foundry in a way similar to Kubernetes labels, but they currently
+	// have no special meaning in Kubernetes.
 	Tags []string `json:"tags,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -271,7 +274,8 @@ type ServiceClassSpec struct {
 	// Requires exposes a list of Cloud Foundry-specific 'permissions'
 	// that must be granted to an instance of this service within Cloud
 	// Foundry.  These 'permissions' have no meaning within Kubernetes and an
-	// ServiceInstance provisioned from this ServiceClass will not work correctly.
+	// ServiceInstance provisioned from this ClusterServiceClass will not
+	// work correctly.
 	Requires []string `json:"requires,omitempty"`
 }
 
@@ -283,29 +287,29 @@ type ServiceClassStatus struct {
 }
 
 // ServicePlanList is a list of ServicePlans.
-type ServicePlanList struct {
+type ClusterServicePlanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []ServicePlan `json:"items"`
+	Items []ClusterServicePlan `json:"items"`
 }
 
 // +genclient=true
 // +nonNamespaced=true
 
-// ServicePlan represents a tier of a ServiceClass.
-type ServicePlan struct {
+// ClusterServicePlan represents a tier of a ServiceClass.
+type ClusterServicePlan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServicePlanSpec   `json:"spec"`
-	Status ServicePlanStatus `json:"status"`
+	Spec   ClusterServicePlanSpec `json:"spec"`
+	Status ServicePlanStatus      `json:"status"`
 }
 
-// ServicePlanSpec represents details about a ServicePlan.
-type ServicePlanSpec struct {
-	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
-	// ServicePlan.
+// ClusterServicePlanSpec represents details about a ClusterServicePlan.
+type ClusterServicePlanSpec struct {
+	// ClusterServiceBrokerName is the name of the ClusterServiceBroker
+	// that offers this ClusterServicePlan.
 	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 
 	// ExternalName is the name of this object that the Service Broker
@@ -317,12 +321,12 @@ type ServicePlanSpec struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// Description is a short description of this ServicePlan.
+	// Description is a short description of this ClusterServicePlan.
 	Description string `json:"description"`
 
-	// Bindable indicates whether a user can create bindings to an ServiceInstance
-	// using this ServicePlan.  If set, overrides the value of the
-	// ServiceClass.Bindable field.
+	// Bindable indicates whether a user can create bindings to an
+	// ServiceInstance using this ClusterServicePlan.  If set, overrides
+	// the value of the ClusterServiceClass.Bindable field.
 	Bindable *bool `json:"bindable,omitempty"`
 
 	// Free indicates whether this plan is available at no cost.
@@ -344,8 +348,9 @@ type ServicePlanSpec struct {
 	// and its data will not be migrated.
 	//
 	// ServiceInstanceUpdateParameterSchema is the schema for the parameters
-	// that may be updated once an ServiceInstance has been provisioned on this plan.
-	// This field only has meaning if the ServiceClass is PlanUpdatable.
+	// that may be updated once an ServiceInstance has been provisioned on
+	// this plan. This field only has meaning if the ClusterServiceClass is
+	// PlanUpdatable.
 	ServiceInstanceUpdateParameterSchema *runtime.RawExtension `json:"instanceUpdateParameterSchema,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -355,9 +360,9 @@ type ServicePlanSpec struct {
 	// may be supplied binding to an ServiceInstance on this plan.
 	ServiceInstanceCredentialCreateParameterSchema *runtime.RawExtension `json:"serviceInstanceCredentialCreateParameterSchema,omitempty"`
 
-	// ServiceClassRef is a reference to the service class that
+	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.
-	ServiceClassRef v1.LocalObjectReference `json:"serviceClassRef"`
+	ClusterServiceClassRef v1.LocalObjectReference `json:"clusterServiceClassRef"`
 }
 
 // ServicePlanStatus represents status information about a ServicePlan.
@@ -406,29 +411,31 @@ type ServiceInstance struct {
 
 // ServiceInstanceSpec represents the desired state of an Instance.
 type ServiceInstanceSpec struct {
-	// ExternalServiceClassName is the human-readable name of the service
-	// as reported by the broker. Note that if the broker changes
-	// the name of the ServiceClass, it will not be reflected here,
-	// and to see the current name of the ServiceClass, you should
-	// follow the ServiceClassRef below.
+	// ExternalClusterServiceClassName is the human-readable name of the
+	// service as reported by the broker. Note that if the broker changes
+	// the name of the ClusterServiceClass, it will not be reflected here,
+	// and to see the current name of the ClusterServiceClass, you should
+	// follow the ClusterServiceClassRef below.
 	//
 	// Immutable.
-	ExternalServiceClassName string `json:"externalServiceClassName"`
-	// ExternalServicePlanName is the human-readable name of the plan
-	// as reported by the broker. Note that if the broker changes
-	// the name of the ServicePlan, it will not be reflected here,
-	// and to see the current name of the ServicePlan, you should
-	// follow the ServicePlanRef below.
-	ExternalServicePlanName string `json:"externalServicePlanName,omitempty"`
+	ExternalClusterServiceClassName string `json:"externalClusterServiceClassName"`
+	// ExternalClusterServicePlanName is the human-readable name of the plan
+	// as reported by the broker. Note that if the broker changes the name
+	// of the ClusterServicePlan, it will not be reflected here, and to see
+	// the current name of the ClusterServicePlan, you should follow the
+	// ClusterServicePlanRef below.
+	ExternalClusterServicePlanName string `json:"externalClusterServicePlanName,omitempty"`
 
-	// ServiceClassRef is a reference to the ServiceClass
+	// ClusterServiceClassRef is a reference to the ClusterServiceClass
 	// that the user selected.
-	// This is set by the controller based on ExternalServiceClassName
-	ServiceClassRef *v1.ObjectReference `json:"serviceClassRef,omitempty"`
-	// ServicePlanRef is a reference to the ServicePlan
+	// This is set by the controller based on
+	// ExternalClusterServiceClassName
+	ClusterServiceClassRef *v1.ObjectReference `json:"clusterServiceClassRef,omitempty"`
+	// ClusterServicePlanRef is a reference to the ClusterServicePlan
 	// that the user selected.
-	// This is set by the controller based on ExternalServicePlanName
-	ServicePlanRef *v1.ObjectReference `json:"servicePlanRef,omitempty"`
+	// This is set by the controller based on
+	// ExternalClusterServicePlanName
+	ClusterServicePlanRef *v1.ObjectReference `json:"clusterServicePlanRef,omitempty"`
 
 	// Parameters is a set of the parameters to be passed to the underlying
 	// broker. The inline YAML/JSON payload to be translated into equivalent
@@ -570,10 +577,10 @@ const (
 // ServiceInstancePropertiesState is the state of a ServiceInstance that
 // the ClusterServiceBroker knows about.
 type ServiceInstancePropertiesState struct {
-	// ExternalServicePlanName is the name of the plan that the broker knows this
-	// ServiceInstance to be on. This is the human readable plan name from the
-	// OSB API.
-	ExternalServicePlanName string `json:"externalServicePlanName"`
+	// ExternalClusterServicePlanName is the name of the plan that the
+	// broker knows this ServiceInstance to be on. This is the human
+	// readable plan name from the OSB API.
+	ExternalClusterServicePlanName string `json:"externalClusterServicePlanName"`
 
 	// Parameters is a blob of the parameters and their values that the broker
 	// knows about for this ServiceInstance.  If a parameter was sourced from

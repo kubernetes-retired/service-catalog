@@ -86,10 +86,10 @@ items:
     verbs:     ["get","list","watch"]
   # access to our service-catalog types
   - apiGroups: ["servicecatalog.k8s.io"]
-    resources: ["serviceclasses"]
+    resources: ["clusterserviceclasses"]
     verbs:     ["get","list","watch","create","patch","update","delete"]
   - apiGroups: ["servicecatalog.k8s.io"]
-    resources: ["serviceplans"]
+    resources: ["clusterserviceplans"]
     verbs:     ["get","list","watch","create","patch","update","delete"]
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["clusterservicebrokers","serviceinstances","serviceinstancecredentials"]

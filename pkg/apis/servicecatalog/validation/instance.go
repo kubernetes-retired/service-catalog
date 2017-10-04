@@ -68,20 +68,20 @@ func internalValidateServiceInstance(instance *sc.ServiceInstance, create bool) 
 func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if "" == spec.ExternalServiceClassName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("externalServiceClassName"), "externalServiceClassName is required"))
+	if "" == spec.ExternalClusterServiceClassName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServiceClassName"), "externalClusterServiceClassName is required"))
 	}
 
-	for _, msg := range validateServiceClassName(spec.ExternalServiceClassName, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalServiceClassName"), spec.ExternalServiceClassName, msg))
+	for _, msg := range validateServiceClassName(spec.ExternalClusterServiceClassName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServiceClassName"), spec.ExternalClusterServiceClassName, msg))
 	}
 
-	if "" == spec.ExternalServicePlanName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("externalServicePlanName"), "externalServicePlanName is required"))
+	if "" == spec.ExternalClusterServicePlanName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "externalClusterServicePlanName is required"))
 	}
 
-	for _, msg := range validateServicePlanName(spec.ExternalServicePlanName, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalServicePlanName"), spec.ExternalServicePlanName, msg))
+	for _, msg := range validateServicePlanName(spec.ExternalClusterServicePlanName, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServicePlanName"), spec.ExternalClusterServicePlanName, msg))
 	}
 
 	if spec.ParametersFrom != nil {
@@ -207,11 +207,11 @@ func validateServiceInstanceCreate(instance *sc.ServiceInstance) field.ErrorList
 	if instance.Status.ReconciledGeneration >= instance.Generation {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("status").Child("reconciledGeneration"), instance.Status.ReconciledGeneration, "reconciledGeneration must be less than generation on create"))
 	}
-	if instance.Spec.ServiceClassRef != nil {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("serviceClassRef"), "serviceClassRef must not be present on create"))
+	if instance.Spec.ClusterServiceClassRef != nil {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("clusterServiceClassRef"), "clusterServiceClassRef must not be present on create"))
 	}
-	if instance.Spec.ServicePlanRef != nil {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef must not be present on create"))
+	if instance.Spec.ClusterServicePlanRef != nil {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("clusterServicePlanRef"), "clusterServicePlanRef must not be present on create"))
 	}
 	return allErrs
 }
@@ -226,11 +226,11 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 		allErrs = append(allErrs, field.Invalid(field.NewPath("status").Child("reconciledGeneration"), instance.Status.ReconciledGeneration, "reconciledGeneration must not be greater than generation"))
 	}
 	if instance.Status.CurrentOperation != "" {
-		if instance.Spec.ServiceClassRef == nil {
-			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servceClassRef"), "serviceClassRef is required when currentOperation is present"))
+		if instance.Spec.ClusterServiceClassRef == nil {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServceClassRef"), "serviceClassRef is required when currentOperation is present"))
 		}
-		if instance.Spec.ServicePlanRef == nil {
-			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef is required when currentOperation is present"))
+		if instance.Spec.ClusterServicePlanRef == nil {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServicePlanRef"), "servicePlanRef is required when currentOperation is present"))
 		}
 	}
 	return allErrs
@@ -244,8 +244,8 @@ func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *
 	if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
 		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
 	}
-	if old.Spec.ExternalServicePlanName != new.Spec.ExternalServicePlanName && new.Spec.ServicePlanRef != nil {
-		errors = append(errors, field.Forbidden(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef must not be present when externalServicePlanName is being changed"))
+	if old.Spec.ExternalClusterServicePlanName != new.Spec.ExternalClusterServicePlanName && new.Spec.ClusterServicePlanRef != nil {
+		errors = append(errors, field.Forbidden(field.NewPath("spec").Child("clusterServicePlanRef"), "clusterServicePlanRef must not be present when externalServicePlanName is being changed"))
 	}
 	return errors
 }
@@ -257,7 +257,7 @@ func ValidateServiceInstanceUpdate(new *sc.ServiceInstance, old *sc.ServiceInsta
 	allErrs = append(allErrs, internalValidateServiceInstanceUpdateAllowed(new, old)...)
 	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
 
-	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ExternalServiceClassName, old.Spec.ExternalServiceClassName, field.NewPath("spec").Child("externalServiceClassName"))...)
+	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ExternalClusterServiceClassName, old.Spec.ExternalClusterServiceClassName, field.NewPath("spec").Child("externalClusterServiceClassName"))...)
 	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ExternalID, old.Spec.ExternalID, field.NewPath("spec").Child("externalID"))...)
 
 	if new.Spec.UpdateRequests < old.Spec.UpdateRequests {
@@ -279,17 +279,17 @@ func internalValidateServiceInstanceReferencesUpdateAllowed(new *sc.ServiceInsta
 	if new.Status.CurrentOperation != "" {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("status").Child("currentOperation"), "cannot update references when currentOperation is present"))
 	}
-	if new.Spec.ServiceClassRef == nil {
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servceClassRef"), "serviceClassRef is required when updating references"))
+	if new.Spec.ClusterServiceClassRef == nil {
+		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServiceClassRef"), "clusterServiceClassRef is required when updating references"))
 	}
-	if new.Spec.ServicePlanRef == nil {
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef is required when updating references"))
+	if new.Spec.ClusterServicePlanRef == nil {
+		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServicePlanRef"), "clusterServicePlanRef is required when updating references"))
 	}
-	if old.Spec.ServiceClassRef != nil {
-		allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ServiceClassRef, old.Spec.ServiceClassRef, field.NewPath("spec").Child("serviceClassRef"))...)
+	if old.Spec.ClusterServiceClassRef != nil {
+		allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ClusterServiceClassRef, old.Spec.ClusterServiceClassRef, field.NewPath("spec").Child("clusterServiceClassRef"))...)
 	}
-	if old.Spec.ServicePlanRef != nil {
-		allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ServicePlanRef, old.Spec.ServicePlanRef, field.NewPath("spec").Child("servicePlanRef"))...)
+	if old.Spec.ClusterServicePlanRef != nil {
+		allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ClusterServicePlanRef, old.Spec.ClusterServicePlanRef, field.NewPath("spec").Child("clusterServicePlanRef"))...)
 	}
 	return allErrs
 }

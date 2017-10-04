@@ -55,7 +55,7 @@ type instanceStatusRESTStrategy struct {
 }
 
 // implements interface RESTUpdateStrategy. This implementation validates updates to
-// instance.Spec.ServicePlanRef and instance.Spec.ServiceClassRef only and disallows
+// instance.Spec.ClusterServicePlanRef and instance.Spec.ClusterServiceClassRef only and disallows
 // any modifications to the remaining instance.Spec or Status fields.
 type instanceReferenceRESTStrategy struct {
 	instanceRESTStrategy
@@ -116,8 +116,8 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	// we just wipe it clean.
 	instance.Status = sc.ServiceInstanceStatus{}
 
-	instance.Spec.ServiceClassRef = nil
-	instance.Spec.ServicePlanRef = nil
+	instance.Spec.ClusterServiceClassRef = nil
+	instance.Spec.ClusterServicePlanRef = nil
 	// Fill in the first entry set to "creating"?
 	instance.Status.Conditions = []sc.ServiceInstanceCondition{}
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
@@ -150,12 +150,12 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 	newServiceInstance.Status = oldServiceInstance.Status
 
 	// Do not allow updates to Service[Class|Plan]Ref fields
-	newServiceInstance.Spec.ServiceClassRef = oldServiceInstance.Spec.ServiceClassRef
-	newServiceInstance.Spec.ServicePlanRef = oldServiceInstance.Spec.ServicePlanRef
+	newServiceInstance.Spec.ClusterServiceClassRef = oldServiceInstance.Spec.ClusterServiceClassRef
+	newServiceInstance.Spec.ClusterServicePlanRef = oldServiceInstance.Spec.ClusterServicePlanRef
 
-	// Clear out the ServicePlanRef so that it is resolved during reconciliation
-	if newServiceInstance.Spec.ExternalServicePlanName != oldServiceInstance.Spec.ExternalServicePlanName {
-		newServiceInstance.Spec.ServicePlanRef = nil
+	// Clear out the ClusterServicePlanRef so that it is resolved during reconciliation
+	if newServiceInstance.Spec.ExternalClusterServicePlanName != oldServiceInstance.Spec.ExternalClusterServicePlanName {
+		newServiceInstance.Spec.ClusterServicePlanRef = nil
 	}
 
 	// Spec updates bump the generation so that we can distinguish between
@@ -237,11 +237,11 @@ func (instanceReferenceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Cont
 	// Reference changes are not allowed to update spec, so stash the new
 	// ones away and overwrite with all the old ones and then update them
 	// again.
-	newServiceClassRef := newServiceInstance.Spec.ServiceClassRef
-	newServicePlanRef := newServiceInstance.Spec.ServicePlanRef
+	newClusterServiceClassRef := newServiceInstance.Spec.ClusterServiceClassRef
+	newClusterServicePlanRef := newServiceInstance.Spec.ClusterServicePlanRef
 	newServiceInstance.Spec = oldServiceInstance.Spec
-	newServiceInstance.Spec.ServiceClassRef = newServiceClassRef
-	newServiceInstance.Spec.ServicePlanRef = newServicePlanRef
+	newServiceInstance.Spec.ClusterServiceClassRef = newClusterServiceClassRef
+	newServiceInstance.Spec.ClusterServicePlanRef = newClusterServicePlanRef
 	newServiceInstance.Status = oldServiceInstance.Status
 }
 

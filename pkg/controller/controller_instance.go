@@ -233,7 +233,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	// All updates not having a DeletingTimestamp will have been handled above
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
 	if err != nil {
 		return err
 	}
@@ -290,12 +290,12 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		}
 	}
 
-	glog.V(4).Infof("Deprovisioning ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+	glog.V(4).Infof("Deprovisioning ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
 			s := fmt.Sprintf(
-				"Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q with status code %d: ErrorMessage: %v, Description: %v",
+				"Error deprovisioning ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q with status code %d: ErrorMessage: %v, Description: %v",
 				instance.Namespace,
 				instance.Name,
 				serviceClass.Spec.ExternalName,
@@ -335,7 +335,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		}
 
 		s := fmt.Sprintf(
-			"Error deprovisioning ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %v",
+			"Error deprovisioning ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %v",
 			instance.Namespace,
 			instance.Name,
 			serviceClass.Name,
@@ -379,7 +379,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	}
 
 	if response.Async {
-		glog.V(5).Infof("Received asynchronous de-provisioning response for ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+		glog.V(5).Infof("Received asynchronous de-provisioning response for ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 
 		if response.OperationKey != nil && *response.OperationKey != "" {
 			key := string(*response.OperationKey)
@@ -435,7 +435,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	}
 
 	c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-	glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+	glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 
 	return nil
 }
@@ -507,7 +507,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	}
 	toUpdate := clone.(*v1alpha1.ServiceInstance)
 
-	// Update references to ServicePlan / ServiceClass if necessary.
+	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
 	toUpdate, err = c.resolveReferences(toUpdate)
 	if err != nil {
 		return err
@@ -517,7 +517,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 	glog.V(4).Infof("Adding/Updating ServiceInstance %v/%v", instance.Namespace, instance.Name)
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndClusterServiceBroker(toUpdate)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(toUpdate)
 	if err != nil {
 		return err
 	}
@@ -609,10 +609,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	}
 
 	toUpdate.Status.InProgressProperties = &v1alpha1.ServiceInstancePropertiesState{
-		ExternalServicePlanName: servicePlan.Spec.ExternalName,
-		Parameters:              rawParametersWithRedaction,
-		ParametersChecksum:      parametersChecksum,
-		UserInfo:                instance.Spec.UserInfo,
+		ExternalClusterServicePlanName: servicePlan.Spec.ExternalName,
+		Parameters:                     rawParametersWithRedaction,
+		ParametersChecksum:             parametersChecksum,
+		UserInfo:                       instance.Spec.UserInfo,
 	}
 
 	var originatingIdentity *osb.AlphaOriginatingIdentity
@@ -680,7 +680,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		}
 		// Only send the plan ID if the plan name has changed from what the Broker has
 		if toUpdate.Status.ExternalProperties == nil ||
-			toUpdate.Status.InProgressProperties.ExternalServicePlanName != toUpdate.Status.ExternalProperties.ExternalServicePlanName {
+			toUpdate.Status.InProgressProperties.ExternalClusterServicePlanName != toUpdate.Status.ExternalProperties.ExternalClusterServicePlanName {
 			planID := servicePlan.Spec.ExternalID
 			updateRequest.PlanID = &planID
 		}
@@ -707,10 +707,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	var provisionResponse *osb.ProvisionResponse
 	var updateResponse *osb.UpdateInstanceResponse
 	if isProvisioning {
-		glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+		glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 		provisionResponse, err = brokerClient.ProvisionInstance(provisionRequest)
 	} else {
-		glog.V(4).Infof("Updating ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+		glog.V(4).Infof("Updating ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 		updateResponse, err = brokerClient.UpdateInstance(updateRequest)
 	}
 	if err != nil {
@@ -724,7 +724,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			}
 			// An error from the broker represents a permanent failure and
 			// should not be retried; set the Failed condition.
-			s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, httpErr)
+			s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, httpErr)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, reason, s)
 
@@ -764,7 +764,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if !isProvisioning {
 			reason = errorErrorCallingUpdateInstanceReason
 		}
-		s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
+		s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
 		glog.Warning(s)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, reason, s)
 
@@ -858,7 +858,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		async = updateResponse.Async
 	}
 	if async {
-		glog.V(5).Infof("Received asynchronous %v response for ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v: response: %+v", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
+		glog.V(5).Infof("Received asynchronous %v response for ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v: response: %+v", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
 		var operationKey *osb.OperationKey
 		if isProvisioning {
@@ -904,7 +904,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			reason = successUpdateInstanceReason
 			message = successUpdateInstanceMessage
 		}
-		glog.V(5).Infof("Successfully %v ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v: response: %+v", provisionedOrUpdatedText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
+		glog.V(5).Infof("Successfully %v ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v: response: %+v", provisionedOrUpdatedText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		c.clearServiceInstanceCurrentOperation(toUpdate)
@@ -929,14 +929,14 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 func (c *controller) pollServiceInstanceInternal(instance *v1alpha1.ServiceInstance) error {
 	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
 	if err != nil {
 		return err
 	}
 	return c.pollServiceInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
 }
 
-func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, servicePlan *v1alpha1.ServicePlan, brokerName string, brokerClient osb.Client, instance *v1alpha1.ServiceInstance) error {
+func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceClass, servicePlan *v1alpha1.ClusterServicePlan, brokerName string, brokerClient osb.Client, instance *v1alpha1.ServiceInstance) error {
 	// There are three possible operations that require polling:
 	// 1) Normal asynchronous provision
 	// 2) Normal asynchronous deprovision
@@ -1057,7 +1057,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			}
 
 			c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 
 			return c.finishPollingServiceInstance(instance)
 		}
@@ -1257,7 +1257,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		}
 
 		c.recorder.Event(instance, apiv1.EventTypeNormal, reason, message)
-		glog.V(5).Infof("Successfully %v ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+		glog.V(5).Infof("Successfully %v ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
 
 		err = c.finishPollingServiceInstance(instance)
 		if err != nil {
@@ -1277,7 +1277,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		default:
 			actionText = "updating"
 		}
-		s := fmt.Sprintf("Error %s ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %q", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
+		s := fmt.Sprintf("Error %s ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %q", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		clone, err := api.Scheme.DeepCopy(instance)
@@ -1368,84 +1368,84 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 	return nil
 }
 
-// resolveReferences checks to see if ServiceClassRef and/or ServicePlanRef are
+// resolveReferences checks to see if ClusterServiceClassRef and/or ClusterServicePlanRef are
 // nil and if so, will resolve the references and update the instance.
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
 func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
-	if instance.Spec.ServiceClassRef != nil && instance.Spec.ServicePlanRef != nil {
+	if instance.Spec.ClusterServiceClassRef != nil && instance.Spec.ClusterServicePlanRef != nil {
 		return instance, nil
 	}
 
-	var sc *v1alpha1.ServiceClass
+	var sc *v1alpha1.ClusterServiceClass
 
-	if instance.Spec.ServiceClassRef == nil {
-		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
-		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalServiceClassName}
-		serviceClasses, err := c.serviceCatalogClient.ServiceClasses().List(listOpts)
+	if instance.Spec.ClusterServiceClassRef == nil {
+		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ClusterServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
+		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalClusterServiceClassName}
+		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err == nil && len(serviceClasses.Items) == 1 {
 			sc = &serviceClasses.Items[0]
-			instance.Spec.ServiceClassRef = &apiv1.ObjectReference{
+			instance.Spec.ClusterServiceClassRef = &apiv1.ObjectReference{
 				Kind:            sc.Kind,
 				Name:            sc.Name,
 				UID:             sc.UID,
 				APIVersion:      sc.APIVersion,
 				ResourceVersion: sc.ResourceVersion,
 			}
-			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ServiceClass with externalName %q to K8S ServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName, sc.Name)
+			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServiceClass with externalName %q to K8S ClusterServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, sc.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName, len(serviceClasses.Items))
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				errorNonexistentServiceClassReason,
-				"The instance references a ServiceClass that does not exist. "+s,
+				errorNonexistentClusterServiceClassReason,
+				"The instance references a ClusterServiceClass that does not exist. "+s,
 			)
-			c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServiceClassReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
 			return nil, fmt.Errorf(s)
 		}
 	}
 
-	if instance.Spec.ServicePlanRef == nil {
+	if instance.Spec.ClusterServicePlanRef == nil {
 		if sc == nil {
 			var scErr error
-			sc, scErr = c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
+			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if scErr != nil {
-				return nil, fmt.Errorf(`Couldn't find ServiceClass (K8S: %s) associated with Instance "%s/%s": %v`, instance.Spec.ServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
+				return nil, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s) associated with Instance "%s/%s": %v`, instance.Spec.ClusterServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
 			}
 		}
 
 		fieldSet := fields.Set{
-			"spec.externalName":             instance.Spec.ExternalServicePlanName,
-			"spec.serviceClassRef.name":     instance.Spec.ServiceClassRef.Name,
-			"spec.clusterServiceBrokerName": sc.Spec.ClusterServiceBrokerName,
+			"spec.externalName":                instance.Spec.ExternalClusterServicePlanName,
+			"spec.clusterServiceClassRef.name": instance.Spec.ClusterServiceClassRef.Name,
+			"spec.clusterServiceBrokerName":    sc.Spec.ClusterServiceBrokerName,
 		}
 		fieldSelector := fields.SelectorFromSet(fieldSet).String()
 		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
-		servicePlans, err := c.serviceCatalogClient.ServicePlans().List(listOpts)
+		servicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]
-			instance.Spec.ServicePlanRef = &apiv1.ObjectReference{
+			instance.Spec.ClusterServicePlanRef = &apiv1.ObjectReference{
 				Kind:            sp.Kind,
 				Name:            sp.Name,
 				UID:             sp.UID,
 				APIVersion:      sp.APIVersion,
 				ResourceVersion: sp.ResourceVersion,
 			}
-			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ServicePlan with externalName %q to K8S ServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, sp.Name)
+			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServicePlan with externalName %q to K8S ClusterServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, instance.Spec.ExternalServiceClassName, len(servicePlans.Items))
+			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				errorNonexistentServicePlanReason,
-				"The instance references a ServicePlan that does not exist. "+s,
+				errorNonexistentClusterServicePlanReason,
+				"The instance references a ClusterServicePlan that does not exist. "+s,
 			)
-			c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServicePlanReason, s)
+			c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 			return nil, fmt.Errorf(s)
 		}
 	}

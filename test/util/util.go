@@ -76,13 +76,13 @@ func WaitForBrokerToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha
 	)
 }
 
-// WaitForServiceClassToExist waits for the ServiceClass with the given name
+// WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given name
 // to exist.
-func WaitForServiceClassToExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
+func WaitForClusterServiceClassToExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for serviceClass %v to exist", name)
-			_, err := client.ServiceClasses().Get(name, metav1.GetOptions{})
+			_, err := client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
 			if nil == err {
 				return true, nil
 			}
@@ -92,13 +92,13 @@ func WaitForServiceClassToExist(client v1alpha1servicecatalog.ServicecatalogV1al
 	)
 }
 
-// WaitForServiceClassToNotExist waits for the ServiceClass with the given
+// WaitForClusterServiceClassToNotExist waits for the ClusterServiceClass with the given
 // name to no longer exist.
-func WaitForServiceClassToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
+func WaitForClusterServiceClassToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for serviceClass %v to not exist", name)
-			_, err := client.ServiceClasses().Get(name, metav1.GetOptions{})
+			_, err := client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}

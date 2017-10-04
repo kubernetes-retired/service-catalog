@@ -82,7 +82,7 @@ func TestV1Alpha1Storage(t *testing.T) {
 	}
 	// TODO: do stuff with broker status storage
 
-	_, serviceClassStorageExists := storageMap["serviceclasses"]
+	_, serviceClassStorageExists := storageMap["clusterserviceclasses"]
 	if !serviceClassStorageExists {
 		t.Fatalf("no service class storage found")
 	}

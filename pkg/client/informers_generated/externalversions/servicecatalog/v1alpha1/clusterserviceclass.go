@@ -30,28 +30,28 @@ import (
 	time "time"
 )
 
-// ServiceClassInformer provides access to a shared informer and lister for
-// ServiceClasses.
-type ServiceClassInformer interface {
+// ClusterServiceClassInformer provides access to a shared informer and lister for
+// ClusterServiceClasses.
+type ClusterServiceClassInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ServiceClassLister
+	Lister() v1alpha1.ClusterServiceClassLister
 }
 
-type serviceClassInformer struct {
+type clusterServiceClassInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServiceClassInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func newClusterServiceClassInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.ServicecatalogV1alpha1().ServiceClasses().List(options)
+				return client.ServicecatalogV1alpha1().ClusterServiceClasses().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.ServicecatalogV1alpha1().ServiceClasses().Watch(options)
+				return client.ServicecatalogV1alpha1().ClusterServiceClasses().Watch(options)
 			},
 		},
-		&servicecatalog_v1alpha1.ServiceClass{},
+		&servicecatalog_v1alpha1.ClusterServiceClass{},
 		resyncPeriod,
 		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
@@ -59,10 +59,10 @@ func newServiceClassInformer(client clientset.Interface, resyncPeriod time.Durat
 	return sharedIndexInformer
 }
 
-func (f *serviceClassInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceClass{}, newServiceClassInformer)
+func (f *clusterServiceClassInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&servicecatalog_v1alpha1.ClusterServiceClass{}, newClusterServiceClassInformer)
 }
 
-func (f *serviceClassInformer) Lister() v1alpha1.ServiceClassLister {
-	return v1alpha1.NewServiceClassLister(f.Informer().GetIndexer())
+func (f *clusterServiceClassInformer) Lister() v1alpha1.ClusterServiceClassLister {
+	return v1alpha1.NewClusterServiceClassLister(f.Informer().GetIndexer())
 }

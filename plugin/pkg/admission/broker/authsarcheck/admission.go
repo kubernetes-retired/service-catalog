@@ -71,7 +71,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 		return admission.NewForbidden(a, fmt.Errorf("not yet ready to handle request"))
 	}
 	// only care about brokers
-	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("servicebrokers") {
+	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("clusterservicebrokers") {
 		return nil
 	}
 	clusterClusterServiceBroker, ok := a.GetObject().(*servicecatalog.ClusterServiceBroker)

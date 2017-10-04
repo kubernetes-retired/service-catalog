@@ -197,10 +197,10 @@ func testNoName(client servicecatalogclient.Interface) error {
 	if br, e := scClient.ClusterServiceBrokers().Create(&v1alpha1.ClusterServiceBroker{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", br.Name)
 	}
-	if sc, e := scClient.ServiceClasses().Create(&v1alpha1.ServiceClass{}); nil == e {
+	if sc, e := scClient.ClusterServiceClasses().Create(&v1alpha1.ClusterServiceClass{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", sc.Name)
 	}
-	if sp, e := scClient.ServicePlans().Create(&v1alpha1.ServicePlan{}); nil == e {
+	if sp, e := scClient.ClusterServicePlans().Create(&v1alpha1.ClusterServicePlan{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", sp.Name)
 	}
 	if i, e := scClient.ServiceInstances(ns).Create(&v1alpha1.ServiceInstance{}); nil == e {
@@ -376,17 +376,17 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	return nil
 }
 
-// TestServiceClassClient exercises the ServiceClass client.
-func TestServiceClassClient(t *testing.T) {
+// TestClusterServiceClassClient exercises the ClusterServiceClass client.
+func TestClusterServiceClassClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceClass{}
+				return &servicecatalog.ClusterServiceClass{}
 			})
 			defer shutdownServer()
 
-			if err := testServiceClassClient(sType, client, name); err != nil {
+			if err := testClusterServiceClassClient(sType, client, name); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -409,12 +409,12 @@ func TestServiceClassClient(t *testing.T) {
 	}
 }
 
-func testServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	serviceClassClient := client.Servicecatalog().ServiceClasses()
+func testClusterServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+	serviceClassClient := client.Servicecatalog().ClusterServiceClasses()
 
-	serviceClass := &v1alpha1.ServiceClass{
+	serviceClass := &v1alpha1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ServiceClassSpec{
+		Spec: v1alpha1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 true,
 			ExternalName:             name,
@@ -440,11 +440,11 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 
 	serviceClassAtServer, err := serviceClassClient.Create(serviceClass)
 	if nil != err {
-		return fmt.Errorf("error creating the ServiceClass (%v)", serviceClass)
+		return fmt.Errorf("error creating the ClusterServiceClass (%v)", serviceClass)
 	}
 	if name != serviceClassAtServer.Name {
 		return fmt.Errorf(
-			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			"didn't get the same ClusterServiceClass back from the server \n%+v\n%+v",
 			serviceClass,
 			serviceClassAtServer,
 		)
@@ -455,7 +455,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
 	if 1 != len(serviceClasses.Items) {
-		return fmt.Errorf("should have exactly one ServiceClass, had %v ServiceClasses", len(serviceClasses.Items))
+		return fmt.Errorf("should have exactly one ClusterServiceClass, had %v ClusterServiceClasses", len(serviceClasses.Items))
 	}
 
 	serviceClassAtServer, err = serviceClassClient.Get(name, metav1.GetOptions{})
@@ -465,7 +465,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	if serviceClassAtServer.Name != name &&
 		serviceClass.ResourceVersion == serviceClassAtServer.ResourceVersion {
 		return fmt.Errorf(
-			"didn't get the same ServiceClass back from the server \n%+v\n%+v",
+			"didn't get the same ClusterServiceClass back from the server \n%+v\n%+v",
 			serviceClass,
 			serviceClassAtServer,
 		)
@@ -506,9 +506,9 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	// Ok, let's verify the field selectors
 	sc2Name := name + "2"
 	sc2ID := "someotheridhere"
-	serviceClass2 := &v1alpha1.ServiceClass{
+	serviceClass2 := &v1alpha1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: sc2Name},
-		Spec: v1alpha1.ServiceClassSpec{
+		Spec: v1alpha1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 true,
 			ExternalName:             sc2Name,
@@ -518,7 +518,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	}
 	_, err = serviceClassClient.Create(serviceClass2)
 	if nil != err {
-		return fmt.Errorf("error creating the ServiceClass (%v) : %s", serviceClass2, err)
+		return fmt.Errorf("error creating the ClusterServiceClass (%v) : %s", serviceClass2, err)
 	}
 
 	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{})
@@ -526,7 +526,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
 	if 2 != len(serviceClasses.Items) {
-		return fmt.Errorf("should have two ServiceClasses, had %v ServiceClasses", len(serviceClasses.Items))
+		return fmt.Errorf("should have two ClusterServiceClasses, had %v ClusterServiceClasses", len(serviceClasses.Items))
 	}
 
 	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{FieldSelector: "spec.externalName==" + sc2Name})
@@ -534,7 +534,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
 	if 1 != len(serviceClasses.Items) {
-		return fmt.Errorf("*should have one ServiceClass, had %v ServiceClassess : %+v", len(serviceClasses.Items), serviceClasses.Items)
+		return fmt.Errorf("*should have one ClusterServiceClass, had %v ClusterServiceClassess : %+v", len(serviceClasses.Items), serviceClasses.Items)
 	}
 
 	if serviceClasses.Items[0].Spec.ExternalID != sc2ID {
@@ -546,7 +546,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
 	if 1 != len(serviceClasses.Items) {
-		return fmt.Errorf("**should have one ServiceClass, had %v ServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
+		return fmt.Errorf("**should have one ClusterServiceClass, had %v ClusterServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
 	}
 
 	if serviceClasses.Items[0].Spec.ExternalName != name {
@@ -558,7 +558,7 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 		return fmt.Errorf("error listing service classes (%s)", err)
 	}
 	if 0 != len(serviceClasses.Items) {
-		return fmt.Errorf("should have zero ServiceClasses, had %v ServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
+		return fmt.Errorf("should have zero ClusterServiceClasses, had %v ClusterServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
 	}
 
 	err = serviceClassClient.Delete(name, &metav1.DeleteOptions{})
@@ -578,17 +578,17 @@ func testServiceClassClient(sType server.StorageType, client servicecatalogclien
 	return nil
 }
 
-// TestServicePlanClient exercises the ServicePlan client.
-func TestServicePlanClient(t *testing.T) {
+// TestClusterServicePlanClient exercises the ClusterServicePlan client.
+func TestClusterServicePlanClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceplan"
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServicePlan{}
+				return &servicecatalog.ClusterServicePlan{}
 			})
 			defer shutdownServer()
 
-			if err := testServicePlanClient(sType, client, name); err != nil {
+			if err := testClusterServicePlanClient(sType, client, name); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -606,19 +606,19 @@ func TestServicePlanClient(t *testing.T) {
 	}
 }
 
-func testServicePlanClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	servicePlanClient := client.Servicecatalog().ServicePlans()
+func testClusterServicePlanClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+	servicePlanClient := client.Servicecatalog().ClusterServicePlans()
 
 	bindable := true
-	servicePlan := &v1alpha1.ServicePlan{
+	servicePlan := &v1alpha1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ServicePlanSpec{
+		Spec: v1alpha1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 &bindable,
 			ExternalName:             name,
 			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 			Description:              "test description",
-			ServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
 		},
@@ -645,7 +645,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	}
 	if name != servicePlanAtServer.Name {
 		return fmt.Errorf(
-			"didn't get the same ServicePlan back from the server \n%+v\n%+v",
+			"didn't get the same ClusterServicePlan back from the server \n%+v\n%+v",
 			servicePlan,
 			servicePlanAtServer,
 		)
@@ -656,7 +656,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 1 != len(servicePlans.Items) {
-		return fmt.Errorf("should have exactly one ServicePlan, had %v ServicePlans", len(servicePlans.Items))
+		return fmt.Errorf("should have exactly one ClusterServicePlan, had %v ClusterServicePlans", len(servicePlans.Items))
 	}
 
 	servicePlanAtServer, err = servicePlanClient.Get(name, metav1.GetOptions{})
@@ -666,7 +666,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	if servicePlanAtServer.Name != name &&
 		servicePlan.ResourceVersion == servicePlanAtServer.ResourceVersion {
 		return fmt.Errorf(
-			"didn't get the same ServicePlan back from the server \n%+v\n%+v",
+			"didn't get the same ClusterServicePlan back from the server \n%+v\n%+v",
 			servicePlan,
 			servicePlanAtServer,
 		)
@@ -708,15 +708,15 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 	// Verify that field selectors work by listing.
 	sp2Name := name + "2"
 	sp2ID := "anotheridhere"
-	servicePlan2 := &v1alpha1.ServicePlan{
+	servicePlan2 := &v1alpha1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
-		Spec: v1alpha1.ServicePlanSpec{
+		Spec: v1alpha1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 &bindable,
 			ExternalName:             sp2Name,
 			ExternalID:               sp2ID,
 			Description:              "test description 2",
-			ServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
 		},
@@ -731,7 +731,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 2 != len(servicePlans.Items) {
-		return fmt.Errorf("should have two ServicePlans, had %v ServicePlans", len(servicePlans.Items))
+		return fmt.Errorf("should have two ClusterServicePlans, had %v ClusterServicePlans", len(servicePlans.Items))
 	}
 
 	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.externalName==" + sp2Name})
@@ -739,7 +739,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 1 != len(servicePlans.Items) {
-		return fmt.Errorf("should have one ServicePlan, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+		return fmt.Errorf("should have one ClusterServicePlan, had %v ClusterServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 
 	if servicePlans.Items[0].Spec.ExternalID != sp2ID {
@@ -751,7 +751,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 1 != len(servicePlans.Items) {
-		return fmt.Errorf("should have one ServicePlan, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+		return fmt.Errorf("should have one ClusterServicePlan, had %v ClusterServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 
 	if servicePlans.Items[0].Spec.ExternalName != name {
@@ -763,7 +763,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 0 != len(servicePlans.Items) {
-		return fmt.Errorf("should have zero ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+		return fmt.Errorf("should have zero ClusterServicePlans, had %v ClusterServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 
 	servicePlans, err = servicePlanClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServiceBrokerName=" + "test-broker"})
@@ -771,7 +771,7 @@ func testServicePlanClient(sType server.StorageType, client servicecatalogclient
 		return fmt.Errorf("error listing service plans (%s)", err)
 	}
 	if 2 != len(servicePlans.Items) {
-		return fmt.Errorf("should have two ServicePlans, had %v ServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
+		return fmt.Errorf("should have two ClusterServicePlans, had %v ClusterServicePlans : %+v", len(servicePlans.Items), servicePlans.Items)
 	}
 
 	err = servicePlanClient.Delete(name, &metav1.DeleteOptions{})
@@ -823,10 +823,10 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: "service-class-name",
-			ExternalServicePlanName:  "plan-name",
-			Parameters:               &runtime.RawExtension{Raw: []byte(instanceParameter)},
-			ExternalID:               osbGUID,
+			ExternalClusterServiceClassName: "service-class-name",
+			ExternalClusterServicePlanName:  "plan-name",
+			Parameters:                      &runtime.RawExtension{Raw: []byte(instanceParameter)},
+			ExternalID:                      osbGUID,
 		},
 	}
 
@@ -931,20 +931,20 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 
 	// Update the instance references
 	classRef := &v1.ObjectReference{Name: "service-class-ref"}
-	instanceServer.Spec.ServiceClassRef = classRef
+	instanceServer.Spec.ClusterServiceClassRef = classRef
 	planRef := &v1.ObjectReference{Name: "service-plan-ref"}
-	instanceServer.Spec.ServicePlanRef = planRef
+	instanceServer.Spec.ClusterServicePlanRef = planRef
 	returnedInstance, err := instanceClient.UpdateReferences(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}
 	oldGeneration := instanceServer.Generation
 	// check the returned object we got back from the reference subresource
-	if e, a := classRef, returnedInstance.Spec.ServiceClassRef; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("ServiceClassRef was not set correctly, expected: %v got: %v", e, a)
+	if e, a := classRef, returnedInstance.Spec.ClusterServiceClassRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ClusterServiceClassRef was not set correctly, expected: %v got: %v", e, a)
 	}
-	if e, a := planRef, returnedInstance.Spec.ServicePlanRef; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("ServiceClassRef was not set correctly, expected: %v got: %v", e, a)
+	if e, a := planRef, returnedInstance.Spec.ClusterServicePlanRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ClusterServiceClassRef was not set correctly, expected: %v got: %v", e, a)
 	}
 	if oldGeneration != returnedInstance.Generation {
 		return fmt.Errorf("Generation was changed, expected: %q got: %q", oldGeneration, returnedInstance.Generation)
@@ -955,11 +955,11 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	if err != nil {
 		return fmt.Errorf("error getting instance (%s)", err)
 	}
-	if e, a := classRef, instanceServer.Spec.ServiceClassRef; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("ServiceClassRef was not set correctly, expected: %v got: %v", e, a)
+	if e, a := classRef, instanceServer.Spec.ClusterServiceClassRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ClusterServiceClassRef was not set correctly, expected: %v got: %v", e, a)
 	}
-	if e, a := planRef, instanceServer.Spec.ServicePlanRef; !reflect.DeepEqual(e, a) {
-		return fmt.Errorf("ServiceClassRef was not set correctly, expected: %v got: %v", e, a)
+	if e, a := planRef, instanceServer.Spec.ClusterServicePlanRef; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("ClusterServiceClassRef was not set correctly, expected: %v got: %v", e, a)
 	}
 	if oldGeneration != instanceServer.Generation {
 		return fmt.Errorf("Generation was changed, expected: %q got: %q", oldGeneration, instanceServer.Generation)
