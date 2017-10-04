@@ -2273,7 +2273,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 		})
 
-		sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 		sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 		sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 		sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
@@ -2298,7 +2298,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 		}
 
 		brokerActions := fakeServiceBrokerClient.Actions()
-		assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 		assertBind(t, brokerActions[0], &osb.BindRequest{
 			BindingID:  bindingGUID,
 			InstanceID: instanceGUID,
@@ -2348,7 +2348,7 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
@@ -2384,7 +2384,7 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
-	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
 		BindingID:  bindingGUID,
 		InstanceID: instanceGUID,
@@ -2418,7 +2418,7 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceCredentialName, Namespace: testNamespace},
 	})
 
-	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
@@ -2454,7 +2454,7 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
-	assertNumberOfServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
 		BindingID:  bindingGUID,
 		InstanceID: instanceGUID,
@@ -2474,8 +2474,8 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Error unbinding ServiceInstanceCredential \"test-ns/test-binding\" for ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ServiceBroker \"test-broker\": timed out"
+	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Error unbinding ServiceInstanceCredential \"test-ns/test-binding\" for ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\": timed out"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event, expected %v got %v", a, e)
 	}
 }
