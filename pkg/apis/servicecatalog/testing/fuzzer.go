@@ -163,7 +163,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 		},
 		func(r *runtime.RawExtension, c fuzz.Continue) {
 			// Pick an arbitrary type and fuzz it
-			types := []runtime.Object{&servicecatalog.ServiceBroker{}}
+			types := []runtime.Object{&servicecatalog.ClusterServiceBroker{}}
 			obj := types[c.Rand.Intn(len(types))]
 			c.Fuzz(obj)
 
@@ -181,7 +181,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			// Set the bytes field on the RawExtension
 			r.Raw = bytes
 		},
-		func(bs *servicecatalog.ServiceBrokerSpec, c fuzz.Continue) {
+		func(bs *servicecatalog.ClusterServiceBrokerSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
 			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}

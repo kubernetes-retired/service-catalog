@@ -25,28 +25,28 @@ import (
 // +genclient=true
 // +nonNamespaced=true
 
-// ServiceBroker represents an entity that provides ServiceClasses for use in the
-// service catalog. ServiceBroker is backed by an OSBAPI v2 broker supporting the
+// ClusterServiceBroker represents an entity that provides ServiceClasses for use in the
+// service catalog. ClusterServiceBroker is backed by an OSBAPI v2 broker supporting the
 // latest minor version of the v2 major version.
-type ServiceBroker struct {
+type ClusterServiceBroker struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec   ServiceBrokerSpec
+	Spec   ClusterServiceBrokerSpec
 	Status ServiceBrokerStatus
 }
 
-// ServiceBrokerList is a list of Brokers.
-type ServiceBrokerList struct {
+// ClusterServiceBrokerList is a list of Brokers.
+type ClusterServiceBrokerList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceBroker
+	Items []ClusterServiceBroker
 }
 
-// ServiceBrokerSpec represents a description of a Broker.
-type ServiceBrokerSpec struct {
-	// URL is the address used to communicate with the ServiceBroker.
+// ClusterServiceBrokerSpec represents a description of a Broker.
+type ClusterServiceBrokerSpec struct {
+	// URL is the address used to communicate with the ClusterServiceBroker.
 	URL string
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
@@ -140,7 +140,7 @@ const (
 type ServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
-	// ReconciledGeneration is the 'Generation' of the serviceBrokerSpec that
+	// ReconciledGeneration is the 'Generation' of the ServiceBrokerSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64
@@ -149,7 +149,7 @@ type ServiceBrokerStatus struct {
 	OperationStartTime *metav1.Time
 }
 
-// ServiceBrokerCondition contains condition information for a Broker.
+// ServiceBrokerCondition contains condition information for a Service Broker.
 type ServiceBrokerCondition struct {
 	// Type of the condition, currently ('Ready').
 	Type ServiceBrokerConditionType
@@ -180,7 +180,7 @@ const (
 
 	// ServiceBrokerConditionFailed represents information about a final failure
 	// that should not be retried.
-	ServiceBrokerConditionFailed ServiceInstanceConditionType = "Failed"
+	ServiceBrokerConditionFailed ServiceBrokerConditionType = "Failed"
 )
 
 // ConditionStatus represents a condition's status.
@@ -223,11 +223,11 @@ type ServiceClass struct {
 
 // ServiceClassSpec represents details about a ServicePlan
 type ServiceClassSpec struct {
-	// ServiceBrokerName is the reference to the Broker that provides this
+	// ClusterServiceBrokerName is the reference to the Broker that provides this
 	// ServiceClass.
 	//
 	// Immutable.
-	ServiceBrokerName string
+	ClusterServiceBrokerName string
 
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Class as. Mutable.
@@ -295,9 +295,9 @@ type ServicePlan struct {
 
 // ServicePlanSpec represents details about the ServicePlan
 type ServicePlanSpec struct {
-	// ServiceBrokerName is the name of the ServiceBroker that offers this
+	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
 	// ServicePlan.
-	ServiceBrokerName string
+	ClusterServiceBrokerName string
 
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.

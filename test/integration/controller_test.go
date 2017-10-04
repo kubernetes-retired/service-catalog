@@ -115,14 +115,14 @@ func TestBasicFlowsSync(t *testing.T) {
 
 	client := catalogClient.ServicecatalogV1alpha1()
 
-	broker := &v1alpha1.ServiceBroker{
+	broker := &v1alpha1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.ServiceBrokerSpec{
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
 	}
 
-	_, err := client.ServiceBrokers().Create(broker)
+	_, err := client.ClusterServiceBrokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
@@ -231,7 +231,7 @@ func TestBasicFlowsSync(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -284,14 +284,14 @@ func TestBasicFlowsAsync(t *testing.T) {
 
 	client := catalogClient.ServicecatalogV1alpha1()
 
-	broker := &v1alpha1.ServiceBroker{
+	broker := &v1alpha1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.ServiceBrokerSpec{
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
 	}
 
-	_, err := client.ServiceBrokers().Create(broker)
+	_, err := client.ClusterServiceBrokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
@@ -400,7 +400,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -442,14 +442,14 @@ func TestProvisionFailure(t *testing.T) {
 
 	client := catalogClient.ServicecatalogV1alpha1()
 
-	broker := &v1alpha1.ServiceBroker{
+	broker := &v1alpha1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.ServiceBrokerSpec{
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
 	}
 
-	_, err := client.ServiceBrokers().Create(broker)
+	_, err := client.ClusterServiceBrokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
@@ -520,7 +520,7 @@ func TestProvisionFailure(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -567,14 +567,14 @@ func TestBindingFailure(t *testing.T) {
 
 	client := fakeCatalogClient.ServicecatalogV1alpha1()
 
-	broker := &v1alpha1.ServiceBroker{
+	broker := &v1alpha1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.ServiceBrokerSpec{
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
 	}
 
-	_, err := client.ServiceBrokers().Create(broker)
+	_, err := client.ClusterServiceBrokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
 	}
@@ -683,7 +683,7 @@ func TestBindingFailure(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -752,14 +752,14 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 
 	client := catalogClient.ServicecatalogV1alpha1()
 
-	broker := &v1alpha1.ServiceBroker{
+	broker := &v1alpha1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
-		Spec: v1alpha1.ServiceBrokerSpec{
+		Spec: v1alpha1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
 	}
 
-	_, err := client.ServiceBrokers().Create(broker)
+	_, err := client.ClusterServiceBrokers().Create(broker)
 	if nil != err {
 		t.Fatalf("error creating the broker %v (%q)", broker, err)
 	}
@@ -977,7 +977,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 
 	// create an sc client and running server
 	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
-		return &servicecatalog.ServiceBroker{}
+		return &servicecatalog.ClusterServiceBroker{}
 	})
 
 	fakeOSBClient := fakeosb.NewFakeClient(config) // error should always be nil
@@ -993,7 +993,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	testController, err := controller.NewController(
 		fakeKubeClient,
 		catalogClient.ServicecatalogV1alpha1(),
-		serviceCatalogSharedInformers.ServiceBrokers(),
+		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceInstanceCredentials(),

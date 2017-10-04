@@ -218,8 +218,8 @@ func TestSpecificKind(t *testing.T) {
 	}
 }
 
-func TestServiceBrokerList(t *testing.T) {
-	kind := "ServiceBrokerList"
+func TestClusterServiceBrokerList(t *testing.T) {
+	kind := "ClusterServiceBrokerList"
 	item, err := api.Scheme.New(serviceCatalogAPIGroup().InternalGroupVersion().WithKind(kind))
 	if err != nil {
 		t.Errorf("Couldn't make a %v? %v", kind, err)

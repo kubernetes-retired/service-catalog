@@ -36,7 +36,7 @@ func WaitForBrokerCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for broker %v condition %#v", name, condition)
-			broker, err := client.ServiceBrokers().Get(name, metav1.GetOptions{})
+			broker, err := client.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Broker %v: %v", name, err)
 			}
@@ -62,7 +62,7 @@ func WaitForBrokerToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for broker %v to not exist", name)
-			_, err := client.ServiceBrokers().Get(name, metav1.GetOptions{})
+			_, err := client.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}

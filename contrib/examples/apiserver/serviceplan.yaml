@@ -3,7 +3,7 @@ kind: ServicePlan
 metadata:
   name: 10e03cb7-b2cf-40dd-a954-16a382b92446
 spec:
-  serviceBrokerName: test-broker
+  clusterServiceBrokerName: test-broker
   externalName: test-serviceplan
   externalID: 10e03cb7-b2cf-40dd-a954-16a382b92446
   description: "plan description"

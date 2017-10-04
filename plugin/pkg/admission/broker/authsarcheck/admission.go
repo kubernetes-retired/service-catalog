@@ -74,25 +74,25 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("servicebrokers") {
 		return nil
 	}
-	serviceBroker, ok := a.GetObject().(*servicecatalog.ServiceBroker)
+	clusterClusterServiceBroker, ok := a.GetObject().(*servicecatalog.ClusterServiceBroker)
 	if !ok {
-		return errors.NewBadRequest("Resource was marked with kind ServiceBroker, but was unable to be converted")
+		return errors.NewBadRequest("Resource was marked with kind ClusterServiceBroker, but was unable to be converted")
 	}
-	glog.V(5).Infof("Retrieved serviceBroker %v", serviceBroker)
+	glog.V(5).Infof("Retrieved clusterClusterServiceBroker %v", clusterClusterServiceBroker)
 
-	if serviceBroker.Spec.AuthInfo == nil {
+	if clusterClusterServiceBroker.Spec.AuthInfo == nil {
 		// no auth secret to check
 		return nil
 	}
 
 	var secretRef *v1.ObjectReference
-	if serviceBroker.Spec.AuthInfo.Basic != nil {
-		secretRef = serviceBroker.Spec.AuthInfo.Basic.SecretRef
-	} else if serviceBroker.Spec.AuthInfo.Bearer != nil {
-		secretRef = serviceBroker.Spec.AuthInfo.Bearer.SecretRef
-	} else if serviceBroker.Spec.AuthInfo.BasicAuthSecret != nil {
+	if clusterClusterServiceBroker.Spec.AuthInfo.Basic != nil {
+		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
+	} else if clusterClusterServiceBroker.Spec.AuthInfo.Bearer != nil {
+		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.Bearer.SecretRef
+	} else if clusterClusterServiceBroker.Spec.AuthInfo.BasicAuthSecret != nil {
 		// TODO: this field is deprecated, remove in v1beta1
-		secretRef = serviceBroker.Spec.AuthInfo.BasicAuthSecret
+		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.BasicAuthSecret
 	}
 	userInfo := a.GetUserInfo()
 

@@ -25,7 +25,7 @@ import (
 
 type ServicecatalogV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	ServiceBrokersGetter
+	ClusterServiceBrokersGetter
 	ServiceClassesGetter
 	ServiceInstancesGetter
 	ServiceInstanceCredentialsGetter
@@ -37,8 +37,8 @@ type ServicecatalogV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ServicecatalogV1alpha1Client) ServiceBrokers() ServiceBrokerInterface {
-	return newServiceBrokers(c)
+func (c *ServicecatalogV1alpha1Client) ClusterServiceBrokers() ClusterServiceBrokerInterface {
+	return newClusterServiceBrokers(c)
 }
 
 func (c *ServicecatalogV1alpha1Client) ServiceClasses() ServiceClassInterface {

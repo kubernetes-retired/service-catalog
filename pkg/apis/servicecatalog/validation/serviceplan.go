@@ -66,8 +66,8 @@ func internalValidateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
 func validateServicePlanSpec(spec *sc.ServicePlanSpec, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if "" == spec.ServiceBrokerName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("serviceBrokerName"), "serviceBrokerName is required"))
+	if "" == spec.ClusterServiceBrokerName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("ClusterServiceBrokerName"), "ClusterServiceBrokerName is required"))
 	}
 
 	if "" == spec.ExternalID {

@@ -30,11 +30,11 @@ func validServiceClass() *servicecatalog.ServiceClass {
 			Name: "test-serviceclass",
 		},
 		Spec: servicecatalog.ServiceClassSpec{
-			Bindable:          true,
-			ServiceBrokerName: "test-broker",
-			ExternalName:      "test-serviceclass",
-			ExternalID:        "1234-4354a-49b",
-			Description:       "service description",
+			Bindable:                 true,
+			ClusterServiceBrokerName: "test-broker",
+			ExternalName:             "test-serviceclass",
+			ExternalID:               "1234-4354a-49b",
+			Description:              "service description",
 		},
 	}
 }

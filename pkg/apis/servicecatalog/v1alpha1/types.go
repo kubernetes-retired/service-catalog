@@ -25,32 +25,32 @@ import (
 // +genclient=true
 // +nonNamespaced=true
 
-// ServiceBroker represents an entity that provides ServiceClasses for use in the
+// ClusterServiceBroker represents an entity that provides ServiceClasses for use in the
 // service catalog.
-type ServiceBroker struct {
+type ClusterServiceBroker struct {
 	metav1.TypeMeta `json:",inline"`
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceBrokerSpec   `json:"spec"`
-	Status ServiceBrokerStatus `json:"status"`
+	Spec   ClusterServiceBrokerSpec `json:"spec"`
+	Status ServiceBrokerStatus      `json:"status"`
 }
 
-// ServiceBrokerList is a list of Brokers.
-type ServiceBrokerList struct {
+// ClusterServiceBrokerList is a list of Brokers.
+type ClusterServiceBrokerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []ServiceBroker `json:"items"`
+	Items []ClusterServiceBroker `json:"items"`
 }
 
-// ServiceBrokerSpec represents a description of a Broker.
-type ServiceBrokerSpec struct {
-	// URL is the address used to communicate with the ServiceBroker.
+// ClusterServiceBrokerSpec represents a description of a Broker.
+type ClusterServiceBrokerSpec struct {
+	// URL is the address used to communicate with the ClusterServiceBroker.
 	URL string `json:"url"`
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
-	// with the ServiceBroker.
+	// with the ClusterServiceBroker.
 	AuthInfo *ServiceBrokerAuthInfo `json:"authInfo,omitempty"`
 
 	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker.
@@ -140,7 +140,7 @@ const (
 type ServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition `json:"conditions"`
 
-	// ReconciledGeneration is the 'Generation' of the serviceBrokerSpec that
+	// ReconciledGeneration is the 'Generation' of the lusterServiceBrokerSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
@@ -223,11 +223,11 @@ type ServiceClass struct {
 
 // ServiceClassSpec represents details about the ServicePlan
 type ServiceClassSpec struct {
-	// ServiceBrokerName is the reference to the Broker that provides this
+	// ClusterServiceBrokerName is the reference to the Broker that provides this
 	// ServiceClass.
 	//
 	// Immutable.
-	ServiceBrokerName string `json:"brokerName"`
+	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Class as. Mutable.
@@ -295,9 +295,9 @@ type ServicePlan struct {
 
 // ServicePlanSpec represents details about a ServicePlan.
 type ServicePlanSpec struct {
-	// ServiceBrokerName is the name of the ServiceBroker that offers this
+	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
 	// ServicePlan.
-	ServiceBrokerName string `json:"serviceBrokerName"`
+	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
@@ -379,7 +379,7 @@ type ExtraValue []string
 //
 // In the future, this will be allowed and will represent the intention that
 // the ServiceInstance should have the plan and/or parameters updated at the
-// ServiceBroker.
+// ClusterServiceBroker.
 type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -546,7 +546,7 @@ const (
 )
 
 // ServiceInstancePropertiesState is the state of a ServiceInstance that
-// the ServiceBroker knows about.
+// the ClusterServiceBroker knows about.
 type ServiceInstancePropertiesState struct {
 	// ExternalServicePlanName is the name of the plan that the broker knows this
 	// ServiceInstance to be on. This is the human readable plan name from the
@@ -719,7 +719,7 @@ const (
 )
 
 // ServiceInstanceCredentialPropertiesState is the state of a
-// ServiceInstanceCredential that the ServiceBroker knows about.
+// ServiceInstanceCredential that the ClusterServiceBroker knows about.
 type ServiceInstanceCredentialPropertiesState struct {
 	// Parameters is a blob of the parameters and their values that the broker
 	// knows about for this ServiceInstanceCredential.  If a parameter was

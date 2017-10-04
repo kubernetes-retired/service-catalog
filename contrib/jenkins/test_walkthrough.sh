@@ -132,15 +132,15 @@ kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthroug
   || error_exit 'Error when creating ups-broker.'
 
 wait_for_expected_output -e 'FetchedCatalog' \
-    kubectl --context=service-catalog get servicebrokers ups-broker -o yaml \
+    kubectl --context=service-catalog get clusterservicebrokers ups-broker -o yaml \
   || {
-    kubectl --context=service-catalog get servicebrokers ups-broker -o yaml
+    kubectl --context=service-catalog get clusterservicebrokers ups-broker -o yaml
     error_exit 'Did not receive expected condition when creating ups-broker.'
   }
 
-[[ "$(kubectl --context=service-catalog get servicebrokers ups-broker -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl --context=service-catalog get clusterservicebrokers ups-broker -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl --context=service-catalog get servicebrokers ups-broker -o yaml
+    kubectl --context=service-catalog get clusterservicebrokers ups-broker -o yaml
     error_exit 'Failure status reported when attempting to fetch catalog from ups-broker.'
   }
 
@@ -212,7 +212,7 @@ kubectl --context=service-catalog delete -n test-ns serviceinstances ups-instanc
 
 echo 'Deleting broker...'
 
-kubectl --context=service-catalog delete servicebrokers ups-broker \
+kubectl --context=service-catalog delete clusterservicebrokers ups-broker \
   || error_exit 'Error when deleting ups-broker.'
 
 wait_for_expected_output -x -e ${USER_PROVIDED_SERVICE_ID} \

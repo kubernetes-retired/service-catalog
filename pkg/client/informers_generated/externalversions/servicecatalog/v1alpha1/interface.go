@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// ServiceBrokers returns a ServiceBrokerInformer.
-	ServiceBrokers() ServiceBrokerInformer
+	// ClusterServiceBrokers returns a ClusterServiceBrokerInformer.
+	ClusterServiceBrokers() ClusterServiceBrokerInformer
 	// ServiceClasses returns a ServiceClassInformer.
 	ServiceClasses() ServiceClassInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
@@ -45,9 +45,9 @@ func New(f internalinterfaces.SharedInformerFactory) Interface {
 	return &version{f}
 }
 
-// ServiceBrokers returns a ServiceBrokerInformer.
-func (v *version) ServiceBrokers() ServiceBrokerInformer {
-	return &serviceBrokerInformer{factory: v.SharedInformerFactory}
+// ClusterServiceBrokers returns a ClusterServiceBrokerInformer.
+func (v *version) ClusterServiceBrokers() ClusterServiceBrokerInformer {
+	return &clusterServiceBrokerInformer{factory: v.SharedInformerFactory}
 }
 
 // ServiceClasses returns a ServiceClassInformer.
