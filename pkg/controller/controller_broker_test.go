@@ -274,7 +274,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling ClusterServiceClass "test-serviceclass" (broker "test-broker"): ClusterServiceClass "test-serviceclass" for ClusterServiceBroker "test-broker" already exists for Broker "notTheSame"`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling ClusterServiceClass "test-serviceclass" (broker "test-broker"): ClusterServiceBroker "test-broker": ClusterServiceClass "test-serviceclass" already exists for Broker "notTheSame"`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
 	}
@@ -368,7 +368,7 @@ func TestReconcileClusterServiceBrokerErrorFetchingCatalog(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorFetchingCatalogReason + " " + "Error getting broker catalog for broker \"test-broker\": ooops"
+	expectedEvent := apiv1.EventTypeWarning + " " + errorFetchingCatalogReason + " " + `ClusterServiceBroker "test-broker": Error getting broker catalog: ooops`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -565,7 +565,7 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.
 	if shouldSucceed {
 		expectedEvent = apiv1.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
 	} else {
-		expectedEvent = apiv1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\""
+		expectedEvent = apiv1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + `ClusterServiceBroker "test-broker": Error getting broker auth credentials`
 	}
 	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) {
 		t.Fatalf("Received unexpected event: %v", a)
