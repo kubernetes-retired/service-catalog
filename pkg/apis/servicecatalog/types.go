@@ -218,7 +218,8 @@ type ServiceClass struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec ServiceClassSpec
+	Spec   ServiceClassSpec
+	Status ServiceClassStatus
 }
 
 // ServiceClassSpec represents details about a ServicePlan
@@ -274,6 +275,13 @@ type ServiceClassSpec struct {
 	Requires []string
 }
 
+// ServiceClassStatus represents status information about a ServiceClass.
+type ServiceClassStatus struct {
+	// PresentInCatalog indicates that the ServiceClass is present in the
+	// broker's catalog.
+	PresentInCatalog bool
+}
+
 // ServicePlanList is a list of ServicePlans.
 type ServicePlanList struct {
 	metav1.TypeMeta
@@ -290,7 +298,8 @@ type ServicePlan struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec ServicePlanSpec
+	Spec   ServicePlanSpec
+	Status ServicePlanStatus
 }
 
 // ServicePlanSpec represents details about the ServicePlan
@@ -349,6 +358,13 @@ type ServicePlanSpec struct {
 	// ServiceClassRef is a reference to the service class that
 	// owns this plan.
 	ServiceClassRef v1.LocalObjectReference
+}
+
+// ServicePlanStatus represents status information about a ServicePlan.
+type ServicePlanStatus struct {
+	// PresentInCatalog indicates that the ServicePlan is present in the
+	// broker's catalog.
+	PresentInCatalog bool
 }
 
 // ServiceInstanceList is a list of instances.

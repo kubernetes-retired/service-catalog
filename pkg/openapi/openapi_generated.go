@@ -389,12 +389,17 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassSpec"),
 							},
 						},
+						"status": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassStatus"),
+							},
+						},
 					},
-					Required: []string{"spec"},
+					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassList": {
 			Schema: spec.Schema{
@@ -526,6 +531,24 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ServiceClassStatus represents status information about a ServiceClass.",
+					Properties: map[string]spec.Schema{
+						"presentInCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PresentInCatalog indicates that the ServiceClass is present in the broker's catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"presentInCatalog"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstance": {
 			Schema: spec.Schema{
@@ -1166,12 +1189,17 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanSpec"),
 							},
 						},
+						"status": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanStatus"),
+							},
+						},
 					},
-					Required: []string{"spec"},
+					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanList": {
 			Schema: spec.Schema{
@@ -1299,6 +1327,24 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/client-go/pkg/api/v1.LocalObjectReference"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ServicePlanStatus represents status information about a ServicePlan.",
+					Properties: map[string]spec.Schema{
+						"presentInCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PresentInCatalog indicates that the ServicePlan is present in the broker's catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"presentInCatalog"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo": {
 			Schema: spec.Schema{

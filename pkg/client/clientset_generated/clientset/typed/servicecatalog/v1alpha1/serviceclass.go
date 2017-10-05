@@ -35,6 +35,7 @@ type ServiceClassesGetter interface {
 type ServiceClassInterface interface {
 	Create(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error)
 	Update(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error)
+	UpdateStatus(*v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.ServiceClass, error)
@@ -73,6 +74,21 @@ func (c *serviceClasses) Update(serviceClass *v1alpha1.ServiceClass) (result *v1
 	err = c.client.Put().
 		Resource("serviceclasses").
 		Name(serviceClass.Name).
+		Body(serviceClass).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+
+func (c *serviceClasses) UpdateStatus(serviceClass *v1alpha1.ServiceClass) (result *v1alpha1.ServiceClass, err error) {
+	result = &v1alpha1.ServiceClass{}
+	err = c.client.Put().
+		Resource("serviceclasses").
+		Name(serviceClass.Name).
+		SubResource("status").
 		Body(serviceClass).
 		Do().
 		Into(result)

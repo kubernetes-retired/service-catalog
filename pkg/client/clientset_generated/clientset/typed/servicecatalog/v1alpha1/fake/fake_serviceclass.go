@@ -53,6 +53,15 @@ func (c *FakeServiceClasses) Update(serviceClass *v1alpha1.ServiceClass) (result
 	return obj.(*v1alpha1.ServiceClass), err
 }
 
+func (c *FakeServiceClasses) UpdateStatus(serviceClass *v1alpha1.ServiceClass) (*v1alpha1.ServiceClass, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewRootUpdateSubresourceAction(serviceclassesResource, "status", serviceClass), &v1alpha1.ServiceClass{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.ServiceClass), err
+}
+
 func (c *FakeServiceClasses) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(serviceclassesResource, name), &v1alpha1.ServiceClass{})
