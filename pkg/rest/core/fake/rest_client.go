@@ -279,14 +279,14 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 				return
 			}
 			codec, err = testapi.GetCodecForObject(&sc.ServiceInstanceList{})
-		case "serviceinstancecredentials":
-			list = &sc.ServiceInstanceCredentialList{TypeMeta: newTypeMeta("binding-list")}
+		case "servicebindings":
+			list = &sc.ServiceBindingList{TypeMeta: newTypeMeta("binding-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.ServiceInstanceCredentialList{})
+			codec, err = testapi.GetCodecForObject(&sc.ServiceBindingList{})
 		default:
 			errStr := fmt.Sprintf("unrecognized resource type: %s", tipe)
 			http.Error(rw, errStr, http.StatusInternalServerError)

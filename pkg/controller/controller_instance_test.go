@@ -1036,7 +1036,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 }
 
 // TestReconcileServiceInstanceDeleteBlockedByCredentials tests
-// deleting/deprovisioning an instance that has ServiceInstanceCredentials.
+// deleting/deprovisioning an instance that has ServiceBindings.
 // Instance reconcilation will set the Ready condition to false with a msg
 // indicating the delete is blocked until the credentials are removed.
 func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
@@ -1049,8 +1049,8 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-	credentials := getTestServiceInstanceCredential()
-	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Add(credentials)
+	credentials := getTestServiceBinding()
+	sharedInformers.ServiceBindings().Informer().GetStore().Add(credentials)
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -1086,13 +1086,13 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + "DeprovisionBlockedByExistingCredentials Delete instance test-ns/test-instance blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first."
+	expectedEvent := apiv1.EventTypeWarning + " " + "DeprovisionBlockedByExistingCredentials Delete instance test-ns/test-instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first."
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
 
 	// delete credentials
-	sharedInformers.ServiceInstanceCredentials().Informer().GetStore().Delete(credentials)
+	sharedInformers.ServiceBindings().Informer().GetStore().Delete(credentials)
 
 	fakeKubeClient.ClearActions()
 	fakeCatalogClient.ClearActions()

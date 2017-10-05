@@ -33,7 +33,7 @@ import (
 
 const (
 	// PluginName is name of admission plug-in
-	PluginName = "ServiceInstanceCredentialsLifecycle"
+	PluginName = "ServiceBindingsLifecycle"
 )
 
 // Register registers a plugin
@@ -44,7 +44,7 @@ func Register(plugins *admission.Plugins) {
 }
 
 // enforceNoNewCredentialsForDeletedInstance is an implementation of admission.Interface.
-// If creating new ServiceInstanceCredentials or updating an existing
+// If creating new ServiceBindings or updating an existing
 // set of credentials, fail the operation if the ServiceInstance is
 // marked for deletion
 type enforceNoNewCredentialsForDeletedInstance struct {
@@ -62,7 +62,7 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Admit(a admission.Attributes
 	}
 
 	// We only care about credentials
-	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("serviceinstancecredentials") {
+	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("servicebindings") {
 		return nil
 	}
 
@@ -71,9 +71,9 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Admit(a admission.Attributes
 		return nil
 	}
 
-	credentials, ok := a.GetObject().(*servicecatalog.ServiceInstanceCredential)
+	credentials, ok := a.GetObject().(*servicecatalog.ServiceBinding)
 	if !ok {
-		return apierrors.NewBadRequest("Resource was marked with kind ServiceInstanceCredentials but was unable to be converted")
+		return apierrors.NewBadRequest("Resource was marked with kind ServiceBindings but was unable to be converted")
 	}
 
 	instanceRef := credentials.Spec.ServiceInstanceRef
@@ -81,7 +81,7 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Admit(a admission.Attributes
 
 	// block the credentials operation if the ServiceInstance is being deleted
 	if err == nil && instance.DeletionTimestamp != nil {
-		warning := fmt.Sprintf("ServiceInstanceCredentials %s/%s references an instance that is being deleted: %s/%s",
+		warning := fmt.Sprintf("ServiceBindings %s/%s references an instance that is being deleted: %s/%s",
 			credentials.Namespace,
 			credentials.Name,
 			credentials.Namespace,
@@ -107,7 +107,7 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Validate() error {
 }
 
 // NewCredentialsBlocker creates a new admission control handler that
-// blocks creation of a ServiceInstanceCredential if the instance
+// blocks creation of a ServiceBinding if the instance
 // is being deleted
 func NewCredentialsBlocker() (admission.Interface, error) {
 	return &enforceNoNewCredentialsForDeletedInstance{

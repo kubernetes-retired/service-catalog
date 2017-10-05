@@ -25,7 +25,7 @@ import (
 )
 
 // Clientset is a wrapper around the generated fake clientset that clones the
-// ServiceInstance and ServiceInstanceCredential objects being passed to
+// ServiceInstance and ServiceBinding objects being passed to
 // UpdateStatus. This is a workaround until the generated fake clientset does its
 // own copying.
 type Clientset struct {

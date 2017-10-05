@@ -161,12 +161,12 @@ func WaitForInstanceToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alp
 
 // WaitForBindingCondition waits for the status of the named binding to
 // contain a condition whose type and status matches the supplied one.
-func WaitForBindingCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.ServiceInstanceCredentialCondition) error {
+func WaitForBindingCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.ServiceBindingCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v condition %#v", namespace, name, condition)
 
-			binding, err := client.ServiceInstanceCredentials(namespace).Get(name, metav1.GetOptions{})
+			binding, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Binding %v/%v: %v", namespace, name, err)
 			}
@@ -193,7 +193,7 @@ func WaitForBindingToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alph
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v to not exist", namespace, name)
 
-			_, err := client.ServiceInstanceCredentials(namespace).Get(name, metav1.GetOptions{})
+			_, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}

@@ -164,7 +164,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 	// Determine if any credentials exist for this instance.  We don't want to
 	// delete the instance if there are any associated creds
-	credentialsLister := c.bindingLister.ServiceInstanceCredentials(instance.Namespace)
+	credentialsLister := c.bindingLister.ServiceBindings(instance.Namespace)
 
 	selector := labels.NewSelector()
 	credentialsList, err := credentialsLister.List(selector)
@@ -182,7 +182,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
 
 			s := fmt.Sprintf(
-				"Delete instance %v/%v blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first.",
+				"Delete instance %v/%v blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first.",
 				instance.Namespace,
 				instance.Name)
 			glog.Warning(s)

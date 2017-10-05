@@ -138,10 +138,10 @@ func TestSetDefaultServiceInstance(t *testing.T) {
 	}
 }
 
-func TestSetDefaultServiceInstanceCredential(t *testing.T) {
-	b := &versioned.ServiceInstanceCredential{}
+func TestSetDefaultServiceBinding(t *testing.T) {
+	b := &versioned.ServiceBinding{}
 	obj2 := roundTrip(t, runtime.Object(b))
-	b2 := obj2.(*versioned.ServiceInstanceCredential)
+	b2 := obj2.(*versioned.ServiceBinding)
 
 	if b2.Spec.ExternalID == "" {
 		t.Error("Expected a default ExternalID, but got none")

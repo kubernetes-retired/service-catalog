@@ -94,7 +94,7 @@ func TestV1Alpha1Storage(t *testing.T) {
 	}
 	// TODO: do stuff with instance storage
 
-	_, bindingStorageExists := storageMap["serviceinstancecredentials"]
+	_, bindingStorageExists := storageMap["servicebindings"]
 	if !bindingStorageExists {
 		t.Fatalf("no service instance credential storage found")
 	}
