@@ -422,7 +422,7 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanList": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ServicePlanList is a list of ServicePlans.",
+					Description: "ClusterServicePlanList is a list of ServicePlans.",
 					Properties: map[string]spec.Schema{
 						"kind": {
 							SchemaProps: spec.SchemaProps{

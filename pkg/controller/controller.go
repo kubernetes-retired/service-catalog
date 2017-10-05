@@ -279,7 +279,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.Spec.ClusterServiceBrokerName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\": references a non-existent broker %q", instance.Namespace, instance.Name, serviceClass.Spec.ClusterServiceBrokerName)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,

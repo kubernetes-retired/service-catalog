@@ -182,7 +182,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
 
 			s := fmt.Sprintf(
-				`ServiceInstance "%v/%v": Delete blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first.`,
+				`ServiceInstance "%v/%v": Delete instance blocked by existing ServiceInstanceCredentials associated with this instance.  All credentials must be removed first.`,
 				instance.Namespace,
 				instance.Name)
 			glog.Warning(s)
@@ -1076,7 +1076,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			errText = err.Error()
 		}
 
-		s := fmt.Sprintf("Error polling last operation for instance %v/%v: %v", instance.Namespace, instance.Name, errText)
+		s := fmt.Sprintf(`ServiceInstance "%v/%v": Error polling last operation: %v`, instance.Namespace, instance.Name, errText)
 		glog.V(4).Info(s)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, errorPollingLastOperationReason, s)
 
