@@ -223,6 +223,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return nil
 	}
 
+	glog.V(4).Infof(
+		`%s "%s/%s": Processing deleting event`,
+		typeSI, instance.Namespace, instance.Name,
+	)
+
 	// Determine if any credentials exist for this instance.  We don't want to
 	// delete the instance if there are any associated creds
 	credentialsLister := c.bindingLister.ServiceBindings(instance.Namespace)
