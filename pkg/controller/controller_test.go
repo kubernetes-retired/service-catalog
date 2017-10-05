@@ -557,9 +557,6 @@ func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
 // getTestServiceInstanceAsync returns an instance in async mode
 func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
-	if operation != "" {
-		instance.Status.LastOperation = &operation
-	}
 
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
@@ -583,12 +580,41 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 	return instance
 }
 
-func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.ServiceInstance {
+// getTestServiceInstanceAsyncUpdating returns an instance for which there is an
+// in-progress async update
+func getTestServiceInstanceAsyncUpdating(operation string) *v1alpha1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
 	instance.Generation = 2
+
+	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	instance.Status = v1alpha1.ServiceInstanceStatus{
+		ReconciledGeneration: 1,
+		Conditions: []v1alpha1.ServiceInstanceCondition{{
+			Type:               v1alpha1.ServiceInstanceConditionReady,
+			Status:             v1alpha1.ConditionFalse,
+			Message:            "Updating",
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+		AsyncOpInProgress:  true,
+		OperationStartTime: &operationStartTime,
+		CurrentOperation:   v1alpha1.ServiceInstanceOperationUpdate,
+		InProgressProperties: &v1alpha1.ServiceInstancePropertiesState{
+			ExternalServicePlanName: testServicePlanName,
+		},
+		ExternalProperties: &v1alpha1.ServiceInstancePropertiesState{
+			ExternalServicePlanName: "old-plan-name",
+		},
+	}
 	if operation != "" {
 		instance.Status.LastOperation = &operation
 	}
+
+	return instance
+}
+
+func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.ServiceInstance {
+	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
 
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1alpha1.ServiceInstanceStatus{
@@ -1659,6 +1685,8 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	switch operation {
 	case v1alpha1.ServiceInstanceOperationProvision:
 		reason = provisioningInFlightReason
+	case v1alpha1.ServiceInstanceOperationUpdate:
+		reason = instanceUpdatingInFlightReason
 	case v1alpha1.ServiceInstanceOperationDeprovision:
 		reason = deprovisioningInFlightReason
 	}
@@ -1691,6 +1719,9 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	case v1alpha1.ServiceInstanceOperationProvision:
 		reason = successProvisionReason
 		readyStatus = v1alpha1.ConditionTrue
+	case v1alpha1.ServiceInstanceOperationUpdate:
+		reason = successUpdateInstanceReason
+		readyStatus = v1alpha1.ConditionTrue
 	case v1alpha1.ServiceInstanceOperationDeprovision:
 		reason = successDeprovisionReason
 		readyStatus = v1alpha1.ConditionFalse
@@ -1717,7 +1748,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1alpha1.ServiceInstance) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
 		readyStatus = v1alpha1.ConditionFalse
 	case v1alpha1.ServiceInstanceOperationDeprovision:
 		readyStatus = v1alpha1.ConditionUnknown
@@ -1751,7 +1782,7 @@ func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object
 func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1alpha1.ServiceInstance) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
 		readyStatus = v1alpha1.ConditionFalse
 	case v1alpha1.ServiceInstanceOperationDeprovision:
 		readyStatus = v1alpha1.ConditionUnknown
@@ -1761,7 +1792,7 @@ func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj 
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
 		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
 	case v1alpha1.ServiceInstanceOperationDeprovision:
@@ -1775,6 +1806,8 @@ func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, oper
 	switch operation {
 	case v1alpha1.ServiceInstanceOperationProvision:
 		reason = asyncProvisioningReason
+	case v1alpha1.ServiceInstanceOperationUpdate:
+		reason = asyncUpdatingInstanceReason
 	case v1alpha1.ServiceInstanceOperationDeprovision:
 		reason = asyncDeprovisioningReason
 	}
@@ -1784,7 +1817,7 @@ func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, oper
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
 		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
 	case v1alpha1.ServiceInstanceOperationDeprovision:
@@ -1802,6 +1835,8 @@ func assertServiceInstanceConditionHasLastOperationDescription(t *testing.T, obj
 	switch operation {
 	case v1alpha1.ServiceInstanceOperationProvision:
 		expected = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, lastOperationDescription)
+	case v1alpha1.ServiceInstanceOperationUpdate:
+		expected = fmt.Sprintf("%s (%s)", asyncUpdatingInstanceMessage, lastOperationDescription)
 	case v1alpha1.ServiceInstanceOperationDeprovision:
 		expected = fmt.Sprintf("%s (%s)", asyncDeprovisioningMessage, lastOperationDescription)
 	}
@@ -2314,6 +2349,16 @@ func assertProvision(t *testing.T, action fakeosb.Action, request *osb.Provision
 
 	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
 		fatalf(t, "unexpected diff in provision request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
+	}
+}
+
+func assertUpdateInstance(t *testing.T, action fakeosb.Action, request *osb.UpdateInstanceRequest) {
+	if e, a := fakeosb.UpdateInstance, action.Type; e != a {
+		fatalf(t, "unexpected action type; expected %v, got %v", e, a)
+	}
+
+	if e, a := request, action.Request; !reflect.DeepEqual(e, a) {
+		fatalf(t, "unexpected diff in update instance request: %v\nexpected %+v\ngot      %+v", diff.ObjectReflectDiff(e, a), e, a)
 	}
 }
 

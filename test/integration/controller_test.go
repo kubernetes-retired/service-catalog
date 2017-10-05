@@ -79,6 +79,7 @@ func truePtr() *bool {
 // - add Broker
 // - verify ServiceClasses added
 // - provision Instance
+// - update Instance
 // - make Binding
 // - unbind
 // - deprovision
@@ -92,6 +93,11 @@ func TestBasicFlowsSync(t *testing.T) {
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{
+				Async: false,
+			},
+		},
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{
 				Async: false,
 			},
 		},
@@ -177,6 +183,28 @@ func TestBasicFlowsSync(t *testing.T) {
 			retInst.Spec.ExternalID,
 			instance.Spec.ExternalID,
 		)
+	}
+
+	// Update Instance
+	updateRequests := retInst.Spec.UpdateRequests + 1
+	retInst.Spec.UpdateRequests = updateRequests
+	if _, err := client.ServiceInstances(testNamespace).Update(retInst); err != nil {
+		t.Fatalf("error updating Instance: %v", err)
+	}
+
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
+		Type:   v1alpha1.ServiceInstanceConditionReady,
+		Status: v1alpha1.ConditionTrue,
+	}); err != nil {
+		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
+
+	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if e, a := updateRequests, retInst.Spec.UpdateRequests; e != a {
+		t.Fatalf("unexpected updateRequets in instance spec: expected %v, got %v", e, a)
 	}
 
 	// Binding test begins here
@@ -264,6 +292,11 @@ func TestBasicFlowsAsync(t *testing.T) {
 				State: osb.StateSucceeded,
 			},
 		},
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{
+				Async: true,
+			},
+		},
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
 				Credentials: map[string]interface{}{
@@ -346,6 +379,28 @@ func TestBasicFlowsAsync(t *testing.T) {
 			retInst.Spec.ExternalID,
 			instance.Spec.ExternalID,
 		)
+	}
+
+	// Update Instance
+	updateRequests := retInst.Spec.UpdateRequests + 1
+	retInst.Spec.UpdateRequests = updateRequests
+	if _, err := client.ServiceInstances(testNamespace).Update(retInst); err != nil {
+		t.Fatalf("error updating Instance: %v", err)
+	}
+
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
+		Type:   v1alpha1.ServiceInstanceConditionReady,
+		Status: v1alpha1.ConditionTrue,
+	}); err != nil {
+		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
+
+	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if e, a := updateRequests, retInst.Spec.UpdateRequests; e != a {
+		t.Fatalf("unexpected updateRequets in instance spec: expected %v, got %v", e, a)
 	}
 
 	// Binding test begins here
@@ -732,6 +787,11 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 				Async: false,
 			},
 		},
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{
+				Async: false,
+			},
+		},
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
 				Credentials: map[string]interface{}{
@@ -824,35 +884,35 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	}
 
 	// Update Instance
-	// TODO: Un-comment the update instance part of this test when we support updates
-	//	catalogClient, err = changeUsernameForCatalogClient(catalogClient, catalogClientConfig, testUpdaterUsername)
-	//	if err != nil {
-	//		t.Fatalf("could not change the username for the catalog client: %v", err)
-	//	}
+	catalogClient, err = changeUsernameForCatalogClient(catalogClient, catalogClientConfig, testUpdaterUsername)
+	if err != nil {
+		t.Fatalf("could not change the username for the catalog client: %v", err)
+	}
 
-	//	client = catalogClient.ServicecatalogV1alpha1()
+	client = catalogClient.ServicecatalogV1alpha1()
 
-	//	if _, err := client.ServiceInstances(testNamespace).Update(retInst); err != nil {
-	//		t.Fatalf("error updating Instance: %v", err)
-	//	}
+	retInst.Spec.UpdateRequests = retInst.Spec.UpdateRequests + 1
+	if _, err := client.ServiceInstances(testNamespace).Update(retInst); err != nil {
+		t.Fatalf("error updating Instance: %v", err)
+	}
 
-	//	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
-	//		Type:   v1alpha1.ServiceInstanceConditionReady,
-	//		Status: v1alpha1.ConditionTrue,
-	//	}); err != nil {
-	//		t.Fatalf("error waiting for instance to become ready: %v", err)
-	//	}
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
+		Type:   v1alpha1.ServiceInstanceConditionReady,
+		Status: v1alpha1.ConditionTrue,
+	}); err != nil {
+		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
 
-	//	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
-	//	if err != nil {
-	//		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
-	//	}
-	//	if retInst.Spec.UserInfo == nil {
-	//		t.Fatalf("instance spec does not include creating user info")
-	//	}
-	//	if e, a := testUpdaterUsername, retInst.Spec.UserInfo.Username; e != a {
-	//		t.Fatalf("unexpected updating user name in instance spec: expected %v, got %v", e, a)
-	//	}
+	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if retInst.Spec.UserInfo == nil {
+		t.Fatalf("instance spec does not include creating user info")
+	}
+	if e, a := testUpdaterUsername, retInst.Spec.UserInfo.Username; e != a {
+		t.Fatalf("unexpected updating user name in instance spec: expected %v, got %v", e, a)
+	}
 
 	// Binding test begins here
 	//-----------------

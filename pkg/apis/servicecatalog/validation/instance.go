@@ -107,6 +107,8 @@ func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Pa
 		}
 	}
 
+	allErrs = append(allErrs, apivalidation.ValidateNonnegativeField(spec.UpdateRequests, fldPath.Child("updateRequests"))...)
+
 	return allErrs
 }
 
@@ -205,6 +207,12 @@ func validateServiceInstanceCreate(instance *sc.ServiceInstance) field.ErrorList
 	if instance.Status.ReconciledGeneration >= instance.Generation {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("status").Child("reconciledGeneration"), instance.Status.ReconciledGeneration, "reconciledGeneration must be less than generation on create"))
 	}
+	if instance.Spec.ServiceClassRef != nil {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("serviceClassRef"), "serviceClassRef must not be present on create"))
+	}
+	if instance.Spec.ServicePlanRef != nil {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef must not be present on create"))
+	}
 	return allErrs
 }
 
@@ -217,6 +225,14 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 	} else if instance.Status.ReconciledGeneration > instance.Generation {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("status").Child("reconciledGeneration"), instance.Status.ReconciledGeneration, "reconciledGeneration must not be greater than generation"))
 	}
+	if instance.Status.CurrentOperation != "" {
+		if instance.Spec.ServiceClassRef == nil {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servceClassRef"), "serviceClassRef is required when currentOperation is present"))
+		}
+		if instance.Spec.ServicePlanRef == nil {
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef is required when currentOperation is present"))
+		}
+	}
 	return allErrs
 }
 
@@ -228,14 +244,26 @@ func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *
 	if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
 		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
 	}
+	if old.Spec.ExternalServicePlanName != new.Spec.ExternalServicePlanName && new.Spec.ServicePlanRef != nil {
+		errors = append(errors, field.Forbidden(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef must not be present when externalServicePlanName is being changed"))
+	}
 	return errors
 }
 
 // ValidateServiceInstanceUpdate validates a change to the Instance's spec.
 func ValidateServiceInstanceUpdate(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	allErrs := field.ErrorList{}
+
 	allErrs = append(allErrs, internalValidateServiceInstanceUpdateAllowed(new, old)...)
 	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
+
+	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ExternalServiceClassName, old.Spec.ExternalServiceClassName, field.NewPath("spec").Child("externalServiceClassName"))...)
+	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ExternalID, old.Spec.ExternalID, field.NewPath("spec").Child("externalID"))...)
+
+	if new.Spec.UpdateRequests < old.Spec.UpdateRequests {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("updateRequests"), new.Spec.UpdateRequests, "new updateRequests value must not be less than the old one"))
+	}
+
 	return allErrs
 }
 
@@ -247,9 +275,23 @@ func internalValidateServiceInstanceStatusUpdateAllowed(new *sc.ServiceInstance,
 }
 
 func internalValidateServiceInstanceReferencesUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
-	errors := field.ErrorList{}
-	// TODO what would be errors?
-	return errors
+	allErrs := field.ErrorList{}
+	if new.Status.CurrentOperation != "" {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("status").Child("currentOperation"), "cannot update references when currentOperation is present"))
+	}
+	if new.Spec.ServiceClassRef == nil {
+		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servceClassRef"), "serviceClassRef is required when updating references"))
+	}
+	if new.Spec.ServicePlanRef == nil {
+		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servicePlanRef"), "servicePlanRef is required when updating references"))
+	}
+	if old.Spec.ServiceClassRef != nil {
+		allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ServiceClassRef, old.Spec.ServiceClassRef, field.NewPath("spec").Child("serviceClassRef"))...)
+	}
+	if old.Spec.ServicePlanRef != nil {
+		allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ServicePlanRef, old.Spec.ServicePlanRef, field.NewPath("spec").Child("servicePlanRef"))...)
+	}
+	return allErrs
 }
 
 // ValidateServiceInstanceStatusUpdate checks that when changing from an older

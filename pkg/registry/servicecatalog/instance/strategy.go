@@ -153,23 +153,19 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 	newServiceInstance.Spec.ServiceClassRef = oldServiceInstance.Spec.ServiceClassRef
 	newServiceInstance.Spec.ServicePlanRef = oldServiceInstance.Spec.ServicePlanRef
 
-	// TODO: We currently don't handle any changes to the spec in the
-	// reconciler. Once we do that, this check needs to be removed and
-	// proper validation of allowed changes needs to be implemented in
-	// ValidateUpdate. Also, the check for whether the generation needs
-	// to be updated needs to be un-commented.
-	newServiceInstance.Spec = oldServiceInstance.Spec
+	// Clear out the ServicePlanRef so that it is resolved during reconciliation
+	if newServiceInstance.Spec.ExternalServicePlanName != oldServiceInstance.Spec.ExternalServicePlanName {
+		newServiceInstance.Spec.ServicePlanRef = nil
+	}
 
 	// Spec updates bump the generation so that we can distinguish between
 	// spec changes and other changes to the object.
-	//
-	// Note that since we do not currently handle any changes to the spec,
-	// the generation will never be incremented
 	if !apiequality.Semantic.DeepEqual(oldServiceInstance.Spec, newServiceInstance.Spec) {
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 			setServiceInstanceUserInfo(newServiceInstance, ctx)
 		}
 		newServiceInstance.Generation = oldServiceInstance.Generation + 1
+		setServiceInstanceReadyFalseCondition(newServiceInstance)
 	}
 }
 
@@ -278,4 +274,35 @@ func setServiceInstanceUserInfo(instance *sc.ServiceInstance, ctx genericapirequ
 			}
 		}
 	}
+}
+
+func setServiceInstanceReadyFalseCondition(instance *sc.ServiceInstance) {
+	newCondition := sc.ServiceInstanceCondition{
+		Type:    sc.ServiceInstanceConditionReady,
+		Status:  sc.ConditionFalse,
+		Reason:  "UpdateInitiated",
+		Message: "Update initiated on ServiceInstance",
+	}
+
+	if len(instance.Status.Conditions) == 0 {
+		newCondition.LastTransitionTime = metav1.Now()
+		instance.Status.Conditions = []sc.ServiceInstanceCondition{newCondition}
+		return
+	}
+
+	for i, cond := range instance.Status.Conditions {
+		if cond.Type == sc.ServiceInstanceConditionReady {
+			if cond.Status != newCondition.Status {
+				newCondition.LastTransitionTime = metav1.Now()
+			} else {
+				newCondition.LastTransitionTime = cond.LastTransitionTime
+			}
+
+			instance.Status.Conditions[i] = newCondition
+			return
+		}
+	}
+
+	newCondition.LastTransitionTime = metav1.Now()
+	instance.Status.Conditions = append(instance.Status.Conditions, newCondition)
 }

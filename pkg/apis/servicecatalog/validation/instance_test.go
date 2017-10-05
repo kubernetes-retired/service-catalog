@@ -22,21 +22,30 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-func validServiceInstance() *servicecatalog.ServiceInstance {
+func validServiceInstanceForCreate() *servicecatalog.ServiceInstance {
 	return &servicecatalog.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-instance",
-			Namespace: "test-ns",
+			Name:       "test-instance",
+			Namespace:  "test-ns",
+			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
 			ExternalServiceClassName: "test-serviceclass",
 			ExternalServicePlanName:  "test-plan",
 		},
 	}
+}
+
+func validServiceInstance() *servicecatalog.ServiceInstance {
+	instance := validServiceInstanceForCreate()
+	instance.Spec.ServiceClassRef = &apiv1.ObjectReference{}
+	instance.Spec.ServicePlanRef = &apiv1.ObjectReference{}
+	return instance
 }
 
 func validServiceInstanceWithInProgressProvision() *servicecatalog.ServiceInstance {
@@ -385,22 +394,15 @@ func TestValidateServiceInstance(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "valid create",
-			instance: func() *servicecatalog.ServiceInstance {
-				i := validServiceInstance()
-				i.Generation = 1
-				i.Status.ReconciledGeneration = 0
-				return i
-			}(),
-			create: true,
-			valid:  true,
+			name:     "valid create",
+			instance: validServiceInstanceForCreate(),
+			create:   true,
+			valid:    true,
 		},
 		{
 			name: "create with operation in-progress",
 			instance: func() *servicecatalog.ServiceInstance {
-				i := validServiceInstance()
-				i.Generation = 1
-				i.Status.ReconciledGeneration = 0
+				i := validServiceInstanceForCreate()
 				i.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
 				return i
 			}(),
@@ -410,8 +412,7 @@ func TestValidateServiceInstance(t *testing.T) {
 		{
 			name: "create with invalid reconciled generation",
 			instance: func() *servicecatalog.ServiceInstance {
-				i := validServiceInstance()
-				i.Generation = 1
+				i := validServiceInstanceForCreate()
 				i.Status.ReconciledGeneration = 1
 				return i
 			}(),
@@ -422,8 +423,27 @@ func TestValidateServiceInstance(t *testing.T) {
 			name: "update with invalid reconciled generation",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
-				i.Generation = 1
 				i.Status.ReconciledGeneration = 2
+				return i
+			}(),
+			create: false,
+			valid:  false,
+		},
+		{
+			name: "in-progress operation with missing service class ref",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressProvision()
+				i.Spec.ServiceClassRef = nil
+				return i
+			}(),
+			create: false,
+			valid:  false,
+		},
+		{
+			name: "in-progress operation with missing service plan ref",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressProvision()
+				i.Spec.ServicePlanRef = nil
 				return i
 			}(),
 			create: false,
@@ -509,6 +529,74 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 			newInstance.Generation = oldInstance.Generation
 		}
 		newInstance.Status.ReconciledGeneration = 1
+
+		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
+	}
+}
+
+func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T) {
+	cases := []struct {
+		name       string
+		oldPlan    string
+		newPlan    string
+		newPlanRef *apiv1.ObjectReference
+		valid      bool
+	}{
+		{
+			name:       "valid plan change",
+			oldPlan:    "old-plan",
+			newPlan:    "new-plan",
+			newPlanRef: nil,
+			valid:      true,
+		},
+		{
+			name:       "plan ref not cleared",
+			oldPlan:    "old-plan",
+			newPlan:    "new-plan",
+			newPlanRef: &apiv1.ObjectReference{},
+			valid:      false,
+		},
+		{
+			name:       "no plan change",
+			oldPlan:    "plan-name",
+			newPlan:    "plan-name",
+			newPlanRef: &apiv1.ObjectReference{},
+			valid:      true,
+		},
+	}
+
+	for _, tc := range cases {
+		oldInstance := &servicecatalog.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-instance",
+				Namespace: "test-ns",
+			},
+			Spec: servicecatalog.ServiceInstanceSpec{
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  tc.oldPlan,
+				ServiceClassRef:          &apiv1.ObjectReference{},
+				ServicePlanRef:           &apiv1.ObjectReference{},
+			},
+		}
+
+		newInstance := &servicecatalog.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-instance",
+				Namespace: "test-ns",
+			},
+			Spec: servicecatalog.ServiceInstanceSpec{
+				ExternalServiceClassName: "test-serviceclass",
+				ExternalServicePlanName:  tc.newPlan,
+				ServiceClassRef:          &apiv1.ObjectReference{},
+				ServicePlanRef:           tc.newPlanRef,
+			},
+		}
 
 		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
@@ -656,6 +744,8 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 			Spec: servicecatalog.ServiceInstanceSpec{
 				ExternalServiceClassName: "test-serviceclass",
 				ExternalServicePlanName:  "test-plan",
+				ServiceClassRef:          &apiv1.ObjectReference{},
+				ServicePlanRef:           &apiv1.ObjectReference{},
 			},
 			Status: *tc.old,
 		}
@@ -669,6 +759,8 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 			Spec: servicecatalog.ServiceInstanceSpec{
 				ExternalServiceClassName: "test-serviceclass",
 				ExternalServicePlanName:  "test-plan",
+				ServiceClassRef:          &apiv1.ObjectReference{},
+				ServicePlanRef:           &apiv1.ObjectReference{},
 			},
 			Status: *tc.new,
 		}
@@ -687,6 +779,83 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 					t.Errorf("%v: Error %q did not contain expected message %q", tc.name, err.Detail, tc.err)
 				}
 			}
+		}
+	}
+}
+
+func TestValidateServiceInstanceReferencesUpdate(t *testing.T) {
+	cases := []struct {
+		name  string
+		old   *servicecatalog.ServiceInstance
+		new   *servicecatalog.ServiceInstance
+		valid bool
+	}{
+		{
+			name: "valid class and plan update",
+			old: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstance()
+				i.Spec.ServiceClassRef = nil
+				i.Spec.ServicePlanRef = nil
+				return i
+			}(),
+			new:   validServiceInstance(),
+			valid: true,
+		},
+		{
+			name: "invalid class update",
+			old:  validServiceInstance(),
+			new: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstance()
+				i.Spec.ServiceClassRef = &apiv1.ObjectReference{
+					Name: "new-class-name",
+				}
+				return i
+			}(),
+			valid: false,
+		},
+		{
+			name: "direct update to plan ref",
+			old:  validServiceInstance(),
+			new: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstance()
+				i.Spec.ServicePlanRef = &apiv1.ObjectReference{
+					Name: "new-plan-name",
+				}
+				return i
+			}(),
+			valid: false,
+		},
+		{
+			name: "valid plan update from name change",
+			old: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstance()
+				i.Spec.ServicePlanRef = nil
+				return i
+			}(),
+			new: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstance()
+				i.Spec.ServicePlanRef = &apiv1.ObjectReference{
+					Name: "new-plan-name",
+				}
+				return i
+			}(),
+			valid: true,
+		},
+		{
+			name:  "in-progress operation",
+			old:   validServiceInstanceWithInProgressProvision(),
+			new:   validServiceInstanceWithInProgressProvision(),
+			valid: false,
+		},
+	}
+
+	for _, tc := range cases {
+		errs := ValidateServiceInstanceReferencesUpdate(tc.new, tc.old)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
 		}
 	}
 }
