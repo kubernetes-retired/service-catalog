@@ -741,7 +741,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 				reason,
 				fmt.Sprintf("ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v", provisionOrUpdateText, s))
 
-			if shouldStartOrphanMitigation(httpErr.StatusCode) {
+			if isProvisioning && shouldStartOrphanMitigation(httpErr.StatusCode) {
 				setServiceInstanceStartOrphanMitigation(toUpdate)
 
 				if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -770,21 +770,36 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		urlErr, ok := err.(*url.Error)
 		if ok && urlErr.Timeout() {
+			var (
+				reason  string
+				message string
+			)
+			if isProvisioning {
+				reason = errorErrorCallingProvisionReason
+			} else {
+				reason = errorErrorCallingUpdateInstanceReason
+			}
+			message = "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
 			// Communication to the broker timed out. Treat as terminal failure and
 			// begin orphan mitigation.
 			setServiceInstanceCondition(
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
-				errorErrorCallingProvisionReason,
-				"Communication with the ClusterServiceBroker timed out; operation will not be retried: "+s)
+				reason,
+				message)
 			setServiceInstanceCondition(
 				toUpdate,
 				v1alpha1.ServiceInstanceConditionFailed,
 				v1alpha1.ConditionTrue,
-				errorErrorCallingProvisionReason,
-				"Communication with the ClusterServiceBroker timed out; operation will not be retried: "+s)
-			setServiceInstanceStartOrphanMitigation(toUpdate)
+				reason,
+				message)
+
+			if isProvisioning {
+				setServiceInstanceStartOrphanMitigation(toUpdate)
+			} else {
+				c.clearServiceInstanceCurrentOperation(toUpdate)
+			}
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
@@ -931,6 +946,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 	// operation we're polling for. This is more readable than checking the
 	// status in various places.
 	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
+	provisioning := instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := false
 	if instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationDeprovision || mitigatingOrphan {
 		deleting = true
@@ -956,7 +972,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 				s)
 		}
 
-		if deleting {
+		if !provisioning {
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 		} else {
 			setServiceInstanceStartOrphanMitigation(toUpdate)
@@ -1082,7 +1098,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 					s)
 			}
 
-			if deleting {
+			if !provisioning {
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
 				setServiceInstanceStartOrphanMitigation(toUpdate)
@@ -1120,10 +1136,10 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			case deleting:
 				reason = asyncDeprovisioningReason
 				message = asyncDeprovisioningMessage
-			case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationProvision:
+			case provisioning:
 				reason = asyncProvisioningReason
 				message = asyncProvisioningMessage
-			case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationUpdate:
+			default:
 				reason = asyncUpdatingInstanceReason
 				message = asyncUpdatingInstanceMessage
 			}
@@ -1160,7 +1176,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 					s)
 			}
 
-			if deleting {
+			if !provisioning {
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
 				setServiceInstanceStartOrphanMitigation(toUpdate)
@@ -1197,12 +1213,12 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			reason = successDeprovisionReason
 			message = successDeprovisionMessage
 			actionText = "deprovisioned"
-		case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationProvision:
+		case provisioning:
 			readyStatus = v1alpha1.ConditionTrue
 			reason = successProvisionReason
 			message = successProvisionMessage
 			actionText = "provisioned"
-		case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationUpdate:
+		default:
 			readyStatus = v1alpha1.ConditionTrue
 			reason = successUpdateInstanceReason
 			message = successUpdateInstanceMessage
@@ -1256,9 +1272,9 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 		switch {
 		case deleting:
 			actionText = "deprovisioning"
-		case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationProvision:
+		case provisioning:
 			actionText = "provisioning"
-		case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationUpdate:
+		default:
 			actionText = "updating"
 		}
 		s := fmt.Sprintf("Error %s ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %q", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
@@ -1281,11 +1297,11 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 			readyCond = v1alpha1.ConditionUnknown
 			reason = errorDeprovisionCalledReason
 			msg = "Deprovision call failed: " + s
-		case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationProvision:
+		case provisioning:
 			readyCond = v1alpha1.ConditionFalse
 			reason = errorProvisionCallFailedReason
 			msg = "Provision call failed: " + s
-		case instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationUpdate:
+		default:
 			readyCond = v1alpha1.ConditionFalse
 			reason = errorUpdateInstanceCallFailedReason
 			msg = "Update call failed: " + s
@@ -1336,7 +1352,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ServiceClass, se
 					s)
 			}
 
-			if deleting {
+			if !provisioning {
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
 				setServiceInstanceStartOrphanMitigation(toUpdate)
