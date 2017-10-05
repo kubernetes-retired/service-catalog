@@ -164,17 +164,17 @@ func (p StorageProvider) v1alpha1Storage(
 	}
 
 	return map[string]rest.Storage{
-		"clusterservicebrokers":             brokerStorage,
-		"clusterservicebrokers/status":      brokerStatusStorage,
-		"clusterserviceclasses":             serviceClassStorage,
-		"clusterserviceclasses/status":      serviceClassStatusStorage,
-		"clusterserviceplans":               servicePlanStorage,
-		"clusterserviceplans/status":        servicePlanStatusStorage,
-		"serviceinstances":                  instanceStorage,
-		"serviceinstances/status":           instanceStatusStorage,
-		"serviceinstances/reference":        instanceReferencesStorage,
-		"servicebindings":        bindingStorage,
-		"servicebindings/status": bindingStatusStorage,
+		"clusterservicebrokers":        brokerStorage,
+		"clusterservicebrokers/status": brokerStatusStorage,
+		"clusterserviceclasses":        serviceClassStorage,
+		"clusterserviceclasses/status": serviceClassStatusStorage,
+		"clusterserviceplans":          servicePlanStorage,
+		"clusterserviceplans/status":   servicePlanStatusStorage,
+		"serviceinstances":             instanceStorage,
+		"serviceinstances/status":      instanceStatusStorage,
+		"serviceinstances/reference":   instanceReferencesStorage,
+		"servicebindings":              bindingStorage,
+		"servicebindings/status":       bindingStatusStorage,
 	}, nil
 }
 
