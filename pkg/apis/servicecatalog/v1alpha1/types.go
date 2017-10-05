@@ -286,7 +286,7 @@ type ServiceClassStatus struct {
 	PresentInCatalog bool `json:"presentInCatalog"`
 }
 
-// ServicePlanList is a list of ServicePlans.
+// ClusterServicePlanList is a list of ServicePlans.
 type ClusterServicePlanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
