@@ -353,6 +353,14 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("Didn't get matching ready conditions:\nexpected: %v\n\ngot: %v", e, a)
 	}
 
+	// Assert incremented relistRequest on Relist subresource request
+	oldRelistRequests = brokerServer.Spec.RelistRequests
+	expectedRelistRequests = oldRelistRequests + 1
+	returnedBroker, err := brokerClient.Relist(brokerServer)
+	if e, a := expectedRelistRequests, returnedBroker.Spec.RelistRequests; !reflect.DeepEqual(e, a) {
+		return fmt.Errorf("Didn't get incremented relistRequests follow Relist: \nexpected: %v\n\ngot: %v", e, a)
+	}
+
 	err = brokerClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("broker should be deleted (%s)", err)

@@ -196,7 +196,17 @@ func (brokerRelistRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 
 	newServiceBroker.Spec = oldServiceBroker.Spec
 	newServiceBroker.Status = oldServiceBroker.Status
-	newServiceBroker.Spec.RelistRequests = oldServiceBroker.Spec.RelistRequests + 1
+	newServiceBroker.TypeMeta = oldServiceBroker.TypeMeta
+	newServiceBroker.ObjectMeta = oldServiceBroker.ObjectMeta
+
+	var nextRelistRequest int64
+	if oldServiceBroker.Spec.RelistRequests == sc.ServiceBrokerRelistRequestsMax {
+		nextRelistRequest = sc.ServiceBrokerRelistRequestsMin
+	} else {
+		nextRelistRequest = oldServiceBroker.Spec.RelistRequests + 1
+	}
+
+	newServiceBroker.Spec.RelistRequests = nextRelistRequest
 }
 
 func (brokerRelistRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {

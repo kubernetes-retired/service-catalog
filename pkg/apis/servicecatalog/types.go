@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/pkg/api/v1"
@@ -181,6 +182,14 @@ const (
 	// ServiceBrokerConditionFailed represents information about a final failure
 	// that should not be retried.
 	ServiceBrokerConditionFailed ServiceInstanceConditionType = "Failed"
+
+	// ServiceBrokerRelistRequestsMax is the maximum allowable value for
+	// RelistRequests before it is wrapped around.
+	ServiceBrokerRelistRequestsMax int64 = util.MaxInt64
+
+	// ServiceBrokerRelistRequestsMin is the minimum value that RelistRequests
+	// will be wrapped around to after reaching its maximum
+	ServiceBrokerRelistRequestsMin int64 = util.MinUint64
 )
 
 // ConditionStatus represents a condition's status.

@@ -163,10 +163,18 @@ func ValidateServiceBrokerStatusUpdate(new *sc.ServiceBroker, old *sc.ServiceBro
 func ValidateServiceBrokerRelistUpdate(new *sc.ServiceBroker, old *sc.ServiceBroker) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if new.Spec.RelistRequests <= old.Spec.RelistRequests {
-		msg := "relisted ServiceBroker must increment relistRequests field"
-		fldPath := field.NewPath("spec").Child("relistRequests")
-		allErrs = append(allErrs, field.Invalid(fldPath, new.Spec.RelistRequests, msg))
+	if old.Spec.RelistRequests == sc.ServiceBrokerRelistRequestsMax {
+		if new.Spec.RelistRequests != sc.ServiceBrokerRelistRequestsMin {
+			msg := "relisted ServiceBroker with max relistRequests must wrap to min relistRequests on relist"
+			fldPath := field.NewPath("spec").Child("relistRequests")
+			allErrs = append(allErrs, field.Invalid(fldPath, new.Spec.RelistRequests, msg))
+		}
+	} else {
+		if new.Spec.RelistRequests <= old.Spec.RelistRequests {
+			msg := "relisted ServiceBroker must increment relistRequests field"
+			fldPath := field.NewPath("spec").Child("relistRequests")
+			allErrs = append(allErrs, field.Invalid(fldPath, new.Spec.RelistRequests, msg))
+		}
 	}
 
 	allErrs = append(allErrs, ValidateServiceBrokerUpdate(new, old)...)

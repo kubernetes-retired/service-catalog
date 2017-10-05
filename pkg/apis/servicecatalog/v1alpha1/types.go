@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/pkg/api/v1"
@@ -86,6 +87,14 @@ const (
 	// ServiceBrokerRelistBehaviorManual indicates that the broker is only
 	// relisted when the spec of the broker changes.
 	ServiceBrokerRelistBehaviorManual ServiceBrokerRelistBehavior = "Manual"
+
+	// ServiceBrokerRelistRequestsMax is the maximum allowable value for
+	// RelistRequests before it is wrapped around.
+	ServiceBrokerRelistRequestsMax int64 = util.MaxInt64
+
+	// ServiceBrokerRelistRequestsMin is the minimum value that RelistRequests
+	// will be wrapped around to after reaching its maximum
+	ServiceBrokerRelistRequestsMin int64 = util.MinUint64
 )
 
 // ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods

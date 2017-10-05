@@ -27,6 +27,17 @@ import (
 	"github.com/golang/glog"
 )
 
+const (
+	// Minimum uint64 value
+	MinUint64 = 0
+
+	// Maximum uint64 value
+	MaxUint64 = ^MinUint64
+
+	// Maximum int64 value
+	MaxInt64 = int64(MaxUint64 >> 1)
+)
+
 // WriteResponse will serialize 'object' to the HTTP ResponseWriter
 // using the 'code' as the HTTP status code
 func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
