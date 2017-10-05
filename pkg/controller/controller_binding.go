@@ -93,8 +93,8 @@ func isServiceInstanceCredentialFailed(binding *v1alpha1.ServiceInstanceCredenti
 // setAndUpdateOrphanMitigation is for setting the OrphanMitigationInProgress
 // status to true, setting the proper condition statuses, and persisting the
 // changes via updateServiceInstanceCredentialStatus.
-func (c *controller) setAndUpdateOrphanMitigation(binding *v1alpha1.ServiceInstanceCredential, toUpdate *v1alpha1.ServiceInstanceCredential, instance *v1alpha1.ServiceInstance, serviceClass *v1alpha1.ServiceClass, brokerName string, errorStr string) error {
-	s := fmt.Sprintf("Starting orphan mitgation for ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ServiceBroker %q, %v",
+func (c *controller) setAndUpdateOrphanMitigation(binding *v1alpha1.ServiceInstanceCredential, toUpdate *v1alpha1.ServiceInstanceCredential, instance *v1alpha1.ServiceInstance, serviceClass *v1alpha1.ClusterServiceClass, brokerName string, errorStr string) error {
+	s := fmt.Sprintf("Starting orphan mitgation for ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ServiceBroker %q, %v",
 		binding.Name,
 		binding.Namespace,
 		instance.Namespace,
@@ -208,31 +208,31 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		return fmt.Errorf("Ongoing Asynchronous operation")
 	}
 
-	if instance.Spec.ServiceClassRef == nil || instance.Spec.ServicePlanRef == nil {
+	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
 		// retry later
-		return fmt.Errorf("ServiceClass or ServicePlan references for Instance have not been resolved yet")
+		return fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
 	}
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance, binding)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance, binding)
 	if err != nil {
 		return err // retry later
 	}
 
 	if !isPlanBindable(serviceClass, servicePlan) {
 		s := fmt.Sprintf(
-			"ServiceInstanceCredential \"%s/%s\" references a non-bindable ServiceClass (%q) and Plan (%q) combination",
+			"ServiceInstanceCredential \"%s/%s\" references a non-bindable ClusterServiceClass (%q) and Plan (%q) combination",
 			binding.Namespace,
 			binding.Name,
-			instance.Spec.ExternalServiceClassName,
-			instance.Spec.ExternalServicePlanName,
+			instance.Spec.ExternalClusterServiceClassName,
+			instance.Spec.ExternalClusterServicePlanName,
 		)
 		glog.Warning(s)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonbindableServiceClassReason, s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonbindableClusterServiceClassReason, s)
 		c.setServiceInstanceCredentialCondition(
 			toUpdate,
 			v1alpha1.ServiceInstanceCredentialConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonbindableServiceClassReason,
+			errorNonbindableClusterServiceClassReason,
 			s,
 		)
 		if _, err := c.updateServiceInstanceCredentialStatus(toUpdate); err != nil {
@@ -416,7 +416,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 					)
 					return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, httpErr.Error())
 				}
-				s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q, %v",
+				s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q, %v",
 					binding.Name,
 					binding.Namespace,
 					instance.Namespace,
@@ -448,7 +448,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				return nil
 			}
 
-			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
+			s := fmt.Sprintf("Error creating ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s", binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
 			glog.Warning(s)
 			c.recorder.Event(binding, apiv1.EventTypeWarning, errorBindCallReason, s)
 			c.setServiceInstanceCredentialCondition(
@@ -537,7 +537,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		}
 
 		c.recorder.Event(binding, apiv1.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
-		glog.V(5).Infof("Successfully bound to ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		glog.V(5).Infof("Successfully bound to ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 
 		return nil
 	}
@@ -608,7 +608,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		_, err = brokerClient.Unbind(unbindRequest)
 		if err != nil {
 			if httpErr, ok := osb.IsHTTPError(err); ok {
-				s := fmt.Sprintf("Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s",
+				s := fmt.Sprintf("Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s",
 					binding.Name,
 					binding.Namespace,
 					instance.Namespace,
@@ -640,7 +640,7 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 				return nil
 			}
 			s := fmt.Sprintf(
-				"Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ServiceClass %q at ClusterServiceBroker %q: %s",
+				"Error unbinding ServiceInstanceCredential \"%s/%s\" for ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s",
 				binding.Namespace,
 				binding.Name,
 				instance.Namespace,
@@ -721,19 +721,19 @@ func (c *controller) reconcileServiceInstanceCredential(binding *v1alpha1.Servic
 		}
 
 		c.recorder.Event(binding, apiv1.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
-		glog.V(5).Infof("Successfully deleted ServiceInstanceCredential %v/%v of ServiceInstance %v/%v of ServiceClass %v at ClusterServiceBroker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+		glog.V(5).Infof("Successfully deleted ServiceInstanceCredential %v/%v of ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 	}
 	return nil
 }
 
-// isPlanBindable returns whether the given ServiceClass and ServicePlan
+// isPlanBindable returns whether the given ClusterServiceClass and ClusterServicePlan
 // combination is bindable.  Plans may override the service-level bindable
 // attribute, so if the plan provides a value, return that value.  Otherwise,
-// return the Bindable field of the ServiceClass.
+// return the Bindable field of the ClusterServiceClass.
 //
 // Note: enforcing that the plan belongs to the given service class is the
 // responsibility of the caller.
-func isPlanBindable(serviceClass *v1alpha1.ServiceClass, plan *v1alpha1.ServicePlan) bool {
+func isPlanBindable(serviceClass *v1alpha1.ClusterServiceClass, plan *v1alpha1.ClusterServicePlan) bool {
 	if plan.Spec.Bindable != nil {
 		return *plan.Spec.Bindable
 	}

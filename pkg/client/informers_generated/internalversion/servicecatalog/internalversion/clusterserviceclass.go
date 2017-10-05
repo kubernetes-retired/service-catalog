@@ -30,28 +30,28 @@ import (
 	time "time"
 )
 
-// ServicePlanInformer provides access to a shared informer and lister for
-// ServicePlans.
-type ServicePlanInformer interface {
+// ClusterServiceClassInformer provides access to a shared informer and lister for
+// ClusterServiceClasses.
+type ClusterServiceClassInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() internalversion.ServicePlanLister
+	Lister() internalversion.ClusterServiceClassLister
 }
 
-type servicePlanInformer struct {
+type clusterServiceClassInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServicePlanInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func newClusterServiceClassInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.Servicecatalog().ServicePlans().List(options)
+				return client.Servicecatalog().ClusterServiceClasses().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.Servicecatalog().ServicePlans().Watch(options)
+				return client.Servicecatalog().ClusterServiceClasses().Watch(options)
 			},
 		},
-		&servicecatalog.ServicePlan{},
+		&servicecatalog.ClusterServiceClass{},
 		resyncPeriod,
 		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
@@ -59,10 +59,10 @@ func newServicePlanInformer(client internalclientset.Interface, resyncPeriod tim
 	return sharedIndexInformer
 }
 
-func (f *servicePlanInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog.ServicePlan{}, newServicePlanInformer)
+func (f *clusterServiceClassInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&servicecatalog.ClusterServiceClass{}, newClusterServiceClassInformer)
 }
 
-func (f *servicePlanInformer) Lister() internalversion.ServicePlanLister {
-	return internalversion.NewServicePlanLister(f.Informer().GetIndexer())
+func (f *clusterServiceClassInformer) Lister() internalversion.ClusterServiceClassLister {
+	return internalversion.NewClusterServiceClassLister(f.Informer().GetIndexer())
 }

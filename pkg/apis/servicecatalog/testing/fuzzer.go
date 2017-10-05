@@ -231,7 +231,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			}
 			bs.Parameters = parameters
 		},
-		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
+		func(sc *servicecatalog.ClusterServiceClass, c fuzz.Continue) {
 			c.FuzzNoCustom(sc)
 			metadata, err := createServiceMetadata(c)
 			if err != nil {
@@ -240,7 +240,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			}
 			sc.Spec.ExternalMetadata = metadata
 		},
-		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
+		func(sp *servicecatalog.ClusterServicePlan, c fuzz.Continue) {
 			c.FuzzNoCustom(sp)
 			metadata, err := createPlanMetadata(c)
 			if err != nil {

@@ -54,14 +54,14 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=Servicecatalog, Version=InternalVersion
 	case servicecatalog.SchemeGroupVersion.WithResource("clusterservicebrokers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ClusterServiceBrokers().Informer()}, nil
-	case servicecatalog.SchemeGroupVersion.WithResource("serviceclasses"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceClasses().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("clusterserviceclasses"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ClusterServiceClasses().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("clusterserviceplans"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ClusterServicePlans().Informer()}, nil
 	case servicecatalog.SchemeGroupVersion.WithResource("serviceinstances"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceInstances().Informer()}, nil
 	case servicecatalog.SchemeGroupVersion.WithResource("serviceinstancecredentials"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceInstanceCredentials().Informer()}, nil
-	case servicecatalog.SchemeGroupVersion.WithResource("serviceplans"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServicePlans().Informer()}, nil
 
 	}
 

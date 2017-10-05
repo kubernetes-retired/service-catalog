@@ -263,14 +263,14 @@ func getItems(storage NamespacedStorage) func(http.ResponseWriter, *http.Request
 				return
 			}
 			codec, err = testapi.GetCodecForObject(&sc.ClusterServiceBrokerList{})
-		case "serviceclasses":
-			list = &sc.ServiceClassList{TypeMeta: newTypeMeta("service-class-list")}
+		case "clusterserviceclasses":
+			list = &sc.ClusterServiceClassList{TypeMeta: newTypeMeta("service-class-list")}
 			if err := meta.SetList(list, items); err != nil {
 				errStr := fmt.Sprintf("Error setting list items (%s)", err)
 				http.Error(rw, errStr, http.StatusInternalServerError)
 				return
 			}
-			codec, err = testapi.GetCodecForObject(&sc.ServiceClassList{})
+			codec, err = testapi.GetCodecForObject(&sc.ClusterServiceClassList{})
 		case "serviceinstances":
 			list = &sc.ServiceInstanceList{TypeMeta: newTypeMeta("instance-list")}
 			if err := meta.SetList(list, items); err != nil {

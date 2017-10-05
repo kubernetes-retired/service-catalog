@@ -74,7 +74,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			instanceNameDef  = "ups-instance-def"
 		)
 
-		// Broker and ServiceClass should become ready
+		// Broker and ClusterServiceClass should become ready
 		By("Make sure the named ClusterServiceBroker does not exist before create")
 		if _, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ClusterServiceBrokers().Get(brokerName, metav1.GetOptions{}); err == nil {
 			err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ClusterServiceBrokers().Delete(brokerName, nil)
@@ -108,8 +108,8 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		)
 		Expect(err).NotTo(HaveOccurred(), "failed to wait ClusterServiceBroker to be ready")
 
-		By("Waiting for ServiceClass to be ready")
-		err = util.WaitForServiceClassToExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassID)
+		By("Waiting for ClusterServiceClass to be ready")
+		err = util.WaitForClusterServiceClassToExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassID)
 		Expect(err).NotTo(HaveOccurred(), "failed to wait serviceclass to be ready")
 
 		// Provisioning a ServiceInstance and binding to it
@@ -124,8 +124,8 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				ExternalServiceClassName: serviceclassName,
-				ExternalServicePlanName:  "default",
+				ExternalClusterServiceClassName: serviceclassName,
+				ExternalClusterServicePlanName:  "default",
 			},
 		}
 		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instance)
@@ -147,10 +147,10 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		By("References should have been resolved before ServiceInstance is ready ")
 		sc, err := f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Get(instanceName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred(), "failed to get ServiceInstance after binding")
-		Expect(sc.Spec.ServiceClassRef).NotTo(BeNil())
-		Expect(sc.Spec.ServicePlanRef).NotTo(BeNil())
-		Expect(sc.Spec.ServiceClassRef.Name).To(Equal(serviceclassID))
-		Expect(sc.Spec.ServicePlanRef.Name).To(Equal(serviceplanID))
+		Expect(sc.Spec.ClusterServiceClassRef).NotTo(BeNil())
+		Expect(sc.Spec.ClusterServicePlanRef).NotTo(BeNil())
+		Expect(sc.Spec.ClusterServiceClassRef.Name).To(Equal(serviceclassID))
+		Expect(sc.Spec.ClusterServicePlanRef.Name).To(Equal(serviceplanID))
 
 		// Binding to the ServiceInstance
 		By("Creating a ServiceInstanceCredential")
@@ -214,7 +214,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				ExternalServiceClassName: serviceclassName,
+				ExternalClusterServiceClassName: serviceclassName,
 			},
 		}
 		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instanceDef)
@@ -245,7 +245,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		err = framework.DeleteKubeNamespace(f.KubeClientSet, testnamespace.Name)
 		Expect(err).NotTo(HaveOccurred())
 
-		// Deleting ClusterServiceBroker and ServiceClass
+		// Deleting ClusterServiceBroker and ClusterServiceClass
 		By("Deleting the ClusterServiceBroker")
 		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ClusterServiceBrokers().Delete(brokerName, nil)
 		Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
@@ -254,8 +254,8 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), brokerName)
 		Expect(err).NotTo(HaveOccurred())
 
-		By("Waiting for ServiceClass to not exist")
-		err = util.WaitForServiceClassToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassID)
+		By("Waiting for ClusterServiceClass to not exist")
+		err = util.WaitForClusterServiceClassToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), serviceclassID)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })

@@ -59,18 +59,18 @@ import (
 // loops for the different catalog API resources.
 
 const (
-	serviceClassGUID            = "SCGUID"
-	planGUID                    = "PGUID"
-	nonbindableServiceClassGUID = "UNBINDABLE-SERVICE"
-	nonbindablePlanGUID         = "UNBINDABLE-PLAN"
-	instanceGUID                = "IGUID"
-	bindingGUID                 = "BGUID"
+	serviceClassGUID                   = "SCGUID"
+	planGUID                           = "PGUID"
+	nonbindableClusterServiceClassGUID = "UNBINDABLE-SERVICE"
+	nonbindablePlanGUID                = "UNBINDABLE-PLAN"
+	instanceGUID                       = "IGUID"
+	bindingGUID                        = "BGUID"
 
 	testClusterServiceBrokerName            = "test-broker"
-	testServiceClassName                    = "test-serviceclass"
-	testNonbindableServiceClassName         = "test-unbindable-serviceclass"
-	testServicePlanName                     = "test-plan"
-	testNonbindableServicePlanName          = "test-unbindable-plan"
+	testClusterServiceClassName             = "test-serviceclass"
+	testNonbindableClusterServiceClassName  = "test-unbindable-serviceclass"
+	testClusterServicePlanName              = "test-plan"
+	testNonbindableClusterServicePlanName   = "test-unbindable-plan"
 	testServiceInstanceName                 = "test-instance"
 	testServiceInstanceCredentialName       = "test-binding"
 	testNamespace                           = "test-ns"
@@ -381,42 +381,42 @@ func getTestClusterServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInf
 }
 
 // a bindable service class wired to the result of getTestClusterServiceBroker()
-func getTestServiceClass() *v1alpha1.ServiceClass {
-	return &v1alpha1.ServiceClass{
+func getTestClusterServiceClass() *v1alpha1.ClusterServiceClass {
+	return &v1alpha1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: serviceClassGUID},
-		Spec: v1alpha1.ServiceClassSpec{
+		Spec: v1alpha1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			Description:              "a test service",
-			ExternalName:             testServiceClassName,
+			ExternalName:             testClusterServiceClassName,
 			ExternalID:               serviceClassGUID,
 			Bindable:                 true,
 		},
 	}
 }
 
-func getTestServicePlan() *v1alpha1.ServicePlan {
-	return &v1alpha1.ServicePlan{
+func getTestClusterServicePlan() *v1alpha1.ClusterServicePlan {
+	return &v1alpha1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
-		Spec: v1alpha1.ServicePlanSpec{
+		Spec: v1alpha1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			ExternalID:               planGUID,
-			ExternalName:             testServicePlanName,
+			ExternalName:             testClusterServicePlanName,
 			Bindable:                 truePtr(),
-			ServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1.LocalObjectReference{
 				Name: serviceClassGUID,
 			},
 		},
 	}
 }
 
-func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
-	return &v1alpha1.ServicePlan{
+func getTestClusterServicePlanNonbindable() *v1alpha1.ClusterServicePlan {
+	return &v1alpha1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: nonbindablePlanGUID},
-		Spec: v1alpha1.ServicePlanSpec{
-			ExternalName: testNonbindableServicePlanName,
+		Spec: v1alpha1.ClusterServicePlanSpec{
+			ExternalName: testNonbindableClusterServicePlanName,
 			ExternalID:   nonbindablePlanGUID,
 			Bindable:     falsePtr(),
-			ServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1.LocalObjectReference{
 				Name: serviceClassGUID,
 			},
 		},
@@ -424,37 +424,37 @@ func getTestServicePlanNonbindable() *v1alpha1.ServicePlan {
 }
 
 // an unbindable service class wired to the result of getTestClusterServiceBroker()
-func getTestNonbindableServiceClass() *v1alpha1.ServiceClass {
-	return &v1alpha1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: nonbindableServiceClassGUID},
-		Spec: v1alpha1.ServiceClassSpec{
+func getTestNonbindableClusterServiceClass() *v1alpha1.ClusterServiceClass {
+	return &v1alpha1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: nonbindableClusterServiceClassGUID},
+		Spec: v1alpha1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalName:             testNonbindableServiceClassName,
-			ExternalID:               nonbindableServiceClassGUID,
+			ExternalName:             testNonbindableClusterServiceClassName,
+			ExternalID:               nonbindableClusterServiceClassGUID,
 			Bindable:                 false,
 		},
 	}
 }
 
 // broker catalog that provides the service class named in of
-// getTestServiceClass()
+// getTestClusterServiceClass()
 func getTestCatalog() *osb.CatalogResponse {
 	return &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:        testServiceClassName,
+				Name:        testClusterServiceClassName,
 				ID:          serviceClassGUID,
 				Description: "a test service",
 				Bindable:    true,
 				Plans: []osb.Plan{
 					{
-						Name:        testServicePlanName,
+						Name:        testClusterServicePlanName,
 						Free:        truePtr(),
 						ID:          planGUID,
 						Description: "a test plan",
 					},
 					{
-						Name:        testNonbindableServicePlanName,
+						Name:        testNonbindableClusterServicePlanName,
 						Free:        truePtr(),
 						ID:          nonbindablePlanGUID,
 						Description: "a test plan",
@@ -466,26 +466,26 @@ func getTestCatalog() *osb.CatalogResponse {
 	}
 }
 
-// instance referencing the result of getTestServiceClass()
-// and getTestServicePlan()
+// instance referencing the result of getTestClusterServiceClass()
+// and getTestClusterServicePlan()
 // This version sets:
-// ExternalServiceClassName and ExternalServicePlanName as well
-// as ServiceClassRef and ServicePlanRef which means that the
-// ServiceClass and ServicePlan are fetched using
+// ExternalClusterServiceClassName and ExternalClusterServicePlanName as well
+// as ClusterServiceClassRef and ClusterServicePlanRef which means that the
+// ClusterServiceClass and ClusterServicePlan are fetched using
 // Service[Class|Plan]Lister.get(spec.Service[Class|Plan]Ref.Name)
 func getTestServiceInstanceWithRefs() *v1alpha1.ServiceInstance {
 	sc := getTestServiceInstance()
-	sc.Spec.ServiceClassRef = &v1.ObjectReference{Name: serviceClassGUID}
-	sc.Spec.ServicePlanRef = &v1.ObjectReference{Name: planGUID}
+	sc.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: serviceClassGUID}
+	sc.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: planGUID}
 	return sc
 }
 
-// instance referencing the result of getTestServiceClass()
-// and getTestServicePlan()
+// instance referencing the result of getTestClusterServiceClass()
+// and getTestClusterServicePlan()
 // This version sets:
-// ExternalServiceClassName and ExternalServicePlanName, so depending on the
+// ExternalClusterServiceClassName and ExternalClusterServicePlanName, so depending on the
 // test, you may need to add reactors that deal with List due to the need
-// to resolve Names to IDs for both ServiceClass and ServicePlan
+// to resolve Names to IDs for both ClusterServiceClass and ClusterServicePlan
 func getTestServiceInstance() *v1alpha1.ServiceInstance {
 	return &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -494,37 +494,37 @@ func getTestServiceInstance() *v1alpha1.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: testServiceClassName,
-			ExternalServicePlanName:  testServicePlanName,
-			ExternalID:               instanceGUID,
+			ExternalClusterServiceClassName: testClusterServiceClassName,
+			ExternalClusterServicePlanName:  testClusterServicePlanName,
+			ExternalID:                      instanceGUID,
 		},
 	}
 }
 
-// an instance referencing the result of getTestNonbindableServiceClass, on the non-bindable plan.
+// an instance referencing the result of getTestNonbindableClusterServiceClass, on the non-bindable plan.
 func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstance()
-	i.Spec.ExternalServiceClassName = testNonbindableServiceClassName
-	i.Spec.ExternalServicePlanName = testNonbindableServicePlanName
-	i.Spec.ServiceClassRef = &v1.ObjectReference{Name: nonbindableServiceClassGUID}
-	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
+	i.Spec.ExternalClusterServiceClassName = testNonbindableClusterServiceClassName
+	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
+	i.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: nonbindableClusterServiceClassGUID}
+	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
 
 	return i
 }
 
-// an instance referencing the result of getTestNonbindableServiceClass, on the bindable plan.
+// an instance referencing the result of getTestNonbindableClusterServiceClass, on the bindable plan.
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
-	i.Spec.ExternalServicePlanName = testServicePlanName
-	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: planGUID}
+	i.Spec.ExternalClusterServicePlanName = testClusterServicePlanName
+	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: planGUID}
 
 	return i
 }
 
 func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.ServiceInstance {
 	i := getTestServiceInstanceWithRefs()
-	i.Spec.ExternalServicePlanName = testNonbindableServicePlanName
-	i.Spec.ServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
+	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
+	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
 
 	return i
 }
@@ -570,7 +570,7 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 		OperationStartTime: &operationStartTime,
 		CurrentOperation:   v1alpha1.ServiceInstanceOperationProvision,
 		InProgressProperties: &v1alpha1.ServiceInstancePropertiesState{
-			ExternalServicePlanName: testServicePlanName,
+			ExternalClusterServicePlanName: testClusterServicePlanName,
 		},
 	}
 	if operation != "" {
@@ -599,10 +599,10 @@ func getTestServiceInstanceAsyncUpdating(operation string) *v1alpha1.ServiceInst
 		OperationStartTime: &operationStartTime,
 		CurrentOperation:   v1alpha1.ServiceInstanceOperationUpdate,
 		InProgressProperties: &v1alpha1.ServiceInstancePropertiesState{
-			ExternalServicePlanName: testServicePlanName,
+			ExternalClusterServicePlanName: testClusterServicePlanName,
 		},
 		ExternalProperties: &v1alpha1.ServiceInstancePropertiesState{
-			ExternalServicePlanName: "old-plan-name",
+			ExternalClusterServicePlanName: "old-plan-name",
 		},
 	}
 	if operation != "" {
@@ -629,7 +629,7 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Servi
 		CurrentOperation:     v1alpha1.ServiceInstanceOperationDeprovision,
 		ReconciledGeneration: 1,
 		ExternalProperties: &v1alpha1.ServiceInstancePropertiesState{
-			ExternalServicePlanName: testServicePlanName,
+			ExternalClusterServicePlanName: testClusterServicePlanName,
 		},
 	}
 	if operation != "" {
@@ -774,7 +774,7 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	}
 }
 
-func checkPlan(plan *v1alpha1.ServicePlan, planID, planName, planDescription string, t *testing.T) {
+func checkPlan(plan *v1alpha1.ClusterServicePlan, planID, planName, planDescription string, t *testing.T) {
 	if plan.Name != planID {
 		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
 	}
@@ -827,7 +827,7 @@ const testCatalogWithMultipleServices = `{
 // FIX: there is an inconsistency between the current broker API types re: the
 // Service.Metadata field.  Our repo types it as `interface{}`, the go-open-
 // service-broker-client types it as `map[string]interface{}`.
-func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
+func TestCatalogConversionMultipleClusterServiceClasses(t *testing.T) {
 	// catalog := &osb.CatalogResponse{}
 	// err := json.Unmarshal([]byte(testCatalogWithMultipleServices), &catalog)
 	// if err != nil {
@@ -930,7 +930,7 @@ func TestCatalogConversionMultipleServiceClasses(t *testing.T) {
 
 }
 
-const testCatalogForServicePlanBindableOverride = `{
+const testCatalogForClusterServicePlanBindableOverride = `{
   "services": [
     {
       "name": "bindable",
@@ -976,9 +976,9 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func TestCatalogConversionServicePlanBindable(t *testing.T) {
+func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 	catalog := &osb.CatalogResponse{}
-	err := json.Unmarshal([]byte(testCatalogForServicePlanBindableOverride), &catalog)
+	err := json.Unmarshal([]byte(testCatalogForClusterServicePlanBindableOverride), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
@@ -988,12 +988,12 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		t.Fatalf("Failed to convertCatalog: %v", err)
 	}
 
-	eclasses := []*v1alpha1.ServiceClass{
+	eclasses := []*v1alpha1.ClusterServiceClass{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "bindable-id",
 			},
-			Spec: v1alpha1.ServiceClassSpec{
+			Spec: v1alpha1.ClusterServiceClassSpec{
 				ExternalName: "bindable",
 				ExternalID:   "bindable-id",
 				Bindable:     true,
@@ -1003,7 +1003,7 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "unbindable-id",
 			},
-			Spec: v1alpha1.ServiceClassSpec{
+			Spec: v1alpha1.ClusterServiceClassSpec{
 				ExternalName: "unbindable",
 				ExternalID:   "unbindable-id",
 				Bindable:     false,
@@ -1011,16 +1011,16 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 		},
 	}
 
-	eplans := []*v1alpha1.ServicePlan{
+	eplans := []*v1alpha1.ClusterServicePlan{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s1_plan1_id",
 			},
-			Spec: v1alpha1.ServicePlanSpec{
+			Spec: v1alpha1.ClusterServicePlanSpec{
 				ExternalID:   "s1_plan1_id",
 				ExternalName: "bindable-bindable",
 				Bindable:     nil,
-				ServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1.LocalObjectReference{
 					Name: "bindable-id",
 				},
 			},
@@ -1029,11 +1029,11 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s1_plan2_id",
 			},
-			Spec: v1alpha1.ServicePlanSpec{
+			Spec: v1alpha1.ClusterServicePlanSpec{
 				ExternalName: "bindable-unbindable",
 				ExternalID:   "s1_plan2_id",
 				Bindable:     falsePtr(),
-				ServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1.LocalObjectReference{
 					Name: "bindable-id",
 				},
 			},
@@ -1042,11 +1042,11 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s2_plan1_id",
 			},
-			Spec: v1alpha1.ServicePlanSpec{
+			Spec: v1alpha1.ClusterServicePlanSpec{
 				ExternalName: "unbindable-unbindable",
 				ExternalID:   "s2_plan1_id",
 				Bindable:     nil,
-				ServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1.LocalObjectReference{
 					Name: "unbindable-id",
 				},
 			},
@@ -1055,11 +1055,11 @@ func TestCatalogConversionServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s2_plan2_id",
 			},
-			Spec: v1alpha1.ServicePlanSpec{
+			Spec: v1alpha1.ClusterServicePlanSpec{
 				ExternalName: "unbindable-bindable",
 				ExternalID:   "s2_plan2_id",
 				Bindable:     truePtr(),
-				ServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1.LocalObjectReference{
 					Name: "unbindable-id",
 				},
 			},
@@ -1106,15 +1106,15 @@ func TestIsClusterServiceBrokerReady(t *testing.T) {
 }
 
 func TestIsPlanBindable(t *testing.T) {
-	serviceClass := func(bindable bool) *v1alpha1.ServiceClass {
-		serviceClass := getTestServiceClass()
+	serviceClass := func(bindable bool) *v1alpha1.ClusterServiceClass {
+		serviceClass := getTestClusterServiceClass()
 		serviceClass.Spec.Bindable = bindable
 		return serviceClass
 	}
 
-	servicePlan := func(bindable *bool) *v1alpha1.ServicePlan {
-		return &v1alpha1.ServicePlan{
-			Spec: v1alpha1.ServicePlanSpec{
+	servicePlan := func(bindable *bool) *v1alpha1.ClusterServicePlan {
+		return &v1alpha1.ClusterServicePlan{
+			Spec: v1alpha1.ClusterServicePlanSpec{
 				Bindable: bindable,
 			},
 		}
@@ -1208,10 +1208,10 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeKubeClient,
 		fakeCatalogClient.ServicecatalogV1alpha1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
-		serviceCatalogSharedInformers.ServiceClasses(),
+		serviceCatalogSharedInformers.ClusterServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
-		serviceCatalogSharedInformers.ServicePlans(),
+		serviceCatalogSharedInformers.ClusterServicePlans(),
 		brokerClFunc,
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
@@ -1344,10 +1344,10 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	switch obj.(type) {
 	case *v1alpha1.ClusterServiceBroker:
 		resource = "clusterservicebrokers"
-	case *v1alpha1.ServiceClass:
-		resource = "serviceclasses"
-	case *v1alpha1.ServicePlan:
-		resource = "serviceplans"
+	case *v1alpha1.ClusterServiceClass:
+		resource = "clusterserviceclasses"
+	case *v1alpha1.ClusterServicePlan:
+		resource = "clusterserviceplans"
 	case *v1alpha1.ServiceInstance:
 		resource = "serviceinstances"
 	case *v1alpha1.ServiceInstanceCredential:
@@ -1927,7 +1927,7 @@ func assertServiceInstancePropertiesStatePlanName(t *testing.T, propsLabel strin
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
-	if e, a := expectedPlanName, actualProps.ExternalServicePlanName; e != a {
+	if e, a := expectedPlanName, actualProps.ExternalClusterServicePlanName; e != a {
 		fatalf(t, "unexpected %v properties external service plan name: expected %v, actual %v", propsLabel, e, a)
 	}
 }

@@ -36,10 +36,10 @@ func getTestInstance() *servicecatalog.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
-			ExternalServiceClassName: "test-serviceclass",
-			ExternalServicePlanName:  "test-plan",
-			ServiceClassRef:          &v1.ObjectReference{},
-			ServicePlanRef:           &v1.ObjectReference{},
+			ExternalClusterServiceClassName: "test-serviceclass",
+			ExternalClusterServicePlanName:  "test-plan",
+			ClusterServiceClassRef:          &v1.ObjectReference{},
+			ClusterServicePlanRef:           &v1.ObjectReference{},
 			UserInfo: &servicecatalog.UserInfo{
 				Username: "some-user",
 			},
@@ -96,7 +96,7 @@ func TestInstanceUpdate(t *testing.T) {
 			older: getTestInstance(),
 			newer: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
-				i.Spec.ExternalServicePlanName = "new-test-plan"
+				i.Spec.ExternalClusterServicePlanName = "new-test-plan"
 				return i
 			}(),
 			shouldSpecUpdate:   true,
@@ -129,11 +129,11 @@ func TestInstanceUpdate(t *testing.T) {
 			t.Errorf("%v: unexpected ready condition status: expected %v, got %v", tc.name, e, a)
 		}
 		if tc.shouldPlanRefClear {
-			if tc.newer.Spec.ServicePlanRef != nil {
+			if tc.newer.Spec.ClusterServicePlanRef != nil {
 				t.Errorf("%v: expected ServicePlanRef to be nil", tc.name)
 			}
 		} else {
-			if tc.newer.Spec.ServicePlanRef == nil {
+			if tc.newer.Spec.ClusterServicePlanRef == nil {
 				t.Errorf("%v: expected ServicePlanRef to not be nil", tc.name)
 			}
 		}

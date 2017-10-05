@@ -89,23 +89,23 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceInstance(t *testing
 	}
 }
 
-// TestReconcileServiceInstanceCredentialUnresolvedServiceClassReference
-// tests reconcileBinding to ensure a binding fails when a ServiceClassRef has not been resolved.
-func TestReconcileServiceInstanceCredentialUnresolvedServiceClassReference(t *testing.T) {
+// TestReconcileServiceInstanceCredentialUnresolvedClusterServiceClassReference
+// tests reconcileBinding to ensure a binding fails when a ClusterServiceClassRef has not been resolved.
+func TestReconcileServiceInstanceCredentialUnresolvedClusterServiceClassReference(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: "nothere",
-			ExternalServicePlanName:  testServicePlanName,
-			ExternalID:               instanceGUID,
+			ExternalClusterServiceClassName: "nothere",
+			ExternalClusterServicePlanName:  testClusterServicePlanName,
+			ExternalID:                      instanceGUID,
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -135,24 +135,24 @@ func TestReconcileServiceInstanceCredentialUnresolvedServiceClassReference(t *te
 	assertNumberOfActions(t, actions, 0)
 }
 
-// TestReconcileServiceInstanceCredentialUnresolvedServicePlanReference
-// tests reconcileBinding to ensure a binding fails when a ServiceClassRef has not been resolved.
-func TestReconcileServiceInstanceCredentialUnresolvedServicePlanReference(t *testing.T) {
+// TestReconcileServiceInstanceCredentialUnresolvedClusterServicePlanReference
+// tests reconcileBinding to ensure a binding fails when a ClusterServiceClassRef has not been resolved.
+func TestReconcileServiceInstanceCredentialUnresolvedClusterServicePlanReference(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: "nothere",
-			ExternalServicePlanName:  testServicePlanName,
-			ExternalID:               instanceGUID,
-			ServiceClassRef:          &v1.ObjectReference{Name: "Some Ref"},
+			ExternalClusterServiceClassName: "nothere",
+			ExternalClusterServicePlanName:  testClusterServicePlanName,
+			ExternalID:                      instanceGUID,
+			ClusterServiceClassRef:          &v1.ObjectReference{Name: "Some Ref"},
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -183,25 +183,25 @@ func TestReconcileServiceInstanceCredentialUnresolvedServicePlanReference(t *tes
 	assertNumberOfActions(t, actions, 0)
 }
 
-// TestReconcileBindingNonExistingServiceClass tests reconcileBinding to ensure a
+// TestReconcileBindingNonExistingClusterServiceClass tests reconcileBinding to ensure a
 // binding fails as expected when a serviceclass does not exist.
-func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T) {
+func TestReconcileServiceInstanceCredentialNonExistingClusterServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalServiceClassName: "nothere",
-			ExternalServicePlanName:  testServicePlanName,
-			ExternalID:               instanceGUID,
-			ServiceClassRef:          &v1.ObjectReference{Name: "nosuchclassid"},
-			ServicePlanRef:           &v1.ObjectReference{Name: "nosuchplanid"},
+			ExternalClusterServiceClassName: "nothere",
+			ExternalClusterServicePlanName:  testClusterServicePlanName,
+			ExternalID:                      instanceGUID,
+			ClusterServiceClassRef:          &v1.ObjectReference{Name: "nosuchclassid"},
+			ClusterServicePlanRef:           &v1.ObjectReference{Name: "nosuchplanid"},
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -230,15 +230,15 @@ func TestReconcileServiceInstanceCredentialNonExistingServiceClass(t *testing.T)
 
 	// There should be one action that says it failed because no such service class.
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorNonexistentServiceClassMessage)
+	assertServiceInstanceCredentialReadyFalse(t, updatedServiceInstanceCredential, errorNonexistentClusterServiceClassMessage)
 	assertServiceInstanceCredentialOrphanMitigationSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentServiceClassMessage + " " + "ServiceInstanceCredential \"test-ns/test-binding\" references a non-existent ServiceClass \"nothere\""
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentClusterServiceClassMessage + " " + "ServiceInstanceCredential \"test-ns/test-binding\" references a non-existent ClusterServiceClass \"nothere\""
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event expected: %v got: %v", e, a)
 	}
 }
 
@@ -263,9 +263,9 @@ func TestReconcileServiceInstanceCredentialWithSecretConflict(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -354,9 +354,9 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -478,16 +478,16 @@ func TestReconcileServiceInstanceCredentialWithParameters(t *testing.T) {
 	}
 }
 
-// TestReconcileBindingNonbindableServiceClass tests reconcileBinding to ensure a
+// TestReconcileBindingNonbindableClusterServiceClass tests reconcileBinding to ensure a
 // binding for an instance that references a non-bindable service class and a
 // non-bindable plan fails as expected.
-func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T) {
+func TestReconcileServiceInstanceCredentialNonbindableClusterServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestNonbindableClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestNonbindableServiceInstance())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlanNonbindable())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlanNonbindable())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -503,7 +503,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T)
 
 	err := testController.reconcileServiceInstanceCredential(binding)
 	if err != nil {
-		t.Fatalf("binding should fail against a non-bindable ServiceClass")
+		t.Fatalf("binding should fail against a non-bindable ClusterServiceClass")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -514,22 +514,22 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClass(t *testing.T)
 
 	// There should only be one action that says binding was created
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableServiceClassReason, binding)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableClusterServiceClassReason, binding)
 	assertServiceInstanceCredentialOrphanMitigationSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonbindableServiceClassReason + ` ServiceInstanceCredential "test-ns/test-binding" references a non-bindable ServiceClass ("test-unbindable-serviceclass") and Plan ("test-unbindable-plan") combination`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonbindableClusterServiceClassReason + ` ServiceInstanceCredential "test-ns/test-binding" references a non-bindable ClusterServiceClass ("test-unbindable-serviceclass") and Plan ("test-unbindable-plan") combination`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
 
-// TestReconcileBindingNonbindableServiceClassBindablePlan tests reconcileBinding
+// TestReconcileBindingNonbindableClusterServiceClassBindablePlan tests reconcileBinding
 // to ensure a binding for an instance that references a non-bindable service
 // class and a bindable plan fails as expected.
-func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t *testing.T) {
+func TestReconcileServiceInstanceCredentialNonbindableClusterServiceClassBindablePlan(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
@@ -545,7 +545,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestNonbindableServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestNonbindableClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(func() *v1alpha1.ServiceInstance {
 		i := getTestServiceInstanceNonbindableServiceBindablePlan()
 		i.Status = v1alpha1.ServiceInstanceStatus{
@@ -558,7 +558,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 		}
 		return i
 	}())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -583,7 +583,7 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	assertBind(t, brokerActions[0], &osb.BindRequest{
 		BindingID:  bindingGUID,
 		InstanceID: instanceGUID,
-		ServiceID:  nonbindableServiceClassGUID,
+		ServiceID:  nonbindableClusterServiceClassGUID,
 		PlanID:     planGUID,
 		AppGUID:    strPtr(testNsUID),
 		BindResource: &osb.BindResource{
@@ -640,16 +640,16 @@ func TestReconcileServiceInstanceCredentialNonbindableServiceClassBindablePlan(t
 	assertNumEvents(t, events, 1)
 }
 
-// TestReconcileBindingBindableServiceClassNonbindablePlan tests reconcileBinding
+// TestReconcileBindingBindableClusterServiceClassNonbindablePlan tests reconcileBinding
 // to ensure a binding for an instance that references a bindable service class
 // and a non-bindable plan fails as expected.
-func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t *testing.T) {
+func TestReconcileServiceInstanceCredentialBindableClusterServiceClassNonbindablePlan(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceBindableServiceNonbindablePlan())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlanNonbindable())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlanNonbindable())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -676,13 +676,13 @@ func TestReconcileServiceInstanceCredentialBindableServiceClassNonbindablePlan(t
 
 	// There should only be one action that says binding was created
 	updatedServiceInstanceCredential := assertUpdateStatus(t, actions[0], binding)
-	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableServiceClassReason, binding)
+	assertServiceInstanceCredentialErrorBeforeRequest(t, updatedServiceInstanceCredential, errorNonbindableClusterServiceClassReason, binding)
 	assertServiceInstanceCredentialOrphanMitigationSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonbindableServiceClassReason + ` ServiceInstanceCredential "test-ns/test-binding" references a non-bindable ServiceClass ("test-serviceclass") and Plan ("test-unbindable-plan") combination`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorNonbindableClusterServiceClassReason + ` ServiceInstanceCredential "test-ns/test-binding" references a non-bindable ClusterServiceClass ("test-serviceclass") and Plan ("test-unbindable-plan") combination`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -695,9 +695,9 @@ func TestReconcileServiceInstanceCredentialFailsWithServiceInstanceAsyncOngoing(
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceAsyncProvisioning(""))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -758,9 +758,9 @@ func TestReconcileServiceInstanceCredentialServiceInstanceNotReady(t *testing.T)
 	addGetNamespaceReaction(fakeKubeClient)
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -809,9 +809,9 @@ func TestReconcileServiceInstanceCredentialNamespaceError(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -857,9 +857,9 @@ func TestReconcileServiceInstanceCredentialDelete(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1080,9 +1080,9 @@ func TestReconcileServiceInstanceCredentialDeleteFailedServiceInstanceCredential
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 	binding.ObjectMeta.DeletionTimestamp = &metav1.Time{}
@@ -1162,9 +1162,9 @@ func TestReconcileServiceInstanceCredentialWithClusterServiceBrokerError(t *test
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1196,7 +1196,7 @@ func TestReconcileServiceInstanceCredentialWithClusterServiceBrokerError(t *test
 	assertServiceInstanceCredentialOrphanMitigationSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker": Unexpected action`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ClusterServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker": Unexpected action`
 	if 1 != len(events) {
 		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
 	}
@@ -1221,9 +1221,9 @@ func TestReconcileServiceInstanceCredentialWithClusterServiceBrokerHTTPError(t *
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1alpha1.ServiceInstanceCredential{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1255,7 +1255,7 @@ func TestReconcileServiceInstanceCredentialWithClusterServiceBrokerHTTPError(t *
 	assertServiceInstanceCredentialOrphanMitigationSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker", Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + `Error creating ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ClusterServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker", Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
 	if 1 != len(events) {
 		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
 	}
@@ -1270,9 +1270,9 @@ func TestReconcileServiceInstanceCredentialWithFailureCondition(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := getTestServiceInstanceCredentialWithFailedStatus()
 
@@ -1303,9 +1303,9 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialCallFail
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := getTestServiceInstanceCredential()
 
@@ -1348,7 +1348,7 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialCallFail
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating ServiceInstanceCredential \"test-binding/test-ns\" for ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\": fake creation failure"
+	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating ServiceInstanceCredential \"test-binding/test-ns\" for ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\": fake creation failure"
 
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
@@ -1369,9 +1369,9 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := getTestServiceInstanceCredential()
 
@@ -1414,7 +1414,7 @@ func TestReconcileServiceInstanceCredentialWithServiceInstanceCredentialFailure(
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating ServiceInstanceCredential \"test-binding/test-ns\" for ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\", Status: 409; ErrorMessage: ServiceInstanceCredentialExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>"
+	expectedEvent := apiv1.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating ServiceInstanceCredential \"test-binding/test-ns\" for ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\", Status: 409; ErrorMessage: ServiceInstanceCredentialExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>"
 
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
@@ -1585,9 +1585,9 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	t1 := metav1.NewTime(time.Now())
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -1625,7 +1625,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 	assertServiceInstanceCredentialOrphanMitigationSet(t, updatedServiceInstanceCredential, false)
 
 	events := getRecordedEvents(testController)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-ns/test-binding" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker": Unexpected action`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-ns/test-binding" for ServiceInstance "test-ns/test-instance" of ClusterServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker": Unexpected action`
 	if 1 != len(events) {
 		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
 	}
@@ -1648,9 +1648,9 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	t1 := metav1.NewTime(time.Now())
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -1689,7 +1689,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker": Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
+	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + `Error unbinding ServiceInstanceCredential "test-binding/test-ns" for ServiceInstance "test-ns/test-instance" of ClusterServiceClass "test-serviceclass" at ClusterServiceBroker "test-broker": Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>`
 	if 1 != len(events) {
 		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
 	}
@@ -1716,8 +1716,8 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 			addGetSecretNotFoundReaction(fakeKubeClient)
 
 			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 			sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 			binding := getTestServiceInstanceCredential()
@@ -1765,8 +1765,8 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 			addGetSecretNotFoundReaction(fakeKubeClient)
 
 			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 			sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 			binding := getTestServiceInstanceCredential()
@@ -1815,8 +1815,8 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
@@ -1873,8 +1873,8 @@ func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
@@ -1930,8 +1930,8 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
@@ -2022,8 +2022,8 @@ func TestReconcileServiceInstanceCredentialWithStatusUpdateError(t *testing.T) {
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := getTestServiceInstanceCredential()
@@ -2085,8 +2085,8 @@ func TestReconcileServiceInstanceCredentialWithSecretParameters(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -2274,8 +2274,8 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 		})
 
 		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-		sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-		sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+		sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 		sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 		binding := &v1alpha1.ServiceInstanceCredential{
@@ -2349,8 +2349,8 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -2419,8 +2419,8 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
-	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue))
 
 	binding := &v1alpha1.ServiceInstanceCredential{
@@ -2474,7 +2474,7 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Error unbinding ServiceInstanceCredential \"test-ns/test-binding\" for ServiceInstance \"test-ns/test-instance\" of ServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\": timed out"
+	expectedEvent := apiv1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Error unbinding ServiceInstanceCredential \"test-ns/test-binding\" for ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass \"test-serviceclass\" at ClusterServiceBroker \"test-broker\": timed out"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event, expected %v got %v", a, e)
 	}

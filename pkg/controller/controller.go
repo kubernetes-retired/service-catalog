@@ -64,10 +64,10 @@ func NewController(
 	kubeClient kubernetes.Interface,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
 	brokerInformer informers.ClusterServiceBrokerInformer,
-	serviceClassInformer informers.ServiceClassInformer,
+	clusterServiceClassInformer informers.ClusterServiceClassInformer,
 	instanceInformer informers.ServiceInstanceInformer,
 	bindingInformer informers.ServiceInstanceCredentialInformer,
-	servicePlanInformer informers.ServicePlanInformer,
+	clusterServicePlanInformer informers.ClusterServicePlanInformer,
 	brokerClientCreateFunc osb.CreateFunc,
 	brokerRelistInterval time.Duration,
 	osbAPIPreferredVersion string,
@@ -97,19 +97,19 @@ func NewController(
 	})
 	controller.brokerLister = brokerInformer.Lister()
 
-	serviceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	clusterServiceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.serviceClassAdd,
 		UpdateFunc: controller.serviceClassUpdate,
 		DeleteFunc: controller.serviceClassDelete,
 	})
-	controller.serviceClassLister = serviceClassInformer.Lister()
+	controller.serviceClassLister = clusterServiceClassInformer.Lister()
 
-	servicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	clusterServicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.servicePlanAdd,
 		UpdateFunc: controller.servicePlanUpdate,
 		DeleteFunc: controller.servicePlanDelete,
 	})
-	controller.servicePlanLister = servicePlanInformer.Lister()
+	controller.servicePlanLister = clusterServicePlanInformer.Lister()
 
 	instanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.instanceAdd,
@@ -143,10 +143,10 @@ type controller struct {
 	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1alpha1Interface
 	brokerClientCreateFunc      osb.CreateFunc
 	brokerLister                listers.ClusterServiceBrokerLister
-	serviceClassLister          listers.ServiceClassLister
+	serviceClassLister          listers.ClusterServiceClassLister
 	instanceLister              listers.ServiceInstanceLister
 	bindingLister               listers.ServiceInstanceCredentialLister
-	servicePlanLister           listers.ServicePlanLister
+	servicePlanLister           listers.ClusterServicePlanLister
 	brokerRelistInterval        time.Duration
 	OSBAPIPreferredVersion      string
 	recorder                    record.EventRecorder
@@ -173,8 +173,8 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	for i := 0; i < workers; i++ {
 		createWorker(c.brokerQueue, "ClusterServiceBroker", maxRetries, true, c.reconcileClusterServiceBrokerKey, stopCh, &waitGroup)
-		createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, &waitGroup)
-		createWorker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey, stopCh, &waitGroup)
+		createWorker(c.serviceClassQueue, "ClusterServiceClass", maxRetries, true, c.reconcileClusterServiceClassKey, stopCh, &waitGroup)
+		createWorker(c.servicePlanQueue, "ClusterServicePlan", maxRetries, true, c.reconcileClusterServicePlanKey, stopCh, &waitGroup)
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
 		createWorker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey, stopCh, &waitGroup)
 		createWorker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, &waitGroup)
@@ -242,38 +242,38 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 	}
 }
 
-// getServiceClassPlanAndClusterServiceBroker is a sequence of operations that's done in couple of
+// getClusterServiceClassPlanAndClusterServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
-// Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
-func (c *controller) getServiceClassPlanAndClusterServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
+// Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ClusterServiceClass, *v1alpha1.ClusterServicePlan, string, osb.Client, error) {
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServiceClassName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
 		glog.Info(s)
 		c.updateServiceInstanceCondition(
 			instance,
 			v1alpha1.ServiceInstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonexistentServiceClassReason,
-			"The instance references a ServiceClass that does not exist. "+s,
+			errorNonexistentClusterServiceClassReason,
+			"The instance references a ClusterServiceClass that does not exist. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServiceClassReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
+	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
 			v1alpha1.ServiceInstanceConditionReady,
 			v1alpha1.ConditionFalse,
-			"ReferencesNonexistentServicePlan",
-			"The instance references a ServicePlan that does not exist. "+s,
+			errorNonexistentClusterServicePlanReason,
+			"The instance references a ClusterServicePlan that does not exist. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
@@ -318,38 +318,38 @@ func (c *controller) getServiceClassPlanAndClusterServiceBroker(instance *v1alph
 	return serviceClass, servicePlan, broker.Name, brokerClient, nil
 }
 
-// getServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential is a sequence of operations that's
+// getClusterServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential is a sequence of operations that's
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given ServiceInstance.
-// Sets ServiceClassRef and/or ServicePlanRef if they haven't been already set.
-func (c *controller) getServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ServiceClass, *v1alpha1.ServicePlan, string, osb.Client, error) {
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ServiceClassRef.Name)
+// Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ClusterServiceClass, *v1alpha1.ClusterServicePlan, string, osb.Client, error) {
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalServiceClassName)
+		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ClusterServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalClusterServiceClassName)
 		glog.Warning(s)
 		c.updateServiceInstanceCredentialCondition(
 			binding,
 			v1alpha1.ServiceInstanceCredentialConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonexistentServiceClassReason,
-			"The binding references a ServiceClass that does not exist. "+s,
+			errorNonexistentClusterServiceClassReason,
+			"The binding references a ClusterServiceClass that does not exist. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, "ReferencesNonexistentServiceClass", s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServiceClassMessage, s)
 		return nil, nil, "", nil, err
 	}
 
-	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ServicePlanRef.Name)
+	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ServicePlan %q on ServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalServicePlanName, serviceClass.Spec.ExternalName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
 		c.updateServiceInstanceCredentialCondition(
 			binding,
 			v1alpha1.ServiceInstanceCredentialConditionReady,
 			v1alpha1.ConditionFalse,
-			errorNonexistentServicePlanReason,
-			"The ServiceInstanceCredential references an ServiceInstance which references ServicePlan that does not exist. "+s,
+			errorNonexistentClusterServicePlanReason,
+			"The ServiceInstanceCredential references an ServiceInstance which references ClusterServicePlan that does not exist. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentServicePlanReason, s)
+		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
@@ -475,13 +475,13 @@ func getBearerConfig(secret *apiv1.Secret) (*osb.BearerConfig, error) {
 	}, nil
 }
 
-// convertCatalog converts a service broker catalog into an array of ServiceClasses
-func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, []*v1alpha1.ServicePlan, error) {
-	serviceClasses := make([]*v1alpha1.ServiceClass, len(in.Services))
-	servicePlans := []*v1alpha1.ServicePlan{}
+// convertCatalog converts a service broker catalog into an array of ClusterServiceClasses
+func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ClusterServiceClass, []*v1alpha1.ClusterServicePlan, error) {
+	serviceClasses := make([]*v1alpha1.ClusterServiceClass, len(in.Services))
+	servicePlans := []*v1alpha1.ClusterServicePlan{}
 	for i, svc := range in.Services {
-		serviceClasses[i] = &v1alpha1.ServiceClass{
-			Spec: v1alpha1.ServiceClassSpec{
+		serviceClasses[i] = &v1alpha1.ClusterServiceClass{
+			Spec: v1alpha1.ClusterServiceClassSpec{
 				Bindable:      svc.Bindable,
 				PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
 				ExternalID:    svc.ID,
@@ -504,8 +504,8 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, []*v1alp
 
 		serviceClasses[i].SetName(svc.ID)
 
-		// set up the plans using the ServiceClass Name
-		plans, err := convertServicePlans(svc.Plans, serviceClasses[i].Name)
+		// set up the plans using the ClusterServiceClass Name
+		plans, err := convertClusterServicePlans(svc.Plans, serviceClasses[i].Name)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -514,19 +514,19 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ServiceClass, []*v1alp
 	return serviceClasses, servicePlans, nil
 }
 
-func convertServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1alpha1.ServicePlan, error) {
+func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1alpha1.ClusterServicePlan, error) {
 	if 0 == len(plans) {
-		return nil, fmt.Errorf("ServiceClass %q must have at least one plan", serviceClassID)
+		return nil, fmt.Errorf("ClusterServiceClass %q must have at least one plan", serviceClassID)
 	}
-	servicePlans := make([]*v1alpha1.ServicePlan, len(plans))
+	servicePlans := make([]*v1alpha1.ClusterServicePlan, len(plans))
 	for i, plan := range plans {
-		servicePlans[i] = &v1alpha1.ServicePlan{
-			Spec: v1alpha1.ServicePlanSpec{
-				ExternalName:    plan.Name,
-				ExternalID:      plan.ID,
-				Free:            (plan.Free != nil && *plan.Free),
-				Description:     plan.Description,
-				ServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassID},
+		servicePlans[i] = &v1alpha1.ClusterServicePlan{
+			Spec: v1alpha1.ClusterServicePlanSpec{
+				ExternalName:           plan.Name,
+				ExternalID:             plan.ID,
+				Free:                   (plan.Free != nil && *plan.Free),
+				Description:            plan.Description,
+				ClusterServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassID},
 			},
 		}
 		servicePlans[i].SetName(plan.ID)

@@ -144,7 +144,7 @@ wait_for_expected_output -e 'FetchedCatalog' \
     error_exit 'Failure status reported when attempting to fetch catalog from ups-broker.'
   }
 
-[[ "$(kubectl --context=service-catalog get serviceclasses)" == *${USER_PROVIDED_SERVICE_ID}* ]] \
+[[ "$(kubectl --context=service-catalog get clusterserviceclasses)" == *${USER_PROVIDED_SERVICE_ID}* ]] \
   || error_exit 'user-provided-service ID not listed when fetching service classes.'
 
 # Provision an instance
@@ -216,9 +216,9 @@ kubectl --context=service-catalog delete clusterservicebrokers ups-broker \
   || error_exit 'Error when deleting ups-broker.'
 
 wait_for_expected_output -x -e ${USER_PROVIDED_SERVICE_ID} \
-    kubectl --context=service-catalog get serviceclasses \
+    kubectl --context=service-catalog get clusterserviceclasses \
   || {
-    kubectl --context=service-catalog get serviceclasses
+    kubectl --context=service-catalog get clusterserviceclasses
     error_exit 'Service classes not successfully removed upon deleting ups-broker.'
   }
 

@@ -30,8 +30,12 @@ func (c *FakeServicecatalog) ClusterServiceBrokers() internalversion.ClusterServ
 	return &FakeClusterServiceBrokers{c}
 }
 
-func (c *FakeServicecatalog) ServiceClasses() internalversion.ServiceClassInterface {
-	return &FakeServiceClasses{c}
+func (c *FakeServicecatalog) ClusterServiceClasses() internalversion.ClusterServiceClassInterface {
+	return &FakeClusterServiceClasses{c}
+}
+
+func (c *FakeServicecatalog) ClusterServicePlans() internalversion.ClusterServicePlanInterface {
+	return &FakeClusterServicePlans{c}
 }
 
 func (c *FakeServicecatalog) ServiceInstances(namespace string) internalversion.ServiceInstanceInterface {
@@ -40,10 +44,6 @@ func (c *FakeServicecatalog) ServiceInstances(namespace string) internalversion.
 
 func (c *FakeServicecatalog) ServiceInstanceCredentials(namespace string) internalversion.ServiceInstanceCredentialInterface {
 	return &FakeServiceInstanceCredentials{c, namespace}
-}
-
-func (c *FakeServicecatalog) ServicePlans() internalversion.ServicePlanInterface {
-	return &FakeServicePlans{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

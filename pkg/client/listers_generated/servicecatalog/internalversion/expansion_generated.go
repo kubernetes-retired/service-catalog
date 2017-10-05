@@ -22,9 +22,13 @@ package internalversion
 // ClusterServiceBrokerLister.
 type ClusterServiceBrokerListerExpansion interface{}
 
-// ServiceClassListerExpansion allows custom methods to be added to
-// ServiceClassLister.
-type ServiceClassListerExpansion interface{}
+// ClusterServiceClassListerExpansion allows custom methods to be added to
+// ClusterServiceClassLister.
+type ClusterServiceClassListerExpansion interface{}
+
+// ClusterServicePlanListerExpansion allows custom methods to be added to
+// ClusterServicePlanLister.
+type ClusterServicePlanListerExpansion interface{}
 
 // ServiceInstanceListerExpansion allows custom methods to be added to
 // ServiceInstanceLister.
@@ -41,7 +45,3 @@ type ServiceInstanceCredentialListerExpansion interface{}
 // ServiceInstanceCredentialNamespaceListerExpansion allows custom methods to be added to
 // ServiceInstanceCredentialNamespaceLister.
 type ServiceInstanceCredentialNamespaceListerExpansion interface{}
-
-// ServicePlanListerExpansion allows custom methods to be added to
-// ServicePlanLister.
-type ServicePlanListerExpansion interface{}
