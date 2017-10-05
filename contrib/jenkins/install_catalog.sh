@@ -108,7 +108,7 @@ ${ROOT}/contrib/jenkins/setup-sc-context.sh \
   || error_exit 'Error when setting up context for service catalog.'
 
 retry &> /dev/null \
-  kubectl --context=service-catalog get clusterservicebrokers,serviceclasses,serviceinstances,serviceinstancecredentials \
+  kubectl --context=service-catalog get clusterservicebrokers,clusterserviceclasses,clusterserviceinstances,serviceinstancecredentials \
   || error_exit 'Timed out waiting for expected response from service catalog API server.'
 
 echo 'Service Catalog installed successfully.'
