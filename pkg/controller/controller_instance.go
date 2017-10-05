@@ -1413,7 +1413,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			var scErr error
 			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if scErr != nil {
-				return nil, fmt.Errorf(`ServiceInstance "%v/%v": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
+				return nil, fmt.Errorf(`ServiceInstance "%v/%v": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, scErr.Error())
 			}
 		}
 
