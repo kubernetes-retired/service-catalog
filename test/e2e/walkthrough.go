@@ -153,29 +153,29 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(sc.Spec.ClusterServicePlanRef.Name).To(Equal(serviceplanID))
 
 		// Binding to the ServiceInstance
-		By("Creating a ServiceInstanceCredential")
-		binding := &v1alpha1.ServiceInstanceCredential{
+		By("Creating a ServiceBinding")
+		binding := &v1alpha1.ServiceBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      bindingName,
 				Namespace: testnamespace.Name,
 			},
-			Spec: v1alpha1.ServiceInstanceCredentialSpec{
+			Spec: v1alpha1.ServiceBindingSpec{
 				ServiceInstanceRef: v1.LocalObjectReference{
 					Name: instanceName,
 				},
 				SecretName: "my-secret",
 			},
 		}
-		binding, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstanceCredentials(testnamespace.Name).Create(binding)
+		binding, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceBindings(testnamespace.Name).Create(binding)
 		Expect(err).NotTo(HaveOccurred(), "failed to create binding")
 		Expect(binding).NotTo(BeNil())
 
-		By("Waiting for ServiceInstanceCredential to be ready")
+		By("Waiting for ServiceBinding to be ready")
 		err = util.WaitForBindingCondition(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(),
 			testnamespace.Name,
 			bindingName,
-			v1alpha1.ServiceInstanceCredentialCondition{
-				Type:   v1alpha1.ServiceInstanceCredentialConditionReady,
+			v1alpha1.ServiceBindingCondition{
+				Type:   v1alpha1.ServiceBindingConditionReady,
 				Status: v1alpha1.ConditionTrue,
 			},
 		)
@@ -186,11 +186,11 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(err).NotTo(HaveOccurred(), "failed to create secret after binding")
 
 		// Unbinding from the ServiceInstance
-		By("Deleting the ServiceInstanceCredential")
-		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstanceCredentials(testnamespace.Name).Delete(bindingName, nil)
+		By("Deleting the ServiceBinding")
+		err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceBindings(testnamespace.Name).Delete(bindingName, nil)
 		Expect(err).NotTo(HaveOccurred(), "failed to delete the binding")
 
-		By("Waiting for ServiceInstanceCredential to not exist")
+		By("Waiting for ServiceBinding to not exist")
 		err = util.WaitForBindingToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1alpha1(), testnamespace.Name, bindingName)
 		Expect(err).NotTo(HaveOccurred())
 

@@ -5118,7 +5118,7 @@ func (x *ClusterServicePlanSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			yyq2[6] = x.ExternalMetadata != nil
 			yyq2[7] = x.ServiceInstanceCreateParameterSchema != nil
 			yyq2[8] = x.ServiceInstanceUpdateParameterSchema != nil
-			yyq2[9] = x.ServiceInstanceCredentialCreateParameterSchema != nil
+			yyq2[9] = x.ServiceBindingCreateParameterSchema != nil
 			var yynn2 int
 			if yyr2 || yy2arr2 {
 				r.EncodeArrayStart(11)
@@ -5382,17 +5382,17 @@ func (x *ClusterServicePlanSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			if yyr2 || yy2arr2 {
 				z.EncSendContainerState(codecSelfer_containerArrayElem1234)
 				if yyq2[9] {
-					if x.ServiceInstanceCredentialCreateParameterSchema == nil {
+					if x.ServiceBindingCreateParameterSchema == nil {
 						r.EncodeNil()
 					} else {
 						yym33 := z.EncBinary()
 						_ = yym33
 						if false {
-						} else if z.HasExtensions() && z.EncExt(x.ServiceInstanceCredentialCreateParameterSchema) {
+						} else if z.HasExtensions() && z.EncExt(x.ServiceBindingCreateParameterSchema) {
 						} else if !yym33 && z.IsJSONHandle() {
-							z.EncJSONMarshal(x.ServiceInstanceCredentialCreateParameterSchema)
+							z.EncJSONMarshal(x.ServiceBindingCreateParameterSchema)
 						} else {
-							z.EncFallback(x.ServiceInstanceCredentialCreateParameterSchema)
+							z.EncFallback(x.ServiceBindingCreateParameterSchema)
 						}
 					}
 				} else {
@@ -5401,19 +5401,19 @@ func (x *ClusterServicePlanSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 			} else {
 				if yyq2[9] {
 					z.EncSendContainerState(codecSelfer_containerMapKey1234)
-					r.EncodeString(codecSelferC_UTF81234, string("serviceInstanceCredentialCreateParameterSchema"))
+					r.EncodeString(codecSelferC_UTF81234, string("serviceBindingCreateParameterSchema"))
 					z.EncSendContainerState(codecSelfer_containerMapValue1234)
-					if x.ServiceInstanceCredentialCreateParameterSchema == nil {
+					if x.ServiceBindingCreateParameterSchema == nil {
 						r.EncodeNil()
 					} else {
 						yym34 := z.EncBinary()
 						_ = yym34
 						if false {
-						} else if z.HasExtensions() && z.EncExt(x.ServiceInstanceCredentialCreateParameterSchema) {
+						} else if z.HasExtensions() && z.EncExt(x.ServiceBindingCreateParameterSchema) {
 						} else if !yym34 && z.IsJSONHandle() {
-							z.EncJSONMarshal(x.ServiceInstanceCredentialCreateParameterSchema)
+							z.EncJSONMarshal(x.ServiceBindingCreateParameterSchema)
 						} else {
-							z.EncFallback(x.ServiceInstanceCredentialCreateParameterSchema)
+							z.EncFallback(x.ServiceBindingCreateParameterSchema)
 						}
 					}
 				}
@@ -5623,23 +5623,23 @@ func (x *ClusterServicePlanSpec) codecDecodeSelfFromMap(l int, d *codec1978.Deco
 					z.DecFallback(x.ServiceInstanceUpdateParameterSchema, false)
 				}
 			}
-		case "serviceInstanceCredentialCreateParameterSchema":
+		case "serviceBindingCreateParameterSchema":
 			if r.TryDecodeAsNil() {
-				if x.ServiceInstanceCredentialCreateParameterSchema != nil {
-					x.ServiceInstanceCredentialCreateParameterSchema = nil
+				if x.ServiceBindingCreateParameterSchema != nil {
+					x.ServiceBindingCreateParameterSchema = nil
 				}
 			} else {
-				if x.ServiceInstanceCredentialCreateParameterSchema == nil {
-					x.ServiceInstanceCredentialCreateParameterSchema = new(pkg4_runtime.RawExtension)
+				if x.ServiceBindingCreateParameterSchema == nil {
+					x.ServiceBindingCreateParameterSchema = new(pkg4_runtime.RawExtension)
 				}
 				yym23 := z.DecBinary()
 				_ = yym23
 				if false {
-				} else if z.HasExtensions() && z.DecExt(x.ServiceInstanceCredentialCreateParameterSchema) {
+				} else if z.HasExtensions() && z.DecExt(x.ServiceBindingCreateParameterSchema) {
 				} else if !yym23 && z.IsJSONHandle() {
-					z.DecJSONUnmarshal(x.ServiceInstanceCredentialCreateParameterSchema)
+					z.DecJSONUnmarshal(x.ServiceBindingCreateParameterSchema)
 				} else {
-					z.DecFallback(x.ServiceInstanceCredentialCreateParameterSchema, false)
+					z.DecFallback(x.ServiceBindingCreateParameterSchema, false)
 				}
 			}
 		case "clusterServiceClassRef":
@@ -5898,21 +5898,21 @@ func (x *ClusterServicePlanSpec) codecDecodeSelfFromArray(l int, d *codec1978.De
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		if x.ServiceInstanceCredentialCreateParameterSchema != nil {
-			x.ServiceInstanceCredentialCreateParameterSchema = nil
+		if x.ServiceBindingCreateParameterSchema != nil {
+			x.ServiceBindingCreateParameterSchema = nil
 		}
 	} else {
-		if x.ServiceInstanceCredentialCreateParameterSchema == nil {
-			x.ServiceInstanceCredentialCreateParameterSchema = new(pkg4_runtime.RawExtension)
+		if x.ServiceBindingCreateParameterSchema == nil {
+			x.ServiceBindingCreateParameterSchema = new(pkg4_runtime.RawExtension)
 		}
 		yym45 := z.DecBinary()
 		_ = yym45
 		if false {
-		} else if z.HasExtensions() && z.DecExt(x.ServiceInstanceCredentialCreateParameterSchema) {
+		} else if z.HasExtensions() && z.DecExt(x.ServiceBindingCreateParameterSchema) {
 		} else if !yym45 && z.IsJSONHandle() {
-			z.DecJSONUnmarshal(x.ServiceInstanceCredentialCreateParameterSchema)
+			z.DecJSONUnmarshal(x.ServiceBindingCreateParameterSchema)
 		} else {
-			z.DecFallback(x.ServiceInstanceCredentialCreateParameterSchema, false)
+			z.DecFallback(x.ServiceBindingCreateParameterSchema, false)
 		}
 	}
 	yyj25++
@@ -9467,7 +9467,7 @@ func (x *ServiceInstancePropertiesState) codecDecodeSelfFromArray(l int, d *code
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceInstanceCredentialList) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceBindingList) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -9588,7 +9588,7 @@ func (x *ServiceInstanceCredentialList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym15
 					if false {
 					} else {
-						h.encSliceServiceInstanceCredential(([]ServiceInstanceCredential)(x.Items), e)
+						h.encSliceServiceBinding(([]ServiceBinding)(x.Items), e)
 					}
 				}
 			} else {
@@ -9602,7 +9602,7 @@ func (x *ServiceInstanceCredentialList) CodecEncodeSelf(e *codec1978.Encoder) {
 					_ = yym16
 					if false {
 					} else {
-						h.encSliceServiceInstanceCredential(([]ServiceInstanceCredential)(x.Items), e)
+						h.encSliceServiceBinding(([]ServiceBinding)(x.Items), e)
 					}
 				}
 			}
@@ -9615,7 +9615,7 @@ func (x *ServiceInstanceCredentialList) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceInstanceCredentialList) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingList) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -9645,7 +9645,7 @@ func (x *ServiceInstanceCredentialList) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceInstanceCredentialList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingList) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -9713,7 +9713,7 @@ func (x *ServiceInstanceCredentialList) codecDecodeSelfFromMap(l int, d *codec19
 				_ = yym11
 				if false {
 				} else {
-					h.decSliceServiceInstanceCredential((*[]ServiceInstanceCredential)(yyv10), d)
+					h.decSliceServiceBinding((*[]ServiceBinding)(yyv10), d)
 				}
 			}
 		default:
@@ -9723,7 +9723,7 @@ func (x *ServiceInstanceCredentialList) codecDecodeSelfFromMap(l int, d *codec19
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceInstanceCredentialList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingList) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -9816,7 +9816,7 @@ func (x *ServiceInstanceCredentialList) codecDecodeSelfFromArray(l int, d *codec
 		_ = yym20
 		if false {
 		} else {
-			h.decSliceServiceInstanceCredential((*[]ServiceInstanceCredential)(yyv19), d)
+			h.decSliceServiceBinding((*[]ServiceBinding)(yyv19), d)
 		}
 	}
 	for {
@@ -9835,7 +9835,7 @@ func (x *ServiceInstanceCredentialList) codecDecodeSelfFromArray(l int, d *codec
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceInstanceCredential) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceBinding) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -9978,7 +9978,7 @@ func (x *ServiceInstanceCredential) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceInstanceCredential) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBinding) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10008,7 +10008,7 @@ func (x *ServiceInstanceCredential) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceInstanceCredential) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceBinding) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10069,14 +10069,14 @@ func (x *ServiceInstanceCredential) codecDecodeSelfFromMap(l int, d *codec1978.D
 			}
 		case "spec":
 			if r.TryDecodeAsNil() {
-				x.Spec = ServiceInstanceCredentialSpec{}
+				x.Spec = ServiceBindingSpec{}
 			} else {
 				yyv10 := &x.Spec
 				yyv10.CodecDecodeSelf(d)
 			}
 		case "status":
 			if r.TryDecodeAsNil() {
-				x.Status = ServiceInstanceCredentialStatus{}
+				x.Status = ServiceBindingStatus{}
 			} else {
 				yyv11 := &x.Status
 				yyv11.CodecDecodeSelf(d)
@@ -10088,7 +10088,7 @@ func (x *ServiceInstanceCredential) codecDecodeSelfFromMap(l int, d *codec1978.D
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceInstanceCredential) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceBinding) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10174,7 +10174,7 @@ func (x *ServiceInstanceCredential) codecDecodeSelfFromArray(l int, d *codec1978
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Spec = ServiceInstanceCredentialSpec{}
+		x.Spec = ServiceBindingSpec{}
 	} else {
 		yyv19 := &x.Spec
 		yyv19.CodecDecodeSelf(d)
@@ -10191,7 +10191,7 @@ func (x *ServiceInstanceCredential) codecDecodeSelfFromArray(l int, d *codec1978
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.Status = ServiceInstanceCredentialStatus{}
+		x.Status = ServiceBindingStatus{}
 	} else {
 		yyv20 := &x.Status
 		yyv20.CodecDecodeSelf(d)
@@ -10212,7 +10212,7 @@ func (x *ServiceInstanceCredential) codecDecodeSelfFromArray(l int, d *codec1978
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceInstanceCredentialSpec) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceBindingSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -10405,7 +10405,7 @@ func (x *ServiceInstanceCredentialSpec) CodecEncodeSelf(e *codec1978.Encoder) {
 	}
 }
 
-func (x *ServiceInstanceCredentialSpec) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10435,7 +10435,7 @@ func (x *ServiceInstanceCredentialSpec) CodecDecodeSelf(d *codec1978.Decoder) {
 	}
 }
 
-func (x *ServiceInstanceCredentialSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingSpec) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10537,7 +10537,7 @@ func (x *ServiceInstanceCredentialSpec) codecDecodeSelfFromMap(l int, d *codec19
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceInstanceCredentialSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingSpec) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10693,7 +10693,7 @@ func (x *ServiceInstanceCredentialSpec) codecDecodeSelfFromArray(l int, d *codec
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceBindingStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -10736,7 +10736,7 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 					_ = yym4
 					if false {
 					} else {
-						h.encSliceServiceInstanceCredentialCondition(([]ServiceInstanceCredentialCondition)(x.Conditions), e)
+						h.encSliceServiceBindingCondition(([]ServiceBindingCondition)(x.Conditions), e)
 					}
 				}
 			} else {
@@ -10750,7 +10750,7 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 					_ = yym5
 					if false {
 					} else {
-						h.encSliceServiceInstanceCredentialCondition(([]ServiceInstanceCredentialCondition)(x.Conditions), e)
+						h.encSliceServiceBindingCondition(([]ServiceBindingCondition)(x.Conditions), e)
 					}
 				}
 			}
@@ -10905,7 +10905,7 @@ func (x *ServiceInstanceCredentialStatus) CodecEncodeSelf(e *codec1978.Encoder) 
 	}
 }
 
-func (x *ServiceInstanceCredentialStatus) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingStatus) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10935,7 +10935,7 @@ func (x *ServiceInstanceCredentialStatus) CodecDecodeSelf(d *codec1978.Decoder) 
 	}
 }
 
-func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -10966,7 +10966,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 				_ = yym5
 				if false {
 				} else {
-					h.decSliceServiceInstanceCredentialCondition((*[]ServiceInstanceCredentialCondition)(yyv4), d)
+					h.decSliceServiceBindingCondition((*[]ServiceBindingCondition)(yyv4), d)
 				}
 			}
 		case "currentOperation":
@@ -11016,7 +11016,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 				}
 			} else {
 				if x.InProgressProperties == nil {
-					x.InProgressProperties = new(ServiceInstanceCredentialPropertiesState)
+					x.InProgressProperties = new(ServiceBindingPropertiesState)
 				}
 				x.InProgressProperties.CodecDecodeSelf(d)
 			}
@@ -11027,7 +11027,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 				}
 			} else {
 				if x.ExternalProperties == nil {
-					x.ExternalProperties = new(ServiceInstanceCredentialPropertiesState)
+					x.ExternalProperties = new(ServiceBindingPropertiesState)
 				}
 				x.ExternalProperties.CodecDecodeSelf(d)
 			}
@@ -11050,7 +11050,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromMap(l int, d *codec
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11076,7 +11076,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromArray(l int, d *cod
 		_ = yym17
 		if false {
 		} else {
-			h.decSliceServiceInstanceCredentialCondition((*[]ServiceInstanceCredentialCondition)(yyv16), d)
+			h.decSliceServiceBindingCondition((*[]ServiceBindingCondition)(yyv16), d)
 		}
 	}
 	yyj15++
@@ -11166,7 +11166,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromArray(l int, d *cod
 		}
 	} else {
 		if x.InProgressProperties == nil {
-			x.InProgressProperties = new(ServiceInstanceCredentialPropertiesState)
+			x.InProgressProperties = new(ServiceBindingPropertiesState)
 		}
 		x.InProgressProperties.CodecDecodeSelf(d)
 	}
@@ -11187,7 +11187,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromArray(l int, d *cod
 		}
 	} else {
 		if x.ExternalProperties == nil {
-			x.ExternalProperties = new(ServiceInstanceCredentialPropertiesState)
+			x.ExternalProperties = new(ServiceBindingPropertiesState)
 		}
 		x.ExternalProperties.CodecDecodeSelf(d)
 	}
@@ -11229,7 +11229,7 @@ func (x *ServiceInstanceCredentialStatus) codecDecodeSelfFromArray(l int, d *cod
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x *ServiceInstanceCredentialCondition) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceBindingCondition) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -11355,7 +11355,7 @@ func (x *ServiceInstanceCredentialCondition) CodecEncodeSelf(e *codec1978.Encode
 	}
 }
 
-func (x *ServiceInstanceCredentialCondition) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingCondition) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11385,7 +11385,7 @@ func (x *ServiceInstanceCredentialCondition) CodecDecodeSelf(d *codec1978.Decode
 	}
 }
 
-func (x *ServiceInstanceCredentialCondition) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingCondition) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11469,7 +11469,7 @@ func (x *ServiceInstanceCredentialCondition) codecDecodeSelfFromMap(l int, d *co
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceInstanceCredentialCondition) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingCondition) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11597,7 +11597,7 @@ func (x *ServiceInstanceCredentialCondition) codecDecodeSelfFromArray(l int, d *
 	z.DecSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x ServiceInstanceCredentialConditionType) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x ServiceBindingConditionType) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -11610,7 +11610,7 @@ func (x ServiceInstanceCredentialConditionType) CodecEncodeSelf(e *codec1978.Enc
 	}
 }
 
-func (x *ServiceInstanceCredentialConditionType) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingConditionType) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11623,7 +11623,7 @@ func (x *ServiceInstanceCredentialConditionType) CodecDecodeSelf(d *codec1978.De
 	}
 }
 
-func (x ServiceInstanceCredentialOperation) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x ServiceBindingOperation) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -11636,7 +11636,7 @@ func (x ServiceInstanceCredentialOperation) CodecEncodeSelf(e *codec1978.Encoder
 	}
 }
 
-func (x *ServiceInstanceCredentialOperation) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingOperation) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11649,7 +11649,7 @@ func (x *ServiceInstanceCredentialOperation) CodecDecodeSelf(d *codec1978.Decode
 	}
 }
 
-func (x *ServiceInstanceCredentialPropertiesState) CodecEncodeSelf(e *codec1978.Encoder) {
+func (x *ServiceBindingPropertiesState) CodecEncodeSelf(e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -11778,7 +11778,7 @@ func (x *ServiceInstanceCredentialPropertiesState) CodecEncodeSelf(e *codec1978.
 	}
 }
 
-func (x *ServiceInstanceCredentialPropertiesState) CodecDecodeSelf(d *codec1978.Decoder) {
+func (x *ServiceBindingPropertiesState) CodecDecodeSelf(d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11808,7 +11808,7 @@ func (x *ServiceInstanceCredentialPropertiesState) CodecDecodeSelf(d *codec1978.
 	}
 }
 
-func (x *ServiceInstanceCredentialPropertiesState) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingPropertiesState) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -11879,7 +11879,7 @@ func (x *ServiceInstanceCredentialPropertiesState) codecDecodeSelfFromMap(l int,
 	z.DecSendContainerState(codecSelfer_containerMapEnd1234)
 }
 
-func (x *ServiceInstanceCredentialPropertiesState) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
+func (x *ServiceBindingPropertiesState) codecDecodeSelfFromArray(l int, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -13454,7 +13454,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCondition(v *[]ServiceInstanceCo
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceInstanceCredential(v []ServiceInstanceCredential, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceServiceBinding(v []ServiceBinding, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -13467,7 +13467,7 @@ func (x codecSelfer1234) encSliceServiceInstanceCredential(v []ServiceInstanceCr
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceCredential, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceServiceBinding(v *[]ServiceBinding, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -13478,7 +13478,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceInstanceCredential{}
+			yyv1 = []ServiceBinding{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -13498,10 +13498,10 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceInstanceCredential, yyrl1)
+					yyv1 = make([]ServiceBinding, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceInstanceCredential, yyrl1)
+				yyv1 = make([]ServiceBinding, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -13516,7 +13516,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceInstanceCredential{}
+				yyv1[yyj1] = ServiceBinding{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -13525,10 +13525,10 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceInstanceCredential{})
+				yyv1 = append(yyv1, ServiceBinding{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceInstanceCredential{}
+					yyv1[yyj1] = ServiceBinding{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -13542,13 +13542,13 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceInstanceCredential{}) // var yyz1 ServiceInstanceCredential
+				yyv1 = append(yyv1, ServiceBinding{}) // var yyz1 ServiceBinding
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceInstanceCredential{}
+					yyv1[yyj1] = ServiceBinding{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -13563,7 +13563,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceInstanceCredential{}
+			yyv1 = []ServiceBinding{}
 			yyc1 = true
 		}
 	}
@@ -13573,7 +13573,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredential(v *[]ServiceInstanceC
 	}
 }
 
-func (x codecSelfer1234) encSliceServiceInstanceCredentialCondition(v []ServiceInstanceCredentialCondition, e *codec1978.Encoder) {
+func (x codecSelfer1234) encSliceServiceBindingCondition(v []ServiceBindingCondition, e *codec1978.Encoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
@@ -13586,7 +13586,7 @@ func (x codecSelfer1234) encSliceServiceInstanceCredentialCondition(v []ServiceI
 	z.EncSendContainerState(codecSelfer_containerArrayEnd1234)
 }
 
-func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]ServiceInstanceCredentialCondition, d *codec1978.Decoder) {
+func (x codecSelfer1234) decSliceServiceBindingCondition(v *[]ServiceBindingCondition, d *codec1978.Decoder) {
 	var h codecSelfer1234
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
@@ -13597,7 +13597,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]Service
 	_ = yyc1
 	if yyl1 == 0 {
 		if yyv1 == nil {
-			yyv1 = []ServiceInstanceCredentialCondition{}
+			yyv1 = []ServiceBindingCondition{}
 			yyc1 = true
 		} else if len(yyv1) != 0 {
 			yyv1 = yyv1[:0]
@@ -13617,10 +13617,10 @@ func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]Service
 				if yyrl1 <= cap(yyv1) {
 					yyv1 = yyv1[:yyrl1]
 				} else {
-					yyv1 = make([]ServiceInstanceCredentialCondition, yyrl1)
+					yyv1 = make([]ServiceBindingCondition, yyrl1)
 				}
 			} else {
-				yyv1 = make([]ServiceInstanceCredentialCondition, yyrl1)
+				yyv1 = make([]ServiceBindingCondition, yyrl1)
 			}
 			yyc1 = true
 			yyrr1 = len(yyv1)
@@ -13635,7 +13635,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]Service
 		for ; yyj1 < yyrr1; yyj1++ {
 			yyh1.ElemContainerState(yyj1)
 			if r.TryDecodeAsNil() {
-				yyv1[yyj1] = ServiceInstanceCredentialCondition{}
+				yyv1[yyj1] = ServiceBindingCondition{}
 			} else {
 				yyv2 := &yyv1[yyj1]
 				yyv2.CodecDecodeSelf(d)
@@ -13644,10 +13644,10 @@ func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]Service
 		}
 		if yyrt1 {
 			for ; yyj1 < yyl1; yyj1++ {
-				yyv1 = append(yyv1, ServiceInstanceCredentialCondition{})
+				yyv1 = append(yyv1, ServiceBindingCondition{})
 				yyh1.ElemContainerState(yyj1)
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceInstanceCredentialCondition{}
+					yyv1[yyj1] = ServiceBindingCondition{}
 				} else {
 					yyv3 := &yyv1[yyj1]
 					yyv3.CodecDecodeSelf(d)
@@ -13661,13 +13661,13 @@ func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]Service
 		for ; !r.CheckBreak(); yyj1++ {
 
 			if yyj1 >= len(yyv1) {
-				yyv1 = append(yyv1, ServiceInstanceCredentialCondition{}) // var yyz1 ServiceInstanceCredentialCondition
+				yyv1 = append(yyv1, ServiceBindingCondition{}) // var yyz1 ServiceBindingCondition
 				yyc1 = true
 			}
 			yyh1.ElemContainerState(yyj1)
 			if yyj1 < len(yyv1) {
 				if r.TryDecodeAsNil() {
-					yyv1[yyj1] = ServiceInstanceCredentialCondition{}
+					yyv1[yyj1] = ServiceBindingCondition{}
 				} else {
 					yyv4 := &yyv1[yyj1]
 					yyv4.CodecDecodeSelf(d)
@@ -13682,7 +13682,7 @@ func (x codecSelfer1234) decSliceServiceInstanceCredentialCondition(v *[]Service
 			yyv1 = yyv1[:yyj1]
 			yyc1 = true
 		} else if yyj1 == 0 && yyv1 == nil {
-			yyv1 = []ServiceInstanceCredentialCondition{}
+			yyv1 = []ServiceBindingCondition{}
 			yyc1 = true
 		}
 	}

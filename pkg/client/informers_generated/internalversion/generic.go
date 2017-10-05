@@ -58,10 +58,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ClusterServiceClasses().Informer()}, nil
 	case servicecatalog.SchemeGroupVersion.WithResource("clusterserviceplans"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ClusterServicePlans().Informer()}, nil
+	case servicecatalog.SchemeGroupVersion.WithResource("servicebindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceBindings().Informer()}, nil
 	case servicecatalog.SchemeGroupVersion.WithResource("serviceinstances"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceInstances().Informer()}, nil
-	case servicecatalog.SchemeGroupVersion.WithResource("serviceinstancecredentials"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceInstanceCredentials().Informer()}, nil
 
 	}
 

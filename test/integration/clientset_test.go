@@ -206,7 +206,7 @@ func testNoName(client servicecatalogclient.Interface) error {
 	if i, e := scClient.ServiceInstances(ns).Create(&v1alpha1.ServiceInstance{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", i.Name)
 	}
-	if bi, e := scClient.ServiceInstanceCredentials(ns).Create(&v1alpha1.ServiceInstanceCredential{}); nil == e {
+	if bi, e := scClient.ServiceBindings(ns).Create(&v1alpha1.ServiceBinding{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", bi.Name)
 	}
 	return nil
@@ -1018,7 +1018,7 @@ func TestBindingClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceInstanceCredential{}
+				return &servicecatalog.ServiceBinding{}
 			})
 			defer shutdownServer()
 
@@ -1036,11 +1036,11 @@ func TestBindingClient(t *testing.T) {
 }
 
 func testBindingClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	bindingClient := client.Servicecatalog().ServiceInstanceCredentials("test-namespace")
+	bindingClient := client.Servicecatalog().ServiceBindings("test-namespace")
 
-	binding := &v1alpha1.ServiceInstanceCredential{
+	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: "bar",
 			},
@@ -1136,14 +1136,14 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		return fmt.Errorf("Didn't find second value in parameters.baz was %+v", parameters)
 	}
 
-	readyConditionTrue := v1alpha1.ServiceInstanceCredentialCondition{
-		Type:    v1alpha1.ServiceInstanceCredentialConditionReady,
+	readyConditionTrue := v1alpha1.ServiceBindingCondition{
+		Type:    v1alpha1.ServiceBindingConditionReady,
 		Status:  v1alpha1.ConditionTrue,
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	bindingServer.Status = v1alpha1.ServiceInstanceCredentialStatus{
-		Conditions: []v1alpha1.ServiceInstanceCredentialCondition{readyConditionTrue},
+	bindingServer.Status = v1alpha1.ServiceBindingStatus{
+		Conditions: []v1alpha1.ServiceBindingCondition{readyConditionTrue},
 	}
 	if _, err = bindingClient.UpdateStatus(bindingServer); err != nil {
 		return fmt.Errorf("Error updating binding: %v", err)

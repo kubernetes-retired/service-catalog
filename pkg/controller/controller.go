@@ -66,7 +66,7 @@ func NewController(
 	brokerInformer informers.ClusterServiceBrokerInformer,
 	clusterServiceClassInformer informers.ClusterServiceClassInformer,
 	instanceInformer informers.ServiceInstanceInformer,
-	bindingInformer informers.ServiceInstanceCredentialInformer,
+	bindingInformer informers.ServiceBindingInformer,
 	clusterServicePlanInformer informers.ClusterServicePlanInformer,
 	brokerClientCreateFunc osb.CreateFunc,
 	brokerRelistInterval time.Duration,
@@ -145,7 +145,7 @@ type controller struct {
 	brokerLister                listers.ClusterServiceBrokerLister
 	serviceClassLister          listers.ClusterServiceClassLister
 	instanceLister              listers.ServiceInstanceLister
-	bindingLister               listers.ServiceInstanceCredentialLister
+	bindingLister               listers.ServiceBindingLister
 	servicePlanLister           listers.ClusterServicePlanLister
 	brokerRelistInterval        time.Duration
 	OSBAPIPreferredVersion      string
@@ -176,7 +176,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		createWorker(c.serviceClassQueue, "ClusterServiceClass", maxRetries, true, c.reconcileClusterServiceClassKey, stopCh, &waitGroup)
 		createWorker(c.servicePlanQueue, "ClusterServicePlan", maxRetries, true, c.reconcileClusterServicePlanKey, stopCh, &waitGroup)
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
-		createWorker(c.bindingQueue, "ServiceInstanceCredential", maxRetries, true, c.reconcileServiceInstanceCredentialKey, stopCh, &waitGroup)
+		createWorker(c.bindingQueue, "ServiceBinding", maxRetries, true, c.reconcileServiceBindingKey, stopCh, &waitGroup)
 		createWorker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, &waitGroup)
 	}
 
@@ -318,18 +318,18 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	return serviceClass, servicePlan, broker.Name, brokerClient, nil
 }
 
-// getClusterServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential is a sequence of operations that's
+// getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding is a sequence of operations that's
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
-func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceInstanceCredential(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceInstanceCredential) (*v1alpha1.ClusterServiceClass, *v1alpha1.ClusterServicePlan, string, osb.Client, error) {
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceBinding) (*v1alpha1.ClusterServiceClass, *v1alpha1.ClusterServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ClusterServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalClusterServiceClassName)
+		s := fmt.Sprintf("ServiceBinding \"%s/%s\" references a non-existent ClusterServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalClusterServiceClassName)
 		glog.Warning(s)
-		c.updateServiceInstanceCredentialCondition(
+		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceInstanceCredentialConditionReady,
+			v1alpha1.ServiceBindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonexistentClusterServiceClassReason,
 			"The binding references a ClusterServiceClass that does not exist. "+s,
@@ -342,12 +342,12 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	if nil != err {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
-		c.updateServiceInstanceCredentialCondition(
+		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceInstanceCredentialConditionReady,
+			v1alpha1.ServiceBindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonexistentClusterServicePlanReason,
-			"The ServiceInstanceCredential references an ServiceInstance which references ClusterServicePlan that does not exist. "+s,
+			"The ServiceBinding references an ServiceInstance which references ClusterServicePlan that does not exist. "+s,
 		)
 		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
@@ -355,11 +355,11 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstanceCredential \"%s/%s\" references a non-existent ClusterServiceBroker %q", binding.Namespace, binding.Name, serviceClass.Spec.ClusterServiceBrokerName)
+		s := fmt.Sprintf("ServiceBinding \"%s/%s\" references a non-existent ClusterServiceBroker %q", binding.Namespace, binding.Name, serviceClass.Spec.ClusterServiceBrokerName)
 		glog.Warning(s)
-		c.updateServiceInstanceCredentialCondition(
+		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceInstanceCredentialConditionReady,
+			v1alpha1.ServiceBindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorNonexistentClusterServiceBrokerReason,
 			"The binding references a ClusterServiceBroker that does not exist. "+s,
@@ -372,9 +372,9 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Warning(s)
-		c.updateServiceInstanceCredentialCondition(
+		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceInstanceCredentialConditionReady,
+			v1alpha1.ServiceBindingConditionReady,
 			v1alpha1.ConditionFalse,
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
@@ -575,7 +575,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1a
 						glog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].Spec.ServiceInstanceCredentialCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 		}

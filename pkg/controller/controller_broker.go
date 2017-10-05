@@ -92,7 +92,7 @@ const (
 	errorDeprovisionBlockedByCredentialsReason     string = "DeprovisionBlockedByExistingCredentials"
 	errorBindCallReason                            string = "BindCallFailed"
 	errorInjectingBindResultReason                 string = "ErrorInjectingBindResult"
-	errorEjectingBindReason                        string = "ErrorEjectingServiceInstanceCredential"
+	errorEjectingBindReason                        string = "ErrorEjectingServiceBinding"
 	errorEjectingBindMessage                       string = "Error ejecting binding."
 	errorUnbindCallReason                          string = "UnbindCallFailed"
 	errorWithOngoingAsyncOperation                 string = "ErrorAsyncOperationInProgress"
@@ -102,7 +102,7 @@ const (
 	errorPollingLastOperationReason                string = "ErrorPollingLastOperation"
 	errorWithOriginatingIdentity                   string = "Error with Originating Identity"
 	errorReconciliationRetryTimeoutReason          string = "ErrorReconciliationRetryTimeout"
-	errorServiceInstanceCredentialOrphanMitigation string = "ServiceInstanceCredentialNeedsOrphanMitigation"
+	errorServiceBindingOrphanMitigation string = "ServiceBindingNeedsOrphanMitigation"
 	errorOrphanMigitationReason                    string = "OrphanMitigationFailed"
 
 	successInjectedBindResultReason           string = "InjectedBindResult"
@@ -126,9 +126,9 @@ const (
 	asyncDeprovisioningReason                 string = "Deprovisioning"
 	asyncDeprovisioningMessage                string = "The instance is being deprovisioned asynchronously"
 	bindingInFlightReason                     string = "BindingRequestInFlight"
-	bindingInFlightMessage                    string = "Binding request for ServiceInstanceCredential in-flight to Broker"
+	bindingInFlightMessage                    string = "Binding request for ServiceBinding in-flight to Broker"
 	unbindingInFlightReason                   string = "UnbindingRequestInFlight"
-	unbindingInFlightMessage                  string = "Unbind request for ServiceInstanceCredential in-flight to Broker"
+	unbindingInFlightMessage                  string = "Unbind request for ServiceBinding in-flight to Broker"
 	provisioningInFlightReason                string = "ProvisionRequestInFlight"
 	provisioningInFlightMessage               string = "Provision request for ServiceInstance in-flight to Broker"
 	instanceUpdatingInFlightReason            string = "UpdateInstanceRequestInFlight"
@@ -595,7 +595,7 @@ func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker,
 	toUpdate.Spec.Free = servicePlan.Spec.Free
 	toUpdate.Spec.ServiceInstanceCreateParameterSchema = servicePlan.Spec.ServiceInstanceCreateParameterSchema
 	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
-	toUpdate.Spec.ServiceInstanceCredentialCreateParameterSchema = servicePlan.Spec.ServiceInstanceCredentialCreateParameterSchema
+	toUpdate.Spec.ServiceBindingCreateParameterSchema = servicePlan.Spec.ServiceBindingCreateParameterSchema
 
 	if _, err := c.serviceCatalogClient.ClusterServicePlans().Update(toUpdate); err != nil {
 		glog.Errorf("Error updating ServicePlan %q: %v", servicePlan.Name, err)

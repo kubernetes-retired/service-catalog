@@ -30,10 +30,10 @@ type Interface interface {
 	ClusterServiceClasses() ClusterServiceClassInformer
 	// ClusterServicePlans returns a ClusterServicePlanInformer.
 	ClusterServicePlans() ClusterServicePlanInformer
+	// ServiceBindings returns a ServiceBindingInformer.
+	ServiceBindings() ServiceBindingInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
 	ServiceInstances() ServiceInstanceInformer
-	// ServiceInstanceCredentials returns a ServiceInstanceCredentialInformer.
-	ServiceInstanceCredentials() ServiceInstanceCredentialInformer
 }
 
 type version struct {
@@ -60,12 +60,12 @@ func (v *version) ClusterServicePlans() ClusterServicePlanInformer {
 	return &clusterServicePlanInformer{factory: v.SharedInformerFactory}
 }
 
+// ServiceBindings returns a ServiceBindingInformer.
+func (v *version) ServiceBindings() ServiceBindingInformer {
+	return &serviceBindingInformer{factory: v.SharedInformerFactory}
+}
+
 // ServiceInstances returns a ServiceInstanceInformer.
 func (v *version) ServiceInstances() ServiceInstanceInformer {
 	return &serviceInstanceInformer{factory: v.SharedInformerFactory}
-}
-
-// ServiceInstanceCredentials returns a ServiceInstanceCredentialInformer.
-func (v *version) ServiceInstanceCredentials() ServiceInstanceCredentialInformer {
-	return &serviceInstanceCredentialInformer{factory: v.SharedInformerFactory}
 }

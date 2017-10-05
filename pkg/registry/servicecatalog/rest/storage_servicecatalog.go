@@ -137,7 +137,7 @@ func (p StorageProvider) v1alpha1Storage(
 		p.StorageType,
 	)
 
-	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstancecredentials"))
+	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebindings"))
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +173,8 @@ func (p StorageProvider) v1alpha1Storage(
 		"serviceinstances":                  instanceStorage,
 		"serviceinstances/status":           instanceStatusStorage,
 		"serviceinstances/reference":        instanceReferencesStorage,
-		"serviceinstancecredentials":        bindingStorage,
-		"serviceinstancecredentials/status": bindingStatusStorage,
+		"servicebindings":        bindingStorage,
+		"servicebindings/status": bindingStatusStorage,
 	}, nil
 }
 

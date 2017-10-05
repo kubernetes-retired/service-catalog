@@ -65,7 +65,7 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 			is.ExternalID = uuid.NewV4().String()
 			is.Parameters = nil
 		},
-		func(bs *servicecatalog.ServiceInstanceCredentialSpec, c fuzz.Continue) {
+		func(bs *servicecatalog.ServiceBindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			bs.ExternalID = uuid.NewV4().String()
 			// Don't allow the SecretName to be an empty string because
@@ -81,7 +81,7 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 			c.FuzzNoCustom(ps)
 			ps.Parameters = nil
 		},
-		func(ps *servicecatalog.ServiceInstanceCredentialPropertiesState, c fuzz.Continue) {
+		func(ps *servicecatalog.ServiceBindingPropertiesState, c fuzz.Continue) {
 			c.FuzzNoCustom(ps)
 			ps.Parameters = nil
 		},

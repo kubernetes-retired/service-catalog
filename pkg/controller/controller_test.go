@@ -72,9 +72,9 @@ const (
 	testClusterServicePlanName              = "test-plan"
 	testNonbindableClusterServicePlanName   = "test-unbindable-plan"
 	testServiceInstanceName                 = "test-instance"
-	testServiceInstanceCredentialName       = "test-binding"
+	testServiceBindingName       = "test-binding"
 	testNamespace                           = "test-ns"
-	testServiceInstanceCredentialSecretName = "test-secret"
+	testServiceBindingSecretName = "test-secret"
 	testOperation                           = "test-operation"
 	testNsUID                               = "test-ns-uid"
 )
@@ -649,25 +649,25 @@ func getTestServiceInstanceAsyncDeprovisioningWithFinalizer(operation string) *v
 }
 
 // binding referencing the result of getTestServiceInstance()
-func getTestServiceInstanceCredential() *v1alpha1.ServiceInstanceCredential {
-	return &v1alpha1.ServiceInstanceCredential{
+func getTestServiceBinding() *v1alpha1.ServiceBinding {
+	return &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       testServiceInstanceCredentialName,
+			Name:       testServiceBindingName,
 			Namespace:  testNamespace,
 			Generation: 1,
 		},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
 }
 
-func getTestServiceInstanceCredentialWithFailedStatus() *v1alpha1.ServiceInstanceCredential {
-	binding := getTestServiceInstanceCredential()
-	binding.Status = v1alpha1.ServiceInstanceCredentialStatus{
-		Conditions: []v1alpha1.ServiceInstanceCredentialCondition{{
-			Type:   v1alpha1.ServiceInstanceCredentialConditionFailed,
+func getTestServiceBindingWithFailedStatus() *v1alpha1.ServiceBinding {
+	binding := getTestServiceBinding()
+	binding.Status = v1alpha1.ServiceBindingStatus{
+		Conditions: []v1alpha1.ServiceBindingCondition{{
+			Type:   v1alpha1.ServiceBindingConditionFailed,
 			Status: v1alpha1.ConditionTrue,
 		}},
 	}
@@ -763,13 +763,13 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 		}
 	}
 
-	if plan.Spec.ServiceInstanceCredentialCreateParameterSchema == nil {
-		t.Fatalf("Expected plan.ServiceInstanceCredentialCreateParameterSchema to be set, but was nil")
+	if plan.Spec.ServiceBindingCreateParameterSchema == nil {
+		t.Fatalf("Expected plan.ServiceBindingCreateParameterSchema to be set, but was nil")
 	}
 	m = make(map[string]string)
-	if err := json.Unmarshal(plan.Spec.ServiceInstanceCredentialCreateParameterSchema.Raw, &m); err == nil {
+	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateParameterSchema.Raw, &m); err == nil {
 		if e, a := "blu", m["zoo"]; e != a {
-			t.Fatalf("Unexpected value of alphaServiceInstanceCredentialCreateParameterSchema; expected %v, got %v", e, a)
+			t.Fatalf("Unexpected value of alphaServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
 		}
 	}
 }
@@ -1210,7 +1210,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ClusterServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
-		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
+		serviceCatalogSharedInformers.ServiceBindings(),
 		serviceCatalogSharedInformers.ClusterServicePlans(),
 		brokerClFunc,
 		24*time.Hour,
@@ -1350,8 +1350,8 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 		resource = "clusterserviceplans"
 	case *v1alpha1.ServiceInstance:
 		resource = "serviceinstances"
-	case *v1alpha1.ServiceInstanceCredential:
-		resource = "serviceinstancecredentials"
+	case *v1alpha1.ServiceBinding:
+		resource = "servicebindings"
 	}
 
 	if e, a := resource, action.GetResource().Resource; e != a {
@@ -1970,22 +1970,22 @@ func assertServiceInstancePropertiesStateParametersUnchanged(t *testing.T, props
 	}
 }
 
-func assertServiceInstanceCredentialReadyTrue(t *testing.T, obj runtime.Object) {
-	assertServiceInstanceCredentialReadyCondition(t, obj, v1alpha1.ConditionTrue)
+func assertServiceBindingReadyTrue(t *testing.T, obj runtime.Object) {
+	assertServiceBindingReadyCondition(t, obj, v1alpha1.ConditionTrue)
 }
 
-func assertServiceInstanceCredentialReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
-	assertServiceInstanceCredentialReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
+func assertServiceBindingReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
+	assertServiceBindingReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
 }
 
-func assertServiceInstanceCredentialReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
-	assertServiceInstanceCredentialCondition(t, obj, v1alpha1.ServiceInstanceCredentialConditionReady, status, reason...)
+func assertServiceBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
+	assertServiceBindingCondition(t, obj, v1alpha1.ServiceBindingConditionReady, status, reason...)
 }
 
-func assertServiceInstanceCredentialCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceInstanceCredentialConditionType, status v1alpha1.ConditionStatus, reason ...string) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceBindingConditionType, status v1alpha1.ConditionStatus, reason ...string) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	conditionFound := false
@@ -2007,10 +2007,10 @@ func assertServiceInstanceCredentialCondition(t *testing.T, obj runtime.Object, 
 	}
 }
 
-func assertServiceInstanceCredentialReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	if e, a := reconciledGeneration, binding.Status.ReconciledGeneration; e != a {
@@ -2018,20 +2018,20 @@ func assertServiceInstanceCredentialReconciledGeneration(t *testing.T, obj runti
 	}
 }
 
-func assertServiceInstanceCredentialReconciliationNotComplete(t *testing.T, obj runtime.Object) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingReconciliationNotComplete(t *testing.T, obj runtime.Object) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 	if g, rg := binding.Generation, binding.Status.ReconciledGeneration; g <= rg {
 		fatalf(t, "expected ReconciledGeneration to be less than Generation: Generation %v, ReconciledGeneration %v", g, rg)
 	}
 }
 
-func assertServiceInstanceCredentialOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	if e, a := isOperationStartTimeSet, binding.Status.OperationStartTime != nil; e != a {
@@ -2043,14 +2043,14 @@ func assertServiceInstanceCredentialOperationStartTimeSet(t *testing.T, obj runt
 	}
 }
 
-func assertServiceInstanceCredentialCurrentOperationClear(t *testing.T, obj runtime.Object) {
-	assertServiceInstanceCredentialCurrentOperation(t, obj, "")
+func assertServiceBindingCurrentOperationClear(t *testing.T, obj runtime.Object) {
+	assertServiceBindingCurrentOperation(t, obj, "")
 }
 
-func assertServiceInstanceCredentialCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1alpha1.ServiceInstanceCredentialOperation) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1alpha1.ServiceBindingOperation) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	if e, a := currentOperation, binding.Status.CurrentOperation; e != a {
@@ -2058,119 +2058,119 @@ func assertServiceInstanceCredentialCurrentOperation(t *testing.T, obj runtime.O
 	}
 }
 
-func assertServiceInstanceCredentialErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalBinding *v1alpha1.ServiceInstanceCredential) {
-	assertServiceInstanceCredentialReadyFalse(t, obj, reason)
-	assertServiceInstanceCredentialCurrentOperationClear(t, obj)
-	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, false)
-	assertServiceInstanceCredentialReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
-	assertServiceInstanceCredentialInProgressPropertiesNil(t, obj)
-	assertServiceInstanceCredentialExternalPropertiesUnchanged(t, obj, originalBinding)
+func assertServiceBindingErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalBinding *v1alpha1.ServiceBinding) {
+	assertServiceBindingReadyFalse(t, obj, reason)
+	assertServiceBindingCurrentOperationClear(t, obj)
+	assertServiceBindingOperationStartTimeSet(t, obj, false)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
+	assertServiceBindingInProgressPropertiesNil(t, obj)
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceInstanceCredentialOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, originalBinding *v1alpha1.ServiceInstanceCredential) {
-	assertServiceInstanceCredentialOperationInProgressWithParameters(t, obj, operation, nil, "", originalBinding)
+func assertServiceBindingOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, originalBinding *v1alpha1.ServiceBinding) {
+	assertServiceBindingOperationInProgressWithParameters(t, obj, operation, nil, "", originalBinding)
 }
 
-func assertServiceInstanceCredentialOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1alpha1.ServiceInstanceCredential) {
+func assertServiceBindingOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1alpha1.ServiceBinding) {
 	reason := ""
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
+	case v1alpha1.ServiceBindingOperationBind:
 		reason = bindingInFlightReason
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+	case v1alpha1.ServiceBindingOperationUnbind:
 		reason = unbindingInFlightReason
 	}
-	assertServiceInstanceCredentialReadyFalse(t, obj, reason)
-	assertServiceInstanceCredentialCurrentOperation(t, obj, operation)
-	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, true)
-	assertServiceInstanceCredentialReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
+	assertServiceBindingReadyFalse(t, obj, reason)
+	assertServiceBindingCurrentOperation(t, obj, operation)
+	assertServiceBindingOperationStartTimeSet(t, obj, true)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
-		assertServiceInstanceCredentialInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
-		assertServiceInstanceCredentialInProgressPropertiesNil(t, obj)
+	case v1alpha1.ServiceBindingOperationBind:
+		assertServiceBindingInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
+	case v1alpha1.ServiceBindingOperationUnbind:
+		assertServiceBindingInProgressPropertiesNil(t, obj)
 	}
-	assertServiceInstanceCredentialExternalPropertiesUnchanged(t, obj, originalBinding)
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceInstanceCredentialOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, originalBinding *v1alpha1.ServiceInstanceCredential) {
-	assertServiceInstanceCredentialOperationSuccessWithParameters(t, obj, operation, nil, "", originalBinding)
+func assertServiceBindingOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, originalBinding *v1alpha1.ServiceBinding) {
+	assertServiceBindingOperationSuccessWithParameters(t, obj, operation, nil, "", originalBinding)
 }
 
-func assertServiceInstanceCredentialOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, externalParameters map[string]interface{}, externalParametersChecksum string, originalBinding *v1alpha1.ServiceInstanceCredential) {
+func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, externalParameters map[string]interface{}, externalParametersChecksum string, originalBinding *v1alpha1.ServiceBinding) {
 	var (
 		reason      string
 		readyStatus v1alpha1.ConditionStatus
 	)
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
+	case v1alpha1.ServiceBindingOperationBind:
 		reason = successInjectedBindResultReason
 		readyStatus = v1alpha1.ConditionTrue
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+	case v1alpha1.ServiceBindingOperationUnbind:
 		reason = successUnboundReason
 		readyStatus = v1alpha1.ConditionFalse
 	}
-	assertServiceInstanceCredentialReadyCondition(t, obj, readyStatus, reason)
-	assertServiceInstanceCredentialCurrentOperationClear(t, obj)
-	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, false)
-	assertServiceInstanceCredentialReconciledGeneration(t, obj, originalBinding.Generation)
-	if operation == v1alpha1.ServiceInstanceCredentialOperationUnbind {
+	assertServiceBindingReadyCondition(t, obj, readyStatus, reason)
+	assertServiceBindingCurrentOperationClear(t, obj)
+	assertServiceBindingOperationStartTimeSet(t, obj, false)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
+	if operation == v1alpha1.ServiceBindingOperationUnbind {
 		assertEmptyFinalizers(t, obj)
 	}
-	assertServiceInstanceCredentialInProgressPropertiesNil(t, obj)
+	assertServiceBindingInProgressPropertiesNil(t, obj)
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
-		assertServiceInstanceCredentialExternalPropertiesParameters(t, obj, externalParameters, externalParametersChecksum)
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
-		assertServiceInstanceCredentialExternalPropertiesNil(t, obj)
+	case v1alpha1.ServiceBindingOperationBind:
+		assertServiceBindingExternalPropertiesParameters(t, obj, externalParameters, externalParametersChecksum)
+	case v1alpha1.ServiceBindingOperationUnbind:
+		assertServiceBindingExternalPropertiesNil(t, obj)
 	}
 }
 
-func assertServiceInstanceCredentialRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, readyReason string, failureReason string, originalBinding *v1alpha1.ServiceInstanceCredential) {
+func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, readyReason string, failureReason string, originalBinding *v1alpha1.ServiceBinding) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
+	case v1alpha1.ServiceBindingOperationBind:
 		readyStatus = v1alpha1.ConditionFalse
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+	case v1alpha1.ServiceBindingOperationUnbind:
 		readyStatus = v1alpha1.ConditionUnknown
 	}
-	assertServiceInstanceCredentialReadyCondition(t, obj, readyStatus, readyReason)
-	assertServiceInstanceCredentialCondition(t, obj, v1alpha1.ServiceInstanceCredentialConditionFailed, v1alpha1.ConditionTrue, failureReason)
-	assertServiceInstanceCredentialCurrentOperationClear(t, obj)
-	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, false)
-	assertServiceInstanceCredentialReconciledGeneration(t, obj, originalBinding.Generation)
-	assertServiceInstanceCredentialInProgressPropertiesNil(t, obj)
-	assertServiceInstanceCredentialExternalPropertiesUnchanged(t, obj, originalBinding)
+	assertServiceBindingReadyCondition(t, obj, readyStatus, readyReason)
+	assertServiceBindingCondition(t, obj, v1alpha1.ServiceBindingConditionFailed, v1alpha1.ConditionTrue, failureReason)
+	assertServiceBindingCurrentOperationClear(t, obj)
+	assertServiceBindingOperationStartTimeSet(t, obj, false)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
+	assertServiceBindingInProgressPropertiesNil(t, obj)
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceInstanceCredentialRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, reason string, originalBinding *v1alpha1.ServiceInstanceCredential) {
-	assertServiceInstanceCredentialRequestRetriableErrorWithParameters(t, obj, operation, reason, nil, "", originalBinding)
+func assertServiceBindingRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, reason string, originalBinding *v1alpha1.ServiceBinding) {
+	assertServiceBindingRequestRetriableErrorWithParameters(t, obj, operation, reason, nil, "", originalBinding)
 }
 
-func assertServiceInstanceCredentialRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceCredentialOperation, reason string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1alpha1.ServiceInstanceCredential) {
+func assertServiceBindingRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, reason string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1alpha1.ServiceBinding) {
 	var readyStatus v1alpha1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
+	case v1alpha1.ServiceBindingOperationBind:
 		readyStatus = v1alpha1.ConditionFalse
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
+	case v1alpha1.ServiceBindingOperationUnbind:
 		readyStatus = v1alpha1.ConditionUnknown
 	}
-	assertServiceInstanceCredentialReadyCondition(t, obj, readyStatus, reason)
-	assertServiceInstanceCredentialCurrentOperation(t, obj, operation)
-	assertServiceInstanceCredentialOperationStartTimeSet(t, obj, true)
-	assertServiceInstanceCredentialReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
+	assertServiceBindingReadyCondition(t, obj, readyStatus, reason)
+	assertServiceBindingCurrentOperation(t, obj, operation)
+	assertServiceBindingOperationStartTimeSet(t, obj, true)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceInstanceCredentialOperationBind:
-		assertServiceInstanceCredentialInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1alpha1.ServiceInstanceCredentialOperationUnbind:
-		assertServiceInstanceCredentialInProgressPropertiesNil(t, obj)
+	case v1alpha1.ServiceBindingOperationBind:
+		assertServiceBindingInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
+	case v1alpha1.ServiceBindingOperationUnbind:
+		assertServiceBindingInProgressPropertiesNil(t, obj)
 	}
-	assertServiceInstanceCredentialExternalPropertiesUnchanged(t, obj, originalBinding)
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceInstanceCredentialInProgressPropertiesNil(t *testing.T, obj runtime.Object) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingInProgressPropertiesNil(t *testing.T, obj runtime.Object) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	if a := binding.Status.InProgressProperties; a != nil {
@@ -2178,30 +2178,30 @@ func assertServiceInstanceCredentialInProgressPropertiesNil(t *testing.T, obj ru
 	}
 }
 
-func assertServiceInstanceCredentialInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
-	assertServiceInstanceCredentialPropertiesStateParameters(t, "in-progress", binding.Status.InProgressProperties, params, checksum)
+	assertServiceBindingPropertiesStateParameters(t, "in-progress", binding.Status.InProgressProperties, params, checksum)
 }
 
-func assertServiceInstanceCredentialInProgressPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1alpha1.ServiceInstanceCredential) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingInProgressPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1alpha1.ServiceBinding) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 	if originalBinding.Status.InProgressProperties == nil {
-		assertServiceInstanceCredentialInProgressPropertiesNil(t, obj)
+		assertServiceBindingInProgressPropertiesNil(t, obj)
 	} else {
-		assertServiceInstanceCredentialPropertiesStateParametersUnchanged(t, "in-progress", binding.Status.InProgressProperties, *originalBinding.Status.InProgressProperties)
+		assertServiceBindingPropertiesStateParametersUnchanged(t, "in-progress", binding.Status.InProgressProperties, *originalBinding.Status.InProgressProperties)
 	}
 }
 
-func assertServiceInstanceCredentialExternalPropertiesNil(t *testing.T, obj runtime.Object) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingExternalPropertiesNil(t *testing.T, obj runtime.Object) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	if a := binding.Status.ExternalProperties; a != nil {
@@ -2209,27 +2209,27 @@ func assertServiceInstanceCredentialExternalPropertiesNil(t *testing.T, obj runt
 	}
 }
 
-func assertServiceInstanceCredentialExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
-	assertServiceInstanceCredentialPropertiesStateParameters(t, "external", binding.Status.ExternalProperties, params, checksum)
+	assertServiceBindingPropertiesStateParameters(t, "external", binding.Status.ExternalProperties, params, checksum)
 }
 
-func assertServiceInstanceCredentialExternalPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1alpha1.ServiceInstanceCredential) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingExternalPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1alpha1.ServiceBinding) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 	if originalBinding.Status.ExternalProperties == nil {
-		assertServiceInstanceCredentialExternalPropertiesNil(t, obj)
+		assertServiceBindingExternalPropertiesNil(t, obj)
 	} else {
-		assertServiceInstanceCredentialPropertiesStateParametersUnchanged(t, "external", binding.Status.ExternalProperties, *originalBinding.Status.ExternalProperties)
+		assertServiceBindingPropertiesStateParametersUnchanged(t, "external", binding.Status.ExternalProperties, *originalBinding.Status.ExternalProperties)
 	}
 }
 
-func assertServiceInstanceCredentialPropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1alpha1.ServiceInstanceCredentialPropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
+func assertServiceBindingPropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1alpha1.ServiceBindingPropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -2239,7 +2239,7 @@ func assertServiceInstanceCredentialPropertiesStateParameters(t *testing.T, prop
 	}
 }
 
-func assertServiceInstanceCredentialPropertiesStateParametersUnchanged(t *testing.T, propsLabel string, new *v1alpha1.ServiceInstanceCredentialPropertiesState, old v1alpha1.ServiceInstanceCredentialPropertiesState) {
+func assertServiceBindingPropertiesStateParametersUnchanged(t *testing.T, propsLabel string, new *v1alpha1.ServiceBindingPropertiesState, old v1alpha1.ServiceBindingPropertiesState) {
 	if new == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -2248,10 +2248,10 @@ func assertServiceInstanceCredentialPropertiesStateParametersUnchanged(t *testin
 	}
 }
 
-func assertServiceInstanceCredentialOrphanMitigationSet(t *testing.T, obj runtime.Object, inProgress bool) {
-	binding, ok := obj.(*v1alpha1.ServiceInstanceCredential)
+func assertServiceBindingOrphanMitigationSet(t *testing.T, obj runtime.Object, inProgress bool) {
+	binding, ok := obj.(*v1alpha1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstanceCredential", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
 	}
 
 	if e, a := inProgress, binding.Status.OrphanMitigationInProgress; e != a {

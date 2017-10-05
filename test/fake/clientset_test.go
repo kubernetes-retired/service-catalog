@@ -62,11 +62,11 @@ func TestClientsetStoresServiceInstanceClone(t *testing.T) {
 	}
 }
 
-func TestClientsetStoresServiceInstanceCredentialClone(t *testing.T) {
+func TestClientsetStoresServiceBindingClone(t *testing.T) {
 	clientset := Clientset{&servicecatalogclientset.Clientset{}}
-	binding := &v1alpha1.ServiceInstanceCredential{}
+	binding := &v1alpha1.ServiceBinding{}
 	binding.Name = "test-instance"
-	returnedBinding, err := clientset.ServicecatalogV1alpha1().ServiceInstanceCredentials("test-namespace").UpdateStatus(binding)
+	returnedBinding, err := clientset.ServicecatalogV1alpha1().ServiceBindings("test-namespace").UpdateStatus(binding)
 	if err != nil {
 		t.Fatalf("unexpected error from UpdateStatus: %v", err)
 	}
@@ -83,9 +83,9 @@ func TestClientsetStoresServiceInstanceCredentialClone(t *testing.T) {
 	}
 
 	storedObject := updateAction.GetObject()
-	storedBinding, ok := storedObject.(*v1alpha1.ServiceInstanceCredential)
+	storedBinding, ok := storedObject.(*v1alpha1.ServiceBinding)
 	if !ok {
-		t.Fatalf("unexpected object in action; failed to convert action object %+v to ServiceInstanceCredential", storedObject)
+		t.Fatalf("unexpected object in action; failed to convert action object %+v to ServiceBinding", storedObject)
 	}
 
 	if e, a := binding, storedBinding; e == a {
