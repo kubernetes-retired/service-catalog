@@ -282,7 +282,7 @@ type ServiceClassStatus struct {
 	PresentInCatalog bool
 }
 
-// ServicePlanList is a list of ServicePlans.
+// ClusterServicePlanList is a list of ServicePlans.
 type ClusterServicePlanList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
