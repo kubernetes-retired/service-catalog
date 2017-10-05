@@ -360,6 +360,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	if e, a := expectedRelistRequests, returnedBroker.Spec.RelistRequests; !reflect.DeepEqual(e, a) {
 		return fmt.Errorf("Didn't get incremented relistRequests follow Relist: \nexpected: %v\n\ngot: %v", e, a)
 	}
+	// TODO ERIK: Test wrap? Need to set initial to max, confirm back to min...
 
 	err = brokerClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
