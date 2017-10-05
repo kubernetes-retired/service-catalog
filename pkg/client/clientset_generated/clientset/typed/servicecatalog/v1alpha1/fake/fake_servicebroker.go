@@ -62,6 +62,15 @@ func (c *FakeServiceBrokers) UpdateStatus(serviceBroker *v1alpha1.ServiceBroker)
 	return obj.(*v1alpha1.ServiceBroker), err
 }
 
+func (c *FakeServiceBrokers) Relist(serviceBroker *v1alpha1.ServiceBroker) (*v1alpha1.ServiceBroker, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewRootUpdateSubresourceAction(servicebrokersResource, "relist", serviceBroker), &v1alpha1.ServiceBroker{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.ServiceBroker), err
+}
+
 func (c *FakeServiceBrokers) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(servicebrokersResource, name), &v1alpha1.ServiceBroker{})
