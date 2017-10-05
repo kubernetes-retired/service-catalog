@@ -166,7 +166,7 @@ func shouldReconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker, 
 					// ignore the Duration and only relist based on spec changes
 
 					glog.V(10).Infof(
-						"Not processing ClusterServiceBroker %v: RelistBehavior is set to Manual",
+						"ClusterServiceBroker %q: Not processing because RelistBehavior is set to Manual",
 						broker.Name,
 					)
 					return false
@@ -174,7 +174,7 @@ func shouldReconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker, 
 
 				if broker.Spec.RelistDuration == nil {
 					glog.Errorf(
-						"Unable to process ClusterServiceBroker %v: RelistBehavior is set to Duration with a nil RelistDuration value",
+						"ClusterServiceBroker %q: Unable to process because RelistBehavior is set to Duration with a nil RelistDuration value",
 						broker.Name,
 					)
 					return false
@@ -186,7 +186,7 @@ func shouldReconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker, 
 				intervalPassed := now.After(condition.LastTransitionTime.Add(duration))
 				if intervalPassed == false {
 					glog.V(10).Infof(
-						"Not processing ClusterServiceBroker %v because RelistDuration has not elapsed since the broker became ready",
+						"ClusterServiceBroker %q: Not processing because RelistDuration has not elapsed since the broker became ready",
 						broker.Name,
 					)
 				}
@@ -206,11 +206,11 @@ func shouldReconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker, 
 func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 	broker, err := c.brokerLister.Get(key)
 	if errors.IsNotFound(err) {
-		glog.Infof("Not doing work for ClusterServiceBroker %v because it has been deleted", key)
+		glog.Infof("ClusterServiceBroker %q: Not doing work because it has been deleted", key)
 		return nil
 	}
 	if err != nil {
-		glog.Infof("Unable to retrieve ClusterServiceBroker %v from store: %v", key, err)
+		glog.Infof("ClusterServiceBroker %q: Unable to retrieve object from store: %v", key, err)
 		return err
 	}
 
@@ -221,7 +221,7 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 // error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker) error {
-	glog.V(4).Infof("Processing ClusterServiceBroker %v", broker.Name)
+	glog.V(4).Infof("ClusterServiceBroker %q: processing", broker.Name)
 
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
@@ -234,7 +234,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 	if broker.DeletionTimestamp == nil { // Add or update
 		authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 		if err != nil {
-			s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
+			s := fmt.Sprintf("ClusterServiceBroker %q: Error getting broker auth credentials: %s", broker.Name, err)
 			glog.Info(s)
 			c.recorder.Event(broker, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
@@ -245,7 +245,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 
 		clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
-		glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
+		glog.V(4).Infof("ClusterServiceBroker %q: creating client, URL: %v", broker.Name, broker.Spec.URL)
 		brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 		if err != nil {
 			s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
@@ -257,11 +257,11 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			return err
 		}
 
-		glog.V(4).Infof("Adding/Updating ClusterServiceBroker %v", broker.Name)
+		glog.V(4).Infof("ClusterServiceBroker %q: processing adding/update event", broker.Name)
 		now := metav1.Now()
 		brokerCatalog, err := brokerClient.GetCatalog()
 		if err != nil {
-			s := fmt.Sprintf("Error getting broker catalog for broker %q: %s", broker.Name, err)
+			s := fmt.Sprintf("ClusterServiceBroker %q: Error getting broker catalog: %s", broker.Name, err)
 			glog.Warning(s)
 			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorFetchingCatalogReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
@@ -273,12 +273,12 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
 					toUpdate.Status.OperationStartTime = &now
 					if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
-						glog.Errorf("Error updating operation start time of ClusterServiceBroker %q: %v", broker.Name, err)
+						glog.Errorf("ClusterServiceBroker %q: Error updating operation start time: %v", broker.Name, err)
 						return err
 					}
 				}
 			} else if !time.Now().Before(broker.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-				s := fmt.Sprintf("Stopping reconciliation retries on ClusterServiceBroker %q because too much time has elapsed", broker.Name)
+				s := fmt.Sprintf("ClusterServiceBroker %q: stopping reconciliation retries because too much time has elapsed", broker.Name)
 				glog.Info(s)
 				c.recorder.Event(broker, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 				clone, err := api.Scheme.DeepCopy(broker)
@@ -298,7 +298,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			}
 			return err
 		}
-		glog.V(5).Infof("Successfully fetched %v catalog entries for ClusterServiceBroker %v", len(brokerCatalog.Services), broker.Name)
+		glog.V(5).Infof("ClusterServiceBroker %q: successfully fetched %v catalog entries for ", broker.Name, len(brokerCatalog.Services))
 
 		if broker.Status.OperationStartTime != nil {
 			clone, err := api.Scheme.DeepCopy(broker)
@@ -308,12 +308,12 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
 			toUpdate.Status.OperationStartTime = nil
 			if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
-				glog.Errorf("Error updating operation start time of ClusterServiceBroker %q: %v", broker.Name, err)
+				glog.Errorf("ClusterServiceBroker %q: Error updating operation start time: %v", broker.Name, err)
 				return err
 			}
 		}
 
-		glog.V(4).Infof("Converting catalog response for ClusterServiceBroker %v into service-catalog API", broker.Name)
+		glog.V(4).Infof("ClusterServiceBroker %q: converting catalog response into service-catalog API", broker.Name)
 		serviceClasses, servicePlans, err := convertCatalog(brokerCatalog)
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
@@ -324,7 +324,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			}
 			return err
 		}
-		glog.V(5).Infof("Successfully converted catalog payload from ClusterServiceBroker %v to service-catalog API", broker.Name)
+		glog.V(5).Infof("ClusterServiceBroker %q: successfully converted catalog payload from to service-catalog API", broker.Name)
 
 		if len(serviceClasses) == 0 {
 			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
@@ -337,12 +337,13 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		}
 
 		for _, servicePlan := range servicePlans {
-			glog.V(4).Infof("Reconciling servicePlan %q (broker %q)", servicePlan.Spec.ExternalName, broker.Name)
-			if err := c.reconcileServicePlan(broker, servicePlan); err != nil {
+			glog.V(4).Infof("ClusterServiceBroker %q: reconciling servicePlan (K8S: %q ExternalName: %q)", broker.Name, servicePlan.Name, servicePlan.Spec.ExternalName)
+			if err := c.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, servicePlan); err != nil {
 				s := fmt.Sprintf(
-					"Error reconciling servicePlan %q (broker %q): %s",
-					servicePlan.Spec.ExternalName,
+					"ClusterServiceBroker %q: Error reconciling servicePlan (K8S: %q ExternalName: %q): %s",
 					broker.Name,
+					servicePlan.Name,
+					servicePlan.Spec.ExternalName,
 					err,
 				)
 				glog.Warning(s)
@@ -351,11 +352,11 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					errorSyncingCatalogMessage+s)
 				return err
 			}
-			glog.V(5).Infof("Reconciled servicePlan %v (broker %v)", servicePlan.Spec.ExternalName, broker.Name)
+			glog.V(5).Infof("ClusterServiceBroker %q: Reconciled servicePlan (K8S: %q ExternalName: %q)", broker.Name, servicePlan.Name, servicePlan.Spec.ExternalName)
 		}
 
 		for _, serviceClass := range serviceClasses {
-			glog.V(4).Infof("Reconciling ClusterServiceClass %v (broker %v)", serviceClass.Spec.ExternalName, broker.Name)
+			glog.V(4).Infof("ClusterServiceBroker %q: Reconciling ClusterServiceClass (K8S: %q ExternalName: %q)", broker.Name, serviceClass.Name, serviceClass.Spec.ExternalName)
 			if err := c.reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker, serviceClass); err != nil {
 				s := fmt.Sprintf(
 					"Error reconciling ClusterServiceClass %q (broker %q): %s",
@@ -372,7 +373,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				return err
 			}
 
-			glog.V(5).Infof("Reconciled ClusterServiceClass %v (broker %v)", serviceClass.Spec.ExternalName, broker.Name)
+			glog.V(5).Infof("ClusterServiceBroker %q: Reconciled ClusterServiceClass (K8S: %q ExternalName: %q)", broker.Name, serviceClass.Name, serviceClass.Spec.ExternalName)
 		}
 
 		if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue, successFetchedCatalogReason, successFetchedCatalogMessage); err != nil {
@@ -388,7 +389,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
 	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
-		glog.V(4).Infof("Finalizing ClusterServiceBroker %v", broker.Name)
+		glog.V(4).Infof("ClusterServiceBroker %q: finalizing", broker.Name)
 
 		// Get ALL ServiceClasses. Remove those that reference this ClusterServiceBroker.
 		svcClasses, err := c.serviceClassLister.List(labels.Everything())
@@ -433,7 +434,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 						err := c.serviceCatalogClient.ClusterServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
 						if err != nil && !errors.IsNotFound(err) {
 							s := fmt.Sprintf(
-								"Error deleting ServicePlan %q (ClusterServiceClass %q): %s",
+								"Error deleting ClusterServicePlan %q (ClusterServiceClass %q): %s",
 								plan.Name,
 								svcClass.Spec.ExternalName,
 								err,
@@ -490,7 +491,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		c.updateClusterServiceBrokerFinalizers(broker, finalizers.List())
 
 		c.recorder.Eventf(broker, apiv1.EventTypeNormal, successClusterServiceBrokerDeletedReason, successClusterServiceBrokerDeletedMessage, broker.Name)
-		glog.V(5).Infof("Successfully deleted ServiceBroker %v", broker.Name)
+		glog.V(5).Infof("ClusterServiceBroker %q: Successfully deleted", broker.Name)
 		return nil
 	}
 
@@ -506,31 +507,31 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServiceClass.
-		glog.V(5).Infof("Fresh ClusterServiceClass %q; creating", serviceClass.Spec.ExternalName)
+		glog.V(5).Infof("ClusterServiceBroker %q: fresh ClusterServiceClass %q; creating", broker.Name, serviceClass.Spec.ExternalName)
 		if _, err := c.serviceCatalogClient.ClusterServiceClasses().Create(serviceClass); err != nil {
-			glog.Errorf("Error creating ClusterServiceClass %q from ClusterServiceBroker %q: %v", serviceClass.Spec.ExternalName, broker.Name, err)
+			glog.Errorf("ClusterServiceBroker %q: Error creating serviceClass %q: %v", broker.Name, serviceClass.Spec.ExternalName, err)
 			return err
 		}
 
 		return nil
 	} else if err != nil {
-		glog.Errorf("Error getting ClusterServiceClass %q: %v", serviceClass.Spec.ExternalName, err)
+		glog.Errorf("ClusterServiceBroker %q: Error getting ClusterServiceClass %q: %v", broker.Name, serviceClass.Spec.ExternalName, err)
 		return err
 	}
 
 	if existingServiceClass.Spec.ClusterServiceBrokerName != broker.Name {
-		errMsg := fmt.Sprintf("ClusterServiceClass %q for ClusterServiceBroker %q already exists for Broker %q", serviceClass.Spec.ExternalName, broker.Name, existingServiceClass.Spec.ClusterServiceBrokerName)
+		errMsg := fmt.Sprintf("ClusterServiceBroker %q: ClusterServiceClass %q already exists for Broker %q", broker.Name, serviceClass.Spec.ExternalName, existingServiceClass.Spec.ClusterServiceBrokerName)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
 	if existingServiceClass.Spec.ExternalID != serviceClass.Spec.ExternalID {
-		errMsg := fmt.Sprintf("ClusterServiceClass %q already exists with OSB guid %q, received different guid %q", serviceClass.Spec.ExternalName, existingServiceClass.Name, serviceClass.Name)
+		errMsg := fmt.Sprintf("ClusterServiceBroker %q: ClusterServiceClass %q already exists with OSB guid %q, received different guid %q", broker.Name, serviceClass.Spec.ExternalName, existingServiceClass.Name, serviceClass.Name)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Infof("Found existing ClusterServiceClass %v; updating", serviceClass.Spec.ExternalName)
+	glog.V(5).Infof("ClusterServiceBroker %q: Found existing ClusterServiceClass (K8S: %q ExternalName: %q); updating", broker.Name, serviceClass.Name, serviceClass.Spec.ExternalName)
 
 	// There was an existing service class -- project the update onto it and
 	// update it.
@@ -547,40 +548,40 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	toUpdate.Spec.Requires = serviceClass.Spec.Requires
 
 	if _, err := c.serviceCatalogClient.ClusterServiceClasses().Update(toUpdate); err != nil {
-		glog.Errorf("Error updating ClusterServiceClass %q from ClusterServiceBroker %q: %v", serviceClass.Spec.ExternalName, broker.Name, err)
+		glog.Errorf("ClusterServiceBroker %q: Error updating ClusterServiceClass %q: %v", broker.Name, serviceClass.Spec.ExternalName, err)
 		return err
 	}
 
 	return nil
 }
 
-// reconcileServicePlan reconciles a ServicePlan after the
-// ClusterServiceClass's catalog has been re-listed.
-func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker, servicePlan *v1alpha1.ClusterServicePlan) error {
+// reconcileClusterServicePlanFromClusterServiceBrokerCatalog reconciles a
+// ServicePlan after the ServiceClass's catalog has been re-listed.
+func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker *v1alpha1.ClusterServiceBroker, servicePlan *v1alpha1.ClusterServicePlan) error {
 	servicePlan.Spec.ClusterServiceBrokerName = broker.Name
 
 	existingServicePlan, err := c.servicePlanLister.Get(servicePlan.Name)
 	if errors.IsNotFound(err) {
 		// An error returned from a lister Get call means that the object does
-		// not exist.  Create a new ServicePlan.
+		// not exist.  Create a new ClusterServicePlan.
 		if _, err := c.serviceCatalogClient.ClusterServicePlans().Create(servicePlan); err != nil {
-			glog.Errorf("Error creating servicePlan %q: %v", servicePlan.Name, err)
+			glog.Errorf("ClusterServiceBroker %q: Error creating ClusterServicePlan %q: %v", broker.Name, servicePlan.Name, err)
 			return err
 		}
 
 		return nil
 	} else if err != nil {
-		glog.Errorf("Error getting servicePlan %q: %v", servicePlan.Name, err)
+		glog.Errorf("ClusterServiceBroker %q: Error getting ClusterServicePlan %q: %v", broker.Name, servicePlan.Name, err)
 		return err
 	}
 
 	if existingServicePlan.Spec.ExternalID != servicePlan.Spec.ExternalID {
-		errMsg := fmt.Sprintf("ServicePlan %q already exists with OSB guid %q, received different guid %q", servicePlan.Name, existingServicePlan.Spec.ExternalID, servicePlan.Spec.ExternalID)
+		errMsg := fmt.Sprintf("ClusterServiceBroker %q: ClusterServicePlan %q already exists with OSB guid %q, received different guid %q", broker.Name, servicePlan.Name, existingServicePlan.Spec.ExternalID, servicePlan.Spec.ExternalID)
 		glog.Error(errMsg)
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Infof("Found existing servicePlan %q; updating", servicePlan.Name)
+	glog.V(5).Infof("ClusterServiceBroker %q: Found existing ClusterServicePlan %q; updating", broker.Name, servicePlan.Name)
 
 	// There was an existing service plan -- project the update onto it and
 	// update it.
@@ -598,7 +599,7 @@ func (c *controller) reconcileServicePlan(broker *v1alpha1.ClusterServiceBroker,
 	toUpdate.Spec.ServiceInstanceCredentialCreateParameterSchema = servicePlan.Spec.ServiceInstanceCredentialCreateParameterSchema
 
 	if _, err := c.serviceCatalogClient.ClusterServicePlans().Update(toUpdate); err != nil {
-		glog.Errorf("Error updating ServicePlan %q: %v", servicePlan.Name, err)
+		glog.Errorf("ClusterServiceBroker %q: Error updating ClusterServicePlan %q: %v", broker.Name, servicePlan.Name, err)
 		return err
 	}
 
@@ -623,14 +624,14 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1alpha1.Cluste
 	t := time.Now()
 
 	if len(broker.Status.Conditions) == 0 {
-		glog.Infof("Setting lastTransitionTime for ClusterServiceBroker %q condition %q to %v", broker.Name, conditionType, t)
+		glog.Infof("ClusterServiceBroker %q: Setting lastTransitionTime for condition %q to %v", broker.Name, conditionType, t)
 		newCondition.LastTransitionTime = metav1.NewTime(t)
 		toUpdate.Status.Conditions = []v1alpha1.ServiceBrokerCondition{newCondition}
 	} else {
 		for i, cond := range broker.Status.Conditions {
 			if cond.Type == conditionType {
 				if cond.Status != newCondition.Status {
-					glog.Infof("Found status change for ClusterServiceBroker %q condition %q: %q -> %q; setting lastTransitionTime to %v", broker.Name, conditionType, cond.Status, status, t)
+					glog.Infof("ClusterServiceBroker %q: Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v", broker.Name, conditionType, cond.Status, status, t)
 					newCondition.LastTransitionTime = metav1.NewTime(t)
 				} else {
 					newCondition.LastTransitionTime = cond.LastTransitionTime
@@ -648,12 +649,12 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1alpha1.Cluste
 		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 	}
 
-	glog.V(4).Infof("Updating ready condition for ClusterServiceBroker %v to %v", broker.Name, status)
+	glog.V(4).Infof("ClusterServiceBroker %q: Updating ready condition to %v", broker.Name, status)
 	_, err = c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate)
 	if err != nil {
-		glog.Errorf("Error updating ready condition for ClusterServiceBroker %q: %v", broker.Name, err)
+		glog.Errorf("ClusterServiceBroker %q: Error updating ready condition: %v", broker.Name, err)
 	} else {
-		glog.V(5).Infof("Updated ready condition for ClusterServiceBroker %q to %v", broker.Name, status)
+		glog.V(5).Infof("ClusterServiceBroker %q: Updated ready condition to %v", broker.Name, status)
 	}
 
 	return err
@@ -669,7 +670,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 	// now removing the last finalizer).
 	broker, err := c.serviceCatalogClient.ClusterServiceBrokers().Get(broker.Name, metav1.GetOptions{})
 	if err != nil {
-		glog.Errorf("Error getting ClusterServiceBroker %q to finalize: %v", broker.Name, err)
+		glog.Errorf("ClusterServiceBroker %q: Error finalizing: %v", broker.Name, err)
 	}
 
 	clone, err := api.Scheme.DeepCopy(broker)
@@ -680,7 +681,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 
 	toUpdate.Finalizers = finalizers
 
-	logContext := fmt.Sprintf("finalizers for ClusterServiceBroker %v to %v",
+	logContext := fmt.Sprintf("ClusterServiceBroker %q: updating finalizers to %v",
 		broker.Name, finalizers)
 
 	glog.V(4).Infof("Updating %v", logContext)

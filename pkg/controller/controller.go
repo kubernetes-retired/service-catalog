@@ -475,7 +475,9 @@ func getBearerConfig(secret *apiv1.Secret) (*osb.BearerConfig, error) {
 	}, nil
 }
 
-// convertCatalog converts a service broker catalog into an array of ClusterServiceClasses
+// convertCatalog converts a service broker catalog into an array of
+// ClusterServiceClasses and an array of ClusterServicePlans.  The ClusterServiceClasses and
+// ClusterServicePlans returned by this method are named in K8S with the OSB ID.
 func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ClusterServiceClass, []*v1alpha1.ClusterServicePlan, error) {
 	serviceClasses := make([]*v1alpha1.ClusterServiceClass, len(in.Services))
 	servicePlans := []*v1alpha1.ClusterServicePlan{}
