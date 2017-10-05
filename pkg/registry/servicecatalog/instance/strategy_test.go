@@ -66,11 +66,11 @@ func contextWithUserName(userName string) genericapirequest.Context {
 // TestInstanceUpdate tests that updates to the spec of an Instance.
 func TestInstanceUpdate(t *testing.T) {
 	cases := []struct {
-		name               string
-		older              *servicecatalog.ServiceInstance
-		newer              *servicecatalog.ServiceInstance
-		shouldSpecUpdate   bool
-		shouldPlanRefClear bool
+		name                      string
+		older                     *servicecatalog.ServiceInstance
+		newer                     *servicecatalog.ServiceInstance
+		shouldGenerationIncrement bool
+		shouldPlanRefClear        bool
 	}{
 		{
 			name:  "no spec change",
@@ -89,7 +89,7 @@ func TestInstanceUpdate(t *testing.T) {
 				i.Spec.UpdateRequests = 2
 				return i
 			}(),
-			shouldSpecUpdate: true,
+			shouldGenerationIncrement: true,
 		},
 		{
 			name:  "plan change",
@@ -99,8 +99,8 @@ func TestInstanceUpdate(t *testing.T) {
 				i.Spec.ExternalServicePlanName = "new-test-plan"
 				return i
 			}(),
-			shouldSpecUpdate:   true,
-			shouldPlanRefClear: true,
+			shouldGenerationIncrement: true,
+			shouldPlanRefClear:        true,
 		},
 	}
 
@@ -108,25 +108,12 @@ func TestInstanceUpdate(t *testing.T) {
 		instanceRESTStrategies.PrepareForUpdate(nil, tc.newer, tc.older)
 
 		expectedGeneration := tc.older.Generation
-		expectedReadyCondition := servicecatalog.ConditionTrue
-		if tc.shouldSpecUpdate {
+		if tc.shouldGenerationIncrement {
 			expectedGeneration = expectedGeneration + 1
-			expectedReadyCondition = servicecatalog.ConditionFalse
 		}
 		if e, a := expectedGeneration, tc.newer.Generation; e != a {
 			t.Errorf("%v: expected %v, got %v for generation", tc.name, e, a)
 			continue
-		}
-		if e, a := 1, len(tc.newer.Status.Conditions); e != a {
-			t.Errorf("%v: unexpected number of conditions: expected %v, got %v", tc.name, e, a)
-			continue
-		}
-		if e, a := servicecatalog.ServiceInstanceConditionReady, tc.newer.Status.Conditions[0].Type; e != a {
-			t.Errorf("%v: unexpected condition type: expected %v, got %v", tc.name, e, a)
-			continue
-		}
-		if e, a := expectedReadyCondition, tc.newer.Status.Conditions[0].Status; e != a {
-			t.Errorf("%v: unexpected ready condition status: expected %v, got %v", tc.name, e, a)
 		}
 		if tc.shouldPlanRefClear {
 			if tc.newer.Spec.ServicePlanRef != nil {

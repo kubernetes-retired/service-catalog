@@ -159,6 +159,26 @@ func WaitForInstanceToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alp
 	)
 }
 
+// WaitForInstanceReconciledGeneration waits for the status of the named instance to
+// have the specified reconciled generation.
+func WaitForInstanceReconciledGeneration(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, reconciledGeneration int64) error {
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
+		func() (bool, error) {
+			glog.V(5).Infof("Waiting for instance %v/%v to have reconciled generation of %v", namespace, name, reconciledGeneration)
+			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
+			if nil != err {
+				return false, fmt.Errorf("error getting Instance %v/%v: %v", namespace, name, err)
+			}
+
+			if instance.Status.ReconciledGeneration == reconciledGeneration {
+				return true, nil
+			}
+
+			return false, nil
+		},
+	)
+}
+
 // WaitForBindingCondition waits for the status of the named binding to
 // contain a condition whose type and status matches the supplied one.
 func WaitForBindingCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.ServiceInstanceCredentialCondition) error {

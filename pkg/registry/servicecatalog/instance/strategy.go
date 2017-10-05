@@ -165,7 +165,6 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 			setServiceInstanceUserInfo(newServiceInstance, ctx)
 		}
 		newServiceInstance.Generation = oldServiceInstance.Generation + 1
-		setServiceInstanceReadyFalseCondition(newServiceInstance)
 	}
 }
 
@@ -274,35 +273,4 @@ func setServiceInstanceUserInfo(instance *sc.ServiceInstance, ctx genericapirequ
 			}
 		}
 	}
-}
-
-func setServiceInstanceReadyFalseCondition(instance *sc.ServiceInstance) {
-	newCondition := sc.ServiceInstanceCondition{
-		Type:    sc.ServiceInstanceConditionReady,
-		Status:  sc.ConditionFalse,
-		Reason:  "UpdateInitiated",
-		Message: "Update initiated on ServiceInstance",
-	}
-
-	if len(instance.Status.Conditions) == 0 {
-		newCondition.LastTransitionTime = metav1.Now()
-		instance.Status.Conditions = []sc.ServiceInstanceCondition{newCondition}
-		return
-	}
-
-	for i, cond := range instance.Status.Conditions {
-		if cond.Type == sc.ServiceInstanceConditionReady {
-			if cond.Status != newCondition.Status {
-				newCondition.LastTransitionTime = metav1.Now()
-			} else {
-				newCondition.LastTransitionTime = cond.LastTransitionTime
-			}
-
-			instance.Status.Conditions[i] = newCondition
-			return
-		}
-	}
-
-	newCondition.LastTransitionTime = metav1.Now()
-	instance.Status.Conditions = append(instance.Status.Conditions, newCondition)
 }
