@@ -256,7 +256,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
-			s := fmt.Sprintf(`ServiceInstance \"%v/%v\": Error building originating identity headers when deprovisioning: %v`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": Error building originating identity headers when deprovisioning: %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
@@ -353,7 +353,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			"Deprovision call failed. "+s)
 
 		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			s := fmt.Sprintf(`ServiceInstance \"%v/%v\": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
@@ -571,7 +571,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		parametersChecksum, err = generateChecksumOfParameters(parameters)
 		if err != nil {
-			s := fmt.Sprintf(`ServiceInstance \"%v/%v\": Failed to generate the parameters checksum to store in Status: %s`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": Failed to generate the parameters checksum to store in Status: %s`, instance.Namespace, instance.Name, err)
 			glog.Info(s)
 			c.recorder.Eventf(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
@@ -588,7 +588,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
 		if err != nil {
-			s := fmt.Sprintf(`ServiceInstance \"%v/%v\": Failed to marshal the parameters to store in the Status: %s`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": Failed to marshal the parameters to store in the Status: %s`, instance.Namespace, instance.Name, err)
 			glog.Info(s)
 			c.recorder.Eventf(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
@@ -619,7 +619,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		originatingIdentity, err = buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
-			s := fmt.Sprintf(`ServiceInstance \"%v/%v\": Error building originating identity headers for provisioning: %v`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": Error building originating identity headers for provisioning: %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
@@ -1380,7 +1380,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 	var sc *v1alpha1.ClusterServiceClass
 
 	if instance.Spec.ClusterServiceClassRef == nil {
-		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ClusterServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
+		glog.V(4).Infof(`ServiceInstance "%v/%v": looking up a ClusterServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
 		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalClusterServiceClassName}
 		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err == nil && len(serviceClasses.Items) == 1 {
@@ -1392,9 +1392,9 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 				APIVersion:      sc.APIVersion,
 				ResourceVersion: sc.ResourceVersion,
 			}
-			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServiceClass with externalName %q to K8S ClusterServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, sc.Name)
+			glog.V(4).Infof(`ServiceInstance "%v/%v": resolved ClusterServiceClass with externalName %q to K8S ClusterServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, sc.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items))
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": references a non-existent ClusterServiceClass %q or there is more than one (found: %d).`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
@@ -1413,7 +1413,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			var scErr error
 			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if scErr != nil {
-				return nil, fmt.Errorf(`ServiceInstance "%s/%s": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
+				return nil, fmt.Errorf(`ServiceInstance "%v/%v": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
 			}
 		}
 
@@ -1434,9 +1434,9 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 				APIVersion:      sp.APIVersion,
 				ResourceVersion: sp.ResourceVersion,
 			}
-			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServicePlan with externalName %q to K8S ClusterServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name)
+			glog.V(4).Infof(`ServiceInstance "%v/%v": resolved ClusterServicePlan with externalName %q to K8S ClusterServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items))
+			s := fmt.Sprintf(`ServiceInstance "%v/%v": references a non-existent ClusterServicePlan %q on ClusterServiceClass %q or there is more than one (found: %d).`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
@@ -1527,7 +1527,7 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceI
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
 func (c *controller) updateServiceInstanceStatus(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
-	glog.V(4).Infof("Updating status for ServiceInstance \"%v/%v\"", toUpdate.Namespace, toUpdate.Name)
+	glog.V(4).Infof(`ServiceInstance "%v/%v": Updating status`, toUpdate.Namespace, toUpdate.Name)
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf(`ServiceInstance "%v/%v": Failed to update status: %v`, toUpdate.Namespace, toUpdate.Name, err)
