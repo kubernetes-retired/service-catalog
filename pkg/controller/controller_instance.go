@@ -143,7 +143,7 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	}
 	instance, err := c.instanceLister.ServiceInstances(namespace).Get(name)
 	if errors.IsNotFound(err) {
-		glog.Infof(`ServiceInstance "%v/%v": Not doing work for %v because it has been deleted`, instance.Namespace, instance.Name, key)
+		glog.Infof(`ServiceInstance "%v/%v": Not doing work for %v because it has been deleted`, namespace, name, key)
 		return nil
 	}
 	if err != nil {
