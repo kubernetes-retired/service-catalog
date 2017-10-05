@@ -33,7 +33,7 @@ Because we haven't created any resources in the service-catalog API server yet,
 `kubectl get` will return an empty list of resources.
 
 ```console
-kubectl get servicebrokers,serviceclasses,serviceinstances,serviceinstancecredentials
+kubectl get servicebrokers,serviceclasses,serviceinstances,servicebindings
 No resources found.
 ```
 
@@ -215,10 +215,10 @@ status:
 
 ```
 
-# Step 5 - Requesting a `ServiceInstanceCredential` to use the `ServiceInstance`
+# Step 5 - Requesting a `ServiceBinding` to use the `ServiceInstance`
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
-we'll create a `ServiceInstanceCredential` resource. Do so with the following
+we'll create a `ServiceBinding` resource. Do so with the following
 command:
 
 ```console
@@ -228,24 +228,24 @@ kubectl create -f contrib/examples/walkthrough/ups-instance-credential.yaml
 That command should output:
 
 ```console
-serviceinstancecredential "ups-instance-credential" created
+servicebinding "ups-instance-credential" created
 ```
 
-After the `ServiceInstanceCredential` resource is created, the service catalog controller will
+After the `ServiceBinding` resource is created, the service catalog controller will
 communicate with the appropriate broker server to initiate binding. Generally,
 this will cause the broker server to create and issue credentials that the
 service catalog controller will insert into a Kubernetes `Secret`. We can check
 the status of this process like so:
 
 ```console
-kubectl get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
+kubectl get servicebindings -n test-ns ups-instance-credential -o yaml
 ```
 
 We should see something like:
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: ServiceInstanceCredential
+kind: ServiceBinding
 metadata:
   creationTimestamp: 2017-03-07T01:44:36Z
   finalizers:
@@ -253,7 +253,7 @@ metadata:
   name: ups-instance-credential
   namespace: test-ns
   resourceVersion: "29"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/serviceinstancecredentials/ups-instance-credential
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/servicebindings/ups-instance-credential
   uid: 9eb2cdce-02d7-11e7-8edb-0242ac110005
 spec:
   instanceRef:
@@ -282,13 +282,13 @@ ups-instance-credential           Opaque                                2       
 
 Notice that a new `Secret` named `ups-instance-credential` has been created.
 
-# Step 6 - Deleting the `ServiceInstanceCredential`
+# Step 6 - Deleting the `ServiceBinding`
 
 Now, let's unbind from the instance. To do this, we simply *delete* the
-`ServiceInstanceCredential` resource that we previously created:
+`ServiceBinding` resource that we previously created:
 
 ```console
-kubectl delete -n test-ns serviceinstancecredentials ups-instance-credential
+kubectl delete -n test-ns servicebindings ups-instance-credential
 ```
 
 After the deletion is complete, we should see that the `Secret` is gone:

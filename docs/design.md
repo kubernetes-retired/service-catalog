@@ -34,7 +34,7 @@ them.
   than Service Catalog does, so to avoid confusion the term *Application*
   will refer to the Kubernetes deployment artifact that will use a Service
   Instance.
-- **ServiceInstanceCredential**, or *Service Instance Credential* : a link between a Service Instance
+- **ServiceBinding**, or *Service Binding* : a link between a Service Instance
   and an Application. It expresses the intent for an Application to
   reference and use a particular Service Instance.
 - **ServiceBroker**, or *Service Broker* : a entity, available via a web endpoint,
@@ -117,7 +117,7 @@ a typical workflow:
 ### Registering a Service Broker
 
 **TODO** Talk about namespaces - ServiceBrokers, ServiceClasses are not in a ns.
-But ServiceInstances, ServiceInstanceCredentials, Secrets and ConfigMaps are. However, instances
+But ServiceInstances, ServiceBindings, Secrets and ConfigMaps are. However, instances
 can be in different NS's than the rest (which must all be in the same).
 
 Before a Service can be used by an Application it must first be registered
@@ -216,25 +216,25 @@ before its fully realized. We shouldn't let the SB be the one to detect this.
 Before a Service Instance can be used it must be "bound" to an Application.
 This means that a link, or usage intent, between an Application and the
 Service Instance must be established. This is done by creating a new
-`ServiceInstanceCredential` resource:
+`ServiceBinding` resource:
 
     kubectl create -f binding.yaml
 
 where `instance.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: ServiceInstanceCredential
+    kind: ServiceBinding
     metadata:
-      name: johnsServiceInstanceCredential
+      name: johnsServiceBinding
     spec:
       secretName: johnSecret
       ...Pod selector labels...
 
-The Controller, upon being notified of the new `ServiceInstanceCredential` resource, will
-then talk to the Service Broker to create a new ServiceInstanceCredential for the specified
+The Controller, upon being notified of the new `ServiceBinding` resource, will
+then talk to the Service Broker to create a new ServiceBinding for the specified
 Service Instance.
 
-Within the ServiceInstanceCredential object that is returned from the Service Broker are
+Within the ServiceBinding object that is returned from the Service Broker are
 a set of Credentials. These Credentials contain all of the information
 needed for the application to talk with the Service Instance. For example,
 it might include things such as:
@@ -248,11 +248,11 @@ by reading the documentation of the Service.
 
 The Credentials will not be stored in the Service Catalog's datastore.
 Rather, they will be stored in the Kubenetes core as Secrets and a reference
-to the Secret will be saved within the `ServiceInstanceCredential` resource. If the
-ServiceInstanceCredential `Spec.SecretName` is not specified then the Controller will
-use the ServiceInstanceCredential `Name` property as the name of the Secret.
+to the Secret will be saved within the `ServiceBinding` resource. If the
+ServiceBinding `Spec.SecretName` is not specified then the Controller will
+use the ServiceBinding `Name` property as the name of the Secret.
 
-ServiceInstanceCredentials are not required to be in the same Kubenetes Namespace
+ServiceBindings are not required to be in the same Kubenetes Namespace
 as the Service Instance. This allows for sharing of Service Instances
 across Applications and Namespaces.
 
@@ -302,12 +302,12 @@ ServiceInstance.
 As with all resources in Kubernetes, you can delete any of the Service
 Catalog resource by doing an HTTP DELETE to the resource's URL. However,
 it is important to note the you can not delete a Service Instance while
-there are ServiceInstanceCredentials associated with it.  In other words, before a Service
-ServiceInstance can be delete, you must first delete all of its ServiceInstanceCredentials.
-Attempting to delete an ServiceInstance that still has a ServiceInstanceCredential will fail
+there are ServiceBindings associated with it.  In other words, before a Service
+ServiceInstance can be delete, you must first delete all of its ServiceBindings.
+Attempting to delete an ServiceInstance that still has a ServiceBinding will fail
 and generate an error.
 
-Deleting a ServiceInstanceCredential will also, automatically, delete any Secrets or ConfigMaps
+Deleting a ServiceBinding will also, automatically, delete any Secrets or ConfigMaps
 that might be associated with it.
 
 **TODO** what happens to the Pods using them?
