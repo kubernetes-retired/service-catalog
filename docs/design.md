@@ -179,6 +179,24 @@ Within the `ServiceInstance` resource is the specified Plan to be used. This all
 for the user of the Service to indicate which variant of the Service they
 want - perhaps based on QoS type of variants.
 
+When creating a ServiceInstance, extra metadata (called "parameters") can be
+passed in to help configure the new Service being provisioned. Parameters
+can be provided two different ways: raw JSON or referencing a Kubernetes
+Secret. In the case of a Secret, the Secret name and key holding the
+parameters must be provided.
+The value of the key must be JSON that is then
+merged with any other parameters specified. It is an error for two
+sets of parameters to include the same top-level JSON property name.
+
+When referencing a Secret it is important to note that any updates made to
+the Secret will not automatically cause the Service Catalog to send an
+update request to the Service Broker for the Service Instance. In other words,
+the Service Catalog is not watching for Secret changes. In order to force an
+update to occur you must manually change something within the
+ServiceInstanceSpec resource that would cause a reconciliation to occur.
+Within the ServiceInstanceSpec is a property called `UpdateRequests` which
+can be incremented to cause this to happen.
+
 **TODO** Discuss the parameters that can be passed in
 
 Once an `ServiceInstance` resource is created, the Controller talks with the
@@ -325,6 +343,6 @@ Below are the key aspects of the code that differ from the design above:
 
 - The API Server can only use etcd as its persistent store.
 - The API Server is not connected to the Controller, which means it's not
-  actually used as part of the running system yet. Any resources created 
+  actually used as part of the running system yet. Any resources created
   by talking to the API Server will be stored but nothing beyond storing
   them will happen.
