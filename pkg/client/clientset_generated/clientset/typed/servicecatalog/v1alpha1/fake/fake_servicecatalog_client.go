@@ -38,12 +38,12 @@ func (c *FakeServicecatalogV1alpha1) ClusterServicePlans() v1alpha1.ClusterServi
 	return &FakeClusterServicePlans{c}
 }
 
-func (c *FakeServicecatalogV1alpha1) ServiceInstances(namespace string) v1alpha1.ServiceInstanceInterface {
-	return &FakeServiceInstances{c, namespace}
+func (c *FakeServicecatalogV1alpha1) ServiceBindings(namespace string) v1alpha1.ServiceBindingInterface {
+	return &FakeServiceBindings{c, namespace}
 }
 
-func (c *FakeServicecatalogV1alpha1) ServiceInstanceCredentials(namespace string) v1alpha1.ServiceInstanceCredentialInterface {
-	return &FakeServiceInstanceCredentials{c, namespace}
+func (c *FakeServicecatalogV1alpha1) ServiceInstances(namespace string) v1alpha1.ServiceInstanceInterface {
+	return &FakeServiceInstances{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -28,8 +28,8 @@ type ServicecatalogV1alpha1Interface interface {
 	ClusterServiceBrokersGetter
 	ClusterServiceClassesGetter
 	ClusterServicePlansGetter
+	ServiceBindingsGetter
 	ServiceInstancesGetter
-	ServiceInstanceCredentialsGetter
 }
 
 // ServicecatalogV1alpha1Client is used to interact with features provided by the servicecatalog.k8s.io group.
@@ -49,12 +49,12 @@ func (c *ServicecatalogV1alpha1Client) ClusterServicePlans() ClusterServicePlanI
 	return newClusterServicePlans(c)
 }
 
-func (c *ServicecatalogV1alpha1Client) ServiceInstances(namespace string) ServiceInstanceInterface {
-	return newServiceInstances(c, namespace)
+func (c *ServicecatalogV1alpha1Client) ServiceBindings(namespace string) ServiceBindingInterface {
+	return newServiceBindings(c, namespace)
 }
 
-func (c *ServicecatalogV1alpha1Client) ServiceInstanceCredentials(namespace string) ServiceInstanceCredentialInterface {
-	return newServiceInstanceCredentials(c, namespace)
+func (c *ServicecatalogV1alpha1Client) ServiceInstances(namespace string) ServiceInstanceInterface {
+	return newServiceInstances(c, namespace)
 }
 
 // NewForConfig creates a new ServicecatalogV1alpha1Client for the given config.

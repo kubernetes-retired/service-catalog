@@ -54,15 +54,15 @@ func newServiceInstance() servicecatalog.ServiceInstance {
 	}
 }
 
-// newServiceInstanceCredential returns a new Service Instance Credential that
+// newServiceBinding returns a new Service Instance Credential that
 // references the "test-instance" service instance.
-func newServiceInstanceCredential() servicecatalog.ServiceInstanceCredential {
-	return servicecatalog.ServiceInstanceCredential{
+func newServiceBinding() servicecatalog.ServiceBinding {
+	return servicecatalog.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-cred",
 			Namespace: "test-ns",
 		},
-		Spec: servicecatalog.ServiceInstanceCredentialSpec{
+		Spec: servicecatalog.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: "test-instance",
 			},
@@ -92,16 +92,16 @@ func TestBlockNewCredentialsForDeletedInstance(t *testing.T) {
 		return true, scList, nil
 	})
 
-	credential := newServiceInstanceCredential()
+	credential := newServiceBinding()
 
 	informerFactory.Start(wait.NeverStop)
 
-	err = handler.Admit(admission.NewAttributesRecord(&credential, nil, servicecatalog.Kind("ServiceInstanceCredentials").WithVersion("version"),
-		"test-ns", "test-cred", servicecatalog.Resource("serviceinstancecredentials").WithVersion("version"), "", admission.Create, nil))
+	err = handler.Admit(admission.NewAttributesRecord(&credential, nil, servicecatalog.Kind("ServiceBindings").WithVersion("version"),
+		"test-ns", "test-cred", servicecatalog.Resource("servicebindings").WithVersion("version"), "", admission.Create, nil))
 	if err == nil {
 		t.Errorf("Unexpected error: %v", err.Error())
 	} else {
-		if err.Error() != "serviceinstancecredentials.servicecatalog.k8s.io \"test-cred\" is forbidden: ServiceInstanceCredentials test-ns/test-cred references an instance that is being deleted: test-ns/test-instance" {
+		if err.Error() != "servicebindings.servicecatalog.k8s.io \"test-cred\" is forbidden: ServiceBindings test-ns/test-cred references an instance that is being deleted: test-ns/test-instance" {
 			t.Fatalf("admission controller blocked the request but not with expected error, expected a forbidden error, got %q", err.Error())
 		}
 	}
@@ -118,9 +118,9 @@ func TestAllowNewCredentialsForNonDeletedInstance(t *testing.T) {
 	}
 	informerFactory.Start(wait.NeverStop)
 
-	credential := newServiceInstanceCredential()
-	err = handler.Admit(admission.NewAttributesRecord(&credential, nil, servicecatalog.Kind("ServiceInstanceCredentials").WithVersion("version"),
-		"test-ns", "test-cred", servicecatalog.Resource("serviceinstancecredentials").WithVersion("version"), "", admission.Create, nil))
+	credential := newServiceBinding()
+	err = handler.Admit(admission.NewAttributesRecord(&credential, nil, servicecatalog.Kind("ServiceBindings").WithVersion("version"),
+		"test-ns", "test-cred", servicecatalog.Resource("servicebindings").WithVersion("version"), "", admission.Create, nil))
 	if err != nil {
 		t.Errorf("Error, admission controller should not block this test")
 	}

@@ -210,29 +210,29 @@ func TestBasicFlowsSync(t *testing.T) {
 	// Binding test begins here
 	//-----------------
 
-	binding := &v1alpha1.ServiceInstanceCredential{
+	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
 	}
 
-	_, err = client.ServiceInstanceCredentials(testNamespace).Create(binding)
+	_, err = client.ServiceBindings(testNamespace).Create(binding)
 	if err != nil {
 		t.Fatalf("error creating Binding: %v", binding)
 	}
 
-	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceInstanceCredentialCondition{
-		Type:   v1alpha1.ServiceInstanceCredentialConditionReady,
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceBindingCondition{
+		Type:   v1alpha1.ServiceBindingConditionReady,
 		Status: v1alpha1.ConditionTrue,
 	})
 	if err != nil {
 		t.Fatalf("error waiting for binding to become ready: %v", err)
 	}
 
-	err = client.ServiceInstanceCredentials(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
+	err = client.ServiceBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatalf("binding delete should have been accepted: %v", err)
 	}
@@ -406,29 +406,29 @@ func TestBasicFlowsAsync(t *testing.T) {
 	// Binding test begins here
 	//-----------------
 
-	binding := &v1alpha1.ServiceInstanceCredential{
+	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
 	}
 
-	_, err = client.ServiceInstanceCredentials(testNamespace).Create(binding)
+	_, err = client.ServiceBindings(testNamespace).Create(binding)
 	if err != nil {
 		t.Fatalf("error creating Binding: %v", binding)
 	}
 
-	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceInstanceCredentialCondition{
-		Type:   v1alpha1.ServiceInstanceCredentialConditionReady,
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceBindingCondition{
+		Type:   v1alpha1.ServiceBindingConditionReady,
 		Status: v1alpha1.ConditionTrue,
 	})
 	if err != nil {
 		t.Fatalf("error waiting for binding to become ready: %v", err)
 	}
 
-	err = client.ServiceInstanceCredentials(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
+	err = client.ServiceBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatalf("binding delete should have been accepted: %v", err)
 	}
@@ -689,29 +689,29 @@ func TestBindingFailure(t *testing.T) {
 	// Binding test begins here
 	//-----------------
 
-	binding := &v1alpha1.ServiceInstanceCredential{
+	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
 	}
 
-	_, err = client.ServiceInstanceCredentials(testNamespace).Create(binding)
+	_, err = client.ServiceBindings(testNamespace).Create(binding)
 	if err != nil {
 		t.Fatalf("error creating Binding: %v", binding)
 	}
 
-	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceInstanceCredentialCondition{
-		Type:   v1alpha1.ServiceInstanceCredentialConditionFailed,
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceBindingCondition{
+		Type:   v1alpha1.ServiceBindingConditionFailed,
 		Status: v1alpha1.ConditionTrue,
 	})
 	if err != nil {
 		t.Fatalf("error waiting for binding to become failed: %v", err)
 	}
 
-	err = client.ServiceInstanceCredentials(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
+	err = client.ServiceBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 	if err != nil {
 		t.Fatalf("binding delete should have been accepted: %v", err)
 	}
@@ -925,29 +925,29 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 
 	client = catalogClient.ServicecatalogV1alpha1()
 
-	binding := &v1alpha1.ServiceInstanceCredential{
+	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
 	}
 
-	_, err = client.ServiceInstanceCredentials(testNamespace).Create(binding)
+	_, err = client.ServiceBindings(testNamespace).Create(binding)
 	if err != nil {
 		t.Fatalf("error creating Binding: %v", binding)
 	}
 
-	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceInstanceCredentialCondition{
-		Type:   v1alpha1.ServiceInstanceCredentialConditionReady,
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1alpha1.ServiceBindingCondition{
+		Type:   v1alpha1.ServiceBindingConditionReady,
 		Status: v1alpha1.ConditionTrue,
 	})
 	if err != nil {
 		t.Fatalf("error waiting for binding to become ready: %v", err)
 	}
 
-	retBinding, err := client.ServiceInstanceCredentials(testNamespace).Get(testBindingName, metav1.GetOptions{})
+	retBinding, err := client.ServiceBindings(testNamespace).Get(testBindingName, metav1.GetOptions{})
 	if err != nil {
 		t.Fatalf("error getting binding %s/%s back", testNamespace, testBindingName)
 	}
@@ -1056,7 +1056,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ClusterServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
-		serviceCatalogSharedInformers.ServiceInstanceCredentials(),
+		serviceCatalogSharedInformers.ServiceBindings(),
 		serviceCatalogSharedInformers.ClusterServicePlans(),
 		brokerClFunc,
 		24*time.Hour,

@@ -175,15 +175,15 @@ kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthroug
   || error_exit 'Error when creating ups-instance-credential.'
 
 wait_for_expected_output -e 'InjectedBindResult' \
-  kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml \
+  kubectl --context=service-catalog get servicebindings -n test-ns ups-instance-credential -o yaml \
   || {
-    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
+    kubectl --context=service-catalog get servicebindings -n test-ns ups-instance-credential -o yaml
     error_exit 'Did not receive expected condition when injecting ups-instance-credential.'
   }
 
-[[ "$(kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl --context=service-catalog get servicebindings -n test-ns ups-instance-credential -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
+    kubectl --context=service-catalog get servicebindings -n test-ns ups-instance-credential -o yaml
     error_exit 'Failure status reported when attempting to inject ups-instance-credential.'
   }
 
@@ -194,7 +194,7 @@ wait_for_expected_output -e 'InjectedBindResult' \
 
 echo 'Unbinding from instance...'
 
-kubectl --context=service-catalog delete -n test-ns serviceinstancecredentials ups-instance-credential \
+kubectl --context=service-catalog delete -n test-ns servicebindings ups-instance-credential \
   || error_exit 'Error when deleting ups-instance-credential.'
 
 wait_for_expected_output -x -e "ups-instance-credential" \

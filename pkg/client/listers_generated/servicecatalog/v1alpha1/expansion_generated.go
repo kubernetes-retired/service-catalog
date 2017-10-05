@@ -30,6 +30,14 @@ type ClusterServiceClassListerExpansion interface{}
 // ClusterServicePlanLister.
 type ClusterServicePlanListerExpansion interface{}
 
+// ServiceBindingListerExpansion allows custom methods to be added to
+// ServiceBindingLister.
+type ServiceBindingListerExpansion interface{}
+
+// ServiceBindingNamespaceListerExpansion allows custom methods to be added to
+// ServiceBindingNamespaceLister.
+type ServiceBindingNamespaceListerExpansion interface{}
+
 // ServiceInstanceListerExpansion allows custom methods to be added to
 // ServiceInstanceLister.
 type ServiceInstanceListerExpansion interface{}
@@ -37,11 +45,3 @@ type ServiceInstanceListerExpansion interface{}
 // ServiceInstanceNamespaceListerExpansion allows custom methods to be added to
 // ServiceInstanceNamespaceLister.
 type ServiceInstanceNamespaceListerExpansion interface{}
-
-// ServiceInstanceCredentialListerExpansion allows custom methods to be added to
-// ServiceInstanceCredentialLister.
-type ServiceInstanceCredentialListerExpansion interface{}
-
-// ServiceInstanceCredentialNamespaceListerExpansion allows custom methods to be added to
-// ServiceInstanceCredentialNamespaceLister.
-type ServiceInstanceCredentialNamespaceListerExpansion interface{}

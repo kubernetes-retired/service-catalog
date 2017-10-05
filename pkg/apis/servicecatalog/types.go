@@ -351,9 +351,9 @@ type ClusterServicePlanSpec struct {
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// ServiceInstanceCredentialCreateParameterSchema is the schema for the parameters that
+	// ServiceBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
-	ServiceInstanceCredentialCreateParameterSchema *runtime.RawExtension
+	ServiceBindingCreateParameterSchema *runtime.RawExtension
 
 	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.
@@ -582,33 +582,33 @@ type ServiceInstancePropertiesState struct {
 	UserInfo *UserInfo
 }
 
-// ServiceInstanceCredentialList is a list of ServiceInstanceCredentials.
-type ServiceInstanceCredentialList struct {
+// ServiceBindingList is a list of ServiceBindings.
+type ServiceBindingList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceInstanceCredential
+	Items []ServiceBinding
 }
 
 // +genclient=true
 
-// ServiceInstanceCredential represents a "used by" relationship between an application and an
+// ServiceBinding represents a "used by" relationship between an application and an
 // ServiceInstance.
-type ServiceInstanceCredential struct {
+type ServiceBinding struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec   ServiceInstanceCredentialSpec
-	Status ServiceInstanceCredentialStatus
+	Spec   ServiceBindingSpec
+	Status ServiceBindingStatus
 }
 
-// ServiceInstanceCredentialSpec represents the desired state of a
-// ServiceInstanceCredential.
+// ServiceBindingSpec represents the desired state of a
+// ServiceBinding.
 //
-// The spec field cannot be changed after a ServiceInstanceCredential is
+// The spec field cannot be changed after a ServiceBinding is
 // created.  Changes submitted to the spec field will be ignored.
-type ServiceInstanceCredentialSpec struct {
-	// ServiceInstanceRef is the reference to the Instance this ServiceInstanceCredential is to.
+type ServiceBindingSpec struct {
+	// ServiceInstanceRef is the reference to the Instance this ServiceBinding is to.
 	//
 	// Immutable.
 	ServiceInstanceRef v1.LocalObjectReference
@@ -634,8 +634,8 @@ type ServiceInstanceCredentialSpec struct {
 	// +optional
 	ParametersFrom []ParametersFromSource
 
-	// SecretName is the name of the secret to create in the ServiceInstanceCredential's
-	// namespace that will hold the credentials associated with the ServiceInstanceCredential.
+	// SecretName is the name of the secret to create in the ServiceBinding's
+	// namespace that will hold the credentials associated with the ServiceBinding.
 	SecretName string
 
 	// ExternalID is the identity of this object for use with the OSB API.
@@ -647,22 +647,22 @@ type ServiceInstanceCredentialSpec struct {
 	// and its data will not be migrated.
 	//
 	// UserInfo contains information about the user that last modified this
-	// ServiceInstanceCredential. This field is set by the API server and not
+	// ServiceBinding. This field is set by the API server and not
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo
 }
 
-// ServiceInstanceCredentialStatus represents the current status of a ServiceInstanceCredential.
-type ServiceInstanceCredentialStatus struct {
-	Conditions []ServiceInstanceCredentialCondition
+// ServiceBindingStatus represents the current status of a ServiceBinding.
+type ServiceBindingStatus struct {
+	Conditions []ServiceBindingCondition
 
 	// CurrentOperation is the operation the Controller is currently performing
-	// on the ServiceInstanceCredential.
-	CurrentOperation ServiceInstanceCredentialOperation
+	// on the ServiceBinding.
+	CurrentOperation ServiceBindingOperation
 
 	// ReconciledGeneration is the 'Generation' of the
-	// serviceInstanceCredentialSpec that was last processed by the controller.
+	// ServiceBindingSpec that was last processed by the controller.
 	// The reconciled generation is updated even if the controller failed to
 	// process the spec.
 	ReconciledGeneration int64
@@ -671,23 +671,23 @@ type ServiceInstanceCredentialStatus struct {
 	OperationStartTime *metav1.Time
 
 	// InProgressProperties is the properties state of the
-	// ServiceInstanceCredential when a Bind is in progress. If the current
+	// ServiceBinding when a Bind is in progress. If the current
 	// operation is an Unbind, this will be nil.
-	InProgressProperties *ServiceInstanceCredentialPropertiesState
+	InProgressProperties *ServiceBindingPropertiesState
 
 	// ExternalProperties is the properties state of the
-	// ServiceInstanceCredential which the broker knows about.
-	ExternalProperties *ServiceInstanceCredentialPropertiesState
+	// ServiceBinding which the broker knows about.
+	ExternalProperties *ServiceBindingPropertiesState
 
 	// OrphanMitigationInProgress is a flag that represents whether orphan
 	// mitigation is in progress.
 	OrphanMitigationInProgress bool
 }
 
-// ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.
-type ServiceInstanceCredentialCondition struct {
+// ServiceBindingCondition condition information for a ServiceBinding.
+type ServiceBindingCondition struct {
 	// Type of the condition, currently ('Ready').
-	Type ServiceInstanceCredentialConditionType
+	Type ServiceBindingConditionType
 
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
@@ -705,29 +705,29 @@ type ServiceInstanceCredentialCondition struct {
 	Message string
 }
 
-// ServiceInstanceCredentialConditionType represents a ServiceInstanceCredentialCondition value.
-type ServiceInstanceCredentialConditionType string
+// ServiceBindingConditionType represents a ServiceBindingCondition value.
+type ServiceBindingConditionType string
 
 const (
-	// ServiceInstanceCredentialConditionReady represents a ServiceInstanceCredentialCondition is in ready state.
-	ServiceInstanceCredentialConditionReady ServiceInstanceCredentialConditionType = "Ready"
+	// ServiceBindingConditionReady represents a ServiceBindingCondition is in ready state.
+	ServiceBindingConditionReady ServiceBindingConditionType = "Ready"
 
-	// ServiceInstanceCredentialConditionFailed represents a ServiceInstanceCredentialCondition that has failed
+	// ServiceBindingConditionFailed represents a ServiceBindingCondition that has failed
 	// completely and should not be retried.
-	ServiceInstanceCredentialConditionFailed ServiceInstanceCredentialConditionType = "Failed"
+	ServiceBindingConditionFailed ServiceBindingConditionType = "Failed"
 )
 
-// ServiceInstanceCredentialOperation represents a type of operation
+// ServiceBindingOperation represents a type of operation
 // the controller can be performing for a binding in the OSB API.
-type ServiceInstanceCredentialOperation string
+type ServiceBindingOperation string
 
 const (
-	// ServiceInstanceCredentialOperationBind indicates that the
-	// ServiceInstanceCredential is being bound.
-	ServiceInstanceCredentialOperationBind ServiceInstanceCredentialOperation = "Bind"
-	// ServiceInstanceCredentialOperationUnbind indicates that the
-	// ServiceInstanceCredential is being unbound.
-	ServiceInstanceCredentialOperationUnbind ServiceInstanceCredentialOperation = "Unbind"
+	// ServiceBindingOperationBind indicates that the
+	// ServiceBinding is being bound.
+	ServiceBindingOperationBind ServiceBindingOperation = "Bind"
+	// ServiceBindingOperationUnbind indicates that the
+	// ServiceBinding is being unbound.
+	ServiceBindingOperationUnbind ServiceBindingOperation = "Unbind"
 )
 
 // These are internal finalizer values to service catalog, must be qualified name.
@@ -735,11 +735,11 @@ const (
 	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
 )
 
-// ServiceInstanceCredentialPropertiesState is the state of a
-// ServiceInstanceCredential that the ServiceBroker knows about.
-type ServiceInstanceCredentialPropertiesState struct {
+// ServiceBindingPropertiesState is the state of a
+// ServiceBinding that the ServiceBroker knows about.
+type ServiceBindingPropertiesState struct {
 	// Parameters is a blob of the parameters and their values that the broker
-	// knows about for this ServiceInstanceCredential.  If a parameter was
+	// knows about for this ServiceBinding.  If a parameter was
 	// sourced from a secret, its value will be "<redacted>" in this blob.
 	Parameters *runtime.RawExtension
 

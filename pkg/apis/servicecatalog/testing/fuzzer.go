@@ -196,7 +196,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			}
 			is.Parameters = parameters
 		},
-		func(bs *servicecatalog.ServiceInstanceCredentialSpec, c fuzz.Continue) {
+		func(bs *servicecatalog.ServiceBindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			bs.ExternalID = uuid.NewV4().String()
 			// Don't allow the SecretName to be an empty string because
@@ -222,7 +222,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 			}
 			bs.Parameters = parameters
 		},
-		func(bs *servicecatalog.ServiceInstanceCredentialPropertiesState, c fuzz.Continue) {
+		func(bs *servicecatalog.ServiceBindingPropertiesState, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			parameters, err := createParameter(c)
 			if err != nil {
@@ -248,7 +248,7 @@ func FuzzerFor(t *testing.T, version schema.GroupVersion, src rand.Source) *fuzz
 				return
 			}
 			sp.Spec.ExternalMetadata = metadata
-			sp.Spec.ServiceInstanceCredentialCreateParameterSchema = metadata
+			sp.Spec.ServiceBindingCreateParameterSchema = metadata
 			sp.Spec.ServiceInstanceCreateParameterSchema = metadata
 			sp.Spec.ServiceInstanceUpdateParameterSchema = metadata
 		},

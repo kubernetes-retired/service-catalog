@@ -43,13 +43,13 @@ func SetDefaults_ServiceInstanceSpec(spec *ServiceInstanceSpec) {
 	}
 }
 
-func SetDefaults_ServiceInstanceCredentialSpec(spec *ServiceInstanceCredentialSpec) {
+func SetDefaults_ServiceBindingSpec(spec *ServiceBindingSpec) {
 	if spec.ExternalID == "" {
 		spec.ExternalID = uuid.NewV4().String()
 	}
 }
 
-func SetDefaults_ServiceInstanceCredential(binding *ServiceInstanceCredential) {
+func SetDefaults_ServiceBinding(binding *ServiceBinding) {
 	// If not specified, make the SecretName default to the binding name
 	if binding.Spec.SecretName == "" {
 		binding.Spec.SecretName = binding.Name

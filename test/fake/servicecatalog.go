@@ -24,7 +24,7 @@ import (
 )
 
 // ServicecatalogV1alpha1 is a wrapper around the generated fake service catalog
-// that clones the ServiceInstance and ServiceInstanceCredential objects being
+// that clones the ServiceInstance and ServiceBinding objects being
 // passed to UpdateStatus. This is a workaround until the generated fake clientset
 // does its own copying.
 type ServicecatalogV1alpha1 struct {
@@ -46,9 +46,9 @@ func (c *ServicecatalogV1alpha1) ServiceInstances(namespace string) v1alpha1.Ser
 	return &ServiceInstances{serviceInstances}
 }
 
-func (c *ServicecatalogV1alpha1) ServiceInstanceCredentials(namespace string) v1alpha1.ServiceInstanceCredentialInterface {
-	serviceInstanceCredentials := c.ServicecatalogV1alpha1Interface.ServiceInstanceCredentials(namespace)
-	return &ServiceInstanceCredentials{serviceInstanceCredentials}
+func (c *ServicecatalogV1alpha1) ServiceBindings(namespace string) v1alpha1.ServiceBindingInterface {
+	serviceInstanceCredentials := c.ServicecatalogV1alpha1Interface.ServiceBindings(namespace)
+	return &ServiceBindings{serviceInstanceCredentials}
 }
 
 func (c *ServicecatalogV1alpha1) ClusterServicePlans() v1alpha1.ClusterServicePlanInterface {

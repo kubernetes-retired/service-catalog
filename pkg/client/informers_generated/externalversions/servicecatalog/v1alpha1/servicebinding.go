@@ -30,28 +30,28 @@ import (
 	time "time"
 )
 
-// ServiceInstanceCredentialInformer provides access to a shared informer and lister for
-// ServiceInstanceCredentials.
-type ServiceInstanceCredentialInformer interface {
+// ServiceBindingInformer provides access to a shared informer and lister for
+// ServiceBindings.
+type ServiceBindingInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ServiceInstanceCredentialLister
+	Lister() v1alpha1.ServiceBindingLister
 }
 
-type serviceInstanceCredentialInformer struct {
+type serviceBindingInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServiceInstanceCredentialInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func newServiceBindingInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	sharedIndexInformer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.ServicecatalogV1alpha1().ServiceInstanceCredentials(v1.NamespaceAll).List(options)
+				return client.ServicecatalogV1alpha1().ServiceBindings(v1.NamespaceAll).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.ServicecatalogV1alpha1().ServiceInstanceCredentials(v1.NamespaceAll).Watch(options)
+				return client.ServicecatalogV1alpha1().ServiceBindings(v1.NamespaceAll).Watch(options)
 			},
 		},
-		&servicecatalog_v1alpha1.ServiceInstanceCredential{},
+		&servicecatalog_v1alpha1.ServiceBinding{},
 		resyncPeriod,
 		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
@@ -59,10 +59,10 @@ func newServiceInstanceCredentialInformer(client clientset.Interface, resyncPeri
 	return sharedIndexInformer
 }
 
-func (f *serviceInstanceCredentialInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceInstanceCredential{}, newServiceInstanceCredentialInformer)
+func (f *serviceBindingInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceBinding{}, newServiceBindingInformer)
 }
 
-func (f *serviceInstanceCredentialInformer) Lister() v1alpha1.ServiceInstanceCredentialLister {
-	return v1alpha1.NewServiceInstanceCredentialLister(f.Informer().GetIndexer())
+func (f *serviceBindingInformer) Lister() v1alpha1.ServiceBindingLister {
+	return v1alpha1.NewServiceBindingLister(f.Informer().GetIndexer())
 }
