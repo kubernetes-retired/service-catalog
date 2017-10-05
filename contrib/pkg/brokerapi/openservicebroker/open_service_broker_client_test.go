@@ -274,10 +274,10 @@ func TestBindOk(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	verifyServiceInstanceCredentialMethodAndPath(http.MethodPut, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
+	verifyServiceBindingMethodAndPath(http.MethodPut, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 
 	if fbs.RequestObject == nil {
-		t.Fatalf("ServiceInstanceCredentialRequest was not received correctly")
+		t.Fatalf("ServiceBindingRequest was not received correctly")
 	}
 	verifyRequestContentType(fbs.Request, t)
 
@@ -304,10 +304,10 @@ func TestBindConflict(t *testing.T) {
 		t.Fatal("Expected create service binding to fail with conflict, but didn't")
 	}
 
-	verifyServiceInstanceCredentialMethodAndPath(http.MethodPut, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
+	verifyServiceBindingMethodAndPath(http.MethodPut, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 
 	if fbs.RequestObject == nil {
-		t.Fatalf("ServiceInstanceCredentialRequest was not received correctly")
+		t.Fatalf("ServiceBindingRequest was not received correctly")
 	}
 	actual := reflect.TypeOf(fbs.RequestObject)
 	expected := reflect.TypeOf(&brokerapi.BindingRequest{})
@@ -331,7 +331,7 @@ func TestUnbindOk(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	verifyServiceInstanceCredentialMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
+	verifyServiceBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 	verifyRequestParameter("service_id", testServiceID, fbs.Request, t)
 	verifyRequestParameter("plan_id", testPlanID, fbs.Request, t)
 
@@ -355,7 +355,7 @@ func TestUnbindGone(t *testing.T) {
 		t.Fatalf("Did not find the expected error message 'There is no binding' in error: %s", err)
 	}
 
-	verifyServiceInstanceCredentialMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
+	verifyServiceBindingMethodAndPath(http.MethodDelete, testServiceInstanceID, testServiceBindingID, fbs.Request, t)
 }
 
 func TestPollServiceInstanceWithMissingServiceID(t *testing.T) {
@@ -482,9 +482,9 @@ func TestPollServiceInstanceWithNoOperation(t *testing.T) {
 	}
 }
 
-// verifyServiceInstanceCredentialMethodAndPath is a helper method that verifies that the request
+// verifyServiceBindingMethodAndPath is a helper method that verifies that the request
 // has the right method and the suffix URL for a binding request.
-func verifyServiceInstanceCredentialMethodAndPath(method, serviceID, bindingID string, req *http.Request, t *testing.T) {
+func verifyServiceBindingMethodAndPath(method, serviceID, bindingID string, req *http.Request, t *testing.T) {
 	expectedPath := fmt.Sprintf(bindingSuffixFormatString, serviceID, bindingID)
 	verifyRequestMethodAndPath(method, expectedPath, req, t)
 }
