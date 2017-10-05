@@ -985,15 +985,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				SchemaProps: spec.SchemaProps{
 					Description: "ServiceClassStatus represents status information about a ServiceClass.",
 					Properties: map[string]spec.Schema{
-						"presentInCatalog": {
+						"removedFromBrokerCatalog": {
 							SchemaProps: spec.SchemaProps{
-								Description: "PresentInCatalog indicates that the ServiceClass is present in the broker's catalog.",
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the service from its catalog.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
 					},
-					Required: []string{"presentInCatalog"},
+					Required: []string{"removedFromBrokerCatalog"},
 				},
 			},
 			Dependencies: []string{},
@@ -1333,15 +1333,15 @@ func GetOpenAPIDefinitions(ref openapi.ReferenceCallback) map[string]openapi.Ope
 				SchemaProps: spec.SchemaProps{
 					Description: "ServicePlanStatus represents status information about a ServicePlan.",
 					Properties: map[string]spec.Schema{
-						"presentInCatalog": {
+						"removedFromBrokerCatalog": {
 							SchemaProps: spec.SchemaProps{
-								Description: "PresentInCatalog indicates that the ServicePlan is present in the broker's catalog.",
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the plan from its catalog.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
 					},
-					Required: []string{"presentInCatalog"},
+					Required: []string{"removedFromBrokerCatalog"},
 				},
 			},
 			Dependencies: []string{},
