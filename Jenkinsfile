@@ -122,6 +122,7 @@ node {
               --create-artifacts
         """
 
+	/*
         ansiColor('xterm-darker-gray') {
           // Run the e2e test framework
           sh """${env.ROOT}/contrib/jenkins/run_e2e.sh \
@@ -131,6 +132,7 @@ node {
                 --create-artifacts
           """
         }
+	*/
 
         echo 'Run succeeded.'
       }
@@ -139,7 +141,7 @@ node {
       currentBuild.result = 'FAILURE'
     } finally {
       archiveArtifacts artifacts: 'walkthrough*.txt', fingerprint: true
-      archiveArtifacts artifacts: 'e2e*.txt', fingerprint: true
+      // archiveArtifacts artifacts: 'e2e*.txt', fingerprint: true
       try {
         sh "rm -rf ${certFolder}"
         sh """${env.ROOT}/contrib/jenkins/cleanup_cluster.sh --kubeconfig ${KUBECONFIG}"""
