@@ -363,14 +363,13 @@ func getTestClusterServiceBroker() *v1alpha1.ClusterServiceBroker {
 
 func getTestClusterServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
-	broker.Status = v1alpha1.ServiceBrokerStatus{
+	broker.Status = v1alpha1.ClusterServiceBrokerStatus{
 		Conditions: []v1alpha1.ServiceBrokerCondition{{
 			Type:               v1alpha1.ServiceBrokerConditionReady,
 			Status:             status,
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
 	}
-
 	return broker
 }
 

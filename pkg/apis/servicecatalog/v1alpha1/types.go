@@ -33,8 +33,8 @@ type ClusterServiceBroker struct {
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServiceBrokerSpec `json:"spec"`
-	Status ServiceBrokerStatus      `json:"status"`
+	Spec   ClusterServiceBrokerSpec   `json:"spec"`
+	Status ClusterServiceBrokerStatus `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -139,11 +139,11 @@ const (
 	BearerTokenKey = "token"
 )
 
-// ServiceBrokerStatus represents the current status of a Broker.
-type ServiceBrokerStatus struct {
+// ClusterServiceBrokerStatus represents the current status of a Broker.
+type ClusterServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition `json:"conditions"`
 
-	// ReconciledGeneration is the 'Generation' of the lusterServiceBrokerSpec that
+	// ReconciledGeneration is the 'Generation' of the ClusterServiceBrokerSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
@@ -224,8 +224,8 @@ type ClusterServiceClass struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServiceClassSpec `json:"spec"`
-	Status ServiceClassStatus      `json:"status"`
+	Spec   ClusterServiceClassSpec   `json:"spec"`
+	Status ClusterServiceClassStatus `json:"status"`
 }
 
 // ClusterServiceClassSpec represents details about the ClusterServicePlan
@@ -285,8 +285,9 @@ type ClusterServiceClassSpec struct {
 	Requires []string `json:"requires,omitempty"`
 }
 
-// ServiceClassStatus represents status information about a ServiceClass.
-type ServiceClassStatus struct {
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the service
 	// from its catalog.
 	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
@@ -311,8 +312,8 @@ type ClusterServicePlan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServicePlanSpec `json:"spec"`
-	Status ServicePlanStatus      `json:"status"`
+	Spec   ClusterServicePlanSpec   `json:"spec"`
+	Status ClusterServicePlanStatus `json:"status"`
 }
 
 // ClusterServicePlanSpec represents details about a ClusterServicePlan.
@@ -374,8 +375,9 @@ type ClusterServicePlanSpec struct {
 	ClusterServiceClassRef v1.LocalObjectReference `json:"clusterServiceClassRef"`
 }
 
-// ServicePlanStatus represents status information about a ServicePlan.
-type ServicePlanStatus struct {
+// ClusterServicePlanStatus represents status information about a
+// ClusterServicePlan.
+type ClusterServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`

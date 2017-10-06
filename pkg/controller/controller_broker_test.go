@@ -91,7 +91,7 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 			name: "no ready condition",
 			broker: func() *v1alpha1.ClusterServiceBroker {
 				broker := getTestClusterServiceBroker()
-				broker.Status = v1alpha1.ServiceBrokerStatus{
+				broker.Status = v1alpha1.ClusterServiceBrokerStatus{
 					Conditions: []v1alpha1.ServiceBrokerCondition{
 						{
 							Type:   v1alpha1.ServiceBrokerConditionType("NotARealCondition"),

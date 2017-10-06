@@ -31,7 +31,7 @@ func brokerWithOldSpec() *sc.ClusterServiceBroker {
 		Spec: sc.ClusterServiceBrokerSpec{
 			URL: "https://kubernetes.default.svc:443/brokers/template.k8s.io",
 		},
-		Status: sc.ServiceBrokerStatus{
+		Status: sc.ClusterServiceBrokerStatus{
 			Conditions: []sc.ServiceBrokerCondition{
 				{
 					Type:   sc.ServiceBrokerConditionReady,
@@ -72,7 +72,7 @@ func TestBroker(t *testing.T) {
 		Spec: sc.ClusterServiceBrokerSpec{
 			URL: "abcd",
 		},
-		Status: sc.ServiceBrokerStatus{
+		Status: sc.ClusterServiceBrokerStatus{
 			Conditions: nil,
 		},
 	}

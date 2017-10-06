@@ -94,7 +94,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerStatus"),
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceBrokerStatus"),
 							},
 						},
 					},
@@ -102,7 +102,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceBrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceBrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceBrokerList": {
 			Schema: spec.Schema{
@@ -206,6 +206,43 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceBrokerStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ClusterServiceBrokerStatus represents the current status of a Broker.",
+					Properties: map[string]spec.Schema{
+						"conditions": {
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerCondition"),
+										},
+									},
+								},
+							},
+						},
+						"reconciledGeneration": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ReconciledGeneration is the 'Generation' of the ClusterServiceBrokerSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
+								Type:        []string{"integer"},
+								Format:      "int64",
+							},
+						},
+						"operationStartTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "OperationStartTime is the time at which the current operation began.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
+					},
+					Required: []string{"conditions", "reconciledGeneration"},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClass": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -237,7 +274,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassStatus"),
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClassStatus"),
 							},
 						},
 					},
@@ -245,7 +282,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClassSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClassSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClassList": {
 			Schema: spec.Schema{
@@ -378,6 +415,24 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServiceClassStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ClusterServiceClassStatus represents status information about a ClusterServiceClass.",
+					Properties: map[string]spec.Schema{
+						"removedFromBrokerCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the service from its catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"removedFromBrokerCatalog"},
+				},
+			},
+			Dependencies: []string{},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlan": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -409,7 +464,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanStatus"),
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanStatus"),
 							},
 						},
 					},
@@ -417,7 +472,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanList": {
 			Schema: spec.Schema{
@@ -545,6 +600,24 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ClusterServicePlanStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ClusterServicePlanStatus represents status information about a ClusterServicePlan.",
+					Properties: map[string]spec.Schema{
+						"removedFromBrokerCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the plan from its catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"removedFromBrokerCatalog"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource": {
 			Schema: spec.Schema{
@@ -967,61 +1040,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerStatus": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "ServiceBrokerStatus represents the current status of a Broker.",
-					Properties: map[string]spec.Schema{
-						"conditions": {
-							SchemaProps: spec.SchemaProps{
-								Type: []string{"array"},
-								Items: &spec.SchemaOrArray{
-									Schema: &spec.Schema{
-										SchemaProps: spec.SchemaProps{
-											Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerCondition"),
-										},
-									},
-								},
-							},
-						},
-						"reconciledGeneration": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the 'Generation' of the lusterServiceBrokerSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
-								Type:        []string{"integer"},
-								Format:      "int64",
-							},
-						},
-						"operationStartTime": {
-							SchemaProps: spec.SchemaProps{
-								Description: "OperationStartTime is the time at which the current operation began.",
-								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-							},
-						},
-					},
-					Required: []string{"conditions", "reconciledGeneration"},
-				},
-			},
-			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceClassStatus": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "ServiceClassStatus represents status information about a ServiceClass.",
-					Properties: map[string]spec.Schema{
-						"removedFromBrokerCatalog": {
-							SchemaProps: spec.SchemaProps{
-								Description: "RemovedFromBrokerCatalog indicates that the broker removed the service from its catalog.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-					},
-					Required: []string{"removedFromBrokerCatalog"},
-				},
-			},
-			Dependencies: []string{},
-		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstance": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -1351,24 +1369,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ServicePlanStatus": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "ServicePlanStatus represents status information about a ServicePlan.",
-					Properties: map[string]spec.Schema{
-						"removedFromBrokerCatalog": {
-							SchemaProps: spec.SchemaProps{
-								Description: "RemovedFromBrokerCatalog indicates that the broker removed the plan from its catalog.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-					},
-					Required: []string{"removedFromBrokerCatalog"},
-				},
-			},
-			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.UserInfo": {
 			Schema: spec.Schema{

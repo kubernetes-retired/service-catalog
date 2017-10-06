@@ -47,18 +47,24 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_servicecatalog_ClusterServiceBrokerList_To_v1alpha1_ClusterServiceBrokerList,
 		Convert_v1alpha1_ClusterServiceBrokerSpec_To_servicecatalog_ClusterServiceBrokerSpec,
 		Convert_servicecatalog_ClusterServiceBrokerSpec_To_v1alpha1_ClusterServiceBrokerSpec,
+		Convert_v1alpha1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus,
+		Convert_servicecatalog_ClusterServiceBrokerStatus_To_v1alpha1_ClusterServiceBrokerStatus,
 		Convert_v1alpha1_ClusterServiceClass_To_servicecatalog_ClusterServiceClass,
 		Convert_servicecatalog_ClusterServiceClass_To_v1alpha1_ClusterServiceClass,
 		Convert_v1alpha1_ClusterServiceClassList_To_servicecatalog_ClusterServiceClassList,
 		Convert_servicecatalog_ClusterServiceClassList_To_v1alpha1_ClusterServiceClassList,
 		Convert_v1alpha1_ClusterServiceClassSpec_To_servicecatalog_ClusterServiceClassSpec,
 		Convert_servicecatalog_ClusterServiceClassSpec_To_v1alpha1_ClusterServiceClassSpec,
+		Convert_v1alpha1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus,
+		Convert_servicecatalog_ClusterServiceClassStatus_To_v1alpha1_ClusterServiceClassStatus,
 		Convert_v1alpha1_ClusterServicePlan_To_servicecatalog_ClusterServicePlan,
 		Convert_servicecatalog_ClusterServicePlan_To_v1alpha1_ClusterServicePlan,
 		Convert_v1alpha1_ClusterServicePlanList_To_servicecatalog_ClusterServicePlanList,
 		Convert_servicecatalog_ClusterServicePlanList_To_v1alpha1_ClusterServicePlanList,
 		Convert_v1alpha1_ClusterServicePlanSpec_To_servicecatalog_ClusterServicePlanSpec,
 		Convert_servicecatalog_ClusterServicePlanSpec_To_v1alpha1_ClusterServicePlanSpec,
+		Convert_v1alpha1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus,
+		Convert_servicecatalog_ClusterServicePlanStatus_To_v1alpha1_ClusterServicePlanStatus,
 		Convert_v1alpha1_ParametersFromSource_To_servicecatalog_ParametersFromSource,
 		Convert_servicecatalog_ParametersFromSource_To_v1alpha1_ParametersFromSource,
 		Convert_v1alpha1_PlanReference_To_servicecatalog_PlanReference,
@@ -81,10 +87,6 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_servicecatalog_ServiceBrokerAuthInfo_To_v1alpha1_ServiceBrokerAuthInfo,
 		Convert_v1alpha1_ServiceBrokerCondition_To_servicecatalog_ServiceBrokerCondition,
 		Convert_servicecatalog_ServiceBrokerCondition_To_v1alpha1_ServiceBrokerCondition,
-		Convert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus,
-		Convert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus,
-		Convert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus,
-		Convert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus,
 		Convert_v1alpha1_ServiceInstance_To_servicecatalog_ServiceInstance,
 		Convert_servicecatalog_ServiceInstance_To_v1alpha1_ServiceInstance,
 		Convert_v1alpha1_ServiceInstanceCondition_To_servicecatalog_ServiceInstanceCondition,
@@ -97,8 +99,6 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_servicecatalog_ServiceInstanceSpec_To_v1alpha1_ServiceInstanceSpec,
 		Convert_v1alpha1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanceStatus,
 		Convert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanceStatus,
-		Convert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus,
-		Convert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus,
 		Convert_v1alpha1_UserInfo_To_servicecatalog_UserInfo,
 		Convert_servicecatalog_UserInfo_To_v1alpha1_UserInfo,
 	)
@@ -149,7 +149,7 @@ func autoConvert_v1alpha1_ClusterServiceBroker_To_servicecatalog_ClusterServiceB
 	if err := Convert_v1alpha1_ClusterServiceBrokerSpec_To_servicecatalog_ClusterServiceBrokerSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_v1alpha1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -165,7 +165,7 @@ func autoConvert_servicecatalog_ClusterServiceBroker_To_v1alpha1_ClusterServiceB
 	if err := Convert_servicecatalog_ClusterServiceBrokerSpec_To_v1alpha1_ClusterServiceBrokerSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_servicecatalog_ClusterServiceBrokerStatus_To_v1alpha1_ClusterServiceBrokerStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -230,12 +230,36 @@ func Convert_servicecatalog_ClusterServiceBrokerSpec_To_v1alpha1_ClusterServiceB
 	return autoConvert_servicecatalog_ClusterServiceBrokerSpec_To_v1alpha1_ClusterServiceBrokerSpec(in, out, s)
 }
 
+func autoConvert_v1alpha1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus(in *ClusterServiceBrokerStatus, out *servicecatalog.ClusterServiceBrokerStatus, s conversion.Scope) error {
+	out.Conditions = *(*[]servicecatalog.ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
+	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
+	return nil
+}
+
+// Convert_v1alpha1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus is an autogenerated conversion function.
+func Convert_v1alpha1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus(in *ClusterServiceBrokerStatus, out *servicecatalog.ClusterServiceBrokerStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus(in, out, s)
+}
+
+func autoConvert_servicecatalog_ClusterServiceBrokerStatus_To_v1alpha1_ClusterServiceBrokerStatus(in *servicecatalog.ClusterServiceBrokerStatus, out *ClusterServiceBrokerStatus, s conversion.Scope) error {
+	out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
+	out.ReconciledGeneration = in.ReconciledGeneration
+	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
+	return nil
+}
+
+// Convert_servicecatalog_ClusterServiceBrokerStatus_To_v1alpha1_ClusterServiceBrokerStatus is an autogenerated conversion function.
+func Convert_servicecatalog_ClusterServiceBrokerStatus_To_v1alpha1_ClusterServiceBrokerStatus(in *servicecatalog.ClusterServiceBrokerStatus, out *ClusterServiceBrokerStatus, s conversion.Scope) error {
+	return autoConvert_servicecatalog_ClusterServiceBrokerStatus_To_v1alpha1_ClusterServiceBrokerStatus(in, out, s)
+}
+
 func autoConvert_v1alpha1_ClusterServiceClass_To_servicecatalog_ClusterServiceClass(in *ClusterServiceClass, out *servicecatalog.ClusterServiceClass, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_ClusterServiceClassSpec_To_servicecatalog_ClusterServiceClassSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_v1alpha1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -251,7 +275,7 @@ func autoConvert_servicecatalog_ClusterServiceClass_To_v1alpha1_ClusterServiceCl
 	if err := Convert_servicecatalog_ClusterServiceClassSpec_To_v1alpha1_ClusterServiceClassSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_servicecatalog_ClusterServiceClassStatus_To_v1alpha1_ClusterServiceClassStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -320,12 +344,32 @@ func Convert_servicecatalog_ClusterServiceClassSpec_To_v1alpha1_ClusterServiceCl
 	return autoConvert_servicecatalog_ClusterServiceClassSpec_To_v1alpha1_ClusterServiceClassSpec(in, out, s)
 }
 
+func autoConvert_v1alpha1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus(in *ClusterServiceClassStatus, out *servicecatalog.ClusterServiceClassStatus, s conversion.Scope) error {
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
+	return nil
+}
+
+// Convert_v1alpha1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus is an autogenerated conversion function.
+func Convert_v1alpha1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus(in *ClusterServiceClassStatus, out *servicecatalog.ClusterServiceClassStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus(in, out, s)
+}
+
+func autoConvert_servicecatalog_ClusterServiceClassStatus_To_v1alpha1_ClusterServiceClassStatus(in *servicecatalog.ClusterServiceClassStatus, out *ClusterServiceClassStatus, s conversion.Scope) error {
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
+	return nil
+}
+
+// Convert_servicecatalog_ClusterServiceClassStatus_To_v1alpha1_ClusterServiceClassStatus is an autogenerated conversion function.
+func Convert_servicecatalog_ClusterServiceClassStatus_To_v1alpha1_ClusterServiceClassStatus(in *servicecatalog.ClusterServiceClassStatus, out *ClusterServiceClassStatus, s conversion.Scope) error {
+	return autoConvert_servicecatalog_ClusterServiceClassStatus_To_v1alpha1_ClusterServiceClassStatus(in, out, s)
+}
+
 func autoConvert_v1alpha1_ClusterServicePlan_To_servicecatalog_ClusterServicePlan(in *ClusterServicePlan, out *servicecatalog.ClusterServicePlan, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_ClusterServicePlanSpec_To_servicecatalog_ClusterServicePlanSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_v1alpha1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -341,7 +385,7 @@ func autoConvert_servicecatalog_ClusterServicePlan_To_v1alpha1_ClusterServicePla
 	if err := Convert_servicecatalog_ClusterServicePlanSpec_To_v1alpha1_ClusterServicePlanSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_servicecatalog_ClusterServicePlanStatus_To_v1alpha1_ClusterServicePlanStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -412,6 +456,26 @@ func autoConvert_servicecatalog_ClusterServicePlanSpec_To_v1alpha1_ClusterServic
 // Convert_servicecatalog_ClusterServicePlanSpec_To_v1alpha1_ClusterServicePlanSpec is an autogenerated conversion function.
 func Convert_servicecatalog_ClusterServicePlanSpec_To_v1alpha1_ClusterServicePlanSpec(in *servicecatalog.ClusterServicePlanSpec, out *ClusterServicePlanSpec, s conversion.Scope) error {
 	return autoConvert_servicecatalog_ClusterServicePlanSpec_To_v1alpha1_ClusterServicePlanSpec(in, out, s)
+}
+
+func autoConvert_v1alpha1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus(in *ClusterServicePlanStatus, out *servicecatalog.ClusterServicePlanStatus, s conversion.Scope) error {
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
+	return nil
+}
+
+// Convert_v1alpha1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus is an autogenerated conversion function.
+func Convert_v1alpha1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus(in *ClusterServicePlanStatus, out *servicecatalog.ClusterServicePlanStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus(in, out, s)
+}
+
+func autoConvert_servicecatalog_ClusterServicePlanStatus_To_v1alpha1_ClusterServicePlanStatus(in *servicecatalog.ClusterServicePlanStatus, out *ClusterServicePlanStatus, s conversion.Scope) error {
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
+	return nil
+}
+
+// Convert_servicecatalog_ClusterServicePlanStatus_To_v1alpha1_ClusterServicePlanStatus is an autogenerated conversion function.
+func Convert_servicecatalog_ClusterServicePlanStatus_To_v1alpha1_ClusterServicePlanStatus(in *servicecatalog.ClusterServicePlanStatus, out *ClusterServicePlanStatus, s conversion.Scope) error {
+	return autoConvert_servicecatalog_ClusterServicePlanStatus_To_v1alpha1_ClusterServicePlanStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_ParametersFromSource_To_servicecatalog_ParametersFromSource(in *ParametersFromSource, out *servicecatalog.ParametersFromSource, s conversion.Scope) error {
@@ -698,50 +762,6 @@ func Convert_servicecatalog_ServiceBrokerCondition_To_v1alpha1_ServiceBrokerCond
 	return autoConvert_servicecatalog_ServiceBrokerCondition_To_v1alpha1_ServiceBrokerCondition(in, out, s)
 }
 
-func autoConvert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(in *ServiceBrokerStatus, out *servicecatalog.ServiceBrokerStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]servicecatalog.ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
-	out.ReconciledGeneration = in.ReconciledGeneration
-	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
-	return nil
-}
-
-// Convert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus is an autogenerated conversion function.
-func Convert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(in *ServiceBrokerStatus, out *servicecatalog.ServiceBrokerStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(in, out, s)
-}
-
-func autoConvert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus(in *servicecatalog.ServiceBrokerStatus, out *ServiceBrokerStatus, s conversion.Scope) error {
-	out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
-	out.ReconciledGeneration = in.ReconciledGeneration
-	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
-	return nil
-}
-
-// Convert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus is an autogenerated conversion function.
-func Convert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus(in *servicecatalog.ServiceBrokerStatus, out *ServiceBrokerStatus, s conversion.Scope) error {
-	return autoConvert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(in *ServiceClassStatus, out *servicecatalog.ServiceClassStatus, s conversion.Scope) error {
-	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
-	return nil
-}
-
-// Convert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus is an autogenerated conversion function.
-func Convert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(in *ServiceClassStatus, out *servicecatalog.ServiceClassStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(in, out, s)
-}
-
-func autoConvert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus(in *servicecatalog.ServiceClassStatus, out *ServiceClassStatus, s conversion.Scope) error {
-	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
-	return nil
-}
-
-// Convert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus is an autogenerated conversion function.
-func Convert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus(in *servicecatalog.ServiceClassStatus, out *ServiceClassStatus, s conversion.Scope) error {
-	return autoConvert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus(in, out, s)
-}
-
 func autoConvert_v1alpha1_ServiceInstance_To_servicecatalog_ServiceInstance(in *ServiceInstance, out *servicecatalog.ServiceInstance, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -924,26 +944,6 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanc
 // Convert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanceStatus is an autogenerated conversion function.
 func Convert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanceStatus(in *servicecatalog.ServiceInstanceStatus, out *ServiceInstanceStatus, s conversion.Scope) error {
 	return autoConvert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanceStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(in *ServicePlanStatus, out *servicecatalog.ServicePlanStatus, s conversion.Scope) error {
-	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
-	return nil
-}
-
-// Convert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus is an autogenerated conversion function.
-func Convert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(in *ServicePlanStatus, out *servicecatalog.ServicePlanStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(in, out, s)
-}
-
-func autoConvert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus(in *servicecatalog.ServicePlanStatus, out *ServicePlanStatus, s conversion.Scope) error {
-	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
-	return nil
-}
-
-// Convert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus is an autogenerated conversion function.
-func Convert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus(in *servicecatalog.ServicePlanStatus, out *ServicePlanStatus, s conversion.Scope) error {
-	return autoConvert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_UserInfo_To_servicecatalog_UserInfo(in *UserInfo, out *servicecatalog.UserInfo, s conversion.Scope) error {
