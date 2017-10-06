@@ -4214,17 +4214,17 @@ func (x *ServiceClassStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym4
 				if false {
 				} else {
-					r.EncodeBool(bool(x.PresentInCatalog))
+					r.EncodeBool(bool(x.RemovedFromBrokerCatalog))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("presentInCatalog"))
+				r.EncodeString(codecSelferC_UTF81234, string("removedFromBrokerCatalog"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym5 := z.EncBinary()
 				_ = yym5
 				if false {
 				} else {
-					r.EncodeBool(bool(x.PresentInCatalog))
+					r.EncodeBool(bool(x.RemovedFromBrokerCatalog))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -4288,11 +4288,11 @@ func (x *ServiceClassStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder)
 		yys3 := string(yys3Slc)
 		z.DecSendContainerState(codecSelfer_containerMapValue1234)
 		switch yys3 {
-		case "presentInCatalog":
+		case "removedFromBrokerCatalog":
 			if r.TryDecodeAsNil() {
-				x.PresentInCatalog = false
+				x.RemovedFromBrokerCatalog = false
 			} else {
-				yyv4 := &x.PresentInCatalog
+				yyv4 := &x.RemovedFromBrokerCatalog
 				yym5 := z.DecBinary()
 				_ = yym5
 				if false {
@@ -4326,9 +4326,9 @@ func (x *ServiceClassStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decode
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.PresentInCatalog = false
+		x.RemovedFromBrokerCatalog = false
 	} else {
-		yyv7 := &x.PresentInCatalog
+		yyv7 := &x.RemovedFromBrokerCatalog
 		yym8 := z.DecBinary()
 		_ = yym8
 		if false {
@@ -5984,17 +5984,17 @@ func (x *ServicePlanStatus) CodecEncodeSelf(e *codec1978.Encoder) {
 				_ = yym4
 				if false {
 				} else {
-					r.EncodeBool(bool(x.PresentInCatalog))
+					r.EncodeBool(bool(x.RemovedFromBrokerCatalog))
 				}
 			} else {
 				z.EncSendContainerState(codecSelfer_containerMapKey1234)
-				r.EncodeString(codecSelferC_UTF81234, string("presentInCatalog"))
+				r.EncodeString(codecSelferC_UTF81234, string("removedFromBrokerCatalog"))
 				z.EncSendContainerState(codecSelfer_containerMapValue1234)
 				yym5 := z.EncBinary()
 				_ = yym5
 				if false {
 				} else {
-					r.EncodeBool(bool(x.PresentInCatalog))
+					r.EncodeBool(bool(x.RemovedFromBrokerCatalog))
 				}
 			}
 			if yyr2 || yy2arr2 {
@@ -6058,11 +6058,11 @@ func (x *ServicePlanStatus) codecDecodeSelfFromMap(l int, d *codec1978.Decoder) 
 		yys3 := string(yys3Slc)
 		z.DecSendContainerState(codecSelfer_containerMapValue1234)
 		switch yys3 {
-		case "presentInCatalog":
+		case "removedFromBrokerCatalog":
 			if r.TryDecodeAsNil() {
-				x.PresentInCatalog = false
+				x.RemovedFromBrokerCatalog = false
 			} else {
-				yyv4 := &x.PresentInCatalog
+				yyv4 := &x.RemovedFromBrokerCatalog
 				yym5 := z.DecBinary()
 				_ = yym5
 				if false {
@@ -6096,9 +6096,9 @@ func (x *ServicePlanStatus) codecDecodeSelfFromArray(l int, d *codec1978.Decoder
 	}
 	z.DecSendContainerState(codecSelfer_containerArrayElem1234)
 	if r.TryDecodeAsNil() {
-		x.PresentInCatalog = false
+		x.RemovedFromBrokerCatalog = false
 	} else {
-		yyv7 := &x.PresentInCatalog
+		yyv7 := &x.RemovedFromBrokerCatalog
 		yym8 := z.DecBinary()
 		_ = yym8
 		if false {

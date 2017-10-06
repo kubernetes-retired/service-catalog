@@ -723,7 +723,7 @@ func Convert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus(
 }
 
 func autoConvert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(in *ServiceClassStatus, out *servicecatalog.ServiceClassStatus, s conversion.Scope) error {
-	out.PresentInCatalog = in.PresentInCatalog
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
 	return nil
 }
 
@@ -733,7 +733,7 @@ func Convert_v1alpha1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(in
 }
 
 func autoConvert_servicecatalog_ServiceClassStatus_To_v1alpha1_ServiceClassStatus(in *servicecatalog.ServiceClassStatus, out *ServiceClassStatus, s conversion.Scope) error {
-	out.PresentInCatalog = in.PresentInCatalog
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
 	return nil
 }
 
@@ -933,7 +933,7 @@ func Convert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanceSta
 }
 
 func autoConvert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(in *ServicePlanStatus, out *servicecatalog.ServicePlanStatus, s conversion.Scope) error {
-	out.PresentInCatalog = in.PresentInCatalog
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
 	return nil
 }
 
@@ -943,7 +943,7 @@ func Convert_v1alpha1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(in *
 }
 
 func autoConvert_servicecatalog_ServicePlanStatus_To_v1alpha1_ServicePlanStatus(in *servicecatalog.ServicePlanStatus, out *ServicePlanStatus, s conversion.Scope) error {
-	out.PresentInCatalog = in.PresentInCatalog
+	out.RemovedFromBrokerCatalog = in.RemovedFromBrokerCatalog
 	return nil
 }
 

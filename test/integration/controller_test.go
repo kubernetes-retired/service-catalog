@@ -192,11 +192,8 @@ func TestBasicFlowsSync(t *testing.T) {
 		t.Fatalf("error updating Instance: %v", err)
 	}
 
-	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
-		Type:   v1alpha1.ServiceInstanceConditionReady,
-		Status: v1alpha1.ConditionTrue,
-	}); err != nil {
-		t.Fatalf("error waiting for instance to become ready: %v", err)
+	if err := util.WaitForInstanceReconciledGeneration(client, testNamespace, testInstanceName, retInst.Status.ReconciledGeneration+1); err != nil {
+		t.Fatalf("error waiting for instance to reconcile: %v", err)
 	}
 
 	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
@@ -388,11 +385,8 @@ func TestBasicFlowsAsync(t *testing.T) {
 		t.Fatalf("error updating Instance: %v", err)
 	}
 
-	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
-		Type:   v1alpha1.ServiceInstanceConditionReady,
-		Status: v1alpha1.ConditionTrue,
-	}); err != nil {
-		t.Fatalf("error waiting for instance to become ready: %v", err)
+	if err := util.WaitForInstanceReconciledGeneration(client, testNamespace, testInstanceName, retInst.Status.ReconciledGeneration+1); err != nil {
+		t.Fatalf("error waiting for instance to reconcile: %v", err)
 	}
 
 	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
@@ -896,11 +890,8 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		t.Fatalf("error updating Instance: %v", err)
 	}
 
-	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1alpha1.ServiceInstanceCondition{
-		Type:   v1alpha1.ServiceInstanceConditionReady,
-		Status: v1alpha1.ConditionTrue,
-	}); err != nil {
-		t.Fatalf("error waiting for instance to become ready: %v", err)
+	if err := util.WaitForInstanceReconciledGeneration(client, testNamespace, testInstanceName, retInst.Status.ReconciledGeneration+1); err != nil {
+		t.Fatalf("error waiting for instance to reconcile: %v", err)
 	}
 
 	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})

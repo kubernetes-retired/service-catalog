@@ -281,9 +281,9 @@ type ClusterServiceClassSpec struct {
 
 // ServiceClassStatus represents status information about a ServiceClass.
 type ServiceClassStatus struct {
-	// PresentInCatalog indicates that the ServiceClass is present in the
-	// broker's catalog.
-	PresentInCatalog bool `json:"presentInCatalog"`
+	// RemovedFromBrokerCatalog indicates that the broker removed the service
+	// from its catalog.
+	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
 }
 
 // ClusterServicePlanList is a list of ServicePlans.
@@ -367,9 +367,9 @@ type ClusterServicePlanSpec struct {
 
 // ServicePlanStatus represents status information about a ServicePlan.
 type ServicePlanStatus struct {
-	// PresentInCatalog indicates that the ServicePlan is present in the
-	// broker's catalog.
-	PresentInCatalog bool `json:"presentInCatalog"`
+	// RemovedFromBrokerCatalog indicates that the broker removed the plan
+	// from its catalog.
+	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
 }
 
 // ServiceInstanceList is a list of instances.
