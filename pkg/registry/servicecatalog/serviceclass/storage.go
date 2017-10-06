@@ -94,7 +94,7 @@ func toSelectableFields(serviceClass *servicecatalog.ClusterServiceClass) fields
 	// field here or the number of object-meta related fields changes, this should
 	// be adjusted.
 	scSpecificFieldsSet := make(fields.Set, 3)
-	scSpecificFieldsSet["spec.lusterServiceBrokerName"] = serviceClass.Spec.ClusterServiceBrokerName
+	scSpecificFieldsSet["spec.clusterServiceBrokerName"] = serviceClass.Spec.ClusterServiceBrokerName
 	scSpecificFieldsSet["spec.externalName"] = serviceClass.Spec.ExternalName
 	scSpecificFieldsSet["spec.externalID"] = serviceClass.Spec.ExternalID
 	return generic.AddObjectMetaFieldsSet(scSpecificFieldsSet, &serviceClass.ObjectMeta, true)

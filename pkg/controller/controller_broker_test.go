@@ -28,6 +28,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
@@ -283,16 +285,30 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 // TestReconcileClusterServiceBrokerDelete simulates a broker reconciliation where broker was marked for deletion.
 // Results in service class and broker both being deleted.
 func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, getTestCatalogConfig())
 
 	testClusterServiceClass := getTestClusterServiceClass()
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(testClusterServiceClass)
+	testClusterServicePlan := getTestClusterServicePlan()
 
 	broker := getTestClusterServiceBroker()
 	broker.DeletionTimestamp = &metav1.Time{}
 	broker.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
 	fakeCatalogClient.AddReactor("get", "clusterservicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, broker, nil
+	})
+	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ClusterServiceClassList{
+			Items: []v1alpha1.ClusterServiceClass{
+				*testClusterServiceClass,
+			},
+		}, nil
+	})
+	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1alpha1.ClusterServicePlanList{
+			Items: []v1alpha1.ClusterServicePlan{
+				*testClusterServicePlan,
+			},
+		}, nil
 	})
 
 	err := testController.reconcileClusterServiceBroker(broker)
@@ -309,20 +325,30 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	// The four actions should be:
-	// 0. Deleting the associated ClusterServiceClass
-	// 1. Updating the ready condition
-	// 2. Getting the broker
-	// 3. Removing the finalizer
-	assertNumberOfActions(t, actions, 4)
+	// - list serviceplans
+	// - delete serviceplans
+	// - list serviceclasses
+	// - delete serviceclass
+	// - update the ready condition
+	// - get the broker
+	// - remove the finalizer
+	assertNumberOfActions(t, actions, 7)
 
-	assertDelete(t, actions[0], testClusterServiceClass)
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", broker.Name),
+	}
+	assertList(t, actions[0], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertDelete(t, actions[1], testClusterServicePlan)
+	assertList(t, actions[2], &v1alpha1.ClusterServiceClass{}, listRestrictions)
+	assertDelete(t, actions[3], testClusterServiceClass)
 
-	updatedClusterServiceBroker := assertUpdateStatus(t, actions[1], broker)
+	updatedClusterServiceBroker := assertUpdateStatus(t, actions[4], broker)
 	assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
 
-	assertGet(t, actions[2], broker)
+	assertGet(t, actions[5], broker)
 
-	updatedClusterServiceBroker = assertUpdateStatus(t, actions[3], broker)
+	updatedClusterServiceBroker = assertUpdateStatus(t, actions[6], broker)
 	assertEmptyFinalizers(t, updatedClusterServiceBroker)
 
 	events := getRecordedEvents(testController)
