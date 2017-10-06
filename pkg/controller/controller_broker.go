@@ -27,7 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/sets"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
@@ -298,7 +298,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			}
 			return err
 		}
-		glog.V(5).Infof("ClusterServiceBroker %q: successfully fetched %v catalog entries for ", broker.Name, len(brokerCatalog.Services))
+		glog.V(5).Infof("ClusterServiceBroker %q: successfully fetched %v catalog entries", broker.Name, len(brokerCatalog.Services))
 
 		if broker.Status.OperationStartTime != nil {
 			clone, err := api.Scheme.DeepCopy(broker)
@@ -308,7 +308,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
 			toUpdate.Status.OperationStartTime = nil
 			if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
-				glog.Errorf("ClusterServiceBroker %q: Error updating operation start time: %v", broker.Name, err)
+				glog.Errorf("ClusterServiceBroker %q: error updating operation start time: %v", broker.Name, err)
 				return err
 			}
 		}
@@ -337,10 +337,10 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		}
 
 		for _, servicePlan := range servicePlans {
-			glog.V(4).Infof("ClusterServiceBroker %q: reconciling servicePlan (K8S: %q ExternalName: %q)", broker.Name, servicePlan.Name, servicePlan.Spec.ExternalName)
+			glog.V(4).Infof("ClusterServiceBroker %q: reconciling ClusterServicePlan (K8S: %q ExternalName: %q)", broker.Name, servicePlan.Name, servicePlan.Spec.ExternalName)
 			if err := c.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, servicePlan); err != nil {
 				s := fmt.Sprintf(
-					"ClusterServiceBroker %q: Error reconciling servicePlan (K8S: %q ExternalName: %q): %s",
+					"ClusterServiceBroker %q: Error reconciling ClusterServicePlan (K8S: %q ExternalName: %q): %s",
 					broker.Name,
 					servicePlan.Name,
 					servicePlan.Spec.ExternalName,
@@ -352,7 +352,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					errorSyncingCatalogMessage+s)
 				return err
 			}
-			glog.V(5).Infof("ClusterServiceBroker %q: Reconciled servicePlan (K8S: %q ExternalName: %q)", broker.Name, servicePlan.Name, servicePlan.Spec.ExternalName)
+			glog.V(5).Infof("ClusterServiceBroker %q: Reconciled ClusterServicePlan (K8S: %q ExternalName: %q)", broker.Name, servicePlan.Name, servicePlan.Spec.ExternalName)
 		}
 
 		for _, serviceClass := range serviceClasses {
@@ -391,8 +391,51 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("ClusterServiceBroker %q: finalizing", broker.Name)
 
-		// Get ALL ServiceClasses. Remove those that reference this ClusterServiceBroker.
-		svcClasses, err := c.serviceClassLister.List(labels.Everything())
+		fieldSet := fields.Set{
+			"spec.clusterServiceBrokerName": broker.Name,
+		}
+		fieldSelector := fields.SelectorFromSet(fieldSet).String()
+		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
+
+		svcPlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
+		if err != nil {
+			c.updateClusterServiceBrokerCondition(
+				broker,
+				v1alpha1.ServiceBrokerConditionReady,
+				v1alpha1.ConditionUnknown,
+				errorListingClusterServicePlansReason,
+				errorListingClusterServicePlansMessage,
+			)
+			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
+			return err
+		}
+
+		glog.V(4).Infof("ClusterServiceBroker %q: found %d ClusterServicePlans to delete", broker.Name, len(svcPlans.Items))
+
+		for _, plan := range svcPlans.Items {
+			glog.V(4).Infof("ClusterServiceBroker %q: deleting ClusterServicePlan (K8S: %q ExternalName: %q)", broker.Name, plan.Name, plan.Spec.ExternalName)
+			err := c.serviceCatalogClient.ClusterServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
+			if err != nil && !errors.IsNotFound(err) {
+				s := fmt.Sprintf(
+					"Error deleting ClusterServicePlan %q: %s",
+					plan.Name,
+					err,
+				)
+				glog.Warning(s)
+				c.updateClusterServiceBrokerCondition(
+					broker,
+					v1alpha1.ServiceBrokerConditionReady,
+					v1alpha1.ConditionUnknown,
+					errorDeletingClusterServicePlanMessage,
+					errorDeletingClusterServicePlanReason+s,
+				)
+				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
+				return err
+			}
+		}
+
+		// Get the ClusterServiceClasses for this broker.
+		svcClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err != nil {
 			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
 			if err := c.updateClusterServiceBrokerCondition(
@@ -407,73 +450,30 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			return err
 		}
 
-		// Delete ClusterServiceClasses that are for THIS ClusterServiceBroker.
-		// TODO: Change this to use field selectors.
-		for _, svcClass := range svcClasses {
-			if svcClass.Spec.ClusterServiceBrokerName == broker.Name {
-				// TODO : implement and switch to filter
-				// selectors. This is horrifyingly inefficient
-				// otherwise with lots of plans.
-				//
-				// find all the service plans owned by this service class
-				plans, err := c.servicePlanLister.List(labels.Everything())
-				if err != nil {
-					c.updateClusterServiceBrokerCondition(
-						broker,
-						v1alpha1.ServiceBrokerConditionReady,
-						v1alpha1.ConditionUnknown,
-						errorListingClusterServicePlansReason,
-						errorListingClusterServicePlansMessage,
-					)
-					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
-					return err
-				}
-				for _, plan := range plans {
-					// only process the plans this class owns
-					if svcClass.Name == plan.Spec.ClusterServiceClassRef.Name {
-						err := c.serviceCatalogClient.ClusterServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
-						if err != nil && !errors.IsNotFound(err) {
-							s := fmt.Sprintf(
-								"Error deleting ClusterServicePlan %q (ClusterServiceClass %q): %s",
-								plan.Name,
-								svcClass.Spec.ExternalName,
-								err,
-							)
-							glog.Warning(s)
-							c.updateClusterServiceBrokerCondition(
-								broker,
-								v1alpha1.ServiceBrokerConditionReady,
-								v1alpha1.ConditionUnknown,
-								errorDeletingClusterServicePlanMessage,
-								errorDeletingClusterServicePlanReason+s,
-							)
-							c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
-							return err
-						}
-					}
-				}
+		glog.V(4).Infof("ClusterServiceBroker %q: found %d ClusterServiceClasses to delete", broker.Name, len(svcClasses.Items))
 
-				err = c.serviceCatalogClient.ClusterServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
-				if err != nil && !errors.IsNotFound(err) {
-					s := fmt.Sprintf(
-						"Error deleting ClusterServiceClass %q (ClusterServiceBroker %q): %s",
-						svcClass.Spec.ExternalName,
-						broker.Name,
-						err,
-					)
-					glog.Warning(s)
-					c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServiceClassReason, "%v %v", errorDeletingClusterServiceClassMessage, s)
-					if err := c.updateClusterServiceBrokerCondition(
-						broker,
-						v1alpha1.ServiceBrokerConditionReady,
-						v1alpha1.ConditionUnknown,
-						errorDeletingClusterServiceClassMessage,
-						errorDeletingClusterServiceClassReason+s,
-					); err != nil {
-						return err
-					}
+		for _, svcClass := range svcClasses.Items {
+			glog.V(4).Infof("ClusterServiceBroker %q: deleting ClusterServiceClass (K8S: %q ExternalName: %q)", broker.Name, svcClass.Name, svcClass.Spec.ExternalName)
+			err = c.serviceCatalogClient.ClusterServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
+			if err != nil && !errors.IsNotFound(err) {
+				s := fmt.Sprintf(
+					"Error deleting ClusterServiceClass %q (ClusterServiceBroker %q): %s",
+					svcClass.Spec.ExternalName,
+					broker.Name,
+					err,
+				)
+				glog.Warning(s)
+				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServiceClassReason, "%v %v", errorDeletingClusterServiceClassMessage, s)
+				if err := c.updateClusterServiceBrokerCondition(
+					broker,
+					v1alpha1.ServiceBrokerConditionReady,
+					v1alpha1.ConditionUnknown,
+					errorDeletingClusterServiceClassMessage,
+					errorDeletingClusterServiceClassReason+s,
+				); err != nil {
 					return err
 				}
+				return err
 			}
 		}
 

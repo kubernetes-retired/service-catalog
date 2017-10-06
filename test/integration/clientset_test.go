@@ -561,6 +561,14 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 		return fmt.Errorf("should have zero ClusterServiceClasses, had %v ClusterServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
 	}
 
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServiceBrokerName=" + "test-broker"})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 2 != len(serviceClasses.Items) {
+		return fmt.Errorf("should have two ClusterServiceClasses, had %v ClusterServiceClasses", len(serviceClasses.Items))
+	}
+
 	err = serviceClassClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("serviceclass should be deleted (%s)", err)
