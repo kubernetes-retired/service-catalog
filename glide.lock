@@ -1,5 +1,5 @@
-hash: e0c51fdda7a82faa03c5cc5a196fd98c386b0b7be69bebb4966413d147f7c953
-updated: 2017-10-05T10:42:54.62456368+11:00
+hash: 5a0c7c16b152743f73c9f6ede963a42ef71d2229f516ae65b38cfec936487732
+updated: 2017-10-06T12:06:25.67282054+11:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -160,10 +160,8 @@ imports:
   - pagination
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
-- name: github.com/gorilla/handlers
-  version: a4d79d4487c2430a17d9dc8a1f74d1a6ed6908ca
 - name: github.com/gorilla/mux
-  version: ac112f7d75a0714af1bd86ab17749b31f7809640
+  version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - name: github.com/gregjones/httpcache
   version: 787624de3eb7bd915c329cba748687a3b22666a6
   subpackages:
@@ -412,11 +410,15 @@ imports:
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
+  - pkg/api/testing
+  - pkg/api/testing/fuzzer
+  - pkg/api/testing/roundtrip
   - pkg/api/validation
   - pkg/api/validation/path
   - pkg/apimachinery
   - pkg/apimachinery/announced
   - pkg/apimachinery/registered
+  - pkg/apis/meta/fuzzer
   - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
@@ -695,6 +697,7 @@ imports:
   version: 0b9efaeb34a2fc51ff8e4d34ad9bc6375459c4a4
   subpackages:
   - pkg/apis/componentconfig
+  - pkg/client/leaderelectionconfig
   - pkg/util/configz
   - pkg/util/interrupt
 testImports: []

@@ -54,10 +54,8 @@ import:
   version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - package: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
-- package: github.com/gorilla/handlers
-  version: a4d79d4487c2430a17d9dc8a1f74d1a6ed6908ca
 - package: github.com/gorilla/mux
-  version: ac112f7d75a0714af1bd86ab17749b31f7809640
+  version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - package: github.com/satori/go.uuid
   version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - package: github.com/jteeuwen/go-bindata
