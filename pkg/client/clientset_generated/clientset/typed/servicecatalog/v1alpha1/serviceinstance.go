@@ -59,6 +59,41 @@ func newServiceInstances(c *ServicecatalogV1alpha1Client, namespace string) *ser
 	}
 }
 
+// Get takes name of the serviceInstance, and returns the corresponding serviceInstance object, and an error if there is any.
+func (c *serviceInstances) Get(name string, options v1.GetOptions) (result *v1alpha1.ServiceInstance, err error) {
+	result = &v1alpha1.ServiceInstance{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("serviceinstances").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// List takes label and field selectors, and returns the list of ServiceInstances that match those selectors.
+func (c *serviceInstances) List(opts v1.ListOptions) (result *v1alpha1.ServiceInstanceList, err error) {
+	result = &v1alpha1.ServiceInstanceList{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("serviceinstances").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// Watch returns a watch.Interface that watches the requested serviceInstances.
+func (c *serviceInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
+	return c.client.Get().
+		Namespace(c.ns).
+		Resource("serviceinstances").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Watch()
+}
+
 // Create takes the representation of a serviceInstance and creates it.  Returns the server's representation of the serviceInstance, and an error, if there is any.
 func (c *serviceInstances) Create(serviceInstance *v1alpha1.ServiceInstance) (result *v1alpha1.ServiceInstance, err error) {
 	result = &v1alpha1.ServiceInstance{}
@@ -85,7 +120,7 @@ func (c *serviceInstances) Update(serviceInstance *v1alpha1.ServiceInstance) (re
 }
 
 // UpdateStatus was generated because the type contains a Status member.
-// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
 func (c *serviceInstances) UpdateStatus(serviceInstance *v1alpha1.ServiceInstance) (result *v1alpha1.ServiceInstance, err error) {
 	result = &v1alpha1.ServiceInstance{}
@@ -120,41 +155,6 @@ func (c *serviceInstances) DeleteCollection(options *v1.DeleteOptions, listOptio
 		Body(options).
 		Do().
 		Error()
-}
-
-// Get takes name of the serviceInstance, and returns the corresponding serviceInstance object, and an error if there is any.
-func (c *serviceInstances) Get(name string, options v1.GetOptions) (result *v1alpha1.ServiceInstance, err error) {
-	result = &v1alpha1.ServiceInstance{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("serviceinstances").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ServiceInstances that match those selectors.
-func (c *serviceInstances) List(opts v1.ListOptions) (result *v1alpha1.ServiceInstanceList, err error) {
-	result = &v1alpha1.ServiceInstanceList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("serviceinstances").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested serviceInstances.
-func (c *serviceInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("serviceinstances").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
 }
 
 // Patch applies the patch and returns the patched serviceInstance.
