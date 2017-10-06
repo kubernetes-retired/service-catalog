@@ -494,13 +494,13 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 	}
 
 	// Test status subresource
-	updated.Status.PresentInCatalog = true
+	updated.Status.RemovedFromBrokerCatalog = true
 	updated, err = serviceClassClient.UpdateStatus(updated)
 	if err != nil {
 		return fmt.Errorf("Error updating serviceClass status: %v", err)
 	}
-	if !updated.Status.PresentInCatalog {
-		return errors.New("Expected status.presentInCatalog = true, got false")
+	if !updated.Status.RemovedFromBrokerCatalog {
+		return errors.New("Expected status.removedFromBrokerCatalog = true, got false")
 	}
 
 	// Ok, let's verify the field selectors
@@ -696,13 +696,13 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 	}
 
 	// Test status subresource
-	updated.Status.PresentInCatalog = true
+	updated.Status.RemovedFromBrokerCatalog = true
 	updated, err = servicePlanClient.UpdateStatus(updated)
 	if err != nil {
 		return fmt.Errorf("Error updating servicePlan status: %v", err)
 	}
-	if !updated.Status.PresentInCatalog {
-		return errors.New("Expected status.presentInCatalog = true, got false")
+	if !updated.Status.RemovedFromBrokerCatalog {
+		return errors.New("Expected status.removedFromBrokerCatalog = true, got false")
 	}
 
 	// Verify that field selectors work by listing.
