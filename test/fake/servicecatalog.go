@@ -47,8 +47,8 @@ func (c *ServicecatalogV1alpha1) ServiceInstances(namespace string) v1alpha1.Ser
 }
 
 func (c *ServicecatalogV1alpha1) ServiceBindings(namespace string) v1alpha1.ServiceBindingInterface {
-	serviceInstanceCredentials := c.ServicecatalogV1alpha1Interface.ServiceBindings(namespace)
-	return &ServiceBindings{serviceInstanceCredentials}
+	serviceBindings := c.ServicecatalogV1alpha1Interface.ServiceBindings(namespace)
+	return &ServiceBindings{serviceBindings}
 }
 
 func (c *ServicecatalogV1alpha1) ClusterServicePlans() v1alpha1.ClusterServicePlanInterface {

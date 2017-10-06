@@ -70,7 +70,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			serviceplanID    = "86064792-7ea2-467b-af93-ac9694d96d52"
 			testns           = "test-ns"
 			instanceName     = "ups-instance"
-			bindingName      = "ups-instance-credential"
+			bindingName      = "ups-binding"
 			instanceNameDef  = "ups-instance-def"
 		)
 

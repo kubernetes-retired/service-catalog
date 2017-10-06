@@ -908,7 +908,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	// Binding test begins here
 	//-----------------
 
-	// Create InstanceCredential
+	// Create ServiceBinding
 	catalogClient, err = changeUsernameForCatalogClient(catalogClient, catalogClientConfig, testCreatorUsername)
 	if err != nil {
 		t.Fatalf("could not change the username for the catalog client: %v", err)
@@ -949,7 +949,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		t.Fatalf("unexpected creating user name in binding spec: expected %v, got %v", e, a)
 	}
 
-	// Delete InstanceCredential
+	// Delete ServiceBinding
 	catalogClient, err = changeUsernameForCatalogClient(catalogClient, catalogClientConfig, testDeleterUsername)
 	if err != nil {
 		t.Fatalf("could not change the username for the catalog client: %v", err)

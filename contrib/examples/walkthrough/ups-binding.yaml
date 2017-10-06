@@ -1,7 +1,7 @@
 apiVersion: servicecatalog.k8s.io/v1alpha1
 kind: ServiceBinding
 metadata:
-  name: ups-instance-credential
+  name: ups-binding
   namespace: test-ns
 spec:
   instanceRef:
