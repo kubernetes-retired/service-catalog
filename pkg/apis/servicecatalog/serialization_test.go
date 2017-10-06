@@ -26,7 +26,6 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	proto "github.com/golang/protobuf/proto"
-	flag "github.com/spf13/pflag"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	testapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
@@ -39,6 +38,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"k8s.io/apimachinery/pkg/api/testing/fuzzer"
+	"k8s.io/apimachinery/pkg/api/testing/roundtrip"
 
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 )
@@ -49,8 +50,6 @@ func init() {
 
 // BABYNETES: ripped from pkg/api/serialization_test.go
 
-var fuzzIters = flag.Int("fuzz-iters", 20, "How many fuzzing iterations to do.")
-
 var codecsToTest = []func(version schema.GroupVersion, item runtime.Object) (runtime.Codec, bool, error){
 	func(version schema.GroupVersion, item runtime.Object) (runtime.Codec, bool, error) {
 		c, err := testapi.GetCodecForObject(item)
@@ -59,7 +58,7 @@ var codecsToTest = []func(version schema.GroupVersion, item runtime.Object) (run
 }
 
 func fuzzInternalObject(t *testing.T, forVersion schema.GroupVersion, item runtime.Object, seed int64) runtime.Object {
-	apitesting.FuzzerFor(t, forVersion, rand.NewSource(seed)).Fuzz(item)
+	fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs).Fuzz(item)
 
 	j, err := meta.TypeAccessor(item)
 	if err != nil {
@@ -164,6 +163,7 @@ func roundTrip(t *testing.T, codec runtime.Codec, item runtime.Object) {
 	t.Logf("Codec: %+v\n", codec)
 	obj2, err := runtime.Decode(codec, data)
 	if err != nil {
+		t.Errorf("ERROR: %v", err)
 		t.Errorf("0: %v: %v\nCodec: %#v\nData: %s\nSource: %#v", name, err, codec, dataAsString(data), printer.Sprintf("%#v", item))
 		panic("failed")
 	}
@@ -201,7 +201,8 @@ func serviceCatalogAPIGroup() testapi.TestGroup {
 	)
 }
 
-// For debugging problems
+// TestSpecificKind round-trips a single specific kind and is intended to help
+// debug issues that arise while adding a new API type.
 func TestSpecificKind(t *testing.T) {
 	group := serviceCatalogAPIGroup()
 
@@ -209,13 +210,11 @@ func TestSpecificKind(t *testing.T) {
 		t.Log(kind)
 	}
 
-	kind := "ClusterServiceClass"
-	for i := 0; i < *fuzzIters; i++ {
-		doRoundTripTest(serviceCatalogAPIGroup(), kind, t)
-		if t.Failed() {
-			break
-		}
-	}
+	internalGVK := schema.GroupVersionKind{Group: group.GroupVersion().Group, Version: group.GroupVersion().Version, Kind: "ClusterServiceClass"}
+	seed := rand.Int63()
+	fuzzer := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs)
+
+	roundtrip.RoundTripSpecificKindWithoutProtobuf(t, internalGVK, api.Scheme, api.Codecs, fuzzer, nil)
 }
 
 func TestClusterServiceBrokerList(t *testing.T) {
@@ -251,22 +250,14 @@ var catalogGroups = map[string]testapi.TestGroup{
 	"servicecatalog": serviceCatalogAPIGroup(),
 }
 
+// TestRoundTripTypes applies the round-trip test to all round-trippable Kinds
+// in all of the API groups registered for test in the testapi package.
 func TestRoundTripTypes(t *testing.T) {
-	for groupKey, group := range catalogGroups {
-		for kind := range group.InternalTypes() {
-			t.Logf("working on %v in %v", kind, groupKey)
-			if nonRoundTrippableTypes.Has(kind) {
-				continue
-			}
-			// Try a few times, since runTest uses random values.
-			for i := 0; i < *fuzzIters; i++ {
-				doRoundTripTest(group, kind, t)
-				if t.Failed() {
-					break
-				}
-			}
-		}
-	}
+	seed := rand.Int63()
+	fuzzer := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs)
+	// TODO nilebox: do we have non-round-trippable types?
+	nonRoundTrippableTypes := map[schema.GroupVersionKind]bool{}
+	roundtrip.RoundTripTypesWithoutProtobuf(t, api.Scheme, api.Codecs, fuzzer, nonRoundTrippableTypes)
 }
 
 func TestBadJSONRejection(t *testing.T) {

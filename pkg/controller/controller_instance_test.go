@@ -41,7 +41,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
 )
 
@@ -89,7 +89,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServiceClass \"nothere\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServiceClass \"nothere\" or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -122,7 +122,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentClusterServiceBrokerReason + " " + "ServiceInstance \"test-ns/test-instance\": references a non-existent broker \"test-broker\""
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceBrokerReason + " " + "ServiceInstance \"test-ns/test-instance\": references a non-existent broker \"test-broker\""
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -136,7 +136,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	broker := getTestClusterServiceBroker()
 	broker.Spec.AuthInfo = &v1alpha1.ServiceBrokerAuthInfo{
 		Basic: &v1alpha1.BasicAuthConfig{
-			SecretRef: &apiv1.ObjectReference{
+			SecretRef: &corev1.ObjectReference{
 				Namespace: "does_not_exist",
 				Name:      "auth-name",
 			},
@@ -178,7 +178,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 
 	// verify that one event was emitted
 	events := getRecordedEvents(testController)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
+	expectedEvent := corev1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + "Error getting broker auth credentials for broker \"test-broker\": no secret defined"
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
 			ExternalClusterServiceClassName: testClusterServiceClassName,
-			ClusterServiceClassRef: &apiv1.ObjectReference{
+			ClusterServiceClassRef: &corev1.ObjectReference{
 				Name: serviceClassGUID,
 			},
 			ExternalClusterServicePlanName: "nothere",
@@ -233,7 +233,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -330,7 +330,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -434,7 +434,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -457,7 +457,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
 
 	instance := getTestServiceInstance()
-	instance.Spec.ClusterServiceClassRef = &apiv1.ObjectReference{
+	instance.Spec.ClusterServiceClassRef = &corev1.ObjectReference{
 		Name: serviceClassGUID,
 	}
 
@@ -535,7 +535,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -584,7 +584,7 @@ func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorWithParameters + " " + "ServiceInstance \"test-ns/test-instance\": Failed to prepare ServiceInstance parameters"
+	expectedEvent := corev1.EventTypeWarning + " " + errorWithParameters + " " + "ServiceInstance \"test-ns/test-instance\": Failed to prepare ServiceInstance parameters"
 	if e, a := expectedEvent, events[0]; !strings.Contains(a, e) { // event contains RawExtension, so just compare error message
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -644,7 +644,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorErrorCallingProvisionReason + " " + "ServiceInstance \"test-ns/test-instance\": Error communicating with broker for \"provisioning\": fake creation failure"
+	expectedEvent := corev1.EventTypeWarning + " " + errorErrorCallingProvisionReason + " " + "ServiceInstance \"test-ns/test-instance\": Error communicating with broker for \"provisioning\": fake creation failure"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -714,7 +714,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "ServiceInstance \"test-ns/test-instance\": Error provisioning ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
+	expectedEvent := corev1.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "ServiceInstance \"test-ns/test-instance\": Error provisioning ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -786,7 +786,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -934,7 +934,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &apiv1.Namespace{}, errors.New("No namespace")
+		return true, &corev1.Namespace{}, errors.New("No namespace")
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
@@ -968,7 +968,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorFindingNamespaceServiceInstanceReason + " " + "ServiceInstance \"test-ns/test-instance\": Failed to get namespace \"test-ns\" during instance create: No namespace"
+	expectedEvent := corev1.EventTypeWarning + " " + errorFindingNamespaceServiceInstanceReason + " " + "ServiceInstance \"test-ns/test-instance\": Failed to get namespace \"test-ns\" during instance create: No namespace"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1029,7 +1029,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1086,7 +1086,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + "DeprovisionBlockedByExistingCredentials ServiceInstance \"test-ns/test-instance\": Delete instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first"
+	expectedEvent := corev1.EventTypeWarning + " " + "DeprovisionBlockedByExistingCredentials ServiceInstance \"test-ns/test-instance\": Delete instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1133,7 +1133,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 
 	events = getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent = apiv1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	expectedEvent = corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1209,7 +1209,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + asyncDeprovisioningReason + " " + "The instance is being deprovisioned asynchronously"
+	expectedEvent := corev1.EventTypeNormal + " " + asyncDeprovisioningReason + " " + "The instance is being deprovisioned asynchronously"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1626,7 +1626,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent := apiv1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %vExpected: %v", a, e)
 	}
@@ -1694,7 +1694,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "ServiceInstance \"test-ns/test-instance\": Error deprovisioning: \"\""
+	expectedEvent := corev1.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "ServiceInstance \"test-ns/test-instance\": Error deprovisioning: \"\""
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1756,7 +1756,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent := apiv1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1814,7 +1814,7 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent := apiv1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "ServiceInstance \"test-ns/test-instance\": Error polling last operation: ServiceInstance \"test-ns/test-instance\": Status code: 403; ErrorMessage: %!q(*string=<nil>); description: %!q(*string=<nil>)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "ServiceInstance \"test-ns/test-instance\": Error polling last operation: ServiceInstance \"test-ns/test-instance\": Status code: 403; ErrorMessage: %!q(*string=<nil>); description: %!q(*string=<nil>)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1880,7 +1880,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent := apiv1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -1940,7 +1940,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -2004,8 +2004,8 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	)
 
 	expectedEventPrefixes := []string{
-		apiv1.EventTypeWarning + " " + errorErrorCallingProvisionReason,
-		apiv1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason,
+		corev1.EventTypeWarning + " " + errorErrorCallingProvisionReason,
+		corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason,
 	}
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, len(expectedEventPrefixes))
@@ -2968,7 +2968,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		},
 	})
 
-	paramSecret := &apiv1.Secret{
+	paramSecret := &corev1.Secret{
 		Data: map[string][]byte{
 			"param-secret-key": []byte("{\"b\":\"2\"}"),
 		},
@@ -3065,7 +3065,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + "The instance was provisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -3145,7 +3145,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " " + "ServiceInstance" + " \"test-ns/test-instance\": references a non-existent ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " " + "ServiceInstance" + " \"test-ns/test-instance\": references a non-existent ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3267,7 +3267,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successUpdateInstanceReason + " " + "The instance was updated successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successUpdateInstanceReason + " " + "The instance was updated successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3340,7 +3340,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "ServiceInstance \"test-ns/test-instance\": references a non-existent ClusterServicePlan \"test-plan\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "ServiceInstance \"test-ns/test-instance\": references a non-existent ClusterServicePlan \"test-plan\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3445,7 +3445,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeNormal + " " + successUpdateInstanceReason + " " + "The instance was updated successfully"
+	expectedEvent := corev1.EventTypeNormal + " " + successUpdateInstanceReason + " " + "The instance was updated successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3508,7 +3508,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorErrorCallingUpdateInstanceReason + " " + "ServiceInstance \"test-ns/test-instance\": Error communicating with broker for \"updating\": fake update failure"
+	expectedEvent := corev1.EventTypeWarning + " " + errorErrorCallingUpdateInstanceReason + " " + "ServiceInstance \"test-ns/test-instance\": Error communicating with broker for \"updating\": fake update failure"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3574,7 +3574,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := apiv1.EventTypeWarning + " " + errorUpdateInstanceCallFailedReason + " " + "ServiceInstance \"test-ns/test-instance\": Error updating ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
+	expectedEvent := corev1.EventTypeWarning + " " + errorUpdateInstanceCallFailedReason + " " + "ServiceInstance \"test-ns/test-instance\": Error updating ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}

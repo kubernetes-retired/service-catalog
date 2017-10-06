@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"testing"
 
+	"k8s.io/api/core/v1"
 	"k8s.io/apiserver/pkg/authentication/user"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/client-go/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"

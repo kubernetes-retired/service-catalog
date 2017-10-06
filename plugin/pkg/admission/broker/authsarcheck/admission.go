@@ -23,11 +23,11 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 
+	authorizationapi "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apiserver/pkg/admission"
 	kubeclientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	authorizationapi "k8s.io/client-go/pkg/apis/authorization/v1"
 
 	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
 )
@@ -85,7 +85,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 		return nil
 	}
 
-	var secretRef *v1.ObjectReference
+	var secretRef *corev1.ObjectReference
 	if clusterClusterServiceBroker.Spec.AuthInfo.Basic != nil {
 		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
 	} else if clusterClusterServiceBroker.Spec.AuthInfo.Bearer != nil {
@@ -101,9 +101,9 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 			ResourceAttributes: &authorizationapi.ResourceAttributes{
 				Namespace: secretRef.Namespace,
 				Verb:      "get",
-				Group:     v1.SchemeGroupVersion.Group,
-				Version:   v1.SchemeGroupVersion.Version,
-				Resource:  v1.ResourceSecrets.String(),
+				Group:     corev1.SchemeGroupVersion.Group,
+				Version:   corev1.SchemeGroupVersion.Version,
+				Resource:  corev1.ResourceSecrets.String(),
 				Name:      secretRef.Name,
 			},
 			User:   userInfo.GetName(),

@@ -17,13 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
-// +genclient=true
-// +nonNamespaced=true
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServiceBroker represents an entity that provides
 // ClusterServiceClasses for use in the service catalog.
@@ -35,6 +36,8 @@ type ClusterServiceBroker struct {
 	Spec   ClusterServiceBrokerSpec `json:"spec"`
 	Status ServiceBrokerStatus      `json:"status"`
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServiceBrokerList is a list of Brokers.
 type ClusterServiceBrokerList struct {
@@ -202,6 +205,8 @@ const (
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // ClusterServiceClassList is a list of ClusterServiceClasses.
 type ClusterServiceClassList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -210,8 +215,9 @@ type ClusterServiceClassList struct {
 	Items []ClusterServiceClass `json:"items"`
 }
 
-// +genclient=true
-// +nonNamespaced=true
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServiceClass represents an offering in the service catalog.
 type ClusterServiceClass struct {
@@ -286,6 +292,8 @@ type ServiceClassStatus struct {
 	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // ClusterServicePlanList is a list of ServicePlans.
 type ClusterServicePlanList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -294,8 +302,9 @@ type ClusterServicePlanList struct {
 	Items []ClusterServicePlan `json:"items"`
 }
 
-// +genclient=true
-// +nonNamespaced=true
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServicePlan represents a tier of a ServiceClass.
 type ClusterServicePlan struct {
@@ -372,6 +381,8 @@ type ServicePlanStatus struct {
 	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // ServiceInstanceList is a list of instances.
 type ServiceInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -392,7 +403,8 @@ type UserInfo struct {
 // provided by the authenticator.
 type ExtraValue []string
 
-// +genclient=true
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ServiceInstance represents a provisioned instance of a ServiceClass.
 // Currently, the spec field cannot be changed once a ServiceInstance is
@@ -594,6 +606,8 @@ type ServiceInstancePropertiesState struct {
 	UserInfo *UserInfo `json:"userInfo,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // ServiceBindingList is a list of ServiceBindings.
 type ServiceBindingList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -602,7 +616,8 @@ type ServiceBindingList struct {
 	Items []ServiceBinding `json:"items"`
 }
 
-// +genclient=true
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ServiceBinding represents a "used by" relationship between an application and an
 // ServiceInstance.

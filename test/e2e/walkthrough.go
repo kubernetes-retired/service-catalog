@@ -21,7 +21,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -160,7 +160,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceBindingSpec{
-				ServiceInstanceRef: v1.LocalObjectReference{
+				ServiceInstanceRef: corev1.LocalObjectReference{
 					Name: instanceName,
 				},
 				SecretName: "my-secret",

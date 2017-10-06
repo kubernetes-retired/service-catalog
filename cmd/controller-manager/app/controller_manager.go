@@ -31,8 +31,8 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -41,9 +41,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/healthz"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
-	"k8s.io/kubernetes/pkg/client/leaderelection"
-	"k8s.io/kubernetes/pkg/client/leaderelection/resourcelock"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/kubernetes/pkg/util/configz"
 
 	// The API groups for our API must be installed before we can use the
@@ -51,9 +50,6 @@ import (
 	// is the point at which we handle this for the controller-manager
 	// process.  Please do not remove.
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/api"
-	// The core API has to be installed in order for the client to understand
-	// error messages from the API server.  Please do not remove.
-	_ "k8s.io/client-go/pkg/api/install"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
@@ -123,7 +119,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	if err != nil {
 		return fmt.Errorf("invalid Kubernetes API configuration: %v", err)
 	}
-	leaderElectionClient := clientset.NewForConfigOrDie(rest.AddUserAgent(k8sKubeconfig, "leader-election"))
+	leaderElectionClient := kubernetes.NewForConfigOrDie(rest.AddUserAgent(k8sKubeconfig, "leader-election"))
 
 	glog.V(4).Infof("Building service-catalog kubeconfig for url: %v\n", controllerManagerOptions.ServiceCatalogAPIServerURL)
 
@@ -222,7 +218,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 			Namespace: controllerManagerOptions.LeaderElectionNamespace,
 			Name:      "service-catalog-controller-manager",
 		},
-		Client: leaderElectionClient,
+		Client: leaderElectionClient.CoreV1(),
 		LockConfig: resourcelock.ResourceLockConfig{
 			Identity:      id + "-external-service-catalog-controller",
 			EventRecorder: recorder,

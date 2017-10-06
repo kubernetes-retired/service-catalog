@@ -30,6 +30,7 @@ import (
 
 	"github.com/satori/go.uuid"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/testing/fuzzer"
 	"k8s.io/apimachinery/pkg/conversion/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -57,7 +58,7 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 		t.Fatalf("Couldn't create internal object %v: %v", kind, err)
 	}
 	seed := rand.Int63()
-	sctesting.FuzzerFor(t, *group.GroupVersion(), rand.NewSource(seed)).Funcs(
+	fuzzer.FuzzerFor(sctesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs).Funcs(
 		// custom fuzzer funcs because RawExtension fields seem to
 		// experience some reordering during unstructured roundtripping.
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
@@ -123,8 +124,7 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 		return
 	}
 
-	newUnstr := map[string]interface{}{}
-	err = unstructured.DefaultConverter.ToUnstructured(item, &newUnstr)
+	newUnstr, err := unstructured.DefaultConverter.ToUnstructured(item)
 	if err != nil {
 		t.Errorf("ToUnstructured failed: %v", err)
 		return

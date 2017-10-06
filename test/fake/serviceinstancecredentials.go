@@ -17,10 +17,10 @@ limitations under the License.
 package fake
 
 import (
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/pkg/api"
 
 	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	v1alpha1typed "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"

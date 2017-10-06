@@ -40,10 +40,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/pkg/api/v1"
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
 )
