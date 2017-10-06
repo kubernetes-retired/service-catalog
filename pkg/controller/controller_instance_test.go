@@ -60,9 +60,11 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "nothere",
-			ExternalClusterServicePlanName:  "nothere",
-			ExternalID:                      instanceGUID,
+			DesiredPlan: v1alpha1.DesiredPlan{
+				ExternalClusterServiceClassName: "nothere",
+				ExternalClusterServicePlanName:  "nothere",
+			},
+			ExternalID: instanceGUID,
 		},
 	}
 
@@ -199,12 +201,14 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: testClusterServiceClassName,
+			DesiredPlan: v1alpha1.DesiredPlan{
+				ExternalClusterServiceClassName: testClusterServiceClassName,
+				ExternalClusterServicePlanName:  "nothere",
+			},
 			ClusterServiceClassRef: &corev1.ObjectReference{
 				Name: serviceClassGUID,
 			},
-			ExternalClusterServicePlanName: "nothere",
-			ExternalID:                     instanceGUID,
+			ExternalID: instanceGUID,
 		},
 	}
 

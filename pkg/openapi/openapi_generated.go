@@ -546,6 +546,30 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.DesiredPlan": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "DesiredPlan defines the user specification for the desired ServicePlan and ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent.",
+					Properties: map[string]spec.Schema{
+						"externalClusterServiceClassName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalClusterServiceClassName is the human-readable name of the service as reported by the broker. Note that if the broker changes the name of the ClusterServiceClass, it will not be reflected here, and to see the current name of the ClusterServiceClass, you should follow the ClusterServiceClassRef below.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"externalClusterServicePlanName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalClusterServicePlanName is the human-readable name of the plan as reported by the broker. Note that if the broker changes the name of the ClusterServicePlan, it will not be reflected here, and to see the current name of the ClusterServicePlan, you should follow the ClusterServicePlanRef below.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -1237,7 +1261,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"externalClusterServiceClassName", "externalID", "updateRequests"},
+					Required: []string{"externalID", "updateRequests"},
 				},
 			},
 			Dependencies: []string{

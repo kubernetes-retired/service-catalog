@@ -57,6 +57,12 @@ func internalValidateServiceInstance(instance *sc.ServiceInstance, create bool) 
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateServiceInstanceSpec(&instance.Spec, field.NewPath("spec"), create)...)
 	allErrs = append(allErrs, validateServiceInstanceStatus(&instance.Status, field.NewPath("status"), create)...)
+	// Since we do not know if any of the pointer fields are invalid, do not
+	// do any more checks that might depend on these fields because the code
+	// would get very messy. Just return the errors we have at this point.
+	if len(allErrs) != 0 {
+		return allErrs
+	}
 	if create {
 		allErrs = append(allErrs, validateServiceInstanceCreate(instance)...)
 	} else {
@@ -71,7 +77,6 @@ func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Pa
 	if "" == spec.ExternalClusterServiceClassName {
 		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServiceClassName"), "externalClusterServiceClassName is required"))
 	}
-
 	for _, msg := range validateServiceClassName(spec.ExternalClusterServiceClassName, false /* prefix */) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServiceClassName"), spec.ExternalClusterServiceClassName, msg))
 	}
@@ -79,7 +84,6 @@ func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Pa
 	if "" == spec.ExternalClusterServicePlanName {
 		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "externalClusterServicePlanName is required"))
 	}
-
 	for _, msg := range validateServicePlanName(spec.ExternalClusterServicePlanName, false /* prefix */) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServicePlanName"), spec.ExternalClusterServicePlanName, msg))
 	}
