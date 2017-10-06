@@ -222,13 +222,13 @@ we'll create a `ServiceBinding` resource. Do so with the following
 command:
 
 ```console
-kubectl create -f contrib/examples/walkthrough/ups-instance-credential.yaml
+kubectl create -f contrib/examples/walkthrough/ups-binding.yaml
 ```
 
 That command should output:
 
 ```console
-servicebinding "ups-instance-credential" created
+servicebinding "ups-binding" created
 ```
 
 After the `ServiceBinding` resource is created, the service catalog controller will
@@ -238,7 +238,7 @@ service catalog controller will insert into a Kubernetes `Secret`. We can check
 the status of this process like so:
 
 ```console
-kubectl get servicebindings -n test-ns ups-instance-credential -o yaml
+kubectl get servicebindings -n test-ns ups-binding -o yaml
 ```
 
 We should see something like:
@@ -250,16 +250,16 @@ metadata:
   creationTimestamp: 2017-03-07T01:44:36Z
   finalizers:
   - kubernetes-incubator/service-catalog
-  name: ups-instance-credential
+  name: ups-binding
   namespace: test-ns
   resourceVersion: "29"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/servicebindings/ups-instance-credential
+  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/servicebindings/ups-binding
   uid: 9eb2cdce-02d7-11e7-8edb-0242ac110005
 spec:
   instanceRef:
     name: ups-instance
   externalID: b041db94-a5a0-41a2-87ae-1025ba760918
-  secretName: ups-instance-credential
+  secretName: ups-binding
 status:
   conditions:
   - lastTransitionTime: 2017-03-03T01:44:37Z
@@ -277,10 +277,10 @@ see a new one:
 kubectl get secrets -n test-ns
 NAME                              TYPE                                  DATA      AGE
 default-token-3k61z               kubernetes.io/service-account-token   3         29m
-ups-instance-credential           Opaque                                2         1m
+ups-binding           Opaque                                2         1m
 ```
 
-Notice that a new `Secret` named `ups-instance-credential` has been created.
+Notice that a new `Secret` named `ups-binding` has been created.
 
 # Step 6 - Deleting the `ServiceBinding`
 
@@ -288,7 +288,7 @@ Now, let's unbind from the instance. To do this, we simply *delete* the
 `ServiceBinding` resource that we previously created:
 
 ```console
-kubectl delete -n test-ns servicebindings ups-instance-credential
+kubectl delete -n test-ns servicebindings ups-binding
 ```
 
 After the deletion is complete, we should see that the `Secret` is gone:
