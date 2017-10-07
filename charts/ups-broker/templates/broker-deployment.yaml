@@ -1,4 +1,5 @@
 kind: Deployment
+# TODO: Migrate to apps/v1beta2 or apps/v1 when available
 apiVersion: extensions/v1beta1
 metadata:
   name: {{ template "fullname" . }}
@@ -25,15 +26,12 @@ spec:
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
-        - --port
-        - "8080"
+        - --port=8080
         {{- if .Values.tls.cert}}
-        - --tlsCert
-        - "{{ .Values.tls.cert }}"
+        - --tlsCert="{{ .Values.tls.cert }}"
         {{- end}}
         {{- if .Values.tls.key}}
-        - --tlsKey
-        - "{{ .Values.tls.key }}"
+        - --tlsKey="{{ .Values.tls.key }}"
         {{- end}}
         ports:
         - containerPort: 8080

@@ -36,6 +36,7 @@ Service Broker
 |-----------|-------------|---------|
 | `image` | Image to use | `quay.io/kubernetes-service-catalog/user-broker:v0.0.23` |
 | `imagePullPolicy` | `imagePullPolicy` for the ups-broker | `Always` |
+| `deployUPSBroker` | Whether the `User Provided Service Broker` Service Catalog resource should be automatically created or not. Requires running behind the aggregator. | `true` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

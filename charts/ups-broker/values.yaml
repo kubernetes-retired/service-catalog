@@ -9,3 +9,6 @@ tls:
   cert:
   # base-64 encoded PEM data for the private key matching the certificate
   key:
+# Specifies whether to deploy the ups-broker Broker object for this Deployment.
+# Requires running behind the aggregator.
+deployUPSBroker: false
