@@ -79,30 +79,6 @@ func dataAsString(data []byte) string {
 	return dataString
 }
 
-func doRoundTripTest(group testapi.TestGroup, kind string, t *testing.T) {
-	item, err := api.Scheme.New(group.InternalGroupVersion().WithKind(kind))
-	if err != nil {
-		t.Fatalf("Couldn't make a %v? %v", kind, err)
-	}
-	if _, err := meta.TypeAccessor(item); err != nil {
-		t.Fatalf("%q is not a TypeMeta and cannot be tested - add it to nonRoundTrippableTypes: %v", kind, err)
-	}
-
-	gvk := group.GroupVersion().WithKind(kind)
-
-	if api.Scheme.Recognizes(gvk) {
-		roundTripSame(t, group, item, nonRoundTrippableTypesByVersion[kind]...)
-	} else {
-		t.Logf("skipped roundTripSame because API scheme doesn't recognize gvk: %v\n", gvk)
-	}
-
-	if !nonInternalRoundTrippableTypes.Has(kind) && api.Scheme.Recognizes(gvk) {
-		roundTrip(t, group.Codec(), fuzzInternalObject(t, group.InternalGroupVersion(), item, rand.Int63()))
-	} else {
-		t.Logf("skipped roundTrip for gvk: %v\n", gvk)
-	}
-}
-
 // roundTripSame verifies the same source object is tested in all API versions.
 func roundTripSame(t *testing.T, group testapi.TestGroup, item runtime.Object, except ...string) {
 	set := sets.NewString(except...)
@@ -227,24 +203,6 @@ func TestClusterServiceBrokerList(t *testing.T) {
 	roundTripSame(t, serviceCatalogAPIGroup(), item)
 }
 
-var nonRoundTrippableTypes = sets.NewString(
-	// TODO: no one seems to understand why the *Options types are or aren't
-	// considered round-trippable in this test; we need to establish what the
-	// issue is in there and then debug any that should be round-trippable but
-	// fail.
-	"ListOptions",
-	"DeleteOptions",
-	"ExportOptions",
-	"GetOptions",
-	// WatchEvent does not include kind and version and can only be deserialized
-	// implicitly (if the caller expects the specific object). The watch call defines
-	// the schema by content type, rather than via kind/version included in each
-	// object.
-	"WatchEvent",
-)
-var nonInternalRoundTrippableTypes = sets.NewString("List", "ListOptions", "ExportOptions", "DeleteOptions")
-var nonRoundTrippableTypesByVersion = map[string][]string{}
-
 // based on pkg/api/testapi
 var catalogGroups = map[string]testapi.TestGroup{
 	"servicecatalog": serviceCatalogAPIGroup(),
@@ -255,7 +213,6 @@ var catalogGroups = map[string]testapi.TestGroup{
 func TestRoundTripTypes(t *testing.T) {
 	seed := rand.Int63()
 	fuzzer := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs)
-	// TODO nilebox: do we have non-round-trippable types?
 	nonRoundTrippableTypes := map[schema.GroupVersionKind]bool{}
 	roundtrip.RoundTripTypesWithoutProtobuf(t, api.Scheme, api.Codecs, fuzzer, nonRoundTrippableTypes)
 }

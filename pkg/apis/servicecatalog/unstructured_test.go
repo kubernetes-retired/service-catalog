@@ -145,9 +145,6 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 func TestRoundTripTypesToUnstructured(t *testing.T) {
 	for groupKey, group := range catalogGroups {
 		for kind := range group.InternalTypes() {
-			if nonRoundTrippableTypes.Has(kind) {
-				continue
-			}
 			t.Logf("Testing: %v in %v", kind, groupKey)
 			for i := 0; i < 50; i++ {
 				doUnstructuredRoundTrip(t, group, kind)
