@@ -67,7 +67,7 @@ func (c *controller) instanceDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for ServiceInstance %v/%v; no further processing will occur", instance.Namespace, instance.Name)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Received delete event; no further processing will occur`, instance.Namespace, instance.Name)
 }
 
 // Async operations on instances have a somewhat convoluted flow in order to
@@ -105,7 +105,7 @@ func (c *controller) requeueServiceInstanceForPoll(key string) error {
 func (c *controller) beginPollingServiceInstance(instance *v1alpha1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+		glog.Errorf(`ServiceInstance "%s/%s": Couldn't create a key for object %+v: %v`, instance.Namespace, instance.Name, instance, err)
 		return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
 	}
 
@@ -125,8 +125,8 @@ func (c *controller) continuePollingServiceInstance(instance *v1alpha1.ServiceIn
 func (c *controller) finishPollingServiceInstance(instance *v1alpha1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		glog.Errorf("Couldn't create a key for object %+v: %v", instance, err)
-		return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+		glog.Errorf(`ServiceInstance "%s/%s": Couldn't create a key for object %+v: %v`, instance.Namespace, instance.Name, instance, err)
+		return fmt.Errorf(`ServiceInstance "%s/%s": Couldn't create a key for object %+v: %v`, instance.Namespace, instance.Name, instance, err)
 	}
 
 	c.pollingQueue.Forget(key)
@@ -143,11 +143,11 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	}
 	instance, err := c.instanceLister.ServiceInstances(namespace).Get(name)
 	if errors.IsNotFound(err) {
-		glog.Infof("Not doing work for ServiceInstance %v because it has been deleted", key)
+		glog.Infof(`ServiceInstance "%s/%s": Not doing work for %v because it has been deleted`, namespace, name, key)
 		return nil
 	}
 	if err != nil {
-		glog.Errorf("Unable to retrieve ServiceInstance %v from store: %v", key, err)
+		glog.Errorf(`ServiceInstance "%s/%s": Unable to retrieve %v from store: %v`, instance.Namespace, instance.Name, key, err)
 		return err
 	}
 
@@ -182,9 +182,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
 
 			s := fmt.Sprintf(
-				"Delete instance %v/%v blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first.",
-				instance.Namespace,
-				instance.Name)
+				`ServiceInstance "%s/%s": Delete instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first`,
+				instance.Namespace, instance.Name)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionBlockedByCredentialsReason, s)
 
@@ -215,7 +214,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		!instance.Status.OrphanMitigationInProgress &&
 		(isServiceInstanceFailed(instance) || instance.Status.ReconciledGeneration == 0) {
 
-		glog.V(5).Infof("Clearing catalog finalizer from ServiceInstance %v/%v", instance.Namespace, instance.Name)
+		glog.V(5).Infof(`ServiceInstance "%s/%s": Clearing catalog finalizer`, instance.Namespace, instance.Name)
 		clone, err := api.Scheme.DeepCopy(instance)
 		if err != nil {
 			return err
@@ -256,7 +255,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
-			s := fmt.Sprintf(`Error building originating identity headers for deprovisioning ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Error building originating identity headers when deprovisioning: %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
@@ -290,16 +289,13 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		}
 	}
 
-	glog.V(4).Infof("Deprovisioning ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Deprovisioning`, instance.Namespace, instance.Name)
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
 			s := fmt.Sprintf(
-				"Error deprovisioning ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q with status code %d: ErrorMessage: %v, Description: %v",
-				instance.Namespace,
-				instance.Name,
-				serviceClass.Spec.ExternalName,
-				brokerName,
+				`ServiceInstance "%s/%s": Deprovision call failed; received error response from broker: Status Code: %d, Error Message: %v, Description: %v`,
+				instance.Namespace, instance.Name,
 				httpErr.StatusCode,
 				httpErr.ErrorMessage,
 				httpErr.Description,
@@ -335,10 +331,9 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		}
 
 		s := fmt.Sprintf(
-			"Error deprovisioning ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %v",
-			instance.Namespace,
-			instance.Name,
-			serviceClass.Name,
+			`ServiceInstance "%s/%s": Error deprovisioning, ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %v`,
+			instance.Namespace, instance.Name,
+			serviceClass.Name, serviceClass.Spec.ExternalName,
 			brokerName,
 			err,
 		)
@@ -353,7 +348,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			"Deprovision call failed. "+s)
 
 		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
@@ -379,7 +374,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	}
 
 	if response.Async {
-		glog.V(5).Infof("Received asynchronous de-provisioning response for ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v: response: %+v", instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
+		glog.V(5).Infof(`ServiceInstance "%s/%s": Received asynchronous de-provisioning response, %s at %s: response: %+v`, instance.Namespace, instance.Name, serviceClass.Name, brokerName, response)
 
 		if response.OperationKey != nil && *response.OperationKey != "" {
 			key := string(*response.OperationKey)
@@ -411,7 +406,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		return nil
 	}
 
-	glog.V(5).Infof("Deprovision call to broker succeeded for ServiceInstance %v/%v, finalizing", instance.Namespace, instance.Name)
+	glog.V(5).Infof(`ServiceInstance "%s/%s": Deprovision call to broker succeeded, finalizing`, instance.Namespace, instance.Name)
 
 	c.clearServiceInstanceCurrentOperation(toUpdate)
 	toUpdate.Status.ExternalProperties = nil
@@ -435,7 +430,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	}
 
 	c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-	glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Name, brokerName)
+	glog.V(5).Infof(`ServiceInstance "%s/%s": Successfully deprovisioned, %s at %s`, instance.Namespace, instance.Name, serviceClass.Name, brokerName)
 
 	return nil
 }
@@ -470,9 +465,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// we make any changes to capture permanent failure in new cases.
 	if isServiceInstanceFailed(instance) {
 		glog.V(4).Infof(
-			"Not processing event for ServiceInstance %v/%v because status showed that it has failed",
-			instance.Namespace,
-			instance.Name,
+			`ServiceInstance "%s/%s": Not processing event because status showed that it has failed`,
+			instance.Namespace, instance.Name,
 		)
 		return nil
 	}
@@ -492,9 +486,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	// controller.
 	if instance.Status.ReconciledGeneration == instance.Generation {
 		glog.V(4).Infof(
-			"Not processing event for ServiceInstance %v/%v because reconciled generation showed there is no work to do",
-			instance.Namespace,
-			instance.Name,
+			`ServiceInstance "%s/%s": Not processing event because reconciled generation showed there is no work to do`,
+			instance.Namespace, instance.Name,
 		)
 		return nil
 	}
@@ -513,9 +506,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		return err
 	}
 
-	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
-
-	glog.V(4).Infof("Adding/Updating ServiceInstance %v/%v", instance.Namespace, instance.Name)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Processing adding/updating event`, instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(toUpdate)
 	if err != nil {
@@ -524,7 +515,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 	ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 	if err != nil {
-		s := fmt.Sprintf("Failed to get namespace %q during instance create: %s", instance.Namespace, err)
+		s := fmt.Sprintf(`ServiceInstance "%s/%s": Failed to get namespace %q during instance create: %s`, instance.Namespace, instance.Name, instance.Namespace, err)
 		glog.Info(s)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, errorFindingNamespaceServiceInstanceReason, s)
 
@@ -551,7 +542,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		var parametersWithSecretsRedacted map[string]interface{}
 		parameters, parametersWithSecretsRedacted, err = buildParameters(c.kubeClient, instance.Namespace, instance.Spec.ParametersFrom, instance.Spec.Parameters)
 		if err != nil {
-			s := fmt.Sprintf("Failed to prepare ServiceInstance parameters\n%s\n %s", instance.Spec.Parameters, err)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Failed to prepare ServiceInstance parameters %s: %s`, instance.Namespace, instance.Name, instance.Spec.Parameters, err)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 
@@ -571,7 +562,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		parametersChecksum, err = generateChecksumOfParameters(parameters)
 		if err != nil {
-			s := fmt.Sprintf(`Failed to generate the parameters checksum to store in the Status of ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Failed to generate the parameters checksum to store in Status: %s`, instance.Namespace, instance.Name, err)
 			glog.Info(s)
 			c.recorder.Eventf(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
@@ -588,7 +579,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
 		if err != nil {
-			s := fmt.Sprintf(`Failed to marshal the parameters to store in the Status of ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Failed to marshal the parameters to store in the Status: %s`, instance.Namespace, instance.Name, err)
 			glog.Info(s)
 			c.recorder.Eventf(instance, apiv1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
@@ -619,7 +610,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		originatingIdentity, err = buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
-			s := fmt.Sprintf(`Error building originating identity headers for provisioning ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Error building originating identity headers for provisioning: %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
@@ -707,10 +698,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	var provisionResponse *osb.ProvisionResponse
 	var updateResponse *osb.UpdateInstanceResponse
 	if isProvisioning {
-		glog.V(4).Infof("Provisioning a new ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+		glog.V(4).Infof(`ServiceInstance "%s/%s": Provisioning a new ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q`, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName)
 		provisionResponse, err = brokerClient.ProvisionInstance(provisionRequest)
 	} else {
-		glog.V(4).Infof("Updating ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+		glog.V(4).Infof(`ServiceInstance "%s/%s": Updating ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q`, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName)
 		updateResponse, err = brokerClient.UpdateInstance(updateRequest)
 	}
 	if err != nil {
@@ -724,7 +715,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			}
 			// An error from the broker represents a permanent failure and
 			// should not be retried; set the Failed condition.
-			s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, httpErr)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Error %v ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %s`, instance.Namespace, instance.Name, provisioningOrUpdatingText, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, httpErr)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, reason, s)
 
@@ -739,7 +730,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 				v1alpha1.ServiceInstanceConditionReady,
 				v1alpha1.ConditionFalse,
 				reason,
-				fmt.Sprintf("ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v", provisionOrUpdateText, s))
+				fmt.Sprintf(`ServiceInstance "%s/%s": ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v`, instance.Namespace, instance.Name, provisionOrUpdateText, s))
 
 			if isProvisioning && shouldStartOrphanMitigation(httpErr.StatusCode) {
 				setServiceInstanceStartOrphanMitigation(toUpdate)
@@ -764,7 +755,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		if !isProvisioning {
 			reason = errorErrorCallingUpdateInstanceReason
 		}
-		s := fmt.Sprintf("Error %v ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %s", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, err)
+		s := fmt.Sprintf(`ServiceInstance "%s/%s": Error communicating with broker for %q: %s`, instance.Namespace, instance.Name, provisioningOrUpdatingText, err)
 		glog.Warning(s)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, reason, s)
 
@@ -813,10 +804,10 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			v1alpha1.ServiceInstanceConditionReady,
 			v1alpha1.ConditionFalse,
 			reason,
-			fmt.Sprintf("The %v call failed and will be retried: %v", provisionOrUpdateText, s))
+			fmt.Sprintf(`ServiceInstance "%s/%s": The %v call failed and will be retried: %v`, instance.Namespace, instance.Name, provisionOrUpdateText, s))
 
 		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 			setServiceInstanceCondition(toUpdate,
@@ -858,7 +849,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		async = updateResponse.Async
 	}
 	if async {
-		glog.V(5).Infof("Received asynchronous %v response for ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v: response: %+v", provisioningOrUpdatingText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
+		glog.V(5).Infof(`ServiceInstance "%s/%s": Received asynchronous %v response for ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: response: %+v`, instance.Namespace, instance.Name, provisioningOrUpdatingText, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
 		var operationKey *osb.OperationKey
 		if isProvisioning {
@@ -904,7 +895,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			reason = successUpdateInstanceReason
 			message = successUpdateInstanceMessage
 		}
-		glog.V(5).Infof("Successfully %v ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v: response: %+v", provisionedOrUpdatedText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, response)
+		glog.V(5).Infof(`ServiceInstance "%s/%s": Successfully %v ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: response: %+v`, provisionedOrUpdatedText, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, response)
 
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		c.clearServiceInstanceCurrentOperation(toUpdate)
@@ -927,7 +918,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 }
 
 func (c *controller) pollServiceInstanceInternal(instance *v1alpha1.ServiceInstance) error {
-	glog.V(4).Infof("Processing ServiceInstance %v/%v", instance.Namespace, instance.Name)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Processing`, instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
 	if err != nil {
@@ -960,7 +951,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			return err
 		}
 		toUpdate := clone.(*v1alpha1.ServiceInstance)
-		s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because the operation start time is not set`, instance.Namespace, instance.Name)
+		s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because the operation start time is not set`, instance.Namespace, instance.Name)
 		glog.Info(s)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
@@ -997,7 +988,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
-			s := fmt.Sprintf(`Error building originating identity headers for polling last operation of ServiceInstance "%v/%v": %v`, instance.Namespace, instance.Name, err)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Error building originating identity headers for polling last operation: %v`, instance.Namespace, instance.Name, err)
 			glog.Warning(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
@@ -1019,7 +1010,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		request.OriginatingIdentity = originatingIdentity
 	}
 
-	glog.V(5).Infof("Polling last operation on ServiceInstance %v/%v", instance.Namespace, instance.Name)
+	glog.V(5).Infof(`ServiceInstance "%s/%s": Polling last operation`, instance.Namespace, instance.Name)
 
 	response, err := brokerClient.PollLastOperation(request)
 	if err != nil {
@@ -1057,7 +1048,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			}
 
 			c.recorder.Event(instance, apiv1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-			glog.V(5).Infof("Successfully deprovisioned ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+			glog.V(5).Infof(`ServiceInstance "%s/%s": Successfully deprovisioned ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q`, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName)
 
 			return c.finishPollingServiceInstance(instance)
 		}
@@ -1071,12 +1062,12 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		// the instance.
 		errText := ""
 		if httpErr, ok := osb.IsHTTPError(err); ok {
-			errText = fmt.Sprintf("Status code: %d; ErrorMessage: %q; description: %q", httpErr.StatusCode, httpErr.ErrorMessage, httpErr.Description)
+			errText = fmt.Sprintf(`ServiceInstance "%s/%s": Status code: %d; ErrorMessage: %q; description: %q`, instance.Namespace, instance.Name, httpErr.StatusCode, httpErr.ErrorMessage, httpErr.Description)
 		} else {
 			errText = err.Error()
 		}
 
-		s := fmt.Sprintf("Error polling last operation for instance %v/%v: %v", instance.Namespace, instance.Name, errText)
+		s := fmt.Sprintf(`ServiceInstance "%s/%s": Error polling last operation: %v`, instance.Namespace, instance.Name, errText)
 		glog.V(4).Info(s)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, errorPollingLastOperationReason, s)
 
@@ -1086,7 +1077,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 				return err
 			}
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
-			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
@@ -1113,7 +1104,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		return c.continuePollingServiceInstance(instance)
 	}
 
-	glog.V(4).Infof("Poll for %v/%v returned %q : %q", instance.Namespace, instance.Name, response.State, response.Description)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Poll returned %q : %q`, instance.Namespace, instance.Name, response.State, response.Description)
 
 	switch response.State {
 	case osb.StateInProgress:
@@ -1164,7 +1155,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 				}
 				toUpdate = clone.(*v1alpha1.ServiceInstance)
 			}
-			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
@@ -1199,7 +1190,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		if err != nil {
 			return err
 		}
-		glog.V(4).Infof("last operation not completed (still in progress) for %v/%v", instance.Namespace, instance.Name)
+		glog.V(4).Infof(`ServiceInstance "%s/%s": last operation not completed (still in progress)`, instance.Namespace, instance.Name)
 	case osb.StateSucceeded:
 		var (
 			readyStatus v1alpha1.ConditionStatus
@@ -1257,7 +1248,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		}
 
 		c.recorder.Event(instance, apiv1.EventTypeNormal, reason, message)
-		glog.V(5).Infof("Successfully %v ServiceInstance %v/%v of ClusterServiceClass %v at ClusterServiceBroker %v", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName)
+		glog.V(5).Infof(`ServiceInstance "%s/%s": Successfully %v`, instance.Namespace, instance.Name, actionText)
 
 		err = c.finishPollingServiceInstance(instance)
 		if err != nil {
@@ -1277,7 +1268,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		default:
 			actionText = "updating"
 		}
-		s := fmt.Sprintf("Error %s ServiceInstance \"%s/%s\" of ClusterServiceClass %q at ClusterServiceBroker %q: %q", actionText, instance.Namespace, instance.Name, serviceClass.Spec.ExternalName, brokerName, description)
+		s := fmt.Sprintf(`ServiceInstance "%s/%s": Error %s: %q`, instance.Namespace, instance.Name, actionText, description)
 		c.recorder.Event(instance, apiv1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		clone, err := api.Scheme.DeepCopy(instance)
@@ -1333,14 +1324,14 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			return err
 		}
 	default:
-		glog.Warningf("Got invalid state in LastOperationResponse: %q", response.State)
+		glog.Warningf(`ServiceInstance "%s/%s": Got invalid state in LastOperationResponse: %q`, instance.Namespace, instance.Name, response.State)
 		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			clone, err := api.Scheme.DeepCopy(instance)
 			if err != nil {
 				return err
 			}
 			toUpdate := clone.(*v1alpha1.ServiceInstance)
-			s := fmt.Sprintf(`Stopping reconciliation retries on ServiceInstance "%v/%v" because too much time has elapsed`, instance.Namespace, instance.Name)
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries on ServiceInstance because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
@@ -1363,7 +1354,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			}
 			return c.finishPollingServiceInstance(instance)
 		}
-		return fmt.Errorf("Got invalid state in LastOperationResponse: %q", response.State)
+		return fmt.Errorf(`ServiceInstance "%s/%s": Got invalid state in LastOperationResponse: %q`, instance.Namespace, instance.Name, response.State)
 	}
 	return nil
 }
@@ -1394,7 +1385,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			}
 			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServiceClass with externalName %q to K8S ClusterServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, sc.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items))
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": references a non-existent ClusterServiceClass %q or there is more than one (found: %d)`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
@@ -1413,7 +1404,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			var scErr error
 			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if scErr != nil {
-				return nil, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s) associated with Instance "%s/%s": %v`, instance.Spec.ClusterServiceClassRef.Name, instance.Namespace, instance.Name, scErr.Error())
+				return nil, fmt.Errorf(`ServiceInstance "%s/%s": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, scErr.Error())
 			}
 		}
 
@@ -1436,7 +1427,7 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			}
 			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServicePlan with externalName %q to K8S ClusterServicePlan %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name)
 		} else {
-			s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q or there is more than one (found: %d).", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items))
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": references a non-existent ClusterServicePlan %q on ClusterServiceClass %q or there is more than one (found: %d)`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items))
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
@@ -1477,7 +1468,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	message string,
 	t metav1.Time) {
 
-	glog.V(5).Infof(`Setting ServiceInstance "%v/%v" condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, status)
+	glog.V(5).Infof(`ServiceInstance "%s/%s": Setting condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, status)
 
 	newCondition := v1alpha1.ServiceInstanceCondition{
 		Type:    conditionType,
@@ -1487,7 +1478,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	}
 
 	if len(toUpdate.Status.Conditions) == 0 {
-		glog.V(3).Infof(`Setting lastTransitionTime for ServiceInstance "%v/%v" condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, t)
+		glog.V(3).Infof(`ServiceInstance "%s/%s": Setting lastTransitionTime, condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, t)
 		newCondition.LastTransitionTime = t
 		toUpdate.Status.Conditions = []v1alpha1.ServiceInstanceCondition{newCondition}
 		return
@@ -1496,7 +1487,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	for i, cond := range toUpdate.Status.Conditions {
 		if cond.Type == conditionType {
 			if cond.Status != newCondition.Status {
-				glog.V(3).Infof(`Found status change for ServiceInstance "%v/%v" condition %q: %q -> %q; setting lastTransitionTime to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, cond.Status, status, t)
+				glog.V(3).Infof(`ServiceInstance "%s/%s": Found status change, condition %q: %q -> %q; setting lastTransitionTime to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, cond.Status, status, t)
 				newCondition.LastTransitionTime = t
 			} else {
 				newCondition.LastTransitionTime = cond.LastTransitionTime
@@ -1507,17 +1498,17 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 		}
 	}
 
-	glog.V(3).Infof(`Setting lastTransitionTime for ServiceInstance "%v/%v" condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, t)
+	glog.V(3).Infof(`ServiceInstance "%s/%s": Setting lastTransitionTime, condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, t)
 	newCondition.LastTransitionTime = t
 	toUpdate.Status.Conditions = append(toUpdate.Status.Conditions, newCondition)
 }
 
 // updateServiceInstanceReferences updates the refs for the given instance.
 func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
-	glog.V(4).Infof("Updating references for ServiceInstance %v/%v", toUpdate.Namespace, toUpdate.Name)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Updating references`, toUpdate.Namespace, toUpdate.Name)
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
 	if err != nil {
-		glog.Errorf("Failed to update references for ServiceInstance %v/%v: %v", toUpdate.Namespace, toUpdate.Name, err)
+		glog.Errorf(`ServiceInstance "%s/%s": Failed to update references: %v`, toUpdate.Namespace, toUpdate.Name, err)
 	}
 	return updatedInstance, err
 }
@@ -1527,10 +1518,10 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceI
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
 func (c *controller) updateServiceInstanceStatus(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
-	glog.V(4).Infof("Updating status for ServiceInstance %v/%v", toUpdate.Namespace, toUpdate.Name)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Updating status`, toUpdate.Namespace, toUpdate.Name)
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
-		glog.Errorf("Failed to update status for ServiceInstance %v/%v: %v", toUpdate.Namespace, toUpdate.Name, err)
+		glog.Errorf(`ServiceInstance "%s/%s": Failed to update status: %v`, toUpdate.Namespace, toUpdate.Name, err)
 	}
 
 	return updatedInstance, err
@@ -1553,10 +1544,10 @@ func (c *controller) updateServiceInstanceCondition(
 
 	setServiceInstanceCondition(toUpdate, conditionType, status, reason, message)
 
-	glog.V(4).Infof("Updating %v condition for ServiceInstance %v/%v to %v", conditionType, instance.Namespace, instance.Name, status)
+	glog.V(4).Infof(`ServiceInstance "%s/%s": Updating %v condition to %v`, instance.Namespace, instance.Name, conditionType, status)
 	_, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
-		glog.Errorf("Failed to update condition %v for ServiceInstance %v/%v to true: %v", conditionType, instance.Namespace, instance.Name, err)
+		glog.Errorf(`ServiceInstance "%s/%s": Failed to update condition %v to true: %v`, instance.Namespace, instance.Name, conditionType, err)
 	}
 
 	return err
