@@ -406,7 +406,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				errorListingClusterServicePlansReason,
 				errorListingClusterServicePlansMessage,
 			)
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
 			return err
 		}
 
@@ -429,7 +429,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					errorDeletingClusterServicePlanMessage,
 					errorDeletingClusterServicePlanReason+s,
 				)
-				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
 				return err
 			}
 		}
@@ -437,7 +437,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		// Get the ClusterServiceClasses for this broker.
 		svcClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err != nil {
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
 			if err := c.updateClusterServiceBrokerCondition(
 				broker,
 				v1alpha1.ServiceBrokerConditionReady,
