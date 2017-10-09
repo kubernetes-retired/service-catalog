@@ -57,12 +57,6 @@ func internalValidateServiceInstance(instance *sc.ServiceInstance, create bool) 
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateServiceInstanceSpec(&instance.Spec, field.NewPath("spec"), create)...)
 	allErrs = append(allErrs, validateServiceInstanceStatus(&instance.Status, field.NewPath("status"), create)...)
-	// Since we do not know if any of the pointer fields are invalid, do not
-	// do any more checks that might depend on these fields because the code
-	// would get very messy. Just return the errors we have at this point.
-	if len(allErrs) != 0 {
-		return allErrs
-	}
 	if create {
 		allErrs = append(allErrs, validateServiceInstanceCreate(instance)...)
 	} else {
