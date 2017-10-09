@@ -86,8 +86,8 @@ USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker-$(ARCH):$(MUTABLE_TAG)
 
 # precheck to avoid kubernetes-incubator/service-catalog#361
-$(if $(realpath vendor/k8s.io/kubernetes/vendor), \
-	$(error the vendor directory exists in the kubernetes \
+$(if $(realpath vendor/k8s.io/apimachinery/vendor), \
+	$(error the vendor directory exists in the apimachinery \
 		vendored source and must be flattened. \
 		run 'glide i -v'))
 

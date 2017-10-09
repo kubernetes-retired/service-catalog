@@ -68,8 +68,6 @@ import:
   - args
 - package: github.com/kubernetes/repo-infra
   version: e26fc85d14a1d3dc25569831acc06919673c545a # latest (Oct 4, 2017)
-- package: k8s.io/kubernetes
-  version: 0b9efaeb34a2fc51ff8e4d34ad9bc6375459c4a4 # kubernetes 1.8.0
 - package: k8s.io/client-go
   version: afb4606c45bae77c4dc2c15291d4d7d6d792196c # release-5.0, latest (Oct 4, 2017)
 - package: k8s.io/apimachinery
