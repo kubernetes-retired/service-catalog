@@ -824,7 +824,7 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			DesiredPlan: v1alpha1.DesiredPlan{
+			PlanReference: v1alpha1.PlanReference{
 				ExternalClusterServiceClassName: "service-class-name",
 				ExternalClusterServicePlanName:  "plan-name",
 			},

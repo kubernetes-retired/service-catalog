@@ -494,7 +494,7 @@ func getTestServiceInstance() *v1alpha1.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			DesiredPlan: v1alpha1.DesiredPlan{
+			PlanReference: v1alpha1.PlanReference{
 				ExternalClusterServiceClassName: testClusterServiceClassName,
 				ExternalClusterServicePlanName:  testClusterServicePlanName,
 			},

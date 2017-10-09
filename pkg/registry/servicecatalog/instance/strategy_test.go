@@ -36,7 +36,7 @@ func getTestInstance() *servicecatalog.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
-			DesiredPlan: servicecatalog.DesiredPlan{
+			PlanReference: servicecatalog.PlanReference{
 				ExternalClusterServiceClassName: "test-serviceclass",
 				ExternalClusterServicePlanName:  "test-plan",
 			},

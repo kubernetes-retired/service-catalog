@@ -124,7 +124,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				DesiredPlan: v1alpha1.DesiredPlan{
+				PlanReference: v1alpha1.PlanReference{
 					ExternalClusterServiceClassName: serviceclassName,
 					ExternalClusterServicePlanName:  "default",
 				},
@@ -216,7 +216,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				DesiredPlan: v1alpha1.DesiredPlan{
+				PlanReference: v1alpha1.PlanReference{
 					ExternalClusterServiceClassName: serviceclassName,
 				},
 			},

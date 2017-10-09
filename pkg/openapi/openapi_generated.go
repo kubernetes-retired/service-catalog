@@ -546,10 +546,27 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.DesiredPlan": {
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "DesiredPlan defines the user specification for the desired ServicePlan and ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent.",
+					Description: "ParametersFromSource represents the source of a set of Parameters",
+					Properties: map[string]spec.Schema{
+						"secretKeyRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The Secret key to select from. The value must be a JSON object.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.SecretKeyReference"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.SecretKeyReference"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.PlanReference": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "PlanReference defines the user specification for the desired ServicePlan and ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent.",
 					Properties: map[string]spec.Schema{
 						"externalClusterServiceClassName": {
 							SchemaProps: spec.SchemaProps{
@@ -569,23 +586,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{},
-		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.ParametersFromSource": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "ParametersFromSource represents the source of a set of Parameters",
-					Properties: map[string]spec.Schema{
-						"secretKeyRef": {
-							SchemaProps: spec.SchemaProps{
-								Description: "The Secret key to select from. The value must be a JSON object.",
-								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.SecretKeyReference"),
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.SecretKeyReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1.SecretKeyReference": {
 			Schema: spec.Schema{

@@ -421,11 +421,11 @@ type ServiceInstance struct {
 	Status ServiceInstanceStatus `json:"status"`
 }
 
-// DesiredPlan defines the user specification for the desired
+// PlanReference defines the user specification for the desired
 // ServicePlan and ServiceClass. Because there are multiple ways to
 // specify the desired Class/Plan, this structure specifies the
 // allowed ways to specify the intent.
-type DesiredPlan struct {
+type PlanReference struct {
 	// ExternalClusterServiceClassName is the human-readable name of the
 	// service as reported by the broker. Note that if the broker changes
 	// the name of the ClusterServiceClass, it will not be reflected here,
@@ -445,7 +445,7 @@ type DesiredPlan struct {
 // ServiceInstanceSpec represents the desired state of an Instance.
 type ServiceInstanceSpec struct {
 	// Specification of what ServiceClass/ServicePlan is being provisioned.
-	DesiredPlan `json:",inline"`
+	PlanReference `json:",inline"`
 
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
 	// that the user selected.
