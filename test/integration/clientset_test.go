@@ -824,10 +824,12 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "service-class-name",
-			ExternalClusterServicePlanName:  "plan-name",
-			Parameters:                      &runtime.RawExtension{Raw: []byte(instanceParameter)},
-			ExternalID:                      osbGUID,
+			PlanReference: v1alpha1.PlanReference{
+				ExternalClusterServiceClassName: "service-class-name",
+				ExternalClusterServicePlanName:  "plan-name",
+			},
+			Parameters: &runtime.RawExtension{Raw: []byte(instanceParameter)},
+			ExternalID: osbGUID,
 		},
 	}
 

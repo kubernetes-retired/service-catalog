@@ -124,8 +124,10 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: serviceclassName,
-				ExternalClusterServicePlanName:  "default",
+				PlanReference: v1alpha1.PlanReference{
+					ExternalClusterServiceClassName: serviceclassName,
+					ExternalClusterServicePlanName:  "default",
+				},
 			},
 		}
 		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instance)
@@ -214,7 +216,9 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1alpha1.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: serviceclassName,
+				PlanReference: v1alpha1.PlanReference{
+					ExternalClusterServiceClassName: serviceclassName,
+				},
 			},
 		}
 		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1alpha1().ServiceInstances(testnamespace.Name).Create(instanceDef)

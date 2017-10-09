@@ -99,9 +99,11 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "nothere",
-			ExternalClusterServicePlanName:  testClusterServicePlanName,
-			ExternalID:                      instanceGUID,
+			PlanReference: v1alpha1.PlanReference{
+				ExternalClusterServiceClassName: "nothere",
+				ExternalClusterServicePlanName:  testClusterServicePlanName,
+			},
+			ExternalID: instanceGUID,
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
@@ -145,10 +147,12 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "nothere",
-			ExternalClusterServicePlanName:  testClusterServicePlanName,
-			ExternalID:                      instanceGUID,
-			ClusterServiceClassRef:          &v1.ObjectReference{Name: "Some Ref"},
+			PlanReference: v1alpha1.PlanReference{
+				ExternalClusterServiceClassName: "nothere",
+				ExternalClusterServicePlanName:  testClusterServicePlanName,
+			},
+			ExternalID:             instanceGUID,
+			ClusterServiceClassRef: &v1.ObjectReference{Name: "Some Ref"},
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
@@ -193,11 +197,13 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 	instance := &v1alpha1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "nothere",
-			ExternalClusterServicePlanName:  testClusterServicePlanName,
-			ExternalID:                      instanceGUID,
-			ClusterServiceClassRef:          &v1.ObjectReference{Name: "nosuchclassid"},
-			ClusterServicePlanRef:           &v1.ObjectReference{Name: "nosuchplanid"},
+			PlanReference: v1alpha1.PlanReference{
+				ExternalClusterServiceClassName: "nothere",
+				ExternalClusterServicePlanName:  testClusterServicePlanName,
+			},
+			ExternalID:             instanceGUID,
+			ClusterServiceClassRef: &v1.ObjectReference{Name: "nosuchclassid"},
+			ClusterServicePlanRef:  &v1.ObjectReference{Name: "nosuchplanid"},
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)

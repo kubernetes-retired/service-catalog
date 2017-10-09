@@ -410,23 +410,30 @@ type ServiceInstance struct {
 	Status ServiceInstanceStatus
 }
 
-// ServiceInstanceSpec represents the desired state of an Instance.
-type ServiceInstanceSpec struct {
-	// ExternalClusterServiceClassName is the human-readable name of the service
-	// as reported by the broker. Note that if the broker changes
+// PlanReference defines the user specification for the desired
+// ServicePlan and ServiceClass. Because there are multiple ways to
+// specify the desired Class/Plan, this structure specifies the
+// allowed ways to specify the intent.
+type PlanReference struct {
+	// ExternalClusterServiceClassName is the human-readable name of the
+	// service as reported by the broker. Note that if the broker changes
 	// the name of the ClusterServiceClass, it will not be reflected here,
 	// and to see the current name of the ClusterServiceClass, you should
 	// follow the ClusterServiceClassRef below.
 	//
 	// Immutable.
 	ExternalClusterServiceClassName string
-
 	// ExternalClusterServicePlanName is the human-readable name of the plan
-	// as reported by the broker. Note that if the broker changes
-	// the name of the ClusterServicePlan, it will not be reflected here,
-	// and to see the current name of the ClusterServicePlan, you should
-	// follow the ClusterServicePlanRef below.
+	// as reported by the broker. Note that if the broker changes the name
+	// of the ClusterServicePlan, it will not be reflected here, and to see
+	// the current name of the ClusterServicePlan, you should follow the
+	// ClusterServicePlanRef below.
 	ExternalClusterServicePlanName string
+}
+
+// ServiceInstanceSpec represents the desired state of an Instance.
+type ServiceInstanceSpec struct {
+	PlanReference
 
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
 	// that the user selected.

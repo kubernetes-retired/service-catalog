@@ -41,8 +41,10 @@ func newTestInstance(name, serviceClassName, planName string) *v1alpha1.ServiceI
 			Name: name,
 		},
 		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServicePlanName:  planName,
-			ExternalClusterServiceClassName: serviceClassName,
+			PlanReference: v1alpha1.PlanReference{
+				ExternalClusterServicePlanName:  planName,
+				ExternalClusterServiceClassName: serviceClassName,
+			},
 		},
 	}
 }
