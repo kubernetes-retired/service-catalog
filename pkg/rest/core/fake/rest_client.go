@@ -30,12 +30,12 @@ import (
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	fakerestclient "k8s.io/client-go/rest/fake"
 )
 
@@ -524,9 +524,9 @@ func deleteItem(storage NamespacedStorage) func(http.ResponseWriter, *http.Reque
 
 func listNamespaces(storage NamespacedStorage) func(http.ResponseWriter, *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		nsList := apiv1.NamespaceList{}
+		nsList := corev1.NamespaceList{}
 		for ns := range storage {
-			nsList.Items = append(nsList.Items, apiv1.Namespace{
+			nsList.Items = append(nsList.Items, corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{Name: ns},
 			})
 		}

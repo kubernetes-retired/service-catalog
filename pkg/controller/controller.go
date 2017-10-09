@@ -31,8 +31,8 @@ import (
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -258,7 +258,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			errorNonexistentClusterServiceClassReason,
 			"The instance references a ClusterServiceClass that does not exist. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -273,7 +273,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			errorNonexistentClusterServicePlanReason,
 			"The instance references a ClusterServicePlan that does not exist. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
@@ -288,7 +288,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			errorNonexistentClusterServiceBrokerReason,
 			"The instance references a ClusterServiceBroker that does not exist. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -303,7 +303,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
-		c.recorder.Event(instance, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -334,7 +334,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			errorNonexistentClusterServiceClassReason,
 			"The binding references a ClusterServiceClass that does not exist. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServiceClassMessage, s)
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentClusterServiceClassMessage, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -349,7 +349,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			errorNonexistentClusterServicePlanReason,
 			"The ServiceBinding references an ServiceInstance which references ClusterServicePlan that does not exist. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
@@ -364,7 +364,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			errorNonexistentClusterServiceBrokerReason,
 			"The binding references a ClusterServiceBroker that does not exist. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -379,7 +379,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
-		c.recorder.Event(binding, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
 		return nil, nil, "", nil, err
 	}
 
@@ -447,7 +447,7 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
 }
 
-func getBasicAuthConfig(secret *apiv1.Secret) (*osb.BasicAuthConfig, error) {
+func getBasicAuthConfig(secret *corev1.Secret) (*osb.BasicAuthConfig, error) {
 	usernameBytes, ok := secret.Data["username"]
 	if !ok {
 		return nil, fmt.Errorf("auth secret didn't contain username")
@@ -464,7 +464,7 @@ func getBasicAuthConfig(secret *apiv1.Secret) (*osb.BasicAuthConfig, error) {
 	}, nil
 }
 
-func getBearerConfig(secret *apiv1.Secret) (*osb.BearerConfig, error) {
+func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 	tokenBytes, ok := secret.Data["token"]
 	if !ok {
 		return nil, fmt.Errorf("auth secret didn't contain token")
@@ -528,7 +528,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1a
 				ExternalID:             plan.ID,
 				Free:                   (plan.Free != nil && *plan.Free),
 				Description:            plan.Description,
-				ClusterServiceClassRef: apiv1.LocalObjectReference{Name: serviceClassID},
+				ClusterServiceClassRef: corev1.LocalObjectReference{Name: serviceClassID},
 			},
 		}
 		servicePlans[i].SetName(plan.ID)

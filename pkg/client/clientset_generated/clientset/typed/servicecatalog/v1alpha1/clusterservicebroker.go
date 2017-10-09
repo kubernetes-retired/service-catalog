@@ -57,6 +57,38 @@ func newClusterServiceBrokers(c *ServicecatalogV1alpha1Client) *clusterServiceBr
 	}
 }
 
+// Get takes name of the clusterServiceBroker, and returns the corresponding clusterServiceBroker object, and an error if there is any.
+func (c *clusterServiceBrokers) Get(name string, options v1.GetOptions) (result *v1alpha1.ClusterServiceBroker, err error) {
+	result = &v1alpha1.ClusterServiceBroker{}
+	err = c.client.Get().
+		Resource("clusterservicebrokers").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// List takes label and field selectors, and returns the list of ClusterServiceBrokers that match those selectors.
+func (c *clusterServiceBrokers) List(opts v1.ListOptions) (result *v1alpha1.ClusterServiceBrokerList, err error) {
+	result = &v1alpha1.ClusterServiceBrokerList{}
+	err = c.client.Get().
+		Resource("clusterservicebrokers").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// Watch returns a watch.Interface that watches the requested clusterServiceBrokers.
+func (c *clusterServiceBrokers) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
+	return c.client.Get().
+		Resource("clusterservicebrokers").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Watch()
+}
+
 // Create takes the representation of a clusterServiceBroker and creates it.  Returns the server's representation of the clusterServiceBroker, and an error, if there is any.
 func (c *clusterServiceBrokers) Create(clusterServiceBroker *v1alpha1.ClusterServiceBroker) (result *v1alpha1.ClusterServiceBroker, err error) {
 	result = &v1alpha1.ClusterServiceBroker{}
@@ -81,7 +113,7 @@ func (c *clusterServiceBrokers) Update(clusterServiceBroker *v1alpha1.ClusterSer
 }
 
 // UpdateStatus was generated because the type contains a Status member.
-// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
 func (c *clusterServiceBrokers) UpdateStatus(clusterServiceBroker *v1alpha1.ClusterServiceBroker) (result *v1alpha1.ClusterServiceBroker, err error) {
 	result = &v1alpha1.ClusterServiceBroker{}
@@ -113,38 +145,6 @@ func (c *clusterServiceBrokers) DeleteCollection(options *v1.DeleteOptions, list
 		Body(options).
 		Do().
 		Error()
-}
-
-// Get takes name of the clusterServiceBroker, and returns the corresponding clusterServiceBroker object, and an error if there is any.
-func (c *clusterServiceBrokers) Get(name string, options v1.GetOptions) (result *v1alpha1.ClusterServiceBroker, err error) {
-	result = &v1alpha1.ClusterServiceBroker{}
-	err = c.client.Get().
-		Resource("clusterservicebrokers").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ClusterServiceBrokers that match those selectors.
-func (c *clusterServiceBrokers) List(opts v1.ListOptions) (result *v1alpha1.ClusterServiceBrokerList, err error) {
-	result = &v1alpha1.ClusterServiceBrokerList{}
-	err = c.client.Get().
-		Resource("clusterservicebrokers").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested clusterServiceBrokers.
-func (c *clusterServiceBrokers) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	opts.Watch = true
-	return c.client.Get().
-		Resource("clusterservicebrokers").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
 }
 
 // Patch applies the patch and returns the patched clusterServiceBroker.

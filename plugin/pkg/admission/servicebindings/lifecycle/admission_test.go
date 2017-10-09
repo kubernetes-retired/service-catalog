@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/admission"
-	"k8s.io/client-go/pkg/api/v1"
 	core "k8s.io/client-go/testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -63,7 +63,7 @@ func newServiceBinding() servicecatalog.ServiceBinding {
 			Namespace: "test-ns",
 		},
 		Spec: servicecatalog.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: "test-instance",
 			},
 			SecretName: "test-secret",

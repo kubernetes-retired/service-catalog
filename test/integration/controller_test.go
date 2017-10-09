@@ -27,15 +27,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/pkg/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	restclient "k8s.io/client-go/rest"
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
 
 	// avoid error `servicecatalog/v1alpha1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	// avoid error `no kind is registered for the type metav1.ListOptions`
-	_ "k8s.io/client-go/pkg/api/install"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
@@ -210,7 +208,7 @@ func TestBasicFlowsSync(t *testing.T) {
 	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1alpha1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -403,7 +401,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1alpha1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -686,7 +684,7 @@ func TestBindingFailure(t *testing.T) {
 	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1alpha1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -919,7 +917,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1alpha1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},

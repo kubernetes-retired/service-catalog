@@ -41,26 +41,31 @@ type serviceBindingInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServiceBindingInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	sharedIndexInformer := cache.NewSharedIndexInformer(
+// NewServiceBindingInformer constructs a new informer for ServiceBinding type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewServiceBindingInformer(client clientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.ServicecatalogV1alpha1().ServiceBindings(v1.NamespaceAll).List(options)
+				return client.ServicecatalogV1alpha1().ServiceBindings(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.ServicecatalogV1alpha1().ServiceBindings(v1.NamespaceAll).Watch(options)
+				return client.ServicecatalogV1alpha1().ServiceBindings(namespace).Watch(options)
 			},
 		},
 		&servicecatalog_v1alpha1.ServiceBinding{},
 		resyncPeriod,
-		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
+		indexers,
 	)
+}
 
-	return sharedIndexInformer
+func defaultServiceBindingInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewServiceBindingInformer(client, v1.NamespaceAll, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 }
 
 func (f *serviceBindingInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceBinding{}, newServiceBindingInformer)
+	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceBinding{}, defaultServiceBindingInformer)
 }
 
 func (f *serviceBindingInformer) Lister() v1alpha1.ServiceBindingLister {

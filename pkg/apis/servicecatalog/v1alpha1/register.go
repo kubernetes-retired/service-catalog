@@ -42,7 +42,8 @@ func Resource(resource string) schema.GroupResource {
 var (
 	// SchemeBuilder needs to be exported as `SchemeBuilder` so
 	// the code-generation can find it.
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
+	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
+	localSchemeBuilder = &SchemeBuilder
 	// AddToScheme is exposed for API installation
 	AddToScheme = SchemeBuilder.AddToScheme
 )

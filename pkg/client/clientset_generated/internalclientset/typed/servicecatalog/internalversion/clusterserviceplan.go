@@ -57,6 +57,38 @@ func newClusterServicePlans(c *ServicecatalogClient) *clusterServicePlans {
 	}
 }
 
+// Get takes name of the clusterServicePlan, and returns the corresponding clusterServicePlan object, and an error if there is any.
+func (c *clusterServicePlans) Get(name string, options v1.GetOptions) (result *servicecatalog.ClusterServicePlan, err error) {
+	result = &servicecatalog.ClusterServicePlan{}
+	err = c.client.Get().
+		Resource("clusterserviceplans").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// List takes label and field selectors, and returns the list of ClusterServicePlans that match those selectors.
+func (c *clusterServicePlans) List(opts v1.ListOptions) (result *servicecatalog.ClusterServicePlanList, err error) {
+	result = &servicecatalog.ClusterServicePlanList{}
+	err = c.client.Get().
+		Resource("clusterserviceplans").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// Watch returns a watch.Interface that watches the requested clusterServicePlans.
+func (c *clusterServicePlans) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
+	return c.client.Get().
+		Resource("clusterserviceplans").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Watch()
+}
+
 // Create takes the representation of a clusterServicePlan and creates it.  Returns the server's representation of the clusterServicePlan, and an error, if there is any.
 func (c *clusterServicePlans) Create(clusterServicePlan *servicecatalog.ClusterServicePlan) (result *servicecatalog.ClusterServicePlan, err error) {
 	result = &servicecatalog.ClusterServicePlan{}
@@ -81,7 +113,7 @@ func (c *clusterServicePlans) Update(clusterServicePlan *servicecatalog.ClusterS
 }
 
 // UpdateStatus was generated because the type contains a Status member.
-// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
 func (c *clusterServicePlans) UpdateStatus(clusterServicePlan *servicecatalog.ClusterServicePlan) (result *servicecatalog.ClusterServicePlan, err error) {
 	result = &servicecatalog.ClusterServicePlan{}
@@ -113,38 +145,6 @@ func (c *clusterServicePlans) DeleteCollection(options *v1.DeleteOptions, listOp
 		Body(options).
 		Do().
 		Error()
-}
-
-// Get takes name of the clusterServicePlan, and returns the corresponding clusterServicePlan object, and an error if there is any.
-func (c *clusterServicePlans) Get(name string, options v1.GetOptions) (result *servicecatalog.ClusterServicePlan, err error) {
-	result = &servicecatalog.ClusterServicePlan{}
-	err = c.client.Get().
-		Resource("clusterserviceplans").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ClusterServicePlans that match those selectors.
-func (c *clusterServicePlans) List(opts v1.ListOptions) (result *servicecatalog.ClusterServicePlanList, err error) {
-	result = &servicecatalog.ClusterServicePlanList{}
-	err = c.client.Get().
-		Resource("clusterserviceplans").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested clusterServicePlans.
-func (c *clusterServicePlans) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	opts.Watch = true
-	return c.client.Get().
-		Resource("clusterserviceplans").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
 }
 
 // Patch applies the patch and returns the patched clusterServicePlan.

@@ -143,24 +143,24 @@ $(BINDIR)/controller-manager: .init .generate_files cmd/controller-manager $(NEW
 	touch $@
 
 $(BINDIR)/defaulter-gen: .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/defaulter-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/defaulter-gen
 
 $(BINDIR)/deepcopy-gen: .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/deepcopy-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/deepcopy-gen
 
 $(BINDIR)/conversion-gen: .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/conversion-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/conversion-gen
 
 $(BINDIR)/client-gen: .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/client-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/client-gen
 
 $(BINDIR)/lister-gen: .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/lister-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/lister-gen
 
 $(BINDIR)/informer-gen: .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kubernetes/cmd/libs/go2idl/informer-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/informer-gen
 
-$(BINDIR)/openapi-gen: vendor/k8s.io/kubernetes/cmd/libs/go2idl/openapi-gen
+$(BINDIR)/openapi-gen: vendor/k8s.io/code-generator/cmd/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
 $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
@@ -198,10 +198,8 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(BINDIR)/openapi-gen \
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1,k8s.io/client-go/pkg/api/v1,k8s.io/apimachinery/pkg/apis/meta/v1" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1,k8s.io/api/core/v1,k8s.io/apimachinery/pkg/apis/meta/v1" \
 		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/openapi"
-	# generate codec
-	$(DOCKER_CMD) $(BUILD_DIR)/update-codecgen.sh
 	touch $@
 
 # Some prereq stuff

@@ -22,15 +22,15 @@ package v1alpha1
 
 import (
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	v1 "k8s.io/client-go/pkg/api/v1"
 	unsafe "unsafe"
 )
 
 func init() {
-	SchemeBuilder.Register(RegisterConversions)
+	localSchemeBuilder.Register(RegisterConversions)
 }
 
 // RegisterConversions adds conversion functions to the given scheme.
@@ -187,11 +187,7 @@ func Convert_v1alpha1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceB
 
 func autoConvert_servicecatalog_ClusterServiceBrokerList_To_v1alpha1_ClusterServiceBrokerList(in *servicecatalog.ClusterServiceBrokerList, out *ClusterServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items == nil {
-		out.Items = make([]ClusterServiceBroker, 0)
-	} else {
-		out.Items = *(*[]ClusterServiceBroker)(unsafe.Pointer(&in.Items))
-	}
+	out.Items = *(*[]ClusterServiceBroker)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -277,11 +273,7 @@ func Convert_v1alpha1_ClusterServiceClassList_To_servicecatalog_ClusterServiceCl
 
 func autoConvert_servicecatalog_ClusterServiceClassList_To_v1alpha1_ClusterServiceClassList(in *servicecatalog.ClusterServiceClassList, out *ClusterServiceClassList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items == nil {
-		out.Items = make([]ClusterServiceClass, 0)
-	} else {
-		out.Items = *(*[]ClusterServiceClass)(unsafe.Pointer(&in.Items))
-	}
+	out.Items = *(*[]ClusterServiceClass)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -371,11 +363,7 @@ func Convert_v1alpha1_ClusterServicePlanList_To_servicecatalog_ClusterServicePla
 
 func autoConvert_servicecatalog_ClusterServicePlanList_To_v1alpha1_ClusterServicePlanList(in *servicecatalog.ClusterServicePlanList, out *ClusterServicePlanList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items == nil {
-		out.Items = make([]ClusterServicePlan, 0)
-	} else {
-		out.Items = *(*[]ClusterServicePlan)(unsafe.Pointer(&in.Items))
-	}
+	out.Items = *(*[]ClusterServicePlan)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -539,11 +527,7 @@ func Convert_v1alpha1_ServiceBindingList_To_servicecatalog_ServiceBindingList(in
 
 func autoConvert_servicecatalog_ServiceBindingList_To_v1alpha1_ServiceBindingList(in *servicecatalog.ServiceBindingList, out *ServiceBindingList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items == nil {
-		out.Items = make([]ServiceBinding, 0)
-	} else {
-		out.Items = *(*[]ServiceBinding)(unsafe.Pointer(&in.Items))
-	}
+	out.Items = *(*[]ServiceBinding)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -623,11 +607,7 @@ func Convert_v1alpha1_ServiceBindingStatus_To_servicecatalog_ServiceBindingStatu
 }
 
 func autoConvert_servicecatalog_ServiceBindingStatus_To_v1alpha1_ServiceBindingStatus(in *servicecatalog.ServiceBindingStatus, out *ServiceBindingStatus, s conversion.Scope) error {
-	if in.Conditions == nil {
-		out.Conditions = make([]ServiceBindingCondition, 0)
-	} else {
-		out.Conditions = *(*[]ServiceBindingCondition)(unsafe.Pointer(&in.Conditions))
-	}
+	out.Conditions = *(*[]ServiceBindingCondition)(unsafe.Pointer(&in.Conditions))
 	out.CurrentOperation = ServiceBindingOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
@@ -707,11 +687,7 @@ func Convert_v1alpha1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(
 }
 
 func autoConvert_servicecatalog_ServiceBrokerStatus_To_v1alpha1_ServiceBrokerStatus(in *servicecatalog.ServiceBrokerStatus, out *ServiceBrokerStatus, s conversion.Scope) error {
-	if in.Conditions == nil {
-		out.Conditions = make([]ServiceBrokerCondition, 0)
-	} else {
-		out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
-	}
+	out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*meta_v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	return nil
@@ -815,11 +791,7 @@ func Convert_v1alpha1_ServiceInstanceList_To_servicecatalog_ServiceInstanceList(
 
 func autoConvert_servicecatalog_ServiceInstanceList_To_v1alpha1_ServiceInstanceList(in *servicecatalog.ServiceInstanceList, out *ServiceInstanceList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items == nil {
-		out.Items = make([]ServiceInstance, 0)
-	} else {
-		out.Items = *(*[]ServiceInstance)(unsafe.Pointer(&in.Items))
-	}
+	out.Items = *(*[]ServiceInstance)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -910,11 +882,7 @@ func Convert_v1alpha1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanceSta
 }
 
 func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1alpha1_ServiceInstanceStatus(in *servicecatalog.ServiceInstanceStatus, out *ServiceInstanceStatus, s conversion.Scope) error {
-	if in.Conditions == nil {
-		out.Conditions = make([]ServiceInstanceCondition, 0)
-	} else {
-		out.Conditions = *(*[]ServiceInstanceCondition)(unsafe.Pointer(&in.Conditions))
-	}
+	out.Conditions = *(*[]ServiceInstanceCondition)(unsafe.Pointer(&in.Conditions))
 	out.AsyncOpInProgress = in.AsyncOpInProgress
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))

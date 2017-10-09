@@ -41,8 +41,11 @@ type clusterServicePlanInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newClusterServicePlanInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	sharedIndexInformer := cache.NewSharedIndexInformer(
+// NewClusterServicePlanInformer constructs a new informer for ClusterServicePlan type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewClusterServicePlanInformer(client internalclientset.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				return client.Servicecatalog().ClusterServicePlans().List(options)
@@ -53,14 +56,16 @@ func newClusterServicePlanInformer(client internalclientset.Interface, resyncPer
 		},
 		&servicecatalog.ClusterServicePlan{},
 		resyncPeriod,
-		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
+		indexers,
 	)
+}
 
-	return sharedIndexInformer
+func defaultClusterServicePlanInformer(client internalclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewClusterServicePlanInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 }
 
 func (f *clusterServicePlanInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog.ClusterServicePlan{}, newClusterServicePlanInformer)
+	return f.factory.InformerFor(&servicecatalog.ClusterServicePlan{}, defaultClusterServicePlanInformer)
 }
 
 func (f *clusterServicePlanInformer) Lister() internalversion.ClusterServicePlanLister {

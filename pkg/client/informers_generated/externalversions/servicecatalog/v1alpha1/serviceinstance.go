@@ -41,26 +41,31 @@ type serviceInstanceInformer struct {
 	factory internalinterfaces.SharedInformerFactory
 }
 
-func newServiceInstanceInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	sharedIndexInformer := cache.NewSharedIndexInformer(
+// NewServiceInstanceInformer constructs a new informer for ServiceInstance type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewServiceInstanceInformer(client clientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
-				return client.ServicecatalogV1alpha1().ServiceInstances(v1.NamespaceAll).List(options)
+				return client.ServicecatalogV1alpha1().ServiceInstances(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
-				return client.ServicecatalogV1alpha1().ServiceInstances(v1.NamespaceAll).Watch(options)
+				return client.ServicecatalogV1alpha1().ServiceInstances(namespace).Watch(options)
 			},
 		},
 		&servicecatalog_v1alpha1.ServiceInstance{},
 		resyncPeriod,
-		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
+		indexers,
 	)
+}
 
-	return sharedIndexInformer
+func defaultServiceInstanceInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewServiceInstanceInformer(client, v1.NamespaceAll, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 }
 
 func (f *serviceInstanceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceInstance{}, newServiceInstanceInformer)
+	return f.factory.InformerFor(&servicecatalog_v1alpha1.ServiceInstance{}, defaultServiceInstanceInformer)
 }
 
 func (f *serviceInstanceInformer) Lister() v1alpha1.ServiceInstanceLister {

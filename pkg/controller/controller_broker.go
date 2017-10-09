@@ -25,11 +25,11 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/sets"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -236,7 +236,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		if err != nil {
 			s := fmt.Sprintf("ClusterServiceBroker %q: Error getting broker auth credentials: %s", broker.Name, err)
 			glog.Info(s)
-			c.recorder.Event(broker, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
+			c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -250,7 +250,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		if err != nil {
 			s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
 			glog.Info(s)
-			c.recorder.Event(broker, apiv1.EventTypeWarning, errorAuthCredentialsReason, s)
+			c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -263,7 +263,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		if err != nil {
 			s := fmt.Sprintf("ClusterServiceBroker %q: Error getting broker catalog: %s", broker.Name, err)
 			glog.Warning(s)
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorFetchingCatalogReason, s)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorFetchingCatalogReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -280,7 +280,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			} else if !time.Now().Before(broker.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 				s := fmt.Sprintf("ClusterServiceBroker %q: stopping reconciliation retries because too much time has elapsed", broker.Name)
 				glog.Info(s)
-				c.recorder.Event(broker, apiv1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+				c.recorder.Event(broker, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 				clone, err := api.Scheme.DeepCopy(broker)
 				if err == nil {
 					toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
@@ -318,7 +318,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(s)
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -329,7 +329,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		if len(serviceClasses) == 0 {
 			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
 			glog.Warning(s)
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
 			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
@@ -347,7 +347,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					err,
 				)
 				glog.Warning(s)
-				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
 				c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s)
 				return err
@@ -365,7 +365,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					err,
 				)
 				glog.Warning(s)
-				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorSyncingCatalogReason, s)
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
 				if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s); err != nil {
 					return err
@@ -380,7 +380,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			return err
 		}
 
-		c.recorder.Event(broker, apiv1.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
+		c.recorder.Event(broker, corev1.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
 
 		return nil
 	}
@@ -406,7 +406,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				errorListingClusterServicePlansReason,
 				errorListingClusterServicePlansMessage,
 			)
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
 			return err
 		}
 
@@ -429,7 +429,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					errorDeletingClusterServicePlanMessage,
 					errorDeletingClusterServicePlanReason+s,
 				)
-				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorDeletingClusterServicePlanReason, "%v %v", errorDeletingClusterServicePlanMessage, s)
 				return err
 			}
 		}
@@ -437,7 +437,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		// Get the ClusterServiceClasses for this broker.
 		svcClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err != nil {
-			c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
 			if err := c.updateClusterServiceBrokerCondition(
 				broker,
 				v1alpha1.ServiceBrokerConditionReady,
@@ -463,7 +463,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 					err,
 				)
 				glog.Warning(s)
-				c.recorder.Eventf(broker, apiv1.EventTypeWarning, errorDeletingClusterServiceClassReason, "%v %v", errorDeletingClusterServiceClassMessage, s)
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorDeletingClusterServiceClassReason, "%v %v", errorDeletingClusterServiceClassMessage, s)
 				if err := c.updateClusterServiceBrokerCondition(
 					broker,
 					v1alpha1.ServiceBrokerConditionReady,
@@ -490,7 +490,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
 		c.updateClusterServiceBrokerFinalizers(broker, finalizers.List())
 
-		c.recorder.Eventf(broker, apiv1.EventTypeNormal, successClusterServiceBrokerDeletedReason, successClusterServiceBrokerDeletedMessage, broker.Name)
+		c.recorder.Eventf(broker, corev1.EventTypeNormal, successClusterServiceBrokerDeletedReason, successClusterServiceBrokerDeletedMessage, broker.Name)
 		glog.V(5).Infof("ClusterServiceBroker %q: Successfully deleted", broker.Name)
 		return nil
 	}

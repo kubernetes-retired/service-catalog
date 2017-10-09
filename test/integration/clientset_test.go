@@ -28,16 +28,9 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
 
-	// TODO: fix this upstream
-	// we shouldn't have to install things to use our own generated client.
-
-	// avoid error `servicecatalog/v1alpha1 is not enabled`
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	// avoid error `no kind is registered for the type metav1.ListOptions`
-	_ "k8s.io/client-go/pkg/api/install"
 	// our versioned types
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
 	// our versioned client
@@ -288,7 +281,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		)
 	}
 
-	authSecret := &v1.ObjectReference{
+	authSecret := &corev1.ObjectReference{
 		Namespace: "test-namespace",
 		Name:      "test-name",
 	}
@@ -626,7 +619,7 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 			ExternalName:             name,
 			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 			Description:              "test description",
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: corev1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
 		},
@@ -724,7 +717,7 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 			ExternalName:             sp2Name,
 			ExternalID:               sp2ID,
 			Description:              "test description 2",
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: corev1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
 		},
@@ -938,9 +931,9 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// Update the instance references
-	classRef := &v1.ObjectReference{Name: "service-class-ref"}
+	classRef := &corev1.ObjectReference{Name: "service-class-ref"}
 	instanceServer.Spec.ClusterServiceClassRef = classRef
-	planRef := &v1.ObjectReference{Name: "service-plan-ref"}
+	planRef := &corev1.ObjectReference{Name: "service-plan-ref"}
 	instanceServer.Spec.ClusterServicePlanRef = planRef
 	returnedInstance, err := instanceClient.UpdateReferences(instanceServer)
 	if err != nil {
@@ -1049,7 +1042,7 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 	binding := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},
 		Spec: v1alpha1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: "bar",
 			},
 			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},

@@ -59,6 +59,41 @@ func newServiceBindings(c *ServicecatalogClient, namespace string) *serviceBindi
 	}
 }
 
+// Get takes name of the serviceBinding, and returns the corresponding serviceBinding object, and an error if there is any.
+func (c *serviceBindings) Get(name string, options v1.GetOptions) (result *servicecatalog.ServiceBinding, err error) {
+	result = &servicecatalog.ServiceBinding{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("servicebindings").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// List takes label and field selectors, and returns the list of ServiceBindings that match those selectors.
+func (c *serviceBindings) List(opts v1.ListOptions) (result *servicecatalog.ServiceBindingList, err error) {
+	result = &servicecatalog.ServiceBindingList{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("servicebindings").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// Watch returns a watch.Interface that watches the requested serviceBindings.
+func (c *serviceBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
+	return c.client.Get().
+		Namespace(c.ns).
+		Resource("servicebindings").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Watch()
+}
+
 // Create takes the representation of a serviceBinding and creates it.  Returns the server's representation of the serviceBinding, and an error, if there is any.
 func (c *serviceBindings) Create(serviceBinding *servicecatalog.ServiceBinding) (result *servicecatalog.ServiceBinding, err error) {
 	result = &servicecatalog.ServiceBinding{}
@@ -85,7 +120,7 @@ func (c *serviceBindings) Update(serviceBinding *servicecatalog.ServiceBinding) 
 }
 
 // UpdateStatus was generated because the type contains a Status member.
-// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
 func (c *serviceBindings) UpdateStatus(serviceBinding *servicecatalog.ServiceBinding) (result *servicecatalog.ServiceBinding, err error) {
 	result = &servicecatalog.ServiceBinding{}
@@ -120,41 +155,6 @@ func (c *serviceBindings) DeleteCollection(options *v1.DeleteOptions, listOption
 		Body(options).
 		Do().
 		Error()
-}
-
-// Get takes name of the serviceBinding, and returns the corresponding serviceBinding object, and an error if there is any.
-func (c *serviceBindings) Get(name string, options v1.GetOptions) (result *servicecatalog.ServiceBinding, err error) {
-	result = &servicecatalog.ServiceBinding{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("servicebindings").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ServiceBindings that match those selectors.
-func (c *serviceBindings) List(opts v1.ListOptions) (result *servicecatalog.ServiceBindingList, err error) {
-	result = &servicecatalog.ServiceBindingList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("servicebindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested serviceBindings.
-func (c *serviceBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("servicebindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
 }
 
 // Patch applies the patch and returns the patched serviceBinding.
