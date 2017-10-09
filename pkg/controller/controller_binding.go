@@ -170,11 +170,11 @@ func (c *controller) reconcileServiceBinding(binding *v1alpha1.ServiceBinding) e
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
-			`%s "%s/%s: Referencing a non-existent ServiceInstance "%s/%s"`,
+			`%s "%s/%s": Referencing a non-existent ServiceInstance "%s/%s"`,
 			typez, binding.Namespace, binding.Name, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
 		)
 		glog.Warningf(
-			`%s "%s/%s: referencing a non-existent ServiceInstance "%s/%s" (%s)`,
+			`%s "%s/%s": referencing a non-existent ServiceInstance "%s/%s" (%s)`,
 			typez, binding.Namespace, binding.Name, binding.Namespace, binding.Spec.ServiceInstanceRef.Name, err,
 		)
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentServiceInstanceReason, s)
@@ -438,7 +438,7 @@ func (c *controller) reconcileServiceBinding(binding *v1alpha1.ServiceBinding) e
 					return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, httpErr.Error())
 				}
 				s := fmt.Sprintf(
-					`%s "%s/%s": Error creating ServiceBinding for ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) %q at ClusterServiceBroker %q, %v`,
+					`%s "%s/%s": Error creating ServiceBinding for ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q, %v`,
 					typez, binding.Name, binding.Namespace, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, httpErr.Error(),
 				)
 				glog.Warning(s)
