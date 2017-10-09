@@ -587,10 +587,12 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  tc.oldPlan,
-				ClusterServiceClassRef:          &corev1.ObjectReference{},
-				ClusterServicePlanRef:           &corev1.ObjectReference{},
+				DesiredPlan: servicecatalog.DesiredPlan{
+					ExternalClusterServiceClassName: "test-serviceclass",
+					ExternalClusterServicePlanName:  tc.oldPlan,
+				},
+				ClusterServiceClassRef: &corev1.ObjectReference{},
+				ClusterServicePlanRef:  &corev1.ObjectReference{},
 			},
 		}
 
