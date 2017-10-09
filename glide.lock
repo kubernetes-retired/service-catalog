@@ -1,5 +1,5 @@
-hash: 5a0c7c16b152743f73c9f6ede963a42ef71d2229f516ae65b38cfec936487732
-updated: 2017-10-06T12:06:25.67282054+11:00
+hash: 39183edc8f22afb55e916e80f27605e49a01be2b61b9a33f12289deac66aa4af
+updated: 2017-10-10T10:29:07.829903971+11:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -693,11 +693,4 @@ imports:
   - pkg/common
   - pkg/handler
   - pkg/util
-- name: k8s.io/kubernetes
-  version: 0b9efaeb34a2fc51ff8e4d34ad9bc6375459c4a4
-  subpackages:
-  - pkg/apis/componentconfig
-  - pkg/client/leaderelectionconfig
-  - pkg/util/configz
-  - pkg/util/interrupt
 testImports: []
