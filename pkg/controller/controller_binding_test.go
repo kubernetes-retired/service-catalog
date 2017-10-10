@@ -1261,7 +1261,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeWarning + " " + errorBindCallReason + " " + `BindingController "test-binding/test-ns": Error creating ServiceBinding for ServiceInstance "test-ns/test-instance" of ClusterServiceClass (K8S: "SCGUID" ExternalName: "test-serviceclass") at ClusterServiceBroker "test-broker", Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
+	expectedEvent := corev1.EventTypeWarning + " " + errorBindCallReason + " " + `BindingController "test-binding/test-ns": Error creating ServiceBinding for ServiceInstance "test-ns/test-instance" of ClusterServiceClass (K8S: "SCGUID" ExternalName: "test-serviceclass") at ClusterServiceBroker "test-broker": Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>`
 	if 1 != len(events) {
 		t.Fatalf("Did not record expected event, expecting: %v", expectedEvent)
 	}
@@ -1420,7 +1420,7 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorBindCallReason + " " + "BindingController \"test-binding/test-ns\": Error creating ServiceBinding for ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\")  at ClusterServiceBroker \"test-broker\", Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>"
+	expectedEvent := corev1.EventTypeWarning + " " + errorBindCallReason + " " + "BindingController \"test-binding/test-ns\": Error creating ServiceBinding for ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>"
 
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
