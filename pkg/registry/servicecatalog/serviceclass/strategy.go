@@ -87,7 +87,7 @@ func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, 
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
 	}
-	serviceClass.Status = sc.ServiceClassStatus{}
+	serviceClass.Status = sc.ClusterServiceClassStatus{}
 }
 
 func (serviceClassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {

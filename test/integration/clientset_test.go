@@ -305,7 +305,7 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	brokerUpdated.Status = v1alpha1.ServiceBrokerStatus{
+	brokerUpdated.Status = v1alpha1.ClusterServiceBrokerStatus{
 		Conditions: []v1alpha1.ServiceBrokerCondition{
 			readyConditionTrue,
 		},

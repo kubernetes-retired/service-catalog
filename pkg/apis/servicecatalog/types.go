@@ -34,7 +34,7 @@ type ClusterServiceBroker struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServiceBrokerSpec
-	Status ServiceBrokerStatus
+	Status ClusterServiceBrokerStatus
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -139,8 +139,8 @@ const (
 	BearerTokenKey = "token"
 )
 
-// ServiceBrokerStatus represents the current status of a Broker.
-type ServiceBrokerStatus struct {
+// ClusterServiceBrokerStatus represents the current status of a ClusterServiceBroker
+type ClusterServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
 	// ReconciledGeneration is the 'Generation' of the ServiceBrokerSpec that
@@ -225,7 +225,7 @@ type ClusterServiceClass struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServiceClassSpec
-	Status ServiceClassStatus
+	Status ClusterServiceClassStatus
 }
 
 // ClusterServiceClassSpec represents details about a ClusterServicePlan
@@ -281,8 +281,9 @@ type ClusterServiceClassSpec struct {
 	Requires []string
 }
 
-// ServiceClassStatus represents status information about a ServiceClass.
-type ServiceClassStatus struct {
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
 	// catalog.
 	RemovedFromBrokerCatalog bool
@@ -308,7 +309,7 @@ type ClusterServicePlan struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServicePlanSpec
-	Status ServicePlanStatus
+	Status ClusterServicePlanStatus
 }
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan
@@ -369,8 +370,9 @@ type ClusterServicePlanSpec struct {
 	ClusterServiceClassRef v1.LocalObjectReference
 }
 
-// ServicePlanStatus represents status information about a ServicePlan.
-type ServicePlanStatus struct {
+// ClusterServicePlanStatus represents status information about a
+// ClusterServicePlan.
+type ClusterServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool
