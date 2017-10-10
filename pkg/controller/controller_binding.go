@@ -984,7 +984,7 @@ func (c *controller) updateServiceBindingCondition(
 	_, err = c.serviceCatalogClient.ServiceBindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf(
-			`%s "%s/%s": Error updating %v condition for ServiceBinding %s/%s to %v: %v`,
+			`%s "%s/%s": Error updating %v condition to %v: %v`,
 			typez, binding.Namespace, binding.Name, conditionType, status, err,
 		)
 	}
