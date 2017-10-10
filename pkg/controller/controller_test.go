@@ -72,11 +72,13 @@ const (
 	testClusterServiceBrokerName            = "test-broker"
 	testClusterServiceClassName             = "test-serviceclass"
 	testClusterServicePlanName              = "test-plan"
+	testNonExistentClusterServiceClassName  = "nothere"
 	testNonbindableClusterServiceClassName  = "test-unbindable-serviceclass"
 	testNonbindableClusterServicePlanName   = "test-unbindable-plan"
 	testRemovedClusterServiceClassName      = "removed-test-serviceclass"
 	testRemovedClusterServicePlanName       = "removed-test-plan"
 	testServiceInstanceName                 = "test-instance"
+	testServiceBindingName                  = "test-binding"
 	testServiceBindingSecretName            = "test-secret"
 	testNamespace                           = "test-ns"
 	testServiceInstanceCredentialSecretName = "test-secret"
@@ -386,12 +388,12 @@ func getTestClusterServiceBrokerWithAuth(authInfo *v1beta1.ServiceBrokerAuthInfo
 // a bindable service class wired to the result of getTestClusterServiceBroker()
 func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 	return &v1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: serviceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			Description:              "a test service",
 			ExternalName:             testClusterServiceClassName,
-			ExternalID:               serviceClassGUID,
+			ExternalID:               testClusterServiceClassGUID,
 			Bindable:                 true,
 		},
 	}
@@ -399,12 +401,12 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 
 func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 	return &v1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: removedClusterServiceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			Description:              "a test service that should be removed",
 			ExternalName:             testRemovedClusterServiceClassName,
-			ExternalID:               removedClusterServiceClassGUID,
+			ExternalID:               testRemovedClusterServiceClassGUID,
 			Bindable:                 true,
 		},
 	}
@@ -412,14 +414,14 @@ func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 
 func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 	return &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalID:               planGUID,
+			ExternalID:               testClusterServicePlanGUID,
 			ExternalName:             testClusterServicePlanName,
 			Bindable:                 truePtr(),
 			ClusterServiceClassRef: v1.LocalObjectReference{
-				Name: serviceClassGUID,
+				Name: testClusterServiceClassGUID,
 			},
 		},
 	}
@@ -427,14 +429,14 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 
 func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 	return &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: removedClusterServicePlanGUID},
+		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalID:               removedClusterServicePlanGUID,
+			ExternalID:               testRemovedClusterServicePlanGUID,
 			ExternalName:             testRemovedClusterServicePlanName,
 			Bindable:                 truePtr(),
 			ClusterServiceClassRef: v1.LocalObjectReference{
-				Name: serviceClassGUID,
+				Name: testClusterServiceClassGUID,
 			},
 		},
 	}
@@ -442,13 +444,13 @@ func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 
 func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 	return &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: nonbindablePlanGUID},
+		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ExternalName: testNonbindableClusterServicePlanName,
-			ExternalID:   nonbindablePlanGUID,
+			ExternalID:   testNonbindableClusterServicePlanGUID,
 			Bindable:     falsePtr(),
 			ClusterServiceClassRef: v1.LocalObjectReference{
-				Name: serviceClassGUID,
+				Name: testClusterServiceClassGUID,
 			},
 		},
 	}
@@ -457,11 +459,11 @@ func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 // an unbindable service class wired to the result of getTestClusterServiceBroker()
 func getTestNonbindableClusterServiceClass() *v1beta1.ClusterServiceClass {
 	return &v1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: nonbindableClusterServiceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			ExternalName:             testNonbindableClusterServiceClassName,
-			ExternalID:               nonbindableClusterServiceClassGUID,
+			ExternalID:               testNonbindableClusterServiceClassGUID,
 			Bindable:                 false,
 		},
 	}
@@ -474,20 +476,20 @@ func getTestCatalog() *osb.CatalogResponse {
 		Services: []osb.Service{
 			{
 				Name:        testClusterServiceClassName,
-				ID:          serviceClassGUID,
+				ID:          testClusterServiceClassGUID,
 				Description: "a test service",
 				Bindable:    true,
 				Plans: []osb.Plan{
 					{
 						Name:        testClusterServicePlanName,
 						Free:        truePtr(),
-						ID:          testServicePlanGUID,
+						ID:          testClusterServicePlanGUID,
 						Description: "a test plan",
 					},
 					{
 						Name:        testNonbindableClusterServicePlanName,
 						Free:        truePtr(),
-						ID:          testNonbindableServicePlanGUID,
+						ID:          testNonbindableClusterServicePlanGUID,
 						Description: "a test plan",
 						Bindable:    falsePtr(),
 					},
@@ -506,8 +508,8 @@ func getTestCatalog() *osb.CatalogResponse {
 // Service[Class|Plan]Lister.get(spec.Service[Class|Plan]Ref.Name)
 func getTestServiceInstanceWithRefs() *v1beta1.ServiceInstance {
 	sc := getTestServiceInstance()
-	sc.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: serviceClassGUID}
-	sc.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: planGUID}
+	sc.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: testClusterServiceClassGUID}
+	sc.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testClusterServicePlanGUID}
 	return sc
 }
 
@@ -529,7 +531,7 @@ func getTestServiceInstance() *v1beta1.ServiceInstance {
 				ExternalClusterServiceClassName: testClusterServiceClassName,
 				ExternalClusterServicePlanName:  testClusterServicePlanName,
 			},
-			ExternalID: instanceGUID,
+			ExternalID: testServiceInstanceGUID,
 		},
 	}
 }
@@ -539,8 +541,8 @@ func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 	i := getTestServiceInstance()
 	i.Spec.ExternalClusterServiceClassName = testNonbindableClusterServiceClassName
 	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
-	i.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: nonbindableClusterServiceClassGUID}
-	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
+	i.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: testNonbindableClusterServiceClassGUID}
+	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testNonbindableClusterServicePlanGUID}
 
 	return i
 }
@@ -549,7 +551,7 @@ func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
 	i.Spec.ExternalClusterServicePlanName = testClusterServicePlanName
-	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: planGUID}
+	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testClusterServicePlanGUID}
 
 	return i
 }
@@ -557,7 +559,7 @@ func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInst
 func getTestServiceInstanceBindableServiceNonbindablePlan() *v1beta1.ServiceInstance {
 	i := getTestServiceInstanceWithRefs()
 	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
-	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
+	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testNonbindableClusterServicePlanGUID}
 
 	return i
 }
