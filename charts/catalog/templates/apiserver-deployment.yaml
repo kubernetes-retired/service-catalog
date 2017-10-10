@@ -38,7 +38,7 @@ spec:
         - {{ .Values.apiserver.audit.logPath }}
         {{- end}}
         - --admission-control
-        - "KubernetesNamespaceLifecycle,DefaultServicePlan,ServiceInstanceCredentialsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
+        - "KubernetesNamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
         - --secure-port
         - "8443"
         - --storage-type
@@ -46,9 +46,6 @@ spec:
         {{- if eq .Values.apiserver.storage.type "etcd" }}
         - --etcd-servers
         - {{ .Values.apiserver.storage.etcd.servers }}
-        {{- else if eq .Values.apiserver.storage.type "tpr" }}
-        - --global-namespace
-        - {{ .Values.apiserver.storage.tpr.globalNamespace }}
         {{- end }}
         - -v
         - "{{ .Values.apiserver.verbosity }}"

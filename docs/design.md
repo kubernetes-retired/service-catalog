@@ -34,7 +34,7 @@ them.
   than Service Catalog does, so to avoid confusion the term *Application*
   will refer to the Kubernetes deployment artifact that will use a Service
   Instance.
-- **ServiceInstanceCredential**, or *Service Instance Credential* : a link between a Service Instance
+- **ServiceBinding**, or *Service Binding* : a link between a Service Instance
   and an Application. It expresses the intent for an Application to
   reference and use a particular Service Instance.
 - **ServiceBroker**, or *Service Broker* : a entity, available via a web endpoint,
@@ -83,17 +83,17 @@ resource model.
 
 The storage component behind the Service Catalog's API Server can either be
 [etcd](https://github.com/coreos/etcd) or
-[Third Party Resources](https://kubernetes.io/docs/user-guide/thirdpartyresources/) (TPRs).
+[Custom Resources](https://kubernetes.io/docs/concepts/api-extension/custom-resources/) (CRDs).
 The `rest.storage` interface abstracts the specific persistent storage
 facility being used.
 When etcd is used, the instance(s) of etcd will be distinct from the etcd
 instances of the Kubernetes core - meaning, the Service Catalog will have its
 own persistent storage that is separate from the Kubernetes core.
-When TPRs are used, those resources will be stored in the Kubernetes core
+When CRDs are used, those resources will be stored in the Kubernetes core
 and therefore a separate persistent storage (from Kubernetes) is not needed.
 
 **[DIFF]** *As of now the API Server can only use etcd as its persistent
-storage. The plan is to add support for TPRs to the `rest.storage` interface
+storage. The plan is to add support for CRDs to the `rest.storage` interface
 of the API Server in the near future.*
 
 The Service Catalog resource model is defined within a file called
@@ -117,7 +117,7 @@ a typical workflow:
 ### Registering a Service Broker
 
 **TODO** Talk about namespaces - ServiceBrokers, ServiceClasses are not in a ns.
-But ServiceInstances, ServiceInstanceCredentials, Secrets and ConfigMaps are. However, instances
+But ServiceInstances, ServiceBindings, Secrets and ConfigMaps are. However, instances
 can be in different NS's than the rest (which must all be in the same).
 
 Before a Service can be used by an Application it must first be registered
@@ -179,6 +179,24 @@ Within the `ServiceInstance` resource is the specified Plan to be used. This all
 for the user of the Service to indicate which variant of the Service they
 want - perhaps based on QoS type of variants.
 
+When creating a ServiceInstance, extra metadata (called "parameters") can be
+passed in to help configure the new Service being provisioned. Parameters
+can be provided two different ways: raw JSON or referencing a Kubernetes
+Secret. In the case of a Secret, the Secret name and key holding the
+parameters must be provided.
+The value of the key must be JSON that is then
+merged with any other parameters specified. It is an error for two
+sets of parameters to include the same top-level JSON property name.
+
+When referencing a Secret it is important to note that any updates made to
+the Secret will not automatically cause the Service Catalog to send an
+update request to the Service Broker for the Service Instance. In other words,
+the Service Catalog is not watching for Secret changes. In order to force an
+update to occur you must manually change something within the
+ServiceInstanceSpec resource that would cause a reconciliation to occur.
+Within the ServiceInstanceSpec is a property called `UpdateRequests` which
+can be incremented to cause this to happen.
+
 **TODO** Discuss the parameters that can be passed in
 
 Once an `ServiceInstance` resource is created, the Controller talks with the
@@ -216,25 +234,25 @@ before its fully realized. We shouldn't let the SB be the one to detect this.
 Before a Service Instance can be used it must be "bound" to an Application.
 This means that a link, or usage intent, between an Application and the
 Service Instance must be established. This is done by creating a new
-`ServiceInstanceCredential` resource:
+`ServiceBinding` resource:
 
     kubectl create -f binding.yaml
 
 where `instance.yaml` might look like:
 
     apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: ServiceInstanceCredential
+    kind: ServiceBinding
     metadata:
-      name: johnsServiceInstanceCredential
+      name: johnsServiceBinding
     spec:
       secretName: johnSecret
       ...Pod selector labels...
 
-The Controller, upon being notified of the new `ServiceInstanceCredential` resource, will
-then talk to the Service Broker to create a new ServiceInstanceCredential for the specified
+The Controller, upon being notified of the new `ServiceBinding` resource, will
+then talk to the Service Broker to create a new ServiceBinding for the specified
 Service Instance.
 
-Within the ServiceInstanceCredential object that is returned from the Service Broker are
+Within the ServiceBinding object that is returned from the Service Broker are
 a set of Credentials. These Credentials contain all of the information
 needed for the application to talk with the Service Instance. For example,
 it might include things such as:
@@ -248,11 +266,11 @@ by reading the documentation of the Service.
 
 The Credentials will not be stored in the Service Catalog's datastore.
 Rather, they will be stored in the Kubenetes core as Secrets and a reference
-to the Secret will be saved within the `ServiceInstanceCredential` resource. If the
-ServiceInstanceCredential `Spec.SecretName` is not specified then the Controller will
-use the ServiceInstanceCredential `Name` property as the name of the Secret.
+to the Secret will be saved within the `ServiceBinding` resource. If the
+ServiceBinding `Spec.SecretName` is not specified then the Controller will
+use the ServiceBinding `Name` property as the name of the Secret.
 
-ServiceInstanceCredentials are not required to be in the same Kubenetes Namespace
+ServiceBindings are not required to be in the same Kubenetes Namespace
 as the Service Instance. This allows for sharing of Service Instances
 across Applications and Namespaces.
 
@@ -302,12 +320,12 @@ ServiceInstance.
 As with all resources in Kubernetes, you can delete any of the Service
 Catalog resource by doing an HTTP DELETE to the resource's URL. However,
 it is important to note the you can not delete a Service Instance while
-there are ServiceInstanceCredentials associated with it.  In other words, before a Service
-ServiceInstance can be delete, you must first delete all of its ServiceInstanceCredentials.
-Attempting to delete an ServiceInstance that still has a ServiceInstanceCredential will fail
+there are ServiceBindings associated with it.  In other words, before a Service
+ServiceInstance can be delete, you must first delete all of its ServiceBindings.
+Attempting to delete an ServiceInstance that still has a ServiceBinding will fail
 and generate an error.
 
-Deleting a ServiceInstanceCredential will also, automatically, delete any Secrets or ConfigMaps
+Deleting a ServiceBinding will also, automatically, delete any Secrets or ConfigMaps
 that might be associated with it.
 
 **TODO** what happens to the Pods using them?
@@ -325,11 +343,6 @@ Below are the key aspects of the code that differ from the design above:
 
 - The API Server can only use etcd as its persistent store.
 - The API Server is not connected to the Controller, which means it's not
-  actually used as part of the running system yet. Any resources created 
+  actually used as part of the running system yet. Any resources created
   by talking to the API Server will be stored but nothing beyond storing
   them will happen.
-- Creating Third Party Resource versions of the Service Catalog resources
-  in the Kubernetes core API Server is the current way the system works.
-  The Controller will then talk to the Kubernetes core API Server
-  and monitor the TPR version of the Service Catalog resources and take
-  all appropriate actions.

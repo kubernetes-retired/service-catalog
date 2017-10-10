@@ -37,20 +37,20 @@ To install with defaults:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-# Step 2 - Creating a `ServiceBroker` Resource
+# Step 2 - Creating a `ClusterServiceBroker` Resource
 
 Next, we'll register a broker server with the catalog by creating a new
-[`ServiceBroker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
+[`ClusterServiceBroker`](../contrib/examples/walkthrough/ups-broker.yaml) resource.
 
 Because we haven't created any resources in the service-catalog API server yet,
 `kubectl get` will return an empty list of resources.
 
 ```console
-kubectl --context=service-catalog get servicebrokers,serviceclasses,serviceinstances,serviceinstancecredentials
+kubectl --context=service-catalog get clusterservicebrokers,clusterserviceclasses,serviceinstances,serviceinstancecredentials
 No resources found.
 ```
 
-Create the new `ServiceBroker` resource with the following command:
+Create the new `ClusterServiceBroker` resource with the following command:
 
 ```console
 kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-broker.yaml
@@ -62,28 +62,28 @@ The output of that command should be the following:
 servicebroker "ups-broker" created
 ```
 
-When we create this `ServiceBroker` resource, the service catalog controller responds
+When we create this `ClusterServiceBroker` resource, the service catalog controller responds
 by querying the broker server to see what services it offers and creates a
-`ServiceClass` for each.
+`ClusterServiceClass` for each.
 
 We can check the status of the broker using `kubectl get`:
 
 ```console
-kubectl --context=service-catalog get servicebrokers ups-broker -o yaml
+kubectl --context=service-catalog get clusterservicebrokers ups-broker -o yaml
 ```
 
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: ServiceBroker
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceBroker
 metadata:
   creationTimestamp: 2017-03-03T04:11:17Z
   finalizers:
   - kubernetes-incubator/service-catalog
   name: ups-broker
   resourceVersion: "6"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/servicebrokers/ups-broker
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/ups-broker
   uid: 72fa629b-ffc7-11e6-b111-0242ac110005
 spec:
   url: http://ups-broker-ups-broker.ups-broker.svc.cluster.local
@@ -99,60 +99,64 @@ Notice that the `status` field has been set to reflect that the broker server's
 catalog of service offerings has been successfully added to our cluster's
 service catalog.
 
-# Step 3 - Viewing `ServiceClass`es
+# Step 3 - Viewing `ClusterServiceClass`es
 
-The controller created a `ServiceClass` for each service that the UPS broker
-provides. We can view the `ServiceClass` resources available in the cluster by
+The controller created a `ClusterServiceClass` for each service that the UPS broker
+provides. We can view the `ClusterServiceClass` resources available in the cluster by
 executing:
 
 ```console
-kubectl --context=service-catalog get serviceclasses
+$ kubectl get clusterserviceclasses -o=custom-columns=NAME:.metadata.name,EXTERNAL\ NAME:.spec.externalName
 ```
 
 We should see something like:
 
 ```console
-NAME                    KIND
-user-provided-service   ServiceClass.v1alpha1.servicecatalog.k8s.io
+NAME                                   EXTERNAL NAME
+4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468   user-provided-service
 ```
 
-As we can see, the UPS broker provides a type of service called
+**NOTE:** The above command uses a custom set of columns.  The `NAME` field is
+the Kubernetes name of the ClusterServiceClass and the `EXTERNAL NAME` field is the
+human-readable name for the service that the broker returns.
+
+The UPS broker provides a service with the external name
 `user-provided-service`. Run the following command to see the details of this
 offering:
 
 ```console
-kubectl --context=service-catalog get serviceclasses user-provided-service -o yaml
+kubectl get clusterserviceclasses 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 -o yaml
 ```
 
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: ServiceClass
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceClass
 metadata:
-  creationTimestamp: 2017-03-03T04:11:17Z
-  name: user-provided-service
-  resourceVersion: "7"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/serviceclasses/user-provided-service
-  uid: 72fef5ce-ffc7-11e6-b111-0242ac110005
-brokerName: ups-broker
-externalID: 4F6E6CF6-FFDD-425F-A2C7-3C9258AD2468
-bindable: false
-planUpdatable: false
-plans:
-- name: default
-  free: true
-  externalID: 86064792-7ea2-467b-af93-ac9694d96d52
+  creationTimestamp: 2017-10-02T14:41:25Z
+  name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  resourceVersion: "5"
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  uid: c46d4496-a77f-11e7-8b18-0242ac110005
+spec:
+  bindable: true
+  brokerName: ups-broker
+  description: A user provided service
+  externalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  externalMetadata: null
+  externalName: user-provided-service
+  planUpdatable: false
 ```
 
 # Step 4 - Creating a New `ServiceInstance`
 
-Now that a `ServiceClass` named `user-provided-service` exists within our
+Now that a `ClusterServiceClass` named `user-provided-service` exists within our
 cluster's service catalog, we can provision an instance of that. We do so by
 creating a new [`ServiceInstance`](../contrib/examples/walkthrough/ups-instance.yaml)
 resource.
 
-Unlike `ServiceBroker` and `ServiceClass` resources, `ServiceInstance` resources must reside
+Unlike `ClusterServiceBroker` and `ClusterServiceClass` resources, `ServiceInstance` resources must reside
 within a Kubernetes namespace. To proceed, we'll first ensure that the namespace
 `test-ns` exists:
 
@@ -183,86 +187,98 @@ kubectl --context=service-catalog get serviceinstances -n test-ns ups-instance -
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
-  creationTimestamp: 2017-03-03T04:26:08Z
+  creationTimestamp: 2017-10-02T14:50:28Z
   finalizers:
   - kubernetes-incubator/service-catalog
+  generation: 1
   name: ups-instance
   namespace: test-ns
-  resourceVersion: "9"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/serviceinstances/ups-instance
-  uid: 8654e626-ffc9-11e6-b111-0242ac110005
+  resourceVersion: "12"
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/serviceinstances/ups-instance
+  uid: 07ecf19d-a781-11e7-8b18-0242ac110005
 spec:
-  externalID: 34c984e1-4626-4574-8a95-9e500d0d48d3
+  externalID: 7f2c176a-ae67-4b5e-a826-58591d85a1d7
+  externalClusterServiceClassName: user-provided-service
+  externalClusterServicePlanName: default
   parameters:
     credentials:
-      name: root
-      password: letmein
-  planName: default
-  serviceClassName: user-provided-service
+      param-1: value-1
+      param-2: value-2
 status:
+  asyncOpInProgress: false
   conditions:
-  - lastTransitionTime: 2017-03-03T04:26:09Z
+  - lastTransitionTime: 2017-10-02T14:50:28Z
     message: The instance was provisioned successfully
     reason: ProvisionedSuccessfully
     status: "True"
     type: Ready
+  externalProperties:
+    externalClusterServicePlanName: default
+    parameterChecksum: e65c764db8429f9afef45f1e8f71bcbf9fdbe9a13306b86fd5dcc3c5d11e5dd3
+    parameters:
+      credentials:
+        param-1: value-1
+        param-2: value-2
+  orphanMitigationInProgress: false
+  reconciledGeneration: 1
+
 ```
 
-# Step 5 - Requesting a `ServiceInstanceCredential` to use the `ServiceInstance`
+# Step 5 - Requesting a `ServiceBinding` to use the `ServiceInstance`
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
-we will create a [`ServiceInstanceCredential`](../contrib/examples/walkthrough/ups-instance-credential.yaml)
+we will create a [`ServiceBinding`](../contrib/examples/walkthrough/ups-binding.yaml)
 resource.
 
 ```console
-kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-instance-credential.yaml
+kubectl --context=service-catalog create -f contrib/examples/walkthrough/ups-binding.yaml
 ```
 
 
 That command should output:
 
 ```console
-serviceinstancecredential "ups-instance-credential" created
+serviceinstancecredential "ups-binding" created
 ```
 
-After the `ServiceInstanceCredential` resource is created, the service catalog controller will
+After the `ServiceBinding` resource is created, the service catalog controller will
 communicate with the appropriate broker server to initiate binding. Generally,
 this will cause the broker server to create and issue credentials that the
 service catalog controller will insert into a Kubernetes `Secret`. We can check
 the status of this process like so:
 
 ```console
-kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
+kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-binding -o yaml
 ```
 
 _NOTE: if using the API aggregator, you will need to use the fully qualified name of the binding resource due to [issue 1008](https://github.com/kubernetes-incubator/service-catalog/issues/1008):_
 
 ```console
-kubectl get bindings.v1alpha1.servicecatalog.k8s.io -n test-ns ups-instance-credential -o yaml
+kubectl get serviceinstancecredentials -n test-ns ups-binding -o yaml
 ```
 
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: ServiceInstanceCredential
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceBinding
 metadata:
   creationTimestamp: 2017-03-07T01:44:36Z
   finalizers:
   - kubernetes-incubator/service-catalog
-  name: ups-instance-credential
+  name: ups-binding
   namespace: test-ns
   resourceVersion: "29"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/serviceinstancecredentials/ups-instance-credential
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/serviceinstancecredentials/ups-binding
   uid: 9eb2cdce-02d7-11e7-8edb-0242ac110005
 spec:
   instanceRef:
     name: ups-instance
   externalID: b041db94-a5a0-41a2-87ae-1025ba760918
-  secretName: ups-instance-credential
+  secretName: ups-binding
 status:
   conditions:
   - lastTransitionTime: 2017-03-03T01:44:37Z
@@ -280,22 +296,22 @@ see a new one:
 kubectl get secrets -n test-ns
 NAME                              TYPE                                  DATA      AGE
 default-token-3k61z               kubernetes.io/service-account-token   3         29m
-ups-instance-credential           Opaque                                2         1m
+ups-binding                       Opaque                                2         1m
 ```
 
-Notice that a new `Secret` named `ups-instance-credential` has been created.
+Notice that a new `Secret` named `ups-binding` has been created.
 
-# Step 6 - Deleting the `ServiceInstanceCredential`
+# Step 6 - Deleting the `ServiceBinding`
 
 Now, let's unbind from the provisioned instance. To do this, we simply *delete* the
-`ServiceInstanceCredential` resource that we previously created:
+`ServiceBinding` resource that we previously created:
 
 ```console
-kubectl --context=service-catalog delete -n test-ns serviceinstancecredentials ups-instance-credential
+kubectl --context=service-catalog delete -n test-ns serviceinstancecredentials ups-binding
 ```
 
 Checking the `Secret`s in the `test-ns` namespace, we should see that
-`ups-instance-credential` has also been deleted:
+`ups-binding` has also been deleted:
 
 ```console
 kubectl get secrets -n test-ns
@@ -312,20 +328,20 @@ Now, we can deprovision the instance. To do this, we simply *delete* the
 kubectl --context=service-catalog delete -n test-ns serviceinstances ups-instance
 ```
 
-# Step 8 - Deleting the `ServiceBroker`
+# Step 8 - Deleting the `ClusterServiceBroker`
 
 Next, we should remove the broker server, and the services it offers, from the catalog. We can do
 so by simply deleting the broker:
 
 ```console
-kubectl --context=service-catalog delete servicebrokers ups-broker
+kubectl --context=service-catalog delete clusterservicebrokers ups-broker
 ```
 
-We should then see that all the `ServiceClass` resources that came from that
+We should then see that all the `ClusterServiceClass` resources that came from that
 broker have also been deleted:
 
 ```console
-kubectl --context=service-catalog get serviceclasses
+kubectl --context=service-catalog get clusterserviceclasses
 No resources found.
 ```
 

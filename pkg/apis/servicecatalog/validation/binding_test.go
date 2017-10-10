@@ -19,19 +19,20 @@ package validation
 import (
 	"testing"
 
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-func validServiceInstanceCredential() *servicecatalog.ServiceInstanceCredential {
-	return &servicecatalog.ServiceInstanceCredential{
+func validServiceBinding() *servicecatalog.ServiceBinding {
+	return &servicecatalog.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-binding",
 			Namespace: "test-ns",
 		},
-		Spec: servicecatalog.ServiceInstanceCredentialSpec{
+		Spec: servicecatalog.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{
 				Name: "test-instance",
 			},
@@ -40,21 +41,40 @@ func validServiceInstanceCredential() *servicecatalog.ServiceInstanceCredential 
 	}
 }
 
-func TestValidateServiceInstanceCredential(t *testing.T) {
+func validServiceBindingWithInProgressBind() *servicecatalog.ServiceBinding {
+	binding := validServiceBinding()
+	binding.Generation = 2
+	binding.Status.ReconciledGeneration = 1
+	binding.Status.CurrentOperation = servicecatalog.ServiceBindingOperationBind
+	now := metav1.Now()
+	binding.Status.OperationStartTime = &now
+	binding.Status.InProgressProperties = validServiceBindingPropertiesState()
+	return binding
+}
+
+func validServiceBindingPropertiesState() *servicecatalog.ServiceBindingPropertiesState {
+	return &servicecatalog.ServiceBindingPropertiesState{
+		Parameters:         &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
+		ParametersChecksum: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	}
+}
+
+func TestValidateServiceBinding(t *testing.T) {
 	cases := []struct {
 		name    string
-		binding *servicecatalog.ServiceInstanceCredential
+		binding *servicecatalog.ServiceBinding
+		create  bool
 		valid   bool
 	}{
 		{
 			name:    "valid",
-			binding: validServiceInstanceCredential(),
+			binding: validServiceBinding(),
 			valid:   true,
 		},
 		{
 			name: "missing namespace",
-			binding: func() *servicecatalog.ServiceInstanceCredential {
-				b := validServiceInstanceCredential()
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
 				b.Namespace = ""
 				return b
 			}(),
@@ -62,8 +82,8 @@ func TestValidateServiceInstanceCredential(t *testing.T) {
 		},
 		{
 			name: "missing instance name",
-			binding: func() *servicecatalog.ServiceInstanceCredential {
-				b := validServiceInstanceCredential()
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
 				b.Spec.ServiceInstanceRef.Name = ""
 				return b
 			}(),
@@ -71,8 +91,8 @@ func TestValidateServiceInstanceCredential(t *testing.T) {
 		},
 		{
 			name: "invalid instance name",
-			binding: func() *servicecatalog.ServiceInstanceCredential {
-				b := validServiceInstanceCredential()
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
 				b.Spec.ServiceInstanceRef.Name = "test-instance-)*!"
 				return b
 			}(),
@@ -80,8 +100,8 @@ func TestValidateServiceInstanceCredential(t *testing.T) {
 		},
 		{
 			name: "missing secretName",
-			binding: func() *servicecatalog.ServiceInstanceCredential {
-				b := validServiceInstanceCredential()
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
 				b.Spec.SecretName = ""
 				return b
 			}(),
@@ -89,17 +109,313 @@ func TestValidateServiceInstanceCredential(t *testing.T) {
 		},
 		{
 			name: "invalid secretName",
-			binding: func() *servicecatalog.ServiceInstanceCredential {
-				b := validServiceInstanceCredential()
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
 				b.Spec.SecretName = "T_T"
 				return b
 			}(),
 			valid: false,
 		},
+		{
+			name:    "valid with in-progress bind",
+			binding: validServiceBindingWithInProgressBind(),
+			valid:   true,
+		},
+		{
+			name: "valid with in-progress unbind",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.CurrentOperation = servicecatalog.ServiceBindingOperationUnbind
+				b.Status.InProgressProperties = nil
+				return b
+			}(),
+			valid: true,
+		},
+		{
+			name: "invalid current operation",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.CurrentOperation = servicecatalog.ServiceBindingOperation("bad-operation")
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress without updated generation",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.ReconciledGeneration = b.Generation
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress with missing OperationStartTime",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.OperationStartTime = nil
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "not in-progress with present OperationStartTime",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				now := metav1.Now()
+				b.Status.OperationStartTime = &now
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress with condition ready/true",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.Conditions = []servicecatalog.ServiceBindingCondition{
+					{
+						Type:   servicecatalog.ServiceBindingConditionReady,
+						Status: servicecatalog.ConditionTrue,
+					},
+				}
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress with condition ready/false",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.Conditions = []servicecatalog.ServiceBindingCondition{
+					{
+						Type:   servicecatalog.ServiceBindingConditionReady,
+						Status: servicecatalog.ConditionFalse,
+					},
+				}
+				return b
+			}(),
+			valid: true,
+		},
+		{
+			name: "in-progress bind with missing InProgressParameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties = nil
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "not in-progress with present InProgressParameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.InProgressProperties = validServiceBindingPropertiesState()
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress unbind with present InProgressParameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.CurrentOperation = servicecatalog.ServiceBindingOperationUnbind
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "valid in-progress properties with no parameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.Parameters = nil
+				b.Status.InProgressProperties.ParametersChecksum = ""
+				return b
+			}(),
+			valid: true,
+		},
+		{
+			name: "in-progress properties parameters with missing parameters checksum",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.ParametersChecksum = ""
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress properties parameters checksum with missing parameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.Parameters = nil
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress properties parameters with missing raw",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.Parameters.Raw = []byte{}
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress properties parameters with malformed yaml",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.Parameters.Raw = []byte("bad yaml")
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress properties parameters checksum too small",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.ParametersChecksum = "0123456"
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress properties parameters checksum malformed",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.InProgressProperties.ParametersChecksum = "not hex"
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "valid external properties",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				return b
+			}(),
+			valid: true,
+		},
+		{
+			name: "valid external properties with no parameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.Parameters = nil
+				b.Status.ExternalProperties.ParametersChecksum = ""
+				return b
+			}(),
+			valid: true,
+		},
+		{
+			name: "external properties parameters with missing parameters checksum",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.ParametersChecksum = ""
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "external properties parameters checksum with missing parameters",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.Parameters = nil
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "external properties parameters with missing raw",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.Parameters.Raw = []byte{}
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "external properties parameters with malformed yaml",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.Parameters.Raw = []byte("bad yaml")
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "external properties parameters checksum too small",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.ParametersChecksum = "0123456"
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "external properties parameters checksum malformed",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
+				b.Status.ExternalProperties.ParametersChecksum = "not hex"
+				return b
+			}(),
+			valid: false,
+		},
+		{
+			name: "valid create",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Generation = 1
+				b.Status.ReconciledGeneration = 0
+				return b
+			}(),
+			create: true,
+			valid:  true,
+		},
+		{
+			name: "create with operation in-progress",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Generation = 1
+				b.Status.ReconciledGeneration = 0
+				b.Status.CurrentOperation = servicecatalog.ServiceBindingOperationBind
+				return b
+			}(),
+			create: true,
+			valid:  false,
+		},
+		{
+			name: "create with invalid reconciled generation",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Generation = 1
+				b.Status.ReconciledGeneration = 1
+				return b
+			}(),
+			create: true,
+			valid:  false,
+		},
+		{
+			name: "update with invalid reconciled generation",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Generation = 1
+				b.Status.ReconciledGeneration = 2
+				return b
+			}(),
+			create: false,
+			valid:  false,
+		},
 	}
 
 	for _, tc := range cases {
-		errs := ValidateServiceInstanceCredential(tc.binding)
+		errs := internalValidateServiceBinding(tc.binding, tc.create)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
@@ -109,7 +425,7 @@ func TestValidateServiceInstanceCredential(t *testing.T) {
 	}
 }
 
-func TestInternalValidateServiceInstanceCredentialUpdateAllowed(t *testing.T) {
+func TestInternalValidateServiceBindingUpdateAllowed(t *testing.T) {
 	cases := []struct {
 		name              string
 		newSpecChange     bool
@@ -143,7 +459,7 @@ func TestInternalValidateServiceInstanceCredentialUpdateAllowed(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		oldBinding := validServiceInstanceCredential()
+		oldBinding := validServiceBinding()
 		if tc.onGoingSpecChange {
 			oldBinding.Generation = 2
 		} else {
@@ -151,7 +467,7 @@ func TestInternalValidateServiceInstanceCredentialUpdateAllowed(t *testing.T) {
 		}
 		oldBinding.Status.ReconciledGeneration = 1
 
-		newBinding := validServiceInstanceCredential()
+		newBinding := validServiceBinding()
 		if tc.newSpecChange {
 			newBinding.Generation = oldBinding.Generation + 1
 		} else {
@@ -159,7 +475,7 @@ func TestInternalValidateServiceInstanceCredentialUpdateAllowed(t *testing.T) {
 		}
 		newBinding.Status.ReconciledGeneration = 1
 
-		errs := internalValidateServiceInstanceCredentialUpdateAllowed(newBinding, oldBinding)
+		errs := internalValidateServiceBindingUpdateAllowed(newBinding, oldBinding)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue

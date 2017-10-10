@@ -26,20 +26,20 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	proto "github.com/golang/protobuf/proto"
-	flag "github.com/spf13/pflag"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	testapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	apitesting "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testing"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/pkg/api"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"k8s.io/apimachinery/pkg/api/testing/fuzzer"
+	"k8s.io/apimachinery/pkg/api/testing/roundtrip"
 
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 )
@@ -50,8 +50,6 @@ func init() {
 
 // BABYNETES: ripped from pkg/api/serialization_test.go
 
-var fuzzIters = flag.Int("fuzz-iters", 20, "How many fuzzing iterations to do.")
-
 var codecsToTest = []func(version schema.GroupVersion, item runtime.Object) (runtime.Codec, bool, error){
 	func(version schema.GroupVersion, item runtime.Object) (runtime.Codec, bool, error) {
 		c, err := testapi.GetCodecForObject(item)
@@ -60,7 +58,7 @@ var codecsToTest = []func(version schema.GroupVersion, item runtime.Object) (run
 }
 
 func fuzzInternalObject(t *testing.T, forVersion schema.GroupVersion, item runtime.Object, seed int64) runtime.Object {
-	apitesting.FuzzerFor(t, forVersion, rand.NewSource(seed)).Fuzz(item)
+	fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs).Fuzz(item)
 
 	j, err := meta.TypeAccessor(item)
 	if err != nil {
@@ -79,30 +77,6 @@ func dataAsString(data []byte) string {
 		proto.NewBuffer(make([]byte, 0, 1024)).DebugPrint("decoded object", data)
 	}
 	return dataString
-}
-
-func doRoundTripTest(group testapi.TestGroup, kind string, t *testing.T) {
-	item, err := api.Scheme.New(group.InternalGroupVersion().WithKind(kind))
-	if err != nil {
-		t.Fatalf("Couldn't make a %v? %v", kind, err)
-	}
-	if _, err := meta.TypeAccessor(item); err != nil {
-		t.Fatalf("%q is not a TypeMeta and cannot be tested - add it to nonRoundTrippableTypes: %v", kind, err)
-	}
-
-	gvk := group.GroupVersion().WithKind(kind)
-
-	if api.Scheme.Recognizes(gvk) {
-		roundTripSame(t, group, item, nonRoundTrippableTypesByVersion[kind]...)
-	} else {
-		t.Logf("skipped roundTripSame because API scheme doesn't recognize gvk: %v\n", gvk)
-	}
-
-	if !nonInternalRoundTrippableTypes.Has(kind) && api.Scheme.Recognizes(gvk) {
-		roundTrip(t, group.Codec(), fuzzInternalObject(t, group.InternalGroupVersion(), item, rand.Int63()))
-	} else {
-		t.Logf("skipped roundTrip for gvk: %v\n", gvk)
-	}
 }
 
 // roundTripSame verifies the same source object is tested in all API versions.
@@ -165,6 +139,7 @@ func roundTrip(t *testing.T, codec runtime.Codec, item runtime.Object) {
 	t.Logf("Codec: %+v\n", codec)
 	obj2, err := runtime.Decode(codec, data)
 	if err != nil {
+		t.Errorf("ERROR: %v", err)
 		t.Errorf("0: %v: %v\nCodec: %#v\nData: %s\nSource: %#v", name, err, codec, dataAsString(data), printer.Sprintf("%#v", item))
 		panic("failed")
 	}
@@ -186,7 +161,7 @@ func roundTrip(t *testing.T, codec runtime.Codec, item runtime.Object) {
 
 func serviceCatalogAPIGroup() testapi.TestGroup {
 	// OOPS: didn't register the right group version
-	groupVersion, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1alpha1")
+	groupVersion, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1beta1")
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing groupversion: %v", err))
 	}
@@ -202,7 +177,8 @@ func serviceCatalogAPIGroup() testapi.TestGroup {
 	)
 }
 
-// For debugging problems
+// TestSpecificKind round-trips a single specific kind and is intended to help
+// debug issues that arise while adding a new API type.
 func TestSpecificKind(t *testing.T) {
 	group := serviceCatalogAPIGroup()
 
@@ -210,17 +186,15 @@ func TestSpecificKind(t *testing.T) {
 		t.Log(kind)
 	}
 
-	kind := "ServiceClass"
-	for i := 0; i < *fuzzIters; i++ {
-		doRoundTripTest(serviceCatalogAPIGroup(), kind, t)
-		if t.Failed() {
-			break
-		}
-	}
+	internalGVK := schema.GroupVersionKind{Group: group.GroupVersion().Group, Version: group.GroupVersion().Version, Kind: "ClusterServiceClass"}
+	seed := rand.Int63()
+	fuzzer := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs)
+
+	roundtrip.RoundTripSpecificKindWithoutProtobuf(t, internalGVK, api.Scheme, api.Codecs, fuzzer, nil)
 }
 
-func TestServiceBrokerList(t *testing.T) {
-	kind := "ServiceBrokerList"
+func TestClusterServiceBrokerList(t *testing.T) {
+	kind := "ClusterServiceBrokerList"
 	item, err := api.Scheme.New(serviceCatalogAPIGroup().InternalGroupVersion().WithKind(kind))
 	if err != nil {
 		t.Errorf("Couldn't make a %v? %v", kind, err)
@@ -229,79 +203,27 @@ func TestServiceBrokerList(t *testing.T) {
 	roundTripSame(t, serviceCatalogAPIGroup(), item)
 }
 
-var nonRoundTrippableTypes = sets.NewString(
-	// TODO: no one seems to understand why the *Options types are or aren't
-	// considered round-trippable in this test; we need to establish what the
-	// issue is in there and then debug any that should be round-trippable but
-	// fail.
-	"ListOptions",
-	"DeleteOptions",
-	"ExportOptions",
-	"GetOptions",
-	// WatchEvent does not include kind and version and can only be deserialized
-	// implicitly (if the caller expects the specific object). The watch call defines
-	// the schema by content type, rather than via kind/version included in each
-	// object.
-	"WatchEvent",
-)
-var nonInternalRoundTrippableTypes = sets.NewString("List", "ListOptions", "ExportOptions", "DeleteOptions")
-var nonRoundTrippableTypesByVersion = map[string][]string{}
-
 // based on pkg/api/testapi
 var catalogGroups = map[string]testapi.TestGroup{
 	"servicecatalog": serviceCatalogAPIGroup(),
 }
 
+// TestRoundTripTypes applies the round-trip test to all round-trippable Kinds
+// in all of the API groups registered for test in the testapi package.
 func TestRoundTripTypes(t *testing.T) {
-	for groupKey, group := range catalogGroups {
-		for kind := range group.InternalTypes() {
-			t.Logf("working on %v in %v", kind, groupKey)
-			if nonRoundTrippableTypes.Has(kind) {
-				continue
-			}
-			// Try a few times, since runTest uses random values.
-			for i := 0; i < *fuzzIters; i++ {
-				doRoundTripTest(group, kind, t)
-				if t.Failed() {
-					break
-				}
-			}
-		}
-	}
-}
-
-func testEncodePtr(t *testing.T) {
-	broker := &servicecatalog.ServiceBroker{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "ServiceBroker",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"name": "broker_foo"},
-		},
-	}
-
-	obj := runtime.Object(broker)
-	data, err := runtime.Encode(testapi.Default.Codec(), obj)
-	obj2, err2 := runtime.Decode(testapi.Default.Codec(), data)
-	if err != nil || err2 != nil {
-		t.Fatalf("Failure: '%v' '%v'", err, err2)
-	}
-	if _, ok := obj2.(*api.Pod); !ok {
-		t.Fatalf("Got wrong type")
-	}
-	if !equality.Semantic.DeepEqual(obj2, broker) {
-		t.Errorf("\nExpected:\n\n %#v,\n\nGot:\n\n %#vDiff: %v\n\n", broker, obj2, diff.ObjectDiff(obj2, broker))
-
-	}
+	seed := rand.Int63()
+	fuzzer := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, rand.NewSource(seed), api.Codecs)
+	nonRoundTrippableTypes := map[schema.GroupVersionKind]bool{}
+	roundtrip.RoundTripTypesWithoutProtobuf(t, api.Scheme, api.Codecs, fuzzer, nonRoundTrippableTypes)
 }
 
 func TestBadJSONRejection(t *testing.T) {
 	badJSONMissingKind := []byte(`{ }`)
-	if _, err := runtime.Decode(testapi.Default.Codec(), badJSONMissingKind); err == nil {
+	if _, err := runtime.Decode(testapi.ServiceCatalog.Codec(), badJSONMissingKind); err == nil {
 		t.Errorf("Did not reject despite lack of kind field: %s", badJSONMissingKind)
 	}
 	badJSONUnknownType := []byte(`{"kind": "bar"}`)
-	if _, err1 := runtime.Decode(testapi.Default.Codec(), badJSONUnknownType); err1 == nil {
+	if _, err1 := runtime.Decode(testapi.ServiceCatalog.Codec(), badJSONUnknownType); err1 == nil {
 		t.Errorf("Did not reject despite use of unknown type: %s", badJSONUnknownType)
 	}
 }
