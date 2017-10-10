@@ -66,10 +66,15 @@ const (
 	instanceGUID                       = "IGUID"
 	bindingGUID                        = "BGUID"
 
+	removedClusterServiceClassGUID = "REMOVED-SERVICE"
+	removedClusterServicePlanGUID  = "REMOVED-PLAN"
+
 	testClusterServiceBrokerName           = "test-broker"
 	testClusterServiceClassName            = "test-serviceclass"
+	testRemovedClusterServiceClassName     = "removed-test-serviceclass"
 	testNonbindableClusterServiceClassName = "test-unbindable-serviceclass"
 	testClusterServicePlanName             = "test-plan"
+	testRemovedClusterServicePlanName      = "removed-test-plan"
 	testNonbindableClusterServicePlanName  = "test-unbindable-plan"
 	testServiceInstanceName                = "test-instance"
 	testServiceBindingName                 = "test-binding"
@@ -394,6 +399,19 @@ func getTestClusterServiceClass() *v1alpha1.ClusterServiceClass {
 	}
 }
 
+func getTestRemovedClusterServiceClass() *v1alpha1.ClusterServiceClass {
+	return &v1alpha1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: removedClusterServiceClassGUID},
+		Spec: v1alpha1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			Description:              "a test service that should be removed",
+			ExternalName:             testRemovedClusterServiceClassName,
+			ExternalID:               removedClusterServiceClassGUID,
+			Bindable:                 true,
+		},
+	}
+}
+
 func getTestClusterServicePlan() *v1alpha1.ClusterServicePlan {
 	return &v1alpha1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
@@ -401,6 +419,21 @@ func getTestClusterServicePlan() *v1alpha1.ClusterServicePlan {
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			ExternalID:               planGUID,
 			ExternalName:             testClusterServicePlanName,
+			Bindable:                 truePtr(),
+			ClusterServiceClassRef: v1.LocalObjectReference{
+				Name: serviceClassGUID,
+			},
+		},
+	}
+}
+
+func getTestRemovedClusterServicePlan() *v1alpha1.ClusterServicePlan {
+	return &v1alpha1.ClusterServicePlan{
+		ObjectMeta: metav1.ObjectMeta{Name: removedClusterServicePlanGUID},
+		Spec: v1alpha1.ClusterServicePlanSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			ExternalID:               removedClusterServicePlanGUID,
+			ExternalName:             testRemovedClusterServicePlanName,
 			Bindable:                 truePtr(),
 			ClusterServiceClassRef: v1.LocalObjectReference{
 				Name: serviceClassGUID,
