@@ -19,7 +19,7 @@ package rest
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	servicecatalogv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
@@ -50,22 +50,22 @@ func (p StorageProvider) NewRESTStorage(
 	restOptionsGetter generic.RESTOptionsGetter,
 ) (*genericapiserver.APIGroupInfo, error) {
 
-	storage, err := p.v1alpha1Storage(apiResourceConfigSource, restOptionsGetter)
+	storage, err := p.v1beta1Storage(apiResourceConfigSource, restOptionsGetter)
 	if err != nil {
 		return nil, err
 	}
 
 	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(servicecatalog.GroupName, api.Registry, api.Scheme, api.ParameterCodec, api.Codecs)
-	apiGroupInfo.GroupMeta.GroupVersion = servicecatalogv1alpha1.SchemeGroupVersion
+	apiGroupInfo.GroupMeta.GroupVersion = servicecatalogv1beta1.SchemeGroupVersion
 
 	apiGroupInfo.VersionedResourcesStorageMap = map[string]map[string]rest.Storage{
-		servicecatalogv1alpha1.SchemeGroupVersion.Version: storage,
+		servicecatalogv1beta1.SchemeGroupVersion.Version: storage,
 	}
 
 	return &apiGroupInfo, nil
 }
 
-func (p StorageProvider) v1alpha1Storage(
+func (p StorageProvider) v1beta1Storage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter,
 ) (map[string]rest.Storage, error) {

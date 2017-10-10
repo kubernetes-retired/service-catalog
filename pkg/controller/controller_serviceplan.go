@@ -18,7 +18,7 @@ package controller
 
 import (
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -49,7 +49,7 @@ func (c *controller) servicePlanUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) servicePlanDelete(obj interface{}) {
-	servicePlan, ok := obj.(*v1alpha1.ClusterServicePlan)
+	servicePlan, ok := obj.(*v1beta1.ClusterServicePlan)
 	if servicePlan == nil || !ok {
 		return
 	}

@@ -24,7 +24,7 @@ import (
 	"github.com/golang/glog"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +53,7 @@ func (c *controller) brokerUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) brokerDelete(obj interface{}) {
-	broker, ok := obj.(*v1alpha1.ClusterServiceBroker)
+	broker, ok := obj.(*v1beta1.ClusterServiceBroker)
 	if broker == nil || !ok {
 		return
 	}
@@ -141,7 +141,7 @@ const (
 // returns true unless the broker has a ready condition with status true and
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true, or if the broker's RelistBehavior is set to Manual.
-func shouldReconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker, now time.Time) bool {
+func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, now time.Time) bool {
 	if broker.Status.ReconciledGeneration != broker.Generation {
 		// If the spec has changed, we should reconcile the broker.
 		return true
@@ -154,14 +154,14 @@ func shouldReconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker, 
 
 	// find the ready condition in the broker's status
 	for _, condition := range broker.Status.Conditions {
-		if condition.Type == v1alpha1.ServiceBrokerConditionReady {
+		if condition.Type == v1beta1.ServiceBrokerConditionReady {
 			// The broker has a ready condition
 
-			if condition.Status == v1alpha1.ConditionTrue {
+			if condition.Status == v1beta1.ConditionTrue {
 
 				// The broker's ready condition has status true, meaning that
 				// at some point, we successfully listed the broker's catalog.
-				if broker.Spec.RelistBehavior == v1alpha1.ServiceBrokerRelistBehaviorManual {
+				if broker.Spec.RelistBehavior == v1beta1.ServiceBrokerRelistBehaviorManual {
 					// If a broker is configured with RelistBehaviorManual, it should
 					// ignore the Duration and only relist based on spec changes
 
@@ -220,7 +220,7 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 // reconcileClusterServiceBroker is the control-loop that reconciles a Broker. An
 // error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
-func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServiceBroker) error {
+func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker) error {
 	glog.V(4).Infof("ClusterServiceBroker %q: processing", broker.Name)
 
 	// * If the broker's ready condition is true and the RelistBehavior has been
@@ -237,7 +237,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			s := fmt.Sprintf("ClusterServiceBroker %q: Error getting broker auth credentials: %s", broker.Name, err)
 			glog.Info(s)
 			c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
 			return err
@@ -251,7 +251,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
 			glog.Info(s)
 			c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
 			return err
@@ -266,13 +266,13 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			s := fmt.Sprintf("ClusterServiceBroker %q: Error getting broker catalog: %s", broker.Name, err)
 			glog.Warning(s)
 			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorFetchingCatalogReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
 				return err
 			}
 			if broker.Status.OperationStartTime == nil {
 				clone, err := api.Scheme.DeepCopy(broker)
 				if err == nil {
-					toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
+					toUpdate := clone.(*v1beta1.ClusterServiceBroker)
 					toUpdate.Status.OperationStartTime = &now
 					if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
 						glog.Errorf("ClusterServiceBroker %q: Error updating operation start time: %v", broker.Name, err)
@@ -285,12 +285,12 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				c.recorder.Event(broker, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 				clone, err := api.Scheme.DeepCopy(broker)
 				if err == nil {
-					toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
+					toUpdate := clone.(*v1beta1.ClusterServiceBroker)
 					toUpdate.Status.OperationStartTime = nil
 					toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 					if err := c.updateClusterServiceBrokerCondition(toUpdate,
-						v1alpha1.ServiceBrokerConditionFailed,
-						v1alpha1.ConditionTrue,
+						v1beta1.ServiceBrokerConditionFailed,
+						v1beta1.ConditionTrue,
 						errorReconciliationRetryTimeoutReason,
 						s); err != nil {
 						return err
@@ -308,7 +308,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			if err != nil {
 				return err
 			}
-			toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
+			toUpdate := clone.(*v1beta1.ClusterServiceBroker)
 			toUpdate.Status.OperationStartTime = nil
 			if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
 				glog.Errorf("ClusterServiceBroker %q: error updating operation start time: %v", broker.Name, err)
@@ -323,7 +323,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(s)
 			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
 			return err
@@ -335,7 +335,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
 			glog.Warning(s)
 			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
 			return stderrors.New(s)
@@ -368,7 +368,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				)
 				glog.Warning(s)
 				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+				c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s)
 				return err
 			}
@@ -393,7 +393,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				)
 				glog.Warningf("ClusterServiceBroker %q: %s", broker.Name, s)
 				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+				if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s); err != nil {
 					return err
 				}
@@ -417,7 +417,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				)
 				glog.Warning(s)
 				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+				if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s); err != nil {
 					return err
 				}
@@ -446,7 +446,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				)
 				glog.Warningf("ClusterServiceBroker %q: %s", broker.Name, s)
 				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse, errorSyncingCatalogReason,
+				if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
 					errorSyncingCatalogMessage+s); err != nil {
 					return err
 				}
@@ -456,7 +456,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 
 		// everything worked correctly; update the broker's ready condition to
 		// status true
-		if err := c.updateClusterServiceBrokerCondition(broker, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue, successFetchedCatalogReason, successFetchedCatalogMessage); err != nil {
+		if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionTrue, successFetchedCatalogReason, successFetchedCatalogMessage); err != nil {
 			return err
 		}
 
@@ -468,7 +468,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 	// All updates not having a DeletingTimestamp will have been handled above
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
-	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
+	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
 		glog.V(4).Infof("ClusterServiceBroker %q: finalizing", broker.Name)
 
 		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForBroker(broker)
@@ -491,8 +491,8 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				glog.Warning(s)
 				c.updateClusterServiceBrokerCondition(
 					broker,
-					v1alpha1.ServiceBrokerConditionReady,
-					v1alpha1.ConditionUnknown,
+					v1beta1.ServiceBrokerConditionReady,
+					v1beta1.ConditionUnknown,
 					errorDeletingClusterServicePlanMessage,
 					errorDeletingClusterServicePlanReason+s,
 				)
@@ -515,8 +515,8 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorDeletingClusterServiceClassReason, "%v %v", errorDeletingClusterServiceClassMessage, s)
 				if err := c.updateClusterServiceBrokerCondition(
 					broker,
-					v1alpha1.ServiceBrokerConditionReady,
-					v1alpha1.ConditionUnknown,
+					v1beta1.ServiceBrokerConditionReady,
+					v1beta1.ConditionUnknown,
 					errorDeletingClusterServiceClassMessage,
 					errorDeletingClusterServiceClassReason+s,
 				); err != nil {
@@ -528,15 +528,15 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 
 		if err := c.updateClusterServiceBrokerCondition(
 			broker,
-			v1alpha1.ServiceBrokerConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceBrokerConditionReady,
+			v1beta1.ConditionFalse,
 			successClusterServiceBrokerDeletedReason,
 			"The broker was deleted successfully",
 		); err != nil {
 			return err
 		}
 		// Clear the finalizer
-		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 		c.updateClusterServiceBrokerFinalizers(broker, finalizers.List())
 
 		c.recorder.Eventf(broker, corev1.EventTypeNormal, successClusterServiceBrokerDeletedReason, successClusterServiceBrokerDeletedMessage, broker.Name)
@@ -552,7 +552,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1alpha1.ClusterServi
 // listed. The serviceClass parameter is the serviceClass from the broker's
 // catalog payload. The existingServiceClass parameter is the serviceClass
 // that already exists for the given broker with this serviceClass' k8s name.
-func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker *v1alpha1.ClusterServiceBroker, serviceClass, existingServiceClass *v1alpha1.ClusterServiceClass) error {
+func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker *v1beta1.ClusterServiceBroker, serviceClass, existingServiceClass *v1beta1.ClusterServiceClass) error {
 	serviceClass.Spec.ClusterServiceBrokerName = broker.Name
 
 	if existingServiceClass == nil {
@@ -598,7 +598,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 		return err
 	}
 
-	toUpdate := clone.(*v1alpha1.ClusterServiceClass)
+	toUpdate := clone.(*v1beta1.ClusterServiceClass)
 	toUpdate.Spec.Bindable = serviceClass.Spec.Bindable
 	toUpdate.Spec.PlanUpdatable = serviceClass.Spec.PlanUpdatable
 	toUpdate.Spec.Tags = serviceClass.Spec.Tags
@@ -615,7 +615,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 
 // reconcileClusterServicePlanFromClusterServiceBrokerCatalog reconciles a
 // ServicePlan after the ServiceClass's catalog has been re-listed.
-func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker *v1alpha1.ClusterServiceBroker, servicePlan, existingServicePlan *v1alpha1.ClusterServicePlan) error {
+func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker *v1beta1.ClusterServiceBroker, servicePlan, existingServicePlan *v1beta1.ClusterServicePlan) error {
 	servicePlan.Spec.ClusterServiceBrokerName = broker.Name
 
 	if existingServicePlan == nil {
@@ -662,7 +662,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 		return err
 	}
 
-	toUpdate := clone.(*v1alpha1.ClusterServicePlan)
+	toUpdate := clone.(*v1beta1.ClusterServicePlan)
 	toUpdate.Spec.Description = servicePlan.Spec.Description
 	toUpdate.Spec.Bindable = servicePlan.Spec.Bindable
 	toUpdate.Spec.Free = servicePlan.Spec.Free
@@ -680,13 +680,13 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 
 // updateClusterServiceBrokerCondition updates the ready condition for the given Broker
 // with the given status, reason, and message.
-func (c *controller) updateClusterServiceBrokerCondition(broker *v1alpha1.ClusterServiceBroker, conditionType v1alpha1.ServiceBrokerConditionType, status v1alpha1.ConditionStatus, reason, message string) error {
+func (c *controller) updateClusterServiceBrokerCondition(broker *v1beta1.ClusterServiceBroker, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus, reason, message string) error {
 	clone, err := api.Scheme.DeepCopy(broker)
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
-	newCondition := v1alpha1.ServiceBrokerCondition{
+	toUpdate := clone.(*v1beta1.ClusterServiceBroker)
+	newCondition := v1beta1.ServiceBrokerCondition{
 		Type:    conditionType,
 		Status:  status,
 		Reason:  reason,
@@ -698,7 +698,7 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1alpha1.Cluste
 	if len(broker.Status.Conditions) == 0 {
 		glog.Infof("ClusterServiceBroker %q: Setting lastTransitionTime for condition %q to %v", broker.Name, conditionType, t)
 		newCondition.LastTransitionTime = metav1.NewTime(t)
-		toUpdate.Status.Conditions = []v1alpha1.ServiceBrokerCondition{newCondition}
+		toUpdate.Status.Conditions = []v1beta1.ServiceBrokerCondition{newCondition}
 	} else {
 		for i, cond := range broker.Status.Conditions {
 			if cond.Type == conditionType {
@@ -717,7 +717,7 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1alpha1.Cluste
 
 	// Set status.ReconciledGeneration if updating ready condition to true
 
-	if conditionType == v1alpha1.ServiceBrokerConditionReady && status == v1alpha1.ConditionTrue {
+	if conditionType == v1beta1.ServiceBrokerConditionReady && status == v1beta1.ConditionTrue {
 		toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 	}
 
@@ -734,7 +734,7 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1alpha1.Cluste
 
 // updateClusterServiceBrokerFinalizers updates the given finalizers for the given Broker.
 func (c *controller) updateClusterServiceBrokerFinalizers(
-	broker *v1alpha1.ClusterServiceBroker,
+	broker *v1beta1.ClusterServiceBroker,
 	finalizers []string) error {
 
 	// Get the latest version of the broker so that we can avoid conflicts
@@ -749,7 +749,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ClusterServiceBroker)
+	toUpdate := clone.(*v1beta1.ClusterServiceBroker)
 
 	toUpdate.Finalizers = finalizers
 
@@ -764,7 +764,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 	return err
 }
 
-func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1alpha1.ClusterServiceBroker) ([]v1alpha1.ClusterServiceClass, []v1alpha1.ClusterServicePlan, error) {
+func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.ClusterServiceBroker) ([]v1beta1.ClusterServiceClass, []v1beta1.ClusterServicePlan, error) {
 	fieldSet := fields.Set{
 		"spec.clusterServiceBrokerName": broker.Name,
 	}
@@ -776,8 +776,8 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1alpha1.
 		c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
 		if err := c.updateClusterServiceBrokerCondition(
 			broker,
-			v1alpha1.ServiceBrokerConditionReady,
-			v1alpha1.ConditionUnknown,
+			v1beta1.ServiceBrokerConditionReady,
+			v1beta1.ConditionUnknown,
 			errorListingClusterServiceClassesReason,
 			errorListingClusterServiceClassesMessage,
 		); err != nil {
@@ -792,8 +792,8 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1alpha1.
 		c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
 		if err := c.updateClusterServiceBrokerCondition(
 			broker,
-			v1alpha1.ServiceBrokerConditionReady,
-			v1alpha1.ConditionUnknown,
+			v1beta1.ServiceBrokerConditionReady,
+			v1beta1.ConditionUnknown,
 			errorListingClusterServicePlansReason,
 			errorListingClusterServicePlansMessage,
 		); err != nil {
@@ -806,8 +806,8 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1alpha1.
 	return existingServiceClasses.Items, existingServicePlans.Items, nil
 }
 
-func convertServiceClassListToMap(list []v1alpha1.ClusterServiceClass) map[string]*v1alpha1.ClusterServiceClass {
-	ret := make(map[string]*v1alpha1.ClusterServiceClass, len(list))
+func convertServiceClassListToMap(list []v1beta1.ClusterServiceClass) map[string]*v1beta1.ClusterServiceClass {
+	ret := make(map[string]*v1beta1.ClusterServiceClass, len(list))
 
 	for i := range list {
 		ret[list[i].Name] = &list[i]
@@ -816,8 +816,8 @@ func convertServiceClassListToMap(list []v1alpha1.ClusterServiceClass) map[strin
 	return ret
 }
 
-func convertServicePlanListToMap(list []v1alpha1.ClusterServicePlan) map[string]*v1alpha1.ClusterServicePlan {
-	ret := make(map[string]*v1alpha1.ClusterServicePlan, len(list))
+func convertServicePlanListToMap(list []v1beta1.ClusterServicePlan) map[string]*v1beta1.ClusterServicePlan {
+	ret := make(map[string]*v1beta1.ClusterServicePlan, len(list))
 
 	for i := range list {
 		ret[list[i].Name] = &list[i]

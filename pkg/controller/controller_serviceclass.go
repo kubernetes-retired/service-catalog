@@ -18,7 +18,7 @@ package controller
 
 import (
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -43,7 +43,7 @@ func (c *controller) reconcileClusterServiceClassKey(key string) error {
 	return nil
 }
 
-func (c *controller) reconcileClusterServiceClass(serviceClass *v1alpha1.ClusterServiceClass) error {
+func (c *controller) reconcileClusterServiceClass(serviceClass *v1beta1.ClusterServiceClass) error {
 	glog.V(4).Infof("Processing ServiceClass %v", serviceClass.Name)
 	return nil
 }
@@ -53,7 +53,7 @@ func (c *controller) serviceClassUpdate(oldObj, newObj interface{}) {
 }
 
 func (c *controller) serviceClassDelete(obj interface{}) {
-	serviceClass, ok := obj.(*v1alpha1.ClusterServiceClass)
+	serviceClass, ok := obj.(*v1beta1.ClusterServiceClass)
 	if serviceClass == nil || !ok {
 		return
 	}

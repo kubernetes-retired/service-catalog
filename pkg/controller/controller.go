@@ -37,10 +37,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
-	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
+	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
 )
 
 const (
@@ -62,7 +62,7 @@ const (
 // NewController returns a new Open Service Broker catalog controller.
 func NewController(
 	kubeClient kubernetes.Interface,
-	serviceCatalogClient servicecatalogclientset.ServicecatalogV1alpha1Interface,
+	serviceCatalogClient servicecatalogclientset.ServicecatalogV1beta1Interface,
 	brokerInformer informers.ClusterServiceBrokerInformer,
 	clusterServiceClassInformer informers.ClusterServiceClassInformer,
 	instanceInformer informers.ServiceInstanceInformer,
@@ -140,7 +140,7 @@ type Controller interface {
 // controller is a concrete Controller.
 type controller struct {
 	kubeClient                  kubernetes.Interface
-	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1alpha1Interface
+	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1beta1Interface
 	brokerClientCreateFunc      osb.CreateFunc
 	brokerLister                listers.ClusterServiceBrokerLister
 	serviceClassLister          listers.ClusterServiceClassLister
@@ -246,15 +246,15 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
-func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1alpha1.ServiceInstance) (*v1alpha1.ClusterServiceClass, *v1alpha1.ClusterServicePlan, string, osb.Client, error) {
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
 		glog.Info(s)
 		c.updateServiceInstanceCondition(
 			instance,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			errorNonexistentClusterServiceClassReason,
 			"The instance references a ClusterServiceClass that does not exist. "+s,
 		)
@@ -268,8 +268,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			errorNonexistentClusterServicePlanReason,
 			"The instance references a ClusterServicePlan that does not exist. "+s,
 		)
@@ -283,8 +283,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			errorNonexistentClusterServiceBrokerReason,
 			"The instance references a ClusterServiceBroker that does not exist. "+s,
 		)
@@ -298,8 +298,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 		glog.Info(s)
 		c.updateServiceInstanceCondition(
 			instance,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
@@ -322,15 +322,15 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
-func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1alpha1.ServiceInstance, binding *v1alpha1.ServiceBinding) (*v1alpha1.ClusterServiceClass, *v1alpha1.ClusterServicePlan, string, osb.Client, error) {
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf("ServiceBinding \"%s/%s\" references a non-existent ClusterServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalClusterServiceClassName)
 		glog.Warning(s)
 		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceBindingConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
 			errorNonexistentClusterServiceClassReason,
 			"The binding references a ClusterServiceClass that does not exist. "+s,
 		)
@@ -344,8 +344,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		glog.Warning(s)
 		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceBindingConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
 			errorNonexistentClusterServicePlanReason,
 			"The ServiceBinding references an ServiceInstance which references ClusterServicePlan that does not exist. "+s,
 		)
@@ -359,8 +359,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		glog.Warning(s)
 		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceBindingConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
 			errorNonexistentClusterServiceBrokerReason,
 			"The binding references a ClusterServiceBroker that does not exist. "+s,
 		)
@@ -374,8 +374,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		glog.Warning(s)
 		c.updateServiceBindingCondition(
 			binding,
-			v1alpha1.ServiceBindingConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
 			errorAuthCredentialsReason,
 			"Error getting auth credentials. "+s,
 		)
@@ -398,7 +398,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 // getAuthCredentialsFromClusterServiceBroker returns the auth credentials, if any, or
 // returns an error. If the AuthInfo field is nil, empty values are
 // returned.
-func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, broker *v1alpha1.ClusterServiceBroker) (*osb.AuthConfig, error) {
+func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, broker *v1beta1.ClusterServiceBroker) (*osb.AuthConfig, error) {
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
@@ -478,12 +478,12 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 // convertCatalog converts a service broker catalog into an array of
 // ClusterServiceClasses and an array of ClusterServicePlans.  The ClusterServiceClasses and
 // ClusterServicePlans returned by this method are named in K8S with the OSB ID.
-func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ClusterServiceClass, []*v1alpha1.ClusterServicePlan, error) {
-	serviceClasses := make([]*v1alpha1.ClusterServiceClass, len(in.Services))
-	servicePlans := []*v1alpha1.ClusterServicePlan{}
+func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+	serviceClasses := make([]*v1beta1.ClusterServiceClass, len(in.Services))
+	servicePlans := []*v1beta1.ClusterServicePlan{}
 	for i, svc := range in.Services {
-		serviceClasses[i] = &v1alpha1.ClusterServiceClass{
-			Spec: v1alpha1.ClusterServiceClassSpec{
+		serviceClasses[i] = &v1beta1.ClusterServiceClass{
+			Spec: v1beta1.ClusterServiceClassSpec{
 				Bindable:      svc.Bindable,
 				PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
 				ExternalID:    svc.ID,
@@ -516,14 +516,14 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1alpha1.ClusterServiceClass, [
 	return serviceClasses, servicePlans, nil
 }
 
-func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1alpha1.ClusterServicePlan, error) {
+func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ClusterServiceClass %q must have at least one plan", serviceClassID)
 	}
-	servicePlans := make([]*v1alpha1.ClusterServicePlan, len(plans))
+	servicePlans := make([]*v1beta1.ClusterServicePlan, len(plans))
 	for i, plan := range plans {
-		servicePlans[i] = &v1alpha1.ClusterServicePlan{
-			Spec: v1alpha1.ClusterServicePlanSpec{
+		servicePlans[i] = &v1beta1.ClusterServicePlan{
+			Spec: v1beta1.ClusterServicePlanSpec{
 				ExternalName:           plan.Name,
 				ExternalID:             plan.ID,
 				Free:                   (plan.Free != nil && *plan.Free),
@@ -588,10 +588,10 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1a
 
 // isServiceInstanceReady returns whether the given instance has a ready condition
 // with status true.
-func isServiceInstanceReady(instance *v1alpha1.ServiceInstance) bool {
+func isServiceInstanceReady(instance *v1beta1.ServiceInstance) bool {
 	for _, cond := range instance.Status.Conditions {
-		if cond.Type == v1alpha1.ServiceInstanceConditionReady {
-			return cond.Status == v1alpha1.ConditionTrue
+		if cond.Type == v1beta1.ServiceInstanceConditionReady {
+			return cond.Status == v1beta1.ConditionTrue
 		}
 	}
 
@@ -638,7 +638,7 @@ func NewControllerRef(owner metav1.Object, gvk schema.GroupVersionKind) *metav1.
 
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
 // to the specified Broker
-func NewClientConfigurationForBroker(broker *v1alpha1.ClusterServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
+func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
 	clientConfig := osb.DefaultClientConfiguration()
 	clientConfig.Name = broker.Name
 	clientConfig.URL = broker.Spec.URL
