@@ -22,8 +22,8 @@ import (
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 
-	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	v1alpha1typed "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
+	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1beta1typed "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 )
 
 // ServiceBindings is a wrapper around the generated fake
@@ -31,23 +31,23 @@ import (
 // being passed to UpdateStatus. This is a workaround until the generated fake
 // clientset does its own copying.
 type ServiceBindings struct {
-	v1alpha1typed.ServiceBindingInterface
+	v1beta1typed.ServiceBindingInterface
 }
 
-func (c *ServiceBindings) Create(serviceInstance *v1alpha1.ServiceBinding) (result *v1alpha1.ServiceBinding, err error) {
+func (c *ServiceBindings) Create(serviceInstance *v1beta1.ServiceBinding) (result *v1beta1.ServiceBinding, err error) {
 	return c.ServiceBindingInterface.Create(serviceInstance)
 }
 
-func (c *ServiceBindings) Update(serviceInstance *v1alpha1.ServiceBinding) (result *v1alpha1.ServiceBinding, err error) {
+func (c *ServiceBindings) Update(serviceInstance *v1beta1.ServiceBinding) (result *v1beta1.ServiceBinding, err error) {
 	return c.ServiceBindingInterface.Update(serviceInstance)
 }
 
-func (c *ServiceBindings) UpdateStatus(serviceInstance *v1alpha1.ServiceBinding) (*v1alpha1.ServiceBinding, error) {
+func (c *ServiceBindings) UpdateStatus(serviceInstance *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
 	clone, err := api.Scheme.DeepCopy(serviceInstance)
 	if err != nil {
 		return nil, err
 	}
-	instanceCopy := clone.(*v1alpha1.ServiceBinding)
+	instanceCopy := clone.(*v1beta1.ServiceBinding)
 	_, err = c.ServiceBindingInterface.UpdateStatus(instanceCopy)
 	return serviceInstance, err
 }
@@ -60,11 +60,11 @@ func (c *ServiceBindings) DeleteCollection(options *v1.DeleteOptions, listOption
 	return c.ServiceBindingInterface.DeleteCollection(options, listOptions)
 }
 
-func (c *ServiceBindings) Get(name string, options v1.GetOptions) (result *v1alpha1.ServiceBinding, err error) {
+func (c *ServiceBindings) Get(name string, options v1.GetOptions) (result *v1beta1.ServiceBinding, err error) {
 	return c.ServiceBindingInterface.Get(name, options)
 }
 
-func (c *ServiceBindings) List(opts v1.ListOptions) (result *v1alpha1.ServiceBindingList, err error) {
+func (c *ServiceBindings) List(opts v1.ListOptions) (result *v1beta1.ServiceBindingList, err error) {
 	return c.ServiceBindingInterface.List(opts)
 }
 
@@ -74,6 +74,6 @@ func (c *ServiceBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Patch applies the patch and returns the patched serviceInstance.
-func (c *ServiceBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.ServiceBinding, err error) {
+func (c *ServiceBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceBinding, err error) {
 	return c.ServiceBindingInterface.Patch(name, pt, data, subresources...)
 }

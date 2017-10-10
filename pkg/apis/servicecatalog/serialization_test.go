@@ -161,7 +161,7 @@ func roundTrip(t *testing.T, codec runtime.Codec, item runtime.Object) {
 
 func serviceCatalogAPIGroup() testapi.TestGroup {
 	// OOPS: didn't register the right group version
-	groupVersion, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1alpha1")
+	groupVersion, err := schema.ParseGroupVersion("servicecatalog.k8s.io/v1beta1")
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing groupversion: %v", err))
 	}

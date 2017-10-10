@@ -108,7 +108,7 @@ identifier).
 To configure a provisioning request in Service Catalog, we need to declare a `ServiceInstance` 
 resource with an AMI identifier declared in the `parameters` field of its spec:
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
   name: ami-instance
@@ -150,7 +150,7 @@ It requires JSON configuration like this:
 The corresponding `ServiceInstance` resource with such configuration can be defined as 
 follows:
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
   name: spring-cloud-instance

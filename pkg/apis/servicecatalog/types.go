@@ -34,7 +34,7 @@ type ClusterServiceBroker struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServiceBrokerSpec
-	Status ServiceBrokerStatus
+	Status ClusterServiceBrokerStatus
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -139,8 +139,8 @@ const (
 	BearerTokenKey = "token"
 )
 
-// ServiceBrokerStatus represents the current status of a Broker.
-type ServiceBrokerStatus struct {
+// ClusterServiceBrokerStatus represents the current status of a ClusterServiceBroker
+type ClusterServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
 	// ReconciledGeneration is the 'Generation' of the ServiceBrokerSpec that
@@ -225,7 +225,7 @@ type ClusterServiceClass struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServiceClassSpec
-	Status ServiceClassStatus
+	Status ClusterServiceClassStatus
 }
 
 // ClusterServiceClassSpec represents details about a ClusterServicePlan
@@ -281,8 +281,9 @@ type ClusterServiceClassSpec struct {
 	Requires []string
 }
 
-// ServiceClassStatus represents status information about a ServiceClass.
-type ServiceClassStatus struct {
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
 	// catalog.
 	RemovedFromBrokerCatalog bool
@@ -308,7 +309,7 @@ type ClusterServicePlan struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServicePlanSpec
-	Status ServicePlanStatus
+	Status ClusterServicePlanStatus
 }
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan
@@ -369,8 +370,9 @@ type ClusterServicePlanSpec struct {
 	ClusterServiceClassRef v1.LocalObjectReference
 }
 
-// ServicePlanStatus represents status information about a ServicePlan.
-type ServicePlanStatus struct {
+// ClusterServicePlanStatus represents status information about a
+// ClusterServicePlan.
+type ClusterServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool
@@ -410,23 +412,30 @@ type ServiceInstance struct {
 	Status ServiceInstanceStatus
 }
 
-// ServiceInstanceSpec represents the desired state of an Instance.
-type ServiceInstanceSpec struct {
-	// ExternalClusterServiceClassName is the human-readable name of the service
-	// as reported by the broker. Note that if the broker changes
+// PlanReference defines the user specification for the desired
+// ServicePlan and ServiceClass. Because there are multiple ways to
+// specify the desired Class/Plan, this structure specifies the
+// allowed ways to specify the intent.
+type PlanReference struct {
+	// ExternalClusterServiceClassName is the human-readable name of the
+	// service as reported by the broker. Note that if the broker changes
 	// the name of the ClusterServiceClass, it will not be reflected here,
 	// and to see the current name of the ClusterServiceClass, you should
 	// follow the ClusterServiceClassRef below.
 	//
 	// Immutable.
 	ExternalClusterServiceClassName string
-
 	// ExternalClusterServicePlanName is the human-readable name of the plan
-	// as reported by the broker. Note that if the broker changes
-	// the name of the ClusterServicePlan, it will not be reflected here,
-	// and to see the current name of the ClusterServicePlan, you should
-	// follow the ClusterServicePlanRef below.
+	// as reported by the broker. Note that if the broker changes the name
+	// of the ClusterServicePlan, it will not be reflected here, and to see
+	// the current name of the ClusterServicePlan, you should follow the
+	// ClusterServicePlanRef below.
 	ExternalClusterServicePlanName string
+}
+
+// ServiceInstanceSpec represents the desired state of an Instance.
+type ServiceInstanceSpec struct {
+	PlanReference
 
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
 	// that the user selected.

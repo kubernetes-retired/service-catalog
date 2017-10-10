@@ -94,7 +94,7 @@ func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj ru
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
-	broker.Status = sc.ServiceBrokerStatus{}
+	broker.Status = sc.ClusterServiceBrokerStatus{}
 	// Fill in the first entry set to "creating"?
 	broker.Status.Conditions = []sc.ServiceBrokerCondition{}
 	broker.Finalizers = []string{sc.FinalizerServiceCatalog}

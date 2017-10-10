@@ -75,7 +75,7 @@ kubectl --context=service-catalog get clusterservicebrokers ups-broker -o yaml
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServiceBroker
 metadata:
   creationTimestamp: 2017-03-03T04:11:17Z
@@ -83,7 +83,7 @@ metadata:
   - kubernetes-incubator/service-catalog
   name: ups-broker
   resourceVersion: "6"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/clusterservicebrokers/ups-broker
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/ups-broker
   uid: 72fa629b-ffc7-11e6-b111-0242ac110005
 spec:
   url: http://ups-broker-ups-broker.ups-broker.svc.cluster.local
@@ -131,13 +131,13 @@ kubectl get clusterserviceclasses 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 -o yaml
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServiceClass
 metadata:
   creationTimestamp: 2017-10-02T14:41:25Z
   name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
   resourceVersion: "5"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/clusterserviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
   uid: c46d4496-a77f-11e7-8b18-0242ac110005
 spec:
   bindable: true
@@ -187,7 +187,7 @@ kubectl --context=service-catalog get serviceinstances -n test-ns ups-instance -
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
   creationTimestamp: 2017-10-02T14:50:28Z
@@ -197,7 +197,7 @@ metadata:
   name: ups-instance
   namespace: test-ns
   resourceVersion: "12"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/serviceinstances/ups-instance
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/serviceinstances/ups-instance
   uid: 07ecf19d-a781-11e7-8b18-0242ac110005
 spec:
   externalID: 7f2c176a-ae67-4b5e-a826-58591d85a1d7
@@ -263,7 +263,7 @@ kubectl get serviceinstancecredentials -n test-ns ups-binding -o yaml
 We should see something like:
 
 ```yaml
-apiVersion: servicecatalog.k8s.io/v1alpha1
+apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
   creationTimestamp: 2017-03-07T01:44:36Z
@@ -272,7 +272,7 @@ metadata:
   name: ups-binding
   namespace: test-ns
   resourceVersion: "29"
-  selfLink: /apis/servicecatalog.k8s.io/v1alpha1/namespaces/test-ns/serviceinstancecredentials/ups-binding
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/serviceinstancecredentials/ups-binding
   uid: 9eb2cdce-02d7-11e7-8edb-0242ac110005
 spec:
   instanceRef:

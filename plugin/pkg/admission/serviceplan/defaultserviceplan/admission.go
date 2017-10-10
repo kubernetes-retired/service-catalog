@@ -77,9 +77,10 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	if !ok {
 		return apierrors.NewBadRequest("Resource was marked with kind Instance but was unable to be converted")
 	}
+
 	// If the plan is specified, let it through and have the controller
 	// deal with finding the right plan, etc.
-	if len(instance.Spec.ExternalClusterServicePlanName) > 0 {
+	if instance.Spec.ExternalClusterServicePlanName != "" {
 		return nil
 	}
 

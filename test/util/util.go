@@ -26,13 +26,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	v1alpha1servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1beta1servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 )
 
 // WaitForBrokerCondition waits for the status of the named broker to contain
 // a condition whose type and status matches the supplied one.
-func WaitForBrokerCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string, condition v1alpha1.ServiceBrokerCondition) error {
+func WaitForBrokerCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string, condition v1beta1.ServiceBrokerCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for broker %v condition %#v", name, condition)
@@ -58,7 +58,7 @@ func WaitForBrokerCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1
 
 // WaitForBrokerToNotExist waits for the Broker with the given name to no
 // longer exist.
-func WaitForBrokerToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
+func WaitForBrokerToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for broker %v to not exist", name)
@@ -78,7 +78,7 @@ func WaitForBrokerToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha
 
 // WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given name
 // to exist.
-func WaitForClusterServiceClassToExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
+func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for serviceClass %v to exist", name)
@@ -94,7 +94,7 @@ func WaitForClusterServiceClassToExist(client v1alpha1servicecatalog.Servicecata
 
 // WaitForClusterServiceClassToNotExist waits for the ClusterServiceClass with the given
 // name to no longer exist.
-func WaitForClusterServiceClassToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, name string) error {
+func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for serviceClass %v to not exist", name)
@@ -114,7 +114,7 @@ func WaitForClusterServiceClassToNotExist(client v1alpha1servicecatalog.Servicec
 
 // WaitForInstanceCondition waits for the status of the named instance to
 // contain a condition whose type and status matches the supplied one.
-func WaitForInstanceCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.ServiceInstanceCondition) error {
+func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceInstanceCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v condition %#v", namespace, name, condition)
@@ -140,7 +140,7 @@ func WaitForInstanceCondition(client v1alpha1servicecatalog.ServicecatalogV1alph
 
 // WaitForInstanceToNotExist waits for the Instance with the given name to no
 // longer exist.
-func WaitForInstanceToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string) error {
+func WaitForInstanceToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v to not exist", namespace, name)
@@ -161,7 +161,7 @@ func WaitForInstanceToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alp
 
 // WaitForInstanceReconciledGeneration waits for the status of the named instance to
 // have the specified reconciled generation.
-func WaitForInstanceReconciledGeneration(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, reconciledGeneration int64) error {
+func WaitForInstanceReconciledGeneration(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, reconciledGeneration int64) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v to have reconciled generation of %v", namespace, name, reconciledGeneration)
@@ -181,7 +181,7 @@ func WaitForInstanceReconciledGeneration(client v1alpha1servicecatalog.Serviceca
 
 // WaitForBindingCondition waits for the status of the named binding to
 // contain a condition whose type and status matches the supplied one.
-func WaitForBindingCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string, condition v1alpha1.ServiceBindingCondition) error {
+func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceBindingCondition) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v condition %#v", namespace, name, condition)
@@ -208,7 +208,7 @@ func WaitForBindingCondition(client v1alpha1servicecatalog.ServicecatalogV1alpha
 
 // WaitForBindingToNotExist waits for the Binding with the given name to no
 // longer exist.
-func WaitForBindingToNotExist(client v1alpha1servicecatalog.ServicecatalogV1alpha1Interface, namespace, name string) error {
+func WaitForBindingToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v to not exist", namespace, name)

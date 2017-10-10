@@ -28,9 +28,9 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
-	v1alpha1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1alpha1"
+	v1beta1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -66,10 +66,15 @@ const (
 	instanceGUID                       = "IGUID"
 	bindingGUID                        = "BGUID"
 
+	removedClusterServiceClassGUID = "REMOVED-SERVICE"
+	removedClusterServicePlanGUID  = "REMOVED-PLAN"
+
 	testClusterServiceBrokerName           = "test-broker"
 	testClusterServiceClassName            = "test-serviceclass"
+	testRemovedClusterServiceClassName     = "removed-test-serviceclass"
 	testNonbindableClusterServiceClassName = "test-unbindable-serviceclass"
 	testClusterServicePlanName             = "test-plan"
+	testRemovedClusterServicePlanName      = "removed-test-plan"
 	testNonbindableClusterServicePlanName  = "test-unbindable-plan"
 	testServiceInstanceName                = "test-instance"
 	testServiceBindingName                 = "test-binding"
@@ -328,12 +333,12 @@ var originatingIdentityTestCases = []originatingIdentityTestCase{
 	},
 }
 
-var testUserInfo = &v1alpha1.UserInfo{
+var testUserInfo = &v1beta1.UserInfo{
 	Username: "fakeusername",
 	UID:      "fakeuid",
 	Groups:   []string{"fakegroup1"},
-	Extra: map[string]v1alpha1.ExtraValue{
-		"fakekey": v1alpha1.ExtraValue([]string{"fakevalue"}),
+	Extra: map[string]v1beta1.ExtraValue{
+		"fakekey": v1beta1.ExtraValue([]string{"fakevalue"}),
 	},
 }
 
@@ -350,41 +355,40 @@ var testOriginatingIdentity = &osb.AlphaOriginatingIdentity{
 }
 
 // broker used in most of the tests that need a broker
-func getTestClusterServiceBroker() *v1alpha1.ClusterServiceBroker {
-	return &v1alpha1.ClusterServiceBroker{
+func getTestClusterServiceBroker() *v1beta1.ClusterServiceBroker {
+	return &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
-		Spec: v1alpha1.ClusterServiceBrokerSpec{
+		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL:            "https://example.com",
-			RelistBehavior: v1alpha1.ServiceBrokerRelistBehaviorDuration,
+			RelistBehavior: v1beta1.ServiceBrokerRelistBehaviorDuration,
 			RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
 		},
 	}
 }
 
-func getTestClusterServiceBrokerWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ClusterServiceBroker {
+func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1beta1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
-	broker.Status = v1alpha1.ServiceBrokerStatus{
-		Conditions: []v1alpha1.ServiceBrokerCondition{{
-			Type:               v1alpha1.ServiceBrokerConditionReady,
+	broker.Status = v1beta1.ClusterServiceBrokerStatus{
+		Conditions: []v1beta1.ServiceBrokerCondition{{
+			Type:               v1beta1.ServiceBrokerConditionReady,
 			Status:             status,
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
 	}
-
 	return broker
 }
 
-func getTestClusterServiceBrokerWithAuth(authInfo *v1alpha1.ServiceBrokerAuthInfo) *v1alpha1.ClusterServiceBroker {
+func getTestClusterServiceBrokerWithAuth(authInfo *v1beta1.ServiceBrokerAuthInfo) *v1beta1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
 	broker.Spec.AuthInfo = authInfo
 	return broker
 }
 
 // a bindable service class wired to the result of getTestClusterServiceBroker()
-func getTestClusterServiceClass() *v1alpha1.ClusterServiceClass {
-	return &v1alpha1.ClusterServiceClass{
+func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
+	return &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: serviceClassGUID},
-		Spec: v1alpha1.ClusterServiceClassSpec{
+		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			Description:              "a test service",
 			ExternalName:             testClusterServiceClassName,
@@ -394,10 +398,23 @@ func getTestClusterServiceClass() *v1alpha1.ClusterServiceClass {
 	}
 }
 
-func getTestClusterServicePlan() *v1alpha1.ClusterServicePlan {
-	return &v1alpha1.ClusterServicePlan{
+func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
+	return &v1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: removedClusterServiceClassGUID},
+		Spec: v1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			Description:              "a test service that should be removed",
+			ExternalName:             testRemovedClusterServiceClassName,
+			ExternalID:               removedClusterServiceClassGUID,
+			Bindable:                 true,
+		},
+	}
+}
+
+func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
+	return &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: planGUID},
-		Spec: v1alpha1.ClusterServicePlanSpec{
+		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			ExternalID:               planGUID,
 			ExternalName:             testClusterServicePlanName,
@@ -409,10 +426,25 @@ func getTestClusterServicePlan() *v1alpha1.ClusterServicePlan {
 	}
 }
 
-func getTestClusterServicePlanNonbindable() *v1alpha1.ClusterServicePlan {
-	return &v1alpha1.ClusterServicePlan{
+func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
+	return &v1beta1.ClusterServicePlan{
+		ObjectMeta: metav1.ObjectMeta{Name: removedClusterServicePlanGUID},
+		Spec: v1beta1.ClusterServicePlanSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			ExternalID:               removedClusterServicePlanGUID,
+			ExternalName:             testRemovedClusterServicePlanName,
+			Bindable:                 truePtr(),
+			ClusterServiceClassRef: v1.LocalObjectReference{
+				Name: serviceClassGUID,
+			},
+		},
+	}
+}
+
+func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
+	return &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: nonbindablePlanGUID},
-		Spec: v1alpha1.ClusterServicePlanSpec{
+		Spec: v1beta1.ClusterServicePlanSpec{
 			ExternalName: testNonbindableClusterServicePlanName,
 			ExternalID:   nonbindablePlanGUID,
 			Bindable:     falsePtr(),
@@ -424,10 +456,10 @@ func getTestClusterServicePlanNonbindable() *v1alpha1.ClusterServicePlan {
 }
 
 // an unbindable service class wired to the result of getTestClusterServiceBroker()
-func getTestNonbindableClusterServiceClass() *v1alpha1.ClusterServiceClass {
-	return &v1alpha1.ClusterServiceClass{
+func getTestNonbindableClusterServiceClass() *v1beta1.ClusterServiceClass {
+	return &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: nonbindableClusterServiceClassGUID},
-		Spec: v1alpha1.ClusterServiceClassSpec{
+		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			ExternalName:             testNonbindableClusterServiceClassName,
 			ExternalID:               nonbindableClusterServiceClassGUID,
@@ -473,7 +505,7 @@ func getTestCatalog() *osb.CatalogResponse {
 // as ClusterServiceClassRef and ClusterServicePlanRef which means that the
 // ClusterServiceClass and ClusterServicePlan are fetched using
 // Service[Class|Plan]Lister.get(spec.Service[Class|Plan]Ref.Name)
-func getTestServiceInstanceWithRefs() *v1alpha1.ServiceInstance {
+func getTestServiceInstanceWithRefs() *v1beta1.ServiceInstance {
 	sc := getTestServiceInstance()
 	sc.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: serviceClassGUID}
 	sc.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: planGUID}
@@ -486,23 +518,25 @@ func getTestServiceInstanceWithRefs() *v1alpha1.ServiceInstance {
 // ExternalClusterServiceClassName and ExternalClusterServicePlanName, so depending on the
 // test, you may need to add reactors that deal with List due to the need
 // to resolve Names to IDs for both ClusterServiceClass and ClusterServicePlan
-func getTestServiceInstance() *v1alpha1.ServiceInstance {
-	return &v1alpha1.ServiceInstance{
+func getTestServiceInstance() *v1beta1.ServiceInstance {
+	return &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testServiceInstanceName,
 			Namespace:  testNamespace,
 			Generation: 1,
 		},
-		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: testClusterServiceClassName,
-			ExternalClusterServicePlanName:  testClusterServicePlanName,
-			ExternalID:                      instanceGUID,
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ExternalClusterServiceClassName: testClusterServiceClassName,
+				ExternalClusterServicePlanName:  testClusterServicePlanName,
+			},
+			ExternalID: instanceGUID,
 		},
 	}
 }
 
 // an instance referencing the result of getTestNonbindableClusterServiceClass, on the non-bindable plan.
-func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
+func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 	i := getTestServiceInstance()
 	i.Spec.ExternalClusterServiceClassName = testNonbindableClusterServiceClassName
 	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
@@ -513,7 +547,7 @@ func getTestNonbindableServiceInstance() *v1alpha1.ServiceInstance {
 }
 
 // an instance referencing the result of getTestNonbindableClusterServiceClass, on the bindable plan.
-func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceInstance {
+func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
 	i.Spec.ExternalClusterServicePlanName = testClusterServicePlanName
 	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: planGUID}
@@ -521,7 +555,7 @@ func getTestServiceInstanceNonbindableServiceBindablePlan() *v1alpha1.ServiceIns
 	return i
 }
 
-func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.ServiceInstance {
+func getTestServiceInstanceBindableServiceNonbindablePlan() *v1beta1.ServiceInstance {
 	i := getTestServiceInstanceWithRefs()
 	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
 	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: nonbindablePlanGUID}
@@ -529,11 +563,11 @@ func getTestServiceInstanceBindableServiceNonbindablePlan() *v1alpha1.ServiceIns
 	return i
 }
 
-func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1.ServiceInstance {
+func getTestServiceInstanceWithStatus(status v1beta1.ConditionStatus) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
-	instance.Status = v1alpha1.ServiceInstanceStatus{
-		Conditions: []v1alpha1.ServiceInstanceCondition{{
-			Type:               v1alpha1.ServiceInstanceConditionReady,
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
 			Status:             status,
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
@@ -542,12 +576,12 @@ func getTestServiceInstanceWithStatus(status v1alpha1.ConditionStatus) *v1alpha1
 	return instance
 }
 
-func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
+func getTestServiceInstanceWithFailedStatus() *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
-	instance.Status = v1alpha1.ServiceInstanceStatus{
-		Conditions: []v1alpha1.ServiceInstanceCondition{{
-			Type:   v1alpha1.ServiceInstanceConditionFailed,
-			Status: v1alpha1.ConditionTrue,
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:   v1beta1.ServiceInstanceConditionFailed,
+			Status: v1beta1.ConditionTrue,
 		}},
 	}
 
@@ -555,21 +589,21 @@ func getTestServiceInstanceWithFailedStatus() *v1alpha1.ServiceInstance {
 }
 
 // getTestServiceInstanceAsync returns an instance in async mode
-func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.ServiceInstance {
+func getTestServiceInstanceAsyncProvisioning(operation string) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
 
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
-	instance.Status = v1alpha1.ServiceInstanceStatus{
-		Conditions: []v1alpha1.ServiceInstanceCondition{{
-			Type:               v1alpha1.ServiceInstanceConditionReady,
-			Status:             v1alpha1.ConditionFalse,
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
+			Status:             v1beta1.ConditionFalse,
 			Message:            "Provisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
 		AsyncOpInProgress:  true,
 		OperationStartTime: &operationStartTime,
-		CurrentOperation:   v1alpha1.ServiceInstanceOperationProvision,
-		InProgressProperties: &v1alpha1.ServiceInstancePropertiesState{
+		CurrentOperation:   v1beta1.ServiceInstanceOperationProvision,
+		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
 			ExternalClusterServicePlanName: testClusterServicePlanName,
 		},
 	}
@@ -582,26 +616,26 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1alpha1.Service
 
 // getTestServiceInstanceAsyncUpdating returns an instance for which there is an
 // in-progress async update
-func getTestServiceInstanceAsyncUpdating(operation string) *v1alpha1.ServiceInstance {
+func getTestServiceInstanceAsyncUpdating(operation string) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
 	instance.Generation = 2
 
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
-	instance.Status = v1alpha1.ServiceInstanceStatus{
+	instance.Status = v1beta1.ServiceInstanceStatus{
 		ReconciledGeneration: 1,
-		Conditions: []v1alpha1.ServiceInstanceCondition{{
-			Type:               v1alpha1.ServiceInstanceConditionReady,
-			Status:             v1alpha1.ConditionFalse,
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
+			Status:             v1beta1.ConditionFalse,
 			Message:            "Updating",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
 		AsyncOpInProgress:  true,
 		OperationStartTime: &operationStartTime,
-		CurrentOperation:   v1alpha1.ServiceInstanceOperationUpdate,
-		InProgressProperties: &v1alpha1.ServiceInstancePropertiesState{
+		CurrentOperation:   v1beta1.ServiceInstanceOperationUpdate,
+		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
 			ExternalClusterServicePlanName: testClusterServicePlanName,
 		},
-		ExternalProperties: &v1alpha1.ServiceInstancePropertiesState{
+		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ExternalClusterServicePlanName: "old-plan-name",
 		},
 	}
@@ -612,23 +646,23 @@ func getTestServiceInstanceAsyncUpdating(operation string) *v1alpha1.ServiceInst
 	return instance
 }
 
-func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.ServiceInstance {
+func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
 	instance.Generation = 2
 
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
-	instance.Status = v1alpha1.ServiceInstanceStatus{
-		Conditions: []v1alpha1.ServiceInstanceCondition{{
-			Type:               v1alpha1.ServiceInstanceConditionReady,
-			Status:             v1alpha1.ConditionFalse,
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
+			Status:             v1beta1.ConditionFalse,
 			Message:            "Deprovisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
 		AsyncOpInProgress:    true,
 		OperationStartTime:   &operationStartTime,
-		CurrentOperation:     v1alpha1.ServiceInstanceOperationDeprovision,
+		CurrentOperation:     v1beta1.ServiceInstanceOperationDeprovision,
 		ReconciledGeneration: 1,
-		ExternalProperties: &v1alpha1.ServiceInstancePropertiesState{
+		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ExternalClusterServicePlanName: testClusterServicePlanName,
 		},
 	}
@@ -642,33 +676,33 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1alpha1.Servi
 	return instance
 }
 
-func getTestServiceInstanceAsyncDeprovisioningWithFinalizer(operation string) *v1alpha1.ServiceInstance {
+func getTestServiceInstanceAsyncDeprovisioningWithFinalizer(operation string) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceAsyncDeprovisioning(operation)
-	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 	return instance
 }
 
 // binding referencing the result of getTestServiceInstance()
-func getTestServiceBinding() *v1alpha1.ServiceBinding {
-	return &v1alpha1.ServiceBinding{
+func getTestServiceBinding() *v1beta1.ServiceBinding {
+	return &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testServiceBindingName,
 			Namespace:  testNamespace,
 			Generation: 1,
 		},
-		Spec: v1alpha1.ServiceBindingSpec{
+		Spec: v1beta1.ServiceBindingSpec{
 			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         bindingGUID,
 		},
 	}
 }
 
-func getTestServiceBindingWithFailedStatus() *v1alpha1.ServiceBinding {
+func getTestServiceBindingWithFailedStatus() *v1beta1.ServiceBinding {
 	binding := getTestServiceBinding()
-	binding.Status = v1alpha1.ServiceBindingStatus{
-		Conditions: []v1alpha1.ServiceBindingCondition{{
-			Type:   v1alpha1.ServiceBindingConditionFailed,
-			Status: v1alpha1.ConditionTrue,
+	binding.Status = v1beta1.ServiceBindingStatus{
+		Conditions: []v1beta1.ServiceBindingCondition{{
+			Type:   v1beta1.ServiceBindingConditionFailed,
+			Status: v1beta1.ConditionTrue,
 		}},
 	}
 
@@ -774,7 +808,7 @@ func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
 	}
 }
 
-func checkPlan(plan *v1alpha1.ClusterServicePlan, planID, planName, planDescription string, t *testing.T) {
+func checkPlan(plan *v1beta1.ClusterServicePlan, planID, planName, planDescription string, t *testing.T) {
 	if plan.Name != planID {
 		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
 	}
@@ -988,12 +1022,12 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		t.Fatalf("Failed to convertCatalog: %v", err)
 	}
 
-	eclasses := []*v1alpha1.ClusterServiceClass{
+	eclasses := []*v1beta1.ClusterServiceClass{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "bindable-id",
 			},
-			Spec: v1alpha1.ClusterServiceClassSpec{
+			Spec: v1beta1.ClusterServiceClassSpec{
 				ExternalName: "bindable",
 				ExternalID:   "bindable-id",
 				Bindable:     true,
@@ -1003,7 +1037,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "unbindable-id",
 			},
-			Spec: v1alpha1.ClusterServiceClassSpec{
+			Spec: v1beta1.ClusterServiceClassSpec{
 				ExternalName: "unbindable",
 				ExternalID:   "unbindable-id",
 				Bindable:     false,
@@ -1011,12 +1045,12 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		},
 	}
 
-	eplans := []*v1alpha1.ClusterServicePlan{
+	eplans := []*v1beta1.ClusterServicePlan{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s1_plan1_id",
 			},
-			Spec: v1alpha1.ClusterServicePlanSpec{
+			Spec: v1beta1.ClusterServicePlanSpec{
 				ExternalID:   "s1_plan1_id",
 				ExternalName: "bindable-bindable",
 				Bindable:     nil,
@@ -1029,7 +1063,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s1_plan2_id",
 			},
-			Spec: v1alpha1.ClusterServicePlanSpec{
+			Spec: v1beta1.ClusterServicePlanSpec{
 				ExternalName: "bindable-unbindable",
 				ExternalID:   "s1_plan2_id",
 				Bindable:     falsePtr(),
@@ -1042,7 +1076,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s2_plan1_id",
 			},
-			Spec: v1alpha1.ClusterServicePlanSpec{
+			Spec: v1beta1.ClusterServicePlanSpec{
 				ExternalName: "unbindable-unbindable",
 				ExternalID:   "s2_plan1_id",
 				Bindable:     nil,
@@ -1055,7 +1089,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "s2_plan2_id",
 			},
-			Spec: v1alpha1.ClusterServicePlanSpec{
+			Spec: v1beta1.ClusterServicePlanSpec{
 				ExternalName: "unbindable-bindable",
 				ExternalID:   "s2_plan2_id",
 				Bindable:     truePtr(),
@@ -1078,12 +1112,12 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 func TestIsClusterServiceBrokerReady(t *testing.T) {
 	cases := []struct {
 		name  string
-		input *v1alpha1.ServiceInstance
+		input *v1beta1.ServiceInstance
 		ready bool
 	}{
 		{
 			name:  "ready",
-			input: getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue),
+			input: getTestServiceInstanceWithStatus(v1beta1.ConditionTrue),
 			ready: true,
 		},
 		{
@@ -1093,7 +1127,7 @@ func TestIsClusterServiceBrokerReady(t *testing.T) {
 		},
 		{
 			name:  "not ready",
-			input: getTestServiceInstanceWithStatus(v1alpha1.ConditionFalse),
+			input: getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
 			ready: false,
 		},
 	}
@@ -1106,15 +1140,15 @@ func TestIsClusterServiceBrokerReady(t *testing.T) {
 }
 
 func TestIsPlanBindable(t *testing.T) {
-	serviceClass := func(bindable bool) *v1alpha1.ClusterServiceClass {
+	serviceClass := func(bindable bool) *v1beta1.ClusterServiceClass {
 		serviceClass := getTestClusterServiceClass()
 		serviceClass.Spec.Bindable = bindable
 		return serviceClass
 	}
 
-	servicePlan := func(bindable *bool) *v1alpha1.ClusterServicePlan {
-		return &v1alpha1.ClusterServicePlan{
-			Spec: v1alpha1.ClusterServicePlanSpec{
+	servicePlan := func(bindable *bool) *v1beta1.ClusterServicePlan {
+		return &v1beta1.ClusterServicePlan{
+			Spec: v1beta1.ClusterServicePlanSpec{
 				Bindable: bindable,
 			},
 		}
@@ -1179,7 +1213,7 @@ func TestIsPlanBindable(t *testing.T) {
 // - a fake service catalog api client
 // - a fake osb client
 // - a test controller
-// - the shared informers for the service catalog v1alpha1 api
+// - the shared informers for the service catalog v1beta1 api
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
@@ -1188,7 +1222,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	*fake.Clientset,
 	*fakeosb.FakeClient,
 	*controller,
-	v1alpha1informers.Interface) {
+	v1beta1informers.Interface) {
 	// create a fake kube client
 	fakeKubeClient := &clientgofake.Clientset{}
 	// create a fake sc client
@@ -1199,14 +1233,14 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 
 	// create informers
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
-	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
+	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
 	fakeRecorder := record.NewFakeRecorder(5)
 
 	// create a test controller
 	testController, err := NewController(
 		fakeKubeClient,
-		fakeCatalogClient.ServicecatalogV1alpha1(),
+		fakeCatalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ClusterServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
@@ -1342,15 +1376,15 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	var resource string
 
 	switch obj.(type) {
-	case *v1alpha1.ClusterServiceBroker:
+	case *v1beta1.ClusterServiceBroker:
 		resource = "clusterservicebrokers"
-	case *v1alpha1.ClusterServiceClass:
+	case *v1beta1.ClusterServiceClass:
 		resource = "clusterserviceclasses"
-	case *v1alpha1.ClusterServicePlan:
+	case *v1beta1.ClusterServicePlan:
 		resource = "clusterserviceplans"
-	case *v1alpha1.ServiceInstance:
+	case *v1beta1.ServiceInstance:
 		resource = "serviceinstances"
-	case *v1alpha1.ServiceBinding:
+	case *v1beta1.ServiceBinding:
 		resource = "servicebindings"
 	}
 
@@ -1460,17 +1494,17 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 }
 
 func assertClusterServiceBrokerReadyTrue(t *testing.T, obj runtime.Object) {
-	assertClusterServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionTrue)
+	assertClusterServiceBrokerCondition(t, obj, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionTrue)
 }
 
 func assertClusterServiceBrokerReadyFalse(t *testing.T, obj runtime.Object) {
-	assertClusterServiceBrokerCondition(t, obj, v1alpha1.ServiceBrokerConditionReady, v1alpha1.ConditionFalse)
+	assertClusterServiceBrokerCondition(t, obj, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse)
 }
 
-func assertClusterServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceBrokerConditionType, status v1alpha1.ConditionStatus) {
-	broker, ok := obj.(*v1alpha1.ClusterServiceBroker)
+func assertClusterServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus) {
+	broker, ok := obj.(*v1beta1.ClusterServiceBroker)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ClusterServiceBroker", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ClusterServiceBroker", obj)
 	}
 
 	for _, condition := range broker.Status.Conditions {
@@ -1481,9 +1515,9 @@ func assertClusterServiceBrokerCondition(t *testing.T, obj runtime.Object, condi
 }
 
 func assertClusterServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
-	broker, ok := obj.(*v1alpha1.ClusterServiceBroker)
+	broker, ok := obj.(*v1beta1.ClusterServiceBroker)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ClusterServiceBroker", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ClusterServiceBroker", obj)
 	}
 
 	if e, a := isOperationStartTimeSet, broker.Status.OperationStartTime != nil; e != a {
@@ -1496,21 +1530,21 @@ func assertClusterServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.O
 }
 
 func assertServiceInstanceReadyTrue(t *testing.T, obj runtime.Object, reason ...string) {
-	assertServiceInstanceReadyCondition(t, obj, v1alpha1.ConditionTrue, reason...)
+	assertServiceInstanceReadyCondition(t, obj, v1beta1.ConditionTrue, reason...)
 }
 
 func assertServiceInstanceReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
-	assertServiceInstanceReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
+	assertServiceInstanceReadyCondition(t, obj, v1beta1.ConditionFalse, reason...)
 }
 
-func assertServiceInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
-	assertServiceInstanceCondition(t, obj, v1alpha1.ServiceInstanceConditionReady, status, reason...)
+func assertServiceInstanceReadyCondition(t *testing.T, obj runtime.Object, status v1beta1.ConditionStatus, reason ...string) {
+	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionReady, status, reason...)
 }
 
-func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceInstanceConditionType, status v1alpha1.ConditionStatus, reason ...string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceInstanceConditionType, status v1beta1.ConditionStatus, reason ...string) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	foundCondition := false
@@ -1532,9 +1566,9 @@ func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionT
 }
 
 func assertServiceInstanceConditionsCount(t *testing.T, obj runtime.Object, count int) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	if e, a := count, len(instance.Status.Conditions); e != a {
@@ -1546,10 +1580,10 @@ func assertServiceInstanceCurrentOperationClear(t *testing.T, obj runtime.Object
 	assertServiceInstanceCurrentOperation(t, obj, "")
 }
 
-func assertServiceInstanceCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1alpha1.ServiceInstanceOperation) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+func assertServiceInstanceCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1beta1.ServiceInstanceOperation) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	if e, a := currentOperation, instance.Status.CurrentOperation; e != a {
@@ -1558,9 +1592,9 @@ func assertServiceInstanceCurrentOperation(t *testing.T, obj runtime.Object, cur
 }
 
 func assertServiceInstanceReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	if e, a := reconciledGeneration, instance.Status.ReconciledGeneration; e != a {
@@ -1569,9 +1603,9 @@ func assertServiceInstanceReconciledGeneration(t *testing.T, obj runtime.Object,
 }
 
 func assertServiceInstanceOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	if e, a := isOperationStartTimeSet, instance.Status.OperationStartTime != nil; e != a {
@@ -1584,9 +1618,9 @@ func assertServiceInstanceOperationStartTimeSet(t *testing.T, obj runtime.Object
 }
 
 func assertAsyncOpInProgressTrue(t *testing.T, obj runtime.Object) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	if !instance.Status.AsyncOpInProgress {
 		fatalf(t, "expected AsyncOpInProgress to be true but was %v", instance.Status.AsyncOpInProgress)
@@ -1594,9 +1628,9 @@ func assertAsyncOpInProgressTrue(t *testing.T, obj runtime.Object) {
 }
 
 func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	if instance.Status.AsyncOpInProgress {
 		fatalf(t, "expected AsyncOpInProgress to be false but was %v", instance.Status.AsyncOpInProgress)
@@ -1625,9 +1659,9 @@ func testServiceInstanceOrphanMitigationInProgress(t *testing.T, name string, f 
 		logContext = name + ": "
 	}
 
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		f(t, "%vCouldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		f(t, "%vCouldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	actual := instance.Status.OrphanMitigationInProgress
@@ -1640,9 +1674,9 @@ func testServiceInstanceOrphanMitigationInProgress(t *testing.T, name string, f 
 }
 
 func assertServiceInstanceLastOperation(t *testing.T, obj runtime.Object, operation string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	if instance.Status.LastOperation == nil {
 		if operation != "" {
@@ -1654,9 +1688,9 @@ func assertServiceInstanceLastOperation(t *testing.T, obj runtime.Object, operat
 }
 
 func assertServiceInstanceDashboardURL(t *testing.T, obj runtime.Object, dashboardURL string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	if instance.Status.DashboardURL == nil {
 		fatalf(t, "DashboardURL was nil")
@@ -1665,7 +1699,7 @@ func assertServiceInstanceDashboardURL(t *testing.T, obj runtime.Object, dashboa
 	}
 }
 
-func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceReadyFalse(t, obj, reason)
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
@@ -1676,18 +1710,18 @@ func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, r
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 }
 
-func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, planName string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceOperationInProgressWithParameters(t, obj, operation, planName, nil, "", originalInstance)
 }
 
-func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	reason := ""
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		reason = provisioningInFlightReason
-	case v1alpha1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationUpdate:
 		reason = instanceUpdatingInFlightReason
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = deprovisioningInFlightReason
 	}
 	assertServiceInstanceReadyFalse(t, obj, reason)
@@ -1697,34 +1731,34 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
 	}
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 }
 
-func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, planName string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceOperationSuccessWithParameters(t, obj, operation, planName, nil, "", originalInstance)
 }
 
-func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, planName string, externalParameters map[string]interface{}, externalParametersChecksum string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, externalParameters map[string]interface{}, externalParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	var (
 		reason      string
-		readyStatus v1alpha1.ConditionStatus
+		readyStatus v1beta1.ConditionStatus
 	)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		reason = successProvisionReason
-		readyStatus = v1alpha1.ConditionTrue
-	case v1alpha1.ServiceInstanceOperationUpdate:
+		readyStatus = v1beta1.ConditionTrue
+	case v1beta1.ServiceInstanceOperationUpdate:
 		reason = successUpdateInstanceReason
-		readyStatus = v1alpha1.ConditionTrue
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+		readyStatus = v1beta1.ConditionTrue
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = successDeprovisionReason
-		readyStatus = v1alpha1.ConditionFalse
+		readyStatus = v1beta1.ConditionFalse
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, reason)
 	assertServiceInstanceCurrentOperationClear(t, obj)
@@ -1732,83 +1766,83 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	if operation == v1alpha1.ServiceInstanceOperationDeprovision {
+	if operation == v1beta1.ServiceInstanceOperationDeprovision {
 		assertEmptyFinalizers(t, obj)
 	}
 	assertServiceInstanceInProgressPropertiesNil(t, obj)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		assertServiceInstanceExternalPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceExternalPropertiesParameters(t, obj, externalParameters, externalParametersChecksum)
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceExternalPropertiesNil(t, obj)
 	}
 }
 
-func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1alpha1.ServiceInstance) {
-	var readyStatus v1alpha1.ConditionStatus
+func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+	var readyStatus v1beta1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
-		readyStatus = v1alpha1.ConditionFalse
-	case v1alpha1.ServiceInstanceOperationDeprovision:
-		readyStatus = v1alpha1.ConditionUnknown
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+		readyStatus = v1beta1.ConditionFalse
+	case v1beta1.ServiceInstanceOperationDeprovision:
+		readyStatus = v1beta1.ConditionUnknown
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
-	assertServiceInstanceCondition(t, obj, v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, failureReason)
+	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceInProgressPropertiesNil(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 }
 
-func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, originalInstance)
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 }
 
-func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, originalInstance)
-	assertServiceInstanceCurrentOperation(t, obj, v1alpha1.ServiceInstanceOperationProvision)
+	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 
-func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string, planName string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, reason string, planName string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestRetriableErrorWithParameters(t, obj, operation, reason, planName, nil, "", originalInstance)
 }
 
-func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, reason string, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1alpha1.ServiceInstance) {
-	var readyStatus v1alpha1.ConditionStatus
+func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, reason string, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
+	var readyStatus v1beta1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
-		readyStatus = v1alpha1.ConditionFalse
-	case v1alpha1.ServiceInstanceOperationDeprovision:
-		readyStatus = v1alpha1.ConditionUnknown
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+		readyStatus = v1beta1.ConditionFalse
+	case v1beta1.ServiceInstanceOperationDeprovision:
+		readyStatus = v1beta1.ConditionUnknown
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, reason)
 	assertServiceInstanceCurrentOperation(t, obj, operation)
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
 		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
 	}
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 }
 
-func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, operationKey string, planName string, originalInstance *v1alpha1.ServiceInstance) {
+func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, operationKey string, planName string, originalInstance *v1beta1.ServiceInstance) {
 	reason := ""
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		reason = asyncProvisioningReason
-	case v1alpha1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationUpdate:
 		reason = asyncUpdatingInstanceReason
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = asyncDeprovisioningReason
 	}
 	assertServiceInstanceReadyFalse(t, obj, reason)
@@ -1817,27 +1851,27 @@ func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, oper
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision, v1alpha1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
 		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
 	}
 	assertAsyncOpInProgressTrue(t, obj)
 }
 
-func assertServiceInstanceConditionHasLastOperationDescription(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceInstanceOperation, lastOperationDescription string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+func assertServiceInstanceConditionHasLastOperationDescription(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, lastOperationDescription string) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	var expected string
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		expected = fmt.Sprintf("%s (%s)", asyncProvisioningMessage, lastOperationDescription)
-	case v1alpha1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationUpdate:
 		expected = fmt.Sprintf("%s (%s)", asyncUpdatingInstanceMessage, lastOperationDescription)
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		expected = fmt.Sprintf("%s (%s)", asyncDeprovisioningMessage, lastOperationDescription)
 	}
 	if e, a := expected, instance.Status.Conditions[0].Message; e != a {
@@ -1846,9 +1880,9 @@ func assertServiceInstanceConditionHasLastOperationDescription(t *testing.T, obj
 }
 
 func assertServiceInstanceInProgressPropertiesNil(t *testing.T, obj runtime.Object) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	if a := instance.Status.InProgressProperties; a != nil {
@@ -1857,25 +1891,25 @@ func assertServiceInstanceInProgressPropertiesNil(t *testing.T, obj runtime.Obje
 }
 
 func assertServiceInstanceInProgressPropertiesPlanName(t *testing.T, obj runtime.Object, planName string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	assertServiceInstancePropertiesStatePlanName(t, "in-progress", instance.Status.InProgressProperties, planName)
 }
 
 func assertServiceInstanceInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	assertServiceInstancePropertiesStateParameters(t, "in-progress", instance.Status.InProgressProperties, params, checksum)
 }
 
-func assertServiceInstanceInProgressPropertiesUnchanged(t *testing.T, obj runtime.Object, originalInstance *v1alpha1.ServiceInstance) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+func assertServiceInstanceInProgressPropertiesUnchanged(t *testing.T, obj runtime.Object, originalInstance *v1beta1.ServiceInstance) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	if originalInstance.Status.InProgressProperties == nil {
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
@@ -1885,9 +1919,9 @@ func assertServiceInstanceInProgressPropertiesUnchanged(t *testing.T, obj runtim
 }
 
 func assertServiceInstanceExternalPropertiesNil(t *testing.T, obj runtime.Object) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	if a := instance.Status.ExternalProperties; a != nil {
@@ -1896,25 +1930,25 @@ func assertServiceInstanceExternalPropertiesNil(t *testing.T, obj runtime.Object
 }
 
 func assertServiceInstanceExternalPropertiesPlanName(t *testing.T, obj runtime.Object, planName string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	assertServiceInstancePropertiesStatePlanName(t, "external", instance.Status.ExternalProperties, planName)
 }
 
 func assertServiceInstanceExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	assertServiceInstancePropertiesStateParameters(t, "external", instance.Status.ExternalProperties, params, checksum)
 }
 
-func assertServiceInstanceExternalPropertiesUnchanged(t *testing.T, obj runtime.Object, originalInstance *v1alpha1.ServiceInstance) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+func assertServiceInstanceExternalPropertiesUnchanged(t *testing.T, obj runtime.Object, originalInstance *v1beta1.ServiceInstance) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 	if originalInstance.Status.ExternalProperties == nil {
 		assertServiceInstanceExternalPropertiesNil(t, obj)
@@ -1923,7 +1957,7 @@ func assertServiceInstanceExternalPropertiesUnchanged(t *testing.T, obj runtime.
 	}
 }
 
-func assertServiceInstancePropertiesStatePlanName(t *testing.T, propsLabel string, actualProps *v1alpha1.ServiceInstancePropertiesState, expectedPlanName string) {
+func assertServiceInstancePropertiesStatePlanName(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceInstancePropertiesState, expectedPlanName string) {
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -1932,7 +1966,7 @@ func assertServiceInstancePropertiesStatePlanName(t *testing.T, propsLabel strin
 	}
 }
 
-func assertServiceInstancePropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1alpha1.ServiceInstancePropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
+func assertServiceInstancePropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceInstancePropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -1961,7 +1995,7 @@ func assertPropertiesStateParameters(t *testing.T, propsLabel string, marshalled
 	}
 }
 
-func assertServiceInstancePropertiesStateParametersUnchanged(t *testing.T, propsLabel string, new *v1alpha1.ServiceInstancePropertiesState, old v1alpha1.ServiceInstancePropertiesState) {
+func assertServiceInstancePropertiesStateParametersUnchanged(t *testing.T, propsLabel string, new *v1beta1.ServiceInstancePropertiesState, old v1beta1.ServiceInstancePropertiesState) {
 	if new == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -1971,21 +2005,21 @@ func assertServiceInstancePropertiesStateParametersUnchanged(t *testing.T, props
 }
 
 func assertServiceBindingReadyTrue(t *testing.T, obj runtime.Object) {
-	assertServiceBindingReadyCondition(t, obj, v1alpha1.ConditionTrue)
+	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionTrue)
 }
 
 func assertServiceBindingReadyFalse(t *testing.T, obj runtime.Object, reason ...string) {
-	assertServiceBindingReadyCondition(t, obj, v1alpha1.ConditionFalse, reason...)
+	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionFalse, reason...)
 }
 
-func assertServiceBindingReadyCondition(t *testing.T, obj runtime.Object, status v1alpha1.ConditionStatus, reason ...string) {
-	assertServiceBindingCondition(t, obj, v1alpha1.ServiceBindingConditionReady, status, reason...)
+func assertServiceBindingReadyCondition(t *testing.T, obj runtime.Object, status v1beta1.ConditionStatus, reason ...string) {
+	assertServiceBindingCondition(t, obj, v1beta1.ServiceBindingConditionReady, status, reason...)
 }
 
-func assertServiceBindingCondition(t *testing.T, obj runtime.Object, conditionType v1alpha1.ServiceBindingConditionType, status v1alpha1.ConditionStatus, reason ...string) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+func assertServiceBindingCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceBindingConditionType, status v1beta1.ConditionStatus, reason ...string) {
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	conditionFound := false
@@ -2008,9 +2042,9 @@ func assertServiceBindingCondition(t *testing.T, obj runtime.Object, conditionTy
 }
 
 func assertServiceBindingReconciledGeneration(t *testing.T, obj runtime.Object, reconciledGeneration int64) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	if e, a := reconciledGeneration, binding.Status.ReconciledGeneration; e != a {
@@ -2019,9 +2053,9 @@ func assertServiceBindingReconciledGeneration(t *testing.T, obj runtime.Object, 
 }
 
 func assertServiceBindingReconciliationNotComplete(t *testing.T, obj runtime.Object) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 	if g, rg := binding.Generation, binding.Status.ReconciledGeneration; g <= rg {
 		fatalf(t, "expected ReconciledGeneration to be less than Generation: Generation %v, ReconciledGeneration %v", g, rg)
@@ -2029,9 +2063,9 @@ func assertServiceBindingReconciliationNotComplete(t *testing.T, obj runtime.Obj
 }
 
 func assertServiceBindingOperationStartTimeSet(t *testing.T, obj runtime.Object, isOperationStartTimeSet bool) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	if e, a := isOperationStartTimeSet, binding.Status.OperationStartTime != nil; e != a {
@@ -2047,10 +2081,10 @@ func assertServiceBindingCurrentOperationClear(t *testing.T, obj runtime.Object)
 	assertServiceBindingCurrentOperation(t, obj, "")
 }
 
-func assertServiceBindingCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1alpha1.ServiceBindingOperation) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+func assertServiceBindingCurrentOperation(t *testing.T, obj runtime.Object, currentOperation v1beta1.ServiceBindingOperation) {
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	if e, a := currentOperation, binding.Status.CurrentOperation; e != a {
@@ -2058,7 +2092,7 @@ func assertServiceBindingCurrentOperation(t *testing.T, obj runtime.Object, curr
 	}
 }
 
-func assertServiceBindingErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalBinding *v1alpha1.ServiceBinding) {
+func assertServiceBindingErrorBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingReadyFalse(t, obj, reason)
 	assertServiceBindingCurrentOperationClear(t, obj)
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
@@ -2067,16 +2101,16 @@ func assertServiceBindingErrorBeforeRequest(t *testing.T, obj runtime.Object, re
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceBindingOperationInProgress(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, originalBinding *v1alpha1.ServiceBinding) {
+func assertServiceBindingOperationInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingOperationInProgressWithParameters(t, obj, operation, nil, "", originalBinding)
 }
 
-func assertServiceBindingOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1alpha1.ServiceBinding) {
+func assertServiceBindingOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1beta1.ServiceBinding) {
 	reason := ""
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
+	case v1beta1.ServiceBindingOperationBind:
 		reason = bindingInFlightReason
-	case v1alpha1.ServiceBindingOperationUnbind:
+	case v1beta1.ServiceBindingOperationUnbind:
 		reason = unbindingInFlightReason
 	}
 	assertServiceBindingReadyFalse(t, obj, reason)
@@ -2084,57 +2118,57 @@ func assertServiceBindingOperationInProgressWithParameters(t *testing.T, obj run
 	assertServiceBindingOperationStartTimeSet(t, obj, true)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
+	case v1beta1.ServiceBindingOperationBind:
 		assertServiceBindingInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1alpha1.ServiceBindingOperationUnbind:
+	case v1beta1.ServiceBindingOperationUnbind:
 		assertServiceBindingInProgressPropertiesNil(t, obj)
 	}
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceBindingOperationSuccess(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, originalBinding *v1alpha1.ServiceBinding) {
+func assertServiceBindingOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingOperationSuccessWithParameters(t, obj, operation, nil, "", originalBinding)
 }
 
-func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, externalParameters map[string]interface{}, externalParametersChecksum string, originalBinding *v1alpha1.ServiceBinding) {
+func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, externalParameters map[string]interface{}, externalParametersChecksum string, originalBinding *v1beta1.ServiceBinding) {
 	var (
 		reason      string
-		readyStatus v1alpha1.ConditionStatus
+		readyStatus v1beta1.ConditionStatus
 	)
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
+	case v1beta1.ServiceBindingOperationBind:
 		reason = successInjectedBindResultReason
-		readyStatus = v1alpha1.ConditionTrue
-	case v1alpha1.ServiceBindingOperationUnbind:
+		readyStatus = v1beta1.ConditionTrue
+	case v1beta1.ServiceBindingOperationUnbind:
 		reason = successUnboundReason
-		readyStatus = v1alpha1.ConditionFalse
+		readyStatus = v1beta1.ConditionFalse
 	}
 	assertServiceBindingReadyCondition(t, obj, readyStatus, reason)
 	assertServiceBindingCurrentOperationClear(t, obj)
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
-	if operation == v1alpha1.ServiceBindingOperationUnbind {
+	if operation == v1beta1.ServiceBindingOperationUnbind {
 		assertEmptyFinalizers(t, obj)
 	}
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
+	case v1beta1.ServiceBindingOperationBind:
 		assertServiceBindingExternalPropertiesParameters(t, obj, externalParameters, externalParametersChecksum)
-	case v1alpha1.ServiceBindingOperationUnbind:
+	case v1beta1.ServiceBindingOperationUnbind:
 		assertServiceBindingExternalPropertiesNil(t, obj)
 	}
 }
 
-func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, readyReason string, failureReason string, originalBinding *v1alpha1.ServiceBinding) {
-	var readyStatus v1alpha1.ConditionStatus
+func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, readyReason string, failureReason string, originalBinding *v1beta1.ServiceBinding) {
+	var readyStatus v1beta1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
-		readyStatus = v1alpha1.ConditionFalse
-	case v1alpha1.ServiceBindingOperationUnbind:
-		readyStatus = v1alpha1.ConditionUnknown
+	case v1beta1.ServiceBindingOperationBind:
+		readyStatus = v1beta1.ConditionFalse
+	case v1beta1.ServiceBindingOperationUnbind:
+		readyStatus = v1beta1.ConditionUnknown
 	}
 	assertServiceBindingReadyCondition(t, obj, readyStatus, readyReason)
-	assertServiceBindingCondition(t, obj, v1alpha1.ServiceBindingConditionFailed, v1alpha1.ConditionTrue, failureReason)
+	assertServiceBindingCondition(t, obj, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, failureReason)
 	assertServiceBindingCurrentOperationClear(t, obj)
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
@@ -2142,35 +2176,35 @@ func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, o
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
-func assertServiceBindingRequestRetriableError(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, reason string, originalBinding *v1alpha1.ServiceBinding) {
+func assertServiceBindingRequestRetriableError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, reason string, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingRequestRetriableErrorWithParameters(t, obj, operation, reason, nil, "", originalBinding)
 }
 
-func assertServiceBindingRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1alpha1.ServiceBindingOperation, reason string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1alpha1.ServiceBinding) {
-	var readyStatus v1alpha1.ConditionStatus
+func assertServiceBindingRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, reason string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalBinding *v1beta1.ServiceBinding) {
+	var readyStatus v1beta1.ConditionStatus
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
-		readyStatus = v1alpha1.ConditionFalse
-	case v1alpha1.ServiceBindingOperationUnbind:
-		readyStatus = v1alpha1.ConditionUnknown
+	case v1beta1.ServiceBindingOperationBind:
+		readyStatus = v1beta1.ConditionFalse
+	case v1beta1.ServiceBindingOperationUnbind:
+		readyStatus = v1beta1.ConditionUnknown
 	}
 	assertServiceBindingReadyCondition(t, obj, readyStatus, reason)
 	assertServiceBindingCurrentOperation(t, obj, operation)
 	assertServiceBindingOperationStartTimeSet(t, obj, true)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	switch operation {
-	case v1alpha1.ServiceBindingOperationBind:
+	case v1beta1.ServiceBindingOperationBind:
 		assertServiceBindingInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1alpha1.ServiceBindingOperationUnbind:
+	case v1beta1.ServiceBindingOperationUnbind:
 		assertServiceBindingInProgressPropertiesNil(t, obj)
 	}
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
 func assertServiceBindingInProgressPropertiesNil(t *testing.T, obj runtime.Object) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	if a := binding.Status.InProgressProperties; a != nil {
@@ -2179,17 +2213,17 @@ func assertServiceBindingInProgressPropertiesNil(t *testing.T, obj runtime.Objec
 }
 
 func assertServiceBindingInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 	assertServiceBindingPropertiesStateParameters(t, "in-progress", binding.Status.InProgressProperties, params, checksum)
 }
 
-func assertServiceBindingInProgressPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1alpha1.ServiceBinding) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+func assertServiceBindingInProgressPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 	if originalBinding.Status.InProgressProperties == nil {
 		assertServiceBindingInProgressPropertiesNil(t, obj)
@@ -2199,9 +2233,9 @@ func assertServiceBindingInProgressPropertiesUnchanged(t *testing.T, obj runtime
 }
 
 func assertServiceBindingExternalPropertiesNil(t *testing.T, obj runtime.Object) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	if a := binding.Status.ExternalProperties; a != nil {
@@ -2210,17 +2244,17 @@ func assertServiceBindingExternalPropertiesNil(t *testing.T, obj runtime.Object)
 }
 
 func assertServiceBindingExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 	assertServiceBindingPropertiesStateParameters(t, "external", binding.Status.ExternalProperties, params, checksum)
 }
 
-func assertServiceBindingExternalPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1alpha1.ServiceBinding) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+func assertServiceBindingExternalPropertiesUnchanged(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 	if originalBinding.Status.ExternalProperties == nil {
 		assertServiceBindingExternalPropertiesNil(t, obj)
@@ -2229,7 +2263,7 @@ func assertServiceBindingExternalPropertiesUnchanged(t *testing.T, obj runtime.O
 	}
 }
 
-func assertServiceBindingPropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1alpha1.ServiceBindingPropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
+func assertServiceBindingPropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceBindingPropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -2239,7 +2273,7 @@ func assertServiceBindingPropertiesStateParameters(t *testing.T, propsLabel stri
 	}
 }
 
-func assertServiceBindingPropertiesStateParametersUnchanged(t *testing.T, propsLabel string, new *v1alpha1.ServiceBindingPropertiesState, old v1alpha1.ServiceBindingPropertiesState) {
+func assertServiceBindingPropertiesStateParametersUnchanged(t *testing.T, propsLabel string, new *v1beta1.ServiceBindingPropertiesState, old v1beta1.ServiceBindingPropertiesState) {
 	if new == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -2249,9 +2283,9 @@ func assertServiceBindingPropertiesStateParametersUnchanged(t *testing.T, propsL
 }
 
 func assertServiceBindingOrphanMitigationSet(t *testing.T, obj runtime.Object, inProgress bool) {
-	binding, ok := obj.(*v1alpha1.ServiceBinding)
+	binding, ok := obj.(*v1beta1.ServiceBinding)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceBinding", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
 	}
 
 	if e, a := inProgress, binding.Status.OrphanMitigationInProgress; e != a {
@@ -2291,7 +2325,7 @@ func testCatalogFinalizerExists(t *testing.T, name string, f failfFunc, obj runt
 	}
 
 	finalizers := sets.NewString(accessor.GetFinalizers()...)
-	if !finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
+	if !finalizers.Has(v1beta1.FinalizerServiceCatalog) {
 		f(t, "%vExpected Service Catalog finalizer but was not there", logContext)
 		return false
 	}

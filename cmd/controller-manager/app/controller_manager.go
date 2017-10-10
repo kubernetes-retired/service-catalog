@@ -80,7 +80,7 @@ the core control loops shipped with the service catalog.`,
 const controllerManagerAgentName = "service-catalog-controller-manager"
 const controllerDiscoveryAgentName = "service-catalog-controller-discovery"
 
-var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1alpha1", Resource: "clusterservicebrokers"}
+var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1beta1", Resource: "clusterservicebrokers"}
 
 // Run runs the service-catalog controller-manager; should never exit.
 func Run(controllerManagerOptions *options.ControllerManagerServer) error {
@@ -315,13 +315,13 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
 			s.ResyncInterval,
 		)
-		// All shared informers are v1alpha1 API level
-		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1alpha1()
+		// All shared informers are v1beta1 API level
+		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
 		glog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
 		serviceCatalogController, err := controller.NewController(
 			coreClient,
-			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1alpha1(),
+			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1beta1(),
 			serviceCatalogSharedInformers.ClusterServiceBrokers(),
 			serviceCatalogSharedInformers.ClusterServiceClasses(),
 			serviceCatalogSharedInformers.ServiceInstances(),

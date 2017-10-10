@@ -66,9 +66,9 @@ func TestV1Alpha1Storage(t *testing.T) {
 	}
 	configSource := serverstorage.NewResourceConfig()
 	roGetter := testRESTOptionsGetter(nil, func() {})
-	storageMap, err := provider.v1alpha1Storage(configSource, roGetter)
+	storageMap, err := provider.v1beta1Storage(configSource, roGetter)
 	if err != nil {
-		t.Fatalf("error getting v1alpha1 storage (%s)", err)
+		t.Fatalf("error getting v1beta1 storage (%s)", err)
 	}
 	_, brokerStorageExists := storageMap["clusterservicebrokers"]
 	if !brokerStorageExists {
