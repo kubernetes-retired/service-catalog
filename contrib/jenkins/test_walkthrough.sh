@@ -171,35 +171,35 @@ wait_for_expected_output -e 'ProvisionedSuccessfully' \
 
 echo 'Binding to instance...'
 
-kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthrough/ups-instance-credential.yaml" \
-  || error_exit 'Error when creating ups-instance-credential.'
+kubectl --context=service-catalog create -f "${ROOT}/contrib/examples/walkthrough/ups-binding.yaml" \
+  || error_exit 'Error when creating ups-binding.'
 
 wait_for_expected_output -e 'InjectedBindResult' \
-  kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml \
+  kubectl --context=service-catalog get servicebindings -n test-ns ups-binding -o yaml \
   || {
-    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
-    error_exit 'Did not receive expected condition when injecting ups-instance-credential.'
+    kubectl --context=service-catalog get servicebindings -n test-ns ups-binding -o yaml
+    error_exit 'Did not receive expected condition when injecting ups-binding.'
   }
 
-[[ "$(kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml)" == *"status: \"True\""* ]] \
+[[ "$(kubectl --context=service-catalog get servicebindings -n test-ns ups-binding -o yaml)" == *"status: \"True\""* ]] \
   || {
-    kubectl --context=service-catalog get serviceinstancecredentials -n test-ns ups-instance-credential -o yaml
-    error_exit 'Failure status reported when attempting to inject ups-instance-credential.'
+    kubectl --context=service-catalog get servicebindings -n test-ns ups-binding -o yaml
+    error_exit 'Failure status reported when attempting to inject ups-binding.'
   }
 
-[[ "$(kubectl get secrets -n test-ns)" == *ups-instance-credential* ]] \
-  || error_exit '"ups-instance-credential" not present when listing secrets.'
+[[ "$(kubectl get secrets -n test-ns)" == *ups-binding* ]] \
+  || error_exit '"ups-binding" not present when listing secrets.'
 
 #Unbind from the instance
 
 echo 'Unbinding from instance...'
 
-kubectl --context=service-catalog delete -n test-ns serviceinstancecredentials ups-instance-credential \
-  || error_exit 'Error when deleting ups-instance-credential.'
+kubectl --context=service-catalog delete -n test-ns servicebindings ups-binding \
+  || error_exit 'Error when deleting ups-binding.'
 
-wait_for_expected_output -x -e "ups-instance-credential" \
+wait_for_expected_output -x -e "ups-binding" \
     kubectl get secrets -n test-ns \
-  || error_exit '"ups-instance-credential" secret not removed upon deleting ups-instance-credential.'
+  || error_exit '"ups-binding" secret not removed upon deleting ups-binding.'
 
 # Deprovision the instance
 

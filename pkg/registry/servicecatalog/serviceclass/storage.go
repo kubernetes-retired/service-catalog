@@ -32,7 +32,6 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage"
-	coreapi "k8s.io/client-go/pkg/api"
 )
 
 var (
@@ -94,7 +93,7 @@ func toSelectableFields(serviceClass *servicecatalog.ClusterServiceClass) fields
 	// field here or the number of object-meta related fields changes, this should
 	// be adjusted.
 	scSpecificFieldsSet := make(fields.Set, 3)
-	scSpecificFieldsSet["spec.lusterServiceBrokerName"] = serviceClass.Spec.ClusterServiceBrokerName
+	scSpecificFieldsSet["spec.clusterServiceBrokerName"] = serviceClass.Spec.ClusterServiceBrokerName
 	scSpecificFieldsSet["spec.externalName"] = serviceClass.Spec.ExternalName
 	scSpecificFieldsSet["spec.externalID"] = serviceClass.Spec.ExternalID
 	return generic.AddObjectMetaFieldsSet(scSpecificFieldsSet, &serviceClass.ObjectMeta, true)
@@ -115,7 +114,6 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
-		1000,
 		&servicecatalog.ClusterServiceClass{},
 		prefix,
 		serviceClassRESTStrategies,
@@ -136,8 +134,8 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		},
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
-		// QualifiedResource should always be plural
-		QualifiedResource: coreapi.Resource("clusterserviceclasses"),
+		// DefaultQualifiedResource should always be plural
+		DefaultQualifiedResource: servicecatalog.Resource("clusterserviceclasses"),
 
 		CreateStrategy: serviceClassRESTStrategies,
 		UpdateStrategy: serviceClassRESTStrategies,

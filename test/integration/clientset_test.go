@@ -28,18 +28,11 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/pkg/api/v1"
 
-	// TODO: fix this upstream
-	// we shouldn't have to install things to use our own generated client.
-
-	// avoid error `servicecatalog/v1alpha1 is not enabled`
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	// avoid error `no kind is registered for the type metav1.ListOptions`
-	_ "k8s.io/client-go/pkg/api/install"
 	// our versioned types
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	// our versioned client
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
@@ -194,19 +187,19 @@ func testNoName(client servicecatalogclient.Interface) error {
 
 	ns := "namespace"
 
-	if br, e := scClient.ClusterServiceBrokers().Create(&v1alpha1.ClusterServiceBroker{}); nil == e {
+	if br, e := scClient.ClusterServiceBrokers().Create(&v1beta1.ClusterServiceBroker{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", br.Name)
 	}
-	if sc, e := scClient.ClusterServiceClasses().Create(&v1alpha1.ClusterServiceClass{}); nil == e {
+	if sc, e := scClient.ClusterServiceClasses().Create(&v1beta1.ClusterServiceClass{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", sc.Name)
 	}
-	if sp, e := scClient.ClusterServicePlans().Create(&v1alpha1.ClusterServicePlan{}); nil == e {
+	if sp, e := scClient.ClusterServicePlans().Create(&v1beta1.ClusterServicePlan{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", sp.Name)
 	}
-	if i, e := scClient.ServiceInstances(ns).Create(&v1alpha1.ServiceInstance{}); nil == e {
+	if i, e := scClient.ServiceInstances(ns).Create(&v1beta1.ServiceInstance{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", i.Name)
 	}
-	if bi, e := scClient.ServiceInstanceCredentials(ns).Create(&v1alpha1.ServiceInstanceCredential{}); nil == e {
+	if bi, e := scClient.ServiceBindings(ns).Create(&v1beta1.ServiceBinding{}); nil == e {
 		return fmt.Errorf("needs a name (%s)", bi.Name)
 	}
 	return nil
@@ -235,9 +228,9 @@ func TestBrokerClient(t *testing.T) {
 
 func testBrokerClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	brokerClient := client.Servicecatalog().ClusterServiceBrokers()
-	broker := &v1alpha1.ClusterServiceBroker{
+	broker := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ClusterServiceBrokerSpec{
+		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: "https://example.com",
 		},
 	}
@@ -288,13 +281,13 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		)
 	}
 
-	authSecret := &v1.ObjectReference{
+	authSecret := &corev1.ObjectReference{
 		Namespace: "test-namespace",
 		Name:      "test-name",
 	}
 
-	brokerServer.Spec.AuthInfo = &v1alpha1.ServiceBrokerAuthInfo{
-		Basic: &v1alpha1.BasicAuthConfig{
+	brokerServer.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
+		Basic: &v1beta1.BasicAuthConfig{
 			SecretRef: authSecret,
 		},
 	}
@@ -306,14 +299,14 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("broker wasn't updated, %v, %v", brokerServer, brokerUpdated)
 	}
 
-	readyConditionTrue := v1alpha1.ServiceBrokerCondition{
-		Type:    v1alpha1.ServiceBrokerConditionReady,
-		Status:  v1alpha1.ConditionTrue,
+	readyConditionTrue := v1beta1.ServiceBrokerCondition{
+		Type:    v1beta1.ServiceBrokerConditionReady,
+		Status:  v1beta1.ConditionTrue,
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	brokerUpdated.Status = v1alpha1.ServiceBrokerStatus{
-		Conditions: []v1alpha1.ServiceBrokerCondition{
+	brokerUpdated.Status = v1beta1.ClusterServiceBrokerStatus{
+		Conditions: []v1beta1.ServiceBrokerCondition{
 			readyConditionTrue,
 		},
 	}
@@ -330,9 +323,9 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		return fmt.Errorf("Should not be able to update spec from status subresource")
 	}
 
-	readyConditionFalse := v1alpha1.ServiceBrokerCondition{
-		Type:    v1alpha1.ServiceBrokerConditionReady,
-		Status:  v1alpha1.ConditionFalse,
+	readyConditionFalse := v1beta1.ServiceBrokerCondition{
+		Type:    v1beta1.ServiceBrokerConditionReady,
+		Status:  v1beta1.ConditionFalse,
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
@@ -412,9 +405,9 @@ func TestClusterServiceClassClient(t *testing.T) {
 func testClusterServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
 	serviceClassClient := client.Servicecatalog().ClusterServiceClasses()
 
-	serviceClass := &v1alpha1.ClusterServiceClass{
+	serviceClass := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ClusterServiceClassSpec{
+		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 true,
 			ExternalName:             name,
@@ -494,21 +487,21 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 	}
 
 	// Test status subresource
-	updated.Status.PresentInCatalog = true
+	updated.Status.RemovedFromBrokerCatalog = true
 	updated, err = serviceClassClient.UpdateStatus(updated)
 	if err != nil {
 		return fmt.Errorf("Error updating serviceClass status: %v", err)
 	}
-	if !updated.Status.PresentInCatalog {
-		return errors.New("Expected status.presentInCatalog = true, got false")
+	if !updated.Status.RemovedFromBrokerCatalog {
+		return errors.New("Expected status.removedFromBrokerCatalog = true, got false")
 	}
 
 	// Ok, let's verify the field selectors
 	sc2Name := name + "2"
 	sc2ID := "someotheridhere"
-	serviceClass2 := &v1alpha1.ClusterServiceClass{
+	serviceClass2 := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: sc2Name},
-		Spec: v1alpha1.ClusterServiceClassSpec{
+		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 true,
 			ExternalName:             sc2Name,
@@ -561,6 +554,14 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 		return fmt.Errorf("should have zero ClusterServiceClasses, had %v ClusterServiceClasses : %+v", len(serviceClasses.Items), serviceClasses.Items)
 	}
 
+	serviceClasses, err = serviceClassClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServiceBrokerName=" + "test-broker"})
+	if err != nil {
+		return fmt.Errorf("error listing service classes (%s)", err)
+	}
+	if 2 != len(serviceClasses.Items) {
+		return fmt.Errorf("should have two ClusterServiceClasses, had %v ClusterServiceClasses", len(serviceClasses.Items))
+	}
+
 	err = serviceClassClient.Delete(name, &metav1.DeleteOptions{})
 	if nil != err {
 		return fmt.Errorf("serviceclass should be deleted (%s)", err)
@@ -610,15 +611,15 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 	servicePlanClient := client.Servicecatalog().ClusterServicePlans()
 
 	bindable := true
-	servicePlan := &v1alpha1.ClusterServicePlan{
+	servicePlan := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ClusterServicePlanSpec{
+		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 &bindable,
 			ExternalName:             name,
 			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
 			Description:              "test description",
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: corev1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
 		},
@@ -696,27 +697,27 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 	}
 
 	// Test status subresource
-	updated.Status.PresentInCatalog = true
+	updated.Status.RemovedFromBrokerCatalog = true
 	updated, err = servicePlanClient.UpdateStatus(updated)
 	if err != nil {
 		return fmt.Errorf("Error updating servicePlan status: %v", err)
 	}
-	if !updated.Status.PresentInCatalog {
-		return errors.New("Expected status.presentInCatalog = true, got false")
+	if !updated.Status.RemovedFromBrokerCatalog {
+		return errors.New("Expected status.removedFromBrokerCatalog = true, got false")
 	}
 
 	// Verify that field selectors work by listing.
 	sp2Name := name + "2"
 	sp2ID := "anotheridhere"
-	servicePlan2 := &v1alpha1.ClusterServicePlan{
+	servicePlan2 := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
-		Spec: v1alpha1.ClusterServicePlanSpec{
+		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
 			Bindable:                 &bindable,
 			ExternalName:             sp2Name,
 			ExternalID:               sp2ID,
 			Description:              "test description 2",
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: corev1.LocalObjectReference{
 				Name: "test-serviceclass",
 			},
 		},
@@ -820,13 +821,15 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	)
 	instanceClient := client.Servicecatalog().ServiceInstances("test-namespace")
 
-	instance := &v1alpha1.ServiceInstance{
+	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "service-class-name",
-			ExternalClusterServicePlanName:  "plan-name",
-			Parameters:                      &runtime.RawExtension{Raw: []byte(instanceParameter)},
-			ExternalID:                      osbGUID,
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ExternalClusterServiceClassName: "service-class-name",
+				ExternalClusterServicePlanName:  "plan-name",
+			},
+			Parameters: &runtime.RawExtension{Raw: []byte(instanceParameter)},
+			ExternalID: osbGUID,
 		},
 	}
 
@@ -904,15 +907,15 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 
 	// update the instance's conditions, and set the ReconciledGeneration so that
 	// spec updates are not rejected
-	readyConditionTrue := v1alpha1.ServiceInstanceCondition{
-		Type:    v1alpha1.ServiceInstanceConditionReady,
-		Status:  v1alpha1.ConditionTrue,
+	readyConditionTrue := v1beta1.ServiceInstanceCondition{
+		Type:    v1beta1.ServiceInstanceConditionReady,
+		Status:  v1beta1.ConditionTrue,
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	instanceServer.Status = v1alpha1.ServiceInstanceStatus{
+	instanceServer.Status = v1beta1.ServiceInstanceStatus{
 		ReconciledGeneration: instanceServer.Generation,
-		Conditions:           []v1alpha1.ServiceInstanceCondition{readyConditionTrue},
+		Conditions:           []v1beta1.ServiceInstanceCondition{readyConditionTrue},
 	}
 
 	_, err = instanceClient.UpdateStatus(instanceServer)
@@ -930,9 +933,9 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 
 	// Update the instance references
-	classRef := &v1.ObjectReference{Name: "service-class-ref"}
+	classRef := &corev1.ObjectReference{Name: "service-class-ref"}
 	instanceServer.Spec.ClusterServiceClassRef = classRef
-	planRef := &v1.ObjectReference{Name: "service-plan-ref"}
+	planRef := &corev1.ObjectReference{Name: "service-plan-ref"}
 	instanceServer.Spec.ClusterServicePlanRef = planRef
 	returnedInstance, err := instanceClient.UpdateReferences(instanceServer)
 	if err != nil {
@@ -1018,7 +1021,7 @@ func TestBindingClient(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
 			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceInstanceCredential{}
+				return &servicecatalog.ServiceBinding{}
 			})
 			defer shutdownServer()
 
@@ -1036,12 +1039,12 @@ func TestBindingClient(t *testing.T) {
 }
 
 func testBindingClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
-	bindingClient := client.Servicecatalog().ServiceInstanceCredentials("test-namespace")
+	bindingClient := client.Servicecatalog().ServiceBindings("test-namespace")
 
-	binding := &v1alpha1.ServiceInstanceCredential{
+	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},
-		Spec: v1alpha1.ServiceInstanceCredentialSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: corev1.LocalObjectReference{
 				Name: "bar",
 			},
 			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},
@@ -1136,14 +1139,14 @@ func testBindingClient(sType server.StorageType, client servicecatalogclient.Int
 		return fmt.Errorf("Didn't find second value in parameters.baz was %+v", parameters)
 	}
 
-	readyConditionTrue := v1alpha1.ServiceInstanceCredentialCondition{
-		Type:    v1alpha1.ServiceInstanceCredentialConditionReady,
-		Status:  v1alpha1.ConditionTrue,
+	readyConditionTrue := v1beta1.ServiceBindingCondition{
+		Type:    v1beta1.ServiceBindingConditionReady,
+		Status:  v1beta1.ConditionTrue,
 		Reason:  "ConditionReason",
 		Message: "ConditionMessage",
 	}
-	bindingServer.Status = v1alpha1.ServiceInstanceCredentialStatus{
-		Conditions: []v1alpha1.ServiceInstanceCredentialCondition{readyConditionTrue},
+	bindingServer.Status = v1beta1.ServiceBindingStatus{
+		Conditions: []v1beta1.ServiceBindingCondition{readyConditionTrue},
 	}
 	if _, err = bindingClient.UpdateStatus(bindingServer); err != nil {
 		return fmt.Errorf("Error updating binding: %v", err)

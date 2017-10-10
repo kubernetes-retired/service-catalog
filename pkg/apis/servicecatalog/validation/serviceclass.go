@@ -40,7 +40,7 @@ var guidRegexp = regexp.MustCompile("^" + guidFmt + "$")
 // have been passed in. External IDs used to be OpenServiceBrokerAPI
 // GUIDs, so we will retain that form until there is another provider
 // that desires a different form.  In the case of the OSBAPI we
-// generate GUIDs for ServiceInstances and ServiceInstanceCredentials, but for ClusterServiceClass and
+// generate GUIDs for ServiceInstances and ServiceBindings, but for ClusterServiceClass and
 // ServicePlan, they are part of the payload returned from the ClusterServiceBroker.
 func validateExternalID(value string) []string {
 	var errs []string

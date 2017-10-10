@@ -71,7 +71,6 @@ func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Pa
 	if "" == spec.ExternalClusterServiceClassName {
 		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServiceClassName"), "externalClusterServiceClassName is required"))
 	}
-
 	for _, msg := range validateServiceClassName(spec.ExternalClusterServiceClassName, false /* prefix */) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServiceClassName"), spec.ExternalClusterServiceClassName, msg))
 	}
@@ -79,7 +78,6 @@ func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Pa
 	if "" == spec.ExternalClusterServicePlanName {
 		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "externalClusterServicePlanName is required"))
 	}
-
 	for _, msg := range validateServicePlanName(spec.ExternalClusterServicePlanName, false /* prefix */) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServicePlanName"), spec.ExternalClusterServicePlanName, msg))
 	}

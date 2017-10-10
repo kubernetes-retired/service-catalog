@@ -133,8 +133,8 @@ func TestGetItem(t *testing.T) {
 		url            string
 		expectedStatus int
 	}{
-		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusNotFound},
-		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusOK},
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1beta1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusNotFound},
+		{"One Item in storage", createSingleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1beta1/namespaces/%s/%s/%s", ns1, tipe1, name1), http.StatusOK},
 	}
 
 	for _, tc := range testCases {
@@ -175,8 +175,8 @@ func TestGetItems(t *testing.T) {
 		url            string
 		expectedStatus int
 	}{
-		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%v/clusterservicebrokers", ns1), http.StatusOK},
-		{"Multiple Items", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%v/clusterservicebrokers", ns1), http.StatusOK},
+		{"Empty Storage", make(NamespacedStorage), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1beta1/namespaces/%v/clusterservicebrokers", ns1), http.StatusOK},
+		{"Multiple Items", createMultipleItemStorage(), NewWatcher(), newResponseWriter(), fmt.Sprintf("/apis/servicecatalog.k8s.io/v1beta1/namespaces/%v/clusterservicebrokers", ns1), http.StatusOK},
 	}
 
 	for _, tc := range testCases {
@@ -224,8 +224,8 @@ func TestCreateItem(t *testing.T) {
 			"Create Item (empty storage)",
 			make(NamespacedStorage), NewWatcher(),
 			newResponseWriter(),
-			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1),
-			&servicecatalog.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: name1}, TypeMeta: metav1.TypeMeta{Kind: "ClusterServiceBroker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
+			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1beta1/namespaces/%s/%s", ns1, tipe1),
+			&servicecatalog.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: name1}, TypeMeta: metav1.TypeMeta{Kind: "ClusterServiceBroker", APIVersion: "servicecatalog.k8s.io/v1beta1"}},
 			http.StatusCreated,
 			1,
 		},
@@ -234,7 +234,7 @@ func TestCreateItem(t *testing.T) {
 			createMultipleItemStorage(),
 			NewWatcher(),
 			newResponseWriter(),
-			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1alpha1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.ClusterServiceBroker{TypeMeta: metav1.TypeMeta{Kind: "ClusterServiceBroker", APIVersion: "servicecatalog.k8s.io/v1alpha1"}},
+			fmt.Sprintf("/apis/servicecatalog.k8s.io/v1beta1/namespaces/%s/%s", ns1, tipe1), &servicecatalog.ClusterServiceBroker{TypeMeta: metav1.TypeMeta{Kind: "ClusterServiceBroker", APIVersion: "servicecatalog.k8s.io/v1beta1"}},
 			http.StatusCreated,
 			2,
 		},

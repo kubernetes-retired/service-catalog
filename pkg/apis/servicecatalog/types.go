@@ -17,13 +17,14 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
-// +genclient=true
-// +nonNamespaced=true
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServiceBroker represents an entity that provides ClusterServiceClasses for use in the
 // service catalog. ClusterServiceBroker is backed by an OSBAPI v2 broker supporting the
@@ -33,8 +34,10 @@ type ClusterServiceBroker struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServiceBrokerSpec
-	Status ServiceBrokerStatus
+	Status ClusterServiceBrokerStatus
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServiceBrokerList is a list of Brokers.
 type ClusterServiceBrokerList struct {
@@ -136,8 +139,8 @@ const (
 	BearerTokenKey = "token"
 )
 
-// ServiceBrokerStatus represents the current status of a Broker.
-type ServiceBrokerStatus struct {
+// ClusterServiceBrokerStatus represents the current status of a ClusterServiceBroker
+type ClusterServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
 	// ReconciledGeneration is the 'Generation' of the ServiceBrokerSpec that
@@ -202,6 +205,8 @@ const (
 	ConditionUnknown ConditionStatus = "Unknown"
 )
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // ClusterServiceClassList is a list of ClusterServiceClasses.
 type ClusterServiceClassList struct {
 	metav1.TypeMeta
@@ -210,8 +215,9 @@ type ClusterServiceClassList struct {
 	Items []ClusterServiceClass
 }
 
-// +genclient=true
-// +nonNamespaced=true
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServiceClass represents an offering in the service catalog.
 type ClusterServiceClass struct {
@@ -219,7 +225,7 @@ type ClusterServiceClass struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServiceClassSpec
-	Status ServiceClassStatus
+	Status ClusterServiceClassStatus
 }
 
 // ClusterServiceClassSpec represents details about a ClusterServicePlan
@@ -275,12 +281,15 @@ type ClusterServiceClassSpec struct {
 	Requires []string
 }
 
-// ServiceClassStatus represents status information about a ServiceClass.
-type ServiceClassStatus struct {
-	// PresentInCatalog indicates that the ServiceClass is present in the
-	// broker's catalog.
-	PresentInCatalog bool
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
+	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
+	// catalog.
+	RemovedFromBrokerCatalog bool
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServicePlanList is a list of ServicePlans.
 type ClusterServicePlanList struct {
@@ -290,8 +299,9 @@ type ClusterServicePlanList struct {
 	Items []ClusterServicePlan
 }
 
-// +genclient=true
-// +nonNamespaced=true
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ClusterServicePlan represents a tier of a ClusterServiceClass.
 type ClusterServicePlan struct {
@@ -299,7 +309,7 @@ type ClusterServicePlan struct {
 	metav1.ObjectMeta
 
 	Spec   ClusterServicePlanSpec
-	Status ServicePlanStatus
+	Status ClusterServicePlanStatus
 }
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan
@@ -351,21 +361,24 @@ type ClusterServicePlanSpec struct {
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// ServiceInstanceCredentialCreateParameterSchema is the schema for the parameters that
+	// ServiceBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
-	ServiceInstanceCredentialCreateParameterSchema *runtime.RawExtension
+	ServiceBindingCreateParameterSchema *runtime.RawExtension
 
 	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.
 	ClusterServiceClassRef v1.LocalObjectReference
 }
 
-// ServicePlanStatus represents status information about a ServicePlan.
-type ServicePlanStatus struct {
-	// PresentInCatalog indicates that the ServicePlan is present in the
-	// broker's catalog.
-	PresentInCatalog bool
+// ClusterServicePlanStatus represents status information about a
+// ClusterServicePlan.
+type ClusterServicePlanStatus struct {
+	// RemovedFromBrokerCatalog indicates that the broker removed the plan
+	// from its catalog.
+	RemovedFromBrokerCatalog bool
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ServiceInstanceList is a list of instances.
 type ServiceInstanceList struct {
@@ -387,7 +400,8 @@ type UserInfo struct {
 // provided by the authenticator.
 type ExtraValue []string
 
-// +genclient=true
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ServiceInstance represents a provisioned instance of a ClusterServiceClass.
 type ServiceInstance struct {
@@ -398,23 +412,30 @@ type ServiceInstance struct {
 	Status ServiceInstanceStatus
 }
 
-// ServiceInstanceSpec represents the desired state of an Instance.
-type ServiceInstanceSpec struct {
-	// ExternalClusterServiceClassName is the human-readable name of the service
-	// as reported by the broker. Note that if the broker changes
+// PlanReference defines the user specification for the desired
+// ServicePlan and ServiceClass. Because there are multiple ways to
+// specify the desired Class/Plan, this structure specifies the
+// allowed ways to specify the intent.
+type PlanReference struct {
+	// ExternalClusterServiceClassName is the human-readable name of the
+	// service as reported by the broker. Note that if the broker changes
 	// the name of the ClusterServiceClass, it will not be reflected here,
 	// and to see the current name of the ClusterServiceClass, you should
 	// follow the ClusterServiceClassRef below.
 	//
 	// Immutable.
 	ExternalClusterServiceClassName string
-
 	// ExternalClusterServicePlanName is the human-readable name of the plan
-	// as reported by the broker. Note that if the broker changes
-	// the name of the ClusterServicePlan, it will not be reflected here,
-	// and to see the current name of the ClusterServicePlan, you should
-	// follow the ClusterServicePlanRef below.
+	// as reported by the broker. Note that if the broker changes the name
+	// of the ClusterServicePlan, it will not be reflected here, and to see
+	// the current name of the ClusterServicePlan, you should follow the
+	// ClusterServicePlanRef below.
 	ExternalClusterServicePlanName string
+}
+
+// ServiceInstanceSpec represents the desired state of an Instance.
+type ServiceInstanceSpec struct {
+	PlanReference
 
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
 	// that the user selected.
@@ -582,33 +603,36 @@ type ServiceInstancePropertiesState struct {
 	UserInfo *UserInfo
 }
 
-// ServiceInstanceCredentialList is a list of ServiceInstanceCredentials.
-type ServiceInstanceCredentialList struct {
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceBindingList is a list of ServiceBindings.
+type ServiceBindingList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
 
-	Items []ServiceInstanceCredential
+	Items []ServiceBinding
 }
 
-// +genclient=true
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceInstanceCredential represents a "used by" relationship between an application and an
+// ServiceBinding represents a "used by" relationship between an application and an
 // ServiceInstance.
-type ServiceInstanceCredential struct {
+type ServiceBinding struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
 
-	Spec   ServiceInstanceCredentialSpec
-	Status ServiceInstanceCredentialStatus
+	Spec   ServiceBindingSpec
+	Status ServiceBindingStatus
 }
 
-// ServiceInstanceCredentialSpec represents the desired state of a
-// ServiceInstanceCredential.
+// ServiceBindingSpec represents the desired state of a
+// ServiceBinding.
 //
-// The spec field cannot be changed after a ServiceInstanceCredential is
+// The spec field cannot be changed after a ServiceBinding is
 // created.  Changes submitted to the spec field will be ignored.
-type ServiceInstanceCredentialSpec struct {
-	// ServiceInstanceRef is the reference to the Instance this ServiceInstanceCredential is to.
+type ServiceBindingSpec struct {
+	// ServiceInstanceRef is the reference to the Instance this ServiceBinding is to.
 	//
 	// Immutable.
 	ServiceInstanceRef v1.LocalObjectReference
@@ -634,8 +658,8 @@ type ServiceInstanceCredentialSpec struct {
 	// +optional
 	ParametersFrom []ParametersFromSource
 
-	// SecretName is the name of the secret to create in the ServiceInstanceCredential's
-	// namespace that will hold the credentials associated with the ServiceInstanceCredential.
+	// SecretName is the name of the secret to create in the ServiceBinding's
+	// namespace that will hold the credentials associated with the ServiceBinding.
 	SecretName string
 
 	// ExternalID is the identity of this object for use with the OSB API.
@@ -647,22 +671,22 @@ type ServiceInstanceCredentialSpec struct {
 	// and its data will not be migrated.
 	//
 	// UserInfo contains information about the user that last modified this
-	// ServiceInstanceCredential. This field is set by the API server and not
+	// ServiceBinding. This field is set by the API server and not
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo
 }
 
-// ServiceInstanceCredentialStatus represents the current status of a ServiceInstanceCredential.
-type ServiceInstanceCredentialStatus struct {
-	Conditions []ServiceInstanceCredentialCondition
+// ServiceBindingStatus represents the current status of a ServiceBinding.
+type ServiceBindingStatus struct {
+	Conditions []ServiceBindingCondition
 
 	// CurrentOperation is the operation the Controller is currently performing
-	// on the ServiceInstanceCredential.
-	CurrentOperation ServiceInstanceCredentialOperation
+	// on the ServiceBinding.
+	CurrentOperation ServiceBindingOperation
 
 	// ReconciledGeneration is the 'Generation' of the
-	// serviceInstanceCredentialSpec that was last processed by the controller.
+	// ServiceBindingSpec that was last processed by the controller.
 	// The reconciled generation is updated even if the controller failed to
 	// process the spec.
 	ReconciledGeneration int64
@@ -671,23 +695,23 @@ type ServiceInstanceCredentialStatus struct {
 	OperationStartTime *metav1.Time
 
 	// InProgressProperties is the properties state of the
-	// ServiceInstanceCredential when a Bind is in progress. If the current
+	// ServiceBinding when a Bind is in progress. If the current
 	// operation is an Unbind, this will be nil.
-	InProgressProperties *ServiceInstanceCredentialPropertiesState
+	InProgressProperties *ServiceBindingPropertiesState
 
 	// ExternalProperties is the properties state of the
-	// ServiceInstanceCredential which the broker knows about.
-	ExternalProperties *ServiceInstanceCredentialPropertiesState
+	// ServiceBinding which the broker knows about.
+	ExternalProperties *ServiceBindingPropertiesState
 
 	// OrphanMitigationInProgress is a flag that represents whether orphan
 	// mitigation is in progress.
 	OrphanMitigationInProgress bool
 }
 
-// ServiceInstanceCredentialCondition condition information for a ServiceInstanceCredential.
-type ServiceInstanceCredentialCondition struct {
+// ServiceBindingCondition condition information for a ServiceBinding.
+type ServiceBindingCondition struct {
 	// Type of the condition, currently ('Ready').
-	Type ServiceInstanceCredentialConditionType
+	Type ServiceBindingConditionType
 
 	// Status of the condition, one of ('True', 'False', 'Unknown').
 	Status ConditionStatus
@@ -705,29 +729,29 @@ type ServiceInstanceCredentialCondition struct {
 	Message string
 }
 
-// ServiceInstanceCredentialConditionType represents a ServiceInstanceCredentialCondition value.
-type ServiceInstanceCredentialConditionType string
+// ServiceBindingConditionType represents a ServiceBindingCondition value.
+type ServiceBindingConditionType string
 
 const (
-	// ServiceInstanceCredentialConditionReady represents a ServiceInstanceCredentialCondition is in ready state.
-	ServiceInstanceCredentialConditionReady ServiceInstanceCredentialConditionType = "Ready"
+	// ServiceBindingConditionReady represents a ServiceBindingCondition is in ready state.
+	ServiceBindingConditionReady ServiceBindingConditionType = "Ready"
 
-	// ServiceInstanceCredentialConditionFailed represents a ServiceInstanceCredentialCondition that has failed
+	// ServiceBindingConditionFailed represents a ServiceBindingCondition that has failed
 	// completely and should not be retried.
-	ServiceInstanceCredentialConditionFailed ServiceInstanceCredentialConditionType = "Failed"
+	ServiceBindingConditionFailed ServiceBindingConditionType = "Failed"
 )
 
-// ServiceInstanceCredentialOperation represents a type of operation
+// ServiceBindingOperation represents a type of operation
 // the controller can be performing for a binding in the OSB API.
-type ServiceInstanceCredentialOperation string
+type ServiceBindingOperation string
 
 const (
-	// ServiceInstanceCredentialOperationBind indicates that the
-	// ServiceInstanceCredential is being bound.
-	ServiceInstanceCredentialOperationBind ServiceInstanceCredentialOperation = "Bind"
-	// ServiceInstanceCredentialOperationUnbind indicates that the
-	// ServiceInstanceCredential is being unbound.
-	ServiceInstanceCredentialOperationUnbind ServiceInstanceCredentialOperation = "Unbind"
+	// ServiceBindingOperationBind indicates that the
+	// ServiceBinding is being bound.
+	ServiceBindingOperationBind ServiceBindingOperation = "Bind"
+	// ServiceBindingOperationUnbind indicates that the
+	// ServiceBinding is being unbound.
+	ServiceBindingOperationUnbind ServiceBindingOperation = "Unbind"
 )
 
 // These are internal finalizer values to service catalog, must be qualified name.
@@ -735,11 +759,11 @@ const (
 	FinalizerServiceCatalog string = "kubernetes-incubator/service-catalog"
 )
 
-// ServiceInstanceCredentialPropertiesState is the state of a
-// ServiceInstanceCredential that the ServiceBroker knows about.
-type ServiceInstanceCredentialPropertiesState struct {
+// ServiceBindingPropertiesState is the state of a
+// ServiceBinding that the ServiceBroker knows about.
+type ServiceBindingPropertiesState struct {
 	// Parameters is a blob of the parameters and their values that the broker
-	// knows about for this ServiceInstanceCredential.  If a parameter was
+	// knows about for this ServiceBinding.  If a parameter was
 	// sourced from a secret, its value will be "<redacted>" in this blob.
 	Parameters *runtime.RawExtension
 

@@ -57,6 +57,38 @@ func newClusterServiceClasses(c *ServicecatalogClient) *clusterServiceClasses {
 	}
 }
 
+// Get takes name of the clusterServiceClass, and returns the corresponding clusterServiceClass object, and an error if there is any.
+func (c *clusterServiceClasses) Get(name string, options v1.GetOptions) (result *servicecatalog.ClusterServiceClass, err error) {
+	result = &servicecatalog.ClusterServiceClass{}
+	err = c.client.Get().
+		Resource("clusterserviceclasses").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// List takes label and field selectors, and returns the list of ClusterServiceClasses that match those selectors.
+func (c *clusterServiceClasses) List(opts v1.ListOptions) (result *servicecatalog.ClusterServiceClassList, err error) {
+	result = &servicecatalog.ClusterServiceClassList{}
+	err = c.client.Get().
+		Resource("clusterserviceclasses").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// Watch returns a watch.Interface that watches the requested clusterServiceClasses.
+func (c *clusterServiceClasses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
+	return c.client.Get().
+		Resource("clusterserviceclasses").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Watch()
+}
+
 // Create takes the representation of a clusterServiceClass and creates it.  Returns the server's representation of the clusterServiceClass, and an error, if there is any.
 func (c *clusterServiceClasses) Create(clusterServiceClass *servicecatalog.ClusterServiceClass) (result *servicecatalog.ClusterServiceClass, err error) {
 	result = &servicecatalog.ClusterServiceClass{}
@@ -81,7 +113,7 @@ func (c *clusterServiceClasses) Update(clusterServiceClass *servicecatalog.Clust
 }
 
 // UpdateStatus was generated because the type contains a Status member.
-// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
 func (c *clusterServiceClasses) UpdateStatus(clusterServiceClass *servicecatalog.ClusterServiceClass) (result *servicecatalog.ClusterServiceClass, err error) {
 	result = &servicecatalog.ClusterServiceClass{}
@@ -113,38 +145,6 @@ func (c *clusterServiceClasses) DeleteCollection(options *v1.DeleteOptions, list
 		Body(options).
 		Do().
 		Error()
-}
-
-// Get takes name of the clusterServiceClass, and returns the corresponding clusterServiceClass object, and an error if there is any.
-func (c *clusterServiceClasses) Get(name string, options v1.GetOptions) (result *servicecatalog.ClusterServiceClass, err error) {
-	result = &servicecatalog.ClusterServiceClass{}
-	err = c.client.Get().
-		Resource("clusterserviceclasses").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ClusterServiceClasses that match those selectors.
-func (c *clusterServiceClasses) List(opts v1.ListOptions) (result *servicecatalog.ClusterServiceClassList, err error) {
-	result = &servicecatalog.ClusterServiceClassList{}
-	err = c.client.Get().
-		Resource("clusterserviceclasses").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested clusterServiceClasses.
-func (c *clusterServiceClasses) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	opts.Watch = true
-	return c.client.Get().
-		Resource("clusterserviceclasses").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
 }
 
 // Patch applies the patch and returns the patched clusterServiceClass.

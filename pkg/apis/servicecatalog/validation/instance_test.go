@@ -20,12 +20,15 @@ import (
 	"strings"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
+
+const externalClusterServiceClassName = "test-serviceclass"
+const externalClusterServicePlanName = "test-plan"
 
 func validServiceInstanceForCreate() *servicecatalog.ServiceInstance {
 	return &servicecatalog.ServiceInstance{
@@ -35,16 +38,18 @@ func validServiceInstanceForCreate() *servicecatalog.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
-			ExternalClusterServiceClassName: "test-serviceclass",
-			ExternalClusterServicePlanName:  "test-plan",
+			PlanReference: servicecatalog.PlanReference{
+				ExternalClusterServiceClassName: externalClusterServiceClassName,
+				ExternalClusterServicePlanName:  externalClusterServicePlanName,
+			},
 		},
 	}
 }
 
 func validServiceInstance() *servicecatalog.ServiceInstance {
 	instance := validServiceInstanceForCreate()
-	instance.Spec.ClusterServiceClassRef = &apiv1.ObjectReference{}
-	instance.Spec.ClusterServicePlanRef = &apiv1.ObjectReference{}
+	instance.Spec.ClusterServiceClassRef = &corev1.ObjectReference{}
+	instance.Spec.ClusterServicePlanRef = &corev1.ObjectReference{}
 	return instance
 }
 
@@ -502,8 +507,10 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  "test-plan",
+				PlanReference: servicecatalog.PlanReference{
+					ExternalClusterServiceClassName: externalClusterServiceClassName,
+					ExternalClusterServicePlanName:  externalClusterServicePlanName,
+				},
 			},
 		}
 		if tc.onGoingSpecChange {
@@ -519,8 +526,10 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  "test-plan",
+				PlanReference: servicecatalog.PlanReference{
+					ExternalClusterServiceClassName: "test-serviceclass",
+					ExternalClusterServicePlanName:  "test-plan",
+				},
 			},
 		}
 		if tc.newSpecChange {
@@ -545,7 +554,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 		name       string
 		oldPlan    string
 		newPlan    string
-		newPlanRef *apiv1.ObjectReference
+		newPlanRef *corev1.ObjectReference
 		valid      bool
 	}{
 		{
@@ -559,14 +568,14 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 			name:       "plan ref not cleared",
 			oldPlan:    "old-plan",
 			newPlan:    "new-plan",
-			newPlanRef: &apiv1.ObjectReference{},
+			newPlanRef: &corev1.ObjectReference{},
 			valid:      false,
 		},
 		{
 			name:       "no plan change",
 			oldPlan:    "plan-name",
 			newPlan:    "plan-name",
-			newPlanRef: &apiv1.ObjectReference{},
+			newPlanRef: &corev1.ObjectReference{},
 			valid:      true,
 		},
 	}
@@ -578,10 +587,12 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  tc.oldPlan,
-				ClusterServiceClassRef:          &apiv1.ObjectReference{},
-				ClusterServicePlanRef:           &apiv1.ObjectReference{},
+				PlanReference: servicecatalog.PlanReference{
+					ExternalClusterServiceClassName: "test-serviceclass",
+					ExternalClusterServicePlanName:  tc.oldPlan,
+				},
+				ClusterServiceClassRef: &corev1.ObjectReference{},
+				ClusterServicePlanRef:  &corev1.ObjectReference{},
 			},
 		}
 
@@ -591,10 +602,12 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  tc.newPlan,
-				ClusterServiceClassRef:          &apiv1.ObjectReference{},
-				ClusterServicePlanRef:           tc.newPlanRef,
+				PlanReference: servicecatalog.PlanReference{
+					ExternalClusterServiceClassName: externalClusterServiceClassName,
+					ExternalClusterServicePlanName:  tc.newPlan,
+				},
+				ClusterServiceClassRef: &corev1.ObjectReference{},
+				ClusterServicePlanRef:  tc.newPlanRef,
 			},
 		}
 
@@ -742,10 +755,12 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				Generation: 2,
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  "test-plan",
-				ClusterServiceClassRef:          &apiv1.ObjectReference{},
-				ClusterServicePlanRef:           &apiv1.ObjectReference{},
+				PlanReference: servicecatalog.PlanReference{
+					ExternalClusterServiceClassName: externalClusterServiceClassName,
+					ExternalClusterServicePlanName:  externalClusterServicePlanName,
+				},
+				ClusterServiceClassRef: &corev1.ObjectReference{},
+				ClusterServicePlanRef:  &corev1.ObjectReference{},
 			},
 			Status: *tc.old,
 		}
@@ -757,10 +772,12 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				Generation: 2,
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  "test-plan",
-				ClusterServiceClassRef:          &apiv1.ObjectReference{},
-				ClusterServicePlanRef:           &apiv1.ObjectReference{},
+				PlanReference: servicecatalog.PlanReference{
+					ExternalClusterServiceClassName: externalClusterServiceClassName,
+					ExternalClusterServicePlanName:  externalClusterServicePlanName,
+				},
+				ClusterServiceClassRef: &corev1.ObjectReference{},
+				ClusterServicePlanRef:  &corev1.ObjectReference{},
 			},
 			Status: *tc.new,
 		}
@@ -806,7 +823,7 @@ func TestValidateServiceInstanceReferencesUpdate(t *testing.T) {
 			old:  validServiceInstance(),
 			new: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
-				i.Spec.ClusterServiceClassRef = &apiv1.ObjectReference{
+				i.Spec.ClusterServiceClassRef = &corev1.ObjectReference{
 					Name: "new-class-name",
 				}
 				return i
@@ -818,7 +835,7 @@ func TestValidateServiceInstanceReferencesUpdate(t *testing.T) {
 			old:  validServiceInstance(),
 			new: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
-				i.Spec.ClusterServicePlanRef = &apiv1.ObjectReference{
+				i.Spec.ClusterServicePlanRef = &corev1.ObjectReference{
 					Name: "new-plan-name",
 				}
 				return i
@@ -834,7 +851,7 @@ func TestValidateServiceInstanceReferencesUpdate(t *testing.T) {
 			}(),
 			new: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
-				i.Spec.ClusterServicePlanRef = &apiv1.ObjectReference{
+				i.Spec.ClusterServicePlanRef = &corev1.ObjectReference{
 					Name: "new-plan-name",
 				}
 				return i

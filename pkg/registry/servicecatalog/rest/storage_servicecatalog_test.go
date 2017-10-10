@@ -40,7 +40,6 @@ func (g GetRESTOptionsHelper) GetRESTOptions(resource schema.GroupResource) (gen
 		Decorator: generic.StorageDecorator(func(
 			copier runtime.ObjectCopier,
 			config *storagebackend.Config,
-			capacity *int,
 			objectType runtime.Object,
 			resourcePrefix string,
 			keyFunc func(obj runtime.Object) (string, error),
@@ -67,9 +66,9 @@ func TestV1Alpha1Storage(t *testing.T) {
 	}
 	configSource := serverstorage.NewResourceConfig()
 	roGetter := testRESTOptionsGetter(nil, func() {})
-	storageMap, err := provider.v1alpha1Storage(configSource, roGetter)
+	storageMap, err := provider.v1beta1Storage(configSource, roGetter)
 	if err != nil {
-		t.Fatalf("error getting v1alpha1 storage (%s)", err)
+		t.Fatalf("error getting v1beta1 storage (%s)", err)
 	}
 	_, brokerStorageExists := storageMap["clusterservicebrokers"]
 	if !brokerStorageExists {
@@ -94,7 +93,7 @@ func TestV1Alpha1Storage(t *testing.T) {
 	}
 	// TODO: do stuff with instance storage
 
-	_, bindingStorageExists := storageMap["serviceinstancecredentials"]
+	_, bindingStorageExists := storageMap["servicebindings"]
 	if !bindingStorageExists {
 		t.Fatalf("no service instance credential storage found")
 	}
