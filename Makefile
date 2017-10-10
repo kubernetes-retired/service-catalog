@@ -173,16 +173,16 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
+		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
 	  	--extra-peer-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--extra-peer-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
+		--extra-peer-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
 		--output-file-base "zz_generated.defaults"
 	# Generate deep copies
 	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen \
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
+		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
 		--bounding-dirs "github.com/kubernetes-incubator/service-catalog" \
 		--output-file-base zz_generated.deepcopy
 	# Generate conversions
@@ -190,7 +190,7 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1alpha1" \
+		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
 		--output-file-base zz_generated.conversion
 	# generate all pkg/client contents
 	$(DOCKER_CMD) $(BUILD_DIR)/update-client-gen.sh
@@ -198,7 +198,7 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 	$(DOCKER_CMD) $(BINDIR)/openapi-gen \
 		--v 1 --logtostderr \
 		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1,k8s.io/api/core/v1,k8s.io/apimachinery/pkg/apis/meta/v1" \
+		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1,k8s.io/api/core/v1,k8s.io/apimachinery/pkg/apis/meta/v1" \
 		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/openapi"
 	touch $@
 
@@ -230,7 +230,7 @@ verify: .init .generate_files verify-client-gen
 	  'for i in $$(find $(TOP_SRC_DIRS) -name *.go \
 	    | grep -v generated \
 	    | grep -v ^pkg/client/ \
-	    | grep -v v1alpha1/defaults.go); \
+	    | grep -v v1beta1/defaults.go); \
 	  do \
 	   golint --set_exit_status $$i || exit 1; \
 	  done'
@@ -319,7 +319,7 @@ purge-generated:
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
 	find $(TOP_SRC_DIRS) -type d -name *_generated -exec rm -rf {} \;
 	rm -f pkg/openapi/openapi_generated.go
-	echo 'package v1alpha1' > pkg/apis/servicecatalog/v1alpha1/types.generated.go
+	echo 'package v1beta1' > pkg/apis/servicecatalog/v1beta1/types.generated.go
 
 clean-coverage:
 	rm -f $(COVERAGE)

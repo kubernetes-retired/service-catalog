@@ -79,7 +79,7 @@ func TestInstanceCredentialUpdate(t *testing.T) {
 		//		{
 		//			name:  "spec change",
 		//			older: getTestInstanceCredential(),
-		//			newer: func() *v1alpha1.ServiceBinding {
+		//			newer: func() *v1beta1.ServiceBinding {
 		//				ic := getTestInstanceCredential()
 		//				ic.Spec.ServiceInstanceRef = v1.LocalObjectReference{
 		//					Name: "new-string",

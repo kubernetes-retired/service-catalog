@@ -28,7 +28,7 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -55,14 +55,14 @@ func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 	// Instances with ongoing asynchronous operations will be manually added
 	// to the polling queue by the reconciler. They should be ignored here in
 	// order to enforce polling rate-limiting.
-	instance := newObj.(*v1alpha1.ServiceInstance)
+	instance := newObj.(*v1beta1.ServiceInstance)
 	if !instance.Status.AsyncOpInProgress {
 		c.instanceAdd(newObj)
 	}
 }
 
 func (c *controller) instanceDelete(obj interface{}) {
-	instance, ok := obj.(*v1alpha1.ServiceInstance)
+	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if instance == nil || !ok {
 		return
 	}
@@ -102,7 +102,7 @@ func (c *controller) requeueServiceInstanceForPoll(key string) error {
 
 // beginPollingServiceInstance does a rate-limited add of the key for the given
 // instance to the controller's instance polling queue.
-func (c *controller) beginPollingServiceInstance(instance *v1alpha1.ServiceInstance) error {
+func (c *controller) beginPollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
 		glog.Errorf(`ServiceInstance "%s/%s": Couldn't create a key for object %+v: %v`, instance.Namespace, instance.Name, instance, err)
@@ -116,13 +116,13 @@ func (c *controller) beginPollingServiceInstance(instance *v1alpha1.ServiceInsta
 
 // continuePollingServiceInstance does a rate-limited add of the key for the given
 // instance to the controller's instance polling queue.
-func (c *controller) continuePollingServiceInstance(instance *v1alpha1.ServiceInstance) error {
+func (c *controller) continuePollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	return c.beginPollingServiceInstance(instance)
 }
 
 // finishPollingServiceInstance removes the instance's key from the controller's instance
 // polling queue.
-func (c *controller) finishPollingServiceInstance(instance *v1alpha1.ServiceInstance) error {
+func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
 		glog.Errorf(`ServiceInstance "%s/%s": Couldn't create a key for object %+v: %v`, instance.Namespace, instance.Name, instance, err)
@@ -156,7 +156,7 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 
 // reconcileServiceInstanceDelete is responsible for handling any instance whose
 // deletion timestamp is set.
-func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceInstance) error {
+func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceInstance) error {
 	// nothing to do...
 	if instance.DeletionTimestamp == nil && !instance.Status.OrphanMitigationInProgress {
 		return nil
@@ -179,7 +179,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 			if err != nil {
 				return err
 			}
-			toUpdate := clone.(*v1alpha1.ServiceInstance)
+			toUpdate := clone.(*v1beta1.ServiceInstance)
 
 			s := fmt.Sprintf(
 				`ServiceInstance "%s/%s": Delete instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first`,
@@ -189,8 +189,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorDeprovisionBlockedByCredentialsReason,
 				"Delete instance failed. "+s)
 			if _, err = c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -200,7 +200,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		}
 	}
 
-	finalizerToken := v1alpha1.FinalizerServiceCatalog
+	finalizerToken := v1beta1.FinalizerServiceCatalog
 	finalizers := sets.NewString(instance.Finalizers...)
 	if !finalizers.Has(finalizerToken) {
 		return nil
@@ -219,7 +219,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 		if err != nil {
 			return err
 		}
-		toUpdate := clone.(*v1alpha1.ServiceInstance)
+		toUpdate := clone.(*v1beta1.ServiceInstance)
 		// Clear the finalizer
 		finalizers.Delete(finalizerToken)
 		toUpdate.Finalizers = finalizers.List()
@@ -243,7 +243,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ServiceInstance)
+	toUpdate := clone.(*v1beta1.ServiceInstance)
 
 	request := &osb.DeprovisionRequest{
 		InstanceID:        instance.Spec.ExternalID,
@@ -261,8 +261,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorWithOriginatingIdentity,
 				s,
 			)
@@ -281,7 +281,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 	}
 
 	if toUpdate.Status.CurrentOperation == "" {
-		toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1alpha1.ServiceInstanceOperationDeprovision)
+		toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1beta1.ServiceInstanceOperationDeprovision)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
 			// over with a fresh view of the instance.
@@ -305,8 +305,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionUnknown,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionUnknown,
 				errorDeprovisionCalledReason,
 				"Deprovision call failed. "+s)
 
@@ -316,8 +316,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 				// orphan.
 				setServiceInstanceCondition(
 					toUpdate,
-					v1alpha1.ServiceInstanceConditionFailed,
-					v1alpha1.ConditionTrue,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
 					errorDeprovisionCalledReason,
 					s,
 				)
@@ -342,8 +342,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionUnknown,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionUnknown,
 			errorDeprovisionCalledReason,
 			"Deprovision call failed. "+s)
 
@@ -354,8 +354,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 			if !instance.Status.OrphanMitigationInProgress {
 				setServiceInstanceCondition(toUpdate,
-					v1alpha1.ServiceInstanceConditionFailed,
-					v1alpha1.ConditionTrue,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -387,8 +387,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			asyncDeprovisioningReason,
 			asyncDeprovisioningMessage,
 		)
@@ -413,15 +413,15 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 	setServiceInstanceCondition(
 		toUpdate,
-		v1alpha1.ServiceInstanceConditionReady,
-		v1alpha1.ConditionFalse,
+		v1beta1.ServiceInstanceConditionReady,
+		v1beta1.ConditionFalse,
 		successDeprovisionReason,
 		successDeprovisionMessage,
 	)
 
 	if instance.DeletionTimestamp != nil {
 		// Clear the finalizer for normal instance deletions
-		finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 		toUpdate.Finalizers = finalizers.List()
 	}
 
@@ -437,9 +437,9 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1alpha1.ServiceIn
 
 // isServiceInstanceFailed returns whether the instance has a failed condition with
 // status true.
-func isServiceInstanceFailed(instance *v1alpha1.ServiceInstance) bool {
+func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 	for _, condition := range instance.Status.Conditions {
-		if condition.Type == v1alpha1.ServiceInstanceConditionFailed && condition.Status == v1alpha1.ConditionTrue {
+		if condition.Type == v1beta1.ServiceInstanceConditionFailed && condition.Status == v1beta1.ConditionTrue {
 			return true
 		}
 	}
@@ -450,7 +450,7 @@ func isServiceInstanceFailed(instance *v1alpha1.ServiceInstance) bool {
 // reconcileServiceInstance is the control-loop for reconciling Instances. An
 // error is returned to indicate that the instance has not been fully
 // processed and should be resubmitted at a later time.
-func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance) error {
+func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance) error {
 	if instance.Status.AsyncOpInProgress {
 		return c.pollServiceInstanceInternal(instance)
 	}
@@ -498,7 +498,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ServiceInstance)
+	toUpdate := clone.(*v1beta1.ServiceInstance)
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
 	toUpdate, err = c.resolveReferences(toUpdate)
@@ -521,8 +521,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			errorFindingNamespaceServiceInstanceReason,
 			"Error finding namespace for instance. "+s,
 		)
@@ -548,8 +548,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorWithParameters,
 				s,
 			)
@@ -567,8 +567,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			c.recorder.Eventf(instance, corev1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorWithParameters,
 				s)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -584,8 +584,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			c.recorder.Eventf(instance, corev1.EventTypeWarning, errorWithParameters, s)
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorWithParameters,
 				s)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -599,7 +599,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		}
 	}
 
-	toUpdate.Status.InProgressProperties = &v1alpha1.ServiceInstancePropertiesState{
+	toUpdate.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
 		ExternalClusterServicePlanName: servicePlan.Spec.ExternalName,
 		Parameters:                     rawParametersWithRedaction,
 		ParametersChecksum:             parametersChecksum,
@@ -616,8 +616,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorWithOriginatingIdentity,
 				s,
 			)
@@ -633,7 +633,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		isProvisioning             bool
 		provisionRequest           *osb.ProvisionRequest
 		updateRequest              *osb.UpdateInstanceRequest
-		currentOperation           v1alpha1.ServiceInstanceOperation
+		currentOperation           v1beta1.ServiceInstanceOperation
 		provisionOrUpdateText      string
 		provisionedOrUpdatedText   string
 		provisioningOrUpdatingText string
@@ -657,7 +657,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			Context:             requestContext,
 			OriginatingIdentity: originatingIdentity,
 		}
-		currentOperation = v1alpha1.ServiceInstanceOperationProvision
+		currentOperation = v1beta1.ServiceInstanceOperationProvision
 		provisionOrUpdateText = "provision"
 		provisionedOrUpdatedText = "provisioned"
 		provisioningOrUpdatingText = "provisioning"
@@ -680,7 +680,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			toUpdate.Status.InProgressProperties.ParametersChecksum != toUpdate.Status.ExternalProperties.ParametersChecksum {
 			updateRequest.Parameters = parameters
 		}
-		currentOperation = v1alpha1.ServiceInstanceOperationUpdate
+		currentOperation = v1beta1.ServiceInstanceOperationUpdate
 		provisionOrUpdateText = "update"
 		provisionedOrUpdatedText = "updated"
 		provisioningOrUpdatingText = "updating"
@@ -721,14 +721,14 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionFailed,
-				v1alpha1.ConditionTrue,
+				v1beta1.ServiceInstanceConditionFailed,
+				v1beta1.ConditionTrue,
 				"ClusterServiceBrokerReturnedFailure",
 				s)
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				reason,
 				fmt.Sprintf(`ServiceInstance "%s/%s": ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v`, instance.Namespace, instance.Name, provisionOrUpdateText, s))
 
@@ -775,14 +775,14 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			// begin orphan mitigation.
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				reason,
 				message)
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionFailed,
-				v1alpha1.ConditionTrue,
+				v1beta1.ServiceInstanceConditionFailed,
+				v1beta1.ConditionTrue,
 				reason,
 				message)
 
@@ -801,8 +801,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			reason,
 			fmt.Sprintf(`ServiceInstance "%s/%s": The %v call failed and will be retried: %v`, instance.Namespace, instance.Name, provisionOrUpdateText, s))
 
@@ -811,8 +811,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 			glog.Info(s)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 			setServiceInstanceCondition(toUpdate,
-				v1alpha1.ServiceInstanceConditionFailed,
-				v1alpha1.ConditionTrue,
+				v1beta1.ServiceInstanceConditionFailed,
+				v1beta1.ConditionTrue,
 				errorReconciliationRetryTimeoutReason,
 				s)
 			c.clearServiceInstanceCurrentOperation(toUpdate)
@@ -874,8 +874,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		}
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionFalse,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
 			reason,
 			message,
 		)
@@ -903,8 +903,8 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 		// TODO: process response
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
-			v1alpha1.ConditionTrue,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionTrue,
 			reason,
 			message,
 		)
@@ -917,7 +917,7 @@ func (c *controller) reconcileServiceInstance(instance *v1alpha1.ServiceInstance
 	return nil
 }
 
-func (c *controller) pollServiceInstanceInternal(instance *v1alpha1.ServiceInstance) error {
+func (c *controller) pollServiceInstanceInternal(instance *v1beta1.ServiceInstance) error {
 	glog.V(4).Infof(`ServiceInstance "%s/%s": Processing`, instance.Namespace, instance.Name)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
@@ -927,7 +927,7 @@ func (c *controller) pollServiceInstanceInternal(instance *v1alpha1.ServiceInsta
 	return c.pollServiceInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
 }
 
-func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceClass, servicePlan *v1alpha1.ClusterServicePlan, brokerName string, brokerClient osb.Client, instance *v1alpha1.ServiceInstance) error {
+func (c *controller) pollServiceInstance(serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan, brokerName string, brokerClient osb.Client, instance *v1beta1.ServiceInstance) error {
 	// There are three possible operations that require polling:
 	// 1) Normal asynchronous provision
 	// 2) Normal asynchronous deprovision
@@ -937,9 +937,9 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 	// operation we're polling for. This is more readable than checking the
 	// status in various places.
 	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
-	provisioning := instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationProvision && !mitigatingOrphan
+	provisioning := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := false
-	if instance.Status.CurrentOperation == v1alpha1.ServiceInstanceOperationDeprovision || mitigatingOrphan {
+	if instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationDeprovision || mitigatingOrphan {
 		deleting = true
 	}
 
@@ -950,15 +950,15 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		if err != nil {
 			return err
 		}
-		toUpdate := clone.(*v1alpha1.ServiceInstance)
+		toUpdate := clone.(*v1beta1.ServiceInstance)
 		s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because the operation start time is not set`, instance.Namespace, instance.Name)
 		glog.Info(s)
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 		if !mitigatingOrphan {
 			setServiceInstanceCondition(toUpdate,
-				v1alpha1.ServiceInstanceConditionFailed,
-				v1alpha1.ConditionTrue,
+				v1beta1.ServiceInstanceConditionFailed,
+				v1beta1.ConditionTrue,
 				errorReconciliationRetryTimeoutReason,
 				s)
 		}
@@ -996,10 +996,10 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			if cloneErr != nil {
 				return cloneErr
 			}
-			toUpdate := clone.(*v1alpha1.ServiceInstance)
+			toUpdate := clone.(*v1beta1.ServiceInstance)
 			setServiceInstanceCondition(toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorWithOriginatingIdentity,
 				s)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -1022,23 +1022,23 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			if err != nil {
 				return err
 			}
-			toUpdate := clone.(*v1alpha1.ServiceInstance)
+			toUpdate := clone.(*v1beta1.ServiceInstance)
 
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.ExternalProperties = nil
 
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				successDeprovisionReason,
 				successDeprovisionMessage,
 			)
 
 			if !mitigatingOrphan {
 				// Clear the finalizer
-				if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
-					finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+				if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
+					finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 					toUpdate.Finalizers = finalizers.List()
 				}
 			}
@@ -1076,15 +1076,15 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			if err != nil {
 				return err
 			}
-			toUpdate := clone.(*v1alpha1.ServiceInstance)
+			toUpdate := clone.(*v1beta1.ServiceInstance)
 			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if !mitigatingOrphan {
 				setServiceInstanceCondition(toUpdate,
-					v1alpha1.ServiceInstanceConditionFailed,
-					v1alpha1.ConditionTrue,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1108,7 +1108,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 
 	switch response.State {
 	case osb.StateInProgress:
-		var toUpdate *v1alpha1.ServiceInstance
+		var toUpdate *v1beta1.ServiceInstance
 
 		// if the description is non-nil, then update the instance condition with it
 		if response.Description != nil {
@@ -1118,7 +1118,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			if err != nil {
 				return err
 			}
-			toUpdate = clone.(*v1alpha1.ServiceInstance)
+			toUpdate = clone.(*v1beta1.ServiceInstance)
 			toUpdate.Status.AsyncOpInProgress = true
 
 			var message string
@@ -1140,8 +1140,8 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			}
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				reason,
 				message,
 			)
@@ -1153,7 +1153,7 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 				if err != nil {
 					return err
 				}
-				toUpdate = clone.(*v1alpha1.ServiceInstance)
+				toUpdate = clone.(*v1beta1.ServiceInstance)
 			}
 			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
@@ -1161,8 +1161,8 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 
 			if !mitigatingOrphan {
 				setServiceInstanceCondition(toUpdate,
-					v1alpha1.ServiceInstanceConditionFailed,
-					v1alpha1.ConditionTrue,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1193,24 +1193,24 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		glog.V(4).Infof(`ServiceInstance "%s/%s": last operation not completed (still in progress)`, instance.Namespace, instance.Name)
 	case osb.StateSucceeded:
 		var (
-			readyStatus v1alpha1.ConditionStatus
+			readyStatus v1beta1.ConditionStatus
 			message     string
 			reason      string
 			actionText  string
 		)
 		switch {
 		case deleting:
-			readyStatus = v1alpha1.ConditionFalse
+			readyStatus = v1beta1.ConditionFalse
 			reason = successDeprovisionReason
 			message = successDeprovisionMessage
 			actionText = "deprovisioned"
 		case provisioning:
-			readyStatus = v1alpha1.ConditionTrue
+			readyStatus = v1beta1.ConditionTrue
 			reason = successProvisionReason
 			message = successProvisionMessage
 			actionText = "provisioned"
 		default:
-			readyStatus = v1alpha1.ConditionTrue
+			readyStatus = v1beta1.ConditionTrue
 			reason = successUpdateInstanceReason
 			message = successUpdateInstanceMessage
 			actionText = "updated"
@@ -1222,14 +1222,14 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		if err != nil {
 			return err
 		}
-		toUpdate := clone.(*v1alpha1.ServiceInstance)
+		toUpdate := clone.(*v1beta1.ServiceInstance)
 
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		c.clearServiceInstanceCurrentOperation(toUpdate)
 
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
+			v1beta1.ServiceInstanceConditionReady,
 			readyStatus,
 			reason,
 			message,
@@ -1237,8 +1237,8 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 
 		if deleting && !mitigatingOrphan {
 			// Clear the finalizer
-			if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1alpha1.FinalizerServiceCatalog) {
-				finalizers.Delete(v1alpha1.FinalizerServiceCatalog)
+			if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
+				finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 				toUpdate.Finalizers = finalizers.List()
 			}
 		}
@@ -1275,31 +1275,31 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		if err != nil {
 			return err
 		}
-		toUpdate := clone.(*v1alpha1.ServiceInstance)
+		toUpdate := clone.(*v1beta1.ServiceInstance)
 		c.clearServiceInstanceCurrentOperation(toUpdate)
 
 		var (
-			readyCond v1alpha1.ConditionStatus
+			readyCond v1beta1.ConditionStatus
 			reason    string
 			msg       string
 		)
 		switch {
 		case deleting:
-			readyCond = v1alpha1.ConditionUnknown
+			readyCond = v1beta1.ConditionUnknown
 			reason = errorDeprovisionCalledReason
 			msg = "Deprovision call failed: " + s
 		case provisioning:
-			readyCond = v1alpha1.ConditionFalse
+			readyCond = v1beta1.ConditionFalse
 			reason = errorProvisionCallFailedReason
 			msg = "Provision call failed: " + s
 		default:
-			readyCond = v1alpha1.ConditionFalse
+			readyCond = v1beta1.ConditionFalse
 			reason = errorUpdateInstanceCallFailedReason
 			msg = "Update call failed: " + s
 		}
 		setServiceInstanceCondition(
 			toUpdate,
-			v1alpha1.ServiceInstanceConditionReady,
+			v1beta1.ServiceInstanceConditionReady,
 			readyCond,
 			reason,
 			msg,
@@ -1308,8 +1308,8 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 		if !mitigatingOrphan {
 			setServiceInstanceCondition(
 				toUpdate,
-				v1alpha1.ServiceInstanceConditionFailed,
-				v1alpha1.ConditionTrue,
+				v1beta1.ServiceInstanceConditionFailed,
+				v1beta1.ConditionTrue,
 				reason,
 				msg,
 			)
@@ -1330,15 +1330,15 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 			if err != nil {
 				return err
 			}
-			toUpdate := clone.(*v1alpha1.ServiceInstance)
+			toUpdate := clone.(*v1beta1.ServiceInstance)
 			s := fmt.Sprintf(`ServiceInstance "%s/%s": Stopping reconciliation retries on ServiceInstance because too much time has elapsed`, instance.Namespace, instance.Name)
 			glog.Info(s)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if !mitigatingOrphan {
 				setServiceInstanceCondition(toUpdate,
-					v1alpha1.ServiceInstanceConditionFailed,
-					v1alpha1.ConditionTrue,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1363,12 +1363,12 @@ func (c *controller) pollServiceInstance(serviceClass *v1alpha1.ClusterServiceCl
 // nil and if so, will resolve the references and update the instance.
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
-func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	if instance.Spec.ClusterServiceClassRef != nil && instance.Spec.ClusterServicePlanRef != nil {
 		return instance, nil
 	}
 
-	var sc *v1alpha1.ClusterServiceClass
+	var sc *v1beta1.ClusterServiceClass
 
 	if instance.Spec.ClusterServiceClassRef == nil {
 		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ClusterServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
@@ -1389,8 +1389,8 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorNonexistentClusterServiceClassReason,
 				"The instance references a ClusterServiceClass that does not exist. "+s,
 			)
@@ -1431,8 +1431,8 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 			glog.Warning(s)
 			c.updateServiceInstanceCondition(
 				instance,
-				v1alpha1.ServiceInstanceConditionReady,
-				v1alpha1.ConditionFalse,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorNonexistentClusterServicePlanReason,
 				"The instance references a ClusterServicePlan that does not exist. "+s,
 			)
@@ -1451,9 +1451,9 @@ func (c *controller) resolveReferences(instance *v1alpha1.ServiceInstance) (*v1a
 //
 // Note: objects coming from informers should never be mutated; always pass a
 // deep copy as the instance parameter.
-func setServiceInstanceCondition(toUpdate *v1alpha1.ServiceInstance,
-	conditionType v1alpha1.ServiceInstanceConditionType,
-	status v1alpha1.ConditionStatus,
+func setServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
+	conditionType v1beta1.ServiceInstanceConditionType,
+	status v1beta1.ConditionStatus,
 	reason,
 	message string) {
 	setServiceInstanceConditionInternal(toUpdate, conditionType, status, reason, message, metav1.Now())
@@ -1461,16 +1461,16 @@ func setServiceInstanceCondition(toUpdate *v1alpha1.ServiceInstance,
 
 // setServiceInstanceConditionInternal is setServiceInstanceCondition but allows the time to
 // be parameterized for testing.
-func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
-	conditionType v1alpha1.ServiceInstanceConditionType,
-	status v1alpha1.ConditionStatus,
+func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
+	conditionType v1beta1.ServiceInstanceConditionType,
+	status v1beta1.ConditionStatus,
 	reason,
 	message string,
 	t metav1.Time) {
 
 	glog.V(5).Infof(`ServiceInstance "%s/%s": Setting condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, status)
 
-	newCondition := v1alpha1.ServiceInstanceCondition{
+	newCondition := v1beta1.ServiceInstanceCondition{
 		Type:    conditionType,
 		Status:  status,
 		Reason:  reason,
@@ -1480,7 +1480,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 	if len(toUpdate.Status.Conditions) == 0 {
 		glog.V(3).Infof(`ServiceInstance "%s/%s": Setting lastTransitionTime, condition %q to %v`, toUpdate.Namespace, toUpdate.Name, conditionType, t)
 		newCondition.LastTransitionTime = t
-		toUpdate.Status.Conditions = []v1alpha1.ServiceInstanceCondition{newCondition}
+		toUpdate.Status.Conditions = []v1beta1.ServiceInstanceCondition{newCondition}
 		return
 	}
 
@@ -1504,7 +1504,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1alpha1.ServiceInstance,
 }
 
 // updateServiceInstanceReferences updates the refs for the given instance.
-func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	glog.V(4).Infof(`ServiceInstance "%s/%s": Updating references`, toUpdate.Namespace, toUpdate.Name)
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
 	if err != nil {
@@ -1517,7 +1517,7 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1alpha1.ServiceI
 //
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
-func (c *controller) updateServiceInstanceStatus(toUpdate *v1alpha1.ServiceInstance) (*v1alpha1.ServiceInstance, error) {
+func (c *controller) updateServiceInstanceStatus(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	glog.V(4).Infof(`ServiceInstance "%s/%s": Updating status`, toUpdate.Namespace, toUpdate.Name)
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
@@ -1530,9 +1530,9 @@ func (c *controller) updateServiceInstanceStatus(toUpdate *v1alpha1.ServiceInsta
 // updateServiceInstanceCondition updates the given condition for the given Instance
 // with the given status, reason, and message.
 func (c *controller) updateServiceInstanceCondition(
-	instance *v1alpha1.ServiceInstance,
-	conditionType v1alpha1.ServiceInstanceConditionType,
-	status v1alpha1.ConditionStatus,
+	instance *v1beta1.ServiceInstance,
+	conditionType v1beta1.ServiceInstanceConditionType,
+	status v1beta1.ConditionStatus,
 	reason,
 	message string) error {
 
@@ -1540,7 +1540,7 @@ func (c *controller) updateServiceInstanceCondition(
 	if err != nil {
 		return err
 	}
-	toUpdate := clone.(*v1alpha1.ServiceInstance)
+	toUpdate := clone.(*v1beta1.ServiceInstance)
 
 	setServiceInstanceCondition(toUpdate, conditionType, status, reason, message)
 
@@ -1563,27 +1563,27 @@ func (c *controller) updateServiceInstanceCondition(
 // 1 - a modifiable copy of the updated instance in the registry; or toUpdate
 //     if there was an error
 // 2 - any error that occurred
-func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1alpha1.ServiceInstance, operation v1alpha1.ServiceInstanceOperation) (*v1alpha1.ServiceInstance, error) {
+func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.ServiceInstance, operation v1beta1.ServiceInstanceOperation) (*v1beta1.ServiceInstance, error) {
 	toUpdate.Status.CurrentOperation = operation
 	now := metav1.Now()
 	toUpdate.Status.OperationStartTime = &now
 	reason := ""
 	message := ""
 	switch operation {
-	case v1alpha1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision:
 		reason = provisioningInFlightReason
 		message = provisioningInFlightMessage
-	case v1alpha1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationUpdate:
 		reason = instanceUpdatingInFlightReason
 		message = instanceUpdatingInFlightMessage
-	case v1alpha1.ServiceInstanceOperationDeprovision:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = deprovisioningInFlightReason
 		message = deprovisioningInFlightMessage
 	}
 	setServiceInstanceCondition(
 		toUpdate,
-		v1alpha1.ServiceInstanceConditionReady,
-		v1alpha1.ConditionFalse,
+		v1beta1.ServiceInstanceConditionReady,
+		v1beta1.ConditionFalse,
 		reason,
 		message,
 	)
@@ -1593,7 +1593,7 @@ func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1alpha1.Se
 // clearServiceInstanceCurrentOperation sets the fields of the instance's Status
 // to indicate that there is no current operation being performed. The Status
 // is *not* recorded in the registry.
-func (c *controller) clearServiceInstanceCurrentOperation(toUpdate *v1alpha1.ServiceInstance) {
+func (c *controller) clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.CurrentOperation = ""
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.AsyncOpInProgress = false
@@ -1606,7 +1606,7 @@ func (c *controller) clearServiceInstanceCurrentOperation(toUpdate *v1alpha1.Ser
 // setServiceInstanceStartOrphanMitigation sets the fields of the instance's
 // Status to indicate that orphan mitigation is starting. The Status is *not*
 // recorded in the registry.
-func setServiceInstanceStartOrphanMitigation(toUpdate *v1alpha1.ServiceInstance) {
+func setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.AsyncOpInProgress = false
 	toUpdate.Status.OrphanMitigationInProgress = true

@@ -178,31 +178,31 @@ func getRouter(
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}",
+		"/apis/servicecatalog.k8s.io/v1beta1/namespaces/{namespace}/{type}",
 		getItems(storage),
 	).Methods("GET")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}",
+		"/apis/servicecatalog.k8s.io/v1beta1/namespaces/{namespace}/{type}",
 		createItem(storage, newEmptyObj),
 	).Methods("POST")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
+		"/apis/servicecatalog.k8s.io/v1beta1/namespaces/{namespace}/{type}/{name}",
 		getItem(storage),
 	).Methods("GET")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
+		"/apis/servicecatalog.k8s.io/v1beta1/namespaces/{namespace}/{type}/{name}",
 		updateItem(storage, newEmptyObj),
 	).Methods("PUT")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/namespaces/{namespace}/{type}/{name}",
+		"/apis/servicecatalog.k8s.io/v1beta1/namespaces/{namespace}/{type}/{name}",
 		deleteItem(storage),
 	).Methods("DELETE")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}/{name}",
+		"/apis/servicecatalog.k8s.io/v1beta1/watch/namespaces/{namespace}/{type}/{name}",
 		watchItem(watcher),
 	).Methods("GET")
 	r.HandleFunc(
-		"/apis/servicecatalog.k8s.io/v1alpha1/watch/namespaces/{namespace}/{type}",
+		"/apis/servicecatalog.k8s.io/v1beta1/watch/namespaces/{namespace}/{type}",
 		watchList(watcher),
 	).Methods("GET")
 	r.HandleFunc(
@@ -543,5 +543,5 @@ func notFoundHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func newTypeMeta(kind string) metav1.TypeMeta {
-	return metav1.TypeMeta{Kind: kind, APIVersion: sc.GroupName + "/v1alpha1'"}
+	return metav1.TypeMeta{Kind: kind, APIVersion: sc.GroupName + "/v1beta1'"}
 }

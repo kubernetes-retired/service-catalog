@@ -25,7 +25,7 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -61,14 +61,14 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 	// shouldReconcileClusterServiceBroker
 	cases := []struct {
 		name      string
-		broker    *v1alpha1.ClusterServiceBroker
+		broker    *v1beta1.ClusterServiceBroker
 		now       time.Time
 		reconcile bool
 		err       error
 	}{
 		{
 			name: "no status",
-			broker: func() *v1alpha1.ClusterServiceBroker {
+			broker: func() *v1beta1.ClusterServiceBroker {
 				broker := getTestClusterServiceBroker()
 				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
@@ -78,8 +78,8 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "deletionTimestamp set",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
 				broker.DeletionTimestamp = &metav1.Time{}
 				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Hour}
 				return broker
@@ -89,13 +89,13 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "no ready condition",
-			broker: func() *v1alpha1.ClusterServiceBroker {
+			broker: func() *v1beta1.ClusterServiceBroker {
 				broker := getTestClusterServiceBroker()
-				broker.Status = v1alpha1.ClusterServiceBrokerStatus{
-					Conditions: []v1alpha1.ServiceBrokerCondition{
+				broker.Status = v1beta1.ClusterServiceBrokerStatus{
+					Conditions: []v1beta1.ServiceBrokerCondition{
 						{
-							Type:   v1alpha1.ServiceBrokerConditionType("NotARealCondition"),
-							Status: v1alpha1.ConditionTrue,
+							Type:   v1beta1.ServiceBrokerConditionType("NotARealCondition"),
+							Status: v1beta1.ConditionTrue,
 						},
 					},
 				}
@@ -107,8 +107,8 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "not ready",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionFalse)
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionFalse)
 				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
 			}(),
@@ -117,8 +117,8 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "ready, interval elapsed",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
 				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
 				return broker
 			}(),
@@ -127,8 +127,8 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "ready, interval not elapsed",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
 				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Hour}
 				return broker
 			}(),
@@ -137,8 +137,8 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "ready, interval not elapsed, spec changed",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue)
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
 				broker.Generation = 2
 				broker.Status.ReconciledGeneration = 1
 				broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Hour}
@@ -149,9 +149,9 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "ready, duration behavior, nil duration",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue)
-				broker.Spec.RelistBehavior = v1alpha1.ServiceBrokerRelistBehaviorDuration
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
+				broker.Spec.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorDuration
 				broker.Spec.RelistDuration = nil
 				return broker
 			}(),
@@ -160,9 +160,9 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 		},
 		{
 			name: "ready, manual behavior",
-			broker: func() *v1alpha1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue)
-				broker.Spec.RelistBehavior = v1alpha1.ServiceBrokerRelistBehaviorManual
+			broker: func() *v1beta1.ClusterServiceBroker {
+				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
+				broker.Spec.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorManual
 				return broker
 			}(),
 			now:       time.Now(),
@@ -208,8 +208,8 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(testClusterServiceClass)
 
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{
-			Items: []v1alpha1.ClusterServiceClass{
+		return true, &v1beta1.ClusterServiceClassList{
+			Items: []v1beta1.ClusterServiceClass{
 				*testClusterServiceClass,
 			},
 		}, nil
@@ -230,8 +230,8 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 6)
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertCreate(t, actions[2], testClusterServicePlan)
 	assertCreate(t, actions[3], testClusterServicePlanNonbindable)
 	assertUpdate(t, actions[4], testClusterServiceClass)
@@ -256,8 +256,8 @@ func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(testRemovedClusterServiceClass)
 
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{
-			Items: []v1alpha1.ClusterServiceClass{
+		return true, &v1beta1.ClusterServiceClassList{
+			Items: []v1beta1.ClusterServiceClass{
 				*testClusterServiceClass,
 				*testRemovedClusterServiceClass,
 			},
@@ -279,8 +279,8 @@ func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 7)
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertCreate(t, actions[2], testClusterServicePlan)
 	assertCreate(t, actions[3], testClusterServicePlanNonbindable)
 	assertUpdate(t, actions[4], testClusterServiceClass)
@@ -305,15 +305,15 @@ func TestReconcileClusterServiceBrokerRemovedClusterServicePlan(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(testRemovedClusterServicePlan)
 
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{
-			Items: []v1alpha1.ClusterServiceClass{
+		return true, &v1beta1.ClusterServiceClassList{
+			Items: []v1beta1.ClusterServiceClass{
 				*testClusterServiceClass,
 			},
 		}, nil
 	})
 	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServicePlanList{
-			Items: []v1alpha1.ClusterServicePlan{
+		return true, &v1beta1.ClusterServicePlanList{
+			Items: []v1beta1.ClusterServicePlan{
 				*testRemovedClusterServicePlan,
 			},
 		}, nil
@@ -334,8 +334,8 @@ func TestReconcileClusterServiceBrokerRemovedClusterServicePlan(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 7)
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertCreate(t, actions[2], testClusterServicePlan)
 	assertCreate(t, actions[3], testClusterServicePlanNonbindable)
 	assertUpdateStatus(t, actions[4], testRemovedClusterServicePlan)
@@ -383,8 +383,8 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	updatedClusterServiceBroker := assertUpdateStatus(t, actions[2], getTestClusterServiceBroker())
 	assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
 
@@ -411,20 +411,20 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 
 	broker := getTestClusterServiceBroker()
 	broker.DeletionTimestamp = &metav1.Time{}
-	broker.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	broker.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 	fakeCatalogClient.AddReactor("get", "clusterservicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, broker, nil
 	})
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{
-			Items: []v1alpha1.ClusterServiceClass{
+		return true, &v1beta1.ClusterServiceClassList{
+			Items: []v1beta1.ClusterServiceClass{
 				*testClusterServiceClass,
 			},
 		}, nil
 	})
 	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServicePlanList{
-			Items: []v1alpha1.ClusterServicePlan{
+		return true, &v1beta1.ClusterServicePlanList{
+			Items: []v1beta1.ClusterServicePlan{
 				*testClusterServicePlan,
 			},
 		}, nil
@@ -457,8 +457,8 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", broker.Name),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertDelete(t, actions[2], testClusterServicePlan)
 	assertDelete(t, actions[3], testClusterServiceClass)
 	updatedClusterServiceBroker := assertUpdateStatus(t, actions[4], broker)
@@ -556,16 +556,16 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 }
 
 func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
-	basicAuthInfo := &v1alpha1.ServiceBrokerAuthInfo{
-		Basic: &v1alpha1.BasicAuthConfig{
+	basicAuthInfo := &v1beta1.ServiceBrokerAuthInfo{
+		Basic: &v1beta1.BasicAuthConfig{
 			SecretRef: &v1.ObjectReference{
 				Namespace: "test-ns",
 				Name:      "auth-secret",
 			},
 		},
 	}
-	bearerAuthInfo := &v1alpha1.ServiceBrokerAuthInfo{
-		Bearer: &v1alpha1.BearerTokenAuthConfig{
+	bearerAuthInfo := &v1beta1.ServiceBrokerAuthInfo{
+		Bearer: &v1beta1.BearerTokenAuthConfig{
 			SecretRef: &v1.ObjectReference{
 				Namespace: "test-ns",
 				Name:      "auth-secret",
@@ -574,13 +574,13 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	}
 	basicAuthSecret := &v1.Secret{
 		Data: map[string][]byte{
-			v1alpha1.BasicAuthUsernameKey: []byte("foo"),
-			v1alpha1.BasicAuthPasswordKey: []byte("bar"),
+			v1beta1.BasicAuthUsernameKey: []byte("foo"),
+			v1beta1.BasicAuthPasswordKey: []byte("bar"),
 		},
 	}
 	bearerAuthSecret := &v1.Secret{
 		Data: map[string][]byte{
-			v1alpha1.BearerTokenKey: []byte("token"),
+			v1beta1.BearerTokenKey: []byte("token"),
 		},
 	}
 
@@ -593,7 +593,7 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	// shouldSucceed: whether authentication should succeed
 	cases := []struct {
 		name          string
-		authInfo      *v1alpha1.ServiceBrokerAuthInfo
+		authInfo      *v1beta1.ServiceBrokerAuthInfo
 		secret        *v1.Secret
 		shouldSucceed bool
 	}{
@@ -643,7 +643,7 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	}
 }
 
-func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1alpha1.ServiceBrokerAuthInfo, secret *v1.Secret, shouldSucceed bool) {
+func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.ServiceBrokerAuthInfo, secret *v1.Secret, shouldSucceed bool) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
 
 	broker := getTestClusterServiceBrokerWithAuth(authInfo)
@@ -743,15 +743,15 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", broker.Name),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertCreate(t, actions[2], getTestClusterServicePlan())
 	assertCreate(t, actions[3], getTestClusterServicePlanNonbindable())
 
 	// the two plans in the catalog as two separate actions
 
 	createSCAction := actions[4].(clientgotesting.CreateAction)
-	createdSC, ok := createSCAction.GetObject().(*v1alpha1.ClusterServiceClass)
+	createdSC, ok := createSCAction.GetObject().(*v1beta1.ClusterServiceClass)
 	if !ok {
 		t.Fatalf("couldn't convert to a ClusterServiceClass: %+v", createSCAction.GetObject())
 	}
@@ -805,8 +805,8 @@ func TestReconcileClusterServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	updatedClusterServiceBroker := assertUpdateStatus(t, actions[0], getTestClusterServiceBroker())
 	assertClusterServiceBrokerOperationStartTimeSet(t, updatedClusterServiceBroker, false)
 
-	assertList(t, actions[1], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[2], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[2], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertCreate(t, actions[3], getTestClusterServicePlan())
 	assertCreate(t, actions[4], getTestClusterServicePlanNonbindable())
 	assertCreate(t, actions[5], testClusterServiceClass)
@@ -847,7 +847,7 @@ func TestReconcileClusterServiceBrokerFailureOnFinalRetry(t *testing.T) {
 	assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
 
 	updatedClusterServiceBroker = assertUpdateStatus(t, actions[1], broker)
-	assertClusterServiceBrokerCondition(t, updatedClusterServiceBroker, v1alpha1.ServiceBrokerConditionFailed, v1alpha1.ConditionTrue)
+	assertClusterServiceBrokerCondition(t, updatedClusterServiceBroker, v1beta1.ServiceBrokerConditionFailed, v1beta1.ConditionTrue)
 	assertClusterServiceBrokerOperationStartTimeSet(t, updatedClusterServiceBroker, false)
 
 	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
@@ -902,8 +902,8 @@ func TestReconcileClusterServiceBrokerWithStatusUpdateError(t *testing.T) {
 		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", broker.Name),
 	}
 
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 	assertCreate(t, actions[2], getTestClusterServicePlan())
 	assertCreate(t, actions[3], getTestClusterServicePlanNonbindable())
 	assertCreate(t, actions[4], testClusterServiceClass)
@@ -938,8 +938,8 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 	// transitionTimeChanged: true if the test conditions should result in transition time change
 	cases := []struct {
 		name                  string
-		input                 *v1alpha1.ClusterServiceBroker
-		status                v1alpha1.ConditionStatus
+		input                 *v1beta1.ClusterServiceBroker
+		status                v1beta1.ConditionStatus
 		reason                string
 		message               string
 		transitionTimeChanged bool
@@ -948,39 +948,39 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 		{
 			name:                  "initially unset",
 			input:                 getTestClusterServiceBroker(),
-			status:                v1alpha1.ConditionFalse,
+			status:                v1beta1.ConditionFalse,
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "not ready -> not ready",
-			input:                 getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionFalse),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionFalse,
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> not ready with reason and message change",
-			input:                 getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionFalse),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionFalse,
 			reason:                "foo",
 			message:               "bar",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> ready",
-			input:                 getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionFalse),
-			status:                v1alpha1.ConditionTrue,
+			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionTrue,
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "ready -> ready",
-			input:                 getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue),
-			status:                v1alpha1.ConditionTrue,
+			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue),
+			status:                v1beta1.ConditionTrue,
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "ready -> not ready",
-			input:                 getTestClusterServiceBrokerWithStatus(v1alpha1.ConditionTrue),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue),
+			status:                v1beta1.ConditionFalse,
 			transitionTimeChanged: true,
 		},
 	}
@@ -994,9 +994,9 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 			continue
 		}
 
-		inputClone := clone.(*v1alpha1.ClusterServiceBroker)
+		inputClone := clone.(*v1beta1.ClusterServiceBroker)
 
-		err = testController.updateClusterServiceBrokerCondition(tc.input, v1alpha1.ServiceBrokerConditionReady, tc.status, tc.reason, tc.message)
+		err = testController.updateClusterServiceBrokerCondition(tc.input, v1beta1.ServiceBrokerConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
 			continue
@@ -1017,7 +1017,7 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedClusterServiceBroker.(*v1alpha1.ClusterServiceBroker)
+		updateActionObject, ok := updatedClusterServiceBroker.(*v1beta1.ClusterServiceBroker)
 		if !ok {
 			t.Errorf("%v: couldn't convert to broker", tc.name)
 			continue

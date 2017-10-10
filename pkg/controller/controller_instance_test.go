@@ -30,7 +30,7 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -54,13 +54,13 @@ const (
 func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
-	instance := &v1alpha1.ServiceInstance{
+	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testServiceInstanceName,
 			Generation: 1,
 		},
-		Spec: v1alpha1.ServiceInstanceSpec{
-			PlanReference: v1alpha1.PlanReference{
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
 				ExternalClusterServiceClassName: "nothere",
 				ExternalClusterServicePlanName:  "nothere",
 			},
@@ -82,7 +82,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	// There should be an action that says it failed because no such class exists.
 	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
@@ -136,8 +136,8 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	broker := getTestClusterServiceBroker()
-	broker.Spec.AuthInfo = &v1alpha1.ServiceBrokerAuthInfo{
-		Basic: &v1alpha1.BasicAuthConfig{
+	broker.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
+		Basic: &v1beta1.BasicAuthConfig{
 			SecretRef: &corev1.ObjectReference{
 				Namespace: "does_not_exist",
 				Name:      "auth-name",
@@ -195,13 +195,13 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	instance := &v1alpha1.ServiceInstance{
+	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testServiceInstanceName,
 			Generation: 1,
 		},
-		Spec: v1alpha1.ServiceInstanceSpec{
-			PlanReference: v1alpha1.PlanReference{
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
 				ExternalClusterServiceClassName: testClusterServiceClassName,
 				ExternalClusterServicePlanName:  "nothere",
 			},
@@ -229,7 +229,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentClusterServicePlanReason, instance)
@@ -307,14 +307,14 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
+	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
@@ -357,16 +357,16 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	instance := getTestServiceInstance()
 
-	var scItems []v1alpha1.ClusterServiceClass
+	var scItems []v1beta1.ClusterServiceClass
 	scItems = append(scItems, *sc)
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{Items: scItems}, nil
+		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 
-	var spItems []v1alpha1.ClusterServicePlan
+	var spItems []v1beta1.ClusterServicePlan
 	spItems = append(spItems, *sp)
 	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServicePlanList{Items: spItems}, nil
+		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
@@ -399,19 +399,19 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
 		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
 	}
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "SCGUID" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
@@ -421,10 +421,10 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	}
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[3], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[4], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -465,16 +465,16 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 		Name: serviceClassGUID,
 	}
 
-	var scItems []v1alpha1.ClusterServiceClass
+	var scItems []v1beta1.ClusterServiceClass
 	scItems = append(scItems, *sc)
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{Items: scItems}, nil
+		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 
-	var spItems []v1alpha1.ClusterServicePlan
+	var spItems []v1beta1.ClusterServicePlan
 	spItems = append(spItems, *sp)
 	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServicePlanList{Items: spItems}, nil
+		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
@@ -506,13 +506,13 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 		Labels: labels.Everything(),
 		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateReference(t, actions[1], instance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "SCGUID" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
@@ -522,10 +522,10 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	}
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[2], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[3], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -640,10 +640,10 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, testClusterServicePlanName, instance)
+	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -703,13 +703,13 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
-		v1alpha1.ServiceInstanceOperationProvision,
+		v1beta1.ServiceInstanceOperationProvision,
 		errorProvisionCallFailedReason,
 		"ClusterServiceBrokerReturnedFailure",
 		instance,
@@ -781,10 +781,10 @@ func TestReconcileServiceInstance(t *testing.T) {
 	}
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
@@ -847,10 +847,10 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testOperation, testClusterServicePlanName, instance)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testClusterServicePlanName, instance)
 	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	// verify no kube resources created.
@@ -914,10 +914,10 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, "", testClusterServicePlanName, instance)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, "", testClusterServicePlanName, instance)
 	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	// verify no kube resources created.
@@ -992,12 +992,12 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
 	// as that implies a previous success.
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{}
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{}
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -1025,10 +1025,10 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1058,12 +1058,12 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
 	// as that implies a previous success.
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{}
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{}
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -1130,10 +1130,10 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	events = getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1160,12 +1160,12 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
 	// as that implies a previous success.
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{}
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{}
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -1205,10 +1205,10 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, instance)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1230,8 +1230,8 @@ func TestReconcileServiceInstanceDeleteFailedInstance(t *testing.T) {
 
 	instance := getTestServiceInstanceWithFailedStatus()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{}
 
 	// we only invoke the broker client to deprovision if we have a reconciled generation set
 	// as that implies a previous success.
@@ -1277,7 +1277,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 	instance.Generation = 1
 	instance.Status.ReconciledGeneration = 0
 
@@ -1392,8 +1392,8 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testOperation, testClusterServicePlanName, instance)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, lastOperationDescription)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testClusterServicePlanName, instance)
+	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
 	// No actions
@@ -1453,7 +1453,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 }
 
 // TestPollServiceInstanceFailureProvisioningWithOperation tests polling an
@@ -1510,7 +1510,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
-		v1alpha1.ServiceInstanceOperationProvision,
+		v1beta1.ServiceInstanceOperationProvision,
 		errorProvisionCallFailedReason,
 		errorProvisionCallFailedReason,
 		instance,
@@ -1566,8 +1566,8 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, instance)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, lastOperationDescription)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, instance)
+	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, lastOperationDescription)
 
 	// verify no kube resources created.
 	// No actions
@@ -1626,7 +1626,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1690,7 +1690,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
-		v1alpha1.ServiceInstanceOperationDeprovision,
+		v1beta1.ServiceInstanceOperationDeprovision,
 		errorDeprovisionCalledReason,
 		errorDeprovisionCalledReason,
 		instance,
@@ -1756,7 +1756,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1880,7 +1880,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -1904,7 +1904,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithRefs()
-	instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
+	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
@@ -1930,7 +1930,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -1964,7 +1964,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithRefs()
-	instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
+	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 
@@ -2001,7 +2001,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
-		v1alpha1.ServiceInstanceOperationProvision,
+		v1beta1.ServiceInstanceOperationProvision,
 		errorErrorCallingProvisionReason,
 		errorReconciliationRetryTimeoutReason,
 		instance,
@@ -2074,7 +2074,7 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 }
 
 // TestPollServiceInstanceFailureOnFinalRetry verifies that polling
@@ -2127,12 +2127,12 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
 		t,
 		updatedServiceInstance,
-		v1alpha1.ServiceInstanceOperationProvision,
+		v1beta1.ServiceInstanceOperationProvision,
 		asyncProvisioningReason,
 		errorReconciliationRetryTimeoutReason,
 		instance,
 	)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, lastOperationDescription)
+	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
 	// No actions
@@ -2174,7 +2174,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
@@ -2198,10 +2198,10 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 // - status with existing Ready=False condition accepts new condition of
 //   Failed=True  and reflects Ready=False, Failed=True, new timestamp
 func TestSetServiceInstanceCondition(t *testing.T) {
-	instanceWithCondition := func(condition *v1alpha1.ServiceInstanceCondition) *v1alpha1.ServiceInstance {
+	instanceWithCondition := func(condition *v1beta1.ServiceInstanceCondition) *v1beta1.ServiceInstance {
 		instance := getTestServiceInstance()
-		instance.Status = v1alpha1.ServiceInstanceStatus{
-			Conditions: []v1alpha1.ServiceInstanceCondition{*condition},
+		instance.Status = v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{*condition},
 		}
 
 		return instance
@@ -2215,8 +2215,8 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 	oldTs := metav1.NewTime(newTs.Add(-5 * time.Minute))
 
 	// condition is a shortcut method for creating conditions with the 'old' timestamp.
-	condition := func(cType v1alpha1.ServiceInstanceConditionType, status v1alpha1.ConditionStatus, s ...string) *v1alpha1.ServiceInstanceCondition {
-		c := &v1alpha1.ServiceInstanceCondition{
+	condition := func(cType v1beta1.ServiceInstanceConditionType, status v1beta1.ConditionStatus, s ...string) *v1beta1.ServiceInstanceCondition {
+		c := &v1beta1.ServiceInstanceCondition{
 			Type:   cType,
 			Status: status,
 		}
@@ -2238,25 +2238,25 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 
 	// shortcut methods for creating conditions of different types
 
-	readyFalse := func() *v1alpha1.ServiceInstanceCondition {
-		return condition(v1alpha1.ServiceInstanceConditionReady, v1alpha1.ConditionFalse, "Reason", "Message")
+	readyFalse := func() *v1beta1.ServiceInstanceCondition {
+		return condition(v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionFalse, "Reason", "Message")
 	}
 
-	readyFalsef := func(reason, message string) *v1alpha1.ServiceInstanceCondition {
-		return condition(v1alpha1.ServiceInstanceConditionReady, v1alpha1.ConditionFalse, reason, message)
+	readyFalsef := func(reason, message string) *v1beta1.ServiceInstanceCondition {
+		return condition(v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionFalse, reason, message)
 	}
 
-	readyTrue := func() *v1alpha1.ServiceInstanceCondition {
-		return condition(v1alpha1.ServiceInstanceConditionReady, v1alpha1.ConditionTrue, "Reason", "Message")
+	readyTrue := func() *v1beta1.ServiceInstanceCondition {
+		return condition(v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, "Reason", "Message")
 	}
 
-	failedTrue := func() *v1alpha1.ServiceInstanceCondition {
-		return condition(v1alpha1.ServiceInstanceConditionFailed, v1alpha1.ConditionTrue, "Reason", "Message")
+	failedTrue := func() *v1beta1.ServiceInstanceCondition {
+		return condition(v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, "Reason", "Message")
 	}
 
 	// withNewTs sets the LastTransitionTime to the 'new' basis time and
 	// returns it.
-	withNewTs := func(c *v1alpha1.ServiceInstanceCondition) *v1alpha1.ServiceInstanceCondition {
+	withNewTs := func(c *v1beta1.ServiceInstanceCondition) *v1beta1.ServiceInstanceCondition {
 		c.LastTransitionTime = newTs
 		return c
 	}
@@ -2276,9 +2276,9 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 	// result: expected instance result
 	cases := []struct {
 		name      string
-		input     *v1alpha1.ServiceInstance
-		condition *v1alpha1.ServiceInstanceCondition
-		result    *v1alpha1.ServiceInstance
+		input     *v1beta1.ServiceInstance
+		condition *v1beta1.ServiceInstanceCondition
+		result    *v1beta1.ServiceInstance
 	}{
 		{
 			name:      "new ready condition",
@@ -2320,7 +2320,7 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 			name:      "not ready -> not ready + failed",
 			input:     instanceWithCondition(readyFalse()),
 			condition: failedTrue(),
-			result: func() *v1alpha1.ServiceInstance {
+			result: func() *v1beta1.ServiceInstance {
 				i := instanceWithCondition(readyFalse())
 				i.Status.Conditions = append(i.Status.Conditions, *withNewTs(failedTrue()))
 				return i
@@ -2348,11 +2348,11 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 // - initially Ready=True accepts a Ready=False update with msg and results in time change
 // - initially Ready=True accepts a Ready=False update with new msg and results in time change
 func TestUpdateServiceInstanceCondition(t *testing.T) {
-	getTestServiceInstanceWithStatus := func(status v1alpha1.ConditionStatus) *v1alpha1.ServiceInstance {
+	getTestServiceInstanceWithStatus := func(status v1beta1.ConditionStatus) *v1beta1.ServiceInstance {
 		instance := getTestServiceInstance()
-		instance.Status = v1alpha1.ServiceInstanceStatus{
-			Conditions: []v1alpha1.ServiceInstanceCondition{{
-				Type:               v1alpha1.ServiceInstanceConditionReady,
+		instance.Status = v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{{
+				Type:               v1beta1.ServiceInstanceConditionReady,
 				Status:             status,
 				Message:            "message",
 				LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
@@ -2370,8 +2370,8 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 	// transitionTimeChanged: true/false indicating if the test should result in an updated transition time change
 	cases := []struct {
 		name                  string
-		input                 *v1alpha1.ServiceInstance
-		status                v1alpha1.ConditionStatus
+		input                 *v1beta1.ServiceInstance
+		status                v1beta1.ConditionStatus
 		reason                string
 		message               string
 		transitionTimeChanged bool
@@ -2380,49 +2380,49 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 		{
 			name:                  "initially unset",
 			input:                 getTestServiceInstance(),
-			status:                v1alpha1.ConditionFalse,
+			status:                v1beta1.ConditionFalse,
 			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "not ready -> not ready",
-			input:                 getTestServiceInstanceWithStatus(v1alpha1.ConditionFalse),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionFalse,
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> not ready, reason and message change",
-			input:                 getTestServiceInstanceWithStatus(v1alpha1.ConditionFalse),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionFalse,
 			reason:                "foo",
 			message:               "bar",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "not ready -> ready",
-			input:                 getTestServiceInstanceWithStatus(v1alpha1.ConditionFalse),
-			status:                v1alpha1.ConditionTrue,
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionTrue,
 			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "ready -> ready",
-			input:                 getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue),
-			status:                v1alpha1.ConditionTrue,
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionTrue),
+			status:                v1beta1.ConditionTrue,
 			message:               "message",
 			transitionTimeChanged: false,
 		},
 		{
 			name:                  "ready -> not ready",
-			input:                 getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionTrue),
+			status:                v1beta1.ConditionFalse,
 			message:               "message",
 			transitionTimeChanged: true,
 		},
 		{
 			name:                  "message -> message2",
-			input:                 getTestServiceInstanceWithStatus(v1alpha1.ConditionTrue),
-			status:                v1alpha1.ConditionFalse,
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionTrue),
+			status:                v1beta1.ConditionFalse,
 			message:               "message2",
 			transitionTimeChanged: true,
 		},
@@ -2436,9 +2436,9 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			t.Errorf("%v: deep copy failed", tc.name)
 			continue
 		}
-		inputClone := clone.(*v1alpha1.ServiceInstance)
+		inputClone := clone.(*v1beta1.ServiceInstance)
 
-		err = testController.updateServiceInstanceCondition(tc.input, v1alpha1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
+		err = testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue
@@ -2462,7 +2462,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			continue
 		}
 
-		updateActionObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+		updateActionObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 		if !ok {
 			t.Errorf("%v: couldn't convert to instance", tc.name)
 			continue
@@ -2567,7 +2567,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 
 			instance := getTestServiceInstanceWithRefs()
 			instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-			instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
+			instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 			// we only invoke the broker client to deprovision if we have a
 			// ReconciledGeneration set as that implies a previous success.
 			instance.Generation = 2
@@ -2714,7 +2714,7 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 		if !ok {
 			continue
 		}
-		updatedServiceInstance, _ := updatedObject.(*v1alpha1.ServiceInstance)
+		updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
 
 		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, tc.triggersOrphanMitigation); !ok {
 			continue
@@ -2755,9 +2755,9 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedObject := assertUpdateStatus(t, actions[1], instance)
-	updatedServiceInstance, ok := updatedObject.(*v1alpha1.ServiceInstance)
+	updatedServiceInstance, ok := updatedObject.(*v1beta1.ServiceInstance)
 	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1alpha1.ServiceInstance", updatedObject)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", updatedObject)
 	}
 
 	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
@@ -2907,8 +2907,8 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 		instance := getTestServiceInstanceWithRefs()
-		instance.ObjectMeta.Finalizers = []string{v1alpha1.FinalizerServiceCatalog}
-		instance.Status.CurrentOperation = v1alpha1.ServiceInstanceOperationProvision
+		instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+		instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 		instance.Status.OrphanMitigationInProgress = true
 
 		if tc.async {
@@ -2940,7 +2940,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 		if !ok {
 			continue
 		}
-		updatedServiceInstance, _ := updatedObject.(*v1alpha1.ServiceInstance)
+		updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
 
 		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
 			continue
@@ -2994,9 +2994,9 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 	}
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	instance.Spec.ParametersFrom = []v1alpha1.ParametersFromSource{
+	instance.Spec.ParametersFrom = []v1beta1.ParametersFromSource{
 		{
-			SecretKeyRef: &v1alpha1.SecretKeyReference{
+			SecretKeyRef: &v1beta1.SecretKeyReference{
 				Name: "param-secret-name",
 				Key:  "param-secret-key",
 			},
@@ -3040,14 +3040,14 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
+	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
@@ -3126,13 +3126,13 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
 
-	updatedObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updatedObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	if updatedObject.Spec.ClusterServiceClassRef != nil {
 		t.Fatalf("ClusterServiceClassRef was unexpectedly set: %+v", updatedObject)
@@ -3192,7 +3192,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		t.Fatalf("Failed to generate parameters checksum: %v", err)
 	}
 
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ExternalClusterServicePlanName: testClusterServicePlanName,
 		Parameters:                     oldParametersRaw,
 		ParametersChecksum:             oldParametersChecksum,
@@ -3244,14 +3244,14 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
+	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, expectedParameters, expectedParametersChecksum, instance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
@@ -3285,10 +3285,10 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	instance := getTestServiceInstance()
 
 	sc := getTestClusterServiceClass()
-	var scItems []v1alpha1.ClusterServiceClass
+	var scItems []v1beta1.ClusterServiceClass
 	scItems = append(scItems, *sc)
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{Items: scItems}, nil
+		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 
 	updatedInstance, err := testController.resolveReferences(instance)
@@ -3315,19 +3315,19 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
 		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
 	}
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[2], instance)
 
-	updatedObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updatedObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	if updatedObject.Spec.ClusterServiceClassRef == nil || updatedObject.Spec.ClusterServiceClassRef.Name != serviceClassGUID {
 		t.Fatalf("ClusterServiceClassRef.Name was not set correctly, expected %q got: %+v", serviceClassGUID, updatedObject.Spec.ClusterServiceClassRef.Name)
@@ -3387,7 +3387,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		t.Fatalf("Failed to generate parameters checksum: %v", err)
 	}
 
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ExternalClusterServicePlanName: "old-plan-name",
 		Parameters:                     oldParametersRaw,
 		ParametersChecksum:             oldParametersChecksum,
@@ -3422,14 +3422,14 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, oldParameters, oldParametersChecksum, instance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, oldParameters, oldParametersChecksum, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, oldParameters, oldParametersChecksum, instance)
+	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, oldParameters, oldParametersChecksum, instance)
 
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 
 	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
@@ -3473,7 +3473,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ExternalClusterServicePlanName: "old-plan-name",
 	}
 
@@ -3504,10 +3504,10 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, errorErrorCallingUpdateInstanceReason, testClusterServicePlanName, instance)
+	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorErrorCallingUpdateInstanceReason, testClusterServicePlanName, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -3540,7 +3540,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ExternalClusterServicePlanName: "old-plan-name",
 	}
 
@@ -3570,10 +3570,10 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "ClusterServiceBrokerReturnedFailure", instance)
+	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "ClusterServiceBrokerReturnedFailure", instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -3592,16 +3592,16 @@ func TestResolveReferencesWorks(t *testing.T) {
 	instance := getTestServiceInstance()
 
 	sc := getTestClusterServiceClass()
-	var scItems []v1alpha1.ClusterServiceClass
+	var scItems []v1beta1.ClusterServiceClass
 	scItems = append(scItems, *sc)
 	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServiceClassList{Items: scItems}, nil
+		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 	sp := getTestClusterServicePlan()
-	var spItems []v1alpha1.ClusterServicePlan
+	var spItems []v1beta1.ClusterServicePlan
 	spItems = append(spItems, *sp)
 	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServicePlanList{Items: spItems}, nil
+		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
 	updatedInstance, err := testController.resolveReferences(instance)
@@ -3628,18 +3628,18 @@ func TestResolveReferencesWorks(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServiceClass{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
 		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
 	}
-	assertList(t, actions[1], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != serviceClassGUID {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
@@ -3669,18 +3669,18 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	newPlanID := "new-plan-id"
 	newPlanName := "new-plan-name"
 
-	sp := &v1alpha1.ClusterServicePlan{
+	sp := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: newPlanID},
-		Spec: v1alpha1.ClusterServicePlanSpec{
+		Spec: v1beta1.ClusterServicePlanSpec{
 			ExternalID:   newPlanID,
 			ExternalName: newPlanName,
 			Bindable:     truePtr(),
 		},
 	}
-	var spItems []v1alpha1.ClusterServicePlan
+	var spItems []v1beta1.ClusterServicePlan
 	spItems = append(spItems, *sp)
 	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1alpha1.ClusterServicePlanList{Items: spItems}, nil
+		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
 	instance.Spec.ExternalClusterServicePlanName = newPlanName
@@ -3709,12 +3709,12 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 		Labels: labels.Everything(),
 		Fields: fields.ParseSelectorOrDie("spec.externalName=new-plan-name,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
 	}
-	assertList(t, actions[0], &v1alpha1.ClusterServicePlan{}, listRestrictions)
+	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
 	updatedServiceInstance := assertUpdateReference(t, actions[1], instance)
-	updateObject, ok := updatedServiceInstance.(*v1alpha1.ServiceInstance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
-		t.Fatalf("couldn't convert to *v1alpha1.ServiceInstance")
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != serviceClassGUID {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
@@ -3756,7 +3756,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 
-	instance.Status.ExternalProperties = &v1alpha1.ServiceInstancePropertiesState{
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ExternalClusterServicePlanName: "old-plan-name",
 	}
 
@@ -3783,10 +3783,10 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testOperation, testClusterServicePlanName, instance)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testOperation, testClusterServicePlanName, instance)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -3848,8 +3848,8 @@ func TestPollServiceInstanceAsyncInProgressUpdating(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testOperation, testClusterServicePlanName, instance)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, lastOperationDescription)
+	assertServiceInstanceAsyncInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testOperation, testClusterServicePlanName, instance)
+	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, lastOperationDescription)
 
 	// verify no kube resources created.
 	// No actions
@@ -3909,7 +3909,7 @@ func TestPollServiceInstanceAsyncSuccessUpdating(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, instance)
 }
 
 // TestPollServiceInstanceAsyncFailureUpdating tests polling an instance where
@@ -3963,5 +3963,5 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1alpha1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
 }
