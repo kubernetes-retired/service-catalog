@@ -543,6 +543,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		// request, so this is what the Broker knows about the state of the
 		// binding.
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
+		toUpdate.Status.InProgressProperties = nil
 
 		err = c.injectServiceBinding(binding, response.Credentials)
 		if err != nil {

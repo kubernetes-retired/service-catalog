@@ -311,11 +311,12 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
 
 	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+
 	assertServiceBindingReadyFalse(t, updatedServiceBinding, errorInjectingBindResultReason)
 	assertServiceBindingCurrentOperation(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind)
 	assertServiceBindingOperationStartTimeSet(t, updatedServiceBinding, true)
 	assertServiceBindingReconciledGeneration(t, updatedServiceBinding, binding.Status.ReconciledGeneration)
-	assertServiceBindingInProgressPropertiesParameters(t, updatedServiceBinding, nil, "")
+	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
 	// External properties are updated because the bind request with the Broker was successful
 	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
@@ -1979,16 +1980,12 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingReadyFalse(t, updatedServiceBinding, errorServiceBindingOrphanMitigation)
-	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason)
-	assertServiceBindingCurrentOperation(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind)
-	assertServiceBindingOperationStartTimeSet(t, updatedServiceBinding, false)
-	assertServiceBindingReconciledGeneration(t, updatedServiceBinding, binding.Status.ReconciledGeneration)
-	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
-	// External properties are updated because the bind request with the Broker was successful
-	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
+
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionFalse, errorServiceBindingOrphanMitigation)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, true)
+	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason)
+	assertServiceBindingStartingOrphanMitigation(t, updatedServiceBinding, binding)
+	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
+	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)
@@ -2333,10 +2330,15 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 		assertServiceBindingReadyFalse(t, updatedServiceBinding)
 
 		updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
-		assertServiceBindingReadyFalse(t, updatedServiceBinding)
-		assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionFalse)
 
-		assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, tc.setOrphanMitigation)
+		if tc.setOrphanMitigation {
+			assertServiceBindingStartingOrphanMitigation(t, updatedServiceBinding, binding)
+		} else {
+			assertServiceBindingReadyFalse(t, updatedServiceBinding)
+			assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionFalse)
+			assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, tc.setOrphanMitigation)
+			assertServiceBindingExternalPropertiesNil(t, updatedServiceBinding)
+		}
 	}
 }
 

@@ -1762,6 +1762,14 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 }
 
+func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Object, readyReason string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
+	assertServiceInstanceReadyFalse(t, obj, readyReason)
+	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
+	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
+}
+
 func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceOperationSuccessWithParameters(t, obj, operation, planName, nil, "", originalInstance)
 }
@@ -1813,7 +1821,6 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)
-	assertServiceInstanceInProgressPropertiesNil(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 }
 
@@ -1822,6 +1829,7 @@ func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, ob
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
+	assertServiceInstanceInProgressPropertiesNil(t, obj)
 }
 
 func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
@@ -2146,6 +2154,14 @@ func assertServiceBindingOperationInProgressWithParameters(t *testing.T, obj run
 		assertServiceBindingInProgressPropertiesNil(t, obj)
 	}
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
+}
+
+func assertServiceBindingStartingOrphanMitigation(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
+	assertServiceBindingCurrentOperation(t, obj, v1beta1.ServiceBindingOperationBind)
+	assertServiceBindingReadyFalse(t, obj, errorServiceBindingOrphanMitigation)
+	assertServiceBindingOperationStartTimeSet(t, obj, false)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
+	assertServiceBindingOrphanMitigationSet(t, obj, true)
 }
 
 func assertServiceBindingOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, originalBinding *v1beta1.ServiceBinding) {
