@@ -249,7 +249,7 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServiceClass %q : K8S Name: %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, instance.Spec.ClusterServiceClassName)
 		glog.Info(s)
 		c.updateServiceInstanceCondition(
 			instance,
@@ -264,7 +264,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 
 	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
-		s := fmt.Sprintf(`ServiceInstance "%v/%v": references a non-existent ClusterServicePlan %q on ClusterServiceClass %q1`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, serviceClass.Spec.ExternalName)
+		s := fmt.Sprintf(`ServiceInstance "%v/%v": references a non-existent ClusterServicePlan %q : K8S Name: %q on ClusterServiceClass %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
 		c.updateServiceInstanceCondition(
 			instance,
@@ -325,7 +325,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf("ServiceBinding \"%s/%s\" references a non-existent ClusterServiceClass %q", binding.Namespace, binding.Name, instance.Spec.ExternalClusterServiceClassName)
+		s := fmt.Sprintf("ServiceBinding \"%s/%s\" references a non-existent ClusterServiceClass %q : K8S name %q", binding.Namespace, binding.Name, instance.Spec.ExternalClusterServiceClassName, instance.Spec.ClusterServiceClassName)
 		glog.Warning(s)
 		c.updateServiceBindingCondition(
 			binding,
@@ -340,7 +340,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 
 	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
-		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q on ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, serviceClass.Spec.ExternalName)
+		s := fmt.Sprintf("ServiceInstance \"%s/%s\" references a non-existent ClusterServicePlan %q : K8S name %q on ClusterServiceClass %q", instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServicePlanName, serviceClass.Spec.ExternalName)
 		glog.Warning(s)
 		c.updateServiceBindingCondition(
 			binding,

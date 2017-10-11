@@ -97,6 +97,47 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceNonExistentClusterServiceClass tests that reconcileInstance gets a failure when
+// the specified service class is not found
+func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *testing.T) {
+	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
+
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassName: "nothereclass",
+				ClusterServicePlanName:  "nothereplan",
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+	}
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatal("nothere is a service class that cannot be referenced by the service instance as it does not exist.")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	// There should be an action that says it failed because no such class exists.
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentClusterServiceClassReason, instance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServiceClass with K8S name \"nothereclass\""
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
 // TestReconcileServiceInstanceNonExistentClusterServiceBroker tests reconciling an instance whose
 // broker does not exist.  This returns an error.
 func TestReconcileServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
@@ -238,6 +279,57 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// service plan
 	events := getRecordedEvents(testController)
 	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName tests that reconcileInstance
+// fails when service class points at a non-existent service plan and is specified using
+// k8s name.
+func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing.T) {
+	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassName: testClusterServiceClassGUID,
+				ClusterServicePlanName:  "nothereplan",
+			},
+			ClusterServiceClassRef: &corev1.ObjectReference{
+				Name: testClusterServiceClassGUID,
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+	}
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatal("The service plan nothere should not exist to be referenced.")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	// ensure that there is only one action to to set the condition on the
+	// instance to indicate that the service plan doesn't exist
+	actions := fakeCatalogClient.Actions()
+
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentClusterServicePlanReason, instance)
+
+	// check to make sure the only event sent indicated that the instance references a non-existent
+	// service plan
+	events := getRecordedEvents(testController)
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServicePlan with K8S name \"nothereplan\" on ClusterServiceClass with K8S name \"" + testClusterServiceClassGUID + "\""
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -784,6 +876,92 @@ func TestReconcileServiceInstance(t *testing.T) {
 	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 
 	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + successProvisionReason + " " + successProvisionMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestReconcileServiceInstance tests synchronously provisioning a new service
+func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				DashboardURL: &testDashboardURL,
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceK8SNames()
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testNamespaceGUID,
+		SpaceGUID:         testNamespaceGUID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
+
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	// Since synchronous operation, must not make it into the polling queue.
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// There are 3 actions, one to update references and update status
+	// twice.
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 3)
+
+	updatedServiceInstance := assertUpdateReference(t, actions[0], instance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	}
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "SCGUID" {
+		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
+	}
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "PGUID" {
+		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
+	}
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[2], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, instance)
 	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
@@ -3720,6 +3898,56 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
 	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != newPlanID {
+		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
+	}
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
+}
+
+// TestResolveReferences tests that resolveReferences works
+// correctly and resolves references.
+func TestResolveReferencesWorksK8SNames(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceK8SNames()
+
+	updatedInstance, err := testController.resolveReferences(instance)
+	if err != nil {
+		t.Fatalf("Should not have failed, but failed with: %q", err)
+	}
+
+	if updatedInstance.Spec.ClusterServiceClassRef == nil || updatedInstance.Spec.ClusterServiceClassRef.Name != testClusterServiceClassGUID {
+		t.Fatalf("Did not find expected ClusterServiceClassRef, expected %q got %+v", testClusterServiceClassGUID, updatedInstance.Spec.ClusterServiceClassRef)
+	}
+
+	if updatedInstance.Spec.ClusterServicePlanRef == nil || updatedInstance.Spec.ClusterServicePlanRef.Name != testClusterServicePlanGUID {
+		t.Fatalf("Did not find expected ClusterServicePlanRef, expected %q got %+v", testClusterServicePlanGUID, updatedInstance.Spec.ClusterServicePlanRef.Name)
+	}
+
+	// We should get the following actions:
+	// updating references
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateReference(t, actions[0], instance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	}
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != testClusterServiceClassGUID {
+		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
+	}
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != testClusterServicePlanGUID {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
