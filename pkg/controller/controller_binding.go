@@ -131,7 +131,6 @@ func (c *controller) setAndUpdateOrphanMitigation(binding *v1beta1.ServiceBindin
 	)
 	toUpdate.Status.OrphanMitigationInProgress = true
 	toUpdate.Status.OperationStartTime = nil
-	toUpdate.Status.InProgressProperties = nil
 	glog.V(5).Info(s)
 
 	c.setServiceBindingCondition(
