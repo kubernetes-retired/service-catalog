@@ -505,7 +505,7 @@ func TestValidateServiceInstance(t *testing.T) {
 						Status: servicecatalog.ConditionFalse,
 					},
 					{
-						Type:	servicecatalog.ServiceInstanceConditionFailed,
+						Type:   servicecatalog.ServiceInstanceConditionFailed,
 						Status: servicecatalog.ConditionTrue,
 					},
 				}
@@ -524,7 +524,7 @@ func TestValidateServiceInstance(t *testing.T) {
 						Status: servicecatalog.ConditionFalse,
 					},
 					{
-						Type:	servicecatalog.ServiceInstanceConditionFailed,
+						Type:   servicecatalog.ServiceInstanceConditionFailed,
 						Status: servicecatalog.ConditionTrue,
 					},
 				}

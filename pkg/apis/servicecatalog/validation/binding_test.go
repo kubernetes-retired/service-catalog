@@ -424,7 +424,7 @@ func TestValidateServiceBinding(t *testing.T) {
 						Status: servicecatalog.ConditionFalse,
 					},
 					{
-						Type:	servicecatalog.ServiceBindingConditionFailed,
+						Type:   servicecatalog.ServiceBindingConditionFailed,
 						Status: servicecatalog.ConditionTrue,
 					},
 				}
@@ -443,7 +443,7 @@ func TestValidateServiceBinding(t *testing.T) {
 						Status: servicecatalog.ConditionFalse,
 					},
 					{
-						Type:	servicecatalog.ServiceBindingConditionFailed,
+						Type:   servicecatalog.ServiceBindingConditionFailed,
 						Status: servicecatalog.ConditionTrue,
 					},
 				}
