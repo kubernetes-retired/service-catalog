@@ -223,7 +223,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 	if !isPlanBindable(serviceClass, servicePlan) {
 		s := fmt.Sprintf(
-			`Referencing a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination`,
+			`References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination`,
 			serviceClass.Name, serviceClass.Spec.ExternalName, instance.Spec.ExternalClusterServicePlanName,
 		)
 		glog.Warningf(
@@ -304,7 +304,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			parameters, parametersWithSecretsRedacted, err = buildParameters(c.kubeClient, binding.Namespace, binding.Spec.ParametersFrom, binding.Spec.Parameters)
 			if err != nil {
 				s := fmt.Sprintf(
-					`Failed to prepare ServiceBinding parameters\n%s\n %s`,
+					`Failed to prepare parameters\n%s\n %s`,
 					binding.Spec.Parameters, err,
 				)
 				glog.Warningf(
@@ -660,7 +660,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		if err != nil {
 			if httpErr, ok := osb.IsHTTPError(err); ok {
 				s := fmt.Sprintf(
-					`Error unbinding ServiceBinding for ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %s`,
+					`Error unbinding from ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %s`,
 					instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, httpErr.Error(),
 				)
 				glog.Warningf(
@@ -689,7 +689,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				return nil
 			}
 			s := fmt.Sprintf(
-				`Error unbinding ServiceBinding for ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %s`,
+				`Error unbinding from ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %s`,
 				instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, err,
 			)
 			glog.Warningf(
@@ -760,10 +760,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				successOrphanMitigationReason,
 				s)
 		} else {
-			s := fmt.Sprintf(
-				`%s "%s/%s": The binding was deleted successfully`,
-				typez, binding.Namespace, binding.Name,
-			)
+			s := "The binding was deleted successfully"
 			c.setServiceBindingCondition(
 				toUpdate,
 				v1beta1.ServiceBindingConditionReady,
@@ -934,7 +931,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 
 	if len(toUpdate.Status.Conditions) == 0 {
 		glog.Infof(
-			`%s "%s/%s": Setting lastTransitionTime condition %q to %v`,
+			`%s "%s/%s": Setting lastTransitionTime for condition %q to %v`,
 			typez, toUpdate.Namespace, toUpdate.Name, conditionType, t,
 		)
 		newCondition.LastTransitionTime = t
@@ -945,7 +942,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 		if cond.Type == conditionType {
 			if cond.Status != newCondition.Status {
 				glog.V(3).Infof(
-					`%s "%s/%s": Found status change condition %q: %q -> %q; setting lastTransitionTime to %v`,
+					`%s "%s/%s": Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v`,
 					typez, toUpdate.Namespace, toUpdate.Name, conditionType, cond.Status, status, t,
 				)
 				newCondition.LastTransitionTime = t
@@ -959,7 +956,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 	}
 
 	glog.V(3).Infof(
-		`%s "%s/%s": Setting lastTransitionTime condition %q to %v`,
+		`%s "%s/%s": Setting lastTransitionTime for condition %q to %v`,
 		typez, toUpdate.Namespace, toUpdate.Name, conditionType, t,
 	)
 
