@@ -304,7 +304,7 @@ func ValidateServiceInstanceReferencesUpdate(new *sc.ServiceInstance, old *sc.Se
 func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	// Just to make readings
+	// Just to make reading of the conditionals in the code easier.
 	externalClassSet := p.ExternalClusterServiceClassName != ""
 	externalPlanSet := p.ExternalClusterServicePlanName != ""
 	k8sClassSet := p.ClusterServiceClassName != ""
@@ -316,7 +316,6 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassName"), "exactly one of externalClusterServiceClassName or clusterServiceClassName required"))
 	}
 	// Can't specify both External and k8s name but must specify one.
-	// Then validate the one that's not empty
 	if externalPlanSet == k8sPlanSet {
 		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "either externalClusterServicePlanName or clusterServicePlanName required"))
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "exactly one of externalClusterServicePlanName or clusterServicePlanName required"))
@@ -327,7 +326,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("externalClusterServiceClassName"), p.ExternalClusterServiceClassName, msg))
 		}
 
-		// Also if ExternalClusterServiceClassName given, must use ExternalClusterServicePlanName
+		// If ExternalClusterServiceClassName given, must use ExternalClusterServicePlanName
 		if !externalPlanSet {
 			allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "must specify externalClusterServicePlanName with externalClusterServiceClassName"))
 		}
@@ -341,7 +340,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassName"), p.ClusterServiceClassName, msg))
 		}
 
-		// Also if ClusterServiceClassName given, must use ClusterServicePlanName
+		// If ClusterServiceClassName given, must use ClusterServicePlanName
 		if !k8sPlanSet {
 			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "must specify clusterServicePlanName with clusterServiceClassName"))
 		}
