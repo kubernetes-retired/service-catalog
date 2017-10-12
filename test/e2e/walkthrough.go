@@ -263,23 +263,23 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(err).NotTo(HaveOccurred(), "failed to create instance with K8S names")
 		Expect(instanceK8SNames).NotTo(BeNil())
 
-		By("Waiting for ServiceInstance to be ready")
+		By("Waiting for ServiceInstance with k8s names to be ready")
 		err = util.WaitForInstanceCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
 			testnamespace.Name,
-			instanceNameDef,
+			instanceNameK8sNames,
 			v1beta1.ServiceInstanceCondition{
 				Type:   v1beta1.ServiceInstanceConditionReady,
 				Status: v1beta1.ConditionTrue,
 			},
 		)
-		Expect(err).NotTo(HaveOccurred(), "failed to wait instance with default plan to be ready")
+		Expect(err).NotTo(HaveOccurred(), "failed to wait instance with k8s names to be ready")
 
-		// Deprovisioning the ServiceInstance with default plan
-		By("Deleting the ServiceInstance with default plan")
+		// Deprovisioning the ServiceInstance with k8s names
+		By("Deleting the ServiceInstance with k8s names")
 		err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(testnamespace.Name).Delete(instanceNameK8sNames, nil)
 		Expect(err).NotTo(HaveOccurred(), "failed to delete the instance with k8s names")
 
-		By("Waiting for ServiceInstance with default plan to not exist")
+		By("Waiting for ServiceInstance with k8s names to not exist")
 		err = util.WaitForInstanceToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), testnamespace.Name, instanceNameK8sNames)
 		Expect(err).NotTo(HaveOccurred())
 
