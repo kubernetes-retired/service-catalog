@@ -2370,11 +2370,10 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
-		asyncProvisioningReason,
+		startingInstanceOrphanMitigationReason,
 		errorReconciliationRetryTimeoutReason,
 		instance,
 	)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
 	// No actions
@@ -2964,7 +2963,7 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 
 		if tc.triggersOrphanMitigation {
 			// TODO(mkibbe): Rework this to be an expects, not asserts
-			assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, errorProvisionCallFailedReason, instance)
+			assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, instance)
 			if err == nil {
 				t.Errorf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
 				continue
@@ -3006,7 +3005,7 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", updatedObject)
 	}
 
-	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
@@ -3016,13 +3015,15 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 	// invalidState := "invalid state"
 
 	cases := []struct {
-		name                     string
-		deprovReaction           *fakeosb.DeprovisionReaction
-		pollReaction             *fakeosb.PollLastOperationReaction
-		async                    bool
-		finishedOrphanMitigation bool
-		shouldError              bool
-		retryDurationExceeded    bool
+		name                         string
+		deprovReaction               *fakeosb.DeprovisionReaction
+		pollReaction                 *fakeosb.PollLastOperationReaction
+		async                        bool
+		finishedOrphanMitigation     bool
+		shouldError                  bool
+		retryDurationExceeded        bool
+		expectedReadyConditionStatus v1beta1.ConditionStatus
+		expectedReadyConditionReason string
 	}{
 		// Synchronous
 		{
@@ -3030,7 +3031,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Response: &osb.DeprovisionResponse{},
 			},
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: successOrphanMitigationReason,
 		},
 		{
 			name: "sync - 202 accepted",
@@ -3040,30 +3043,38 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 					OperationKey: &key,
 				},
 			},
-			finishedOrphanMitigation: false,
+			finishedOrphanMitigation:     false,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: asyncDeprovisioningReason,
 		},
 		{
 			name: "sync - http error",
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fakeosb.AsyncRequiredError(),
 			},
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		{
 			name: "sync - other error",
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fmt.Errorf("other error"),
 			},
-			finishedOrphanMitigation: false,
-			shouldError:              true,
+			finishedOrphanMitigation:     false,
+			shouldError:                  true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorDeprovisionCalledReason,
 		},
 		{
 			name: "sync - other error - retry duration exceeded",
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fmt.Errorf("other error"),
 			},
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		// Asynchronous (Polling)
 		{
@@ -3074,7 +3085,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: successOrphanMitigationReason,
 		},
 		{
 			name: "poll - gone",
@@ -3084,7 +3097,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: successOrphanMitigationReason,
 		},
 		{
 			name: "poll - in progress",
@@ -3095,7 +3110,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: false,
+			finishedOrphanMitigation:     false,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: asyncDeprovisioningReason,
 		},
 		{
 			name: "poll - failed",
@@ -3105,7 +3122,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		// TODO (mkibbe): poll - error
 		// TODO (mkibbe): invalid state
@@ -3115,8 +3134,10 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				Error: fmt.Errorf("other error"),
 			},
 			async: true,
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		{
 			name: "poll - in progress - retry duration exceeded",
@@ -3126,8 +3147,10 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		{
 			name: "poll - invalid state - retry duration exceeded",
@@ -3137,8 +3160,10 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 	}
 
@@ -3191,6 +3216,14 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
 			continue
 		}
+
+		//TODO(mkibbe): change asserts to expects
+		assertServiceInstanceReadyCondition(
+			t,
+			updatedServiceInstance,
+			tc.expectedReadyConditionStatus,
+			tc.expectedReadyConditionReason,
+		)
 
 		// validate reconciliation error response
 		if tc.shouldError {
