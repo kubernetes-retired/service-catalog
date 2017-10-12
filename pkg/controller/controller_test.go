@@ -536,6 +536,27 @@ func getTestServiceInstance() *v1beta1.ServiceInstance {
 	}
 }
 
+// instance referencing the result of getTestClusterServiceClass()
+// and getTestClusterServicePlan()
+// This version sets:
+// ClusterServiceClassName and ClusterServicePlanName
+func getTestServiceInstanceK8SNames() *v1beta1.ServiceInstance {
+	return &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassName: testClusterServiceClassGUID,
+				ClusterServicePlanName:  testClusterServicePlanGUID,
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+	}
+}
+
 // an instance referencing the result of getTestNonbindableClusterServiceClass, on the non-bindable plan.
 func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 	i := getTestServiceInstance()

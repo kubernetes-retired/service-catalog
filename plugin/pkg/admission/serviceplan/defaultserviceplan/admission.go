@@ -80,7 +80,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	// If the plan is specified, let it through and have the controller
 	// deal with finding the right plan, etc.
-	if instance.Spec.ExternalClusterServicePlanName != "" {
+	if instance.Spec.ExternalClusterServicePlanName != "" || instance.Spec.ClusterServicePlanName != "" {
 		return nil
 	}
 

@@ -1411,8 +1411,38 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 	}
 
 	var sc *v1beta1.ClusterServiceClass
-
+	var err error
 	if instance.Spec.ClusterServiceClassRef == nil {
+		instance, sc, err = c.resolveClusterServiceClassRef(instance)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if instance.Spec.ClusterServicePlanRef == nil {
+		if sc == nil {
+			var scErr error
+			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+			if scErr != nil {
+				return nil, fmt.Errorf(`ServiceInstance "%s/%s": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, scErr.Error())
+			}
+		}
+
+		instance, err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.updateServiceInstanceReferences(instance)
+}
+
+// resolveClusterServiceClassRef resolves a reference  to a ClusterServiceClass
+// and updates the instance.
+// If ClusterServiceClass can not be resolved, returns an error, records an
+// Event, and sets the InstanceCondition with the appropriate error message.
+func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, *v1beta1.ClusterServiceClass, error) {
+	var sc *v1beta1.ClusterServiceClass
+	if instance.Spec.ExternalClusterServiceClassName != "" {
 		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ClusterServiceClass from externalName: %q`, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName)
 		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalClusterServiceClassName}
 		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
@@ -1437,23 +1467,52 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 				"The instance references a ClusterServiceClass that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-			return nil, fmt.Errorf(s)
+			return nil, nil, fmt.Errorf(s)
 		}
-	}
+	} else if instance.Spec.ClusterServiceClassName != "" {
+		glog.V(4).Infof(`ServiceInstance "%s/%s": looking up a ClusterServiceClass from K8S Name: %q`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassName)
 
-	if instance.Spec.ClusterServicePlanRef == nil {
-		if sc == nil {
-			var scErr error
-			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
-			if scErr != nil {
-				return nil, fmt.Errorf(`ServiceInstance "%s/%s": Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassRef.Name, scErr.Error())
+		var err error
+		sc, err = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassName)
+		if err == nil {
+			instance.Spec.ClusterServiceClassRef = &corev1.ObjectReference{
+				Kind:            sc.Kind,
+				Name:            sc.Name,
+				UID:             sc.UID,
+				APIVersion:      sc.APIVersion,
+				ResourceVersion: sc.ResourceVersion,
 			}
+			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServiceClass with K8S name %q to ClusterServiceClass with external Name %q`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassName, sc.Spec.ExternalName)
+		} else {
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": references a non-existent ClusterServiceClass with K8S name %q`, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassName)
+			glog.Warning(s)
+			c.updateServiceInstanceCondition(
+				instance,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				errorNonexistentClusterServiceClassReason,
+				"The instance references a ClusterServiceClass that does not exist. "+s,
+			)
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
+			return nil, nil, fmt.Errorf(s)
 		}
+	} else {
+		// ServiceInstance is in invalid state, should not ever happen. check
+		return nil, nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ExternalClusterServiceClassName nor ClusterServiceClassName is set: %+v", instance.Spec)
+	}
+	return instance, sc, nil
+}
 
+// resolveClusterServicePlanRef resolves a reference  to a ClusterServicePlan
+// and updates the instance.
+// If ClusterServicePlan can not be resolved, returns an error, records an
+// Event, and sets the InstanceCondition with the appropriate error message.
+func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) (*v1beta1.ServiceInstance, error) {
+	if instance.Spec.ExternalClusterServicePlanName != "" {
 		fieldSet := fields.Set{
 			"spec.externalName":                instance.Spec.ExternalClusterServicePlanName,
 			"spec.clusterServiceClassRef.name": instance.Spec.ClusterServiceClassRef.Name,
-			"spec.clusterServiceBrokerName":    sc.Spec.ClusterServiceBrokerName,
+			"spec.clusterServiceBrokerName":    brokerName,
 		}
 		fieldSelector := fields.SelectorFromSet(fieldSet).String()
 		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
@@ -1481,8 +1540,35 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
 			return nil, fmt.Errorf(s)
 		}
+	} else if instance.Spec.ClusterServicePlanName != "" {
+		sp, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanName)
+		if err == nil {
+			instance.Spec.ClusterServicePlanRef = &corev1.ObjectReference{
+				Kind:            sp.Kind,
+				Name:            sp.Name,
+				UID:             sp.UID,
+				APIVersion:      sp.APIVersion,
+				ResourceVersion: sp.ResourceVersion,
+			}
+			glog.V(4).Infof(`ServiceInstance "%s/%s": resolved ClusterServicePlan with K8S name %q to ClusterServicePlan with external name %q`, instance.Namespace, instance.Name, instance.Spec.ClusterServicePlanName, sp.Spec.ExternalName)
+		} else {
+			s := fmt.Sprintf(`ServiceInstance "%s/%s": references a non-existent ClusterServicePlan with K8S name %q on ClusterServiceClass with K8S name %q`, instance.Namespace, instance.Name, instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServiceClassName)
+			glog.Warning(s)
+			c.updateServiceInstanceCondition(
+				instance,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				errorNonexistentClusterServicePlanReason,
+				"The instance references a ClusterServicePlan that does not exist. "+s,
+			)
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
+			return nil, fmt.Errorf(s)
+		}
+	} else {
+		// ServiceInstance is in invalid state, should not ever happen. check
+		return nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ExternalClusterServicePlanName nor ClusterServicePlanName is set: %+v", instance.Spec)
 	}
-	return c.updateServiceInstanceReferences(instance)
+	return instance, nil
 }
 
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
