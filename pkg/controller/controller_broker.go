@@ -35,6 +35,33 @@ import (
 
 var typeCSB = "ClusterServiceBroker"
 
+// the Message strings have a terminating period and space so they can
+// be easily combined with a follow on specific message.
+const (
+	errorFetchingCatalogReason  string = "ErrorFetchingCatalog"
+	errorFetchingCatalogMessage string = "Error fetching catalog. "
+	errorSyncingCatalogReason   string = "ErrorSyncingCatalog"
+	errorSyncingCatalogMessage  string = "Error syncing catalog from ServiceBroker. "
+
+	errorListingClusterServiceClassesReason  string = "ErrorListingServiceClasses"
+	errorListingClusterServiceClassesMessage string = "Error listing service classes."
+	errorListingClusterServicePlansReason    string = "ErrorListingServicePlans"
+	errorListingClusterServicePlansMessage   string = "Error listing service plans."
+	errorDeletingClusterServiceClassReason   string = "ErrorDeletingServiceClass"
+	errorDeletingClusterServiceClassMessage  string = "Error deleting service class."
+	errorDeletingClusterServicePlanReason    string = "ErrorDeletingServicePlan"
+	errorDeletingClusterServicePlanMessage   string = "Error deleting service plan."
+	errorAuthCredentialsReason               string = "ErrorGettingAuthCredentials"
+
+	successFetchedCatalogReason               string = "FetchedCatalog"
+	successFetchedCatalogMessage              string = "Successfully fetched catalog entries from broker."
+	successClusterServiceBrokerDeletedReason  string = "DeletedSuccessfully"
+	successClusterServiceBrokerDeletedMessage string = "The broker %v was deleted successfully."
+
+	// these reasons are re-used in other controller files.
+	errorReconciliationRetryTimeoutReason string = "ErrorReconciliationRetryTimeout"
+)
+
 func (c *controller) brokerAdd(obj interface{}) {
 	// DeletionHandlingMetaNamespaceKeyFunc returns a unique key for the resource and
 	// handles the special case where the resource is of DeletedFinalStateUnknown type, which
@@ -62,82 +89,6 @@ func (c *controller) brokerDelete(obj interface{}) {
 
 	glog.V(4).Infof("Received delete event for ClusterServiceBroker %v; no further processing will occur", broker.Name)
 }
-
-// the Message strings have a terminating period and space so they can
-// be easily combined with a follow on specific message.
-const (
-	errorFetchingCatalogReason                 string = "ErrorFetchingCatalog"
-	errorFetchingCatalogMessage                string = "Error fetching catalog. "
-	errorSyncingCatalogReason                  string = "ErrorSyncingCatalog"
-	errorSyncingCatalogMessage                 string = "Error syncing catalog from ServiceBroker. "
-	errorWithParameters                        string = "ErrorWithParameters"
-	errorListingClusterServiceClassesReason    string = "ErrorListingServiceClasses"
-	errorListingClusterServiceClassesMessage   string = "Error listing service classes."
-	errorListingClusterServicePlansReason      string = "ErrorListingServicePlans"
-	errorListingClusterServicePlansMessage     string = "Error listing service plans."
-	errorDeletingClusterServiceClassReason     string = "ErrorDeletingServiceClass"
-	errorDeletingClusterServiceClassMessage    string = "Error deleting service class."
-	errorDeletingClusterServicePlanReason      string = "ErrorDeletingServicePlan"
-	errorDeletingClusterServicePlanMessage     string = "Error deleting service plan."
-	errorNonexistentClusterServiceClassReason  string = "ReferencesNonexistentServiceClass"
-	errorNonexistentClusterServiceClassMessage string = "ReferencesNonexistentServiceClass"
-	errorNonexistentClusterServicePlanReason   string = "ReferencesNonexistentServicePlan"
-	errorNonexistentClusterServiceBrokerReason string = "ReferencesNonexistentBroker"
-	errorNonexistentServiceInstanceReason      string = "ReferencesNonexistentInstance"
-	errorAuthCredentialsReason                 string = "ErrorGettingAuthCredentials"
-	errorFindingNamespaceServiceInstanceReason string = "ErrorFindingNamespaceForInstance"
-	errorProvisionCallFailedReason             string = "ProvisionCallFailed"
-	errorErrorCallingProvisionReason           string = "ErrorCallingProvision"
-	errorUpdateInstanceCallFailedReason        string = "UpdateInstanceCallFailed"
-	errorErrorCallingUpdateInstanceReason      string = "ErrorCallingUpdateInstance"
-	errorDeprovisionCalledReason               string = "DeprovisionCallFailed"
-	errorDeprovisionBlockedByCredentialsReason string = "DeprovisionBlockedByExistingCredentials"
-	errorBindCallReason                        string = "BindCallFailed"
-	errorInjectingBindResultReason             string = "ErrorInjectingBindResult"
-	errorEjectingBindReason                    string = "ErrorEjectingServiceBinding"
-	errorEjectingBindMessage                   string = "Error ejecting binding."
-	errorUnbindCallReason                      string = "UnbindCallFailed"
-	errorWithOngoingAsyncOperation             string = "ErrorAsyncOperationInProgress"
-	errorWithOngoingAsyncOperationMessage      string = "Another operation for this service instance is in progress. "
-	errorNonbindableClusterServiceClassReason  string = "ErrorNonbindableServiceClass"
-	errorServiceInstanceNotReadyReason         string = "ErrorInstanceNotReady"
-	errorPollingLastOperationReason            string = "ErrorPollingLastOperation"
-	errorWithOriginatingIdentity               string = "Error with Originating Identity"
-	errorReconciliationRetryTimeoutReason      string = "ErrorReconciliationRetryTimeout"
-	errorServiceBindingOrphanMitigation        string = "ServiceBindingNeedsOrphanMitigation"
-	errorOrphanMigitationReason                string = "OrphanMitigationFailed"
-
-	successInjectedBindResultReason           string = "InjectedBindResult"
-	successInjectedBindResultMessage          string = "Injected bind result"
-	successDeprovisionReason                  string = "DeprovisionedSuccessfully"
-	successDeprovisionMessage                 string = "The instance was deprovisioned successfully"
-	successUpdateInstanceReason               string = "InstanceUpdatedSuccessfully"
-	successUpdateInstanceMessage              string = "The instance was updated successfully"
-	successProvisionReason                    string = "ProvisionedSuccessfully"
-	successProvisionMessage                   string = "The instance was provisioned successfully"
-	successFetchedCatalogReason               string = "FetchedCatalog"
-	successFetchedCatalogMessage              string = "Successfully fetched catalog entries from broker."
-	successClusterServiceBrokerDeletedReason  string = "DeletedSuccessfully"
-	successClusterServiceBrokerDeletedMessage string = "The broker %v was deleted successfully."
-	successUnboundReason                      string = "UnboundSuccessfully"
-	successOrphanMitigationReason             string = "OrphanMitigationSuccessful"
-	asyncProvisioningReason                   string = "Provisioning"
-	asyncProvisioningMessage                  string = "The instance is being provisioned asynchronously"
-	asyncUpdatingInstanceReason               string = "UpdatingInstance"
-	asyncUpdatingInstanceMessage              string = "The instance is being updated asynchronously"
-	asyncDeprovisioningReason                 string = "Deprovisioning"
-	asyncDeprovisioningMessage                string = "The instance is being deprovisioned asynchronously"
-	bindingInFlightReason                     string = "BindingRequestInFlight"
-	bindingInFlightMessage                    string = "Binding request for ServiceBinding in-flight to Broker"
-	unbindingInFlightReason                   string = "UnbindingRequestInFlight"
-	unbindingInFlightMessage                  string = "Unbind request for ServiceBinding in-flight to Broker"
-	provisioningInFlightReason                string = "ProvisionRequestInFlight"
-	provisioningInFlightMessage               string = "Provision request for ServiceInstance in-flight to Broker"
-	instanceUpdatingInFlightReason            string = "UpdateInstanceRequestInFlight"
-	instanceUpdatingInFlightMessage           string = "Update request for ServiceInstance in-flight to Broker"
-	deprovisioningInFlightReason              string = "DeprovisionRequestInFlight"
-	deprovisioningInFlightMessage             string = "Deprovision request for ServiceInstance in-flight to Broker"
-)
 
 // shouldReconcileClusterServiceBroker determines whether a broker should be reconciled; it
 // returns true unless the broker has a ready condition with status true and
