@@ -1519,8 +1519,8 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 			)
 		} else {
 			s := fmt.Sprintf(
-				"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %d)",
-				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items),
+				"References a non-existent ClusterServiceClass (ExternalName: %q) or there is more than one (found: %d)",
+				instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items),
 			)
 			glog.Warningf(
 				`%s "%s/%s": %s`,

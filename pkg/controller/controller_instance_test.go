@@ -91,7 +91,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " " + "References a non-existent ClusterServiceClass \"nothere\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " " + "References a non-existent ClusterServiceClass (ExternalName: \"nothere\") or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -237,7 +237,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -3149,7 +3149,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " " + "References a non-existent ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " " + "References a non-existent ClusterServiceClass (ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3344,7 +3344,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "References a non-existent ClusterServicePlan \"test-plan\" on ClusterServiceClass \"test-serviceclass\" or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "References a non-existent ClusterServicePlan \"test-plan\" on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}

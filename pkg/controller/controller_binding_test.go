@@ -242,7 +242,7 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassMessage + " " + "References a non-existent ClusterServiceClass \"" + testNonExistentClusterServiceClassName + "\""
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassMessage + " " + "References a non-existent ClusterServiceClass (K8S: \"nosuchclassid\" ExternalName: \"" + testNonExistentClusterServiceClassName + "\")"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event expected: %v got: %v", e, a)
 	}
