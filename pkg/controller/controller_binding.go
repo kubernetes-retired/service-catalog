@@ -805,8 +805,8 @@ func isPlanBindable(serviceClass *v1beta1.ClusterServiceClass, plan *v1beta1.Clu
 
 func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, credentials map[string]interface{}) error {
 	glog.V(5).Infof(
-		`%s "%s/%s": Creating/updating Secret`,
-		typez, binding.Namespace, binding.Spec.SecretName,
+		`%s "%s/%s": Creating/updating Secret "%s/%s" with %d keys`,
+		typez, binding.Namespace, binding.Name, binding.Namespace, binding.Spec.SecretName, len(credentials),
 	)
 
 	secretData := make(map[string][]byte)
