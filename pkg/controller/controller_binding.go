@@ -37,6 +37,26 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const (
+	errorNonexistentServiceInstanceReason     string = "ReferencesNonexistentInstance"
+	errorBindCallReason                       string = "BindCallFailed"
+	errorInjectingBindResultReason            string = "ErrorInjectingBindResult"
+	errorEjectingBindReason                   string = "ErrorEjectingServiceBinding"
+	errorEjectingBindMessage                  string = "Error ejecting binding."
+	errorUnbindCallReason                     string = "UnbindCallFailed"
+	errorNonbindableClusterServiceClassReason string = "ErrorNonbindableServiceClass"
+	errorServiceInstanceNotReadyReason        string = "ErrorInstanceNotReady"
+	errorServiceBindingOrphanMitigation       string = "ServiceBindingNeedsOrphanMitigation"
+
+	successInjectedBindResultReason  string = "InjectedBindResult"
+	successInjectedBindResultMessage string = "Injected bind result"
+	successUnboundReason             string = "UnboundSuccessfully"
+	bindingInFlightReason            string = "BindingRequestInFlight"
+	bindingInFlightMessage           string = "Binding request for ServiceBinding in-flight to Broker"
+	unbindingInFlightReason          string = "UnbindingRequestInFlight"
+	unbindingInFlightMessage         string = "Unbind request for ServiceBinding in-flight to Broker"
+)
+
 // bindingControllerKind contains the schema.GroupVersionKind for this controller type.
 var bindingControllerKind = v1beta1.SchemeGroupVersion.WithKind("ServiceBinding")
 

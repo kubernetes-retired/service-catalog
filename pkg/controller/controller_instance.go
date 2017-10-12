@@ -39,6 +39,48 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const (
+	successDeprovisionReason     string = "DeprovisionedSuccessfully"
+	successDeprovisionMessage    string = "The instance was deprovisioned successfully"
+	successUpdateInstanceReason  string = "InstanceUpdatedSuccessfully"
+	successUpdateInstanceMessage string = "The instance was updated successfully"
+	successProvisionReason       string = "ProvisionedSuccessfully"
+	successProvisionMessage      string = "The instance was provisioned successfully"
+
+	errorWithParameters                        string = "ErrorWithParameters"
+	errorProvisionCallFailedReason             string = "ProvisionCallFailed"
+	errorErrorCallingProvisionReason           string = "ErrorCallingProvision"
+	errorUpdateInstanceCallFailedReason        string = "UpdateInstanceCallFailed"
+	errorErrorCallingUpdateInstanceReason      string = "ErrorCallingUpdateInstance"
+	errorDeprovisionCalledReason               string = "DeprovisionCallFailed"
+	errorDeprovisionBlockedByCredentialsReason string = "DeprovisionBlockedByExistingCredentials"
+	errorPollingLastOperationReason            string = "ErrorPollingLastOperation"
+	errorWithOriginatingIdentity               string = "Error with Originating Identity"
+	errorWithOngoingAsyncOperation             string = "ErrorAsyncOperationInProgress"
+	errorWithOngoingAsyncOperationMessage      string = "Another operation for this service instance is in progress. "
+	errorNonexistentClusterServiceClassReason  string = "ReferencesNonexistentServiceClass"
+	errorNonexistentClusterServiceClassMessage string = "ReferencesNonexistentServiceClass"
+	errorNonexistentClusterServicePlanReason   string = "ReferencesNonexistentServicePlan"
+	errorNonexistentClusterServiceBrokerReason string = "ReferencesNonexistentBroker"
+	errorFindingNamespaceServiceInstanceReason string = "ErrorFindingNamespaceForInstance"
+
+	asyncProvisioningReason         string = "Provisioning"
+	asyncProvisioningMessage        string = "The instance is being provisioned asynchronously"
+	asyncUpdatingInstanceReason     string = "UpdatingInstance"
+	asyncUpdatingInstanceMessage    string = "The instance is being updated asynchronously"
+	asyncDeprovisioningReason       string = "Deprovisioning"
+	asyncDeprovisioningMessage      string = "The instance is being deprovisioned asynchronously"
+	provisioningInFlightReason      string = "ProvisionRequestInFlight"
+	provisioningInFlightMessage     string = "Provision request for ServiceInstance in-flight to Broker"
+	instanceUpdatingInFlightReason  string = "UpdateInstanceRequestInFlight"
+	instanceUpdatingInFlightMessage string = "Update request for ServiceInstance in-flight to Broker"
+	deprovisioningInFlightReason    string = "DeprovisionRequestInFlight"
+	deprovisioningInFlightMessage   string = "Deprovision request for ServiceInstance in-flight to Broker"
+
+	successOrphanMitigationReason string = "OrphanMitigationSuccessful"
+	errorOrphanMigitationReason   string = "OrphanMitigationFailed"
+)
+
 // ServiceInstance handlers and control-loop
 
 func (c *controller) instanceAdd(obj interface{}) {
