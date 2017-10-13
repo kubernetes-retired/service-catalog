@@ -1551,9 +1551,9 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
@@ -1608,9 +1608,9 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -1662,9 +1662,9 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -1724,9 +1724,9 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
@@ -1781,9 +1781,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -1842,9 +1842,9 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -1911,9 +1911,9 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -1972,9 +1972,9 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %v", err)
+		t.Fatalf("pollServiceInstance failed: %v", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
@@ -2035,9 +2035,9 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -2230,8 +2230,8 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.pollServiceInstanceInternal(instance); err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+	if err := testController.pollServiceInstance(instance); err != nil {
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -2285,7 +2285,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.pollServiceInstanceInternal(instance); err != nil {
+	if err := testController.pollServiceInstance(instance); err != nil {
 		t.Fatalf("Should have return no error because the retry duration has elapsed: %v", err)
 	}
 
@@ -2810,9 +2810,9 @@ func TestPollInstanceUsingOriginatingIdentity(t *testing.T) {
 				instance.Spec.UserInfo = testUserInfo
 			}
 
-			err := testController.pollServiceInstanceInternal(instance)
+			err := testController.pollServiceInstance(instance)
 			if err != nil {
-				t.Fatalf("Expected pollServiceInstanceInternal to not fail while in progress")
+				t.Fatalf("Expected pollServiceInstance to not fail while in progress")
 			}
 
 			brokerActions := fakeBrokerClient.Actions()
@@ -4063,9 +4063,9 @@ func TestPollServiceInstanceAsyncInProgressUpdating(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
@@ -4120,9 +4120,9 @@ func TestPollServiceInstanceAsyncSuccessUpdating(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -4174,9 +4174,9 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	err := testController.pollServiceInstanceInternal(instance)
+	err := testController.pollServiceInstance(instance)
 	if err != nil {
-		t.Fatalf("pollServiceInstanceInternal failed: %s", err)
+		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {

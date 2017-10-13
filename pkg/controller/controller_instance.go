@@ -533,7 +533,7 @@ func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance) error {
 	if instance.Status.AsyncOpInProgress {
-		return c.pollServiceInstanceInternal(instance)
+		return c.pollServiceInstance(instance)
 	}
 
 	if instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress {
@@ -552,19 +552,9 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		return nil
 	}
 
-	// If there's no async op in progress, determine whether there is a new
-	// generation of the object. If the instance's generation does not match
-	// the reconciled generation, then there is a new generation, indicating
-	// that changes have been made to the instance's spec. If there is an
-	// async op in progress, we need to keep polling, hence do not bail if
-	// there is not a new generation.
-	//
-	// Note: currently the instance spec is immutable because we do not yet
-	// support plan or parameter updates.  This logic is currently meant only
-	// to facilitate re-trying provision requests where there was a problem
-	// communicating with the broker.  In the future the same logic will
-	// result in an instance that requires update being processed by the
-	// controller.
+	// If the instance's "metadata.generation" matches its
+	// "status.reconciledGeneration", then no new changes have been made to
+	// the instance's spec, and we can just return.
 	if instance.Status.ReconciledGeneration == instance.Generation {
 		glog.V(4).Infof(
 			`%s "%s/%s": Not processing event because reconciled generation showed there is no work to do`,
@@ -1040,7 +1030,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	return nil
 }
 
-func (c *controller) pollServiceInstanceInternal(instance *v1beta1.ServiceInstance) error {
+func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) error {
 	glog.V(4).Infof(
 		`%s "%s/%s": Processing`,
 		typeSI, instance.Namespace, instance.Name,
@@ -1050,10 +1040,7 @@ func (c *controller) pollServiceInstanceInternal(instance *v1beta1.ServiceInstan
 	if err != nil {
 		return err
 	}
-	return c.pollServiceInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
-}
 
-func (c *controller) pollServiceInstance(serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan, brokerName string, brokerClient osb.Client, instance *v1beta1.ServiceInstance) error {
 	// There are three possible operations that require polling:
 	// 1) Normal asynchronous provision
 	// 2) Normal asynchronous deprovision
