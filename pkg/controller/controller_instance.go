@@ -552,19 +552,9 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		return nil
 	}
 
-	// If there's no async op in progress, determine whether there is a new
-	// generation of the object. If the instance's generation does not match
-	// the reconciled generation, then there is a new generation, indicating
-	// that changes have been made to the instance's spec. If there is an
-	// async op in progress, we need to keep polling, hence do not bail if
-	// there is not a new generation.
-	//
-	// Note: currently the instance spec is immutable because we do not yet
-	// support plan or parameter updates.  This logic is currently meant only
-	// to facilitate re-trying provision requests where there was a problem
-	// communicating with the broker.  In the future the same logic will
-	// result in an instance that requires update being processed by the
-	// controller.
+	// If the instance's "metadata.generation" matches its
+	// "status.reconciledGeneration", then no new changes have been made to
+	// the instance's spec, and we can just return.
 	if instance.Status.ReconciledGeneration == instance.Generation {
 		glog.V(4).Infof(
 			`%s "%s/%s": Not processing event because reconciled generation showed there is no work to do`,
