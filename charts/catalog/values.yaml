@@ -1,6 +1,9 @@
 # Default values for Service Catalog
 # determines whether the API server should be registered with the kube-aggregator
 useAggregator: false
+## If true, create & use RBAC resources
+##
+rbacEnable: true
 apiserver:
   # apiserver image to use
   image: quay.io/kubernetes-service-catalog/apiserver:v0.1.0-rc1

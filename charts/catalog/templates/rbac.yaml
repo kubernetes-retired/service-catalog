@@ -1,11 +1,4 @@
-{{- $apiVersion := "" -}}
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1beta1" -}}
-{{- $apiVersion = "rbac.authorization.k8s.io/v1beta1" -}}
-{{- else if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" -}}
-{{- $apiVersion = "rbac.authorization.k8s.io/v1" -}}
-{{- end -}}
-
-{{- if $apiVersion }}
+{{- if .Values.rbacEnable }}
 apiVersion: v1
 kind: List
 items:
@@ -14,7 +7,7 @@ items:
 
 # TODO: if this is just for namespace lifecycle admission, move to a generic role
 # the role for the apiserver 
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRole
   metadata:
     name: "servicecatalog.k8s.io:apiserver"
@@ -25,7 +18,7 @@ items:
     resources: ["namespaces"]
     verbs:     ["get", "list", "watch"]
 # API-server service-account gets its own role
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRoleBinding
   metadata:
     name: "servicecatalog.k8s.io:apiserver"
@@ -40,7 +33,7 @@ items:
     namespace: "{{ .Release.Namespace }}"
 # apiserver gets the auth-delegator role to delegate auth decisions to
 # the core apiserver
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRoleBinding
   metadata:
     name: "servicecatalog.k8s.io:apiserver-auth-delegator"
@@ -56,7 +49,7 @@ items:
 # apiserver gets the ability to read authentication. This allows it to
 # read the specific configmap that has the requestheader-* entries to
 # enable api aggregation
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: RoleBinding
   metadata:
     name: "servicecatalog.k8s.io:apiserver-authentication-reader"
@@ -76,7 +69,7 @@ items:
 # controller-manager role defines what access the service-catalog
 # controller-manager needs to manage the resources of the
 # service-catalog
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRole
   metadata:
     name: "servicecatalog.k8s.io:controller-manager"
@@ -105,7 +98,7 @@ items:
     resources: ["clusterservicebrokers/status","serviceinstances/status","serviceinstances/reference","servicebindings/status"]
     verbs:     ["update"]
 # give the controller-manager service account access to whats defined in its role.
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRoleBinding
   metadata:
     name: "servicecatalog.k8s.io:controller-manager"
@@ -121,7 +114,7 @@ items:
 
 # This gives create/update access to an endpoint in kube-system for leader election
 # TODO: use an object other than endpoints, and in the same namespace as the service catalog, not in kube-system
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: Role
   metadata:
     name: "servicecatalog.k8s.io:leader-locking-controller-manager"
@@ -134,7 +127,7 @@ items:
     resources:     ["endpoints"]
     resourceNames: ["service-catalog-controller-manager"]
     verbs:         ["get","update"]
-- apiVersion: {{ $apiVersion }}
+- apiVersion: {{template "rbacApiVersion" . }}
   kind: RoleBinding
   metadata:
     name: service-catalog-controller-manager
@@ -148,4 +141,4 @@ items:
     kind: ServiceAccount
     name: "{{ .Values.controllerManager.serviceAccount }}"
     namespace: "{{ .Release.Namespace }}"
-{{ end }}
+{{end}}
