@@ -278,7 +278,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := fmt.Sprintf(`%s  %s References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
+	expectedEvent := fmt.Sprintf(`%s %s References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
 		corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, "", "nothere", "SCGUID", "test-serviceclass", 0,
 	)
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
