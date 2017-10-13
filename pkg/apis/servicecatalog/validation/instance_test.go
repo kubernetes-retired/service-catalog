@@ -493,6 +493,45 @@ func TestValidateServiceInstance(t *testing.T) {
 			create: true,
 			valid:  false,
 		},
+		{
+			name: "failed provision starting orphan mitigation",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressProvision()
+				i.Status.OperationStartTime = nil
+				i.Status.OrphanMitigationInProgress = true
+				i.Status.Conditions = []servicecatalog.ServiceInstanceCondition{
+					{
+						Type:   servicecatalog.ServiceInstanceConditionReady,
+						Status: servicecatalog.ConditionFalse,
+					},
+					{
+						Type:   servicecatalog.ServiceInstanceConditionFailed,
+						Status: servicecatalog.ConditionTrue,
+					},
+				}
+				return i
+			}(),
+			valid: true,
+		},
+		{
+			name: "in-progress orphan mitigation",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressProvision()
+				i.Status.OrphanMitigationInProgress = true
+				i.Status.Conditions = []servicecatalog.ServiceInstanceCondition{
+					{
+						Type:   servicecatalog.ServiceInstanceConditionReady,
+						Status: servicecatalog.ConditionFalse,
+					},
+					{
+						Type:   servicecatalog.ServiceInstanceConditionFailed,
+						Status: servicecatalog.ConditionTrue,
+					},
+				}
+				return i
+			}(),
+			valid: true,
+		},
 	}
 
 	for _, tc := range cases {

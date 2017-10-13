@@ -1924,7 +1924,6 @@ func setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.ServiceInstance) 
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.AsyncOpInProgress = false
 	toUpdate.Status.OrphanMitigationInProgress = true
-	toUpdate.Status.InProgressProperties = nil
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status

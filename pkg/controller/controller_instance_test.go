@@ -2898,14 +2898,18 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 			continue
 		}
 
-		if tc.triggersOrphanMitigation && err == nil {
-			t.Errorf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
-			continue
-		}
-
-		if !tc.triggersOrphanMitigation && err != nil {
-			t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
-			continue
+		if tc.triggersOrphanMitigation {
+			// TODO(mkibbe): Rework this to be an expects, not asserts
+			assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, errorProvisionCallFailedReason, instance)
+			if err == nil {
+				t.Errorf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
+				continue
+			}
+		} else {
+			if err != nil {
+				t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
+				continue
+			}
 		}
 	}
 }
