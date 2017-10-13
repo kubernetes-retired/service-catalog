@@ -1719,7 +1719,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				"References a non-existent ClusterServicePlan with K8S name %q on ClusterServiceClass with K8S name %q",
 				instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServiceClassName,
 			)
-			glog.Warnings(
+			glog.Warningsf(
 				`%s "%s/%s": `,
 				typeSI, instance.Namespace, instance.Name, s,
 			)
