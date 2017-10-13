@@ -82,7 +82,7 @@ also need:
 
 * A working Kubernetes cluster and `kubectl` installed in your local `PATH`,
   properly configured to access that cluster. The version of Kubernetes and
-  `kubectl` must be >= 1.6. See below for instructions on how to download these
+  `kubectl` must be >= 1.7. See below for instructions on how to download these
   versions of `kubectl`
 * [Helm](https://helm.sh) (Tiller) installed in your Kubernetes cluster and the
   `helm` binary in your `PATH`
@@ -266,18 +266,15 @@ release, you probably want to deploy the canary images. Always use the
 canary images when testing local changes.
 
 For more information see the
-[installation instructions](./install-1.7.md). The last two lines of
+[installation instructions](./install.md). The last two lines of
 the following `helm install` example show the canary images being
 installed with the other standard installation options.
 
+From the root of this repository:
+
 ```
-helm install ../charts/catalog \
-    --name ${HELM_RELEASE_NAME} --namespace ${SVCCAT_NAMESPACE} \
-    --set apiserver.auth.enabled=true \
-    --set useAggregator=true \
-    --set apiserver.tls.ca=$(base64 --wrap 0 ${SC_SERVING_CA}) \
-    --set apiserver.tls.cert=$(base64 --wrap 0 ${SC_SERVING_CERT}) \
-    --set apiserver.tls.key=$(base64 --wrap 0 ${SC_SERVING_KEY}) \
+helm install charts/catalog \
+    --name catalog --namespace catalog \
     --set image=quay.io/kubernetes-service-catalog/service-catalog:canary
 ```
 
