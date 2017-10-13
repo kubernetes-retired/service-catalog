@@ -317,7 +317,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 	}
 	// Can't specify both External and k8s name but must specify one.
 	if externalPlanSet == k8sPlanSet {
-		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "either externalClusterServicePlanName or clusterServicePlanName required"))
+		allErrs = append(allErrs, field.Required(fldPath.Child("externalClusterServicePlanName"), "exactly one of externalClusterServicePlanName or clusterServicePlanName required"))
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "exactly one of externalClusterServicePlanName or clusterServicePlanName required"))
 	}
 
