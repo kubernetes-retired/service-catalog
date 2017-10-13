@@ -24,7 +24,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/interrupt"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/broker/authsarcheck"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/namespace/lifecycle"
 	siclifecycle "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/servicebindings/lifecycle"
@@ -39,14 +38,6 @@ const (
 	// Store generated SSL certificates in a place that won't collide with the
 	// k8s core API server.
 	certDirectory = "/var/run/kubernetes-service-catalog"
-
-	// I made this up to match some existing paths. I am not sure if there
-	// are any restrictions on the format or structure beyond text
-	// separated by slashes.
-	etcdPathPrefix = "/k8s.io/service-catalog"
-
-	// GroupName I made this up. Maybe we'll need it.
-	GroupName = "service-catalog.k8s.io"
 
 	storageTypeFlagName = "storageType"
 )
@@ -93,14 +84,6 @@ func NewCommandServer(
 	if err != nil {
 		glog.Fatalf("invalid storage type '%s' (%s)", storageType, err)
 		return nil, err
-	}
-	if storageType == server.StorageTypeEtcd {
-		glog.Infof("using etcd for storage")
-		// Store resources in etcd under our special prefix
-		opts.EtcdOptions.StorageConfig.Prefix = etcdPathPrefix
-	} else {
-		// This should never happen, catch for potential bugs
-		panic("Unexpected storage type: " + storageType)
 	}
 
 	cmd.Run = func(c *cobra.Command, args []string) {
