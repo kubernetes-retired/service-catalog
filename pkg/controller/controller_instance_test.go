@@ -132,7 +132,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServiceClass with K8S name \"nothereclass\""
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassReason + " References a non-existent ClusterServiceClass (K8S: \"nothereclass\")"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -329,7 +329,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " ServiceInstance \"/test-instance\": references a non-existent ClusterServicePlan with K8S name \"nothereplan\" on ClusterServiceClass with K8S name \"" + testClusterServiceClassGUID + "\""
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan with K8S name \"nothereplan\" on ClusterServiceClass with K8S name \"" + testClusterServiceClassGUID + "\""
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}

@@ -1591,7 +1591,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			)
 		} else {
 			s := fmt.Sprintf(
-				"References a non-existent ClusterServiceClass %q or there is more than one (found: %d)",
+				"References a non-existent ClusterServiceClass (ExternalName: %q) or there is more than one (found: %d)",
 				instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items),
 			)
 			glog.Warningf(
@@ -1630,7 +1630,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			)
 		} else {
 			s := fmt.Sprintf(
-				"References a non-existent ClusterServiceClass with K8S name %q",
+				"References a non-existent ClusterServiceClass (K8S: %q)",
 				instance.Spec.ClusterServiceClassName,
 			)
 			glog.Warningf(
