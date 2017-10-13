@@ -278,7 +278,9 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan (K8S: \"\" ExternalName: \"nothere\") on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
+	expectedEvent := fmt.Sprintf(`%s  %s References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
+		corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, "", "nothere", "SCGUID", "test-serviceclass", 0,
+	)
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -810,7 +812,10 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "Error provisioning ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
+	expectedEvent := fmt.Sprintf(`%s %s Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s`,
+		corev1.EventTypeWarning, errorProvisionCallFailedReason, "SCGUID", "test-serviceclass", "test-broker", 409, `OutOfQuota; Description: You're out of quota!; ResponseError: <nil>`,
+	)
+
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3522,7 +3527,10 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "References a non-existent ClusterServicePlan (K8S: \"\" ExternalName: \"test-plan\") on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
+	expectedEvent := fmt.Sprintf(
+		`%s %s References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
+		corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, "", "test-plan", "SCGUID", "test-serviceclass", 0,
+	)
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3756,7 +3764,10 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorUpdateInstanceCallFailedReason + " " + "Error updating ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
+	expectedEvent := fmt.Sprintf(
+		`%s %s Error updating ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s`,
+		corev1.EventTypeWarning, errorUpdateInstanceCallFailedReason, "SCGUID", "test-serviceclass", "test-broker", 409, `OutOfQuota; Description: You're out of quota!; ResponseError: <nil>`,
+	)
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
