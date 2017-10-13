@@ -2716,7 +2716,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.ProvisionRequest{}, actualRequest)
 				return
 			}
-			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			var expectedOriginatingIdentity *osb.OriginatingIdentity
 			if tc.expectedOriginatingIdentity {
 				expectedOriginatingIdentity = testOriginatingIdentity
 			}
@@ -2770,7 +2770,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.DeprovisionRequest{}, actualRequest)
 				return
 			}
-			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			var expectedOriginatingIdentity *osb.OriginatingIdentity
 			if tc.expectedOriginatingIdentity {
 				expectedOriginatingIdentity = testOriginatingIdentity
 			}
@@ -2817,7 +2817,7 @@ func TestPollInstanceUsingOriginatingIdentity(t *testing.T) {
 				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.LastOperationRequest{}, actualRequest)
 				return
 			}
-			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			var expectedOriginatingIdentity *osb.OriginatingIdentity
 			if tc.expectedOriginatingIdentity {
 				expectedOriginatingIdentity = testOriginatingIdentity
 			}

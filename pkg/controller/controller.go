@@ -584,7 +584,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 			servicePlans[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
-		if schemas := plan.AlphaParameterSchemas; schemas != nil {
+		if schemas := plan.ParameterSchemas; schemas != nil {
 			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
 				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil && instanceCreateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceCreateSchema.Parameters)
