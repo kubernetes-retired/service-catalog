@@ -1743,7 +1743,7 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.BindRequest{}, actualRequest)
 				return
 			}
-			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			var expectedOriginatingIdentity *osb.OriginatingIdentity
 			if tc.expectedOriginatingIdentity {
 				expectedOriginatingIdentity = testOriginatingIdentity
 			}
@@ -1794,7 +1794,7 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 				t.Errorf("%v: unexpected request type; expected %T, got %T", tc.name, &osb.UnbindRequest{}, actualRequest)
 				return
 			}
-			var expectedOriginatingIdentity *osb.AlphaOriginatingIdentity
+			var expectedOriginatingIdentity *osb.OriginatingIdentity
 			if tc.expectedOriginatingIdentity {
 				expectedOriginatingIdentity = testOriginatingIdentity
 			}

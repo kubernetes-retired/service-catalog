@@ -350,7 +350,7 @@ const testOriginatingIdentityValue = `{
 	"fakekey": ["fakevalue"]
 }`
 
-var testOriginatingIdentity = &osb.AlphaOriginatingIdentity{
+var testOriginatingIdentity = &osb.OriginatingIdentity{
 	Platform: originatingIdentityPlatform,
 	Value:    testOriginatingIdentityValue,
 }
@@ -775,7 +775,7 @@ func TestCatalogConversion(t *testing.T) {
 	checkPlan(servicePlans[1], "0f4008b5-XXXX-XXXX-XXXX-dace631cd648", "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
 
-func TestCatalogConversionWithAlphaParameterSchemas(t *testing.T) {
+func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)
 	if err != nil {
@@ -2473,7 +2473,7 @@ func assertUnbind(t *testing.T, action fakeosb.Action, request *osb.UnbindReques
 	}
 }
 
-func assertOriginatingIdentity(t *testing.T, expected *osb.AlphaOriginatingIdentity, actual *osb.AlphaOriginatingIdentity) {
+func assertOriginatingIdentity(t *testing.T, expected *osb.OriginatingIdentity, actual *osb.OriginatingIdentity) {
 	if e, a := expected, actual; (e != nil) != (a != nil) {
 		fatalf(t, "unexpected originating identity in request: expected %q, got %q", e, a)
 	}

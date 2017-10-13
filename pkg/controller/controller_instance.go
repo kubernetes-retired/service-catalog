@@ -702,7 +702,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		UserInfo:                       instance.Spec.UserInfo,
 	}
 
-	var originatingIdentity *osb.AlphaOriginatingIdentity
+	var originatingIdentity *osb.OriginatingIdentity
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		originatingIdentity, err = buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
