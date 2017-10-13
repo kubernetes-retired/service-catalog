@@ -533,7 +533,7 @@ func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance) error {
 	if instance.Status.AsyncOpInProgress {
-		return c.pollServiceInstanceInternal(instance)
+		return c.pollServiceInstance(instance)
 	}
 
 	if instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress {
@@ -1040,7 +1040,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	return nil
 }
 
-func (c *controller) pollServiceInstanceInternal(instance *v1beta1.ServiceInstance) error {
+func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) error {
 	glog.V(4).Infof(
 		`%s "%s/%s": Processing`,
 		typeSI, instance.Namespace, instance.Name,
@@ -1050,10 +1050,7 @@ func (c *controller) pollServiceInstanceInternal(instance *v1beta1.ServiceInstan
 	if err != nil {
 		return err
 	}
-	return c.pollServiceInstance(serviceClass, servicePlan, brokerName, brokerClient, instance)
-}
 
-func (c *controller) pollServiceInstance(serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan, brokerName string, brokerClient osb.Client, instance *v1beta1.ServiceInstance) error {
 	// There are three possible operations that require polling:
 	// 1) Normal asynchronous provision
 	// 2) Normal asynchronous deprovision
