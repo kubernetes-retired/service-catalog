@@ -834,9 +834,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 		var err error
 		secretData[k], err = serialize(v)
 		if err != nil {
-			// Terminal error
-			// TODO mark as terminal error once we have the terminal condition
-			return fmt.Errorf("Unable to serialize credential value %q: %v; %s", k, v, err)
+			return fmt.Errorf("Unable to serialize value for credential key %q (value is intentionally not logged): %s", k, err)
 		}
 	}
 
@@ -847,25 +845,21 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 		// Update existing secret
 		if !IsControlledBy(existingSecret, binding) {
 			controllerRef := GetControllerOf(existingSecret)
-			// TODO mark as terminal error once we have the terminal condition
-			return fmt.Errorf("Secret '%s' is not owned by ServiceBinding, controllerRef: %v", existingSecret.Name, controllerRef)
+			return fmt.Errorf(`Secret "%s/%s" is not owned by ServiceBinding, controllerRef: %v`, binding.Namespace, existingSecret.Name, controllerRef)
 		}
 		existingSecret.Data = secretData
 		_, err = secretClient.Update(existingSecret)
 		if err != nil {
 			if apierrors.IsConflict(err) {
 				// Conflicting update detected, try again later
-				return fmt.Errorf("Conflicting Secret '%s' update detected", existingSecret.Name)
+				return fmt.Errorf(`Conflicting Secret "%s/%s" update detected`, binding.Namespace, existingSecret.Name)
 			}
-			// Terminal error
-			// TODO mark as terminal error once we have the terminal condition
-			return fmt.Errorf("Unexpected error in response: %v", err)
+			return fmt.Errorf(`Unexpected error updating Secret "%s/%s": %v`, binding.Namespace, existingSecret.Name, err)
 		}
 	} else {
 		if !apierrors.IsNotFound(err) {
 			// Terminal error
-			// TODO mark as terminal error once we have the terminal condition
-			return fmt.Errorf("Unexpected error in response: %v", err)
+			return fmt.Errorf(`Unexpected error getting Secret "%s/%s": %v`, binding.Namespace, existingSecret.Name, err)
 		}
 		err = nil
 
@@ -885,11 +879,10 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 			if apierrors.IsAlreadyExists(err) {
 				// Concurrent controller has created secret under the same name,
 				// Update the secret at the next retry iteration
-				return fmt.Errorf("Conflicting Secret '%s' creation detected", secret.Name)
+				return fmt.Errorf(`Conflicting Secret "%s/%s" creation detected`, binding.Namespace, secret.Name)
 			}
 			// Terminal error
-			// TODO mark as terminal error once we have the terminal condition
-			return fmt.Errorf("Unexpected error in response: %v", err)
+			return fmt.Errorf(`Unexpected error creating Secret "%s/%s": %v`, binding.Namespace, secret.Name, err)
 		}
 	}
 
@@ -900,8 +893,8 @@ func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error 
 	var err error
 
 	glog.V(5).Infof(
-		`%s "%s/%s": Deleting Secret`,
-		typeSB, binding.Namespace, binding.Spec.SecretName,
+		`%s "%s/%s": Deleting Secret "%s/%s"`,
+		typeSB, binding.Namespace, binding.Name, binding.Namespace, binding.Spec.SecretName,
 	)
 	err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
