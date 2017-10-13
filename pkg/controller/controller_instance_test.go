@@ -278,7 +278,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan (K8S: \"\" ExternalName: \"nothere\") on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -3522,7 +3522,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "References a non-existent ClusterServicePlan \"test-plan\" on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "References a non-existent ClusterServicePlan (K8S: \"\" ExternalName: \"test-plan\") on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}

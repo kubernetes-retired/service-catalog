@@ -1678,13 +1678,13 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				ResourceVersion: sp.ResourceVersion,
 			}
 			glog.V(4).Infof(
-				`%s "%s/%s": resolved ClusterServicePlan with externalName %q to K8S ClusterServicePlan %q`,
+				`%s "%s/%s": resolved ClusterServicePlan (ExternalName: %q) to ClusterServicePlan (K8S: %q)`,
 				typeSI, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name,
 			)
 		} else {
 			s := fmt.Sprintf(
-				"References a non-existent ClusterServicePlan %q on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %d)",
-				instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items),
+				"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %d)",
+				instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items),
 			)
 			glog.Warningf(
 				`%s "%s/%s": %s`,

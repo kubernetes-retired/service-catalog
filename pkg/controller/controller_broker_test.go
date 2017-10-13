@@ -395,7 +395,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorSyncingCatalogReason + ` ClusterServiceBroker "test-broker": Error reconciling ClusterServicePlan (K8S: "PGUID" ExternalName: "test-plan"): ClusterServiceBroker "test-broker": ClusterServicePlan "test-plan" already exists for Broker "notTheSame"`
+	expectedEvent := corev1.EventTypeWarning + " " + errorSyncingCatalogReason + ` Error reconciling ClusterServicePlan (K8S: "PGUID" ExternalName: "test-plan"): ClusterServicePlan (K8S: "PGUID" ExternalName: "test-plan") already exists for Broker "notTheSame"`
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event; expected\n%v, got\n%v", e, a)
 	}
