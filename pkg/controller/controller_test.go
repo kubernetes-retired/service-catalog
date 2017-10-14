@@ -502,7 +502,7 @@ func getTestCatalog() *osb.CatalogResponse {
 // instance referencing the result of getTestClusterServiceClass()
 // and getTestClusterServicePlan()
 // This version sets:
-// ExternalClusterServiceClassName and ExternalClusterServicePlanName as well
+// ClusterServiceClassExternalName and ClusterServicePlanExternalName as well
 // as ClusterServiceClassRef and ClusterServicePlanRef which means that the
 // ClusterServiceClass and ClusterServicePlan are fetched using
 // Service[Class|Plan]Lister.get(spec.Service[Class|Plan]Ref.Name)
@@ -516,7 +516,7 @@ func getTestServiceInstanceWithRefs() *v1beta1.ServiceInstance {
 // instance referencing the result of getTestClusterServiceClass()
 // and getTestClusterServicePlan()
 // This version sets:
-// ExternalClusterServiceClassName and ExternalClusterServicePlanName, so depending on the
+// ClusterServiceClassExternalName and ClusterServicePlanExternalName, so depending on the
 // test, you may need to add reactors that deal with List due to the need
 // to resolve Names to IDs for both ClusterServiceClass and ClusterServicePlan
 func getTestServiceInstance() *v1beta1.ServiceInstance {
@@ -528,8 +528,8 @@ func getTestServiceInstance() *v1beta1.ServiceInstance {
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testClusterServicePlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testServiceInstanceGUID,
 		},
@@ -560,8 +560,8 @@ func getTestServiceInstanceK8SNames() *v1beta1.ServiceInstance {
 // an instance referencing the result of getTestNonbindableClusterServiceClass, on the non-bindable plan.
 func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 	i := getTestServiceInstance()
-	i.Spec.ExternalClusterServiceClassName = testNonbindableClusterServiceClassName
-	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
+	i.Spec.ClusterServiceClassExternalName = testNonbindableClusterServiceClassName
+	i.Spec.ClusterServicePlanExternalName = testNonbindableClusterServicePlanName
 	i.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{Name: testNonbindableClusterServiceClassGUID}
 	i.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testNonbindableClusterServicePlanGUID}
 
@@ -571,7 +571,7 @@ func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 // an instance referencing the result of getTestNonbindableClusterServiceClass, on the bindable plan.
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
-	i.Spec.ExternalClusterServicePlanName = testClusterServicePlanName
+	i.Spec.ClusterServicePlanExternalName = testClusterServicePlanName
 	i.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testClusterServicePlanGUID}
 
 	return i
@@ -579,7 +579,7 @@ func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInst
 
 func getTestServiceInstanceBindableServiceNonbindablePlan() *v1beta1.ServiceInstance {
 	i := getTestServiceInstanceWithRefs()
-	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
+	i.Spec.ClusterServicePlanExternalName = testNonbindableClusterServicePlanName
 	i.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testNonbindableClusterServicePlanGUID}
 
 	return i
@@ -626,7 +626,7 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1beta1.ServiceI
 		OperationStartTime: &operationStartTime,
 		CurrentOperation:   v1beta1.ServiceInstanceOperationProvision,
 		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: testClusterServicePlanName,
+			ClusterServicePlanExternalName: testClusterServicePlanName,
 		},
 	}
 	if operation != "" {
@@ -655,10 +655,10 @@ func getTestServiceInstanceAsyncUpdating(operation string) *v1beta1.ServiceInsta
 		OperationStartTime: &operationStartTime,
 		CurrentOperation:   v1beta1.ServiceInstanceOperationUpdate,
 		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: testClusterServicePlanName,
+			ClusterServicePlanExternalName: testClusterServicePlanName,
 		},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: "old-plan-name",
+			ClusterServicePlanExternalName: "old-plan-name",
 		},
 	}
 	if operation != "" {
@@ -685,7 +685,7 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1beta1.Servic
 		CurrentOperation:     v1beta1.ServiceInstanceOperationDeprovision,
 		ReconciledGeneration: 1,
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: testClusterServicePlanName,
+			ClusterServicePlanExternalName: testClusterServicePlanName,
 		},
 	}
 	if operation != "" {
@@ -1999,7 +1999,7 @@ func assertServiceInstancePropertiesStatePlanName(t *testing.T, propsLabel strin
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
-	if e, a := expectedPlanName, actualProps.ExternalClusterServicePlanName; e != a {
+	if e, a := expectedPlanName, actualProps.ClusterServicePlanExternalName; e != a {
 		fatalf(t, "unexpected %v properties external service plan name: expected %v, actual %v", propsLabel, e, a)
 	}
 }

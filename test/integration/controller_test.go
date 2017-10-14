@@ -154,8 +154,8 @@ func TestBasicFlowsSync(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -349,8 +349,8 @@ func TestBasicFlowsAsync(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -528,8 +528,8 @@ func TestProvisionFailure(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -655,8 +655,8 @@ func TestBindingFailure(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -854,8 +854,8 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -1066,8 +1066,8 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -1193,8 +1193,8 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  testPlanName,
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testPlanName,
 			},
 			ExternalID: testExternalID,
 		},

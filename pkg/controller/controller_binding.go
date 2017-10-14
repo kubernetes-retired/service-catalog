@@ -243,7 +243,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 	if !isPlanBindable(serviceClass, servicePlan) {
 		s := fmt.Sprintf(
 			`References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination`,
-			serviceClass.Name, serviceClass.Spec.ExternalName, instance.Spec.ExternalClusterServicePlanName,
+			serviceClass.Name, serviceClass.Spec.ExternalName, instance.Spec.ClusterServicePlanExternalName,
 		)
 		glog.Warningf(
 			`%s "%s/%s": %s`,

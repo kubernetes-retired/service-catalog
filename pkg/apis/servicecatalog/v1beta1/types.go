@@ -428,26 +428,26 @@ type ServiceInstance struct {
 // allowed ways to specify the intent.
 //
 // Currently supported ways:
-//  - ExternalClusterServiceClassName and ExternalClusterServicePlanName
+//  - ClusterServiceClassExternalName and ClusterServicePlanExternalName
 //  - ClusterServiceClassName and ClusterServicePlanName
 //
 // For both of these ways, if a ClusterServiceClass only has one plan
 // then leaving the *ServicePlanName is optional.
 type PlanReference struct {
-	// ExternalClusterServiceClassName is the human-readable name of the
+	// ClusterServiceClassExternalName is the human-readable name of the
 	// service as reported by the broker. Note that if the broker changes
 	// the name of the ClusterServiceClass, it will not be reflected here,
 	// and to see the current name of the ClusterServiceClass, you should
 	// follow the ClusterServiceClassRef below.
 	//
 	// Immutable.
-	ExternalClusterServiceClassName string `json:"externalClusterServiceClassName,omitempty"`
-	// ExternalClusterServicePlanName is the human-readable name of the plan
+	ClusterServiceClassExternalName string `json:"clusterServiceClassExternalName,omitempty"`
+	// ClusterServicePlanExternalName is the human-readable name of the plan
 	// as reported by the broker. Note that if the broker changes the name
 	// of the ClusterServicePlan, it will not be reflected here, and to see
 	// the current name of the ClusterServicePlan, you should follow the
 	// ClusterServicePlanRef below.
-	ExternalClusterServicePlanName string `json:"externalClusterServicePlanName,omitempty"`
+	ClusterServicePlanExternalName string `json:"clusterServicePlanExternalName,omitempty"`
 
 	// ClusterServiceClassName is the kubernetes name of the
 	// ClusterServiceClass.
@@ -466,12 +466,12 @@ type ServiceInstanceSpec struct {
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
 	// that the user selected.
 	// This is set by the controller based on
-	// ExternalClusterServiceClassName
+	// ClusterServiceClassExternalName
 	ClusterServiceClassRef *ClusterObjectReference `json:"clusterServiceClassRef,omitempty"`
 	// ClusterServicePlanRef is a reference to the ClusterServicePlan
 	// that the user selected.
 	// This is set by the controller based on
-	// ExternalClusterServicePlanName
+	// ClusterServicePlanExternalName
 	ClusterServicePlanRef *ClusterObjectReference `json:"clusterServicePlanRef,omitempty"`
 
 	// Parameters is a set of the parameters to be passed to the underlying
@@ -614,10 +614,10 @@ const (
 // ServiceInstancePropertiesState is the state of a ServiceInstance that
 // the ClusterServiceBroker knows about.
 type ServiceInstancePropertiesState struct {
-	// ExternalClusterServicePlanName is the name of the plan that the
+	// ClusterServicePlanExternalName is the name of the plan that the
 	// broker knows this ServiceInstance to be on. This is the human
 	// readable plan name from the OSB API.
-	ExternalClusterServicePlanName string `json:"externalClusterServicePlanName"`
+	ClusterServicePlanExternalName string `json:"clusterServicePlanExternalName"`
 
 	// Parameters is a blob of the parameters and their values that the broker
 	// knows about for this ServiceInstance.  If a parameter was sourced from

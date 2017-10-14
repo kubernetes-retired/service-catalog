@@ -253,7 +253,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	if err != nil {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName,
+			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
 		)
 		glog.Info(pcb.Message(s))
 		c.updateServiceInstanceCondition(
@@ -271,7 +271,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	if nil != err {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, serviceClass.Name, serviceClass.Spec.ExternalName,
+			instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, serviceClass.Name, serviceClass.Spec.ExternalName,
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceInstanceCondition(
@@ -337,7 +337,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	if err != nil {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName,
+			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
@@ -355,7 +355,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	if nil != err {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, serviceClass.Name, serviceClass.Spec.ExternalName,
+			instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, serviceClass.Name, serviceClass.Spec.ExternalName,
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
