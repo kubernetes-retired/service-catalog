@@ -220,8 +220,9 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 verify: .init .generate_files verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
-	@bash -c '[ "`cat .out`" == "" ] || \
-	  (echo -e "\n*** Please 'gofmt' the following:" ; cat .out ; echo ; false)'
+	@[ ! -s .out ] || \
+	  (echo && echo "*** Please 'gofmt' the following:" && \
+	  cat .out && echo && rm .out && false)
 	@rm .out
 	@#
 	@echo Running golint and go vet:
@@ -240,7 +241,7 @@ verify: .init .generate_files verify-client-gen
 	$(DOCKER_CMD) go vet $(NON_VENDOR_DIRS)
 	@echo Running repo-infra verify scripts
 	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
-	@bash -c '[ "`cat .out`" == "" ] || (cat .out ; false)'
+	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
 	@echo Running href checker:
