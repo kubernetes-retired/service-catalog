@@ -268,11 +268,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 	// If there is no op in progress, and the instance either was never
 	// provisioned or was already deprovisioned due to orphan mitigation,
-	// we can just clear the finalizer and delete. One possible  scenario
-	// is if  the service class name referenced never existed.
-	if !instance.Status.AsyncOpInProgress &&
-		!instance.Status.OrphanMitigationInProgress &&
-		(isServiceInstanceFailed(instance) || instance.Status.ReconciledGeneration == 0) {
+	// we can just clear the finalizer and delete. One possible scenario
+	// is if the service class name referenced never existed.
+	if instance.Status.CurrentOperation == "" &&
+		instance.Status.ReconciledGeneration == 0 ||
+		(isServiceInstanceFailed(instance) && instance.Status.ReconciledGeneration == 1) {
 
 		glog.V(5).Infof(
 			`%s "%s/%s": Clearing catalog finalizer`,
