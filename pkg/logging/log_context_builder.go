@@ -23,7 +23,7 @@ import (
 // LogContextBuilder allows building up log lines with context that is important
 // for debugging and tracing. This class helps create log line formatting
 // consistantly. Logging should always be in the form:
-// <kind> "<Namespace>/<Name>": <msg>
+// <Kind> "<Namespace>/<Name>": <message>
 type LogContextBuilder struct {
 	Kind      string
 	Namespace string
@@ -45,6 +45,9 @@ func (k Kind) String() string {
 	}
 }
 
+// NewLogContextBuilder returns a new LogContextBuilder that can be used to format messages in the
+// form `<Kind> "<Namespace>/<Name>": <message>`.
+// kind,  namespace, name are all optional.
 func NewLogContextBuilder(kind Kind, namespace string, name string) *LogContextBuilder {
 	lb := new(LogContextBuilder)
 	lb.Kind = kind.String()
@@ -53,21 +56,25 @@ func NewLogContextBuilder(kind Kind, namespace string, name string) *LogContextB
 	return lb
 }
 
+// SetKind sets the kind to use in the source context for messages.
 func (l *LogContextBuilder) SetKind(k string) *LogContextBuilder {
 	l.Kind = k
 	return l
 }
 
+// SetNamespace sets the namespace to use in the source context for messages.
 func (l *LogContextBuilder) SetNamespace(n string) *LogContextBuilder {
 	l.Namespace = n
 	return l
 }
 
+// SetName sets the name to use in the source context for messages.
 func (l *LogContextBuilder) SetName(n string) *LogContextBuilder {
 	l.Name = n
 	return l
 }
 
+// Message returns a string with message prepended with the current source context.
 func (l *LogContextBuilder) Message(msg string) string {
 	if l.Kind != "" || l.Namespace != "" || l.Name != "" {
 		return fmt.Sprintf(`%s: %s`, l, msg)
