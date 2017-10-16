@@ -78,7 +78,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	}
 
 	// cannot find what we're trying to create an instance of
-	sc, err := d.getClusterServiceClassByExternalName(a, instance.Spec.ExternalClusterServiceClassName)
+	sc, err := d.getClusterServiceClassByPlanReference(a, &instance.Spec.PlanReference)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
@@ -120,9 +120,13 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	// otherwise, by default, pick the only plan that exists for the service class
 
 	p := plans[0]
-	glog.V(4).Infof("Using default plan %q for Service Class %q for instance %s",
-		p.Spec.ExternalName, sc.Spec.ExternalName, instance.Name)
-	instance.Spec.ExternalClusterServicePlanName = p.Spec.ExternalName
+	glog.V(4).Infof("Using default plan %q (K8S: %q) for Service Class %q for instance %s",
+		p.Spec.ExternalName, p.Name, sc.Spec.ExternalName, instance.Name)
+	if instance.Spec.ExternalClusterServiceClassName != "" {
+		instance.Spec.ExternalClusterServicePlanName = p.Spec.ExternalName
+	} else {
+		instance.Spec.ClusterServicePlanName = p.Name
+	}
 	return nil
 }
 
@@ -149,6 +153,18 @@ func (d *defaultServicePlan) Validate() error {
 		return errors.New("missing serviceplan interface")
 	}
 	return nil
+}
+
+func (d *defaultServicePlan) getClusterServiceClassByPlanReference(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
+	if ref.ExternalClusterServiceClassName != "" {
+		return d.getClusterServiceClassByExternalName(a, ref.ExternalClusterServiceClassName)
+	}
+	return d.getClusterServiceClassByK8SName(a, ref.ClusterServiceClassName)
+}
+
+func (d *defaultServicePlan) getClusterServiceClassByK8SName(a admission.Attributes, scK8SName string) (*servicecatalog.ClusterServiceClass, error) {
+	glog.V(4).Infof("Fetching serviceclass by class k8s name %q", scK8SName)
+	return d.scClient.Get(scK8SName, apimachineryv1.GetOptions{})
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByExternalName(a admission.Attributes, scName string) (*servicecatalog.ClusterServiceClass, error) {
