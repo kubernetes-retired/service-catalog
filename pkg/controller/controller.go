@@ -248,7 +248,7 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // a brokerClient to use for that method given an ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
-	pcb := pretty.NewPrettyContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(

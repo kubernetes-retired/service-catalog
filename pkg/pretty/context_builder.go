@@ -23,6 +23,7 @@ import (
 // Kind is used for the enum of the Type of object we are building context for.
 type Kind int
 
+// Names of Types to use when creating pretty messages.
 const (
 	ServiceInstance Kind = 1
 )
@@ -36,21 +37,21 @@ func (k Kind) String() string {
 	}
 }
 
-// PrettyContextBuilder allows building up pretty message lines with context
+// ContextBuilder allows building up pretty message lines with context
 // that is important for debugging and tracing. This class helps create log
 // line formatting consistency. Pretty lines should be in the form:
 // <Kind> "<Namespace>/<Name>": <message>
-type PrettyContextBuilder struct {
+type ContextBuilder struct {
 	Kind      Kind
 	Namespace string
 	Name      string
 }
 
-// NewPrettyContextBuilder returns a new PrettyContextBuilder that can be used to format messages in the
+// NewContextBuilder returns a new ContextBuilder that can be used to format messages in the
 // form `<Kind> "<Namespace>/<Name>": <message>`.
 // kind,  namespace, name are all optional.
-func NewPrettyContextBuilder(kind Kind, namespace string, name string) *PrettyContextBuilder {
-	lb := new(PrettyContextBuilder)
+func NewContextBuilder(kind Kind, namespace string, name string) *ContextBuilder {
+	lb := new(ContextBuilder)
 	lb.Kind = kind
 	lb.Namespace = namespace
 	lb.Name = name
@@ -58,25 +59,25 @@ func NewPrettyContextBuilder(kind Kind, namespace string, name string) *PrettyCo
 }
 
 // SetKind sets the kind to use in the source context for messages.
-func (pcb *PrettyContextBuilder) SetKind(k Kind) *PrettyContextBuilder {
+func (pcb *ContextBuilder) SetKind(k Kind) *ContextBuilder {
 	pcb.Kind = k
 	return pcb
 }
 
 // SetNamespace sets the namespace to use in the source context for messages.
-func (pcb *PrettyContextBuilder) SetNamespace(n string) *PrettyContextBuilder {
+func (pcb *ContextBuilder) SetNamespace(n string) *ContextBuilder {
 	pcb.Namespace = n
 	return pcb
 }
 
 // SetName sets the name to use in the source context for messages.
-func (pcb *PrettyContextBuilder) SetName(n string) *PrettyContextBuilder {
+func (pcb *ContextBuilder) SetName(n string) *ContextBuilder {
 	pcb.Name = n
 	return pcb
 }
 
 // Message returns a string with message prepended with the current source context.
-func (pcb *PrettyContextBuilder) Message(msg string) string {
+func (pcb *ContextBuilder) Message(msg string) string {
 	if pcb.Kind > 0 || pcb.Namespace != "" || pcb.Name != "" {
 		return fmt.Sprintf(`%s: %s`, pcb, msg)
 	}
@@ -85,19 +86,19 @@ func (pcb *PrettyContextBuilder) Message(msg string) string {
 
 // TODO(n3wscott): Support <type> (K8S: <K8S-Type-Name> ExternalName: <External-Type-Name>)
 
-func (l PrettyContextBuilder) String() string {
+func (pcb ContextBuilder) String() string {
 	s := ""
 	space := ""
-	if l.Kind > 0 {
-		s += fmt.Sprintf("%s", l.Kind)
+	if pcb.Kind > 0 {
+		s += fmt.Sprintf("%s", pcb.Kind)
 		space = " "
 	}
-	if l.Namespace != "" && l.Name != "" {
-		s += fmt.Sprintf(`%s"%s/%s"`, space, l.Namespace, l.Name)
-	} else if l.Namespace != "" {
-		s += fmt.Sprintf(`%s"%s"`, space, l.Namespace)
-	} else if l.Name != "" {
-		s += fmt.Sprintf(`%s"%s"`, space, l.Name)
+	if pcb.Namespace != "" && pcb.Name != "" {
+		s += fmt.Sprintf(`%s"%s/%s"`, space, pcb.Namespace, pcb.Name)
+	} else if pcb.Namespace != "" {
+		s += fmt.Sprintf(`%s"%s"`, space, pcb.Namespace)
+	} else if pcb.Name != "" {
+		s += fmt.Sprintf(`%s"%s"`, space, pcb.Name)
 	}
 	return s
 }

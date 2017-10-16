@@ -21,95 +21,95 @@ import (
 )
 
 func TestPrettyContextBuilderKind(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetKind(ServiceInstance)
 
 	e := "ServiceInstance"
 	g := pcb.String()
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderNamespace(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetNamespace("Namespace")
 
 	e := `"Namespace"`
 	g := pcb.String()
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderName(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetName("Name")
 
 	e := `"Name"`
 	g := pcb.String()
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderKindAndNamespace(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetKind(ServiceInstance).SetNamespace("Namespace")
 
 	e := `ServiceInstance "Namespace"`
 	g := pcb.String()
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderKindAndName(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetKind(ServiceInstance).SetName("Name")
 
 	e := `ServiceInstance "Name"`
 	g := pcb.String()
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderKindNamespaceName(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetKind(ServiceInstance).SetNamespace("Namespace").SetName("Name")
 
 	e := `ServiceInstance "Namespace/Name"`
 	g := pcb.String()
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderMsg(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	e := `Msg`
 	g := pcb.Message("Msg")
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
 
 func TestPrettyContextBuilderContextAndMsg(t *testing.T) {
-	pcb := PrettyContextBuilder{}
+	pcb := ContextBuilder{}
 
 	pcb.SetKind(ServiceInstance).SetNamespace("Namespace").SetName("Name")
 
 	e := `ServiceInstance "Namespace/Name": Msg`
 	g := pcb.Message("Msg")
 	if g != e {
-		t.Fatalf("Unexpected value of PrettyContextBuilder String; expected %v, got %v", e, g)
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
