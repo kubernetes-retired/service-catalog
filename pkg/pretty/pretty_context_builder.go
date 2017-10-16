@@ -20,22 +20,6 @@ import (
 	"fmt"
 )
 
-// Kind is used for the enum of the Type of object we are building context for.
-type Kind int
-
-const (
-	ServiceInstance Kind = 1
-)
-
-func (k Kind) String() string {
-	switch k {
-	case ServiceInstance:
-		return "ServiceInstance"
-	default:
-		return ""
-	}
-}
-
 // PrettyContextBuilder allows building up pretty message lines with context
 // that is important for debugging and tracing. This class helps create log
 // line formatting consistency. Pretty lines should be in the form:
