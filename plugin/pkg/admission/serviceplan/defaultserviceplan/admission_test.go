@@ -65,9 +65,8 @@ func newFakeServiceCatalogClientForTest(sc *servicecatalog.ClusterServiceClass, 
 		fakeClient.AddReactor("get", "clusterserviceclasses", func(action core.Action) (bool, runtime.Object, error) {
 			if sc != nil {
 				return true, sc, nil
-			} else {
-				return true, nil, apierrors.NewNotFound(schema.GroupResource{}, "")
 			}
+			return true, nil, apierrors.NewNotFound(schema.GroupResource{}, "")
 		})
 	} else {
 		// react to the given service class list

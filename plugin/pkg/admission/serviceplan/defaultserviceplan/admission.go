@@ -158,9 +158,8 @@ func (d *defaultServicePlan) Validate() error {
 func (d *defaultServicePlan) getClusterServiceClassByPlanReference(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
 	if ref.ExternalClusterServiceClassName != "" {
 		return d.getClusterServiceClassByExternalName(a, ref.ExternalClusterServiceClassName)
-	} else {
-		return d.getClusterServiceClassByK8SName(a, ref.ClusterServiceClassName)
 	}
+	return d.getClusterServiceClassByK8SName(a, ref.ClusterServiceClassName)
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByK8SName(a admission.Attributes, scK8SName string) (*servicecatalog.ClusterServiceClass, error) {
