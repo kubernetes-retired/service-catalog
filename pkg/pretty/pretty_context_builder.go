@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package logging
+package pretty
 
 import (
 	"fmt"
@@ -36,21 +36,21 @@ func (k Kind) String() string {
 	}
 }
 
-// LogContextBuilder allows building up log lines with context that is important
-// for debugging and tracing. This class helps create log line formatting
-// consistantly. Logging should always be in the form:
+// PrettyContextBuilder allows building up pretty message lines with context
+// that is important for debugging and tracing. This class helps create log
+// line formatting consistency. Pretty lines should be in the form:
 // <Kind> "<Namespace>/<Name>": <message>
-type LogContextBuilder struct {
+type PrettyContextBuilder struct {
 	Kind      Kind
 	Namespace string
 	Name      string
 }
 
-// NewLogContextBuilder returns a new LogContextBuilder that can be used to format messages in the
+// NewPrettyContextBuilder returns a new PrettyContextBuilder that can be used to format messages in the
 // form `<Kind> "<Namespace>/<Name>": <message>`.
 // kind,  namespace, name are all optional.
-func NewLogContextBuilder(kind Kind, namespace string, name string) *LogContextBuilder {
-	lb := new(LogContextBuilder)
+func NewPrettyContextBuilder(kind Kind, namespace string, name string) *PrettyContextBuilder {
+	lb := new(PrettyContextBuilder)
 	lb.Kind = kind
 	lb.Namespace = namespace
 	lb.Name = name
@@ -58,34 +58,34 @@ func NewLogContextBuilder(kind Kind, namespace string, name string) *LogContextB
 }
 
 // SetKind sets the kind to use in the source context for messages.
-func (l *LogContextBuilder) SetKind(k Kind) *LogContextBuilder {
-	l.Kind = k
-	return l
+func (pcb *PrettyContextBuilder) SetKind(k Kind) *PrettyContextBuilder {
+	pcb.Kind = k
+	return pcb
 }
 
 // SetNamespace sets the namespace to use in the source context for messages.
-func (l *LogContextBuilder) SetNamespace(n string) *LogContextBuilder {
-	l.Namespace = n
-	return l
+func (pcb *PrettyContextBuilder) SetNamespace(n string) *PrettyContextBuilder {
+	pcb.Namespace = n
+	return pcb
 }
 
 // SetName sets the name to use in the source context for messages.
-func (l *LogContextBuilder) SetName(n string) *LogContextBuilder {
-	l.Name = n
-	return l
+func (pcb *PrettyContextBuilder) SetName(n string) *PrettyContextBuilder {
+	pcb.Name = n
+	return pcb
 }
 
 // Message returns a string with message prepended with the current source context.
-func (l *LogContextBuilder) Message(msg string) string {
-	if l.Kind > 0 || l.Namespace != "" || l.Name != "" {
-		return fmt.Sprintf(`%s: %s`, l, msg)
+func (pcb *PrettyContextBuilder) Message(msg string) string {
+	if pcb.Kind > 0 || pcb.Namespace != "" || pcb.Name != "" {
+		return fmt.Sprintf(`%s: %s`, pcb, msg)
 	}
 	return msg
 }
 
 // TODO(n3wscott): Support <type> (K8S: <K8S-Type-Name> ExternalName: <External-Type-Name>)
 
-func (l LogContextBuilder) String() string {
+func (l PrettyContextBuilder) String() string {
 	s := ""
 	space := ""
 	if l.Kind > 0 {
