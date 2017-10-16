@@ -598,6 +598,8 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	toUpdate.Spec.Tags = serviceClass.Spec.Tags
 	toUpdate.Spec.Description = serviceClass.Spec.Description
 	toUpdate.Spec.Requires = serviceClass.Spec.Requires
+	toUpdate.Spec.ExternalName = serviceClass.Spec.ExternalName
+	toUpdate.Spec.ExternalMetadata = serviceClass.Spec.ExternalMetadata
 
 	if _, err := c.serviceCatalogClient.ClusterServiceClasses().Update(toUpdate); err != nil {
 		glog.Errorf(
@@ -663,6 +665,8 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 	toUpdate.Spec.Description = servicePlan.Spec.Description
 	toUpdate.Spec.Bindable = servicePlan.Spec.Bindable
 	toUpdate.Spec.Free = servicePlan.Spec.Free
+	toUpdate.Spec.ExternalName = servicePlan.Spec.ExternalName
+	toUpdate.Spec.ExternalMetadata = servicePlan.Spec.ExternalMetadata
 	toUpdate.Spec.ServiceInstanceCreateParameterSchema = servicePlan.Spec.ServiceInstanceCreateParameterSchema
 	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
 	toUpdate.Spec.ServiceBindingCreateParameterSchema = servicePlan.Spec.ServiceBindingCreateParameterSchema
