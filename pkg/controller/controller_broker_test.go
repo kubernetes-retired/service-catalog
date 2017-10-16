@@ -26,6 +26,7 @@ import (
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -1048,6 +1049,105 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 		}
 		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
 			t.Errorf("%v: condition message didn't match; expected %v, got %v", tc.name, e, a)
+		}
+	}
+}
+
+func TestReconcileClusterServicePlanFromClusterServiceBrokerCatalog(t *testing.T) {
+	updatedPlan := func() *v1beta1.ClusterServicePlan {
+		p := getTestClusterServicePlan()
+		p.Spec.Description = "new-description"
+		p.Spec.ExternalName = "new-value"
+		p.Spec.Free = false
+		p.Spec.ExternalMetadata = &runtime.RawExtension{Raw: []byte(`{"field1": "value1"}`)}
+		p.Spec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: []byte(`{"field1": "value1"}`)}
+		p.Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: []byte(`{"field1": "value1"}`)}
+		p.Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: []byte(`{"field1": "value1"}`)}
+
+		return p
+	}
+
+	cases := []struct {
+		name                    string
+		newServicePlan          *v1beta1.ClusterServicePlan
+		existingServicePlan     *v1beta1.ClusterServicePlan
+		listerServicePlan       *v1beta1.ClusterServicePlan
+		shouldError             bool
+		errText                 *string
+		catalogClientPrepFunc   func(*fake.Clientset)
+		catalogActionsCheckFunc func(t *testing.T, name string, actions []clientgotesting.Action)
+	}{
+		{
+			name:           "new plan",
+			newServicePlan: getTestClusterServicePlan(),
+			shouldError:    false,
+			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
+				expectNumberOfActions(t, name, actions, 1)
+				expectCreate(t, name, actions[0], getTestClusterServicePlan())
+			},
+		},
+		{
+			name:                "exists, but for a different broker",
+			newServicePlan:      getTestClusterServicePlan(),
+			existingServicePlan: getTestClusterServicePlan(),
+			listerServicePlan: func() *v1beta1.ClusterServicePlan {
+				p := getTestClusterServicePlan()
+				p.Spec.ClusterServiceBrokerName = "something-else"
+				return p
+			}(),
+			shouldError: true,
+			errText:     strPtr(`ClusterServiceBroker "test-broker": ClusterServicePlan "test-plan" already exists for Broker "something-else"`),
+		},
+		{
+			name:                "plan update",
+			newServicePlan:      updatedPlan(),
+			existingServicePlan: getTestClusterServicePlan(),
+			shouldError:         false,
+			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
+				expectNumberOfActions(t, name, actions, 1)
+				expectUpdate(t, name, actions[0], updatedPlan())
+			},
+		},
+		{
+			name:                "plan update - failure",
+			newServicePlan:      updatedPlan(),
+			existingServicePlan: getTestClusterServicePlan(),
+			catalogClientPrepFunc: func(client *fake.Clientset) {
+				client.AddReactor("update", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					return true, nil, errors.New("oops")
+				})
+			},
+			shouldError: true,
+			errText:     strPtr("oops"),
+		},
+	}
+
+	broker := getTestClusterServiceBroker()
+
+	for _, tc := range cases {
+		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
+		if tc.catalogClientPrepFunc != nil {
+			tc.catalogClientPrepFunc(fakeCatalogClient)
+		}
+
+		if tc.listerServicePlan != nil {
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(tc.listerServicePlan)
+		}
+
+		err := testController.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, tc.newServicePlan, tc.existingServicePlan)
+		if err != nil {
+			if !tc.shouldError {
+				t.Errorf("%v: unexpected error from method under test: %v", tc.name, err)
+				continue
+			} else if tc.errText != nil && *tc.errText != err.Error() {
+				t.Errorf("%v: unexpected error text from method under test; expected %v, got %v", tc.name, tc.errText, err.Error())
+				continue
+			}
+		}
+
+		if tc.catalogActionsCheckFunc != nil {
+			actions := fakeCatalogClient.Actions()
+			tc.catalogActionsCheckFunc(t, tc.name, actions)
 		}
 	}
 }
