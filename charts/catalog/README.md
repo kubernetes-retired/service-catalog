@@ -59,6 +59,7 @@ chart and their default values.
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
 | `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator (requires setting `apiserver.tls.ca` to work) | `false` |
+| `rbacEnable` | If true, create & use RBAC resources | `true` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
