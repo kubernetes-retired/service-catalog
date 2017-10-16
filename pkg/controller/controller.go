@@ -318,7 +318,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
 	s := fmt.Sprintf("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
-	glog.V(4).Infof(lbc.Message(s))
+	glog.V(4).Info(lbc.Message(s))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, nil, "", nil, err
