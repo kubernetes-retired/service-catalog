@@ -20,20 +20,10 @@ import (
 	"fmt"
 )
 
-// LogContextBuilder allows building up log lines with context that is important
-// for debugging and tracing. This class helps create log line formatting
-// consistantly. Logging should always be in the form:
-// <Kind> "<Namespace>/<Name>": <message>
-type LogContextBuilder struct {
-	Kind      string
-	Namespace string
-	Name      string
-}
-
 type Kind int
 
 const (
-	ServiceInstance Kind = iota
+	ServiceInstance Kind = 1
 )
 
 func (k Kind) String() string {
@@ -45,19 +35,29 @@ func (k Kind) String() string {
 	}
 }
 
+// LogContextBuilder allows building up log lines with context that is important
+// for debugging and tracing. This class helps create log line formatting
+// consistantly. Logging should always be in the form:
+// <Kind> "<Namespace>/<Name>": <message>
+type LogContextBuilder struct {
+	Kind      Kind
+	Namespace string
+	Name      string
+}
+
 // NewLogContextBuilder returns a new LogContextBuilder that can be used to format messages in the
 // form `<Kind> "<Namespace>/<Name>": <message>`.
 // kind,  namespace, name are all optional.
 func NewLogContextBuilder(kind Kind, namespace string, name string) *LogContextBuilder {
 	lb := new(LogContextBuilder)
-	lb.Kind = kind.String()
+	lb.Kind = kind
 	lb.Namespace = namespace
 	lb.Name = name
 	return lb
 }
 
 // SetKind sets the kind to use in the source context for messages.
-func (l *LogContextBuilder) SetKind(k string) *LogContextBuilder {
+func (l *LogContextBuilder) SetKind(k Kind) *LogContextBuilder {
 	l.Kind = k
 	return l
 }
@@ -76,7 +76,7 @@ func (l *LogContextBuilder) SetName(n string) *LogContextBuilder {
 
 // Message returns a string with message prepended with the current source context.
 func (l *LogContextBuilder) Message(msg string) string {
-	if l.Kind != "" || l.Namespace != "" || l.Name != "" {
+	if l.Kind > 0 || l.Namespace != "" || l.Name != "" {
 		return fmt.Sprintf(`%s: %s`, l, msg)
 	}
 	return msg
@@ -87,7 +87,7 @@ func (l *LogContextBuilder) Message(msg string) string {
 func (l LogContextBuilder) String() string {
 	s := ""
 	space := ""
-	if l.Kind != "" {
+	if l.Kind > 0 {
 		s += fmt.Sprintf("%s", l.Kind)
 		space = " "
 	}

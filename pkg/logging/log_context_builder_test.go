@@ -23,9 +23,9 @@ import (
 func TestLogContextBuilderKind(t *testing.T) {
 	lbc := LogContextBuilder{}
 
-	lbc.SetKind("Kind")
+	lbc.SetKind(ServiceInstance)
 
-	e := "Kind"
+	e := "ServiceInstance"
 	g := lbc.String()
 	if g != e {
 		t.Fatalf("Unexpected value of LogContextBuilder String; expected %v, got %v", e, g)
@@ -59,9 +59,9 @@ func TestLogContextBuilderName(t *testing.T) {
 func TestLogContextBuilderKindAndNamespace(t *testing.T) {
 	lbc := LogContextBuilder{}
 
-	lbc.SetKind("Kind").SetNamespace("Namespace")
+	lbc.SetKind(ServiceInstance).SetNamespace("Namespace")
 
-	e := `Kind "Namespace"`
+	e := `ServiceInstance "Namespace"`
 	g := lbc.String()
 	if g != e {
 		t.Fatalf("Unexpected value of LogContextBuilder String; expected %v, got %v", e, g)
@@ -71,9 +71,9 @@ func TestLogContextBuilderKindAndNamespace(t *testing.T) {
 func TestLogContextBuilderKindAndName(t *testing.T) {
 	lbc := LogContextBuilder{}
 
-	lbc.SetKind("Kind").SetName("Name")
+	lbc.SetKind(ServiceInstance).SetName("Name")
 
-	e := `Kind "Name"`
+	e := `ServiceInstance "Name"`
 	g := lbc.String()
 	if g != e {
 		t.Fatalf("Unexpected value of LogContextBuilder String; expected %v, got %v", e, g)
@@ -83,9 +83,9 @@ func TestLogContextBuilderKindAndName(t *testing.T) {
 func TestLogContextBuilderKindNamespaceName(t *testing.T) {
 	lbc := LogContextBuilder{}
 
-	lbc.SetKind("Kind").SetNamespace("Namespace").SetName("Name")
+	lbc.SetKind(ServiceInstance).SetNamespace("Namespace").SetName("Name")
 
-	e := `Kind "Namespace/Name"`
+	e := `ServiceInstance "Namespace/Name"`
 	g := lbc.String()
 	if g != e {
 		t.Fatalf("Unexpected value of LogContextBuilder String; expected %v, got %v", e, g)
@@ -105,9 +105,9 @@ func TestLogContextBuilderMsg(t *testing.T) {
 func TestLogContextBuilderContextAndMsg(t *testing.T) {
 	lbc := LogContextBuilder{}
 
-	lbc.SetKind("Kind").SetNamespace("Namespace").SetName("Name")
+	lbc.SetKind(ServiceInstance).SetNamespace("Namespace").SetName("Name")
 
-	e := `Kind "Namespace/Name": Msg`
+	e := `ServiceInstance "Namespace/Name": Msg`
 	g := lbc.Message("Msg")
 	if g != e {
 		t.Fatalf("Unexpected value of LogContextBuilder String; expected %v, got %v", e, g)
