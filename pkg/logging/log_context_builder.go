@@ -20,6 +20,7 @@ import (
 	"fmt"
 )
 
+// Kind is used for the enum of the Type of object we are building context for.
 type Kind int
 
 const (
