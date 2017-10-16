@@ -23,8 +23,7 @@ import (
 )
 
 // Print name form `<Kind> (K8S: <K8S-Name> ExternalName: <External-Name>)`
-// kind is required.
-// k8sName and externalName are optional
+// kind is required. k8sName and externalName are optional
 func Name(kind Kind, k8sName, externalName string) string {
 	s := fmt.Sprintf("%s", kind)
 	if k8sName != "" && externalName != "" {
@@ -37,9 +36,18 @@ func Name(kind Kind, k8sName, externalName string) string {
 	return s
 }
 
+// ClusterServiceClassName returns a string with the k8s name and external name if available.
 func ClusterServiceClassName(serviceClass *v1beta1.ClusterServiceClass) string {
 	if serviceClass != nil {
 		return Name(ClusterServiceClass, serviceClass.Name, serviceClass.Spec.ExternalName)
 	}
 	return Name(ClusterServiceClass, "", "")
+}
+
+// ClusterServicePlanName returns a string with the k8s name and external name if available.
+func ClusterServicePlanName(servicePlan *v1beta1.ClusterServicePlan) string {
+	if servicePlan != nil {
+		return Name(ClusterServicePlan, servicePlan.Name, servicePlan.Spec.ExternalName)
+	}
+	return Name(ClusterServicePlan, "", "")
 }

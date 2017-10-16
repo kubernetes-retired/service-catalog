@@ -20,13 +20,18 @@ package pretty
 type Kind int
 
 const (
-	Unknown         Kind = 0
-	ServiceInstance Kind = iota
+	Unknown Kind = iota
 	ClusterServiceClass
+	ClusterServicePlan
+	ServiceInstance
 )
 
 func (k Kind) String() string {
 	switch k {
+	case ClusterServiceClass:
+		return "ClusterServiceClass"
+	case ClusterServicePlan:
+		return "ClusterServicePlan"
 	case ServiceInstance:
 		return "ServiceInstance"
 	default:
