@@ -19,6 +19,7 @@ package pretty
 // Kind is used for the enum of the Type of object we are building context for.
 type Kind int
 
+// Names of Types to use when creating pretty messages
 const (
 	Unknown Kind = iota
 	ClusterServiceClass
