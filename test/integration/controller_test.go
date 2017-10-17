@@ -1100,7 +1100,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		retInst,
 		v1beta1.ServiceInstanceConditionReady,
 		v1beta1.ConditionFalse,
-		"DeprovisionedSuccessfully",
+		"OrphanMitigationSuccessful",
 	)
 
 	err = client.ServiceInstances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})

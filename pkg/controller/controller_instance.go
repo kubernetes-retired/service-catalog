@@ -42,12 +42,14 @@ import (
 var typeSI = "ServiceInstance"
 
 const (
-	successDeprovisionReason     string = "DeprovisionedSuccessfully"
-	successDeprovisionMessage    string = "The instance was deprovisioned successfully"
-	successUpdateInstanceReason  string = "InstanceUpdatedSuccessfully"
-	successUpdateInstanceMessage string = "The instance was updated successfully"
-	successProvisionReason       string = "ProvisionedSuccessfully"
-	successProvisionMessage      string = "The instance was provisioned successfully"
+	successDeprovisionReason       string = "DeprovisionedSuccessfully"
+	successDeprovisionMessage      string = "The instance was deprovisioned successfully"
+	successUpdateInstanceReason    string = "InstanceUpdatedSuccessfully"
+	successUpdateInstanceMessage   string = "The instance was updated successfully"
+	successProvisionReason         string = "ProvisionedSuccessfully"
+	successProvisionMessage        string = "The instance was provisioned successfully"
+	successOrphanMitigationReason  string = "OrphanMitigationSuccessful"
+	successOrphanMitigationMessage string = "Orphan mitigation was completed successfully"
 
 	errorWithParameters                        string = "ErrorWithParameters"
 	errorProvisionCallFailedReason             string = "ProvisionCallFailed"
@@ -65,22 +67,22 @@ const (
 	errorNonexistentClusterServicePlanReason   string = "ReferencesNonexistentServicePlan"
 	errorNonexistentClusterServiceBrokerReason string = "ReferencesNonexistentBroker"
 	errorFindingNamespaceServiceInstanceReason string = "ErrorFindingNamespaceForInstance"
+	errorOrphanMitigationFailedReason          string = "OrphanMitigationFailed"
 
-	asyncProvisioningReason         string = "Provisioning"
-	asyncProvisioningMessage        string = "The instance is being provisioned asynchronously"
-	asyncUpdatingInstanceReason     string = "UpdatingInstance"
-	asyncUpdatingInstanceMessage    string = "The instance is being updated asynchronously"
-	asyncDeprovisioningReason       string = "Deprovisioning"
-	asyncDeprovisioningMessage      string = "The instance is being deprovisioned asynchronously"
-	provisioningInFlightReason      string = "ProvisionRequestInFlight"
-	provisioningInFlightMessage     string = "Provision request for ServiceInstance in-flight to Broker"
-	instanceUpdatingInFlightReason  string = "UpdateInstanceRequestInFlight"
-	instanceUpdatingInFlightMessage string = "Update request for ServiceInstance in-flight to Broker"
-	deprovisioningInFlightReason    string = "DeprovisionRequestInFlight"
-	deprovisioningInFlightMessage   string = "Deprovision request for ServiceInstance in-flight to Broker"
-
-	successOrphanMitigationReason string = "OrphanMitigationSuccessful"
-	errorOrphanMigitationReason   string = "OrphanMitigationFailed"
+	asyncProvisioningReason                 string = "Provisioning"
+	asyncProvisioningMessage                string = "The instance is being provisioned asynchronously"
+	asyncUpdatingInstanceReason             string = "UpdatingInstance"
+	asyncUpdatingInstanceMessage            string = "The instance is being updated asynchronously"
+	asyncDeprovisioningReason               string = "Deprovisioning"
+	asyncDeprovisioningMessage              string = "The instance is being deprovisioned asynchronously"
+	provisioningInFlightReason              string = "ProvisionRequestInFlight"
+	provisioningInFlightMessage             string = "Provision request for ServiceInstance in-flight to Broker"
+	instanceUpdatingInFlightReason          string = "UpdateInstanceRequestInFlight"
+	instanceUpdatingInFlightMessage         string = "Update request for ServiceInstance in-flight to Broker"
+	deprovisioningInFlightReason            string = "DeprovisionRequestInFlight"
+	deprovisioningInFlightMessage           string = "Deprovision request for ServiceInstance in-flight to Broker"
+	startingInstanceOrphanMitigationReason  string = "StartingInstanceOrphanMitigation"
+	startingInstanceOrphanMitigationMessage string = "The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource"
 )
 
 // ServiceInstance handlers and control-loop
@@ -220,6 +222,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	if instance.DeletionTimestamp == nil && !instance.Status.OrphanMitigationInProgress {
 		return nil
 	}
+
+	glog.V(4).Infof(
+		`%s "%s/%s": Processing deleting event`,
+		typeSI, instance.Namespace, instance.Name,
+	)
 
 	// Determine if any credentials exist for this instance.  We don't want to
 	// delete the instance if there are any associated creds
@@ -372,14 +379,21 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionUnknown,
-				errorDeprovisionCalledReason,
-				"Deprovision call failed. "+s)
+			if instance.Status.OrphanMitigationInProgress {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorOrphanMitigationFailedReason,
+					"Orphan mitigation deprovision call failed. "+s)
+			} else {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorDeprovisionCalledReason,
+					"Deprovision call failed. "+s)
 
-			if !instance.Status.OrphanMitigationInProgress {
 				// Do not overwrite 'Failed' message if deprovisioning due to orphan
 				// mitigation in order to prevent loss of original reason for the
 				// orphan.
@@ -424,7 +438,14 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
-			if !instance.Status.OrphanMitigationInProgress {
+			if instance.Status.OrphanMitigationInProgress {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorOrphanMitigationFailedReason,
+					"Orphan mitigation deprovision call failed. "+s)
+			} else {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
@@ -489,29 +510,47 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	c.clearServiceInstanceCurrentOperation(toUpdate)
 	toUpdate.Status.ExternalProperties = nil
 
-	setServiceInstanceCondition(
-		toUpdate,
-		v1beta1.ServiceInstanceConditionReady,
-		v1beta1.ConditionFalse,
-		successDeprovisionReason,
-		successDeprovisionMessage,
-	)
-
 	if instance.DeletionTimestamp != nil {
+		glog.V(5).Infof(
+			`%s "%s/%s": Successfully deprovisioned, %s at %s`,
+			typeSI, instance.Namespace, instance.Name, serviceClass.Name, brokerName,
+		)
+		c.recorder.Event(instance, corev1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+
+		setServiceInstanceCondition(
+			toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			successDeprovisionReason,
+			successDeprovisionMessage,
+		)
+
 		// Clear the finalizer for normal instance deletions
 		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 		toUpdate.Finalizers = finalizers.List()
+	} else {
+		// Deprovision due to orphan mitigation successful
+		glog.V(5).Infof(
+			`%s "%s/%s": %s`,
+			typeSI,
+			instance.Namespace,
+			instance.Name,
+			successOrphanMitigationMessage,
+		)
+		c.recorder.Event(instance, corev1.EventTypeNormal, successOrphanMitigationReason, successOrphanMitigationMessage)
+
+		setServiceInstanceCondition(
+			toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			successOrphanMitigationReason,
+			successOrphanMitigationMessage,
+		)
 	}
 
 	if _, err = c.updateServiceInstanceStatus(toUpdate); err != nil {
 		return err
 	}
-
-	c.recorder.Event(instance, corev1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-	glog.V(5).Infof(
-		`%s "%s/%s": Successfully deprovisioned, %s at %s`,
-		typeSI, instance.Namespace, instance.Name, serviceClass.Name, brokerName,
-	)
 
 	return nil
 }
@@ -826,15 +865,9 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 				v1beta1.ConditionTrue,
 				"ClusterServiceBrokerReturnedFailure",
 				s)
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				reason,
-				fmt.Sprintf("ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v", provisionOrUpdateText, s))
 
 			if isProvisioning && shouldStartOrphanMitigation(httpErr.StatusCode) {
-				setServiceInstanceStartOrphanMitigation(toUpdate)
+				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 
 				if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 					return err
@@ -842,6 +875,13 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 
 				return httpErr
 			}
+
+			setServiceInstanceCondition(
+				toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				reason,
+				fmt.Sprintf("ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v", provisionOrUpdateText, s))
 
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 
@@ -879,20 +919,20 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			// begin orphan mitigation.
 			setServiceInstanceCondition(
 				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				reason,
-				message)
-			setServiceInstanceCondition(
-				toUpdate,
 				v1beta1.ServiceInstanceConditionFailed,
 				v1beta1.ConditionTrue,
 				reason,
 				message)
 
 			if isProvisioning {
-				setServiceInstanceStartOrphanMitigation(toUpdate)
+				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			} else {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
+					reason,
+					message)
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			}
 
@@ -1071,7 +1111,14 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		)
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
-		if !mitigatingOrphan {
+		if mitigatingOrphan {
+			setServiceInstanceCondition(
+				toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionUnknown,
+				errorOrphanMitigationFailedReason,
+				"Orphan mitigation failed: "+s)
+		} else {
 			setServiceInstanceCondition(toUpdate,
 				v1beta1.ServiceInstanceConditionFailed,
 				v1beta1.ConditionTrue,
@@ -1082,7 +1129,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		if !provisioning {
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 		} else {
-			setServiceInstanceStartOrphanMitigation(toUpdate)
+			c.setServiceInstanceStartOrphanMitigation(toUpdate)
 		}
 
 		if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -1149,15 +1196,38 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.ExternalProperties = nil
 
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				successDeprovisionReason,
-				successDeprovisionMessage,
-			)
+			if mitigatingOrphan {
+				glog.V(5).Infof(
+					`%s "%s/%s": %s`,
+					typeSI,
+					instance.Namespace,
+					instance.Name,
+					successOrphanMitigationMessage,
+				)
+				c.recorder.Event(instance, corev1.EventTypeNormal, successOrphanMitigationReason, successOrphanMitigationMessage)
 
-			if !mitigatingOrphan {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
+					successOrphanMitigationReason,
+					successOrphanMitigationMessage,
+				)
+			} else {
+				glog.V(5).Infof(
+					`%s "%s/%s": Successfully deprovisioned ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q`,
+					typeSI, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName,
+				)
+				c.recorder.Event(instance, corev1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
+
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
+					successDeprovisionReason,
+					successDeprovisionMessage,
+				)
+
 				// Clear the finalizer
 				if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
 					finalizers.Delete(v1beta1.FinalizerServiceCatalog)
@@ -1168,12 +1238,6 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
 			}
-
-			c.recorder.Event(instance, corev1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-			glog.V(5).Infof(
-				`%s "%s/%s": Successfully deprovisioned ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q`,
-				typeSI, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName,
-			)
 
 			return c.finishPollingServiceInstance(instance)
 		}
@@ -1215,7 +1279,14 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
-			if !mitigatingOrphan {
+			if mitigatingOrphan {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorOrphanMitigationFailedReason,
+					"Orphan mitigation failed: "+s)
+			} else {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
@@ -1226,7 +1297,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			if !provisioning {
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
-				setServiceInstanceStartOrphanMitigation(toUpdate)
+				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			}
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -1299,7 +1370,14 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
-			if !mitigatingOrphan {
+			if mitigatingOrphan {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorOrphanMitigationFailedReason,
+					"Orphan mitigation failed: "+s)
+			} else {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
@@ -1310,7 +1388,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			if !provisioning {
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
-				setServiceInstanceStartOrphanMitigation(toUpdate)
+				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			}
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -1342,6 +1420,11 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			actionText  string
 		)
 		switch {
+		case mitigatingOrphan:
+			readyStatus = v1beta1.ConditionFalse
+			reason = successOrphanMitigationReason
+			message = successOrphanMitigationMessage
+			actionText = "completed orphan mitigation"
 		case deleting:
 			readyStatus = v1beta1.ConditionFalse
 			reason = successDeprovisionReason
@@ -1407,6 +1490,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		}
 		actionText := ""
 		switch {
+		case mitigatingOrphan:
+			actionText = "mitigating orphan"
 		case deleting:
 			actionText = "deprovisioning"
 		case provisioning:
@@ -1434,6 +1519,10 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			msg       string
 		)
 		switch {
+		case mitigatingOrphan:
+			readyCond = v1beta1.ConditionUnknown
+			reason = errorOrphanMitigationFailedReason
+			msg = "Orphan mitigation failed: " + s
 		case deleting:
 			readyCond = v1beta1.ConditionUnknown
 			reason = errorDeprovisionCalledReason
@@ -1447,6 +1536,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			reason = errorUpdateInstanceCallFailedReason
 			msg = "Update call failed: " + s
 		}
+
 		setServiceInstanceCondition(
 			toUpdate,
 			v1beta1.ServiceInstanceConditionReady,
@@ -1491,7 +1581,14 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
-			if !mitigatingOrphan {
+			if mitigatingOrphan {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorOrphanMitigationFailedReason,
+					"Orphan mitigation failed: "+s)
+			} else {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
@@ -1502,7 +1599,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			if !provisioning {
 				c.clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
-				setServiceInstanceStartOrphanMitigation(toUpdate)
+				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			}
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -1665,13 +1762,13 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				ResourceVersion: sp.ResourceVersion,
 			}
 			glog.V(4).Infof(
-				`%s "%s/%s": resolved ClusterServicePlan with externalName %q to K8S ClusterServicePlan %q`,
+				`%s "%s/%s": resolved ClusterServicePlan (ExternalName: %q) to ClusterServicePlan (K8S: %q)`,
 				typeSI, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name,
 			)
 		} else {
 			s := fmt.Sprintf(
-				"References a non-existent ClusterServicePlan %q on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %d)",
-				instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items),
+				"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %d)",
+				instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items),
 			)
 			glog.Warningf(
 				`%s "%s/%s": %s`,
@@ -1920,10 +2017,33 @@ func (c *controller) clearServiceInstanceCurrentOperation(toUpdate *v1beta1.Serv
 // setServiceInstanceStartOrphanMitigation sets the fields of the instance's
 // Status to indicate that orphan mitigation is starting. The Status is *not*
 // recorded in the registry.
-func setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.ServiceInstance) {
+func (c *controller) setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.ServiceInstance) {
+	glog.V(5).Infof(
+		`%s "%s/%s": %s`,
+		typeSI,
+		toUpdate.Name,
+		toUpdate.Namespace,
+		startingInstanceOrphanMitigationMessage,
+	)
+
+	c.recorder.Event(
+		toUpdate,
+		corev1.EventTypeWarning,
+		startingInstanceOrphanMitigationReason,
+		startingInstanceOrphanMitigationMessage,
+	)
+
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.AsyncOpInProgress = false
 	toUpdate.Status.OrphanMitigationInProgress = true
+
+	setServiceInstanceCondition(
+		toUpdate,
+		v1beta1.ServiceInstanceConditionReady,
+		v1beta1.ConditionFalse,
+		startingInstanceOrphanMitigationReason,
+		startingInstanceOrphanMitigationMessage,
+	)
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status
