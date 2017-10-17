@@ -22,7 +22,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
-// Print name form `<Kind> (K8S: <K8S-Name> ExternalName: <External-Name>)`
+// Name prints in the form `<Kind> (K8S: <K8S-Name> ExternalName: <External-Name>)`
 // kind is required. k8sName and externalName are optional
 func Name(kind Kind, k8sName, externalName string) string {
 	s := fmt.Sprintf("%s", kind)
