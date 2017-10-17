@@ -703,7 +703,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 			"ClusterServicePlan (K8S: %q ExternalName: %q) already exists with OSB guid %q, received different guid %q",
 			servicePlan.Name, servicePlan.Spec.ExternalName, existingServicePlan.Spec.ExternalID, servicePlan.Spec.ExternalID,
 		)
-		glog.Error(
+		glog.Errorf(
 			"%s %q: %s",
 			typeCSB, broker.Name, errMsg,
 		)
