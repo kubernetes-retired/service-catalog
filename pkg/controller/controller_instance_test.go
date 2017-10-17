@@ -278,7 +278,9 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	// check to make sure the only event sent indicated that the instance references a non-existent
 	// service plan
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " References a non-existent ClusterServicePlan \"nothere\" on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
+	expectedEvent := fmt.Sprintf(`%s %s References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
+		corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, "", "nothere", "SCGUID", "test-serviceclass", 0,
+	)
 	if err := checkEvents(events, []string{expectedEvent}); err != nil {
 		t.Fatal(err)
 	}
@@ -810,7 +812,10 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorProvisionCallFailedReason + " " + "Error provisioning ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
+	expectedEvent := fmt.Sprintf(`%s %s Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s`,
+		corev1.EventTypeWarning, errorProvisionCallFailedReason, "SCGUID", "test-serviceclass", "test-broker", 409, `OutOfQuota; Description: You're out of quota!; ResponseError: <nil>`,
+	)
+
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -2370,11 +2375,10 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
-		asyncProvisioningReason,
+		startingInstanceOrphanMitigationReason,
 		errorReconciliationRetryTimeoutReason,
 		instance,
 	)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
 	// No actions
@@ -2964,7 +2968,7 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 
 		if tc.triggersOrphanMitigation {
 			// TODO(mkibbe): Rework this to be an expects, not asserts
-			assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, errorProvisionCallFailedReason, instance)
+			assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, instance)
 			if err == nil {
 				t.Errorf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
 				continue
@@ -3006,7 +3010,7 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", updatedObject)
 	}
 
-	assertServiceInstanceReadyFalse(t, updatedServiceInstance)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
@@ -3016,13 +3020,15 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 	// invalidState := "invalid state"
 
 	cases := []struct {
-		name                     string
-		deprovReaction           *fakeosb.DeprovisionReaction
-		pollReaction             *fakeosb.PollLastOperationReaction
-		async                    bool
-		finishedOrphanMitigation bool
-		shouldError              bool
-		retryDurationExceeded    bool
+		name                         string
+		deprovReaction               *fakeosb.DeprovisionReaction
+		pollReaction                 *fakeosb.PollLastOperationReaction
+		async                        bool
+		finishedOrphanMitigation     bool
+		shouldError                  bool
+		retryDurationExceeded        bool
+		expectedReadyConditionStatus v1beta1.ConditionStatus
+		expectedReadyConditionReason string
 	}{
 		// Synchronous
 		{
@@ -3030,7 +3036,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Response: &osb.DeprovisionResponse{},
 			},
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: successOrphanMitigationReason,
 		},
 		{
 			name: "sync - 202 accepted",
@@ -3040,30 +3048,38 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 					OperationKey: &key,
 				},
 			},
-			finishedOrphanMitigation: false,
+			finishedOrphanMitigation:     false,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: asyncDeprovisioningReason,
 		},
 		{
 			name: "sync - http error",
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fakeosb.AsyncRequiredError(),
 			},
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		{
 			name: "sync - other error",
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fmt.Errorf("other error"),
 			},
-			finishedOrphanMitigation: false,
-			shouldError:              true,
+			finishedOrphanMitigation:     false,
+			shouldError:                  true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorDeprovisionCalledReason,
 		},
 		{
 			name: "sync - other error - retry duration exceeded",
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fmt.Errorf("other error"),
 			},
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		// Asynchronous (Polling)
 		{
@@ -3074,7 +3090,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: successOrphanMitigationReason,
 		},
 		{
 			name: "poll - gone",
@@ -3084,7 +3102,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: successOrphanMitigationReason,
 		},
 		{
 			name: "poll - in progress",
@@ -3095,7 +3115,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: false,
+			finishedOrphanMitigation:     false,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionReason: asyncDeprovisioningReason,
 		},
 		{
 			name: "poll - failed",
@@ -3105,7 +3127,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
+			finishedOrphanMitigation:     true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		// TODO (mkibbe): poll - error
 		// TODO (mkibbe): invalid state
@@ -3115,8 +3139,10 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				Error: fmt.Errorf("other error"),
 			},
 			async: true,
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		{
 			name: "poll - in progress - retry duration exceeded",
@@ -3126,8 +3152,10 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 		{
 			name: "poll - invalid state - retry duration exceeded",
@@ -3137,8 +3165,10 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation: true,
-			retryDurationExceeded:    true,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
 	}
 
@@ -3191,6 +3221,14 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
 			continue
 		}
+
+		//TODO(mkibbe): change asserts to expects
+		assertServiceInstanceReadyCondition(
+			t,
+			updatedServiceInstance,
+			tc.expectedReadyConditionStatus,
+			tc.expectedReadyConditionReason,
+		)
 
 		// validate reconciliation error response
 		if tc.shouldError {
@@ -3590,7 +3628,10 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServicePlanReason + " " + "References a non-existent ClusterServicePlan \"test-plan\" on ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") or there is more than one (found: 0)"
+	expectedEvent := fmt.Sprintf(
+		`%s %s References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
+		corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, "", "test-plan", "SCGUID", "test-serviceclass", 0,
+	)
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
@@ -3824,7 +3865,10 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorUpdateInstanceCallFailedReason + " " + "Error updating ServiceInstance of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>"
+	expectedEvent := fmt.Sprintf(
+		`%s %s Error updating ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s`,
+		corev1.EventTypeWarning, errorUpdateInstanceCallFailedReason, "SCGUID", "test-serviceclass", "test-broker", 409, `OutOfQuota; Description: You're out of quota!; ResponseError: <nil>`,
+	)
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}

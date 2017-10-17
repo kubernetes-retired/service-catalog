@@ -82,6 +82,7 @@ func withConfigGetFreshApiserverAndClient(
 		if serverstorage.StorageTypeEtcd == serverConfig.storageType {
 			etcdOptions = server.NewEtcdOptions()
 			etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
+			etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
 		} else {
 			t.Fatal("no storage type specified")
 		}

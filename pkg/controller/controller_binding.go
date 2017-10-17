@@ -600,7 +600,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 		c.recorder.Event(binding, corev1.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
 		glog.V(5).Infof(
-			`%s "%s/%s": Successfully bound to ServiceInstance ""%s/%s"" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %v`,
+			`%s "%s/%s": Successfully bound to ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %v`,
 			typeSB, binding.Namespace, binding.Name, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName,
 		)
 

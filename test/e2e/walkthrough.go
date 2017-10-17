@@ -64,15 +64,16 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 	It("Run walkthrough-example ", func() {
 		var (
-			brokerName           = upsbrokername
-			serviceclassName     = "user-provided-service"
-			serviceclassID       = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
-			serviceplanID        = "86064792-7ea2-467b-af93-ac9694d96d52"
-			testns               = "test-ns"
-			instanceName         = "ups-instance"
-			bindingName          = "ups-binding"
-			instanceNameDef      = "ups-instance-def"
-			instanceNameK8sNames = "ups-instance-k8s-names"
+			brokerName              = upsbrokername
+			serviceclassName        = "user-provided-service"
+			serviceclassID          = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+			serviceplanID           = "86064792-7ea2-467b-af93-ac9694d96d52"
+			testns                  = "test-ns"
+			instanceName            = "ups-instance"
+			bindingName             = "ups-binding"
+			instanceNameDef         = "ups-instance-def"
+			instanceNameK8sNames    = "ups-instance-k8s-names"
+			instanceNameK8sNamesDef = "ups-instance-k8s-names-def"
 		)
 
 		// Broker and ClusterServiceClass should become ready
@@ -281,6 +282,42 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		By("Waiting for ServiceInstance with k8s names to not exist")
 		err = util.WaitForInstanceToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), testnamespace.Name, instanceNameK8sNames)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("Creating a ServiceInstance using k8s name and default plan")
+		instanceK8SNamesDef := &v1beta1.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      instanceNameK8sNamesDef,
+				Namespace: testnamespace.Name,
+			},
+			Spec: v1beta1.ServiceInstanceSpec{
+				PlanReference: v1beta1.PlanReference{
+					ClusterServiceClassName: serviceclassID,
+				},
+			},
+		}
+		instance, err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(testnamespace.Name).Create(instanceK8SNamesDef)
+		Expect(err).NotTo(HaveOccurred(), "failed to create instance with K8S name and default plan")
+		Expect(instanceK8SNamesDef).NotTo(BeNil())
+
+		By("Waiting for ServiceInstance with k8s name and default plan to be ready")
+		err = util.WaitForInstanceCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
+			testnamespace.Name,
+			instanceNameK8sNamesDef,
+			v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionTrue,
+			},
+		)
+		Expect(err).NotTo(HaveOccurred(), "failed to wait instance with k8s name and default plan to be ready")
+
+		// Deprovisioning the ServiceInstance with k8s name and default plan
+		By("Deleting the ServiceInstance with k8s name and default plan")
+		err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(testnamespace.Name).Delete(instanceNameK8sNamesDef, nil)
+		Expect(err).NotTo(HaveOccurred(), "failed to delete the instance with k8s name and default plan")
+
+		By("Waiting for ServiceInstance with k8s name and default plan to not exist")
+		err = util.WaitForInstanceToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), testnamespace.Name, instanceNameK8sNamesDef)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Deleting the test namespace")

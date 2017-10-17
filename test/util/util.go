@@ -239,8 +239,6 @@ func WaitForBindingReconciledGeneration(client v1beta1servicecatalog.Servicecata
 				return false, fmt.Errorf("error getting ServiceBinding %v/%v: %v", namespace, name, err)
 			}
 
-			fmt.Printf("BINDING: %+v\n\n\n", binding)
-
 			if binding.Status.ReconciledGeneration == reconciledGeneration {
 				return true, nil
 			}
