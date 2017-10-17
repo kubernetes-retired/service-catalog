@@ -24,7 +24,6 @@ import (
 
 	"github.com/golang/glog"
 
-	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -129,7 +128,7 @@ func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecata
 		Spec: servicecatalog.ClusterServicePlanSpec{
 			ExternalName: "bar",
 			ExternalID:   "12345",
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: classname,
 			},
 		},
@@ -142,7 +141,7 @@ func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecata
 		Spec: servicecatalog.ClusterServicePlanSpec{
 			ExternalName: "baz",
 			ExternalID:   "23456",
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: classname,
 			},
 		},

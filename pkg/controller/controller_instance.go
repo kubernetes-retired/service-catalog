@@ -1662,12 +1662,8 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err == nil && len(serviceClasses.Items) == 1 {
 			sc = &serviceClasses.Items[0]
-			instance.Spec.ClusterServiceClassRef = &corev1.ObjectReference{
-				Kind:            sc.Kind,
-				Name:            sc.Name,
-				UID:             sc.UID,
-				APIVersion:      sc.APIVersion,
-				ResourceVersion: sc.ResourceVersion,
+			instance.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{
+				Name: sc.Name,
 			}
 			glog.V(4).Infof(
 				`%s "%s/%s": resolved ClusterServiceClass with externalName %q to K8S ClusterServiceClass %q`,
@@ -1701,12 +1697,8 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 		var err error
 		sc, err = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassName)
 		if err == nil {
-			instance.Spec.ClusterServiceClassRef = &corev1.ObjectReference{
-				Kind:            sc.Kind,
-				Name:            sc.Name,
-				UID:             sc.UID,
-				APIVersion:      sc.APIVersion,
-				ResourceVersion: sc.ResourceVersion,
+			instance.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{
+				Name: sc.Name,
 			}
 			glog.V(4).Infof(
 				`%s "%s/%s": resolved ClusterServiceClass with K8S name %q to ClusterServiceClass with external Name %q`,
@@ -1754,12 +1746,8 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		servicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]
-			instance.Spec.ClusterServicePlanRef = &corev1.ObjectReference{
-				Kind:            sp.Kind,
-				Name:            sp.Name,
-				UID:             sp.UID,
-				APIVersion:      sp.APIVersion,
-				ResourceVersion: sp.ResourceVersion,
+			instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
+				Name: sp.Name,
 			}
 			glog.V(4).Infof(
 				`%s "%s/%s": resolved ClusterServicePlan (ExternalName: %q) to ClusterServicePlan (K8S: %q)`,
@@ -1787,12 +1775,8 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 	} else if instance.Spec.ClusterServicePlanName != "" {
 		sp, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanName)
 		if err == nil {
-			instance.Spec.ClusterServicePlanRef = &corev1.ObjectReference{
-				Kind:            sp.Kind,
-				Name:            sp.Name,
-				UID:             sp.UID,
-				APIVersion:      sp.APIVersion,
-				ResourceVersion: sp.ResourceVersion,
+			instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
+				Name: sp.Name,
 			}
 			glog.V(4).Infof(
 				`%s "%s/%s": resolved ClusterServicePlan with K8S name %q to ClusterServicePlan with external name %q`,

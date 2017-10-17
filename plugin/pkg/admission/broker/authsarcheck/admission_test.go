@@ -27,7 +27,6 @@ import (
 	"k8s.io/apiserver/pkg/authentication/user"
 
 	authorizationapi "k8s.io/api/authorization/v1"
-	corev1 "k8s.io/api/core/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	kubefake "k8s.io/client-go/kubernetes/fake"
@@ -109,7 +108,7 @@ func TestAdmissionBroker(t *testing.T) {
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Basic: &servicecatalog.BasicAuthConfig{
-							SecretRef: &corev1.ObjectReference{
+							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
 							},
@@ -132,7 +131,7 @@ func TestAdmissionBroker(t *testing.T) {
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						BasicAuthSecret: &corev1.ObjectReference{
+						BasicAuthSecret: &servicecatalog.ObjectReference{
 							Namespace: "test-ns",
 							Name:      "test-secret",
 						},
@@ -155,7 +154,7 @@ func TestAdmissionBroker(t *testing.T) {
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
-							SecretRef: &corev1.ObjectReference{
+							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
 							},
@@ -179,7 +178,7 @@ func TestAdmissionBroker(t *testing.T) {
 					URL: "http://example.com",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
-							SecretRef: &corev1.ObjectReference{
+							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
 							},

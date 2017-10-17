@@ -562,9 +562,9 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 			Spec: v1beta1.ClusterServicePlanSpec{
 				ExternalName:           plan.Name,
 				ExternalID:             plan.ID,
-				Free:                   (plan.Free != nil && *plan.Free),
+				Free:                   plan.Free != nil && *plan.Free,
 				Description:            plan.Description,
-				ClusterServiceClassRef: corev1.LocalObjectReference{Name: serviceClassID},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: serviceClassID},
 			},
 		}
 		servicePlans[i].SetName(plan.ID)
