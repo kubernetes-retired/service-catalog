@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes/fake"
-	corev1 "k8s.io/api/core/v1"
 	restclient "k8s.io/client-go/rest"
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
@@ -1007,6 +1007,22 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	if e, a := testDeleterUsername, retInst.Spec.UserInfo.Username; e != a {
 		t.Fatalf("unexpected deleting user name in instance spec: expected %v, got %v", e, a)
 	}
+
+	// Delete the broker
+	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("broker should be deleted (%s)", err)
+	}
+
+	err = util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName)
+	if err != nil {
+		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
+	}
+
+	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	if err != nil {
+		t.Fatalf("error waiting for Broker to not exist: %v", err)
+	}
 }
 
 // TestServiceInstanceOrphanMitigation tests whether an instance is
@@ -1019,7 +1035,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Error: osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusInternalServerError,
+				StatusCode: http.StatusInternalServerError,
 			},
 		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -1073,7 +1089,6 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 			ExternalID: testExternalID,
 		},
 	}
-
 
 	if _, err := client.ServiceInstances(testNamespace).Create(instance); err != nil {
 		t.Fatalf("error creating Instance: %v", err)
@@ -1143,7 +1158,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Error: osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusInternalServerError,
+				StatusCode: http.StatusInternalServerError,
 			},
 		},
 		UnbindReaction: &fakeosb.UnbindReaction{},
