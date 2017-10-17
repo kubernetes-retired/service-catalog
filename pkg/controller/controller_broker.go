@@ -347,8 +347,8 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			)
 			if err := c.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, payloadServicePlan, existingServicePlan); err != nil {
 				s := fmt.Sprintf(
-					"ClusterServiceBroker %q: Error reconciling %s: %s",
-					broker.Name, pretty.ClusterServicePlanName(payloadServicePlan), err,
+					"Error reconciling %s: %s",
+					pretty.ClusterServicePlanName(payloadServicePlan), err,
 				)
 				glog.Warningf(
 					"%s %q: %s",
