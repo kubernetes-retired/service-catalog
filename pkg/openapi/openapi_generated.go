@@ -656,7 +656,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ObjectReference contains enough information to let you inspect or modify the referred object.",
+					Description: "ObjectReference contains enough information to let you locate the referenced object.",
 					Properties: map[string]spec.Schema{
 						"namespace": {
 							SchemaProps: spec.SchemaProps{
