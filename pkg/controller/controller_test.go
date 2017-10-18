@@ -1371,6 +1371,14 @@ func assertUpdateReference(t *testing.T, action clientgotesting.Action, obj inte
 	return assertActionFor(t, action, "update", "reference", obj)
 }
 
+func expectCreate(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
+	return testActionFor(t, name, errorf, action, "create", "" /* subresource */, obj)
+}
+
+func expectUpdate(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
+	return testActionFor(t, name, errorf, action, "update", "" /* subresource */, obj)
+}
+
 func expectUpdateStatus(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
 	return testActionFor(t, name, errorf, action, "update", "status", obj)
 }
