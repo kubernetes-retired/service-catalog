@@ -827,6 +827,12 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 				ExternalClusterServiceClassName: "service-class-name",
 				ExternalClusterServicePlanName:  "plan-name",
 			},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
+				Name: "test-serviceclass",
+			},
+			ClusterServicePlanRef: &v1beta1.ClusterObjectReference{
+				Name: "test-serviceplan",
+			},
 			Parameters: &runtime.RawExtension{Raw: []byte(instanceParameter)},
 			ExternalID: osbGUID,
 		},
@@ -965,6 +971,34 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 	if oldGeneration != instanceServer.Generation {
 		return fmt.Errorf("Generation was changed, expected: %q got: %q", oldGeneration, instanceServer.Generation)
+	}
+
+	// field selector tests
+	instances, err = instanceClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServiceClassRef.name=should-return-zero"})
+	if err != nil {
+		return fmt.Errorf("error listing instances: %v", err)
+	}
+
+	if 0 != len(instances.Items) {
+		return fmt.Errorf("should have exactly zero instances, had %v instances", len(instances.Items))
+	}
+
+	instances, err = instanceClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServiceClassRef.name=service-class-ref"})
+	if err != nil {
+		return fmt.Errorf("error listing instances: %v", err)
+	}
+
+	if 1 != len(instances.Items) {
+		return fmt.Errorf("should have exactly one instance, had %v instances", len(instances.Items))
+	}
+
+	instances, err = instanceClient.List(metav1.ListOptions{FieldSelector: "spec.clusterServicePlanRef.name=service-plan-ref"})
+	if err != nil {
+		return fmt.Errorf("error listing instances: %v", err)
+	}
+
+	if 1 != len(instances.Items) {
+		return fmt.Errorf("should have exactly one instance, had %v instances", len(instances.Items))
 	}
 
 	// update the instance's spec
