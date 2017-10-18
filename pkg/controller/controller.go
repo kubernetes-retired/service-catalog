@@ -41,6 +41,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
+	pretty "github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
 const (
@@ -247,16 +248,14 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 // a brokerClient to use for that method given an ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
 			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName,
 		)
-		glog.Infof(
-			`ServiceInstance "%v/%v": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Info(pcb.Message(s))
 		c.updateServiceInstanceCondition(
 			instance,
 			v1beta1.ServiceInstanceConditionReady,
@@ -274,10 +273,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
 			instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, serviceClass.Name, serviceClass.Spec.ExternalName,
 		)
-		glog.Warningf(
-			`ServiceInstance "%s/%s": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.updateServiceInstanceCondition(
 			instance,
 			v1beta1.ServiceInstanceConditionReady,
@@ -292,10 +288,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent broker %q", serviceClass.Spec.ClusterServiceBrokerName)
-		glog.Warningf(
-			`ServiceInstance "%s/%s": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.updateServiceInstanceCondition(
 			instance,
 			v1beta1.ServiceInstanceConditionReady,
@@ -310,10 +303,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Infof(
-			`ServiceInstance "%v/%v": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Info(pcb.Message(s))
 		c.updateServiceInstanceCondition(
 			instance,
 			v1beta1.ServiceInstanceConditionReady,
@@ -327,7 +317,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 
-	glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
+	s := fmt.Sprintf("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
+	glog.V(4).Info(pcb.Message(s))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -341,16 +332,14 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 // a brokerclient to use for a given ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
 			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName,
 		)
-		glog.Warningf(
-			`ServiceBinding "%s/%s": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -368,10 +357,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
 			instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, serviceClass.Name, serviceClass.Spec.ExternalName,
 		)
-		glog.Warningf(
-			`ServiceBinding "%s/%s": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -386,10 +372,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent ClusterServiceBroker %q", serviceClass.Spec.ClusterServiceBrokerName)
-		glog.Warningf(
-			`ServiceBinding "%s/%s": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -404,10 +387,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Warningf(
-			`ServiceBinding "%s/%s": %s`,
-			instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
