@@ -85,7 +85,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 		return nil
 	}
 
-	var secretRef *corev1.ObjectReference
+	var secretRef *servicecatalog.ObjectReference
 	if clusterClusterServiceBroker.Spec.AuthInfo.Basic != nil {
 		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
 	} else if clusterClusterServiceBroker.Spec.AuthInfo.Bearer != nil {

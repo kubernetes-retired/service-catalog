@@ -143,7 +143,7 @@ func validateClusterServiceBrokerSpec(spec *sc.ClusterServiceBrokerSpec, fldPath
 	}
 
 	if spec.RelistDuration != nil {
-		zeroDuration := metav1.Duration{0}
+		zeroDuration := metav1.Duration{Duration: 0}
 		if spec.RelistDuration.Duration <= zeroDuration.Duration {
 			allErrs = append(
 				allErrs,

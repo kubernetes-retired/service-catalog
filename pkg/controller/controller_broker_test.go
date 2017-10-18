@@ -37,7 +37,6 @@ import (
 	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
 )
@@ -559,7 +558,7 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	basicAuthInfo := &v1beta1.ServiceBrokerAuthInfo{
 		Basic: &v1beta1.BasicAuthConfig{
-			SecretRef: &v1.ObjectReference{
+			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "test-ns",
 				Name:      "auth-secret",
 			},
@@ -567,19 +566,19 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	}
 	bearerAuthInfo := &v1beta1.ServiceBrokerAuthInfo{
 		Bearer: &v1beta1.BearerTokenAuthConfig{
-			SecretRef: &v1.ObjectReference{
+			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "test-ns",
 				Name:      "auth-secret",
 			},
 		},
 	}
-	basicAuthSecret := &v1.Secret{
+	basicAuthSecret := &corev1.Secret{
 		Data: map[string][]byte{
 			v1beta1.BasicAuthUsernameKey: []byte("foo"),
 			v1beta1.BasicAuthPasswordKey: []byte("bar"),
 		},
 	}
-	bearerAuthSecret := &v1.Secret{
+	bearerAuthSecret := &corev1.Secret{
 		Data: map[string][]byte{
 			v1beta1.BearerTokenKey: []byte("token"),
 		},
@@ -595,7 +594,7 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	cases := []struct {
 		name          string
 		authInfo      *v1beta1.ServiceBrokerAuthInfo
-		secret        *v1.Secret
+		secret        *corev1.Secret
 		shouldSucceed bool
 	}{
 		{
@@ -644,7 +643,7 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	}
 }
 
-func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.ServiceBrokerAuthInfo, secret *v1.Secret, shouldSucceed bool) {
+func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.ServiceBrokerAuthInfo, secret *corev1.Secret, shouldSucceed bool) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
 
 	broker := getTestClusterServiceBrokerWithAuth(authInfo)
