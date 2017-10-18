@@ -692,7 +692,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 			"%s already exists with OSB guid %q, received different guid %q",
 			pretty.ClusterServicePlanName(servicePlan), existingServicePlan.Spec.ExternalID, servicePlan.Spec.ExternalID,
 		)
-		glog.Error(
+		glog.Errorf(
 			"%s %q: %s",
 			typeCSB, broker.Name, errMsg,
 		)

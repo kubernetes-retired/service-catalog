@@ -179,7 +179,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	broker := getTestClusterServiceBroker()
 	broker.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
 		Basic: &v1beta1.BasicAuthConfig{
-			SecretRef: &corev1.ObjectReference{
+			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "does_not_exist",
 				Name:      "auth-name",
 			},
@@ -246,7 +246,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 				ExternalClusterServiceClassName: testClusterServiceClassName,
 				ExternalClusterServicePlanName:  "nothere",
 			},
-			ClusterServiceClassRef: &corev1.ObjectReference{
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
 			ExternalID: testServiceInstanceGUID,
@@ -306,7 +306,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 				ClusterServiceClassName: testClusterServiceClassGUID,
 				ClusterServicePlanName:  "nothereplan",
 			},
-			ClusterServiceClassRef: &corev1.ObjectReference{
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
 			ExternalID: testServiceInstanceGUID,
@@ -555,7 +555,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
 
 	instance := getTestServiceInstance()
-	instance.Spec.ClusterServiceClassRef = &corev1.ObjectReference{
+	instance.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{
 		Name: testClusterServiceClassGUID,
 	}
 

@@ -14,6 +14,11 @@
 
 FROM BASEIMAGE
 
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install ca-certificates -y && \
+    rm -rf /var/lib/apt/lists/*
+
 ADD controller-manager /opt/services/
 
 ENTRYPOINT ["/opt/services/controller-manager" ]

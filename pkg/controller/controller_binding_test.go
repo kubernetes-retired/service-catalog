@@ -40,7 +40,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
 )
 
@@ -55,7 +54,7 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testNonExistentClusterServiceClassName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testNonExistentClusterServiceClassName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -116,7 +115,7 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -152,7 +151,7 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 				ExternalClusterServicePlanName:  testClusterServicePlanName,
 			},
 			ExternalID:             testServiceInstanceGUID,
-			ClusterServiceClassRef: &v1.ObjectReference{Name: "Some Ref"},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "Some Ref"},
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
@@ -165,7 +164,7 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -202,8 +201,8 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 				ExternalClusterServicePlanName:  testClusterServicePlanName,
 			},
 			ExternalID:             testServiceInstanceGUID,
-			ClusterServiceClassRef: &v1.ObjectReference{Name: "nosuchclassid"},
-			ClusterServicePlanRef:  &v1.ObjectReference{Name: "nosuchplanid"},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "nosuchclassid"},
+			ClusterServicePlanRef:  &v1beta1.ClusterObjectReference{Name: "nosuchplanid"},
 		},
 	}
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
@@ -216,7 +215,7 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -264,7 +263,7 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 	// existing Secret with nil controllerRef
-	addGetSecretReaction(fakeKubeClient, &v1.Secret{
+	addGetSecretReaction(fakeKubeClient, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
 	})
 
@@ -280,7 +279,7 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -372,7 +371,7 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -447,9 +446,9 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	if e, a := "secrets", action.GetResource().Resource; e != a {
 		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
 	}
-	actionSecret, ok := action.GetObject().(*v1.Secret)
+	actionSecret, ok := action.GetObject().(*corev1.Secret)
 	if !ok {
-		t.Fatal("couldn't convert secret into a v1.Secret")
+		t.Fatal("couldn't convert secret into a corev1.Secret")
 	}
 	controllerRef := GetControllerOf(actionSecret)
 	if controllerRef == nil || controllerRef.UID != updatedServiceBinding.UID {
@@ -503,7 +502,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -574,7 +573,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -621,9 +620,9 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 	if e, a := "secrets", action.GetResource().Resource; e != a {
 		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
 	}
-	actionSecret, ok := action.GetObject().(*v1.Secret)
+	actionSecret, ok := action.GetObject().(*corev1.Secret)
 	if !ok {
-		t.Fatal("couldn't convert secret into a v1.Secret")
+		t.Fatal("couldn't convert secret into a corev1.Secret")
 	}
 	if e, a := testServiceBindingSecretName, actionSecret.Name; e != a {
 		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)
@@ -665,7 +664,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -713,7 +712,7 @@ func TestReconcileServiceBindingFailsWithServiceInstanceAsyncOngoing(t *testing.
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -776,7 +775,7 @@ func TestReconcileServiceBindingServiceInstanceNotReady(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -812,7 +811,7 @@ func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1.Namespace{}, errors.New("No namespace")
+		return true, &corev1.Namespace{}, errors.New("No namespace")
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
@@ -827,7 +826,7 @@ func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -877,7 +876,7 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 			Generation:        2,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -1180,7 +1179,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -1239,7 +1238,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -1605,7 +1604,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 			Generation:        1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -1668,7 +1667,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 			Generation:        1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -1932,7 +1931,7 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 	// existing Secret with nil controllerRef
-	addGetSecretReaction(fakeKubeClient, &v1.Secret{
+	addGetSecretReaction(fakeKubeClient, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
 	})
 
@@ -1949,7 +1948,7 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -2073,7 +2072,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 
-	paramSecret := &v1.Secret{
+	paramSecret := &corev1.Secret{
 		Data: map[string][]byte{
 			"param-secret-key": []byte("{\"b\":\"2\"}"),
 		},
@@ -2099,7 +2098,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -2272,7 +2271,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 
 		addGetNamespaceReaction(fakeKubeClient)
 		// existing Secret with nil controllerRef
-		addGetSecretReaction(fakeKubeClient, &v1.Secret{
+		addGetSecretReaction(fakeKubeClient, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
 		})
 
@@ -2288,7 +2287,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 				Generation: 1,
 			},
 			Spec: v1beta1.ServiceBindingSpec{
-				ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+				ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 				ExternalID:         testServiceBindingGUID,
 				SecretName:         testServiceBindingSecretName,
 			},
@@ -2352,7 +2351,7 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 
 	addGetNamespaceReaction(fakeKubeClient)
 	// existing Secret with nil controllerRef
-	addGetSecretReaction(fakeKubeClient, &v1.Secret{
+	addGetSecretReaction(fakeKubeClient, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
 	})
 
@@ -2369,7 +2368,7 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
@@ -2422,7 +2421,7 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 
 	addGetNamespaceReaction(fakeKubeClient)
 	// existing Secret with nil controllerRef
-	addGetSecretReaction(fakeKubeClient, &v1.Secret{
+	addGetSecretReaction(fakeKubeClient, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
 	})
 
@@ -2439,7 +2438,7 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},

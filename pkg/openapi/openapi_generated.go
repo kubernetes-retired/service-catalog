@@ -36,14 +36,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"secretRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
-								Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
 							},
 						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/api/core/v1.ObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig": {
 			Schema: spec.Schema{
@@ -53,14 +53,31 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"secretRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
-								Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
 							},
 						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/api/core/v1.ObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ClusterObjectReference contains enough information to let you locate the cluster-scoped referenced object.",
+					Properties: map[string]spec.Schema{
+						"name": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Name of the referent.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker": {
 			Schema: spec.Schema{
@@ -591,7 +608,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"clusterServiceClassRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ClusterServiceClassRef is a reference to the service class that owns this plan.",
-								Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 							},
 						},
 					},
@@ -599,7 +616,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus": {
 			Schema: spec.Schema{
@@ -615,6 +632,47 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 					},
 					Required: []string{"removedFromBrokerCatalog"},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.",
+					Properties: map[string]spec.Schema{
+						"name": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Name of the referent.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ObjectReference contains enough information to let you inspect or modify the referred object.",
+					Properties: map[string]spec.Schema{
+						"namespace": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Namespace of the referent.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"name": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Name of the referent.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+					},
 				},
 			},
 			Dependencies: []string{},
@@ -867,7 +925,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"instanceRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ServiceInstanceRef is the reference to the Instance this ServiceBinding is to.\n\nImmutable.",
-								Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 							},
 						},
 						"parameters": {
@@ -914,7 +972,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus": {
 			Schema: spec.Schema{
@@ -999,14 +1057,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"basicAuthSecret": {
 							SchemaProps: spec.SchemaProps{
 								Description: "DEPRECATED: use `Basic` field for configuring basic authentication instead. BasicAuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this ServiceBroker using basic auth.",
-								Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
 							},
 						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig", "k8s.io/api/core/v1.ObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition": {
 			Schema: spec.Schema{
@@ -1258,13 +1316,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"clusterServiceClassRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on ExternalClusterServiceClassName",
-								Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 							},
 						},
 						"clusterServicePlanRef": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on ExternalClusterServicePlanName",
-								Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 							},
 						},
 						"parameters": {
@@ -1311,7 +1369,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus": {
 			Schema: spec.Schema{

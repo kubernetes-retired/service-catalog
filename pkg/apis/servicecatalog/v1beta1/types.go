@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -105,7 +104,7 @@ type ServiceBrokerAuthInfo struct {
 	// DEPRECATED: use `Basic` field for configuring basic authentication instead.
 	// BasicAuthSecret is a reference to a Secret containing auth information the
 	// catalog should use to authenticate to this ServiceBroker using basic auth.
-	BasicAuthSecret *v1.ObjectReference `json:"basicAuthSecret,omitempty"`
+	BasicAuthSecret *ObjectReference `json:"basicAuthSecret,omitempty"`
 }
 
 // BasicAuthConfig provides config for the basic authentication.
@@ -116,7 +115,7 @@ type BasicAuthConfig struct {
 	// Required at least one of the fields:
 	// - Secret.Data["username"] - username used for authentication
 	// - Secret.Data["password"] - password or token needed for authentication
-	SecretRef *v1.ObjectReference `json:"secretRef,omitempty"`
+	SecretRef *ObjectReference `json:"secretRef,omitempty"`
 }
 
 // BearerTokenAuthConfig provides config for the bearer token authentication.
@@ -126,7 +125,7 @@ type BearerTokenAuthConfig struct {
 	//
 	// Required field:
 	// - Secret.Data["token"] - bearer token for authentication
-	SecretRef *v1.ObjectReference `json:"secretRef,omitempty"`
+	SecretRef *ObjectReference `json:"secretRef,omitempty"`
 }
 
 const (
@@ -372,7 +371,7 @@ type ClusterServicePlanSpec struct {
 
 	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.
-	ClusterServiceClassRef v1.LocalObjectReference `json:"clusterServiceClassRef"`
+	ClusterServiceClassRef ClusterObjectReference `json:"clusterServiceClassRef"`
 }
 
 // ClusterServicePlanStatus represents status information about a
@@ -468,12 +467,12 @@ type ServiceInstanceSpec struct {
 	// that the user selected.
 	// This is set by the controller based on
 	// ExternalClusterServiceClassName
-	ClusterServiceClassRef *v1.ObjectReference `json:"clusterServiceClassRef,omitempty"`
+	ClusterServiceClassRef *ClusterObjectReference `json:"clusterServiceClassRef,omitempty"`
 	// ClusterServicePlanRef is a reference to the ClusterServicePlan
 	// that the user selected.
 	// This is set by the controller based on
 	// ExternalClusterServicePlanName
-	ClusterServicePlanRef *v1.ObjectReference `json:"clusterServicePlanRef,omitempty"`
+	ClusterServicePlanRef *ClusterObjectReference `json:"clusterServicePlanRef,omitempty"`
 
 	// Parameters is a set of the parameters to be passed to the underlying
 	// broker. The inline YAML/JSON payload to be translated into equivalent
@@ -664,7 +663,7 @@ type ServiceBindingSpec struct {
 	// ServiceInstanceRef is the reference to the Instance this ServiceBinding is to.
 	//
 	// Immutable.
-	ServiceInstanceRef v1.LocalObjectReference `json:"instanceRef"`
+	ServiceInstanceRef LocalObjectReference `json:"instanceRef"`
 
 	// Parameters is a set of the parameters to be passed to the underlying
 	// broker. The inline YAML/JSON payload to be translated into equivalent
@@ -817,4 +816,27 @@ type SecretKeyReference struct {
 	Name string `json:"name"`
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key string `json:"key"`
+}
+
+// ObjectReference contains enough information to let you locate the
+// referenced object.
+type ObjectReference struct {
+	// Namespace of the referent.
+	Namespace string `json:"namespace,omitempty"`
+	// Name of the referent.
+	Name string `json:"name,omitempty"`
+}
+
+// LocalObjectReference contains enough information to let you locate the
+// referenced object inside the same namespace.
+type LocalObjectReference struct {
+	// Name of the referent.
+	Name string `json:"name,omitempty"`
+}
+
+// ClusterObjectReference contains enough information to let you locate the
+// cluster-scoped referenced object.
+type ClusterObjectReference struct {
+	// Name of the referent.
+	Name string `json:"name,omitempty"`
 }

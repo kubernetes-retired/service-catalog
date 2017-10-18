@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
@@ -420,7 +420,7 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 			ExternalID:               testClusterServicePlanGUID,
 			ExternalName:             testClusterServicePlanName,
 			Bindable:                 truePtr(),
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
 		},
@@ -435,7 +435,7 @@ func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 			ExternalID:               testRemovedClusterServicePlanGUID,
 			ExternalName:             testRemovedClusterServicePlanName,
 			Bindable:                 truePtr(),
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
 		},
@@ -449,7 +449,7 @@ func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 			ExternalName: testNonbindableClusterServicePlanName,
 			ExternalID:   testNonbindableClusterServicePlanGUID,
 			Bindable:     falsePtr(),
-			ClusterServiceClassRef: v1.LocalObjectReference{
+			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
 		},
@@ -508,8 +508,8 @@ func getTestCatalog() *osb.CatalogResponse {
 // Service[Class|Plan]Lister.get(spec.Service[Class|Plan]Ref.Name)
 func getTestServiceInstanceWithRefs() *v1beta1.ServiceInstance {
 	sc := getTestServiceInstance()
-	sc.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: testClusterServiceClassGUID}
-	sc.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testClusterServicePlanGUID}
+	sc.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{Name: testClusterServiceClassGUID}
+	sc.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testClusterServicePlanGUID}
 	return sc
 }
 
@@ -562,8 +562,8 @@ func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 	i := getTestServiceInstance()
 	i.Spec.ExternalClusterServiceClassName = testNonbindableClusterServiceClassName
 	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
-	i.Spec.ClusterServiceClassRef = &v1.ObjectReference{Name: testNonbindableClusterServiceClassGUID}
-	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testNonbindableClusterServicePlanGUID}
+	i.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{Name: testNonbindableClusterServiceClassGUID}
+	i.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testNonbindableClusterServicePlanGUID}
 
 	return i
 }
@@ -572,7 +572,7 @@ func getTestNonbindableServiceInstance() *v1beta1.ServiceInstance {
 func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInstance {
 	i := getTestNonbindableServiceInstance()
 	i.Spec.ExternalClusterServicePlanName = testClusterServicePlanName
-	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testClusterServicePlanGUID}
+	i.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testClusterServicePlanGUID}
 
 	return i
 }
@@ -580,7 +580,7 @@ func getTestServiceInstanceNonbindableServiceBindablePlan() *v1beta1.ServiceInst
 func getTestServiceInstanceBindableServiceNonbindablePlan() *v1beta1.ServiceInstance {
 	i := getTestServiceInstanceWithRefs()
 	i.Spec.ExternalClusterServicePlanName = testNonbindableClusterServicePlanName
-	i.Spec.ClusterServicePlanRef = &v1.ObjectReference{Name: testNonbindableClusterServicePlanGUID}
+	i.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{Name: testNonbindableClusterServicePlanGUID}
 
 	return i
 }
@@ -713,7 +713,7 @@ func getTestServiceBinding() *v1beta1.ServiceBinding {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1.LocalObjectReference{Name: testServiceInstanceName},
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
 	}
@@ -1076,7 +1076,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				ExternalID:   "s1_plan1_id",
 				ExternalName: "bindable-bindable",
 				Bindable:     nil,
-				ClusterServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "bindable-id",
 				},
 			},
@@ -1089,7 +1089,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				ExternalName: "bindable-unbindable",
 				ExternalID:   "s1_plan2_id",
 				Bindable:     falsePtr(),
-				ClusterServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "bindable-id",
 				},
 			},
@@ -1102,7 +1102,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				ExternalName: "unbindable-unbindable",
 				ExternalID:   "s2_plan1_id",
 				Bindable:     nil,
-				ClusterServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "unbindable-id",
 				},
 			},
@@ -1115,7 +1115,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				ExternalName: "unbindable-bindable",
 				ExternalID:   "s2_plan2_id",
 				Bindable:     truePtr(),
-				ClusterServiceClassRef: v1.LocalObjectReference{
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "unbindable-id",
 				},
 			},
@@ -1369,6 +1369,14 @@ func assertUpdateStatus(t *testing.T, action clientgotesting.Action, obj interfa
 
 func assertUpdateReference(t *testing.T, action clientgotesting.Action, obj interface{}) runtime.Object {
 	return assertActionFor(t, action, "update", "reference", obj)
+}
+
+func expectCreate(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
+	return testActionFor(t, name, errorf, action, "create", "" /* subresource */, obj)
+}
+
+func expectUpdate(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
+	return testActionFor(t, name, errorf, action, "update", "" /* subresource */, obj)
 }
 
 func expectUpdateStatus(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
@@ -2522,7 +2530,7 @@ func getTestCatalogConfig() fakeosb.FakeClientConfiguration {
 
 func addGetNamespaceReaction(fakeKubeClient *clientgofake.Clientset) {
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1.Namespace{
+		return true, &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				UID: types.UID(testNamespaceGUID),
 			},
@@ -2536,7 +2544,7 @@ func addGetSecretNotFoundReaction(fakeKubeClient *clientgofake.Clientset) {
 	})
 }
 
-func addGetSecretReaction(fakeKubeClient *clientgofake.Clientset, secret *v1.Secret) {
+func addGetSecretReaction(fakeKubeClient *clientgofake.Clientset, secret *corev1.Secret) {
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, secret, nil
 	})

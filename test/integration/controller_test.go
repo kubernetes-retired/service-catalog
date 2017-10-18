@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes/fake"
-	corev1 "k8s.io/api/core/v1"
 	restclient "k8s.io/client-go/rest"
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
@@ -210,7 +209,7 @@ func TestBasicFlowsSync(t *testing.T) {
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: corev1.LocalObjectReference{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -405,7 +404,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: corev1.LocalObjectReference{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -692,7 +691,7 @@ func TestBindingFailure(t *testing.T) {
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: corev1.LocalObjectReference{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -927,7 +926,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: corev1.LocalObjectReference{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
@@ -1019,7 +1018,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Error: osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusInternalServerError,
+				StatusCode: http.StatusInternalServerError,
 			},
 		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -1073,7 +1072,6 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 			ExternalID: testExternalID,
 		},
 	}
-
 
 	if _, err := client.ServiceInstances(testNamespace).Create(instance); err != nil {
 		t.Fatalf("error creating Instance: %v", err)
@@ -1143,7 +1141,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Error: osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusInternalServerError,
+				StatusCode: http.StatusInternalServerError,
 			},
 		},
 		UnbindReaction: &fakeosb.UnbindReaction{},
@@ -1230,7 +1228,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: corev1.LocalObjectReference{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},
