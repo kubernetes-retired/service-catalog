@@ -83,6 +83,9 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentServiceInstanceReason + " " + "References a non-existent ServiceInstance \"/nothere\""
+
+	//checkEvents() TODO here
+
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}

@@ -18,16 +18,31 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 )
 
 func checkEvents(actual, expected []string) error {
 	if len(actual) != len(expected) {
-		return fmt.Errorf("expected %d events, got %d", len(expected), len(actual))
+		return fmt.Errorf("incorrect number of events, %s;\nevents: %+v", expectedGot(len(expected), len(actual)), actual)
 	}
 	for i, actualEvt := range actual {
 		if expectedEvt := expected[i]; actualEvt != expectedEvt {
-			return fmt.Errorf("event %d: expected '%s', got '%s'", i, expectedEvt, actualEvt)
+			return fmt.Errorf("received unexpected event[%d], %s", i, expectedGot(expected, actual))
 		}
 	}
 	return nil
+}
+
+func checkEventPrefixes(actual, expectedPrefixes []string) error {
+	for i, e := range expectedPrefixes {
+		a := actual[i]
+		if !strings.HasPrefix(a, e) {
+			return fmt.Errorf("received unexpected event prefix:\n %s", expectedGot(e, a))
+		}
+	}
+	return nil
+}
+
+func expectedGot(a ...interface{}) string {
+	return fmt.Sprintf("\nexpected:\n\t '%v',\ngot:\n\t '%v'", a...)
 }
