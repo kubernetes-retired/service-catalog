@@ -1298,7 +1298,7 @@ func getRecordedEvents(testController *controller) []string {
 
 func assertNumEvents(t *testing.T, strings []string, number int) {
 	if e, a := number, len(strings); e != a {
-		fatalf(t, "Unexpected number of events: expected %v, got %v;\nevents: %+v", e, a, strings)
+		fatalf(t, "Unexpected number of events: %s;\nevents: %+v", expectedGot(e, a), strings)
 	}
 }
 

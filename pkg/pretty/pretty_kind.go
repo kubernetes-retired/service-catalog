@@ -22,6 +22,7 @@ type Kind int
 // Names of Types to use when creating pretty messages
 const (
 	Unknown Kind = iota
+	ClusterServiceBroker
 	ClusterServiceClass
 	ClusterServicePlan
 	ServiceInstance
@@ -29,6 +30,8 @@ const (
 
 func (k Kind) String() string {
 	switch k {
+	case ClusterServiceBroker:
+		return "ClusterServiceBroker"
 	case ClusterServiceClass:
 		return "ClusterServiceClass"
 	case ClusterServicePlan:
