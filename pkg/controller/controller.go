@@ -27,7 +27,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -612,44 +611,6 @@ func isServiceInstanceReady(instance *v1beta1.ServiceInstance) bool {
 	}
 
 	return false
-}
-
-// TODO (nilebox): The controllerRef methods below are merged into apimachinery and will be released in 1.8:
-// https://github.com/kubernetes/kubernetes/pull/48319
-// Remove them after 1.8 is released and Service Catalog is migrated to it
-
-// IsControlledBy checks if the given object has a controller ownerReference set to the given owner
-func IsControlledBy(obj metav1.Object, owner metav1.Object) bool {
-	ref := GetControllerOf(obj)
-	if ref == nil {
-		return false
-	}
-	return ref.UID == owner.GetUID()
-}
-
-// GetControllerOf returns the controllerRef if controllee has a controller,
-// otherwise returns nil.
-func GetControllerOf(controllee metav1.Object) *metav1.OwnerReference {
-	for _, ref := range controllee.GetOwnerReferences() {
-		if ref.Controller != nil && *ref.Controller == true {
-			return &ref
-		}
-	}
-	return nil
-}
-
-// NewControllerRef creates an OwnerReference pointing to the given owner.
-func NewControllerRef(owner metav1.Object, gvk schema.GroupVersionKind) *metav1.OwnerReference {
-	blockOwnerDeletion := true
-	isController := true
-	return &metav1.OwnerReference{
-		APIVersion:         gvk.GroupVersion().String(),
-		Kind:               gvk.Kind,
-		Name:               owner.GetName(),
-		UID:                owner.GetUID(),
-		BlockOwnerDeletion: &blockOwnerDeletion,
-		Controller:         &isController,
-	}
 }
 
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
