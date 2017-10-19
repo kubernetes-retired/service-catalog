@@ -100,11 +100,6 @@ type ServiceBrokerAuthInfo struct {
 	// The value is referenced from the 'token' field of the given secret.  This value should only
 	// contain the token value and not the `Bearer` scheme.
 	Bearer *BearerTokenAuthConfig `json:"bearer,omitempty"`
-
-	// DEPRECATED: use `Basic` field for configuring basic authentication instead.
-	// BasicAuthSecret is a reference to a Secret containing auth information the
-	// catalog should use to authenticate to this ServiceBroker using basic auth.
-	BasicAuthSecret *ObjectReference `json:"basicAuthSecret,omitempty"`
 }
 
 // BasicAuthConfig provides config for the basic authentication.

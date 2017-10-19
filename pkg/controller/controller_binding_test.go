@@ -450,11 +450,11 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	if !ok {
 		t.Fatal("couldn't convert secret into a corev1.Secret")
 	}
-	controllerRef := GetControllerOf(actionSecret)
+	controllerRef := metav1.GetControllerOf(actionSecret)
 	if controllerRef == nil || controllerRef.UID != updatedServiceBinding.UID {
 		t.Fatalf("Secret is not owned by the ServiceBinding: %v", controllerRef)
 	}
-	if !IsControlledBy(actionSecret, updatedServiceBinding) {
+	if !metav1.IsControlledBy(actionSecret, updatedServiceBinding) {
 		t.Fatal("Secret is not owned by the ServiceBinding")
 	}
 	if e, a := testServiceBindingSecretName, actionSecret.Name; e != a {

@@ -843,8 +843,8 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	existingSecret, err := secretClient.Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err == nil {
 		// Update existing secret
-		if !IsControlledBy(existingSecret, binding) {
-			controllerRef := GetControllerOf(existingSecret)
+		if !metav1.IsControlledBy(existingSecret, binding) {
+			controllerRef := metav1.GetControllerOf(existingSecret)
 			return fmt.Errorf(`Secret "%s/%s" is not owned by ServiceBinding, controllerRef: %v`, binding.Namespace, existingSecret.Name, controllerRef)
 		}
 		existingSecret.Data = secretData
@@ -869,7 +869,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 				Name:      binding.Spec.SecretName,
 				Namespace: binding.Namespace,
 				OwnerReferences: []metav1.OwnerReference{
-					*NewControllerRef(binding, bindingControllerKind),
+					*metav1.NewControllerRef(binding, bindingControllerKind),
 				},
 			},
 			Data: secretData,
