@@ -33,6 +33,7 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
+BUILD_LDFLAGS  = $(shell build/version.sh $(ROOT) $(SC_PKG))
 
 # Run stat against /dev/null and check if it has any stdout output.
 # If stdout is blank, we are detecting bsd-stat because stat it has
@@ -73,7 +74,8 @@ $(error Unsupported platform to compile for)
 endif
 
 GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
-                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)"
+                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)" \
+                   -ldflags "$(BUILD_LDFLAGS)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
