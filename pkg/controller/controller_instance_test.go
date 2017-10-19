@@ -4455,7 +4455,7 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 	for _, tc := range cases {
 		fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
-		err := testController.checkClassAndPlanForDeletion(tc.instance, tc.class, tc.plan)
+		err := testController.checkForRemovedClassAndPlan(tc.instance, tc.class, tc.plan)
 		if err != nil {
 			if tc.success {
 				t.Errorf("%q: Unexpected error %v", tc.name, err)

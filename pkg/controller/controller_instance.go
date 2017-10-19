@@ -631,11 +631,12 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	}
 
 	// Check if the ServiceClass or ServicePlan has been deleted and do not allow
-	// new plans to be created. It's little more complicated since we do want to allow
-	// parameter changes on an instance that's been deleted.
+	// creation of new ServiceInstances or plan upgrades. It's little complicated
+	// since we do want to allow parameter changes on an instance whose plan or class
+	// has been removed from the broker's catalog.
 	// If changes are not allowed, the method will set the appropriate status / record
 	// events, so we can just return here on failure.
-	err = c.checkClassAndPlanForDeletion(instance, serviceClass, servicePlan)
+	err = c.checkForRemovedClassAndPlan(instance, serviceClass, servicePlan)
 	if err != nil {
 		return err
 	}
@@ -2044,10 +2045,10 @@ func (c *controller) setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.S
 	)
 }
 
-// checkClassAndPlanForDeletion looks at serviceClass and servicePlan and
+// checkForRemovedClassAndPlan looks at serviceClass and servicePlan and
 // if either has been deleted, will block a new instance creation. If
 //
-func (c *controller) checkClassAndPlanForDeletion(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) error {
+func (c *controller) checkForRemovedClassAndPlan(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) error {
 	classDeleted := serviceClass.Status.RemovedFromBrokerCatalog
 	planDeleted := servicePlan.Status.RemovedFromBrokerCatalog
 
@@ -2092,27 +2093,24 @@ func (c *controller) checkClassAndPlanForDeletion(instance *v1beta1.ServiceInsta
 		return fmt.Errorf(s)
 	}
 
-	if classDeleted {
-		s := fmt.Sprintf("Service Class %q (K8S name: %q) has been deleted, can not provision.", serviceClass.Spec.ExternalName, serviceClass.Name)
-		glog.Warningf(
-			`%s "%s/%s": %s`,
-			typeSI, instance.Namespace, instance.Name, s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorDeletedClusterServiceClassReason, s)
+	s := fmt.Sprintf("Service Class %q (K8S name: %q) has been deleted, can not provision.", serviceClass.Spec.ExternalName, serviceClass.Name)
+	glog.Warningf(
+		`%s "%s/%s": %s`,
+		typeSI, instance.Namespace, instance.Name, s,
+	)
+	c.recorder.Event(instance, corev1.EventTypeWarning, errorDeletedClusterServiceClassReason, s)
 
-		setServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorDeletedClusterServiceClassReason,
-			s,
-		)
-		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
-			return err
-		}
-		return fmt.Errorf(s)
+	setServiceInstanceCondition(
+		instance,
+		v1beta1.ServiceInstanceConditionReady,
+		v1beta1.ConditionFalse,
+		errorDeletedClusterServiceClassReason,
+		s,
+	)
+	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+		return err
 	}
-	return nil
+	return fmt.Errorf(s)
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status
