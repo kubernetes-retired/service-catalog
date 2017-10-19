@@ -861,7 +861,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	// Since synchronous operation, must not make it into the polling queue.
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -918,7 +918,7 @@ func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	// Since synchronous operation, must not make it into the polling queue.
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -966,7 +966,7 @@ func TestReconcileServiceInstanceFailsWithDeletedClass(t *testing.T) {
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	// Since synchronous operation, must not make it into the polling queue.
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1029,7 +1029,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	// Since synchronous operation, must not make it into the polling queue.
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1099,7 +1099,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	instance := getTestServiceInstanceWithRefs()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1139,7 +1139,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
 }
@@ -1166,7 +1166,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 	instance := getTestServiceInstanceWithRefs()
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1206,7 +1206,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
 }
@@ -1464,7 +1464,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1473,9 +1473,9 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
-	// The item should've been added to the pollingQueue for later processing
+	// The item should've been added to the instancePollingQueue for later processing
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
 
@@ -1840,7 +1840,7 @@ func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1875,7 +1875,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1884,7 +1884,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
@@ -1932,7 +1932,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1941,7 +1941,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -1986,7 +1986,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	instance := getTestServiceInstanceAsyncProvisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -1995,7 +1995,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -2048,7 +2048,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2057,7 +2057,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
@@ -2105,7 +2105,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2114,7 +2114,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -2166,7 +2166,7 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2175,7 +2175,7 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
@@ -2311,7 +2311,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2320,7 +2320,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -2372,7 +2372,7 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2381,7 +2381,7 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %v", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
@@ -2435,7 +2435,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 		return true, instance, nil
 	})
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2444,7 +2444,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -2630,7 +2630,7 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2638,7 +2638,7 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -2685,7 +2685,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2693,7 +2693,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t.Fatalf("Should have return no error because the retry duration has elapsed: %v", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -4475,7 +4475,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	}
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -4513,7 +4513,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
 }
@@ -4538,7 +4538,7 @@ func TestPollServiceInstanceAsyncInProgressUpdating(t *testing.T) {
 	instance := getTestServiceInstanceAsyncUpdating(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -4547,7 +4547,7 @@ func TestPollServiceInstanceAsyncInProgressUpdating(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have record of seeing test instance once")
 	}
 
@@ -4595,7 +4595,7 @@ func TestPollServiceInstanceAsyncSuccessUpdating(t *testing.T) {
 	instance := getTestServiceInstanceAsyncUpdating(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -4604,7 +4604,7 @@ func TestPollServiceInstanceAsyncSuccessUpdating(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
@@ -4649,7 +4649,7 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 	instance := getTestServiceInstanceAsyncUpdating(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -4658,7 +4658,7 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
