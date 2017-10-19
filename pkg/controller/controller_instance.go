@@ -66,6 +66,10 @@ const (
 	errorNonexistentClusterServiceClassMessage string = "ReferencesNonexistentServiceClass"
 	errorNonexistentClusterServicePlanReason   string = "ReferencesNonexistentServicePlan"
 	errorNonexistentClusterServiceBrokerReason string = "ReferencesNonexistentBroker"
+	errorDeletedClusterServiceClassReason      string = "ReferencesDeletedServiceClass"
+	errorDeletedClusterServiceClassMessage     string = "ReferencesDeletedServiceClass"
+	errorDeletedClusterServicePlanReason       string = "ReferencesDeletedServicePlan"
+	errorDeletedClusterServicePlanMessage      string = "ReferencesDeletedServicePlan"
 	errorFindingNamespaceServiceInstanceReason string = "ErrorFindingNamespaceForInstance"
 	errorOrphanMitigationFailedReason          string = "OrphanMitigationFailed"
 
@@ -622,6 +626,16 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(toUpdate)
+	if err != nil {
+		return err
+	}
+
+	// Check if the ServiceClass or ServicePlan has been deleted and do not allow
+	// new plans to be created. It's little more complicated since we do want to allow
+	// parameter changes on an instance that's been deleted.
+	// If changes are not allowed, the method will set the appropriate status / record
+	// events, so we can just return here on failure.
+	err = c.checkClassAndPlanForDeletion(instance, serviceClass, servicePlan)
 	if err != nil {
 		return err
 	}
@@ -2028,6 +2042,77 @@ func (c *controller) setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.S
 		startingInstanceOrphanMitigationReason,
 		startingInstanceOrphanMitigationMessage,
 	)
+}
+
+// checkClassAndPlanForDeletion looks at serviceClass and servicePlan and
+// if either has been deleted, will block a new instance creation. If
+//
+func (c *controller) checkClassAndPlanForDeletion(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) error {
+	classDeleted := serviceClass.Status.RemovedFromBrokerCatalog
+	planDeleted := servicePlan.Status.RemovedFromBrokerCatalog
+
+	if !classDeleted && !planDeleted {
+		// Neither has been deleted, life's good.
+		return nil
+	}
+
+	isProvisioning := false
+	if instance.Status.ReconciledGeneration == 0 {
+		isProvisioning = true
+	}
+
+	// Regardless of what's been deleted, you can always update
+	// parameters (ie, not change plans)
+	if !isProvisioning && instance.Status.ExternalProperties != nil &&
+		instance.Spec.ExternalClusterServicePlanName == instance.Status.ExternalProperties.ExternalClusterServicePlanName {
+		// Service Instance has already been provisioned and we're only
+		// updating parameters, so let it through.
+		return nil
+	}
+
+	// At this point we know that plan is being changed
+	if planDeleted {
+		s := fmt.Sprintf("Service Plan %q (K8S name: %q) has been deleted, can not provision.", servicePlan.Spec.ExternalName, servicePlan.Name)
+		glog.Warningf(
+			`%s "%s/%s": %s`,
+			typeSI, instance.Namespace, instance.Name, s,
+		)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorDeletedClusterServicePlanReason, s)
+
+		setServiceInstanceCondition(
+			instance,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			errorDeletedClusterServicePlanReason,
+			s,
+		)
+		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+			return err
+		}
+		return fmt.Errorf(s)
+	}
+
+	if classDeleted {
+		s := fmt.Sprintf("Service Class %q (K8S name: %q) has been deleted, can not provision.", serviceClass.Spec.ExternalName, serviceClass.Name)
+		glog.Warningf(
+			`%s "%s/%s": %s`,
+			typeSI, instance.Namespace, instance.Name, s,
+		)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorDeletedClusterServiceClassReason, s)
+
+		setServiceInstanceCondition(
+			instance,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			errorDeletedClusterServiceClassReason,
+			s,
+		)
+		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+			return err
+		}
+		return fmt.Errorf(s)
+	}
+	return nil
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status

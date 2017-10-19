@@ -399,6 +399,20 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 	}
 }
 
+func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
+	return &v1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
+		Spec: v1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			Description:              "a test service that has been marked as removed",
+			ExternalName:             testRemovedClusterServiceClassName,
+			ExternalID:               testRemovedClusterServiceClassGUID,
+			Bindable:                 true,
+		},
+		Status: v1beta1.ClusterServiceClassStatus{RemovedFromBrokerCatalog: true},
+	}
+}
+
 func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 	return &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
@@ -424,6 +438,22 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 				Name: testClusterServiceClassGUID,
 			},
 		},
+	}
+}
+
+func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
+	return &v1beta1.ClusterServicePlan{
+		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
+		Spec: v1beta1.ClusterServicePlanSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			ExternalID:               testRemovedClusterServicePlanGUID,
+			ExternalName:             testRemovedClusterServicePlanName,
+			Bindable:                 truePtr(),
+			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+				Name: testClusterServiceClassGUID,
+			},
+		},
+		Status: v1beta1.ClusterServicePlanStatus{RemovedFromBrokerCatalog: true},
 	}
 }
 
@@ -605,6 +635,40 @@ func getTestServiceInstanceWithFailedStatus() *v1beta1.ServiceInstance {
 			Type:   v1beta1.ServiceInstanceConditionFailed,
 			Status: v1beta1.ConditionTrue,
 		}},
+	}
+
+	return instance
+}
+
+func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithRefs()
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:   v1beta1.ServiceInstanceConditionFailed,
+			Status: v1beta1.ConditionTrue,
+		}},
+		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
+			ExternalClusterServicePlanName: "old-plan-here",
+		},
+		// It's been provisioned successfully.
+		ReconciledGeneration: 1,
+	}
+
+	return instance
+}
+
+func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithRefs()
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:   v1beta1.ServiceInstanceConditionFailed,
+			Status: v1beta1.ConditionTrue,
+		}},
+		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
+			ExternalClusterServicePlanName: testClusterServicePlanName,
+		},
+		// It's been provisioned successfully.
+		ReconciledGeneration: 1,
 	}
 
 	return instance
