@@ -2065,7 +2065,7 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
-	expectedEvent := corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: Status code: 403; ErrorMessage: %!q(*string=<nil>); description: %!q(*string=<nil>)"
+	expectedEvent := corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: Status: 403; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
 	}
