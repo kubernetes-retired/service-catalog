@@ -67,6 +67,11 @@ func (pcb *ContextBuilder) Message(msg string) string {
 	return msg
 }
 
+func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
+	msg := fmt.Sprintf(format, a...)
+	return pcb.Message(msg)
+}
+
 // TODO(n3wscott): Support <type> (K8S: <K8S-Type-Name> ExternalName: <External-Type-Name>)
 
 func (pcb ContextBuilder) String() string {

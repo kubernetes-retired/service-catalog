@@ -92,7 +92,17 @@ func TestPrettyContextBuilderKindNamespaceName(t *testing.T) {
 	}
 }
 
-func TestPrettyContextBuilderMsg(t *testing.T) {
+func TestPrettyContextBuilderKindNamespaceNameNew(t *testing.T) {
+	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name")
+
+	e := `ServiceInstance "Namespace/Name"`
+	g := pcb.String()
+	if g != e {
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
+	}
+}
+
+func TestPrettyContextBuilderMessage(t *testing.T) {
 	pcb := ContextBuilder{}
 
 	e := `Msg`
@@ -102,13 +112,45 @@ func TestPrettyContextBuilderMsg(t *testing.T) {
 	}
 }
 
-func TestPrettyContextBuilderContextAndMsg(t *testing.T) {
+func TestPrettyContextBuilderContextAndMessage(t *testing.T) {
 	pcb := ContextBuilder{}
 
 	pcb.SetKind(ServiceInstance).SetNamespace("Namespace").SetName("Name")
 
 	e := `ServiceInstance "Namespace/Name": Msg`
 	g := pcb.Message("Msg")
+	if g != e {
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
+	}
+}
+
+func TestPrettyContextBuilderMessagef(t *testing.T) {
+	pcb := ContextBuilder{}
+
+	e := `This was built.`
+	g := pcb.Messagef("This %s built.", "was")
+	if g != e {
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
+	}
+}
+
+func TestPrettyContextBuilderMessagefMany(t *testing.T) {
+	pcb := ContextBuilder{}
+
+	e := `One 2 three 4 "five" 6`
+	g := pcb.Messagef("%s %d %s %v %q %d", "One", 2, "three", 4, "five", 6)
+	if g != e {
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
+	}
+}
+
+func TestPrettyContextBuilderContextMessagefAndContext(t *testing.T) {
+	pcb := ContextBuilder{}
+
+	pcb.SetKind(ServiceInstance).SetNamespace("Namespace").SetName("Name")
+
+	e := `ServiceInstance "Namespace/Name": This was the message: Msg`
+	g := pcb.Messagef("This was the message: %s", "Msg")
 	if g != e {
 		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
