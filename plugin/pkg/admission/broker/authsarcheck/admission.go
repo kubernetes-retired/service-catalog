@@ -90,9 +90,6 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
 	} else if clusterClusterServiceBroker.Spec.AuthInfo.Bearer != nil {
 		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.Bearer.SecretRef
-	} else if clusterClusterServiceBroker.Spec.AuthInfo.BasicAuthSecret != nil {
-		// TODO: this field is deprecated, remove in v1beta1
-		secretRef = clusterClusterServiceBroker.Spec.AuthInfo.BasicAuthSecret
 	}
 	userInfo := a.GetUserInfo()
 

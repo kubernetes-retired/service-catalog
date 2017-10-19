@@ -1054,17 +1054,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"),
 							},
 						},
-						"basicAuthSecret": {
-							SchemaProps: spec.SchemaProps{
-								Description: "DEPRECATED: use `Basic` field for configuring basic authentication instead. BasicAuthSecret is a reference to a Secret containing auth information the catalog should use to authenticate to this ServiceBroker using basic auth.",
-								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
-							},
-						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition": {
 			Schema: spec.Schema{

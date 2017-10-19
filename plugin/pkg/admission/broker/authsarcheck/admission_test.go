@@ -123,28 +123,6 @@ func TestAdmissionBroker(t *testing.T) {
 			allowed: true,
 		},
 		{
-			name: "broker with basic auth, user authenticated (deprecated authinfo field)",
-			broker: &servicecatalog.ClusterServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
-				},
-				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						BasicAuthSecret: &servicecatalog.ObjectReference{
-							Namespace: "test-ns",
-							Name:      "test-secret",
-						},
-					},
-				},
-			},
-			userInfo: &user.DefaultInfo{
-				Name:   "system:serviceaccount:test-ns:catalog",
-				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
-			},
-			allowed: true,
-		},
-		{
 			name: "broker with bearer token, user authenticated",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{

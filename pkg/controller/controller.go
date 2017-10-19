@@ -446,19 +446,6 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 		return &osb.AuthConfig{
 			BearerConfig: bearerConfig,
 		}, nil
-	} else if authInfo.BasicAuthSecret != nil {
-		secretRef := authInfo.BasicAuthSecret
-		secret, err := client.Core().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		basicAuthConfig, err := getBasicAuthConfig(secret)
-		if err != nil {
-			return nil, err
-		}
-		return &osb.AuthConfig{
-			BasicAuthConfig: basicAuthConfig,
-		}, nil
 	}
 	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
 }

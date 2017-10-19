@@ -82,16 +82,6 @@ func validateClusterServiceBrokerSpec(spec *sc.ClusterServiceBrokerSpec, fldPath
 					field.Required(fldPath.Child("authInfo", "bearer", "secretRef"), "a basic auth secret is required"),
 				)
 			}
-		} else if spec.AuthInfo.BasicAuthSecret != nil {
-			basicAuthSecret := spec.AuthInfo.BasicAuthSecret
-			if basicAuthSecret != nil {
-				for _, msg := range apivalidation.ValidateNamespaceName(basicAuthSecret.Namespace, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basicAuthSecret", "namespace"), basicAuthSecret.Namespace, msg))
-				}
-				for _, msg := range apivalidation.NameIsDNSSubdomain(basicAuthSecret.Name, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basicAuthSecret", "name"), basicAuthSecret.Name, msg))
-				}
-			}
 		} else {
 			// Authentication
 			allErrs = append(
