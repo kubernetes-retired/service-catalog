@@ -951,15 +951,6 @@ func (in *ServiceBrokerAuthInfo) DeepCopyInto(out *ServiceBrokerAuthInfo) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
-	if in.BasicAuthSecret != nil {
-		in, out := &in.BasicAuthSecret, &out.BasicAuthSecret
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ObjectReference)
-			**out = **in
-		}
-	}
 	return
 }
 

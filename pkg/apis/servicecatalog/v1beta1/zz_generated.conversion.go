@@ -792,7 +792,6 @@ func Convert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingStatus
 func autoConvert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthInfo(in *ServiceBrokerAuthInfo, out *servicecatalog.ServiceBrokerAuthInfo, s conversion.Scope) error {
 	out.Basic = (*servicecatalog.BasicAuthConfig)(unsafe.Pointer(in.Basic))
 	out.Bearer = (*servicecatalog.BearerTokenAuthConfig)(unsafe.Pointer(in.Bearer))
-	out.BasicAuthSecret = (*servicecatalog.ObjectReference)(unsafe.Pointer(in.BasicAuthSecret))
 	return nil
 }
 
@@ -804,7 +803,6 @@ func Convert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthIn
 func autoConvert_servicecatalog_ServiceBrokerAuthInfo_To_v1beta1_ServiceBrokerAuthInfo(in *servicecatalog.ServiceBrokerAuthInfo, out *ServiceBrokerAuthInfo, s conversion.Scope) error {
 	out.Basic = (*BasicAuthConfig)(unsafe.Pointer(in.Basic))
 	out.Bearer = (*BearerTokenAuthConfig)(unsafe.Pointer(in.Bearer))
-	out.BasicAuthSecret = (*ObjectReference)(unsafe.Pointer(in.BasicAuthSecret))
 	return nil
 }
 
