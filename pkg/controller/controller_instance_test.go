@@ -3852,13 +3852,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	instance := getTestServiceInstanceWithRefs()
-	instance.Generation = 2
-	instance.Status.ReconciledGeneration = 1
-
-	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: "old-plan-name",
-	}
+	instance := getTestServiceInstanceUpdatingPlan()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance.")
@@ -3919,13 +3913,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	instance := getTestServiceInstanceWithRefs()
-	instance.Generation = 2
-	instance.Status.ReconciledGeneration = 1
-
-	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: "old-plan-name",
-	}
+	instance := getTestServiceInstanceUpdatingPlan()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)

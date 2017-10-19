@@ -642,13 +642,14 @@ func getTestServiceInstanceWithFailedStatus() *v1beta1.ServiceInstance {
 
 func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
 	instance.Status = v1beta1.ServiceInstanceStatus{
 		Conditions: []v1beta1.ServiceInstanceCondition{{
-			Type:   v1beta1.ServiceInstanceConditionFailed,
+			Type:   v1beta1.ServiceInstanceConditionReady,
 			Status: v1beta1.ConditionTrue,
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: "old-plan-here",
+			ExternalClusterServicePlanName: "old-plan-name",
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
@@ -659,9 +660,10 @@ func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 
 func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
 	instance.Status = v1beta1.ServiceInstanceStatus{
 		Conditions: []v1beta1.ServiceInstanceCondition{{
-			Type:   v1beta1.ServiceInstanceConditionFailed,
+			Type:   v1beta1.ServiceInstanceConditionReady,
 			Status: v1beta1.ConditionTrue,
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
