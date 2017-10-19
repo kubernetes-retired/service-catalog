@@ -724,6 +724,15 @@ type ServiceBindingSpec struct {
 type ServiceBindingStatus struct {
 	Conditions []ServiceBindingCondition
 
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this ServiceBinding in progress.
+	AsyncOpInProgress bool
+
+	// LastOperation is the string that the broker may have returned when
+	// an async operation started, it should be sent back to the broker
+	// on poll requests as a query param.
+	LastOperation *string
+
 	// CurrentOperation is the operation the Controller is currently performing
 	// on the ServiceBinding.
 	CurrentOperation ServiceBindingOperation
