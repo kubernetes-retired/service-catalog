@@ -67,6 +67,7 @@ func (pcb *ContextBuilder) Message(msg string) string {
 	return msg
 }
 
+// Messagef returns a string with message formatted then prepended with the current source context.
 func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 	msg := fmt.Sprintf(format, a...)
 	return pcb.Message(msg)
