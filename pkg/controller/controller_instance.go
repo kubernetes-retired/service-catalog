@@ -1251,10 +1251,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		// the instance.
 		errText := ""
 		if httpErr, ok := osb.IsHTTPError(err); ok {
-			errText = fmt.Sprintf(
-				"Status code: %d; ErrorMessage: %q; description: %q",
-				httpErr.StatusCode, httpErr.ErrorMessage, httpErr.Description,
-			)
+			errText = httpErr.Error()
 		} else {
 			errText = err.Error()
 		}
