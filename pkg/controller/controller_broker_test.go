@@ -512,7 +512,7 @@ func TestReconcileClusterServiceBrokerErrorFetchingCatalog(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorFetchingCatalogReason + " " + `ClusterServiceBroker "test-broker": Error getting broker catalog: ooops`
+	expectedEvent := corev1.EventTypeWarning + " " + errorFetchingCatalogReason + " " + "Error getting broker catalog: ooops"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v", a)
 	}
@@ -709,10 +709,10 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.S
 	if shouldSucceed {
 		expectedEvent = corev1.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
 	} else {
-		expectedEvent = corev1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + `ClusterServiceBroker "test-broker": Error getting broker auth credentials`
+		expectedEvent = corev1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + `Error getting broker auth credentials`
 	}
 	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event,\nexpected:\t%s \ngot:\t%s", e, a)
 	}
 }
 
