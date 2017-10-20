@@ -90,40 +90,40 @@ func NewController(
 		pollingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
 	}
 
+	controller.brokerLister = brokerInformer.Lister()
 	brokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.brokerAdd,
 		UpdateFunc: controller.brokerUpdate,
 		DeleteFunc: controller.brokerDelete,
 	})
-	controller.brokerLister = brokerInformer.Lister()
 
+	controller.serviceClassLister = clusterServiceClassInformer.Lister()
 	clusterServiceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.serviceClassAdd,
 		UpdateFunc: controller.serviceClassUpdate,
 		DeleteFunc: controller.serviceClassDelete,
 	})
-	controller.serviceClassLister = clusterServiceClassInformer.Lister()
 
+	controller.servicePlanLister = clusterServicePlanInformer.Lister()
 	clusterServicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.servicePlanAdd,
 		UpdateFunc: controller.servicePlanUpdate,
 		DeleteFunc: controller.servicePlanDelete,
 	})
-	controller.servicePlanLister = clusterServicePlanInformer.Lister()
 
+	controller.instanceLister = instanceInformer.Lister()
 	instanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.instanceAdd,
 		UpdateFunc: controller.instanceUpdate,
 		DeleteFunc: controller.instanceDelete,
 	})
-	controller.instanceLister = instanceInformer.Lister()
 
+	controller.bindingLister = bindingInformer.Lister()
 	bindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.bindingAdd,
 		UpdateFunc: controller.bindingUpdate,
 		DeleteFunc: controller.bindingDelete,
 	})
-	controller.bindingLister = bindingInformer.Lister()
 
 	return controller, nil
 }
