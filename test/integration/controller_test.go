@@ -49,27 +49,22 @@ import (
 )
 
 const (
-	testNamespace               = "test-namespace"
-	testBrokerName              = "test-broker"
-	testClusterServiceClassName = "test-service"
-	testClusterServiceClassID   = "12345"
-	testPlanName                = "test-plan"
-	testPlanExternalID          = "34567"
-	testInstanceName            = "test-instance"
-	testBindingName             = "test-binding"
-	testSecretName              = "test-secret"
-	testBrokerURL               = "https://example.com"
-	testExternalID              = "9737b6ed-ca95-4439-8219-c53fcad118ab"
-	testDashboardURL            = "http://test-dashboard.example.com"
-	testCreatorUsername         = "create-username"
-	testUpdaterUsername         = "update-username"
-	testDeleterUsername         = "delete-username"
+	testNamespace                = "test-namespace"
+	testClusterServiceBrokerName = "test-broker"
+	testClusterServiceClassName  = "test-service"
+	testClusterServiceClassGUID  = "12345"
+	testClusterServicePlanName   = "test-plan"
+	testPlanExternalID           = "34567"
+	testInstanceName             = "test-instance"
+	testBindingName              = "test-binding"
+	testSecretName               = "test-secret"
+	testBrokerURL                = "https://example.com"
+	testExternalID               = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+	testDashboardURL             = "http://test-dashboard.example.com"
+	testCreatorUsername          = "create-username"
+	testUpdaterUsername          = "update-username"
+	testDeleterUsername          = "delete-username"
 )
-
-func truePtr() *bool {
-	b := true
-	return &b
-}
 
 // TestBasicFlowsSync tests:
 //
@@ -119,7 +114,7 @@ func TestBasicFlowsSync(t *testing.T) {
 	client := catalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -131,7 +126,7 @@ func TestBasicFlowsSync(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -140,7 +135,7 @@ func TestBasicFlowsSync(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -155,7 +150,7 @@ func TestBasicFlowsSync(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -255,7 +250,7 @@ func TestBasicFlowsSync(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -265,7 +260,7 @@ func TestBasicFlowsSync(t *testing.T) {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
-	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
 	if err != nil {
 		t.Fatalf("error waiting for Broker to not exist: %v", err)
 	}
@@ -314,7 +309,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 	client := catalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -326,7 +321,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -335,7 +330,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -350,7 +345,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -450,7 +445,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -460,7 +455,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
-	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
 	if err != nil {
 		t.Fatalf("error waiting for Broker to not exist: %v", err)
 	}
@@ -493,7 +488,7 @@ func TestProvisionFailure(t *testing.T) {
 	client := catalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -505,7 +500,7 @@ func TestProvisionFailure(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -514,7 +509,7 @@ func TestProvisionFailure(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -529,7 +524,7 @@ func TestProvisionFailure(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -572,7 +567,7 @@ func TestProvisionFailure(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -582,7 +577,7 @@ func TestProvisionFailure(t *testing.T) {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
-	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
 	if err != nil {
 		t.Fatalf("error waiting for Broker to not exist: %v", err)
 	}
@@ -620,7 +615,7 @@ func TestBindingFailure(t *testing.T) {
 	client := fakeCatalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -632,7 +627,7 @@ func TestBindingFailure(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -641,7 +636,7 @@ func TestBindingFailure(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -656,7 +651,7 @@ func TestBindingFailure(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -737,7 +732,7 @@ func TestBindingFailure(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -747,7 +742,7 @@ func TestBindingFailure(t *testing.T) {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
-	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
 	if err != nil {
 		t.Fatalf("error waiting for Broker to not exist: %v", err)
 	}
@@ -771,7 +766,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 						Bindable:    true,
 						Plans: []osb.Plan{
 							{
-								Name:        testPlanName,
+								Name:        testClusterServicePlanName,
 								Free:        truePtr(),
 								ID:          "34567",
 								Description: "a test plan",
@@ -812,7 +807,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	client := catalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -824,7 +819,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -833,7 +828,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -855,7 +850,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -1031,7 +1026,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 	client := catalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -1043,7 +1038,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -1052,7 +1047,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -1067,7 +1062,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -1115,7 +1110,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 	// End orphan mitigation test
 
 	// Delete the broker
-	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -1125,7 +1120,7 @@ func TestServiceInstanceOrphanMitigation(t *testing.T) {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
-	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
 	if err != nil {
 		t.Fatalf("error waiting for Broker to not exist: %v", err)
 	}
@@ -1158,7 +1153,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 	client := fakeCatalogClient.ServicecatalogV1beta1()
 
 	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testBrokerName},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			URL: testBrokerURL,
 		},
@@ -1170,7 +1165,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 	}
 
 	err = util.WaitForBrokerCondition(client,
-		testBrokerName,
+		testClusterServiceBrokerName,
 		v1beta1.ServiceBrokerCondition{
 			Type:   v1beta1.ServiceBrokerConditionReady,
 			Status: v1beta1.ConditionTrue,
@@ -1179,7 +1174,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassID)
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
 	if nil != err {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
@@ -1194,7 +1189,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
-				ClusterServicePlanExternalName:  testPlanName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testExternalID,
 		},
@@ -1283,7 +1278,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 	// End provision test
 
 	// Delete the broker
-	err = client.ClusterServiceBrokers().Delete(testBrokerName, &metav1.DeleteOptions{})
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
 	if nil != err {
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
@@ -1293,7 +1288,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
-	err = util.WaitForBrokerToNotExist(client, testBrokerName)
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
 	if err != nil {
 		t.Fatalf("error waiting for Broker to not exist: %v", err)
 	}
@@ -1401,7 +1396,7 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 				Bindable:    true,
 				Plans: []osb.Plan{
 					{
-						Name:        testPlanName,
+						Name:        testClusterServicePlanName,
 						Free:        truePtr(),
 						ID:          testPlanExternalID,
 						Description: "a test plan",

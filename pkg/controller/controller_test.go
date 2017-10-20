@@ -438,6 +438,7 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 				Name: testClusterServiceClassGUID,
 			},
 		},
+		Status: v1beta1.ClusterServicePlanStatus{},
 	}
 }
 
