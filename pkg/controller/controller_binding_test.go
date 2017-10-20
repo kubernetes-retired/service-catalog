@@ -99,8 +99,8 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testNonExistentClusterServiceClassName,
-				ExternalClusterServicePlanName:  testClusterServicePlanName,
+				ClusterServiceClassExternalName: testNonExistentClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID: testServiceInstanceGUID,
 		},
@@ -147,8 +147,8 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testNonExistentClusterServiceClassName,
-				ExternalClusterServicePlanName:  testClusterServicePlanName,
+				ClusterServiceClassExternalName: testNonExistentClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID:             testServiceInstanceGUID,
 			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "Some Ref"},
@@ -197,8 +197,8 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testNonExistentClusterServiceClassName,
-				ExternalClusterServicePlanName:  testClusterServicePlanName,
+				ClusterServiceClassExternalName: testNonExistentClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
 			},
 			ExternalID:             testServiceInstanceGUID,
 			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "nosuchclassid"},

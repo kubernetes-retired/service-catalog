@@ -725,7 +725,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	}
 
 	toUpdate.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
-		ExternalClusterServicePlanName: servicePlan.Spec.ExternalName,
+		ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
 		Parameters:                     rawParametersWithRedaction,
 		ParametersChecksum:             parametersChecksum,
 		UserInfo:                       instance.Spec.UserInfo,
@@ -799,7 +799,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		}
 		// Only send the plan ID if the plan name has changed from what the Broker has
 		if toUpdate.Status.ExternalProperties == nil ||
-			toUpdate.Status.InProgressProperties.ExternalClusterServicePlanName != toUpdate.Status.ExternalProperties.ExternalClusterServicePlanName {
+			toUpdate.Status.InProgressProperties.ClusterServicePlanExternalName != toUpdate.Status.ExternalProperties.ClusterServicePlanExternalName {
 			planID := servicePlan.Spec.ExternalID
 			updateRequest.PlanID = &planID
 		}
@@ -1653,12 +1653,12 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 // Event, and sets the InstanceCondition with the appropriate error message.
 func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, *v1beta1.ClusterServiceClass, error) {
 	var sc *v1beta1.ClusterServiceClass
-	if instance.Spec.ExternalClusterServiceClassName != "" {
+	if instance.Spec.ClusterServiceClassExternalName != "" {
 		glog.V(4).Infof(
 			`%s "%s/%s": looking up a ClusterServiceClass from externalName: %q`,
-			typeSI, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName,
+			typeSI, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassExternalName,
 		)
-		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ExternalClusterServiceClassName}
+		listOpts := metav1.ListOptions{FieldSelector: "spec.externalName==" + instance.Spec.ClusterServiceClassExternalName}
 		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
 		if err == nil && len(serviceClasses.Items) == 1 {
 			sc = &serviceClasses.Items[0]
@@ -1667,12 +1667,12 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			}
 			glog.V(4).Infof(
 				`%s "%s/%s": resolved ClusterServiceClass with externalName %q to K8S ClusterServiceClass %q`,
-				typeSI, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServiceClassName, sc.Name,
+				typeSI, instance.Namespace, instance.Name, instance.Spec.ClusterServiceClassExternalName, sc.Name,
 			)
 		} else {
 			s := fmt.Sprintf(
 				"References a non-existent ClusterServiceClass (ExternalName: %q) or there is more than one (found: %d)",
-				instance.Spec.ExternalClusterServiceClassName, len(serviceClasses.Items),
+				instance.Spec.ClusterServiceClassExternalName, len(serviceClasses.Items),
 			)
 			glog.Warningf(
 				`%s "%s/%s": %s`,
@@ -1725,7 +1725,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 		}
 	} else {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ExternalClusterServiceClassName nor ClusterServiceClassName is set: %+v", instance.Spec)
+		return nil, nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ClusterServiceClassExternalName nor ClusterServiceClassName is set: %+v", instance.Spec)
 	}
 	return instance, sc, nil
 }
@@ -1735,9 +1735,9 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 // If ClusterServicePlan can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
 func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) (*v1beta1.ServiceInstance, error) {
-	if instance.Spec.ExternalClusterServicePlanName != "" {
+	if instance.Spec.ClusterServicePlanExternalName != "" {
 		fieldSet := fields.Set{
-			"spec.externalName":                instance.Spec.ExternalClusterServicePlanName,
+			"spec.externalName":                instance.Spec.ClusterServicePlanExternalName,
 			"spec.clusterServiceClassRef.name": instance.Spec.ClusterServiceClassRef.Name,
 			"spec.clusterServiceBrokerName":    brokerName,
 		}
@@ -1751,12 +1751,12 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 			}
 			glog.V(4).Infof(
 				`%s "%s/%s": resolved ClusterServicePlan (ExternalName: %q) to ClusterServicePlan (K8S: %q)`,
-				typeSI, instance.Namespace, instance.Name, instance.Spec.ExternalClusterServicePlanName, sp.Name,
+				typeSI, instance.Namespace, instance.Name, instance.Spec.ClusterServicePlanExternalName, sp.Name,
 			)
 		} else {
 			s := fmt.Sprintf(
 				"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %d)",
-				instance.Spec.ClusterServicePlanName, instance.Spec.ExternalClusterServicePlanName, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ExternalClusterServiceClassName, len(servicePlans.Items),
+				instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName, len(servicePlans.Items),
 			)
 			glog.Warningf(
 				`%s "%s/%s": %s`,
@@ -1803,7 +1803,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		}
 	} else {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ExternalClusterServicePlanName nor ClusterServicePlanName is set: %+v", instance.Spec)
+		return nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ClusterServicePlanExternalName nor ClusterServicePlanName is set: %+v", instance.Spec)
 	}
 	return instance, nil
 }

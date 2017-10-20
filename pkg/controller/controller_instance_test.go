@@ -61,8 +61,8 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: "nothere",
-				ExternalClusterServicePlanName:  "nothere",
+				ClusterServiceClassExternalName: "nothere",
+				ClusterServicePlanExternalName:  "nothere",
 			},
 			ExternalID: testServiceInstanceGUID,
 		},
@@ -80,7 +80,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -243,8 +243,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
-				ExternalClusterServiceClassName: testClusterServiceClassName,
-				ExternalClusterServicePlanName:  "nothere",
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  "nothere",
 			},
 			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
@@ -491,7 +491,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -3408,7 +3408,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -3477,7 +3477,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	}
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ExternalClusterServicePlanName: testClusterServicePlanName,
+		ClusterServicePlanExternalName: testClusterServicePlanName,
 		Parameters:                     oldParametersRaw,
 		ParametersChecksum:             oldParametersChecksum,
 	}
@@ -3597,7 +3597,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -3675,7 +3675,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	}
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ExternalClusterServicePlanName: "old-plan-name",
+		ClusterServicePlanExternalName: "old-plan-name",
 		Parameters:                     oldParametersRaw,
 		ParametersChecksum:             oldParametersChecksum,
 	}
@@ -3761,7 +3761,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	instance.Status.ReconciledGeneration = 1
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ExternalClusterServicePlanName: "old-plan-name",
+		ClusterServicePlanExternalName: "old-plan-name",
 	}
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
@@ -3828,7 +3828,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	instance.Status.ReconciledGeneration = 1
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ExternalClusterServicePlanName: "old-plan-name",
+		ClusterServicePlanExternalName: "old-plan-name",
 	}
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
@@ -3916,7 +3916,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ExternalClusterServiceClassName),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -3973,7 +3973,7 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
-	instance.Spec.ExternalClusterServicePlanName = newPlanName
+	instance.Spec.ClusterServicePlanExternalName = newPlanName
 	instance.Spec.ClusterServicePlanRef = nil
 
 	updatedInstance, err := testController.resolveReferences(instance)
@@ -4097,7 +4097,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	instance.Status.ReconciledGeneration = 1
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ExternalClusterServicePlanName: "old-plan-name",
+		ClusterServicePlanExternalName: "old-plan-name",
 	}
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName

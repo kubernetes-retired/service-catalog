@@ -36,8 +36,8 @@ func getTestInstance() *servicecatalog.ServiceInstance {
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
 			PlanReference: servicecatalog.PlanReference{
-				ExternalClusterServiceClassName: "test-serviceclass",
-				ExternalClusterServicePlanName:  "test-plan",
+				ClusterServiceClassExternalName: "test-serviceclass",
+				ClusterServicePlanExternalName:  "test-plan",
 			},
 			ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
 			ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
@@ -97,7 +97,7 @@ func TestInstanceUpdate(t *testing.T) {
 			older: getTestInstance(),
 			newer: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
-				i.Spec.ExternalClusterServicePlanName = "new-test-plan"
+				i.Spec.ClusterServicePlanExternalName = "new-test-plan"
 				return i
 			}(),
 			shouldGenerationIncrement: true,
