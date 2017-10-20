@@ -893,6 +893,102 @@ func TestReconcileServiceInstance(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceFailsWithDeletedPlan tests that a ServiceInstance is not
+// created if the ServicePlan specified is marked as RemovedFromCatalog.
+func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sp := getTestClusterServicePlan()
+	sp.Status.RemovedFromBrokerCatalog = true
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
+
+	instance := getTestServiceInstanceWithRefs()
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatalf("This should fail")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	// Since synchronous operation, must not make it into the polling queue.
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// verify no kube actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance, errorDeletedClusterServicePlanReason)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeWarning + " " + errorDeletedClusterServicePlanReason + " Service Plan \"test-plan\" (K8S name: \"PGUID\") has been deleted, can not provision."
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestReconcileServiceInstanceFailsWithDeletedClass tests that a ServiceInstance is not
+// created if the ServiceClass specified is marked as RemovedFromCatalog.
+func TestReconcileServiceInstanceFailsWithDeletedClass(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sc := getTestClusterServiceClass()
+	sc.Status.RemovedFromBrokerCatalog = true
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(sc)
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatalf("This should have failed")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	// Since synchronous operation, must not make it into the polling queue.
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	// verify no kube actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceReadyFalse(t, updatedServiceInstance, errorDeletedClusterServiceClassReason)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeWarning + " " + errorDeletedClusterServiceClassReason + " Service Class \"test-serviceclass\" (K8S name: \"SCGUID\") has been deleted, can not provision."
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
 // TestReconcileServiceInstance tests synchronously provisioning a new service
 func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
@@ -3756,13 +3852,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	instance := getTestServiceInstanceWithRefs()
-	instance.Generation = 2
-	instance.Status.ReconciledGeneration = 1
-
-	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: "old-plan-name",
-	}
+	instance := getTestServiceInstanceUpdatingPlan()
 
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance.")
@@ -3823,13 +3913,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	instance := getTestServiceInstanceWithRefs()
-	instance.Generation = 2
-	instance.Status.ReconciledGeneration = 1
-
-	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: "old-plan-name",
-	}
+	instance := getTestServiceInstanceUpdatingPlan()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -4304,4 +4388,104 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+}
+
+func TestCheckClassAndPlanForDeletion(t *testing.T) {
+	cases := []struct {
+		name           string
+		instance       *v1beta1.ServiceInstance
+		class          *v1beta1.ClusterServiceClass
+		plan           *v1beta1.ClusterServicePlan
+		success        bool
+		expectedReason string
+		expectedErrors []string
+	}{
+		{
+			name:     "non-deleted plan and class works",
+			instance: getTestServiceInstance(),
+			class:    getTestClusterServiceClass(),
+			plan:     getTestClusterServicePlan(),
+			success:  true,
+		},
+		{
+			name:           "deleted plan fails",
+			instance:       getTestServiceInstance(),
+			class:          getTestClusterServiceClass(),
+			plan:           getTestMarkedAsRemovedClusterServicePlan(),
+			success:        false,
+			expectedReason: errorDeletedClusterServicePlanReason,
+			expectedErrors: []string{"Service Plan", "has been deleted"},
+		},
+		{
+			name:           "deleted class fails",
+			instance:       getTestServiceInstance(),
+			class:          getTestMarkedAsRemovedClusterServiceClass(),
+			plan:           getTestClusterServicePlan(),
+			success:        false,
+			expectedReason: errorDeletedClusterServiceClassReason,
+			expectedErrors: []string{"Service Class", "has been deleted"},
+		},
+		{
+			name:           "deleted plan and class fails",
+			instance:       getTestServiceInstance(),
+			class:          getTestClusterServiceClass(),
+			plan:           getTestMarkedAsRemovedClusterServicePlan(),
+			success:        false,
+			expectedReason: errorDeletedClusterServicePlanReason,
+			expectedErrors: []string{"Service Plan", "has been deleted"},
+		},
+		{
+			name:           "Updating plan fails",
+			instance:       getTestServiceInstanceUpdatingPlan(),
+			class:          getTestClusterServiceClass(),
+			plan:           getTestMarkedAsRemovedClusterServicePlan(),
+			success:        false,
+			expectedReason: errorDeletedClusterServicePlanReason,
+			expectedErrors: []string{"Service Plan", "has been deleted"},
+		},
+		{
+			name:     "Updating parameters works",
+			instance: getTestServiceInstanceUpdatingParametersOfDeletedPlan(),
+			class:    getTestClusterServiceClass(),
+			plan:     getTestMarkedAsRemovedClusterServicePlan(),
+			success:  true,
+		},
+	}
+
+	for _, tc := range cases {
+		fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
+
+		err := testController.checkForRemovedClassAndPlan(tc.instance, tc.class, tc.plan)
+		if err != nil {
+			if tc.success {
+				t.Errorf("%q: Unexpected error %v", tc.name, err)
+			}
+			for _, exp := range tc.expectedErrors {
+				if e, a := exp, err.Error(); !strings.Contains(a, e) {
+					t.Errorf("%q: Did not find expected error %q : got %q", tc.name, e, a)
+				}
+			}
+		} else if !tc.success {
+			t.Errorf("%q: Did not get a failure when expected one", tc.name)
+		}
+
+		// no kube or broker actions ever
+		assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
+		brokerActions := fakeClusterServiceBrokerClient.Actions()
+		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+		// If things succeeded, make sure no actions on the catalog client
+		// and if things fail, make sure instance status is updated and
+		// an event is generated
+		actions := fakeCatalogClient.Actions()
+		if tc.success {
+			assertNumberOfActions(t, actions, 0)
+		} else {
+			assertNumberOfActions(t, actions, 1)
+			assertUpdateStatus(t, actions[0], tc.instance)
+			assertServiceInstanceReadyFalse(t, tc.instance, tc.expectedReason)
+			events := getRecordedEvents(testController)
+			assertNumEvents(t, events, 1)
+		}
+	}
 }
