@@ -121,13 +121,13 @@ func isServiceBindingFailed(binding *v1beta1.ServiceBinding) bool {
 	return false
 }
 
-// setAndUpdateOrphanMitigation is for setting the OrphanMitigationInProgress
-// status to true, setting the proper condition statuses, and persisting the
-// changes via updateServiceBindingStatus.
-func (c *controller) setAndUpdateOrphanMitigation(binding *v1beta1.ServiceBinding, toUpdate *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, brokerName string, errorStr string) error {
+// setAndUpdateServiceBindingStartOrphanMitigation is for setting the
+// OrphanMitigationInProgress status to true, setting the proper condition
+// statuses, and persisting the changes via updateServiceBindingStatus.
+func (c *controller) setAndUpdateServiceBindingStartOrphanMitigation(toUpdate *v1beta1.ServiceBinding) error {
 	s := fmt.Sprintf(
 		`%s "%s/%s": Starting orphan mitgation`,
-		typeSB, binding.Name, binding.Namespace,
+		typeSB, toUpdate.Name, toUpdate.Namespace,
 	)
 	toUpdate.Status.OrphanMitigationInProgress = true
 	toUpdate.Status.OperationStartTime = nil
@@ -141,7 +141,7 @@ func (c *controller) setAndUpdateOrphanMitigation(binding *v1beta1.ServiceBindin
 		s,
 	)
 
-	c.recorder.Event(binding, corev1.EventTypeWarning, errorServiceBindingOrphanMitigation, s)
+	c.recorder.Event(toUpdate, corev1.EventTypeWarning, errorServiceBindingOrphanMitigation, s)
 	if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 		return err
 	}
@@ -449,7 +449,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				errorBindCallReason,
 				"Communication with the ServiceBroker timed out; Bind operation will not be retried: "+err.Error(),
 			)
-			return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, netErr.Error())
+			return c.setAndUpdateServiceBindingStartOrphanMitigation(toUpdate)
 		} else if err != nil {
 			if httpErr, ok := osb.IsHTTPError(err); ok {
 				// orphan mitigation: looking for 2xx (excluding 200), 408, 5xx
@@ -463,7 +463,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 						errorBindCallReason,
 						"ServiceBroker returned a failure; Bind operation will not be retried: "+err.Error(),
 					)
-					return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, httpErr.Error())
+					return c.setAndUpdateServiceBindingStartOrphanMitigation(toUpdate)
 				}
 				s := fmt.Sprintf(
 					`Error creating ServiceBinding for ServiceInstance "%s/%s" of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %v`,
@@ -573,7 +573,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 					v1beta1.ConditionTrue,
 					errorReconciliationRetryTimeoutReason,
 					s)
-				return c.setAndUpdateOrphanMitigation(binding, toUpdate, instance, serviceClass, brokerName, "too much time has elapsed")
+				return c.setAndUpdateServiceBindingStartOrphanMitigation(toUpdate)
 			}
 
 			if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
