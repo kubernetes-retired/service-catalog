@@ -213,7 +213,7 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 	}
 	if instance.Status.CurrentOperation != "" {
 		if instance.Spec.ClusterServiceClassRef == nil {
-			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServceClassRef"), "serviceClassRef is required when currentOperation is present"))
+			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServiceClassRef"), "serviceClassRef is required when currentOperation is present"))
 		}
 		if instance.Spec.ClusterServicePlanRef == nil {
 			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServicePlanRef"), "servicePlanRef is required when currentOperation is present"))
