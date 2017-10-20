@@ -649,7 +649,7 @@ func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 			Status: v1beta1.ConditionTrue,
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: "old-plan-name",
+			ClusterServicePlanExternalName: "old-plan-name",
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
@@ -667,7 +667,7 @@ func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
 			Status: v1beta1.ConditionTrue,
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ExternalClusterServicePlanName: testClusterServicePlanName,
+			ClusterServicePlanExternalName: testClusterServicePlanName,
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
