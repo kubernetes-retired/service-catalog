@@ -101,7 +101,11 @@ func TestBasicFlowsSync(t *testing.T) {
 				},
 			},
 		},
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async: false,
+			},
+		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
 			Response: &osb.DeprovisionResponse{
 				Async: false,
@@ -283,6 +287,11 @@ func TestBasicFlowsAsync(t *testing.T) {
 				State: osb.StateSucceeded,
 			},
 		},
+		PollBindingLastOperationReaction: &fakeosb.PollBindingLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
 		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
 			Response: &osb.UpdateInstanceResponse{
 				Async: true,
@@ -290,13 +299,22 @@ func TestBasicFlowsAsync(t *testing.T) {
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
+				Async: false,
+			},
+		},
+		GetBindingReaction: &fakeosb.GetBindingReaction{
+			Response: &osb.GetBindingResponse{
 				Credentials: map[string]interface{}{
 					"foo": "bar",
 					"baz": "zap",
 				},
 			},
 		},
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async: false,
+			},
+		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
 			Response: &osb.DeprovisionResponse{
 				Async: true,
@@ -599,7 +617,11 @@ func TestBindingFailure(t *testing.T) {
 				Description:  strPtr("Service binding with the same id, for the same service instance already exists."),
 			},
 		},
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async:false,
+			},
+		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{
 				Async: false,
@@ -796,7 +818,11 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 				},
 			},
 		},
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async: false,
+			},
+		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
 			Response: &osb.DeprovisionResponse{
 				Async: false,
@@ -1141,7 +1167,9 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 				StatusCode: http.StatusInternalServerError,
 			},
 		},
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{},
+		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{},
 		},

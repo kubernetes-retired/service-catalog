@@ -399,13 +399,13 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 		appGUID := string(ns.UID)
 		request := &osb.BindRequest{
-			BindingID:    binding.Spec.ExternalID,
-			InstanceID:   instance.Spec.ExternalID,
-			ServiceID:    serviceClass.Spec.ExternalID,
-			PlanID:       servicePlan.Spec.ExternalID,
-			AppGUID:      &appGUID,
-			Parameters:   parameters,
-			BindResource: &osb.BindResource{AppGUID: &appGUID},
+			BindingID:         binding.Spec.ExternalID,
+			InstanceID:        instance.Spec.ExternalID,
+			ServiceID:         serviceClass.Spec.ExternalID,
+			PlanID:            servicePlan.Spec.ExternalID,
+			AppGUID:           &appGUID,
+			Parameters:        parameters,
+			BindResource:      &osb.BindResource{AppGUID: &appGUID},
 			AcceptsIncomplete: true,
 		}
 
@@ -648,10 +648,10 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		}
 
 		unbindRequest := &osb.UnbindRequest{
-			BindingID:  binding.Spec.ExternalID,
-			InstanceID: instance.Spec.ExternalID,
-			ServiceID:  serviceClass.Spec.ExternalID,
-			PlanID:     servicePlan.Spec.ExternalID,
+			BindingID:         binding.Spec.ExternalID,
+			InstanceID:        instance.Spec.ExternalID,
+			ServiceID:         serviceClass.Spec.ExternalID,
+			PlanID:            servicePlan.Spec.ExternalID,
 			AcceptsIncomplete: true,
 		}
 
