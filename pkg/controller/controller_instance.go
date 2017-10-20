@@ -1496,26 +1496,38 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			return err
 		}
 	case osb.StateFailed:
-		description := ""
+		description := "(no description provided)"
 		if response.Description != nil {
 			description = *response.Description
 		}
-		actionText := ""
+		var (
+			readyCond v1beta1.ConditionStatus
+			reason    string
+			message   string
+		)
 		switch {
 		case mitigatingOrphan:
-			actionText = "mitigating orphan"
+			readyCond = v1beta1.ConditionUnknown
+			reason = errorOrphanMitigationFailedReason
+			message = "Orphan mitigation failed: " + description
 		case deleting:
-			actionText = "deprovisioning"
+			readyCond = v1beta1.ConditionUnknown
+			reason = errorDeprovisionCalledReason
+			message = "Deprovision call failed: " + description
 		case provisioning:
-			actionText = "provisioning"
+			readyCond = v1beta1.ConditionFalse
+			reason = errorProvisionCallFailedReason
+			message = "Provision call failed: " + description
 		default:
-			actionText = "updating"
+			readyCond = v1beta1.ConditionFalse
+			reason = errorUpdateInstanceCallFailedReason
+			message = "Update call failed: " + description
 		}
-		s := fmt.Sprintf(`Error %s: %q`, actionText, description)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionCalledReason, s)
+
+		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
 		glog.V(5).Infof(
 			`%s "%s/%s": %s`,
-			typeSI, instance.Namespace, instance.Name, s,
+			typeSI, instance.Namespace, instance.Name, message,
 		)
 
 		clone, err := api.Scheme.DeepCopy(instance)
@@ -1523,38 +1535,15 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			return err
 		}
 		toUpdate := clone.(*v1beta1.ServiceInstance)
-		c.clearServiceInstanceCurrentOperation(toUpdate)
 
-		var (
-			readyCond v1beta1.ConditionStatus
-			reason    string
-			msg       string
-		)
-		switch {
-		case mitigatingOrphan:
-			readyCond = v1beta1.ConditionUnknown
-			reason = errorOrphanMitigationFailedReason
-			msg = "Orphan mitigation failed: " + s
-		case deleting:
-			readyCond = v1beta1.ConditionUnknown
-			reason = errorDeprovisionCalledReason
-			msg = "Deprovision call failed: " + s
-		case provisioning:
-			readyCond = v1beta1.ConditionFalse
-			reason = errorProvisionCallFailedReason
-			msg = "Provision call failed: " + s
-		default:
-			readyCond = v1beta1.ConditionFalse
-			reason = errorUpdateInstanceCallFailedReason
-			msg = "Update call failed: " + s
-		}
+		c.clearServiceInstanceCurrentOperation(toUpdate)
 
 		setServiceInstanceCondition(
 			toUpdate,
 			v1beta1.ServiceInstanceConditionReady,
 			readyCond,
 			reason,
-			msg,
+			message,
 		)
 
 		if !mitigatingOrphan {
@@ -1563,7 +1552,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 				v1beta1.ServiceInstanceConditionFailed,
 				v1beta1.ConditionTrue,
 				reason,
-				msg,
+				message,
 			)
 		}
 
@@ -1571,10 +1560,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			return err
 		}
 
-		err = c.finishPollingServiceInstance(instance)
-		if err != nil {
-			return err
-		}
+		return c.finishPollingServiceInstance(instance)
 	default:
 		glog.Warningf(
 			`%s "%s/%s": Got invalid state in LastOperationResponse: %q`,
