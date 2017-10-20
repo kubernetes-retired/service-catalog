@@ -83,8 +83,8 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentServiceInstanceReason + " " + "References a non-existent ServiceInstance \"/nothere\""
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -125,7 +125,7 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 		t.Fatal("serviceclassref was nil and reconcile should return an error")
 	}
 	if !strings.Contains(err.Error(), "not been resolved yet") {
-		t.Fatalf("Did not get the expected error %q : got %q", "not been resolved yet", err)
+		t.Fatalf("Did not get the expected error: %s", expectedGot("not been resolved yet", err))
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -174,8 +174,8 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 		t.Fatal("serviceclass nothere was found and it should not be found")
 	}
 
-	if !strings.Contains(err.Error(), "not been resolved yet") {
-		t.Fatalf("Did not get the expected error %q : got %q", "not been resolved yet", err)
+	if err := checkEventContains(err.Error(), "not been resolved yet"); err != nil {
+		t.Fatal(err)
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -242,8 +242,8 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorNonexistentClusterServiceClassMessage + " " + "References a non-existent ClusterServiceClass (K8S: \"nosuchclassid\" ExternalName: \"" + testNonExistentClusterServiceClassName + "\")"
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event expected: %v got: %v", e, a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -327,18 +327,19 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	// second action is a get on the secret
 	action := kubeActions[1].(clientgotesting.GetAction)
 	if e, a := "get", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorInjectingBindResultReason
-	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) {
-		t.Fatalf("Received unexpected event: %v", a)
+
+	if err := checkEventPrefixes(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -441,10 +442,10 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	// second action is a get on the secret
 	action := kubeActions[2].(clientgotesting.CreateAction)
 	if e, a := "create", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 	actionSecret, ok := action.GetObject().(*corev1.Secret)
 	if !ok {
@@ -458,29 +459,29 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 		t.Fatal("Secret is not owned by the ServiceBinding")
 	}
 	if e, a := testServiceBindingSecretName, actionSecret.Name; e != a {
-		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected name of secret; %s", expectedGot(e, a))
 	}
 	value, ok := actionSecret.Data["a"]
 	if !ok {
 		t.Fatal("Didn't find secret key 'a' in created secret")
 	}
 	if e, a := "b", string(value); e != a {
-		t.Fatalf("Unexpected value of key 'a' in created secret; expected %v got %v", e, a)
+		t.Fatalf("Unexpected value of key 'a' in created secret; %s", expectedGot(e, a))
 	}
 	value, ok = actionSecret.Data["c"]
 	if !ok {
 		t.Fatal("Didn't find secret key 'a' in created secret")
 	}
 	if e, a := "d", string(value); e != a {
-		t.Fatalf("Unexpected value of key 'c' in created secret; expected %v got %v", e, a)
+		t.Fatalf("Unexpected value of key 'c' in created secret; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -527,8 +528,8 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorNonbindableClusterServiceClassReason + ` References a non-bindable ClusterServiceClass (K8S: "UNBINDABLE-SERVICE" ExternalName: "test-unbindable-serviceclass") and Plan ("test-unbindable-plan") combination`
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -615,31 +616,31 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 	// second action is a get on the secret
 	action := kubeActions[2].(clientgotesting.CreateAction)
 	if e, a := "create", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 	actionSecret, ok := action.GetObject().(*corev1.Secret)
 	if !ok {
 		t.Fatal("couldn't convert secret into a corev1.Secret")
 	}
 	if e, a := testServiceBindingSecretName, actionSecret.Name; e != a {
-		t.Fatalf("Unexpected name of secret; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected name of secret; %s", expectedGot(e, a))
 	}
 	value, ok := actionSecret.Data["a"]
 	if !ok {
 		t.Fatal("Didn't find secret key 'a' in created secret")
 	}
 	if e, a := "b", string(value); e != a {
-		t.Fatalf("Unexpected value of key 'a' in created secret; expected %v got %v", e, a)
+		t.Fatalf("Unexpected value of key 'a' in created secret; %s", expectedGot(e, a))
 	}
 	value, ok = actionSecret.Data["c"]
 	if !ok {
 		t.Fatal("Didn't find secret key 'a' in created secret")
 	}
 	if e, a := "d", string(value); e != a {
-		t.Fatalf("Unexpected value of key 'c' in created secret; expected %v got %v", e, a)
+		t.Fatalf("Unexpected value of key 'c' in created secret; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
@@ -689,8 +690,8 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorNonbindableClusterServiceClassReason + ` References a non-bindable ClusterServiceClass (K8S: "SCGUID" ExternalName: "test-serviceclass") and Plan ("test-unbindable-plan") combination`
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+	if err := checkEvents(events, []string{expectedEvent}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -722,8 +723,8 @@ func TestReconcileServiceBindingFailsWithServiceInstanceAsyncOngoing(t *testing.
 		t.Fatalf("reconcileServiceBinding did not fail with async operation ongoing")
 	}
 
-	if !strings.Contains(err.Error(), "Ongoing Asynchronous") {
-		t.Fatalf("Did not get the expected error %q : got %q", "Ongoing Asynchronous", err)
+	if err := checkEventContains(err.Error(), "Ongoing Asynchronous"); err != nil {
+		t.Fatal(err)
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
