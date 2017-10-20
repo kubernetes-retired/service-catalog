@@ -2065,7 +2065,7 @@ func (c *controller) checkForRemovedClassAndPlan(instance *v1beta1.ServiceInstan
 	// Regardless of what's been deleted, you can always update
 	// parameters (ie, not change plans)
 	if !isProvisioning && instance.Status.ExternalProperties != nil &&
-		instance.Spec.ClusterServicePlanExternalName == instance.Status.ExternalProperties.ClusterServicePlanExternalName {
+		servicePlan.Spec.ExternalName == instance.Status.ExternalProperties.ClusterServicePlanExternalName {
 		// Service Instance has already been provisioned and we're only
 		// updating parameters, so let it through.
 		return nil

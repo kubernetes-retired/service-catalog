@@ -4445,7 +4445,7 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 		},
 		{
 			name:     "Updating parameters works",
-			instance: getTestServiceInstanceUpdatingParameters(),
+			instance: getTestServiceInstanceUpdatingParametersOfDeletedPlan(),
 			class:    getTestClusterServiceClass(),
 			plan:     getTestMarkedAsRemovedClusterServicePlan(),
 			success:  true,

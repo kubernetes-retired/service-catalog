@@ -676,6 +676,24 @@ func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
 	return instance
 }
 
+func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:   v1beta1.ServiceInstanceConditionReady,
+			Status: v1beta1.ConditionTrue,
+		}},
+		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
+			ClusterServicePlanExternalName: testRemovedClusterServicePlanName,
+		},
+		// It's been provisioned successfully.
+		ReconciledGeneration: 1,
+	}
+
+	return instance
+}
+
 // getTestServiceInstanceAsync returns an instance in async mode
 func getTestServiceInstanceAsyncProvisioning(operation string) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
