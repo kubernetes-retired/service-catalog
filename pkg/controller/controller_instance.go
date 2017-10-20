@@ -1091,7 +1091,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		typeSI, instance.Namespace, instance.Name,
 	)
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, servicePlan, _, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
 	if err != nil {
 		return err
 	}
@@ -1208,41 +1208,31 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			}
 			toUpdate := clone.(*v1beta1.ServiceInstance)
 
+			var (
+				reason  string
+				message string
+			)
+			switch {
+			case mitigatingOrphan:
+				reason = successOrphanMitigationReason
+				message = successOrphanMitigationMessage
+			default:
+				reason = successDeprovisionReason
+				message = successDeprovisionMessage
+			}
+
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.ExternalProperties = nil
 
-			if mitigatingOrphan {
-				glog.V(5).Infof(
-					`%s "%s/%s": %s`,
-					typeSI,
-					instance.Namespace,
-					instance.Name,
-					successOrphanMitigationMessage,
-				)
-				c.recorder.Event(instance, corev1.EventTypeNormal, successOrphanMitigationReason, successOrphanMitigationMessage)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				reason,
+				message,
+			)
 
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionFalse,
-					successOrphanMitigationReason,
-					successOrphanMitigationMessage,
-				)
-			} else {
-				glog.V(5).Infof(
-					`%s "%s/%s": Successfully deprovisioned ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q`,
-					typeSI, instance.Namespace, instance.Name, serviceClass.Name, serviceClass.Spec.ExternalName, brokerName,
-				)
-				c.recorder.Event(instance, corev1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
-
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionFalse,
-					successDeprovisionReason,
-					successDeprovisionMessage,
-				)
-
+			if !mitigatingOrphan {
 				// Clear the finalizer
 				if finalizers := sets.NewString(toUpdate.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
 					finalizers.Delete(v1beta1.FinalizerServiceCatalog)
@@ -1253,6 +1243,13 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
 			}
+
+			glog.V(5).Infof(
+				`%s "%s/%s": %s`,
+				typeSI, instance.Namespace, instance.Name, message,
+			)
+
+			c.recorder.Event(instance, corev1.EventTypeNormal, reason, message)
 
 			return c.finishPollingServiceInstance(instance)
 		}
