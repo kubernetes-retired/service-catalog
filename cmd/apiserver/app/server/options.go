@@ -31,14 +31,6 @@ const (
 	// k8s core API server.
 	certDirectory = "/var/run/kubernetes-service-catalog"
 
-	// I made this up to match some existing paths. I am not sure if there
-	// are any restrictions on the format or structure beyond text
-	// separated by slashes.
-	etcdPathPrefix = "/k8s.io/service-catalog"
-
-	// GroupName I made this up. Maybe we'll need it.
-	GroupName = "service-catalog.k8s.io"
-
 	storageTypeFlagName = "storageType"
 )
 
