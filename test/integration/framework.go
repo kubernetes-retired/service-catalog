@@ -97,13 +97,12 @@ func withConfigGetFreshApiserverAndClient(
 			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 			AuditOptions:            genericserveroptions.NewAuditOptions(),
 			DisableAuth:             true,
-			StopCh:                  stopCh,
 			StandaloneMode:          true, // this must be true because we have no kube server for integration.
 		}
 		options.SecureServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
 
-		if err := server.RunServer(options); err != nil {
+		if err := server.RunServer(options, stopCh); err != nil {
 			close(serverFailed)
 			t.Fatalf("Error in bringing up the server: %v", err)
 		}

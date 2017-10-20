@@ -80,10 +80,8 @@ BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
 MUTABLE_TAG                      ?= canary
-APISERVER_IMAGE                   = $(REGISTRY)apiserver-$(ARCH):$(VERSION)
-APISERVER_MUTABLE_IMAGE           = $(REGISTRY)apiserver-$(ARCH):$(MUTABLE_TAG)
-CONTROLLER_MANAGER_IMAGE          = $(REGISTRY)controller-manager-$(ARCH):$(VERSION)
-CONTROLLER_MANAGER_MUTABLE_IMAGE  = $(REGISTRY)controller-manager-$(ARCH):$(MUTABLE_TAG)
+SERVICE_CATALOG_IMAGE             = $(REGISTRY)service-catalog-$(ARCH):$(VERSION)
+SERVICE_CATALOG_MUTABLE_IMAGE     = $(REGISTRY)service-catalog-$(ARCH):$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker-$(ARCH):$(MUTABLE_TAG)
 
@@ -111,11 +109,10 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
-# "apiserver" instead of "bin/apiserver".
+# "service-catalog" instead of "bin/service-catalog".
 #########################################################################
 build: .init .generate_files \
-	$(BINDIR)/apiserver \
-	$(BINDIR)/controller-manager \
+	$(BINDIR)/service-catalog \
 	$(BINDIR)/user-broker
 
 user-broker: $(BINDIR)/user-broker
@@ -124,14 +121,10 @@ $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 	  $(shell find contrib/pkg/broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
-# We'll rebuild apiserver if any go file has changed (ie. NEWEST_GO_FILE)
-apiserver: $(BINDIR)/apiserver
-$(BINDIR)/apiserver: .init .generate_files cmd/apiserver $(NEWEST_GO_FILE)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/apiserver
-
-controller-manager: $(BINDIR)/controller-manager
-$(BINDIR)/controller-manager: .init .generate_files cmd/controller-manager $(NEWEST_GO_FILE)
-	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
+# We'll rebuild service-catalog if any go file has changed (ie. NEWEST_GO_FILE)
+service-catalog: $(BINDIR)/service-catalog
+$(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # This section contains the code generation stuff
 #################################################
@@ -331,7 +324,7 @@ clean-coverage:
 
 # Building Docker Images for our executables
 ############################################
-images: user-broker-image controller-manager-image apiserver-image
+images: user-broker-image service-catalog-image
 
 images-all: $(addprefix arch-image-,$(ALL_ARCH))
 arch-image-%:
@@ -360,24 +353,17 @@ ifeq ($(ARCH),amd64)
 	docker tag $(USER_BROKER_MUTABLE_IMAGE) $(REGISTRY)user-broker:$(MUTABLE_TAG)
 endif
 
-apiserver-image: build/apiserver/Dockerfile $(BINDIR)/apiserver
-	$(call build-and-tag,"apiserver",$(APISERVER_IMAGE),$(APISERVER_MUTABLE_IMAGE))
+service-catalog-image: build/service-catalog/Dockerfile $(BINDIR)/service-catalog
+	$(call build-and-tag,"service-catalog",$(SERVICE_CATALOG_IMAGE),$(SERVICE_CATALOG_MUTABLE_IMAGE))
 ifeq ($(ARCH),amd64)
-	docker tag $(APISERVER_IMAGE) $(REGISTRY)apiserver:$(VERSION)
-	docker tag $(APISERVER_MUTABLE_IMAGE) $(REGISTRY)apiserver:$(MUTABLE_TAG)
-endif
-
-controller-manager-image: build/controller-manager/Dockerfile $(BINDIR)/controller-manager
-	$(call build-and-tag,"controller-manager",$(CONTROLLER_MANAGER_IMAGE),$(CONTROLLER_MANAGER_MUTABLE_IMAGE))
-ifeq ($(ARCH),amd64)
-	docker tag $(CONTROLLER_MANAGER_IMAGE) $(REGISTRY)controller-manager:$(VERSION)
-	docker tag $(CONTROLLER_MANAGER_MUTABLE_IMAGE) $(REGISTRY)controller-manager:$(MUTABLE_TAG)
+	docker tag $(SERVICE_CATALOG_IMAGE) $(REGISTRY)service-catalog:$(VERSION)
+	docker tag $(SERVICE_CATALOG_MUTABLE_IMAGE) $(REGISTRY)service-catalog:$(MUTABLE_TAG)
 endif
 
 
 # Push our Docker Images to a registry
 ######################################
-push: user-broker-push controller-manager-push apiserver-push
+push: user-broker-push service-catalog-push
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
@@ -387,20 +373,12 @@ ifeq ($(ARCH),amd64)
 	docker push $(REGISTRY)user-broker:$(MUTABLE_TAG)
 endif
 
-controller-manager-push: controller-manager-image
-	docker push $(CONTROLLER_MANAGER_IMAGE)
-	docker push $(CONTROLLER_MANAGER_MUTABLE_IMAGE)
+service-catalog-push: service-catalog-image
+	docker push $(SERVICE_CATALOG_IMAGE)
+	docker push $(SERVICE_CATALOG_MUTABLE_IMAGE)
 ifeq ($(ARCH),amd64)
-	docker push $(REGISTRY)controller-manager:$(VERSION)
-	docker push $(REGISTRY)controller-manager:$(MUTABLE_TAG)
-endif
-
-apiserver-push: apiserver-image
-	docker push $(APISERVER_IMAGE)
-	docker push $(APISERVER_MUTABLE_IMAGE)
-ifeq ($(ARCH),amd64)
-	docker push $(REGISTRY)apiserver:$(VERSION)
-	docker push $(REGISTRY)apiserver:$(MUTABLE_TAG)
+	docker push $(REGISTRY)service-catalog:$(VERSION)
+	docker push $(REGISTRY)service-catalog:$(MUTABLE_TAG)
 endif
 
 
