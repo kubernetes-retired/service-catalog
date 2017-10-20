@@ -761,6 +761,8 @@ func Convert_servicecatalog_ServiceBindingSpec_To_v1beta1_ServiceBindingSpec(in 
 
 func autoConvert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingStatus(in *ServiceBindingStatus, out *servicecatalog.ServiceBindingStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]servicecatalog.ServiceBindingCondition)(unsafe.Pointer(&in.Conditions))
+	out.AsyncOpInProgress = in.AsyncOpInProgress
+	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.CurrentOperation = servicecatalog.ServiceBindingOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
@@ -777,6 +779,8 @@ func Convert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingStatus
 
 func autoConvert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingStatus(in *servicecatalog.ServiceBindingStatus, out *ServiceBindingStatus, s conversion.Scope) error {
 	out.Conditions = *(*[]ServiceBindingCondition)(unsafe.Pointer(&in.Conditions))
+	out.AsyncOpInProgress = in.AsyncOpInProgress
+	out.LastOperation = (*string)(unsafe.Pointer(in.LastOperation))
 	out.CurrentOperation = ServiceBindingOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))

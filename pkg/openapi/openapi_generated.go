@@ -997,6 +997,20 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								},
 							},
 						},
+						"asyncOpInProgress": {
+							SchemaProps: spec.SchemaProps{
+								Description: "AsyncOpInProgress is set to true if there is an ongoing async operation against this ServiceBinding in progress.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"lastOperation": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"currentOperation": {
 							SchemaProps: spec.SchemaProps{
 								Description: "CurrentOperation is the operation the Controller is currently performing on the ServiceBinding.",
@@ -1037,7 +1051,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"conditions", "reconciledGeneration", "orphanMitigationInProgress"},
+					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration", "orphanMitigationInProgress"},
 				},
 			},
 			Dependencies: []string{
