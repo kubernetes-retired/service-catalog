@@ -641,7 +641,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		return err
 	}
 
-	ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
+	ns, err := c.kubeClient.CoreV1().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 	if err != nil {
 		s := fmt.Sprintf("Failed to get namespace %q during instance create: %s", instance.Namespace, err)
 		glog.Infof(
