@@ -30,6 +30,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,8 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 )
-
-var typeSI = "ServiceInstance"
 
 const (
 	successDeprovisionReason       string = "DeprovisionedSuccessfully"
@@ -117,10 +116,8 @@ func (c *controller) instanceDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof(
-		`%s "%s/%s": Received delete event; no further processing will occur`,
-		typeSI, instance.Namespace, instance.Name,
-	)
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	glog.V(4).Info(pcb.Message("Received delete event; no further processing will occur"))
 }
 
 // Async operations on instances have a somewhat convoluted flow in order to
@@ -158,11 +155,10 @@ func (c *controller) requeueServiceInstanceForPoll(key string) error {
 func (c *controller) beginPollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		glog.Errorf(
-			`%s "%s/%s": Couldn't create a key for object %+v: %v`,
-			typeSI, instance.Namespace, instance.Name, instance, err,
-		)
-		return fmt.Errorf("Couldn't create a key for object %+v: %v", instance, err)
+		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
+		glog.Errorf(pcb.Message(s))
+		return fmt.Errorf(s)
 	}
 
 	c.pollingQueue.AddRateLimited(key)
@@ -181,11 +177,10 @@ func (c *controller) continuePollingServiceInstance(instance *v1beta1.ServiceIns
 func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		glog.Errorf(
-			`%s "%s/%s": Couldn't create a key for object %+v: %v`,
-			typeSI, instance.Namespace, instance.Name, instance, err,
-		)
-		return fmt.Errorf(`Couldn't create a key for object %+v: %v`, instance, err)
+		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
+		glog.Errorf(pcb.Message(s))
+		return fmt.Errorf(s)
 	}
 
 	c.pollingQueue.Forget(key)
@@ -200,19 +195,14 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	if err != nil {
 		return err
 	}
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, namespace, name)
 	instance, err := c.instanceLister.ServiceInstances(namespace).Get(name)
 	if errors.IsNotFound(err) {
-		glog.Infof(
-			`%s "%s/%s": Not doing work for %v because it has been deleted`,
-			typeSI, namespace, name, key,
-		)
+		glog.Info(pcb.Messagef("Not doing work for %v because it has been deleted", key))
 		return nil
 	}
 	if err != nil {
-		glog.Errorf(
-			`%s "%s/%s": Unable to retrieve %v from store: %v`,
-			typeSI, instance.Namespace, instance.Name, key, err,
-		)
+		glog.Errorf(pcb.Messagef("Unable to retrieve %v from store: %v", key, err))
 		return err
 	}
 
@@ -227,10 +217,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	glog.V(4).Infof(
-		`%s "%s/%s": Processing deleting event`,
-		typeSI, instance.Namespace, instance.Name,
-	)
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	glog.V(4).Info(pcb.Message("Processing deleting event"))
 
 	// Determine if any credentials exist for this instance.  We don't want to
 	// delete the instance if there are any associated creds
@@ -252,10 +240,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			toUpdate := clone.(*v1beta1.ServiceInstance)
 
 			s := "Delete instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first"
-			glog.Warningf(
-				`%s "%s/%s": %s`,
-				typeSI, instance.Namespace, instance.Name, s,
-			)
+			glog.Warning(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionBlockedByCredentialsReason, s)
 
 			setServiceInstanceCondition(
@@ -285,10 +270,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		instance.Status.ReconciledGeneration == 0 ||
 		(isServiceInstanceFailed(instance) && instance.Status.ReconciledGeneration == 1) {
 
-		glog.V(5).Infof(
-			`%s "%s/%s": Clearing catalog finalizer`,
-			typeSI, instance.Namespace, instance.Name,
-		)
+		glog.V(5).Info(pcb.Message("Clearing catalog finalizer"))
 		clone, err := api.Scheme.DeepCopy(instance)
 		if err != nil {
 			return err
@@ -330,10 +312,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
 			s := fmt.Sprintf("Error building originating identity headers when deprovisioning: %v", err)
-			glog.Warningf(
-				`%s "%s/%s": %s`,
-				typeSI, instance.Namespace, instance.Name, s,
-			)
+			glog.Warning(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorWithOriginatingIdentity, s)
 
 			setServiceInstanceCondition(
@@ -366,10 +345,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	}
 
-	glog.V(4).Infof(
-		`%s "%s/%s": Deprovisioning`,
-		typeSI, instance.Namespace, instance.Name,
-	)
+	glog.V(4).Info(pcb.Message("Deprovisioning"))
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
@@ -377,10 +353,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 				"Deprovision call failed; received error response from broker: %v",
 				httpErr.Error(),
 			)
-			glog.Warningf(
-				`%s "%s/%s": %s`,
-				typeSI, instance.Namespace, instance.Name, s,
-			)
+			glog.Warning(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 			if instance.Status.OrphanMitigationInProgress {
@@ -418,13 +391,10 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 
 		s := fmt.Sprintf(
-			`Error deprovisioning, ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: %v`,
-			serviceClass.Name, serviceClass.Spec.ExternalName, brokerName, err,
+			`Error deprovisioning, %s at ClusterServiceBroker %q: %v`,
+			pretty.ClusterServiceClassName(serviceClass), brokerName, err,
 		)
-		glog.Warningf(
-			`%s "%s/%s": %s`,
-			typeSI, instance.Namespace, instance.Name, s,
-		)
+		glog.Warning(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
 		setServiceInstanceCondition(
@@ -436,10 +406,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 			s := "Stopping reconciliation retries because too much time has elapsed"
-			glog.Infof(
-				`%s "%s/%s": %s`,
-				typeSI, instance.Namespace, instance.Name, s,
-			)
+			glog.Info(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
 			if instance.Status.OrphanMitigationInProgress {
@@ -471,10 +438,9 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	}
 
 	if response.Async {
-		glog.V(5).Infof(
-			`%s "%s/%s": Received asynchronous de-provisioning response, %s at %s: response: %+v`,
-			typeSI, instance.Namespace, instance.Name, serviceClass.Name, brokerName, response,
-		)
+		glog.V(5).Info(pcb.Messagef("Received asynchronous de-provisioning response, %s at %s: response: %+v",
+			serviceClass.Name, brokerName, response,
+		))
 
 		if response.OperationKey != nil && *response.OperationKey != "" {
 			key := string(*response.OperationKey)
@@ -506,19 +472,15 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	glog.V(5).Infof(
-		`%s "%s/%s": Deprovision call to broker succeeded, finalizing`,
-		typeSI, instance.Namespace, instance.Name,
-	)
+	glog.V(5).Info(pcb.Message("Deprovision call to broker succeeded, finalizing"))
 
 	c.clearServiceInstanceCurrentOperation(toUpdate)
 	toUpdate.Status.ExternalProperties = nil
 
 	if instance.DeletionTimestamp != nil {
-		glog.V(5).Infof(
-			`%s "%s/%s": Successfully deprovisioned, %s at %s`,
-			typeSI, instance.Namespace, instance.Name, serviceClass.Name, brokerName,
-		)
+		glog.V(5).Info(pcb.Messagef("Successfully deprovisioned, %s at %s",
+			serviceClass.Name, brokerName,
+		))
 		c.recorder.Event(instance, corev1.EventTypeNormal, successDeprovisionReason, successDeprovisionMessage)
 
 		setServiceInstanceCondition(
@@ -534,13 +496,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		toUpdate.Finalizers = finalizers.List()
 	} else {
 		// Deprovision due to orphan mitigation successful
-		glog.V(5).Infof(
-			`%s "%s/%s": %s`,
-			typeSI,
-			instance.Namespace,
-			instance.Name,
-			successOrphanMitigationMessage,
-		)
+		glog.V(5).Info(pcb.Message(successOrphanMitigationMessage))
 		c.recorder.Event(instance, corev1.EventTypeNormal, successOrphanMitigationReason, successOrphanMitigationMessage)
 
 		setServiceInstanceCondition(
@@ -582,16 +538,13 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	if instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress {
 		return c.reconcileServiceInstanceDelete(instance)
 	}
-
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	// Currently, we only set a failure condition if the initial provision
 	// call fails, so if that condition is set, we only need to remove the
 	// finalizer from the instance. We will need to reevaluate this logic as
 	// we make any changes to capture permanent failure in new cases.
 	if isServiceInstanceFailed(instance) {
-		glog.V(4).Infof(
-			`%s "%s/%s": Not processing event because status showed that it has failed`,
-			typeSI, instance.Namespace, instance.Name,
-		)
+		glog.V(4).Info(pcb.Message("Not processing event because status showed that it has failed"))
 		return nil
 	}
 
