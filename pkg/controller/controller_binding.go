@@ -85,7 +85,7 @@ func (c *controller) reconcileServiceBindingKey(key string) error {
 		return nil
 	}
 	if err != nil {
-		glog.Infof(pcb.Messagef("Unable to retrieve store: %v", err))
+		glog.Info(pcb.Messagef("Unable to retrieve store: %v", err))
 		return err
 	}
 
@@ -143,7 +143,7 @@ func (c *controller) setAndUpdateServiceBindingStartOrphanMitigation(toUpdate *v
 func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
 	if isServiceBindingFailed(binding) && binding.ObjectMeta.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress {
-		glog.V(4).Infof(pcb.Message("not processing event; status showed that it has failed"))
+		glog.V(4).Info(pcb.Message("not processing event; status showed that it has failed"))
 		return nil
 	}
 
@@ -156,7 +156,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 	// but does not affect the generation.
 	if binding.DeletionTimestamp == nil {
 		if binding.Status.ReconciledGeneration == binding.Generation {
-			glog.V(4).Infof(pcb.Message("Not processing event; reconciled generation showed there is no work to do"))
+			glog.V(4).Info(pcb.Message("Not processing event; reconciled generation showed there is no work to do"))
 			return nil
 		}
 	}
@@ -166,7 +166,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		return err
 	}
 
-	glog.V(4).Infof(pcb.Message("Processing"))
+	glog.V(4).Info(pcb.Message("Processing"))
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
@@ -311,7 +311,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			parametersChecksum, err = generateChecksumOfParameters(parameters)
 			if err != nil {
 				s := fmt.Sprintf(`Failed to generate the parameters checksum to store in Status: %s`, err)
-				glog.Infof(pcb.Message(s))
+				glog.Info(pcb.Message(s))
 				c.recorder.Eventf(binding, corev1.EventTypeWarning, errorWithParameters, s)
 				setServiceBindingCondition(
 					toUpdate,
@@ -540,7 +540,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		}
 
 		c.recorder.Event(binding, corev1.EventTypeNormal, successInjectedBindResultReason, successInjectedBindResultMessage)
-		glog.V(5).Infof(pcb.Messagef(
+		glog.V(5).Info(pcb.Messagef(
 			`Successfully bound to %s`,
 			pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName),
 		))
