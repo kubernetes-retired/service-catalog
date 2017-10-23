@@ -374,8 +374,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
 			s := fmt.Sprintf(
-				"Deprovision call failed; received error response from broker: Status Code: %d, Error Message: %v, Description: %v",
-				httpErr.StatusCode, httpErr.ErrorMessage, httpErr.Description,
+				"Deprovision call failed; received error response from broker: %v",
+				httpErr.Error(),
 			)
 			glog.Warningf(
 				`%s "%s/%s": %s`,
@@ -1322,7 +1322,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 	}
 
 	glog.V(4).Infof(
-		`%s "%s/%s": Poll returned %q : %q`,
+		`%s "%s/%s": Poll returned %q : Response description: %v`,
 		typeSI, instance.Namespace, instance.Name, response.State, response.Description,
 	)
 
@@ -1800,7 +1800,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServiceClassName,
 			)
 			glog.Warningf(
-				`%s "%s/%s": `,
+				`%s "%s/%s": %s`,
 				typeSI, instance.Namespace, instance.Name, s,
 			)
 			c.updateServiceInstanceCondition(
@@ -1886,7 +1886,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 
 	glog.V(3).Infof(
 		`%s "%s/%s": Setting lastTransitionTime, condition %q to %v`,
-		toUpdate.Namespace, toUpdate.Name, conditionType, t,
+		typeSI, toUpdate.Namespace, toUpdate.Name, conditionType, t,
 	)
 	newCondition.LastTransitionTime = t
 	toUpdate.Status.Conditions = append(toUpdate.Status.Conditions, newCondition)
