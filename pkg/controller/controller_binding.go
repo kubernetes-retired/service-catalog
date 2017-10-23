@@ -61,8 +61,6 @@ const (
 // bindingControllerKind contains the schema.GroupVersionKind for this controller type.
 var bindingControllerKind = v1beta1.SchemeGroupVersion.WithKind("ServiceBinding")
 
-var typeSB = "ServiceBinding"
-
 // ServiceBinding handlers and control-loop
 
 func (c *controller) bindingAdd(obj interface{}) {
@@ -244,7 +242,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 	if binding.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress { // Add or update
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
 
-		ns, err := c.kubeClient.Core().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
+		ns, err := c.kubeClient.CoreV1().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 		if err != nil {
 			s := fmt.Sprintf(`Failed to get namespace %q during binding: %s`, instance.Namespace, err)
 			glog.Info(pcb.Message(s))
@@ -758,7 +756,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	}
 
 	// Creating/updating the Secret
-	secretClient := c.kubeClient.Core().Secrets(binding.Namespace)
+	secretClient := c.kubeClient.CoreV1().Secrets(binding.Namespace)
 	existingSecret, err := secretClient.Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err == nil {
 		// Update existing secret
@@ -814,7 +812,7 @@ func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error 
 	glog.V(5).Info(pcb.Messagef(`Deleting Secret "%s/%s"`,
 		binding.Namespace, binding.Spec.SecretName,
 	))
-	err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
+	err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -924,7 +922,7 @@ func (c *controller) updateServiceBindingCondition(
 
 	glog.V(4).Info(pcb.Messagef(
 		"Updating %v condition to %v (Reason: %q, Message: %q)",
-		typeSB, binding.Namespace, binding.Name, conditionType, status, reason, message,
+		conditionType, status, reason, message,
 	))
 	_, err = c.serviceCatalogClient.ServiceBindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {

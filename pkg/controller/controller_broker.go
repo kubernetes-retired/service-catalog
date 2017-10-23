@@ -299,55 +299,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		existingServiceClassMap := convertServiceClassListToMap(existingServiceClasses)
 		existingServicePlanMap := convertServicePlanListToMap(existingServicePlans)
 
-		// reconcile the plans that were part of the broker's catalog payload
-		for _, payloadServicePlan := range payloadServicePlans {
-			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
-			delete(existingServicePlanMap, payloadServicePlan.Name)
-
-			glog.V(4).Infof(
-				"ClusterServiceBroker %q: reconciling %s",
-				broker.Name, pretty.ClusterServicePlanName(payloadServicePlan),
-			)
-			if err := c.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, payloadServicePlan, existingServicePlan); err != nil {
-				s := fmt.Sprintf(
-					"Error reconciling %s: %s",
-					pretty.ClusterServicePlanName(payloadServicePlan), err,
-				)
-				glog.Warning(pcb.Message(s))
-				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
-					errorSyncingCatalogMessage+s)
-				return err
-			}
-			glog.V(5).Info(pcb.Messagef("Reconciled %s", pretty.ClusterServicePlanName(payloadServicePlan)))
-
-		}
-
-		// handle the servicePlans that were not in the broker's payload;
-		// mark these as deleted
-		for _, existingServicePlan := range existingServicePlanMap {
-			if existingServicePlan.Status.RemovedFromBrokerCatalog {
-				continue
-			}
-			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServicePlanName(existingServicePlan)))
-			existingServicePlan.Status.RemovedFromBrokerCatalog = true
-			_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(existingServicePlan)
-			if err != nil {
-				s := fmt.Sprintf(
-					"Error updating status of %s: %v",
-					pretty.ClusterServicePlanName(existingServicePlan),
-					err,
-				)
-				glog.Warning(pcb.Message(s))
-				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
-					errorSyncingCatalogMessage+s); err != nil {
-					return err
-				}
-				return err
-			}
-		}
-
 		// reconcile the serviceClasses that were part of the broker's catalog
 		// payload
 		for _, payloadServiceClass := range payloadServiceClasses {
@@ -386,6 +337,55 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				s := fmt.Sprintf(
 					"Error updating status of %s: %v",
 					pretty.ClusterServiceClassName(existingServiceClass), err,
+				)
+				glog.Warning(pcb.Message(s))
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
+				if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
+					errorSyncingCatalogMessage+s); err != nil {
+					return err
+				}
+				return err
+			}
+		}
+
+		// reconcile the plans that were part of the broker's catalog payload
+		for _, payloadServicePlan := range payloadServicePlans {
+			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
+			delete(existingServicePlanMap, payloadServicePlan.Name)
+
+			glog.V(4).Infof(
+				"ClusterServiceBroker %q: reconciling %s",
+				broker.Name, pretty.ClusterServicePlanName(payloadServicePlan),
+			)
+			if err := c.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, payloadServicePlan, existingServicePlan); err != nil {
+				s := fmt.Sprintf(
+					"Error reconciling %s: %s",
+					pretty.ClusterServicePlanName(payloadServicePlan), err,
+				)
+				glog.Warning(pcb.Message(s))
+				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
+				c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason,
+					errorSyncingCatalogMessage+s)
+				return err
+			}
+			glog.V(5).Info(pcb.Messagef("Reconciled %s", pretty.ClusterServicePlanName(payloadServicePlan)))
+
+		}
+
+		// handle the servicePlans that were not in the broker's payload;
+		// mark these as deleted
+		for _, existingServicePlan := range existingServicePlanMap {
+			if existingServicePlan.Status.RemovedFromBrokerCatalog {
+				continue
+			}
+			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServicePlanName(existingServicePlan)))
+			existingServicePlan.Status.RemovedFromBrokerCatalog = true
+			_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(existingServicePlan)
+			if err != nil {
+				s := fmt.Sprintf(
+					"Error updating status of %s: %v",
+					pretty.ClusterServicePlanName(existingServicePlan),
+					err,
 				)
 				glog.Warning(pcb.Message(s))
 				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
