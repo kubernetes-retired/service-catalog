@@ -158,6 +158,11 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 		newServiceInstance.Spec.ClusterServicePlanRef = nil
 	}
 
+	// Ignore the UpdateRequests field when it is the default value
+	if newServiceInstance.Spec.UpdateRequests == 0 {
+		newServiceInstance.Spec.UpdateRequests = oldServiceInstance.Spec.UpdateRequests
+	}
+
 	// Spec updates bump the generation so that we can distinguish between
 	// spec changes and other changes to the object.
 	if !apiequality.Semantic.DeepEqual(oldServiceInstance.Spec, newServiceInstance.Spec) {
