@@ -22,33 +22,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-/*
-Test String Builder
-*/
-
-// Kind is used for the enum of the Type of object we are building context for.
-type Kind int
-
-// Names of Types to use when creating pretty messages
-const (
-	Unknown Kind = iota
-	ClusterServiceBroker
-	ClusterServiceClass
-	ClusterServicePlan
-	ServiceInstance
-)
-
-// ContextBuilder allows building up pretty message lines with context
-// that is important for debugging and tracing. This class helps create log
-// line formatting consistency. Pretty lines should be in the form:
-// <Kind> "<Namespace>/<Name>": <message>
+// MessageBuilder builds Event Type messages to help unit tests create these strings
+// Example usage:
+// mb := new(MessageBuilder).warning().reson("ReasonForError).msg("Error: hello world.")
+// ms.String()
 type MessageBuilder struct {
 	eventMessage  string
 	reasonMessage string
 	message       string
 }
-
-// mb := new(MessageBuilder)
 
 func (mb *MessageBuilder) warning() *MessageBuilder {
 	mb.eventMessage = corev1.EventTypeWarning
@@ -61,13 +43,17 @@ func (mb *MessageBuilder) normal() *MessageBuilder {
 }
 
 func (mb *MessageBuilder) reason(reason string) *MessageBuilder {
-	mb.reasonMessage = corev1.EventTypeNormal
+	mb.reasonMessage = reason
 	return mb
 }
 
 // Appends a message to the message builder.
 func (mb *MessageBuilder) msg(msg string) *MessageBuilder {
-	fmt.Sprintf(`%s %s`, mb.message, msg)
+	space := ""
+	if mb.message > "" {
+		space = " "
+	}
+	mb.message = fmt.Sprintf(`%s%s%s`, mb.message, space, msg)
 	return mb
 }
 
@@ -93,6 +79,14 @@ func (mb *MessageBuilder) msgCreateServiceBindingError(serviceInstance, serviceC
 func (mb *MessageBuilder) msgUnbindingError(serviceInstance, serviceClassK8S, serviceClassExternalName, broker string) *MessageBuilder {
 	msg := fmt.Sprintf("Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		serviceInstance, serviceClassK8S, serviceClassExternalName, broker)
+	return mb.msg(msg)
+}
+
+// msgNonBindableClusterServiceClass Adds a message in the following form:
+// "References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q)"
+func (mb *MessageBuilder) msgNonBindableClusterServiceClass(serviceClassK8S, serviceClassExternalName, plan string) *MessageBuilder {
+	msg := fmt.Sprintf("References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
+		serviceClassK8S, serviceClassExternalName, plan)
 	return mb.msg(msg)
 }
 

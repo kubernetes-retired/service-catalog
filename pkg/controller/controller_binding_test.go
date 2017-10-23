@@ -73,7 +73,7 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 	// There should only be one action that says it failed because no such instance exists.
 	updateAction := actions[0].(clientgotesting.UpdateAction)
 	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on actions[0]; %s", expectedGot(e, a))
 	}
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
 	assertServiceBindingErrorBeforeRequest(t, updatedServiceBinding, errorNonexistentServiceInstanceReason, binding)
@@ -83,7 +83,7 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorNonexistentServiceInstanceReason)
-	expectedEvent.msgf("References a non-existent ServiceInstance %q", testNonExistentClusterServiceClassName)
+	expectedEvent.msgf("References a non-existent ServiceInstance %q", "/"+testNonExistentClusterServiceClassName)
 	if err := checkEvents(events, expectedEvent.StringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -533,8 +533,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorNonbindableClusterServiceClassReason)
-	expectedEvent.msgf(
-		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
+	expectedEvent.msgNonBindableClusterServiceClass(
 		"UNBINDABLE-SERVICE", "test-unbindable-serviceclass", "test-unbindable-plan",
 	)
 	if err := checkEvents(events, expectedEvent.StringArr()); err != nil {
@@ -699,8 +698,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorNonbindableClusterServiceClassReason)
-	expectedEvent.msgf(
-		"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
+	expectedEvent.msgNonBindableClusterServiceClass(
 		"SCGUID", "test-serviceclass", "test-unbindable-plan",
 	)
 	if err := checkEvents(events, expectedEvent.StringArr()); err != nil {
