@@ -74,8 +74,7 @@ $(error Unsupported platform to compile for)
 endif
 
 GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
-                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)" \
-                   -ldflags "$(BUILD_LDFLAGS)"
+                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
