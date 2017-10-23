@@ -839,7 +839,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	}
 
 	// Creating/updating the Secret
-	secretClient := c.kubeClient.Core().Secrets(binding.Namespace)
+	secretClient := c.kubeClient.CoreV1().Secrets(binding.Namespace)
 	existingSecret, err := secretClient.Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err == nil {
 		// Update existing secret
@@ -896,7 +896,7 @@ func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error 
 		`%s "%s/%s": Deleting Secret "%s/%s"`,
 		typeSB, binding.Namespace, binding.Name, binding.Namespace, binding.Spec.SecretName,
 	)
-	err = c.kubeClient.Core().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
+	err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}

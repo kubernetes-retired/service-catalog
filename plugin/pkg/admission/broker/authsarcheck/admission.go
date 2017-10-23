@@ -111,7 +111,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 			//UID:    userInfo.GetUID(),
 		},
 	}
-	sar, err := s.client.Authorization().SubjectAccessReviews().Create(sar)
+	sar, err := s.client.AuthorizationV1().SubjectAccessReviews().Create(sar)
 	if err != nil {
 		return err
 	}
