@@ -106,9 +106,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 			User:   userInfo.GetName(),
 			Groups: userInfo.GetGroups(),
 			Extra:  convertToSARExtra(userInfo.GetExtra()),
-			// TODO: uncomment after rebase onto Kubernetes 1.8.
-			// See https://github.com/kubernetes/kubernetes/pull/49677
-			//UID:    userInfo.GetUID(),
+			UID:    userInfo.GetUID(),
 		},
 	}
 	sar, err := s.client.AuthorizationV1().SubjectAccessReviews().Create(sar)
