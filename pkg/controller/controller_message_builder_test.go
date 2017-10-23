@@ -25,29 +25,32 @@ import (
 // MessageBuilder builds Event Type messages to help unit tests create these strings
 // Example usage:
 // mb := new(MessageBuilder).warning().reson("ReasonForError).msg("Error: hello world.")
-// ms.String()
+// mb.String()
 type MessageBuilder struct {
 	eventMessage  string
 	reasonMessage string
 	message       string
 }
 
-func (mb *MessageBuilder) warning() *MessageBuilder {
-	mb.eventMessage = corev1.EventTypeWarning
-	return mb
-}
-
+// normal sets the event type field to normal for the message builder in <type> <reason> <message>
 func (mb *MessageBuilder) normal() *MessageBuilder {
 	mb.eventMessage = corev1.EventTypeNormal
 	return mb
 }
 
+// warning sets the event type field to warning for the message builder in <type> <reason> <message>
+func (mb *MessageBuilder) warning() *MessageBuilder {
+	mb.eventMessage = corev1.EventTypeWarning
+	return mb
+}
+
+// reason sets the event reason field for the message builder in <type> <reason> <message>
 func (mb *MessageBuilder) reason(reason string) *MessageBuilder {
 	mb.reasonMessage = reason
 	return mb
 }
 
-// Appends a message to the message builder.
+// msg appends a message to the message builder
 func (mb *MessageBuilder) msg(msg string) *MessageBuilder {
 	space := ""
 	if mb.message > "" {
@@ -57,16 +60,13 @@ func (mb *MessageBuilder) msg(msg string) *MessageBuilder {
 	return mb
 }
 
+// msgf appends a message after formatting to the message builder
 func (mb *MessageBuilder) msgf(format string, a ...interface{}) *MessageBuilder {
 	msg := fmt.Sprintf(format, a...)
 	return mb.msg(msg)
 }
 
-func (mb *MessageBuilder) StringArr() []string {
-	return []string{mb.String()}
-}
-
-// msgCreateServiceBindingError Adds a message in the following form:
+// msgCreateServiceBindingError adds a message in the following form:
 // "Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:"
 func (mb *MessageBuilder) msgCreateServiceBindingError(serviceInstance, serviceClassK8S, serviceClassExternalName, broker string) *MessageBuilder {
 	msg := fmt.Sprintf("Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
@@ -74,7 +74,7 @@ func (mb *MessageBuilder) msgCreateServiceBindingError(serviceInstance, serviceC
 	return mb.msg(msg)
 }
 
-// msgUnbindingError Adds a message in the following form:
+// msgUnbindingError adds a message in the following form:
 // "Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:"
 func (mb *MessageBuilder) msgUnbindingError(serviceInstance, serviceClassK8S, serviceClassExternalName, broker string) *MessageBuilder {
 	msg := fmt.Sprintf("Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
@@ -82,12 +82,17 @@ func (mb *MessageBuilder) msgUnbindingError(serviceInstance, serviceClassK8S, se
 	return mb.msg(msg)
 }
 
-// msgNonBindableClusterServiceClass Adds a message in the following form:
+// msgNonBindableClusterServiceClass adds a message in the following form:
 // "References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q)"
 func (mb *MessageBuilder) msgNonBindableClusterServiceClass(serviceClassK8S, serviceClassExternalName, plan string) *MessageBuilder {
 	msg := fmt.Sprintf("References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
 		serviceClassK8S, serviceClassExternalName, plan)
 	return mb.msg(msg)
+}
+
+// stringArr is a fast way to create a string array containing mb.String()
+func (mb *MessageBuilder) stringArr() []string {
+	return []string{mb.String()}
 }
 
 func (mb *MessageBuilder) String() string {
