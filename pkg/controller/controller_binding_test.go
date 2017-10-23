@@ -744,16 +744,13 @@ func TestReconcileServiceBindingFailsWithServiceInstanceAsyncOngoing(t *testing.
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
 
-	if !strings.Contains(events[0], "has ongoing asynchronous operation") {
-		t.Fatalf("Did not find expected error %q : got %q", "has ongoing asynchronous operation", events[0])
+	assertNumEvents(t, events, 1)
+	if err := checkEventContains(events[0], "has ongoing asynchronous operation"); err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(events[0], testNamespace+"/"+testServiceInstanceName) {
-		t.Fatalf("Did not find expected instance name : got %q", events[0])
-	}
-	if !strings.Contains(events[0], testNamespace+"/"+testServiceBindingName) {
-		t.Fatalf("Did not find expected binding name : got %q", events[0])
+	if err := checkEventContains(events[0], testNamespace+"/"+testServiceInstanceName); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -1424,7 +1421,7 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 	expectedEvent := corev1.EventTypeWarning + " " + errorBindCallReason + " " + "Error creating ServiceBinding for ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>"
 
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v", a)
+		t.Fatalf("Received unexpected event: %s", expectedGot(e, a))
 	}
 }
 
@@ -2484,6 +2481,6 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 
 	expectedEvent := corev1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Error unbinding from ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": timed out"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event, expected %v got %v", a, e)
+		t.Fatalf("Received unexpected event, %s", expectedGot(e, a))
 	}
 }
