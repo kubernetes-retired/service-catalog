@@ -273,7 +273,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		if err != nil {
 			s := fmt.Sprintf(`Failed to get namespace %q during binding: %s`, instance.Namespace, err)
 			glog.Infof(
-				`%s "%s/%s": `,
+				`%s "%s/%s": %s`,
 				typeSB, binding.Namespace, binding.Name, s,
 			)
 			c.recorder.Eventf(binding, corev1.EventTypeWarning, errorFindingNamespaceServiceInstanceReason, s)
