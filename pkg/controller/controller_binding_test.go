@@ -533,7 +533,8 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorNonbindableClusterServiceClassReason)
-	expectedEvent.msgNonBindableClusterServiceClass(
+	expectedEvent.msgf(
+		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
 		"UNBINDABLE-SERVICE", "test-unbindable-serviceclass", "test-unbindable-plan",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -698,7 +699,8 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorNonbindableClusterServiceClassReason)
-	expectedEvent.msgNonBindableClusterServiceClass(
+	expectedEvent.msgf(
+		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
 		"SCGUID", "test-serviceclass", "test-unbindable-plan",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -1223,7 +1225,8 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgCreateServiceBindingError(
+	expectedEvent.msgf(
+		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg("Unexpected action")
@@ -1284,7 +1287,8 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgCreateServiceBindingError(
+	expectedEvent.msgf(
+		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg(
@@ -1379,7 +1383,8 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgCreateServiceBindingError(
+	expectedEvent.msgf(
+		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg("fake creation failure")
@@ -1447,7 +1452,8 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgCreateServiceBindingError(
+	expectedEvent.msgf(
+		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg("Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>")
@@ -1662,7 +1668,8 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorUnbindCallReason)
-	expectedEvent.msgUnbindingError(
+	expectedEvent.msgf(
+		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg("Unexpected action")
@@ -1727,7 +1734,8 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorUnbindCallReason)
-	expectedEvent.msgUnbindingError(
+	expectedEvent.msgf(
+		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg("Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
@@ -2507,7 +2515,8 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	events := getRecordedEvents(testController)
 
 	expectedEvent := new(MessageBuilder).warning().reason(errorUnbindCallReason)
-	expectedEvent.msgUnbindingError(
+	expectedEvent.msgf(
+		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
 	)
 	expectedEvent.msg("timed out")

@@ -66,30 +66,6 @@ func (mb *MessageBuilder) msgf(format string, a ...interface{}) *MessageBuilder 
 	return mb.msg(msg)
 }
 
-// msgCreateServiceBindingError adds a message in the following form:
-// "Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:"
-func (mb *MessageBuilder) msgCreateServiceBindingError(serviceInstance, serviceClassK8S, serviceClassExternalName, broker string) *MessageBuilder {
-	msg := fmt.Sprintf("Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		serviceInstance, serviceClassK8S, serviceClassExternalName, broker)
-	return mb.msg(msg)
-}
-
-// msgUnbindingError adds a message in the following form:
-// "Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:"
-func (mb *MessageBuilder) msgUnbindingError(serviceInstance, serviceClassK8S, serviceClassExternalName, broker string) *MessageBuilder {
-	msg := fmt.Sprintf("Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		serviceInstance, serviceClassK8S, serviceClassExternalName, broker)
-	return mb.msg(msg)
-}
-
-// msgNonBindableClusterServiceClass adds a message in the following form:
-// "References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q)"
-func (mb *MessageBuilder) msgNonBindableClusterServiceClass(serviceClassK8S, serviceClassExternalName, plan string) *MessageBuilder {
-	msg := fmt.Sprintf("References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		serviceClassK8S, serviceClassExternalName, plan)
-	return mb.msg(msg)
-}
-
 // stringArr is a fast way to create a string array containing mb.String()
 func (mb *MessageBuilder) stringArr() []string {
 	return []string{mb.String()}
