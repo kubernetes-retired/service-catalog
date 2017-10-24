@@ -143,7 +143,8 @@ func isServiceBindingFailed(binding *v1beta1.ServiceBinding) bool {
 // statuses, and persisting the changes via updateServiceBindingStatus.
 func (c *controller) setAndUpdateServiceBindingStartOrphanMitigation(toUpdate *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, toUpdate.Name, toUpdate.Namespace)
-	s := pcb.Message("Starting orphan mitgation")
+	s := pcb.Message("Starting orphan mitigation")
+
 	toUpdate.Status.OrphanMitigationInProgress = true
 	toUpdate.Status.OperationStartTime = nil
 	glog.V(5).Info(s)

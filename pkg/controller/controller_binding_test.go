@@ -28,6 +28,7 @@ import (
 
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1beta1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +41,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 )
 
@@ -2735,4 +2737,856 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 		t.Fatal(err)
 	}
 
+}
+
+// TestReconcileServiceBindingAsynchronousBind tests the situation where the
+// controller receives an asynchronous bind response back from the broker when
+// doing a bind call.
+func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
+	key := osb.OperationKey(testOperation)
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Async:        true,
+				OperationKey: &key,
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+	addGetSecretNotFoundReaction(fakeKubeClient)
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+	binding := getTestServiceBinding()
+	bindingKey := binding.Namespace + "/" + binding.Name
+
+	if testController.bindingPollingQueue.NumRequeues(bindingKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test binding")
+	}
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
+
+	if testController.bindingPollingQueue.NumRequeues(bindingKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test binding once")
+	}
+
+	// Broker actions
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
+		AppGUID:    strPtr(testNamespaceGUID),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNamespaceGUID),
+		},
+		AcceptsIncomplete: true,
+	})
+
+	// Kube actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 1)
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Service Catalog actions
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
+
+	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingAsyncInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, asyncBindingReason, testOperation, binding)
+
+	// Events
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + asyncBindingReason + " " + asyncBindingMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event, expected %v got %v", e, a)
+	}
+}
+
+// TestReconcileServiceBindingAsynchronousUnbind tests the situation where the
+// controller receives an asynchronous bind response back from the broker when
+// doing an unbind call.
+func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
+	key := osb.OperationKey(testOperation)
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async:        true,
+				OperationKey: &key,
+			},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+	binding := getTestServiceBindingUnbinding()
+	bindingKey := binding.Namespace + "/" + binding.Name
+
+	fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
+	if testController.bindingPollingQueue.NumRequeues(bindingKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test binding")
+	}
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
+
+	if testController.bindingPollingQueue.NumRequeues(bindingKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test binding once")
+	}
+
+	// Broker actions
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+		BindingID:         testServiceBindingGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+		AcceptsIncomplete: true,
+	})
+
+	// Kube actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 1)
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	// Service Catalog actions
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+
+	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingAsyncInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, asyncUnbindingReason, testOperation, binding)
+
+	// Events
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + asyncUnbindingReason + " " + asyncUnbindingMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event, expected %v got %v", e, a)
+	}
+}
+
+func TestPollServiceBinding(t *testing.T) {
+	goneError := osb.HTTPStatusCodeError{
+		StatusCode: http.StatusGone,
+	}
+
+	validatePollBindingLastOperationAction := func(t *testing.T, actions []fakeosb.Action) {
+		assertNumberOfClusterServiceBrokerActions(t, actions, 1)
+
+		operationKey := osb.OperationKey(testOperation)
+		assertPollBindingLastOperation(t, actions[0], &osb.BindingLastOperationRequest{
+			InstanceID:   testServiceInstanceGUID,
+			BindingID:    testServiceBindingGUID,
+			ServiceID:    strPtr(testClusterServiceClassGUID),
+			PlanID:       strPtr(testClusterServicePlanGUID),
+			OperationKey: &operationKey,
+		})
+	}
+
+	validatePollBindingLastOperationAndGetBindingActions := func(t *testing.T, actions []fakeosb.Action) {
+		assertNumberOfClusterServiceBrokerActions(t, actions, 2)
+
+		operationKey := osb.OperationKey(testOperation)
+		assertPollBindingLastOperation(t, actions[0], &osb.BindingLastOperationRequest{
+			InstanceID:   testServiceInstanceGUID,
+			BindingID:    testServiceBindingGUID,
+			ServiceID:    strPtr(testClusterServiceClassGUID),
+			PlanID:       strPtr(testClusterServicePlanGUID),
+			OperationKey: &operationKey,
+		})
+
+		assertGetBinding(t, actions[1], &osb.GetBindingRequest{
+			InstanceID: testServiceInstanceGUID,
+			BindingID:  testServiceBindingGUID,
+		})
+	}
+
+	cases := []struct {
+		name                      string
+		binding                   *v1beta1.ServiceBinding
+		pollReaction              *fakeosb.PollBindingLastOperationReaction
+		getBindingReaction        *fakeosb.GetBindingReaction
+		environmentSetupFunc      func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface)
+		validateBrokerActionsFunc func(t *testing.T, actions []fakeosb.Action)
+		validateKubeActionsFunc   func(t *testing.T, actions []clientgotesting.Action)
+		validateConditionsFunc    func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding)
+		shouldFinishPolling       bool
+		expectedEvents            []string
+	}{
+		// Bind
+		{
+			name:    "bind - error",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Error: fmt.Errorf("random error"),
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
+		},
+		{
+			// Special test for 410, as it is treated differently in other operations
+			name:    "bind - 410 Gone considered error",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Error: goneError,
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: " + goneError.Error()},
+		},
+		{
+			name:    "bind - in progress",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncInProgress(t, updatedBinding, v1beta1.ServiceBindingOperationBind, asyncBindingReason, testOperation, originalBinding)
+			},
+			shouldFinishPolling: false,
+			expectedEvents:      []string{},
+		},
+		{
+			name:    "bind - failed",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateFailed,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingRequestFailingError(
+					t,
+					updatedBinding,
+					v1beta1.ServiceBindingOperationBind,
+					errorBindCallReason,
+					errorBindCallReason,
+					originalBinding,
+				)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorBindCallReason + " " + "Bind call failed: " + lastOperationDescription},
+		},
+		{
+			name:    "bind - invalid state",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       "test invalid state",
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{}, // does not record event
+		},
+		{
+			name:    "bind - in progress - retry duration exceeded",
+			binding: getTestServiceBindingAsyncBindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncBindRetryDurationExceeded(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents: []string{
+				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
+				corev1.EventTypeWarning + " " + errorServiceBindingOrphanMitigation + " " + `ServiceBinding "test-binding/test-ns": Starting orphan mitigation`,
+			},
+		},
+		{
+			name:    "bind - invalid state - retry duration exceeded",
+			binding: getTestServiceBindingAsyncBindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       "test invalid state",
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncBindRetryDurationExceeded(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents: []string{
+				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
+				corev1.EventTypeWarning + " " + errorServiceBindingOrphanMitigation + " " + `ServiceBinding "test-binding/test-ns": Starting orphan mitigation`,
+			},
+		},
+		{
+			name:    "bind - operation succeeded but GET failed",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			getBindingReaction: &fakeosb.GetBindingReaction{
+				Error: fmt.Errorf("some error"),
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingErrorFetchingBinding(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: false,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorFetchingBindingFailedReason + " " + "Could not do a GET on binding resource: some error"},
+		},
+		{
+			name:    "bind - operation succeeded but GET failed - retry duration exceeded",
+			binding: getTestServiceBindingAsyncBindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			getBindingReaction: &fakeosb.GetBindingReaction{
+				Error: fmt.Errorf("some error"),
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncBindRetryDurationExceededAfterSuccess(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents: []string{
+				corev1.EventTypeWarning + " " + errorFetchingBindingFailedReason + " " + "Could not do a GET on binding resource: some error",
+				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
+				corev1.EventTypeWarning + " " + errorServiceBindingOrphanMitigation + " " + `ServiceBinding "test-binding/test-ns": Starting orphan mitigation`,
+			},
+		},
+		{
+			name:    "bind - operation succeeded but binding injection failed",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			getBindingReaction: &fakeosb.GetBindingReaction{
+				Response: &osb.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"a": "b",
+						"c": "d",
+					},
+				},
+			},
+			environmentSetupFunc: func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface) {
+				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+				addGetNamespaceReaction(fakeKubeClient)
+				addGetSecretReaction(fakeKubeClient, &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
+				})
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
+			validateKubeActionsFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 1)
+
+				action := actions[0].(clientgotesting.GetAction)
+				if e, a := "get", action.GetVerb(); e != a {
+					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
+				}
+				if e, a := "secrets", action.GetResource().Resource; e != a {
+					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
+				}
+			},
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingErrorInjectingCredentials(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: false, // should not be requeued in polling queue; will drop back to default rate limiting
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorInjectingBindResultReason + " " + `Error injecting bind results: Secret "test-ns/test-binding" is not owned by ServiceBinding, controllerRef: nil`},
+		},
+		{
+			name:    "bind - operation succeeded but binding injection failed - retry duration exceeded",
+			binding: getTestServiceBindingAsyncBindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			getBindingReaction: &fakeosb.GetBindingReaction{
+				Response: &osb.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"a": "b",
+						"c": "d",
+					},
+				},
+			},
+			environmentSetupFunc: func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface) {
+				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+				addGetNamespaceReaction(fakeKubeClient)
+				addGetSecretReaction(fakeKubeClient, &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
+				})
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
+			validateKubeActionsFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 1)
+
+				action := actions[0].(clientgotesting.GetAction)
+				if e, a := "get", action.GetVerb(); e != a {
+					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
+				}
+				if e, a := "secrets", action.GetResource().Resource; e != a {
+					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
+				}
+			},
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncBindRetryDurationExceededAfterSuccess(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents: []string{
+				corev1.EventTypeWarning + " " + errorInjectingBindResultReason + " " + `Error injecting bind results: Secret "test-ns/test-binding" is not owned by ServiceBinding, controllerRef: nil`,
+				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
+				corev1.EventTypeWarning + " " + errorServiceBindingOrphanMitigation + " " + `ServiceBinding "test-binding/test-ns": Starting orphan mitigation`,
+			},
+		},
+		{
+			name:    "bind - succeeded",
+			binding: getTestServiceBindingAsyncBinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			getBindingReaction: &fakeosb.GetBindingReaction{
+				Response: &osb.GetBindingResponse{
+					Credentials: map[string]interface{}{
+						"a": "b",
+						"c": "d",
+					},
+				},
+			},
+			environmentSetupFunc: func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface) {
+				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+				addGetNamespaceReaction(fakeKubeClient)
+				addGetSecretNotFoundReaction(fakeKubeClient)
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
+			validateKubeActionsFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 2)
+
+				// GET on Secret
+				getAction := actions[0].(clientgotesting.GetAction)
+				if e, a := "get", getAction.GetVerb(); e != a {
+					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
+				}
+				if e, a := "secrets", getAction.GetResource().Resource; e != a {
+					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
+				}
+
+				// CREATE on Secret
+				createAction := actions[1].(clientgotesting.CreateAction)
+				if e, a := "create", createAction.GetVerb(); e != a {
+					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
+				}
+				if e, a := "secrets", createAction.GetResource().Resource; e != a {
+					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
+				}
+			},
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationBind, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeNormal + " " + successInjectedBindResultReason + " " + successInjectedBindResultMessage},
+		},
+		// Unbind as part of deletion
+		{
+			name:    "unbind - succeeded",
+			binding: getTestServiceBindingAsyncUnbinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationUnbind, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeNormal + " " + successUnboundReason + " " + "The binding was deleted successfully"},
+		},
+		{
+			name:    "unbind - 410 Gone considered succeeded",
+			binding: getTestServiceBindingAsyncUnbinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Error: osb.HTTPStatusCodeError{
+					StatusCode: http.StatusGone,
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationUnbind, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeNormal + " " + successUnboundReason + " " + "The binding was deleted successfully"},
+		},
+		{
+			name:    "unbind - in progress",
+			binding: getTestServiceBindingAsyncUnbinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncInProgress(t, updatedBinding, v1beta1.ServiceBindingOperationUnbind, asyncUnbindingReason, testOperation, originalBinding)
+			},
+			shouldFinishPolling: false,
+			expectedEvents:      []string{},
+		},
+		{
+			name:    "unbind - error",
+			binding: getTestServiceBindingAsyncUnbinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Error: fmt.Errorf("random error"),
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
+		},
+		{
+			name:    "unbind - failed",
+			binding: getTestServiceBindingAsyncUnbinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateFailed,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingRequestFailingError(
+					t,
+					updatedBinding,
+					v1beta1.ServiceBindingOperationUnbind,
+					errorUnbindCallReason,
+					errorUnbindCallReason,
+					originalBinding,
+				)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Unbind call failed: " + lastOperationDescription},
+		},
+		{
+			name:    "unbind - invalid state",
+			binding: getTestServiceBindingAsyncUnbinding(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       "test invalid state",
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{}, // does not record event
+		},
+		{
+			name:    "unbind - in progress - retry duration exceeded",
+			binding: getTestServiceBindingAsyncUnbindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncUnbindRetryDurationExceeded(
+					t,
+					updatedBinding,
+					v1beta1.ServiceBindingOperationUnbind,
+					asyncUnbindingReason,
+					errorReconciliationRetryTimeoutReason,
+					originalBinding,
+				)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed"},
+		},
+		{
+			name:    "unbind - invalid state - retry duration exceeded",
+			binding: getTestServiceBindingAsyncUnbindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       "test invalid state",
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncUnbindRetryDurationExceeded(
+					t,
+					updatedBinding,
+					v1beta1.ServiceBindingOperationUnbind,
+					"",
+					errorReconciliationRetryTimeoutReason,
+					originalBinding,
+				)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed"},
+		},
+		// Unbind as part of orphan mitigation
+		{
+			name:    "orphan mitigation - succeeded",
+			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateSucceeded,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingOrphanMitigationSuccess(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeNormal + " " + successOrphanMitigationReason + " " + successOrphanMitigationMessage},
+		},
+		{
+			name:    "orphan mitigation - 410 Gone considered succeeded",
+			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Error: osb.HTTPStatusCodeError{
+					StatusCode: http.StatusGone,
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingOrphanMitigationSuccess(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeNormal + " " + successOrphanMitigationReason + " " + successOrphanMitigationMessage},
+		},
+		{
+			name:    "orphan mitigation - in progress",
+			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncInProgress(t, updatedBinding, v1beta1.ServiceBindingOperationBind, asyncUnbindingReason, testOperation, originalBinding)
+			},
+			shouldFinishPolling: false,
+			expectedEvents:      []string{},
+		},
+		{
+			name:    "orphan mitigation - error",
+			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Error: fmt.Errorf("random error"),
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
+		},
+		{
+			name:    "orphan mitigation - failed",
+			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateFailed,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingOrphanMitigationFailure(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorOrphanMitigationFailedReason + " " + "Orphan mitigation failed: " + lastOperationDescription},
+		},
+		{
+			name:    "orphan mitigation - invalid state",
+			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       "test invalid state",
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc:    nil, // does not update resources
+			shouldFinishPolling:       false,
+			expectedEvents:            []string{}, // does not record event
+		},
+		{
+			name:    "orphan mitigation - in progress - retry duration exceeded",
+			binding: getTestServiceBindingAsyncOrphanMitigationRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateInProgress,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed"},
+		},
+		{
+			name:    "orphan mitigation - invalid state - retry duration exceeded",
+			binding: getTestServiceBindingAsyncOrphanMitigationRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       "test invalid state",
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				PollBindingLastOperationReaction: tc.pollReaction,
+				GetBindingReaction:               tc.getBindingReaction,
+			})
+
+			if tc.environmentSetupFunc != nil {
+				tc.environmentSetupFunc(t, fakeKubeClient, sharedInformers)
+			} else {
+				// default
+				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+			}
+
+			bindingKey := tc.binding.Namespace + "/" + tc.binding.Name
+
+			if err := testController.pollServiceBinding(tc.binding); err != nil {
+				t.Fatalf("unexpected error when polling service binding: %v", err)
+			}
+
+			if tc.shouldFinishPolling && testController.bindingPollingQueue.NumRequeues(bindingKey) != 0 {
+				t.Fatalf("Expected polling queue to not have any record of test binding as polling should have completed")
+			} else if !tc.shouldFinishPolling && testController.bindingPollingQueue.NumRequeues(bindingKey) != 1 {
+				t.Fatalf("Expected polling queue to have record of seeing test binding once")
+			}
+
+			// Broker actions
+			brokerActions := fakeServiceBrokerClient.Actions()
+
+			if tc.validateBrokerActionsFunc != nil {
+				tc.validateBrokerActionsFunc(t, brokerActions)
+			} else {
+				assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+			}
+
+			// Kube actions
+			kubeActions := fakeKubeClient.Actions()
+
+			if tc.validateKubeActionsFunc != nil {
+				tc.validateKubeActionsFunc(t, kubeActions)
+			} else {
+				assertNumberOfActions(t, kubeActions, 0)
+			}
+
+			// Catalog actions
+			actions := fakeCatalogClient.Actions()
+			if tc.validateConditionsFunc != nil {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], tc.binding).(*v1beta1.ServiceBinding)
+				tc.validateConditionsFunc(t, updatedBinding, tc.binding)
+			} else {
+				assertNumberOfActions(t, actions, 0)
+			}
+
+			// Events
+			events := getRecordedEvents(testController)
+			assertNumEvents(t, events, len(tc.expectedEvents))
+
+			for idx, expectedEvent := range tc.expectedEvents {
+				if e, a := expectedEvent, events[idx]; e != a {
+					t.Fatalf("Received unexpected event #%v, expected %v got %v", idx, e, a)
+				}
+			}
+		})
+	}
 }
