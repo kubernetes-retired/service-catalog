@@ -32,6 +32,7 @@ import (
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
@@ -73,6 +74,15 @@ func (c *controller) bindingAdd(obj interface{}) {
 		)
 		return
 	}
+
+	acc, err := meta.Accessor(obj)
+	if err != nil {
+		glog.Errorf("error creating meta accessor: %v", err)
+		return
+	}
+
+	glog.V(6).Infof("ServiceBinding %v: received ADD/UPDATE event for: resourceVersion: %v", key, acc.GetResourceVersion())
+
 	c.bindingQueue.Add(key)
 }
 
@@ -151,6 +161,10 @@ func (c *controller) setAndUpdateServiceBindingStartOrphanMitigation(toUpdate *v
 // an error is returned to indicate that the binding has not been
 // fully processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) error {
+	glog.V(6).Infof(`%s "%s/%s": beginning to process resourceVersion: %v`,
+		typeSB, binding.Namespace, binding.Name, binding.ResourceVersion,
+	)
+
 	if isServiceBindingFailed(binding) && binding.ObjectMeta.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress {
 		glog.V(4).Infof(
 			`%s "%s/%s": Not processing event; status showed that it has failed`,
@@ -979,8 +993,8 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 
 func (c *controller) updateServiceBindingStatus(toUpdate *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
 	glog.V(4).Infof(
-		`%s "%s/%s": Updating status`,
-		typeSB, toUpdate.Namespace, toUpdate.Name,
+		`%s "%s/%s": Updating status; resourceVersion: %v`,
+		typeSB, toUpdate.Namespace, toUpdate.Name, toUpdate.ResourceVersion,
 	)
 	updatedBinding, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
@@ -988,7 +1002,11 @@ func (c *controller) updateServiceBindingStatus(toUpdate *v1beta1.ServiceBinding
 			`%s "%s/%s": Error updating status`,
 			typeSB, toUpdate.Namespace, toUpdate.Name,
 		)
+	} else {
+		glog.V(6).Infof(`%s "%s/%s": Updated status of resourceVersion: %v; got resourceVersion: %v`,
+			typeSB, toUpdate.Namespace, toUpdate.Name, toUpdate.ResourceVersion, updatedBinding.ResourceVersion)
 	}
+
 	return updatedBinding, err
 }
 
@@ -1028,8 +1046,8 @@ func (c *controller) bindingDelete(obj interface{}) {
 	}
 
 	glog.V(4).Infof(
-		`%s "%s/%s": Received delete event; no further processing will occur`,
-		typeSB, binding.Namespace, binding.Name,
+		`%s "%s/%s": Received DELETE event; no further processing will occur; resourceVersion: %v`,
+		typeSB, binding.Namespace, binding.Name, binding.ResourceVersion,
 	)
 }
 
