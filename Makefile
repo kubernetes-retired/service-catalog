@@ -97,7 +97,7 @@ endif
 ifdef TEST_LOG_LEVEL
 	UNIT_TEST_FLAGS+=-v
 	UNIT_TEST_LOG_FLAGS=-args --alsologtostderr --v=$(TEST_LOG_LEVEL)
-	INT_TEST_FLAGS=--alsologtostderr -v=$(TEST_LOG_LEVEL)
+	INT_TEST_FLAGS=--alsologtostderr --v=$(TEST_LOG_LEVEL)
 endif
 
 ifdef NO_DOCKER
