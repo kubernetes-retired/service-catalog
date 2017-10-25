@@ -94,8 +94,10 @@ ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
 
-ifdef INT_TEST_LOG_LEVEL
-	INT_TEST_FLAGS=--alsologtostderr --v=$(INT_TEST_LOG_LEVEL)
+ifdef TEST_LOG_LEVEL
+	UNIT_TEST_FLAGS+=-v
+	UNIT_TEST_LOG_FLAGS=-args --alsologtostderr --v=$(TEST_LOG_LEVEL)
+	INT_TEST_FLAGS=--alsologtostderr -v=$(TEST_LOG_LEVEL)
 endif
 
 ifdef NO_DOCKER
@@ -275,7 +277,7 @@ test-unit-native: check-go
 test-unit: .init build
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
-	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
+	  $(addprefix $(SC_PKG)/,$(TEST_DIRS)) $(UNIT_TEST_LOG_FLAGS)
 
 test-integration: .init $(scBuildImageTarget) build
 	# test kubectl

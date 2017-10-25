@@ -201,11 +201,6 @@ script called `contrib/hack/kubectl` that will run it from within a
 Docker container. This avoids the need for you to download, or install it,
 youself. You may find it useful to add `contrib/hack` to your `PATH`.
 
-You can also set the log level for the integration tests, which is useful for
-debugging using the `INT_TEST_LOG_LEVEL` env variable. Log level 5 e.g.:
-
-    $ INT_TEST_LOG_LEVEL=5 make test-integration
-
 The `test` Makefile target will run both the unit and integration tests, e.g.:
 
     $ make test
@@ -218,6 +213,11 @@ specify the source directories of the tests:
 or you can specify a regexp expression for the test name:
 
     $ UNIT_TESTS=TestBar* make test
+
+You can also set the log level for the tests, which is useful for
+debugging using the `TEST_LOG_LEVEL` env variable. Log level 5 e.g.:
+
+    $ TEST_LOG_LEVEL=5 make test-integration
 
 To see how well these tests cover the source code, you can use:
 
