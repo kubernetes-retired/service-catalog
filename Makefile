@@ -230,6 +230,8 @@ verify: .init .generate_files verify-client-gen
 	@$(DOCKER_CMD) verify-links.sh -t .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
+	@echo Running tag verification:
+	@$(DOCKER_CMD) build/verify-tags.sh
 
 verify-client-gen: .init .generate_files
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
