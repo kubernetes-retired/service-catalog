@@ -2444,7 +2444,8 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 			SecretName:         testServiceBindingSecretName,
 		},
 	}
-	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	binding.Status.CurrentOperation = v1beta1.ServiceBindingOperationBind
 	binding.Status.OperationStartTime = &startTime
 	binding.Status.OrphanMitigationInProgress = true
 
@@ -2471,11 +2472,9 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
-	assertUpdateStatus(t, actions[0], binding)
-	assertUpdateStatus(t, actions[1], binding)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceBinding := assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionUnknown)
 
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, true)

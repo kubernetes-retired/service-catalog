@@ -352,17 +352,22 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		request.OriginatingIdentity = originatingIdentity
 	}
 
-	if instance.Status.OrphanMitigationInProgress && instance.Status.OperationStartTime == nil {
-		now := metav1.Now()
-		toUpdate.Status.OperationStartTime = &now
-	}
+	if toUpdate.DeletionTimestamp == nil {
+		if toUpdate.Status.OperationStartTime == nil {
+			now := metav1.Now()
+			toUpdate.Status.OperationStartTime = &now
+		}
+	} else {
+		if toUpdate.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
+			// Cancel any pending orphan mitigation since the resource is being deleted
+			toUpdate.Status.OrphanMitigationInProgress = false
 
-	if toUpdate.Status.CurrentOperation == "" {
-		toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1beta1.ServiceInstanceOperationDeprovision)
-		if err != nil {
-			// There has been an update to the instance. Start reconciliation
-			// over with a fresh view of the instance.
-			return err
+			toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1beta1.ServiceInstanceOperationDeprovision)
+			if err != nil {
+				// There has been an update to the instance. Start reconciliation
+				// over with a fresh view of the instance.
+				return err
+			}
 		}
 	}
 
