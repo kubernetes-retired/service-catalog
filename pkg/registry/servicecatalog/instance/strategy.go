@@ -114,12 +114,14 @@ func (instanceRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj 
 	// Creating a brand new object, thus it must have no
 	// status. We can't fail here if they passed a status in, so
 	// we just wipe it clean.
-	instance.Status = sc.ServiceInstanceStatus{}
+	instance.Status = sc.ServiceInstanceStatus{
+		// Fill in the first entry set to "creating"?
+		Conditions:        []sc.ServiceInstanceCondition{},
+		DeprovisionStatus: sc.ServiceInstanceDeprovisionStatusNotRequired,
+	}
 
 	instance.Spec.ClusterServiceClassRef = nil
 	instance.Spec.ClusterServicePlanRef = nil
-	// Fill in the first entry set to "creating"?
-	instance.Status.Conditions = []sc.ServiceInstanceCondition{}
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
 	instance.Generation = 1
 }
