@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#This script makes sure each versioned API in service catalog
+#has as json tag
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -24,11 +27,9 @@ find_files() {
   find . -not \( \
       \( \
         -wholename './output' \
-        -o -wholename './_output' \
         -o -wholename './_gopath' \
         -o -wholename './release' \
         -o -wholename './target' \
-        -o -wholename '*/third_party/*' \
         -o -wholename '*/vendor/*' \
       \) -prune \
     \) \
@@ -46,7 +47,6 @@ fi
 
 for file in $versioned_api_files; do
   if tail -n +22 "${file}" | egrep -v "(\/\/|{|}|\(|\)|type|=)" | sed '/^\s*$/d' | grep -v json; then 
-#  if grep metav1 "${file}" | grep -v // | grep -v "\".*\"" | grep -v json ; then
     echo "versioned APIs should contain json tags for fields in file ${file}"
     result=1
   fi
