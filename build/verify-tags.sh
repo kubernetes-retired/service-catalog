@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#This script makes sure each versioned API in service catalog
+# This script makes sure each versioned API in service catalog
 #has as json tag
 
 set -o errexit
@@ -46,8 +46,8 @@ else
 fi
 
 for file in $versioned_api_files; do
-  if tail -n +22 "${file}" | egrep -v "(\/\/|{|}|\(|\)|type|=)" | sed '/^\s*$/d' | grep -v json; then 
-    echo "versioned APIs should contain json tags for fields in file ${file}"
+  if cat -n "${file}" | tail -n +22 | grep -v "^\s*[0-9]*\s$" | egrep -v "(\/\/|{|}|\(|\)|type|=)" | grep -v json; then 
+    echo "Versioned APIs should contain json tags for fields in file ${file}"
     result=1
   fi
 done
