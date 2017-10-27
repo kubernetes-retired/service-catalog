@@ -675,14 +675,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				"Unbind call failed. "+s)
 
 			if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-				s := "Stopping reconciliation retries, too much time has elapsed"
-				glog.Info(pcb.Message(s))
-				c.recorder.Event(binding, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-				setServiceBindingCondition(toUpdate,
-					v1beta1.ServiceBindingConditionFailed,
-					v1beta1.ConditionTrue,
-					errorReconciliationRetryTimeoutReason,
-					s)
 				if toUpdate.Status.OrphanMitigationInProgress {
 					s := "Stopping reconciliation retries, too much time has elapsed during orphan mitigation"
 					glog.Info(pcb.Message(s))
