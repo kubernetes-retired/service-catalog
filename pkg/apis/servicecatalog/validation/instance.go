@@ -171,7 +171,7 @@ func validateServiceInstanceStatus(status *sc.ServiceInstanceStatus, fldPath *fi
 
 	if create {
 		if status.DeprovisionStatus != sc.ServiceInstanceDeprovisionStatusNotRequired {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("deprovisionStatus"), status.DeprovisionStatus, `deprovisionStatus must be "Not Required" on create`))
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("deprovisionStatus"), status.DeprovisionStatus, `deprovisionStatus must be "NotRequired" on create`))
 		}
 	} else {
 		if !validServiceInstanceDeprovisionStatuses[status.DeprovisionStatus] {

@@ -640,7 +640,7 @@ const (
 	// ServiceInstanceDeprovisionStatusNotRequired indicates that a provision
 	// request has not been sent for the ServiceInstance, so no deprovision
 	// request needs to be made.
-	ServiceInstanceDeprovisionStatusNotRequired ServiceInstanceDeprovisionStatus = "Not Required"
+	ServiceInstanceDeprovisionStatusNotRequired ServiceInstanceDeprovisionStatus = "NotRequired"
 	// ServiceInstanceDeprovisionStatusRequired indicates that a provision
 	// request has been sent for the ServiceInstance. A deprovision request
 	// must be made before deleting the ServiceInstance.
