@@ -22,6 +22,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+func normalEventBuilder(reason string) *MessageBuilder {
+	return new(MessageBuilder).normal().reason(reason)
+}
+
+func warningEventBuilder(reason string) *MessageBuilder {
+	return new(MessageBuilder).warning().reason(reason)
+}
+
 // MessageBuilder builds Event Type messages to help unit tests create these strings
 // Example usage:
 // mb := new(MessageBuilder).warning().reson("ReasonForError).msg("Error: hello world.")

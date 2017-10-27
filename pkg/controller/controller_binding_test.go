@@ -82,8 +82,10 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorNonexistentServiceInstanceReason)
-	expectedEvent.msgf("References a non-existent ServiceInstance %q", "/"+testNonExistentClusterServiceClassName)
+	expectedEvent := warningEventBuilder(errorNonexistentServiceInstanceReason).msgf(
+		"References a non-existent ServiceInstance %q",
+		"/"+testNonExistentClusterServiceClassName,
+	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -242,8 +244,7 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorNonexistentClusterServiceClassMessage)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassMessage).msgf(
 		"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
 		"nosuchclassid", testNonExistentClusterServiceClassName,
 	)
@@ -341,7 +342,7 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorInjectingBindResultReason)
+	expectedEvent := warningEventBuilder(errorInjectingBindResultReason)
 
 	if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -484,7 +485,7 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).normal().reason(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
+	expectedEvent := normalEventBuilder(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -532,8 +533,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorNonbindableClusterServiceClassReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
 		"UNBINDABLE-SERVICE", "test-unbindable-serviceclass", "test-unbindable-plan",
 	)
@@ -698,8 +698,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorNonbindableClusterServiceClassReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
 		"SCGUID", "test-serviceclass", "test-unbindable-plan",
 	)
@@ -810,8 +809,7 @@ func TestReconcileServiceBindingServiceInstanceNotReady(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorServiceInstanceNotReadyReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorServiceInstanceNotReadyReason).msgf(
 		"ServiceBinding cannot begin because referenced ServiceInstance %q is not ready",
 		"test-ns/test-instance",
 	)
@@ -864,8 +862,10 @@ func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorFindingNamespaceServiceInstanceReason)
-	expectedEvent.msgf("Failed to get namespace %q during binding: %s", "test-ns", "No namespace")
+	expectedEvent := warningEventBuilder(errorFindingNamespaceServiceInstanceReason).msgf(
+		"Failed to get namespace %q during binding: %s",
+		"test-ns", "No namespace",
+	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -950,8 +950,7 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).normal().reason(successUnboundReason)
-	expectedEvent.msg("This binding was deleted successfully")
+	expectedEvent := normalEventBuilder(successUnboundReason).msg("This binding was deleted successfully")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1163,8 +1162,7 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := new(MessageBuilder).normal().reason(successUnboundReason)
-	expectedEvent.msg("This binding was deleted successfully")
+	expectedEvent := normalEventBuilder(successUnboundReason).msg("This binding was deleted successfully")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1221,12 +1219,10 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
-	)
-	expectedEvent.msg("Unexpected action")
+	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1283,12 +1279,10 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
-	)
-	expectedEvent.msg(
+	).msg(
 		"Status: 422; ErrorMessage: AsyncRequired; Description: This service plan requires client support for asynchronous service operations.; ResponseError: <nil>",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -1379,12 +1373,10 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
-	)
-	expectedEvent.msg("fake creation failure")
+	).msg("fake creation failure")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1448,12 +1440,12 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorBindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
+	).msg(
+		"Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>",
 	)
-	expectedEvent.msg("Status: 409; ErrorMessage: ServiceBindingExists; Description: Service binding with the same id, for the same service instance already exists.; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1664,12 +1656,10 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorUnbindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
-	)
-	expectedEvent.msg("Unexpected action")
+	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1730,12 +1720,10 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorUnbindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
-	)
-	expectedEvent.msg("Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
+	).msg("Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1893,7 +1881,7 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).normal().reason(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
+	expectedEvent := normalEventBuilder(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -1938,8 +1926,8 @@ func TestReconcileBindingFailureOnFinalRetry(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEventPrefixes := []string{
-		new(MessageBuilder).warning().reason(errorBindCallReason).String(),
-		new(MessageBuilder).warning().reason(errorReconciliationRetryTimeoutReason).String(),
+		warningEventBuilder(errorBindCallReason).String(),
+		warningEventBuilder(errorReconciliationRetryTimeoutReason).String(),
 	}
 	if err := checkEventPrefixes(events, expectedEventPrefixes); err != nil {
 		t.Fatal(err)
@@ -2034,9 +2022,9 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEventPrefixes := []string{
-		new(MessageBuilder).warning().reason(errorInjectingBindResultReason).String(),
-		new(MessageBuilder).warning().reason(errorReconciliationRetryTimeoutReason).String(),
-		new(MessageBuilder).warning().reason(errorServiceBindingOrphanMitigation).String(),
+		warningEventBuilder(errorInjectingBindResultReason).String(),
+		warningEventBuilder(errorReconciliationRetryTimeoutReason).String(),
+		warningEventBuilder(errorServiceBindingOrphanMitigation).String(),
 	}
 	if err := checkEventPrefixes(events, expectedEventPrefixes); err != nil {
 		t.Fatal(err)
@@ -2215,7 +2203,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).normal().reason(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
+	expectedEvent := normalEventBuilder(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -2510,12 +2498,10 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := new(MessageBuilder).warning().reason(errorUnbindCallReason)
-	expectedEvent.msgf(
+	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
 		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
-	)
-	expectedEvent.msg("timed out")
+	).msg("timed out")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
