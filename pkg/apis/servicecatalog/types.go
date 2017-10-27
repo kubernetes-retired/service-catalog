@@ -614,18 +614,21 @@ type ServiceInstancePropertiesState struct {
 type ServiceInstanceDeprovisionStatus string
 
 const (
-	// A provision request has not been sent for the ServiceInstance, so no
-	// deprovision request needs to be made.
+	// ServiceInstanceDeprovisionStatusNotRequired indicates that a provision
+	// request has not been sent for the ServiceInstance, so no deprovision
+	// request needs to be made.
 	ServiceInstanceDeprovisionStatusNotRequired ServiceInstanceDeprovisionStatus = "Not Required"
-	// A provision request has been sent for the ServiceInstance. A
-	// deprovision request must be made before deleting the ServiceInstance.
+	// ServiceInstanceDeprovisionStatusRequired indicates that a provision
+	// request has been sent for the ServiceInstance. A deprovision request
+	// must be made before deleting the ServiceInstance.
 	ServiceInstanceDeprovisionStatusRequired ServiceInstanceDeprovisionStatus = "Required"
-	// A deprovisionm request has been sent for the ServiceInstance, and the
-	// request was successful.
+	// ServiceInstanceDeprovisionStatusSucceeded indicates that a deprovision
+	// request has been sent for the ServiceInstance, and the request was
+	// successful.
 	ServiceInstanceDeprovisionStatusSucceeded ServiceInstanceDeprovisionStatus = "Succeeded"
-	// A deprovision requests have been sent for the ServiceInstance but they
-	// failed. The controller has given up on sending more deprovision
-	// requests.
+	// ServiceInstanceDeprovisionStatusFailed indicates that deprovision
+	// requests have been sent for the ServiceInstance but they failed. The
+	// controller has given up on sending more deprovision requests.
 	ServiceInstanceDeprovisionStatusFailed ServiceInstanceDeprovisionStatus = "Failed"
 )
 

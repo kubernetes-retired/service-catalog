@@ -217,7 +217,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"url", "relistBehavior", "relistRequests"},
+					Required: []string{"url", "relistBehavior"},
 				},
 			},
 			Dependencies: []string{
@@ -1359,7 +1359,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"externalID", "updateRequests"},
+					Required: []string{"externalID"},
 				},
 			},
 			Dependencies: []string{
