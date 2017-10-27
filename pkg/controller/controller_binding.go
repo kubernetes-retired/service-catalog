@@ -83,6 +83,20 @@ func (c *controller) bindingAdd(obj interface{}) {
 	c.bindingQueue.Add(key)
 }
 
+func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
+	c.bindingAdd(newObj)
+}
+
+func (c *controller) bindingDelete(obj interface{}) {
+	binding, ok := obj.(*v1beta1.ServiceBinding)
+	if binding == nil || !ok {
+		return
+	}
+
+	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	glog.V(4).Info(pcb.Messagef("Received DELETE event; no further processing will occur; resourceVersion %v", binding.ResourceVersion))
+}
+
 func (c *controller) reconcileServiceBindingKey(key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -100,10 +114,6 @@ func (c *controller) reconcileServiceBindingKey(key string) error {
 	}
 
 	return c.reconcileServiceBinding(binding)
-}
-
-func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
-	c.bindingAdd(newObj)
 }
 
 func makeServiceBindingClone(binding *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
@@ -948,16 +958,6 @@ func (c *controller) updateServiceBindingCondition(
 		))
 	}
 	return err
-}
-
-func (c *controller) bindingDelete(obj interface{}) {
-	binding, ok := obj.(*v1beta1.ServiceBinding)
-	if binding == nil || !ok {
-		return
-	}
-
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
-	glog.V(4).Info(pcb.Messagef("Received DELETE event; no further processing will occur; resourceVersion %v", binding.ResourceVersion))
 }
 
 // recordStartOfServiceBindingOperation updates the binding to indicate
