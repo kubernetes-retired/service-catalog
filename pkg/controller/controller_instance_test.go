@@ -3611,7 +3611,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	expectedParameters := map[string]interface{}{
 		"args": map[string]interface{}{
 			"first":  "first-arg",
-			"second": "second-arg",
+			"second": "new-second-arg",
 		},
 		"name": "test-param",
 	}

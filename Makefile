@@ -59,23 +59,10 @@ PLATFORM?=linux
 ARCH?=amd64
 
 # TODO: Consider using busybox instead of debian
-ifeq ($(ARCH),amd64)
-	BASEIMAGE?=debian:jessie
-else ifeq ($(ARCH),arm)
-	BASEIMAGE?=arm32v7/debian:jessie
-else ifeq ($(ARCH),arm64)
-	BASEIMAGE?=arm64v8/debian:jessie
-else ifeq ($(ARCH),ppc64le)
-	BASEIMAGE?=ppc64le/debian:jessie
-else ifeq ($(ARCH),s390x)
-	BASEIMAGE?=s390x/debian:jessie
-else
-$(error Unsupported platform to compile for)
-endif
+BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.2
 
 GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
-                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION)" \
-                   -ldflags "$(BUILD_LDFLAGS)"
+                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)"
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 

@@ -1846,7 +1846,7 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
 		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
 	case v1beta1.ServiceInstanceOperationDeprovision:
@@ -1894,7 +1894,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	}
 	assertServiceInstanceInProgressPropertiesNil(t, obj)
 	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision:
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
 		assertServiceInstanceExternalPropertiesPlanName(t, obj, planName)
 		assertServiceInstanceExternalPropertiesParameters(t, obj, externalParameters, externalParametersChecksum)
 	case v1beta1.ServiceInstanceOperationDeprovision:

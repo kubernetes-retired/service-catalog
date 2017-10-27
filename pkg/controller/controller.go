@@ -421,7 +421,7 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
 		secretRef := authInfo.Basic.SecretRef
-		secret, err := client.Core().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := client.CoreV1().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -434,7 +434,7 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 		}, nil
 	} else if authInfo.Bearer != nil {
 		secretRef := authInfo.Bearer.SecretRef
-		secret, err := client.Core().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := client.CoreV1().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

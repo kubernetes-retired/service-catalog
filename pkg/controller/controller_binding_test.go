@@ -757,16 +757,13 @@ func TestReconcileServiceBindingFailsWithServiceInstanceAsyncOngoing(t *testing.
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
 
-	if !strings.Contains(events[0], "has ongoing asynchronous operation") {
-		t.Fatalf("Did not find expected error %q : got %q", "has ongoing asynchronous operation", events[0])
+	assertNumEvents(t, events, 1)
+	if err := checkEventContains(events[0], "has ongoing asynchronous operation"); err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(events[0], testNamespace+"/"+testServiceInstanceName) {
-		t.Fatalf("Did not find expected instance name : got %q", events[0])
-	}
-	if !strings.Contains(events[0], testNamespace+"/"+testServiceBindingName) {
-		t.Fatalf("Did not find expected binding name : got %q", events[0])
+	if err := checkEventContains(events[0], testNamespace+"/"+testServiceInstanceName); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2476,7 +2473,8 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 			SecretName:         testServiceBindingSecretName,
 		},
 	}
-	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	binding.Status.CurrentOperation = v1beta1.ServiceBindingOperationBind
 	binding.Status.OperationStartTime = &startTime
 	binding.Status.OrphanMitigationInProgress = true
 
@@ -2503,11 +2501,9 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
-	assertUpdateStatus(t, actions[0], binding)
-	assertUpdateStatus(t, actions[1], binding)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceBinding := assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionUnknown)
 
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, true)
