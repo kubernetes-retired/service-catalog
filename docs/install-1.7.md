@@ -141,6 +141,10 @@ source ../../contrib/svc-cat-apiserver-aggregation-tls-setup.sh
 
 # Step 3 - Install Service Catalog with Helm Chart
 
+It is recommended to deploy the service catalog with your local copy of the repo
+at the latest tagged version. Should it be in any other state, see the
+Troubleshooting section [here](#non-default-image-installation).
+
 Use helm to install the Service Catalog, associating it with the
 configured name ${HELM_RELEASE_NAME}, and into the specified namespace." This
 command also enables authentication and authorization and provides the
@@ -171,3 +175,38 @@ helm install ../../charts/catalog \
         --set apiserver.tls.cert=$(base64 ${SC_SERVING_CERT}) \
         --set apiserver.tls.key=$(base64 ${SC_SERVING_KEY})
 ```
+
+# Troubleshooting
+
+## Non-default image installation
+
+The service catalog installation will by default use images of the controller
+and apiserver built at the latest tagged version. Should you be using a
+different state of the repo (for instance, the latest commit in the `master`
+branch), there may be conflicts with these images and the latest chart and
+walkthrough files. During installation, you may specify the images of the
+controller and apiserver to use. To do so, set your `REGISTRY` and `VERSION`
+environment variables to the appropriate container registry and image tag
+respectively and add the following flags to your `helm install` command:
+
+```console
+--set apiserver.image=${REGISTRY}apiserver:${VERSION} \
+--set controllerManager.image=${REGISTRY}controller-manager:${VERSION}
+```
+
+The `quay.io/kubernetes-service-catalog/` container registry stores images built
+from recent `master` commits. To use these images, set `REGISTRY` to point to
+this registry and `VERSION` to the abbreviated SHA of that commit via the
+following:
+
+```console
+REGISTRY=quay.io/kubernetes-service-catalog/
+VERSION=$(git describe --always --abbrev=7)
+```
+
+Note that there is a lag between when a commit is made and the images are built,
+so the latest commit to `master` may not yet be available. If the most
+up-to-date image is not yet available, or you would like to use a build with
+local changes, please take a look at the build documentation
+[here](https://github.com/kubernetes-incubator/service-catalog/blob/master/docs/devguide.md#building).
+
