@@ -74,6 +74,7 @@ type ClusterServiceBrokerSpec struct {
 
 	// RelistRequests is a strictly increasing, non-negative integer counter that
 	// can be manually incremented by a user to manually trigger a relist.
+	// +optional
 	RelistRequests int64 `json:"relistRequests"`
 }
 
@@ -508,6 +509,7 @@ type ServiceInstanceSpec struct {
 	// can be manually incremented by a user to manually trigger an update. This
 	// allows for parameters to be updated with any out-of-band changes that have
 	// been made to the secrets from which the parameters are sourced.
+	// +optional
 	UpdateRequests int64 `json:"updateRequests"`
 }
 
