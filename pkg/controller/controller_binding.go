@@ -620,16 +620,23 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			unbindRequest.OriginatingIdentity = originatingIdentity
 		}
 
-		if toUpdate.Status.CurrentOperation == "" {
-			toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationUnbind)
-			if err != nil {
-				// There has been an update to the binding. Start reconciliation
-				// over with a fresh view of the binding.
-				return err
+		if toUpdate.DeletionTimestamp == nil {
+			if toUpdate.Status.OperationStartTime == nil {
+				now := metav1.Now()
+				toUpdate.Status.OperationStartTime = &now
 			}
-		} else if toUpdate.Status.OrphanMitigationInProgress && toUpdate.Status.OperationStartTime == nil {
-			now := metav1.Now()
-			toUpdate.Status.OperationStartTime = &now
+		} else {
+			if toUpdate.Status.CurrentOperation != v1beta1.ServiceBindingOperationUnbind {
+				// Cancel any pending orphan mitigation since the resource is being deleted
+				toUpdate.Status.OrphanMitigationInProgress = false
+
+				toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationUnbind)
+				if err != nil {
+					// There has been an update to the binding. Start reconciliation
+					// over with a fresh view of the binding.
+					return err
+				}
+			}
 		}
 
 		_, err = brokerClient.Unbind(unbindRequest)
