@@ -4489,3 +4489,146 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 		}
 	}
 }
+
+// TestReconcileServiceInstanceDeleteDuringOngoingOperation tests deleting an
+// instance that has an on-going operation.
+func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	instance.Status.OperationStartTime = &startTime
+
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	timeOfReconciliation := metav1.Now()
+
+	err := testController.reconcileServiceInstance(instance)
+	if err != nil {
+		t.Fatalf("This should not fail")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+	})
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+
+	// Verify that the operation start time was reset to Now
+	if updatedServiceInstance.Status.OperationStartTime.Before(&timeOfReconciliation) {
+		t.Fatalf(
+			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
+			updatedServiceInstance.Status.OperationStartTime,
+			timeOfReconciliation,
+		)
+	}
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance).(*v1beta1.ServiceInstance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestReconcileServiceInstanceDeleteDuringOrphanMitigation tests deleting an
+// instance that is undergoing orphan mitigation.
+func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	instance.Status.OperationStartTime = &startTime
+	instance.Status.OrphanMitigationInProgress = true
+
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, instance, nil
+	})
+
+	timeOfReconciliation := metav1.Now()
+
+	err := testController.reconcileServiceInstance(instance)
+	if err != nil {
+		t.Fatalf("This should not fail")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+	})
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+
+	// Verify that the operation start time was reset to Now
+	if updatedServiceInstance.Status.OperationStartTime.Before(&timeOfReconciliation) {
+		t.Fatalf(
+			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
+			updatedServiceInstance.Status.OperationStartTime,
+			timeOfReconciliation,
+		)
+	}
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance).(*v1beta1.ServiceInstance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, instance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
