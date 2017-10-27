@@ -72,7 +72,7 @@ const (
 	errorDeletedClusterServicePlanMessage      string = "ReferencesDeletedServicePlan"
 	errorFindingNamespaceServiceInstanceReason string = "ErrorFindingNamespaceForInstance"
 	errorOrphanMitigationFailedReason          string = "OrphanMitigationFailed"
-	errorInvalidDeprovisionStatusReason        string = "InvalidDeprovsionStatus"
+	errorInvalidDeprovisionStatusReason        string = "InvalidDeprovisionStatus"
 	errorInvalidDeprovisionStatusMessage       string = "The deprovision status is invalid"
 
 	asyncProvisioningReason                 string = "Provisioning"
