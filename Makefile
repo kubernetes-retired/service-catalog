@@ -82,6 +82,16 @@ ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
 
+ifdef INT_TESTS
+	INT_TEST_FLAGS=--test.run=$(INT_TESTS)
+endif
+
+ifdef TEST_LOG_LEVEL
+	UNIT_TEST_FLAGS+=-v
+	UNIT_TEST_LOG_FLAGS=-args --alsologtostderr --v=$(TEST_LOG_LEVEL)
+	INT_TEST_FLAGS+=--alsologtostderr --v=$(TEST_LOG_LEVEL)
+endif
+
 ifdef NO_DOCKER
 	DOCKER_CMD =
 	scBuildImageTarget =
@@ -259,14 +269,14 @@ test-unit-native: check-go
 test-unit: .init build
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
-	  $(addprefix $(SC_PKG)/,$(TEST_DIRS))
+	  $(addprefix $(SC_PKG)/,$(TEST_DIRS)) $(UNIT_TEST_LOG_FLAGS)
 
 test-integration: .init $(scBuildImageTarget) build
 	# test kubectl
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
 	# golang integration tests
-	$(DOCKER_CMD) test/integration.sh
+	$(DOCKER_CMD) test/integration.sh $(INT_TEST_FLAGS)
 
 clean-e2e:
 	rm -f $(BINDIR)/e2e.test

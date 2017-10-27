@@ -214,6 +214,15 @@ or you can specify a regexp expression for the test name:
 
     $ UNIT_TESTS=TestBar* make test
 
+a regexp expression also works for integration test names:
+
+    $ INT_TESTS=TestIntegrateBar* make test
+
+You can also set the log level for the tests, which is useful for
+debugging using the `TEST_LOG_LEVEL` env variable. Log level 5 e.g.:
+
+    $ TEST_LOG_LEVEL=5 make test-integration
+
 To see how well these tests cover the source code, you can use:
 
     $ make coverage
