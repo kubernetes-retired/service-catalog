@@ -299,7 +299,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
-				Async: false,
+				Async: true,
 			},
 		},
 		GetBindingReaction: &fakeosb.GetBindingReaction{
@@ -312,7 +312,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		},
 		UnbindReaction: &fakeosb.UnbindReaction{
 			Response: &osb.UnbindResponse{
-				Async: false,
+				Async: true,
 			},
 		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -1361,7 +1361,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
-	fakeRecorder := record.NewFakeRecorder(10)
+	fakeRecorder := record.NewFakeRecorder(20)
 
 	// create a test controller
 	testController, err := controller.NewController(
