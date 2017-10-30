@@ -409,6 +409,7 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 			Description:              "a test service",
 			ExternalName:             testClusterServiceClassName,
 			ExternalID:               testClusterServiceClassGUID,
+			BindingRetrievable:       true,
 			Bindable:                 true,
 		},
 	}
@@ -521,10 +522,11 @@ func getTestCatalog() *osb.CatalogResponse {
 	return &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:        testClusterServiceClassName,
-				ID:          testClusterServiceClassGUID,
-				Description: "a test service",
-				Bindable:    true,
+				Name:               testClusterServiceClassName,
+				ID:                 testClusterServiceClassGUID,
+				Description:        "a test service",
+				BindingRetrievable: true,
+				Bindable:           true,
 				Plans: []osb.Plan{
 					{
 						Name:        testClusterServicePlanName,

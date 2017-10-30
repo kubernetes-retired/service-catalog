@@ -271,7 +271,8 @@ func TestBasicFlowsSync(t *testing.T) {
 }
 
 // TestBasicFlowsAsync tests the same flows as TestBasicFlowsSync, using
-// asynchronous provision/deprovision.
+// asynchronous provision/deprovision (but not asynchronous bind/unbind, as
+// they are alpha features).
 func TestBasicFlowsAsync(t *testing.T) {
 	_, catalogClient, _, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
@@ -299,7 +300,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
-				Async: true,
+				Async: false,
 			},
 		},
 		GetBindingReaction: &fakeosb.GetBindingReaction{
@@ -312,7 +313,7 @@ func TestBasicFlowsAsync(t *testing.T) {
 		},
 		UnbindReaction: &fakeosb.UnbindReaction{
 			Response: &osb.UnbindResponse{
-				Async: true,
+				Async: false,
 			},
 		},
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -1280,6 +1281,219 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		v1beta1.ConditionFalse,
 		"OrphanMitigationSuccessful",
 	)
+
+	err = client.ServiceBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
+	if err != nil {
+		t.Fatalf("binding delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForBindingToNotExist(client, testNamespace, testBindingName)
+	if err != nil {
+		t.Fatalf("error waiting for binding to not exist: %v", err)
+	}
+
+	//-----------------
+	// End binding test
+
+	err = client.ServiceInstances(testNamespace).Delete(testInstanceName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("instance delete should have been accepted: %v", err)
+	}
+
+	err = util.WaitForInstanceToNotExist(client, testNamespace, testInstanceName)
+	if err != nil {
+		t.Fatalf("error waiting for instance to be deleted: %v", err)
+	}
+
+	//-----------------
+	// End provision test
+
+	// Delete the broker
+	err = client.ClusterServiceBrokers().Delete(testClusterServiceBrokerName, &metav1.DeleteOptions{})
+	if nil != err {
+		t.Fatalf("broker should be deleted (%s)", err)
+	}
+
+	err = util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName)
+	if err != nil {
+		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
+	}
+
+	err = util.WaitForBrokerToNotExist(client, testClusterServiceBrokerName)
+	if err != nil {
+		t.Fatalf("error waiting for Broker to not exist: %v", err)
+	}
+}
+
+// TestBasicFlowsAsyncBinding tests the same flows as TestBasicFlowsAsync, using
+// asynchronous binding/unbindg as well.
+func TestBasicFlowsAsyncBinding(t *testing.T) {
+	// Enable the AsyncBindingOperations feature
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+
+	_, catalogClient, _, _, _, _, shutdownServer, shutdownController := newTestController(t, fakeosb.FakeClientConfiguration{
+		CatalogReaction: &fakeosb.CatalogReaction{
+			Response: getTestCatalogResponse(),
+		},
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				Async: true,
+			},
+		},
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
+		PollBindingLastOperationReaction: &fakeosb.PollBindingLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateSucceeded,
+			},
+		},
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{
+				Async: true,
+			},
+		},
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Async: true,
+			},
+		},
+		GetBindingReaction: &fakeosb.GetBindingReaction{
+			Response: &osb.GetBindingResponse{
+				Credentials: map[string]interface{}{
+					"foo": "bar",
+					"baz": "zap",
+				},
+			},
+		},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async: true,
+			},
+		},
+		DeprovisionReaction: &fakeosb.DeprovisionReaction{
+			Response: &osb.DeprovisionResponse{
+				Async: true,
+			},
+		},
+	})
+	defer shutdownController()
+	defer shutdownServer()
+
+	client := catalogClient.ServicecatalogV1beta1()
+
+	broker := &v1beta1.ClusterServiceBroker{
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
+		Spec: v1beta1.ClusterServiceBrokerSpec{
+			URL: testBrokerURL,
+		},
+	}
+
+	_, err := client.ClusterServiceBrokers().Create(broker)
+	if nil != err {
+		t.Fatalf("error creating the broker %q (%q)", broker.Name, err)
+	}
+
+	err = util.WaitForBrokerCondition(client,
+		testClusterServiceBrokerName,
+		v1beta1.ServiceBrokerCondition{
+			Type:   v1beta1.ServiceBrokerConditionReady,
+			Status: v1beta1.ConditionTrue,
+		})
+	if err != nil {
+		t.Fatalf("error waiting for broker to become ready: %v", err)
+	}
+
+	err = util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID)
+	if nil != err {
+		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
+	}
+
+	// TODO: find some way to compose scenarios; extract method here for real
+	// logic for this test.
+
+	//-----------------
+
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testInstanceName},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
+			},
+			ExternalID: testExternalID,
+		},
+	}
+
+	if _, err := client.ServiceInstances(testNamespace).Create(instance); err != nil {
+		t.Fatalf("error creating Instance: %v", err)
+	}
+
+	if err := util.WaitForInstanceCondition(client, testNamespace, testInstanceName, v1beta1.ServiceInstanceCondition{
+		Type:   v1beta1.ServiceInstanceConditionReady,
+		Status: v1beta1.ConditionTrue,
+	}); err != nil {
+		t.Fatalf("error waiting for instance to become ready: %v", err)
+	}
+
+	retInst, err := client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if retInst.Spec.ExternalID != instance.Spec.ExternalID {
+		t.Fatalf(
+			"returned OSB GUID '%s' doesn't match original '%s'",
+			retInst.Spec.ExternalID,
+			instance.Spec.ExternalID,
+		)
+	}
+
+	// Update Instance
+	updateRequests := retInst.Spec.UpdateRequests + 1
+	retInst.Spec.UpdateRequests = updateRequests
+	if _, err := client.ServiceInstances(testNamespace).Update(retInst); err != nil {
+		t.Fatalf("error updating Instance: %v", err)
+	}
+
+	if err := util.WaitForInstanceReconciledGeneration(client, testNamespace, testInstanceName, retInst.Status.ReconciledGeneration+1); err != nil {
+		t.Fatalf("error waiting for instance to reconcile: %v", err)
+	}
+
+	retInst, err = client.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting instance %s/%s back", instance.Namespace, instance.Name)
+	}
+	if e, a := updateRequests, retInst.Spec.UpdateRequests; e != a {
+		t.Fatalf("unexpected updateRequets in instance spec: expected %v, got %v", e, a)
+	}
+
+	// Binding test begins here
+	//-----------------
+
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{
+				Name: testInstanceName,
+			},
+		},
+	}
+
+	_, err = client.ServiceBindings(testNamespace).Create(binding)
+	if err != nil {
+		t.Fatalf("error creating Binding: %v", binding)
+	}
+
+	err = util.WaitForBindingCondition(client, testNamespace, testBindingName, v1beta1.ServiceBindingCondition{
+		Type:   v1beta1.ServiceBindingConditionReady,
+		Status: v1beta1.ConditionTrue,
+	})
+	if err != nil {
+		t.Fatalf("error waiting for binding to become ready: %v", err)
+	}
 
 	err = client.ServiceBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 	if err != nil {

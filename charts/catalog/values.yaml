@@ -91,3 +91,5 @@ controllerManager:
   apiserverSkipVerify: true
 # Whether the OriginatingIdentity alpha feature should be enabled
 originatingIdentityEnabled: false
+# Whether the AsyncBindingOperations alpha feature should be enabled
+asyncBindingOperationsEnabled: false

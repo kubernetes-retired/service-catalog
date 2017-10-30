@@ -341,6 +341,7 @@ func autoConvert_v1beta1_ClusterServiceClassSpec_To_servicecatalog_ClusterServic
 	out.ExternalID = in.ExternalID
 	out.Description = in.Description
 	out.Bindable = in.Bindable
+	out.BindingRetrievable = in.BindingRetrievable
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
@@ -359,6 +360,7 @@ func autoConvert_servicecatalog_ClusterServiceClassSpec_To_v1beta1_ClusterServic
 	out.ExternalID = in.ExternalID
 	out.Description = in.Description
 	out.Bindable = in.Bindable
+	out.BindingRetrievable = in.BindingRetrievable
 	out.PlanUpdatable = in.PlanUpdatable
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))

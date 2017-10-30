@@ -309,7 +309,6 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -420,7 +419,6 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	expectedParameters := map[string]interface{}{
@@ -611,7 +609,6 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -923,11 +920,10 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		BindingID:         testServiceBindingGUID,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-		AcceptsIncomplete: true,
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
 	})
 
 	kubeActions := fakeKubeClient.Actions()
@@ -1138,11 +1134,10 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		BindingID:         testServiceBindingGUID,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-		AcceptsIncomplete: true,
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
 	})
 
 	// verify one kube action occurred
@@ -1383,7 +1378,6 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(""),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	events := getRecordedEvents(testController)
@@ -1451,7 +1445,6 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(""),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	events := getRecordedEvents(testController)
@@ -1888,7 +1881,6 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2012,7 +2004,6 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2181,7 +2172,6 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
-		AcceptsIncomplete: true,
 	})
 
 	expectedParameters := map[string]interface{}{
@@ -2350,7 +2340,6 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 			BindResource: &osb.BindResource{
 				AppGUID: strPtr(testNamespaceGUID),
 			},
-			AcceptsIncomplete: true,
 		})
 
 		kubeActions := fakeKubeClient.Actions()
@@ -2436,11 +2425,10 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		BindingID:         testServiceBindingGUID,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-		AcceptsIncomplete: true,
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2517,11 +2505,10 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		BindingID:         testServiceBindingGUID,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-		AcceptsIncomplete: true,
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2753,6 +2740,9 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 		},
 	})
 
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
@@ -2834,6 +2824,9 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 		},
 	})
 
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
@@ -2902,6 +2895,9 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 }
 
 func TestPollServiceBinding(t *testing.T) {
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+
 	goneError := osb.HTTPStatusCodeError{
 		StatusCode: http.StatusGone,
 	}

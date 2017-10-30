@@ -400,14 +400,19 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 		appGUID := string(ns.UID)
 		request := &osb.BindRequest{
-			BindingID:         binding.Spec.ExternalID,
-			InstanceID:        instance.Spec.ExternalID,
-			ServiceID:         serviceClass.Spec.ExternalID,
-			PlanID:            servicePlan.Spec.ExternalID,
-			AppGUID:           &appGUID,
-			Parameters:        parameters,
-			BindResource:      &osb.BindResource{AppGUID: &appGUID},
-			AcceptsIncomplete: true,
+			BindingID:    binding.Spec.ExternalID,
+			InstanceID:   instance.Spec.ExternalID,
+			ServiceID:    serviceClass.Spec.ExternalID,
+			PlanID:       servicePlan.Spec.ExternalID,
+			AppGUID:      &appGUID,
+			Parameters:   parameters,
+			BindResource: &osb.BindResource{AppGUID: &appGUID},
+		}
+
+		if serviceClass.Spec.BindingRetrievable &&
+			utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+
+			request.AcceptsIncomplete = true
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
@@ -649,11 +654,16 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		}
 
 		unbindRequest := &osb.UnbindRequest{
-			BindingID:         binding.Spec.ExternalID,
-			InstanceID:        instance.Spec.ExternalID,
-			ServiceID:         serviceClass.Spec.ExternalID,
-			PlanID:            servicePlan.Spec.ExternalID,
-			AcceptsIncomplete: true,
+			BindingID:  binding.Spec.ExternalID,
+			InstanceID: instance.Spec.ExternalID,
+			ServiceID:  serviceClass.Spec.ExternalID,
+			PlanID:     servicePlan.Spec.ExternalID,
+		}
+
+		if serviceClass.Spec.BindingRetrievable &&
+			utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+
+			unbindRequest.AcceptsIncomplete = true
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {

@@ -259,6 +259,13 @@ type ClusterServiceClassSpec struct {
 	// this field.
 	Bindable bool `json:"bindable"`
 
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// BindingRetrievable indicates whether fetching a binding via a GET on
+	// its endpoint is supported for all plans.
+	BindingRetrievable bool `json:"binding_retrievable"`
+
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ClusterServiceClass may change ClusterServicePlans after being
 	// provisioned.

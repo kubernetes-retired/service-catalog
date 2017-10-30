@@ -257,6 +257,13 @@ type ClusterServiceClassSpec struct {
 	// Bindable which overrides the value of this field.
 	Bindable bool
 
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// BindingRetrievable indicates whether fetching a binding via a GET on
+	// its endpoint is supported for all plans.
+	BindingRetrievable bool
+
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ClusterServiceClass may change ClusterServicePlans after being provisioned.
 	PlanUpdatable bool
