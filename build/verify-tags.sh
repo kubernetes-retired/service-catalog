@@ -46,7 +46,7 @@ else
 fi
 
 for file in $versioned_api_files; do
-  if cat -n "${file}" | tail -n +22 | grep -v "^\s*[0-9]*\s$" | egrep -v "(\/\/|{|}|\(|\)|type|=)" | grep -v json; then 
+  if cat -n "${file}" | sed -n '/genclient/,$p' | grep -v "^\s*[0-9]*\s$" | egrep -v "(\/\/|{|}|\(|\)|type|=)" | grep -v json; then 
     echo "Versioned APIs should contain json tags for fields in file ${file}"
     result=1
   fi
