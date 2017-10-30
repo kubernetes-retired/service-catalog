@@ -20,4 +20,3 @@ contrib/build/*/tmp/*
 .pkg
 .kube
 .var
-docs/certs
