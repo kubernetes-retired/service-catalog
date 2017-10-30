@@ -2440,14 +2440,23 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 			ExternalID:         testServiceBindingGUID,
 			SecretName:         testServiceBindingSecretName,
 		},
+		Status: v1beta1.ServiceBindingStatus{
+			Conditions: []v1beta1.ServiceBindingCondition{
+				{
+					Type:   v1beta1.ServiceBindingConditionFailed,
+					Status: v1beta1.ConditionTrue,
+					Reason: "reason-orphan-mitigation-began",
+				},
+			},
+		},
 	}
-	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	binding.Status.CurrentOperation = v1beta1.ServiceBindingOperationBind
 	binding.Status.OperationStartTime = &startTime
 	binding.Status.OrphanMitigationInProgress = true
 
-	if err := testController.reconcileServiceBinding(binding); err == nil {
-		t.Fatal("reconciliation shouldn't fully complete due to timeout error")
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("reconciliation should complete since the retry duration has elapsed: %v", err)
 	}
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 1)
@@ -2472,14 +2481,213 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionUnknown)
+	assertServiceBindingRequestFailingError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, errorUnbindCallReason, "reason-orphan-mitigation-began", binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, true)
+	expectedEventPrefixes := []string{
+		corev1.EventTypeWarning + " " + errorUnbindCallReason,
+		corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason,
+	}
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, len(expectedEventPrefixes))
+
+	for i, e := range expectedEventPrefixes {
+		a := events[i]
+		if !strings.HasPrefix(a, e) {
+			t.Fatalf("Received unexpected event:\n  expected prefix: %v\n  got: %v", e, a)
+		}
+	}
+}
+
+// TestReconcileServiceBindingDeleteDuringOngoingOperation tests deleting a
+// binding that has an on-going operation.
+func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testServiceBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         testServiceBindingGUID,
+			SecretName:         testServiceBindingSecretName,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			CurrentOperation:   v1beta1.ServiceBindingOperationBind,
+			OperationStartTime: &startTime,
+		},
+	}
+
+	fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
+	timeOfReconciliation := metav1.Now()
+
+	err := testController.reconcileServiceBinding(binding)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
+	})
+
+	kubeActions := fakeKubeClient.Actions()
+	// The action should be deleting the secret
+	assertNumberOfActions(t, kubeActions, 1)
+
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	// The actions should be:
+	// 0. Updating the current operation
+	// 1. Updating the ready condition
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	// Verify that the operation start time was reset to Now
+	if updatedServiceBinding.Status.OperationStartTime.Before(&timeOfReconciliation) {
+		t.Fatalf(
+			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
+			updatedServiceBinding.Status.OperationStartTime,
+			timeOfReconciliation,
+		)
+	}
+
+	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
 
-	expectedEvent := corev1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Error unbinding from ServiceInstance \"test-ns/test-instance\" of ClusterServiceClass (K8S: \"SCGUID\" ExternalName: \"test-serviceclass\") at ClusterServiceBroker \"test-broker\": timed out"
+	expectedEvent := corev1.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
 	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event, %s", expectedGot(e, a))
+		t.Fatalf("Received unexpected event: %v", a)
+	}
+}
+
+// TestReconcileServiceBindingDeleteDuringOrphanMitigation tests deleting a
+// binding that is undergoing orphan mitigation
+func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testServiceBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         testServiceBindingGUID,
+			SecretName:         testServiceBindingSecretName,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			CurrentOperation:           v1beta1.ServiceBindingOperationBind,
+			OperationStartTime:         &startTime,
+			OrphanMitigationInProgress: true,
+		},
+	}
+
+	fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
+	timeOfReconciliation := metav1.Now()
+
+	err := testController.reconcileServiceBinding(binding)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
+	})
+
+	kubeActions := fakeKubeClient.Actions()
+	// The action should be deleting the secret
+	assertNumberOfActions(t, kubeActions, 1)
+
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := "delete", deleteAction.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+	}
+
+	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	// The actions should be:
+	// 0. Updating the current operation
+	// 1. Updating the ready condition
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	// Verify that the operation start time was reset to Now
+	if updatedServiceBinding.Status.OperationStartTime.Before(&timeOfReconciliation) {
+		t.Fatalf(
+			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
+			updatedServiceBinding.Status.OperationStartTime,
+			timeOfReconciliation,
+		)
+	}
+
+	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + successUnboundReason + " " + "This binding was deleted successfully"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v", a)
 	}
 }
