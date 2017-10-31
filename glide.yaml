@@ -12,6 +12,8 @@ import:
   # We want Nov 4, 2014 version as the Jul 24, 2015 version (latest version)
   # introduces bug documented in issue 1187
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
+- package: github.com/golang/mock
+  version: 13f360950a79f5864a972c786a10a50e44b69541
 - package: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:

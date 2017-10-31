@@ -40,7 +40,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
-	pretty "github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
 const (

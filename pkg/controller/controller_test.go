@@ -1349,6 +1349,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 
 	// create informers
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
+
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
 	fakeRecorder := record.NewFakeRecorder(5)

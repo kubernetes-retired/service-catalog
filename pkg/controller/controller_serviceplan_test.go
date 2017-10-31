@@ -17,16 +17,21 @@ limitations under the License.
 package controller
 
 import (
-	"errors"
+	"fmt"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	mocklisters "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1/mocks"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
-	"k8s.io/apimachinery/pkg/runtime"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/util/workqueue"
 )
 
 func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
@@ -39,7 +44,6 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 	cases := []struct {
 		name                    string
 		plan                    *v1beta1.ClusterServicePlan
-		instances               []v1beta1.ServiceInstance
 		catalogClientPrepFunc   func(*fake.Clientset)
 		shouldError             bool
 		errText                 *string
@@ -49,12 +53,23 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			name:        "not removed from catalog",
 			plan:        getTestClusterServicePlan(),
 			shouldError: false,
+			catalogClientPrepFunc: func(client *fake.Clientset) {
+				client.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					return true, &v1beta1.ServiceInstanceList{Items: nil}, nil
+				})
+			},
 		},
 		{
-			name:        "removed from catalog, instances left",
-			plan:        getRemovedPlan(),
-			instances:   []v1beta1.ServiceInstance{*getTestServiceInstance()},
+			name: "removed from catalog, instances left",
+			plan: getRemovedPlan(),
+
 			shouldError: false,
+			catalogClientPrepFunc: func(client *fake.Clientset) {
+				instances := []v1beta1.ServiceInstance{*getTestServiceInstance()}
+				client.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					return true, &v1beta1.ServiceInstanceList{Items: instances}, nil
+				})
+			},
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
@@ -68,8 +83,12 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 		{
 			name:        "removed from catalog, no instances left",
 			plan:        getRemovedPlan(),
-			instances:   nil,
 			shouldError: false,
+			catalogClientPrepFunc: func(client *fake.Clientset) {
+				client.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					return true, &v1beta1.ServiceInstanceList{Items: nil}, nil
+				})
+			},
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
@@ -83,11 +102,13 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 		},
 		{
 			name: "removed from catalog, no instances left, delete fails", plan: getRemovedPlan(),
-			instances:   nil,
 			shouldError: true,
 			catalogClientPrepFunc: func(client *fake.Clientset) {
+				client.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					return true, &v1beta1.ServiceInstanceList{Items: nil}, nil
+				})
 				client.AddReactor("delete", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-					return true, nil, errors.New("oops")
+					return true, nil, errors.NewBadRequest("oops")
 				})
 			},
 			errText: strPtr("oops"),
@@ -102,14 +123,29 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 				assertDelete(t, actions[1], getRemovedPlan())
 			},
 		},
+		{
+			name: "plan not found, reconcile fails", plan: getRemovedPlan(),
+			shouldError: true,
+			errText:     strPtr("error on list"),
+			catalogClientPrepFunc: func(client *fake.Clientset) {
+				client.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					return true, nil, fmt.Errorf("error on list")
+				})
+			},
+			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
+				listRestrictions := clientgotesting.ListRestrictions{
+					Labels: labels.Everything(),
+					Fields: fields.OneTermEqualSelector("spec.clusterServicePlanRef.name", "PGUID"),
+				}
+
+				expectNumberOfActions(t, name, actions, 1)
+				assertList(t, actions[0], &v1beta1.ServiceInstance{}, listRestrictions)
+			},
+		},
 	}
 
 	for _, tc := range cases {
 		_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
-
-		fakeCatalogClient.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-			return true, &v1beta1.ServiceInstanceList{Items: tc.instances}, nil
-		})
 
 		if tc.catalogClientPrepFunc != nil {
 			tc.catalogClientPrepFunc(fakeCatalogClient)
@@ -133,5 +169,90 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 		} else {
 			expectNumberOfActions(t, tc.name, actions, 0)
 		}
+	}
+}
+
+func TestServicePlanAdd(t *testing.T) {
+	// setup
+	servicePlanQueue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-plan")
+
+	// create controller
+	testController := controller{
+		servicePlanQueue: servicePlanQueue,
+	}
+
+	// perform test
+	testController.servicePlanAdd(getTestClusterServicePlan())
+
+	if servicePlanQueue.Len() != 1 {
+		t.Fatalf("servicePlanQueue length error: %s", expectedGot(1, servicePlanQueue.Len()))
+	}
+
+	planName, _ := servicePlanQueue.Get()
+
+	if planName != testClusterServicePlanGUID {
+		t.Fatalf("Wrong plan queued: %s", expectedGot(testClusterServicePlanGUID, planName))
+	}
+}
+
+func TestServicePlanAddFail(t *testing.T) {
+	// setup
+	servicePlanQueue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-plan")
+
+	// create controller
+	testController := controller{
+		servicePlanQueue: servicePlanQueue,
+	}
+
+	// perform test
+	testController.servicePlanAdd(nil)
+
+	if servicePlanQueue.Len() != 0 {
+		t.Fatalf("servicePlanQueue length error: %s", expectedGot(0, servicePlanQueue.Len()))
+	}
+}
+
+func TestServicePlanUpdate(t *testing.T) {
+	// TODO(n3wscott): it looks like servicePlanUpdate is not implemented yet
+}
+
+func TestServicePlanDelete(t *testing.T) {
+	_, _, _, testController, _ := newTestController(t, noFakeActions())
+
+	testController.servicePlanDelete(nil)
+	testController.servicePlanDelete(getTestClusterServicePlan())
+	// TODO(#1407): Nothing to test yet
+}
+
+func TestReconcileClusterServicePlanKeyThrowsError(t *testing.T) {
+	// setup mocks
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockClusterServicePlansLister := mocklisters.NewMockClusterServicePlanLister(mockCtrl)
+	mockClusterServicePlansLister.EXPECT().Get("key").Return(nil, fmt.Errorf("error"))
+
+	// create controller
+	testController := controller{servicePlanLister: mockClusterServicePlansLister}
+
+	// perform test
+	if err := testController.reconcileClusterServicePlanKey("key"); err == nil {
+		t.Fatalf("Should have returned an error.")
+	}
+}
+
+func TestReconcileClusterServicePlanKeyNotFound(t *testing.T) {
+	// setup mocks
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockClusterServicePlansLister := mocklisters.NewMockClusterServicePlanLister(mockCtrl)
+	expectedErr := errors.NewNotFound(v1beta1.Resource("serviceplan"), "key")
+	mockClusterServicePlansLister.EXPECT().Get("key").Return(nil, expectedErr)
+
+	// create controller
+	testController := controller{servicePlanLister: mockClusterServicePlansLister}
+
+	// perform test
+	if err := testController.reconcileClusterServicePlanKey("key"); err != nil {
+		t.Fatalf("Should have not returned an error.")
 	}
 }
