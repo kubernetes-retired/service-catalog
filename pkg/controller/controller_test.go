@@ -1696,7 +1696,7 @@ func assertServiceInstanceConditionsCount(t *testing.T, obj runtime.Object, coun
 	}
 
 	if e, a := count, len(instance.Status.Conditions); e != a {
-		t.Fatalf("Expected %v condition, got %v", e, a)
+		fatalf(t, "Expected %v condition, got %v", e, a)
 	}
 }
 
