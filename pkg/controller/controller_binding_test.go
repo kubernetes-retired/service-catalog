@@ -2705,4 +2705,5 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
+
 }
