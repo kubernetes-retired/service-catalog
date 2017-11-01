@@ -1703,7 +1703,7 @@ func assertServiceInstanceConditionsCount(t *testing.T, obj runtime.Object, coun
 	}
 
 	if e, a := count, len(instance.Status.Conditions); e != a {
-		t.Fatalf("Expected %v condition, got %v", e, a)
+		fatalf(t, "Expected %v condition, got %v", e, a)
 	}
 }
 
@@ -1950,7 +1950,12 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
-	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
+	switch operation {
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationDeprovision:
+		assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
+	case v1beta1.ServiceInstanceOperationUpdate:
+		assertServiceInstanceConditionsCount(t, obj, 1)
+	}
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)

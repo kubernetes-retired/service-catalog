@@ -884,21 +884,23 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			glog.Warning(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, reason, s)
 
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				"ClusterServiceBrokerReturnedFailure",
-				s)
+			if isProvisioning {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					"ClusterServiceBrokerReturnedFailure",
+					s)
 
-			if isProvisioning && shouldStartOrphanMitigation(httpErr.StatusCode) {
-				c.setServiceInstanceStartOrphanMitigation(toUpdate)
+				if shouldStartOrphanMitigation(httpErr.StatusCode) {
+					c.setServiceInstanceStartOrphanMitigation(toUpdate)
 
-				if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-					return err
+					if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+						return err
+					}
+
+					return httpErr
 				}
-
-				return httpErr
 			}
 
 			setServiceInstanceCondition(
@@ -939,14 +941,14 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			message = "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
 			// Communication to the broker timed out. Treat as terminal failure and
 			// begin orphan mitigation.
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				reason,
-				message)
 
 			if isProvisioning {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					reason,
+					message)
 				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			} else {
 				setServiceInstanceCondition(
@@ -976,11 +978,19 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			s := "Stopping reconciliation retries because too much time has elapsed"
 			glog.Info(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-			setServiceInstanceCondition(toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				errorReconciliationRetryTimeoutReason,
-				s)
+			if isProvisioning {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			}
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
@@ -1132,10 +1142,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 				v1beta1.ConditionUnknown,
 				errorOrphanMitigationFailedReason,
 				"Orphan mitigation failed: "+s)
-		} else {
+		} else if deleting || provisioning {
 			setServiceInstanceCondition(toUpdate,
 				v1beta1.ServiceInstanceConditionFailed,
 				v1beta1.ConditionTrue,
+				errorReconciliationRetryTimeoutReason,
+				s)
+		} else {
+			setServiceInstanceCondition(toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorReconciliationRetryTimeoutReason,
 				s)
 		}
@@ -1281,10 +1297,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 					v1beta1.ConditionUnknown,
 					errorOrphanMitigationFailedReason,
 					"Orphan mitigation failed: "+s)
-			} else {
+			} else if deleting || provisioning {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1373,10 +1395,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 					v1beta1.ConditionUnknown,
 					errorOrphanMitigationFailedReason,
 					"Orphan mitigation failed: "+s)
-			} else {
+			} else if deleting || provisioning {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1531,7 +1559,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			message,
 		)
 
-		if !mitigatingOrphan {
+		if !mitigatingOrphan && (deleting || provisioning) {
 			setServiceInstanceCondition(
 				toUpdate,
 				v1beta1.ServiceInstanceConditionFailed,
@@ -1565,10 +1593,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 					v1beta1.ConditionUnknown,
 					errorOrphanMitigationFailedReason,
 					"Orphan mitigation failed: "+s)
-			} else {
+			} else if deleting || provisioning {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
