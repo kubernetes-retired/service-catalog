@@ -923,6 +923,7 @@ func Convert_servicecatalog_ServiceInstanceList_To_v1beta1_ServiceInstanceList(i
 
 func autoConvert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_ServiceInstancePropertiesState(in *ServiceInstancePropertiesState, out *servicecatalog.ServiceInstancePropertiesState, s conversion.Scope) error {
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
+	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
@@ -936,6 +937,7 @@ func Convert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_ServiceIns
 
 func autoConvert_servicecatalog_ServiceInstancePropertiesState_To_v1beta1_ServiceInstancePropertiesState(in *servicecatalog.ServiceInstancePropertiesState, out *ServiceInstancePropertiesState, s conversion.Scope) error {
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
+	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))

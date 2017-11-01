@@ -597,6 +597,10 @@ type ServiceInstancePropertiesState struct {
 	// OSB API.
 	ClusterServicePlanExternalName string
 
+	// ClusterServicePlanExternalID is the external ID of the plan that the
+	// broker knows this ServiceInstance to be on.
+	ClusterServicePlanExternalID string
+
 	// Parameters is a blob of the parameters and their values that the broker
 	// knows about for this ServiceInstance.  If a parameter was sourced from
 	// a secret, its value will be "<redacted>" in this blob.
