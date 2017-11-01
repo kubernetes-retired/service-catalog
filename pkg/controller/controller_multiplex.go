@@ -30,6 +30,8 @@ import (
 
 // Conditions
 
+// ConditionType can be translated to a ServiceInstanceCondition or
+// ServiceBindingCondition value.
 type ConditionType string
 
 const (
