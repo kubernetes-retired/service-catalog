@@ -101,7 +101,9 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			},
 		},
 		{
-			name: "removed from catalog, no instances left, delete fails", plan: getRemovedPlan(),
+			name:        "removed from catalog, no instances left, delete fails",
+			plan:        getRemovedPlan(),
+			instances:   nil,
 			shouldError: true,
 			catalogClientPrepFunc: func(client *fake.Clientset) {
 				client.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
