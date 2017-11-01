@@ -288,11 +288,6 @@ func TestBasicFlowsAsync(t *testing.T) {
 				State: osb.StateSucceeded,
 			},
 		},
-		PollBindingLastOperationReaction: &fakeosb.PollBindingLastOperationReaction{
-			Response: &osb.LastOperationResponse{
-				State: osb.StateSucceeded,
-			},
-		},
 		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
 			Response: &osb.UpdateInstanceResponse{
 				Async: true,
@@ -300,11 +295,6 @@ func TestBasicFlowsAsync(t *testing.T) {
 		},
 		BindReaction: &fakeosb.BindReaction{
 			Response: &osb.BindResponse{
-				Async: false,
-			},
-		},
-		GetBindingReaction: &fakeosb.GetBindingReaction{
-			Response: &osb.GetBindingResponse{
 				Credentials: map[string]interface{}{
 					"foo": "bar",
 					"baz": "zap",
