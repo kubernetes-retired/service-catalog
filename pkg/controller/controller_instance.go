@@ -423,53 +423,18 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	glog.V(4).Info(pcb.Message("Deprovisioning"))
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
+		var s string
 		if httpErr, ok := osb.IsHTTPError(err); ok {
-			s := fmt.Sprintf(
+			s = fmt.Sprintf(
 				"Deprovision call failed; received error response from broker: %v",
 				httpErr.Error(),
 			)
-			glog.Warning(pcb.Message(s))
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionCalledReason, s)
-
-			if instance.Status.OrphanMitigationInProgress {
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionUnknown,
-					errorOrphanMitigationFailedReason,
-					"Orphan mitigation deprovision call failed. "+s)
-			} else {
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionUnknown,
-					errorDeprovisionCalledReason,
-					"Deprovision call failed. "+s)
-
-				// Do not overwrite 'Failed' message if deprovisioning due to orphan
-				// mitigation in order to prevent loss of original reason for the
-				// orphan.
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionFailed,
-					v1beta1.ConditionTrue,
-					errorDeprovisionCalledReason,
-					s,
-				)
-			}
-
-			c.clearServiceInstanceCurrentOperation(toUpdate)
-			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return nil
+		} else {
+			s = fmt.Sprintf(
+				`Error deprovisioning, %s at ClusterServiceBroker %q: %v`,
+				pretty.ClusterServiceClassName(serviceClass), brokerName, err,
+			)
 		}
-
-		s := fmt.Sprintf(
-			`Error deprovisioning, %s at ClusterServiceBroker %q: %v`,
-			pretty.ClusterServiceClassName(serviceClass), brokerName, err,
-		)
 		glog.Warning(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorDeprovisionCalledReason, s)
 
@@ -1459,25 +1424,20 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			description = *response.Description
 		}
 		var (
-			readyCond v1beta1.ConditionStatus
-			reason    string
-			message   string
+			reason  string
+			message string
 		)
 		switch {
 		case mitigatingOrphan:
-			readyCond = v1beta1.ConditionUnknown
 			reason = errorOrphanMitigationFailedReason
 			message = "Orphan mitigation failed: " + description
 		case deleting:
-			readyCond = v1beta1.ConditionUnknown
 			reason = errorDeprovisionCalledReason
 			message = "Deprovision call failed: " + description
 		case provisioning:
-			readyCond = v1beta1.ConditionFalse
 			reason = errorProvisionCallFailedReason
 			message = "Provision call failed: " + description
 		default:
-			readyCond = v1beta1.ConditionFalse
 			reason = errorUpdateInstanceCallFailedReason
 			message = "Update call failed: " + description
 		}
@@ -1491,34 +1451,85 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		}
 		toUpdate := clone.(*v1beta1.ServiceInstance)
 
-		c.clearServiceInstanceCurrentOperation(toUpdate)
-		if deleting {
+		if !deleting {
+			c.clearServiceInstanceCurrentOperation(toUpdate)
+			setServiceInstanceCondition(
+				toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				reason,
+				message,
+			)
+			if provisioning {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					reason,
+					message,
+				)
+			}
+			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+				return err
+			}
+			return c.finishPollingServiceInstance(instance)
+		}
+
+		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+			s := "Stopping reconciliation retries on ServiceInstance because too much time has elapsed"
+			glog.Info(pcb.Message(s))
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+
+			c.clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
+
+			setServiceInstanceCondition(
+				toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionUnknown,
+				errorReconciliationRetryTimeoutReason,
+				s,
+			)
+
+			if mitigatingOrphan {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionUnknown,
+					errorOrphanMitigationFailedReason,
+					"Orphan mitigation failed: "+s)
+			} else {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s,
+				)
+			}
+
+			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+				return err
+			}
+
+			return c.finishPollingServiceInstance(instance)
 		}
 
 		setServiceInstanceCondition(
 			toUpdate,
 			v1beta1.ServiceInstanceConditionReady,
-			readyCond,
+			v1beta1.ConditionUnknown,
 			reason,
 			message,
 		)
-
-		if !mitigatingOrphan && (deleting || provisioning) {
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				reason,
-				message,
-			)
-		}
-
 		if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 			return err
 		}
+		err = c.continuePollingServiceInstance(instance)
+		if err != nil {
+			return err
+		}
 
-		return c.finishPollingServiceInstance(instance)
 	default:
 		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
 		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
