@@ -592,12 +592,13 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	if instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress {
 		return c.reconcileServiceInstanceDelete(instance)
 	}
-
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-
-	// Do not do update requests for instances that failed to provision
-	if instance.Status.ReconciledGeneration <= 1 && isServiceInstanceFailed(instance) {
-		glog.V(4).Info(pcb.Message("Not processing event because status showed that the provision failed"))
+	// Currently, we only set a failure condition if the initial provision
+	// call fails, so if that condition is set, we only need to remove the
+	// finalizer from the instance. We will need to reevaluate this logic as
+	// we make any changes to capture permanent failure in new cases.
+	if isServiceInstanceFailed(instance) {
+		glog.V(4).Info(pcb.Message("Not processing event because status showed that it has failed"))
 		return nil
 	}
 
@@ -857,21 +858,23 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			glog.Warning(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, reason, s)
 
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				"ClusterServiceBrokerReturnedFailure",
-				s)
+			if isProvisioning {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					"ClusterServiceBrokerReturnedFailure",
+					s)
 
-			if isProvisioning && shouldStartOrphanMitigation(httpErr.StatusCode) {
-				c.setServiceInstanceStartOrphanMitigation(toUpdate)
+				if shouldStartOrphanMitigation(httpErr.StatusCode) {
+					c.setServiceInstanceStartOrphanMitigation(toUpdate)
 
-				if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-					return err
+					if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+						return err
+					}
+
+					return httpErr
 				}
-
-				return httpErr
 			}
 
 			setServiceInstanceCondition(
@@ -912,14 +915,14 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			message = "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
 			// Communication to the broker timed out. Treat as terminal failure and
 			// begin orphan mitigation.
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				reason,
-				message)
 
 			if isProvisioning {
+				setServiceInstanceCondition(
+					toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					reason,
+					message)
 				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			} else {
 				setServiceInstanceCondition(
@@ -949,11 +952,19 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			s := "Stopping reconciliation retries because too much time has elapsed"
 			glog.Info(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-			setServiceInstanceCondition(toUpdate,
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ConditionTrue,
-				errorReconciliationRetryTimeoutReason,
-				s)
+			if isProvisioning {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionFailed,
+					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			}
 			c.clearServiceInstanceCurrentOperation(toUpdate)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
@@ -1044,7 +1055,6 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		c.clearServiceInstanceCurrentOperation(toUpdate)
-		removeServiceInstanceFailedCondition(toUpdate)
 
 		// TODO: process response
 		setServiceInstanceCondition(
@@ -1106,10 +1116,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 				v1beta1.ConditionUnknown,
 				errorOrphanMitigationFailedReason,
 				"Orphan mitigation failed: "+s)
-		} else {
+		} else if deleting || provisioning {
 			setServiceInstanceCondition(toUpdate,
 				v1beta1.ServiceInstanceConditionFailed,
 				v1beta1.ConditionTrue,
+				errorReconciliationRetryTimeoutReason,
+				s)
+		} else {
+			setServiceInstanceCondition(toUpdate,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
 				errorReconciliationRetryTimeoutReason,
 				s)
 		}
@@ -1255,10 +1271,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 					v1beta1.ConditionUnknown,
 					errorOrphanMitigationFailedReason,
 					"Orphan mitigation failed: "+s)
-			} else {
+			} else if deleting || provisioning {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1347,10 +1369,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 					v1beta1.ConditionUnknown,
 					errorOrphanMitigationFailedReason,
 					"Orphan mitigation failed: "+s)
-			} else {
+			} else if deleting || provisioning {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -1425,9 +1453,6 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		c.clearServiceInstanceCurrentOperation(toUpdate)
 		if deleting {
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
-		}
-		if !deleting {
-			removeServiceInstanceFailedCondition(toUpdate)
 		}
 
 		setServiceInstanceCondition(
@@ -1508,7 +1533,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			message,
 		)
 
-		if !mitigatingOrphan {
+		if !mitigatingOrphan && (deleting || provisioning) {
 			setServiceInstanceCondition(
 				toUpdate,
 				v1beta1.ServiceInstanceConditionFailed,
@@ -1542,10 +1567,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 					v1beta1.ConditionUnknown,
 					errorOrphanMitigationFailedReason,
 					"Orphan mitigation failed: "+s)
-			} else {
+			} else if deleting || provisioning {
 				setServiceInstanceCondition(toUpdate,
 					v1beta1.ServiceInstanceConditionFailed,
 					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
+			} else {
+				setServiceInstanceCondition(toUpdate,
+					v1beta1.ServiceInstanceConditionReady,
+					v1beta1.ConditionFalse,
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
@@ -2022,17 +2053,4 @@ func shouldStartOrphanMitigation(statusCode int) bool {
 	return (is2XX && statusCode != http.StatusOK) ||
 		statusCode == http.StatusRequestTimeout ||
 		is5XX
-}
-
-// removeServiceInstanceFailedCondition removes the Failed condition from the
-// ServiceInstance conditions.
-func removeServiceInstanceFailedCondition(instance *v1beta1.ServiceInstance) {
-	for i, condition := range instance.Status.Conditions {
-		if condition.Type == v1beta1.ServiceInstanceConditionFailed {
-			newLen := len(instance.Status.Conditions) - 1
-			instance.Status.Conditions[i] = instance.Status.Conditions[newLen]
-			instance.Status.Conditions = instance.Status.Conditions[:newLen]
-			return
-		}
-	}
 }

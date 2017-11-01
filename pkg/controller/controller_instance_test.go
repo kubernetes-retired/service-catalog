@@ -41,7 +41,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	testutil "github.com/kubernetes-incubator/service-catalog/test/util"
 	corev1 "k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
 )
@@ -1809,9 +1808,9 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumEvents(t, events, 0)
 }
 
-// TestReconcileServiceInstanceWithFailedProvision tests reconciling an
-// instance that failed to provision
-func TestReconcileServiceInstanceWithFailedProvision(t *testing.T) {
+// TestReconcileServiceInstanceWithFailureCondition tests reconciling an instance that
+// has a status condition set to failure.
+func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
@@ -1819,8 +1818,6 @@ func TestReconcileServiceInstanceWithFailedProvision(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithFailedStatus()
-	instance.Generation = 2
-	instance.Status.ReconciledGeneration = 1
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
@@ -1844,114 +1841,6 @@ func TestReconcileServiceInstanceWithFailedProvision(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
-}
-
-// TestReconcileServiceInstanceWithFailedUpdate tests reconciling an
-// instance that failed to update
-func TestReconcileServiceInstanceWithFailedUpdate(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
-			Response: &osb.UpdateInstanceResponse{},
-		},
-	})
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	instance := getTestServiceInstanceWithFailedStatus()
-	instance.Generation = 3
-	instance.Status.ReconciledGeneration = 2
-	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
-
-	oldParameters := map[string]interface{}{
-		"args": map[string]interface{}{
-			"first":  "first-arg",
-			"second": "second-arg",
-		},
-		"name": "test-param",
-	}
-	oldParametersMarshaled, err := MarshalRawParameters(oldParameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters: %v", err)
-	}
-	oldParametersRaw := &runtime.RawExtension{
-		Raw: oldParametersMarshaled,
-	}
-
-	oldParametersChecksum, err := generateChecksumOfParameters(oldParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
-
-	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: "old-plan-name",
-		Parameters:                     oldParametersRaw,
-		ParametersChecksum:             oldParametersChecksum,
-	}
-
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
-	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
-
-	if err = testController.reconcileServiceInstance(instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
-
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
-	expectedPlanID := testClusterServicePlanGUID
-	assertUpdateInstance(t, brokerActions[0], &osb.UpdateInstanceRequest{
-		AcceptsIncomplete: true,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            &expectedPlanID,
-		Parameters:        nil, // no change to parameters
-	})
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, oldParameters, oldParametersChecksum, instance)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, oldParameters, oldParametersChecksum, instance)
-	// Verify that the Failed condition was removed
-	assertServiceInstanceConditionsCount(t, updatedServiceInstance, 1)
-
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
-	}
-
-	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
-	}
-
-	// verify no kube resources created
-	// One single action comes from getting namespace uid
-	kubeActions := fakeKubeClient.Actions()
-	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
-		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
-
-	expectedEvent := corev1.EventTypeNormal + " " + successUpdateInstanceReason + " " + "The instance was updated successfully"
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
-	}
 }
 
 // TestPollServiceInstanceInProgressProvisioningWithOperation tests polling an
@@ -4900,90 +4789,5 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 	expectedEvent := corev1.EventTypeNormal + " " + successDeprovisionReason + " " + "The instance was deprovisioned successfully"
 	if e, a := expectedEvent, events[0]; e != a {
 		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
-	}
-}
-
-// TestRemoveServiceInstanceFailedCondition tests the
-// removeServiceInstanceFailedCondition function.
-func TestRemoveServiceInstanceFailedCondition(t *testing.T) {
-	cases := []struct {
-		name          string
-		initialTypes  []v1beta1.ServiceInstanceConditionType
-		expectedTypes []v1beta1.ServiceInstanceConditionType
-	}{
-		{
-			name: "no conditions",
-		},
-		{
-			name: "only ready",
-			initialTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionReady,
-			},
-			expectedTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionReady,
-			},
-		},
-		{
-			name: "only failed",
-			initialTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionFailed,
-			},
-		},
-		{
-			name: "failed first",
-			initialTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ServiceInstanceConditionType("a"),
-				v1beta1.ServiceInstanceConditionType("b"),
-			},
-			expectedTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionType("a"),
-				v1beta1.ServiceInstanceConditionType("b"),
-			},
-		},
-		{
-			name: "failed middle",
-			initialTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionType("a"),
-				v1beta1.ServiceInstanceConditionFailed,
-				v1beta1.ServiceInstanceConditionType("b"),
-			},
-			expectedTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionType("a"),
-				v1beta1.ServiceInstanceConditionType("b"),
-			},
-		},
-		{
-			name: "failed last",
-			initialTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionType("a"),
-				v1beta1.ServiceInstanceConditionType("b"),
-				v1beta1.ServiceInstanceConditionFailed,
-			},
-			expectedTypes: []v1beta1.ServiceInstanceConditionType{
-				v1beta1.ServiceInstanceConditionType("a"),
-				v1beta1.ServiceInstanceConditionType("b"),
-			},
-		},
-	}
-	for _, tc := range cases {
-		conditions := make([]v1beta1.ServiceInstanceCondition, 0, len(tc.initialTypes))
-		for _, initialType := range tc.initialTypes {
-			conditions = append(conditions, v1beta1.ServiceInstanceCondition{Type: initialType})
-		}
-		instance := &v1beta1.ServiceInstance{
-			Status: v1beta1.ServiceInstanceStatus{
-				Conditions: conditions,
-			},
-		}
-		removeServiceInstanceFailedCondition(instance)
-		actualTypes := make([]v1beta1.ServiceInstanceConditionType, 0, len(instance.Status.Conditions))
-		for _, condition := range instance.Status.Conditions {
-			actualTypes = append(actualTypes, condition.Type)
-		}
-		testutil.AssertNotContains(t, actualTypes, v1beta1.ServiceInstanceConditionFailed)
-		for _, expectedType := range tc.expectedTypes {
-			testutil.AssertContains(t, actualTypes, expectedType)
-		}
 	}
 }
