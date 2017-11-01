@@ -1280,8 +1280,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		glog.V(4).Info(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorPollingLastOperationReason, s)
 
-		if c.reconciliationTimeExpired(instance) {
-			return c.reconciliationTimeExpiredFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
+		if c.isReconciliationRetryDurationExceeded(instance) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
 		}
 
 		return c.continuePollingServiceInstance(instance)
@@ -1533,8 +1533,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		return c.finishPollingServiceInstance(instance)
 	default:
 		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
-		if c.reconciliationTimeExpired(instance) {
-			return c.reconciliationTimeExpiredFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
+		if c.isReconciliationRetryDurationExceeded(instance) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
 		}
 		return fmt.Errorf(`Got invalid state in LastOperationResponse: %q`, response.State)
 	}
@@ -1543,8 +1543,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 // reconciliationTimeExpired tests if the current Operation State time has
 // elapsed the reconciliationRetryDuration time period
-func (c *controller) reconciliationTimeExpired(instance *v1beta1.ServiceInstance) bool {
-	if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+func (c *controller) isReconciliationRetryDurationExceeded(instance *v1beta1.ServiceInstance) bool {
+	if time.Now().After(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 		return true
 	}
 	return false
@@ -1553,7 +1553,7 @@ func (c *controller) reconciliationTimeExpired(instance *v1beta1.ServiceInstance
 // reconciliationTimeExpiredFinishPollingServiceInstance marks the instance as
 // failed from time expired based on current state and then prepares the
 // instance for removal from reconciliation
-func (c *controller) reconciliationTimeExpiredFinishPollingServiceInstance(instance *v1beta1.ServiceInstance, mitigatingOrphan, provisioning, deleting bool) error {
+func (c *controller) reconciliationRetryDurationExceededFinishPollingServiceInstance(instance *v1beta1.ServiceInstance, mitigatingOrphan, provisioning, deleting bool) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 
 	clone, err := api.Scheme.DeepCopy(instance)
