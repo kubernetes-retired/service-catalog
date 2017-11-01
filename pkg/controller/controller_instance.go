@@ -73,6 +73,8 @@ const (
 	errorOrphanMitigationFailedReason          string = "OrphanMitigationFailed"
 	errorInvalidDeprovisionStatusReason        string = "InvalidDeprovisionStatus"
 	errorInvalidDeprovisionStatusMessage       string = "The deprovision status is invalid"
+	errorUnknownServicePlanReason              string = "UnknownServicePlan"
+	errorUnknownServicePlanMessage             string = "The ServicePlan is not known"
 
 	asyncProvisioningReason                 string = "Provisioning"
 	asyncProvisioningMessage                string = "The instance is being provisioned asynchronously"
@@ -347,10 +349,33 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	}
 	toUpdate := clone.(*v1beta1.ServiceInstance)
 
+	var servicePlanExternalID string
+	if instance.Status.ExternalProperties != nil {
+		servicePlanExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
+	} else if servicePlan != nil {
+		servicePlanExternalID = servicePlan.Spec.ExternalID
+	} else {
+		glog.Warning(pcb.Message(errorUnknownServicePlanMessage))
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorUnknownServicePlanReason, errorUnknownServicePlanMessage)
+
+		setServiceInstanceCondition(
+			toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			errorUnknownServicePlanReason,
+			errorUnknownServicePlanMessage,
+		)
+		if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+			return err
+		}
+
+		return err
+	}
+
 	request := &osb.DeprovisionRequest{
 		InstanceID:        instance.Spec.ExternalID,
 		ServiceID:         serviceClass.Spec.ExternalID,
-		PlanID:            servicePlan.Spec.ExternalID,
+		PlanID:            servicePlanExternalID,
 		AcceptsIncomplete: true,
 	}
 
@@ -730,6 +755,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 
 	toUpdate.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
+		ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
 		Parameters:                     rawParametersWithRedaction,
 		ParametersChecksum:             parametersChecksum,
 		UserInfo:                       instance.Spec.UserInfo,
@@ -799,9 +825,9 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			ServiceID:           serviceClass.Spec.ExternalID,
 			OriginatingIdentity: originatingIdentity,
 		}
-		// Only send the plan ID if the plan name has changed from what the Broker has
+		// Only send the plan ID if the plan ID has changed from what the Broker has
 		if toUpdate.Status.ExternalProperties == nil ||
-			toUpdate.Status.InProgressProperties.ClusterServicePlanExternalName != toUpdate.Status.ExternalProperties.ClusterServicePlanExternalName {
+			servicePlan.Spec.ExternalID != toUpdate.Status.ExternalProperties.ClusterServicePlanExternalID {
 			planID := servicePlan.Spec.ExternalID
 			updateRequest.PlanID = &planID
 		}
@@ -1968,7 +1994,7 @@ func (c *controller) checkForRemovedClassAndPlan(instance *v1beta1.ServiceInstan
 	// Regardless of what's been deleted, you can always update
 	// parameters (ie, not change plans)
 	if !isProvisioning && instance.Status.ExternalProperties != nil &&
-		servicePlan.Spec.ExternalName == instance.Status.ExternalProperties.ClusterServicePlanExternalName {
+		servicePlan.Spec.ExternalID == instance.Status.ExternalProperties.ClusterServicePlanExternalID {
 		// Service Instance has already been provisioned and we're only
 		// updating parameters, so let it through.
 		return nil

@@ -654,6 +654,7 @@ func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: "old-plan-name",
+			ClusterServicePlanExternalID:   "old-plan-id",
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
@@ -673,6 +674,7 @@ func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: testClusterServicePlanName,
+			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
@@ -692,6 +694,7 @@ func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceIns
 		}},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: testRemovedClusterServicePlanName,
+			ClusterServicePlanExternalID:   testRemovedClusterServicePlanGUID,
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
@@ -718,6 +721,7 @@ func getTestServiceInstanceAsyncProvisioning(operation string) *v1beta1.ServiceI
 		CurrentOperation:   v1beta1.ServiceInstanceOperationProvision,
 		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: testClusterServicePlanName,
+			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		},
 		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
@@ -748,9 +752,11 @@ func getTestServiceInstanceAsyncUpdating(operation string) *v1beta1.ServiceInsta
 		CurrentOperation:   v1beta1.ServiceInstanceOperationUpdate,
 		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: testClusterServicePlanName,
+			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		},
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: "old-plan-name",
+			ClusterServicePlanExternalID:   "old-plan-id",
 		},
 		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
@@ -779,6 +785,7 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1beta1.Servic
 		ReconciledGeneration: 1,
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: testClusterServicePlanName,
+			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		},
 		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
@@ -1845,11 +1852,11 @@ func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, r
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
 }
 
-func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceOperationInProgressWithParameters(t, obj, operation, planName, nil, "", originalInstance)
+func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceOperationInProgressWithParameters(t, obj, operation, planName, planID, nil, "", originalInstance)
 }
 
-func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	reason := ""
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision:
@@ -1867,7 +1874,7 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
+		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
@@ -1885,11 +1892,11 @@ func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Obj
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
 }
 
-func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceOperationSuccessWithParameters(t, obj, operation, planName, nil, "", originalInstance)
+func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceOperationSuccessWithParameters(t, obj, operation, planName, planID, nil, "", originalInstance)
 }
 
-func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName string, externalParameters map[string]interface{}, externalParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, externalParameters map[string]interface{}, externalParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	var (
 		reason            string
 		readyStatus       v1beta1.ConditionStatus
@@ -1921,7 +1928,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	assertServiceInstanceInProgressPropertiesNil(t, obj)
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceExternalPropertiesPlanName(t, obj, planName)
+		assertServiceInstanceExternalPropertiesPlan(t, obj, planName, planID)
 		assertServiceInstanceExternalPropertiesParameters(t, obj, externalParameters, externalParametersChecksum)
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceExternalPropertiesNil(t, obj)
@@ -1965,11 +1972,11 @@ func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T,
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 
-func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, reason string, planName string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceRequestRetriableErrorWithParameters(t, obj, operation, reason, planName, nil, "", originalInstance)
+func assertServiceInstanceRequestRetriableError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, reason string, planName, planID string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceRequestRetriableErrorWithParameters(t, obj, operation, reason, planName, planID, nil, "", originalInstance)
 }
 
-func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, reason string, planName string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, reason string, planName, planID string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	var readyStatus v1beta1.ConditionStatus
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
@@ -1983,7 +1990,7 @@ func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj 
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
+		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
@@ -1992,7 +1999,7 @@ func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj 
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
 }
 
-func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, operationKey string, planName string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, operationKey string, planName, planID string, originalInstance *v1beta1.ServiceInstance) {
 	reason := ""
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision:
@@ -2009,7 +2016,7 @@ func assertServiceInstanceAsyncInProgress(t *testing.T, obj runtime.Object, oper
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlanName(t, obj, planName)
+		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesNil(t, obj)
@@ -2048,12 +2055,12 @@ func assertServiceInstanceInProgressPropertiesNil(t *testing.T, obj runtime.Obje
 	}
 }
 
-func assertServiceInstanceInProgressPropertiesPlanName(t *testing.T, obj runtime.Object, planName string) {
+func assertServiceInstanceInProgressPropertiesPlan(t *testing.T, obj runtime.Object, planName string, planID string) {
 	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
-	assertServiceInstancePropertiesStatePlanName(t, "in-progress", instance.Status.InProgressProperties, planName)
+	assertServiceInstancePropertiesStatePlan(t, "in-progress", instance.Status.InProgressProperties, planName, planID)
 }
 
 func assertServiceInstanceInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
@@ -2087,12 +2094,12 @@ func assertServiceInstanceExternalPropertiesNil(t *testing.T, obj runtime.Object
 	}
 }
 
-func assertServiceInstanceExternalPropertiesPlanName(t *testing.T, obj runtime.Object, planName string) {
+func assertServiceInstanceExternalPropertiesPlan(t *testing.T, obj runtime.Object, planName string, planID string) {
 	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
-	assertServiceInstancePropertiesStatePlanName(t, "external", instance.Status.ExternalProperties, planName)
+	assertServiceInstancePropertiesStatePlan(t, "external", instance.Status.ExternalProperties, planName, planID)
 }
 
 func assertServiceInstanceExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
@@ -2115,12 +2122,15 @@ func assertServiceInstanceExternalPropertiesUnchanged(t *testing.T, obj runtime.
 	}
 }
 
-func assertServiceInstancePropertiesStatePlanName(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceInstancePropertiesState, expectedPlanName string) {
+func assertServiceInstancePropertiesStatePlan(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceInstancePropertiesState, expectedPlanName string, expectedPlanID string) {
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
 	if e, a := expectedPlanName, actualProps.ClusterServicePlanExternalName; e != a {
 		fatalf(t, "unexpected %v properties external service plan name: expected %v, actual %v", propsLabel, e, a)
+	}
+	if e, a := expectedPlanID, actualProps.ClusterServicePlanExternalID; e != a {
+		fatalf(t, "unexpected %v properties external service plan ID: expected %v, actual %v", propsLabel, e, a)
 	}
 }
 
