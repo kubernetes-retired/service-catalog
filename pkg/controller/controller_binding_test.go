@@ -2537,7 +2537,9 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 // binding that has an on-going operation.
 func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{},
+		},
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
@@ -2632,7 +2634,9 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 // binding that is undergoing orphan mitigation
 func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		UnbindReaction: &fakeosb.UnbindReaction{},
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{},
+		},
 	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())

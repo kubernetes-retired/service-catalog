@@ -2238,7 +2238,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *te
 	instance.Status.OperationStartTime = &startTime
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
@@ -2247,7 +2247,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *te
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
