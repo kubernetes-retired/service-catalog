@@ -2274,6 +2274,15 @@ func assertServiceBindingErrorBeforeRequest(t *testing.T, obj runtime.Object, re
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
 
+func assertServiceBindingFailedBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalBinding *v1beta1.ServiceBinding) {
+	assertServiceBindingReadyFalse(t, obj, reason)
+	assertServiceBindingCurrentOperationClear(t, obj)
+	assertServiceBindingOperationStartTimeSet(t, obj, false)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
+	assertServiceBindingInProgressPropertiesNil(t, obj)
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
+}
+
 func assertServiceBindingOperationInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingOperationInProgressWithParameters(t, obj, operation, nil, "", originalBinding)
 }
