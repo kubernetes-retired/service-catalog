@@ -217,6 +217,11 @@ type UpdateInstanceRequest struct {
 	// unset, indicates that the client does not wish to update the parameters
 	// for an instance.
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
+	// Context requires a client API version >= 2.12.
+	//
+	// Context is platform-specific contextual information under which the
+	// service instance was created.
+	Context map[string]interface{} `json:"context,omitempty"`
 	// OriginatingIdentity is the identity on the platform of the user making this request.
 	OriginatingIdentity *OriginatingIdentity `json:"originatingIdentity,omitempty"`
 
