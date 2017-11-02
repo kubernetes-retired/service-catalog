@@ -559,7 +559,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				return err
 			}
 
-			c.recorder.Eventf(instance, corev1.EventTypeNormal, asyncBindingReason, asyncBindingMessage)
+			c.recorder.Eventf(binding, corev1.EventTypeNormal, asyncBindingReason, asyncBindingMessage)
 
 			return nil
 		}
@@ -802,7 +802,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				return err
 			}
 
-			c.recorder.Eventf(instance, corev1.EventTypeNormal, asyncUnbindingReason, asyncUnbindingMessage)
+			c.recorder.Eventf(binding, corev1.EventTypeNormal, asyncUnbindingReason, asyncUnbindingMessage)
 
 			return nil
 		}

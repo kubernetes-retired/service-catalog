@@ -1565,7 +1565,9 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
-	fakeRecorder := record.NewFakeRecorder(20)
+	// WARNING: Should you try to record more events than the buffer size
+	// passed here, the recording function will hang indefinitely.
+	fakeRecorder := record.NewFakeRecorder(50)
 
 	// create a test controller
 	testController, err := controller.NewController(

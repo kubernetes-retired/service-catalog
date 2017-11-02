@@ -754,10 +754,16 @@ type ServiceBindingSpec struct {
 type ServiceBindingStatus struct {
 	Conditions []ServiceBindingCondition `json:"conditions"`
 
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
 	// AsyncOpInProgress is set to true if there is an ongoing async operation
 	// against this ServiceBinding in progress.
 	AsyncOpInProgress bool `json:"asyncOpInProgress"`
 
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
 	// LastOperation is the string that the broker may have returned when
 	// an async operation started, it should be sent back to the broker
 	// on poll requests as a query param.
