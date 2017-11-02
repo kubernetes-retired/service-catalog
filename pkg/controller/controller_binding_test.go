@@ -954,7 +954,71 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
+
+	expectedEvent := normalEventBuilder(successUnboundReason).msg("This binding was deleted successfully")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference
+// tests reconcileBinding to ensure a binding delete succeeds when a ClusterServiceClassRef
+// has not been resolved and no action has accrued for the binding.
+func TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference(t *testing.T) {
+	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: testNonExistentClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+	}
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testServiceBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+			Generation:        1,
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         testServiceBindingGUID,
+		},
+	}
+
+	err := testController.reconcileServiceBinding(binding)
+	if err != nil {
+		t.Fatal("serviceclassref was nil + generation was 1: reconcile should abort the binding")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The actions should be:
+	// 0. Updating the current operation
+	// 1. Updating the ready condition
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
+	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
+	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	events := getRecordedEvents(testController)
 
 	expectedEvent := normalEventBuilder(successUnboundReason).msg("This binding was deleted successfully")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
