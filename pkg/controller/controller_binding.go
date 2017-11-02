@@ -1192,7 +1192,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		}
 
 		if !creating {
-			c.clearServiceBindingCurrentOperation(binding)
+			clearServiceBindingCurrentOperation(binding)
 
 			if _, err := c.updateServiceBindingStatus(binding); err != nil {
 				return err
@@ -1259,7 +1259,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 				message = "The binding was deleted successfully"
 			}
 
-			c.clearServiceBindingCurrentOperation(binding)
+			clearServiceBindingCurrentOperation(binding)
 			binding.Status.ExternalProperties = nil
 
 			setServiceBindingCondition(
@@ -1368,7 +1368,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 				message = "The binding was deleted successfully"
 			}
 
-			c.clearServiceBindingCurrentOperation(binding)
+			clearServiceBindingCurrentOperation(binding)
 			binding.Status.ExternalProperties = nil
 
 			setServiceBindingCondition(
@@ -1466,7 +1466,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			successInjectedBindResultReason,
 			successInjectedBindResultMessage,
 		)
-		c.clearServiceBindingCurrentOperation(binding)
+		clearServiceBindingCurrentOperation(binding)
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
 			return err
@@ -1520,7 +1520,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			)
 		}
 
-		c.clearServiceBindingCurrentOperation(binding)
+		clearServiceBindingCurrentOperation(binding)
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
 			return err
@@ -1577,7 +1577,7 @@ func (c *controller) checkPollingServiceBindingForReconciliationRetryTimeout(bin
 	}
 
 	if !creating {
-		c.clearServiceBindingCurrentOperation(binding)
+		clearServiceBindingCurrentOperation(binding)
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
 			return err
