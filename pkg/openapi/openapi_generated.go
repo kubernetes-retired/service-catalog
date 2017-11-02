@@ -253,6 +253,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
+						"lastCatalogRetrievalTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastCatalogRetrievalTime is the time the Catalog was last fetched from the Service Broker",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
 					},
 					Required: []string{"conditions", "reconciledGeneration"},
 				},
