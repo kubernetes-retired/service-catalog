@@ -749,6 +749,13 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		}
 	}
 
+	// osb client handles whether or not to really send this based
+	// on the version of the client.
+	requestContext := map[string]interface{}{
+		"platform":  ContextProfilePlatformKubernetes,
+		"namespace": instance.Namespace,
+	}
+
 	var (
 		isProvisioning             bool
 		provisionRequest           *osb.ProvisionRequest
@@ -760,12 +767,6 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	)
 	if toUpdate.Status.ReconciledGeneration == 0 {
 		isProvisioning = true
-		// osb client handles whether or not to really send this based
-		// on the version of the client.
-		requestContext := map[string]interface{}{
-			"platform":  ContextProfilePlatformKubernetes,
-			"namespace": instance.Namespace,
-		}
 		provisionRequest = &osb.ProvisionRequest{
 			AcceptsIncomplete:   true,
 			InstanceID:          instance.Spec.ExternalID,
@@ -788,6 +789,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			AcceptsIncomplete:   true,
 			InstanceID:          instance.Spec.ExternalID,
 			ServiceID:           serviceClass.Spec.ExternalID,
+			Context:             requestContext,
 			OriginatingIdentity: originatingIdentity,
 		}
 		// Only send the plan ID if the plan ID has changed from what the Broker has
