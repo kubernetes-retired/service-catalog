@@ -70,6 +70,12 @@ type ClusterServiceBrokerSpec struct {
 
 	// RelistDuration is the frequency by which a controller will relist the
 	// broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration.
+	// Users are cautioned against configuring low values for the RelistDuration,
+	// as this can easily overload the controller manager in an environment with
+	// many brokers. The actual interval is intrinsically governed by the
+	// configured resync interval of the controller, which acts as a minimum bound.
+	// For example, with a resync interval of 5m and a RelistDuration of 2m, relists
+	// will occur at the resync interval of 5m.
 	RelistDuration *metav1.Duration
 
 	// RelistRequests is a strictly increasing, non-negative integer counter that

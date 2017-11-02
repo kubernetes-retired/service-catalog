@@ -527,11 +527,11 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 
 	// There should only be one action that says binding was created
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingErrorBeforeRequest(t, updatedServiceBinding, errorNonbindableClusterServiceClassReason, binding)
+	assertServiceBindingFailedBeforeRequest(t, updatedServiceBinding, errorNonbindableClusterServiceClassReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+	assertServiceBindingReconciledGeneration(t, updatedServiceBinding, binding.Generation)
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
@@ -692,7 +692,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 
 	// There should only be one action that says binding was created
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingErrorBeforeRequest(t, updatedServiceBinding, errorNonbindableClusterServiceClassReason, binding)
+	assertServiceBindingFailedBeforeRequest(t, updatedServiceBinding, errorNonbindableClusterServiceClassReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
