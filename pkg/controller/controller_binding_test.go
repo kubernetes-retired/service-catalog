@@ -926,11 +926,11 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on kubeActions[1]; %s", expectedGot(e, a))
 	}
 
 	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1142,7 +1142,7 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1555,7 +1555,7 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(tc.input, inputClone) {
-			t.Errorf("%v: updating broker condition mutated input: expected %v, got %v", tc.name, inputClone, tc.input)
+			t.Errorf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
 			continue
 		}
 
@@ -1581,7 +1581,7 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 		}
 
 		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-			t.Errorf("%v: expected %v condition(s), got %v", tc.name, e, a)
+			t.Errorf("%v: %s", tc.name, expectedGot(e, a))
 		}
 
 		outputCondition := updateActionObject.Status.Conditions[0]
@@ -1595,11 +1595,11 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 			continue
 		}
 		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
 			continue
 		}
 		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; expected %v, got %v", tc.name, e, a)
+			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
 		}
 	}
 }
@@ -2013,10 +2013,10 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	// second action is a get on the secret
 	action := kubeActions[1].(clientgotesting.GetAction)
 	if e, a := "get", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
@@ -2057,7 +2057,7 @@ func TestReconcileServiceBindingWithStatusUpdateError(t *testing.T) {
 		t.Fatalf("expected error from but got none")
 	}
 	if e, a := "update error", err.Error(); e != a {
-		t.Fatalf("unexpected error returned: expected %q, got %q", e, a)
+		t.Fatalf("unexpected error returned: %s", expectedGot(e, a))
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2195,10 +2195,10 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 		t.Fatalf("unexpected type of action: expected a GetAction, got %T", kubeActions[0])
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action: expected %q, got %q", e, a)
+		t.Fatalf("Unexpected resource on action: %s", expectedGot(e, a))
 	}
 	if e, a := "param-secret-name", action.GetName(); e != a {
-		t.Fatalf("Unexpected name of secret fetched: expected %q, got %q", e, a)
+		t.Fatalf("Unexpected name of secret fetched: %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
@@ -2334,10 +2334,10 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 		assertNumberOfActions(t, kubeActions, 1)
 		action := kubeActions[0].(clientgotesting.GetAction)
 		if e, a := "get", action.GetVerb(); e != a {
-			t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+			t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 		}
 		if e, a := "namespaces", action.GetResource().Resource; e != a {
-			t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+			t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 		}
 
 		actions := fakeCatalogClient.Actions()
@@ -2402,10 +2402,10 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 1)
 	action := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "delete", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -2482,10 +2482,10 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	assertNumberOfActions(t, kubeActions, 1)
 	action := kubeActions[0].(clientgotesting.GetAction)
 	if e, a := "delete", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
 	}
 	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
@@ -2504,18 +2504,15 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	assertServiceBindingRequestFailingError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, errorUnbindCallReason, "reason-orphan-mitigation-began", binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
-	expectedEventPrefixes := []string{
-		corev1.EventTypeWarning + " " + errorUnbindCallReason,
-		corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason,
-	}
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, len(expectedEventPrefixes))
 
-	for i, e := range expectedEventPrefixes {
-		a := events[i]
-		if !strings.HasPrefix(a, e) {
-			t.Fatalf("Received unexpected event:\n  expected prefix: %v\n  got: %v", e, a)
-		}
+	expectedEventPrefixes := []string{
+		warningEventBuilder(errorUnbindCallReason).String(),
+		warningEventBuilder(errorReconciliationRetryTimeoutReason).String(),
+	}
+
+	if err := checkEventPrefixes(events, expectedEventPrefixes); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2576,11 +2573,11 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on kubeActions[1]; %s", expectedGot(e, a))
 	}
 
 	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -2672,11 +2669,11 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
 	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
+		t.Fatalf("Unexpected verb on kubeActions[1]; %s", expectedGot(e, a))
 	}
 
 	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
+		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -2703,7 +2700,6 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
 
 	expectedEvent := normalEventBuilder(successUnboundReason).msg("This binding was deleted successfully")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
