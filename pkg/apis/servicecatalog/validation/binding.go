@@ -43,6 +43,23 @@ var validServiceBindingOperationValues = func() []string {
 	return validValues
 }()
 
+var validServiceBindingUnbindStatuses = map[sc.ServiceBindingUnbindStatus]bool{
+	sc.ServiceBindingUnbindStatusNotRequired: true,
+	sc.ServiceBindingUnbindStatusRequired:    true,
+	sc.ServiceBindingUnbindStatusSucceeded:   true,
+	sc.ServiceBindingUnbindStatusFailed:      true,
+}
+
+var validServiceBindingUnbindStatusValues = func() []string {
+	validValues := make([]string, len(validServiceBindingUnbindStatuses))
+	i := 0
+	for operation := range validServiceBindingUnbindStatuses {
+		validValues[i] = string(operation)
+		i++
+	}
+	return validValues
+}()
+
 // ValidateServiceBinding validates a ServiceBinding and returns a list of errors.
 func ValidateServiceBinding(binding *sc.ServiceBinding) field.ErrorList {
 	return internalValidateServiceBinding(binding, true)
@@ -122,6 +139,16 @@ func validateServiceBindingStatus(status *sc.ServiceBindingStatus, fldPath *fiel
 
 	if status.ExternalProperties != nil {
 		allErrs = append(allErrs, validateServiceBindingPropertiesState(status.ExternalProperties, fldPath.Child("externalProperties"), create)...)
+	}
+
+	if create {
+		if status.UnbindStatus != sc.ServiceBindingUnbindStatusNotRequired {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("unbindStatus"), status.UnbindStatus, `unbindStatus must be "NotRequired" on create`))
+		}
+	} else {
+		if !validServiceBindingUnbindStatuses[status.UnbindStatus] {
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("unbindStatus"), status.UnbindStatus, validServiceBindingUnbindStatusValues))
+		}
 	}
 
 	return allErrs

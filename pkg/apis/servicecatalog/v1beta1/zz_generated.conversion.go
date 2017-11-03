@@ -767,6 +767,7 @@ func autoConvert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingSt
 	out.InProgressProperties = (*servicecatalog.ServiceBindingPropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*servicecatalog.ServiceBindingPropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
+	out.UnbindStatus = servicecatalog.ServiceBindingUnbindStatus(in.UnbindStatus)
 	return nil
 }
 
@@ -783,6 +784,7 @@ func autoConvert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingSt
 	out.InProgressProperties = (*ServiceBindingPropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*ServiceBindingPropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
+	out.UnbindStatus = ServiceBindingUnbindStatus(in.UnbindStatus)
 	return nil
 }
 

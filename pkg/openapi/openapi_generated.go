@@ -205,7 +205,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"relistDuration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration.",
+								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration. Users are cautioned against configuring low values for the RelistDuration, as this can easily overload the controller manager in an environment with many brokers. The actual interval is intrinsically governed by the configured resync interval of the controller, which acts as a minimum bound. For example, with a resync interval of 5m and a RelistDuration of 2m, relists will occur at the resync interval of 5m.",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 							},
 						},
@@ -1036,8 +1036,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
+						"unbindStatus": {
+							SchemaProps: spec.SchemaProps{
+								Description: "UnbindStatus describes what has been done to unbind the ServiceBinding.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 					},
-					Required: []string{"conditions", "reconciledGeneration", "orphanMitigationInProgress"},
+					Required: []string{"conditions", "reconciledGeneration", "orphanMitigationInProgress", "unbindStatus"},
 				},
 			},
 			Dependencies: []string{
