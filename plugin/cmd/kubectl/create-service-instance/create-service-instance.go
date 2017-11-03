@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/plugin/cmd/kubectl/utils"
 
 	"k8s.io/client-go/rest"
@@ -37,12 +37,12 @@ func main() {
 		utils.Exit1(usage)
 	}
 
-	instance := v1alpha1.ServiceInstance{}
+	instance := v1beta1.ServiceInstance{}
 	instance.Kind = "Instance"
 	instance.Name = os.Args[3]
 	instance.Namespace = os.Args[4]
-	instance.Spec.PlanName = os.Args[2]
-	instance.Spec.ServiceClassName = os.Args[1]
+	instance.Spec.ClusterServicePlanRef.Name = os.Args[2]
+	instance.Spec.ClusterServiceClassRef.Name = os.Args[1]
 
 	fmt.Printf("Looking up Namespace %s...\n", utils.Entity(instance.Namespace))
 	if err := utils.CheckNamespaceExists(instance.Namespace); err != nil {
@@ -52,7 +52,7 @@ func main() {
 
 	restConfig := rest.Config{
 		Host:    svcURL,
-		APIPath: "/apis/servicecatalog.k8s.io/v1alpha1",
+		APIPath: "/apis/servicecatalog.k8s.io/v1beta1",
 	}
 
 	svcClient, err := clientset.NewForConfig(&restConfig)
@@ -68,7 +68,7 @@ func main() {
 	utils.Ok()
 
 	table := utils.NewTable("INSTANCE NAME", "NAMESPACE", "PLAN NAME", "SERVICE CLASS NAME")
-	table.AddRow(resp.Name, resp.Namespace, resp.Spec.PlanName, resp.Spec.ServiceClassName)
+	table.AddRow(resp.Name, resp.Namespace, resp.Spec.ClusterServicePlanRef.Name, resp.Spec.ClusterServiceClassRef.Name)
 	err = table.Print()
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))

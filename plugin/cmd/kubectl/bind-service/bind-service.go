@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"os"
 
-	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1alpha1"
-	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/plugin/cmd/kubectl/utils"
 
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -38,11 +37,11 @@ func main() {
 		utils.Exit1(usage)
 	}
 
-	binding := v1alpha1.ServiceInstanceCredential{}
+	binding := v1beta1.ServiceBinding{}
 	binding.Kind = "binding"
 	binding.Name = os.Args[2]
 	binding.Namespace = os.Args[3]
-	binding.Spec.ServiceInstanceRef = v1.LocalObjectReference{
+	binding.Spec.ServiceInstanceRef = v1beta1.LocalObjectReference{
 		Name: os.Args[1],
 	}
 	binding.Spec.SecretName = os.Args[2]
@@ -55,7 +54,7 @@ func main() {
 
 	restConfig := rest.Config{
 		Host:    svcURL,
-		APIPath: "/apis/servicecatalog.k8s.io/v1alpha1",
+		APIPath: "/apis/servicecatalog.k8s.io/v1beta1",
 	}
 
 	svcClient, err := clientset.NewForConfig(&restConfig)
@@ -67,7 +66,7 @@ func main() {
 		utils.Entity(binding.Name),
 		utils.Entity(binding.Spec.ServiceInstanceRef.Name),
 		utils.Entity(binding.Namespace))
-	resp, err := svcClient.ServiceInstanceCredentials(binding.Namespace).Create(&binding)
+	resp, err := svcClient.ServiceBindings(binding.Namespace).Create(&binding)
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Error binding service instance (%s)", err))
 	}
