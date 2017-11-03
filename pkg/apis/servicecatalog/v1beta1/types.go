@@ -151,6 +151,10 @@ type ClusterServiceBrokerStatus struct {
 
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
+
+	// LastCatalogRetrievalTime is the time the Catalog was last fetched from
+	// the Service Broker
+	LastCatalogRetrievalTime *metav1.Time `json:"lastCatalogRetrievalTime,omitempty"`
 }
 
 // ServiceBrokerCondition contains condition information for a Broker.
