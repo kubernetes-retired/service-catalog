@@ -1554,7 +1554,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 	return nil
 }
 
-// reconciliationTimeExpired tests if the current Operation State time has
+// isReconciliationRetryDurationExceeded tests if the current Operation State time has
 // elapsed the reconciliationRetryDuration time period
 func (c *controller) isReconciliationRetryDurationExceeded(instance *v1beta1.ServiceInstance) bool {
 	if time.Now().After(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
@@ -1563,7 +1563,7 @@ func (c *controller) isReconciliationRetryDurationExceeded(instance *v1beta1.Ser
 	return false
 }
 
-// reconciliationTimeExpiredFinishPollingServiceInstance marks the instance as
+// reconciliationRetryDurationExceededFinishPollingServiceInstance marks the instance as
 // failed from time expired based on current state and then prepares the
 // instance for removal from reconciliation
 func (c *controller) reconciliationRetryDurationExceededFinishPollingServiceInstance(instance *v1beta1.ServiceInstance, mitigatingOrphan, provisioning, deleting bool) error {
