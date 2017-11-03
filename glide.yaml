@@ -90,4 +90,4 @@ import:
 - package: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - package: github.com/pmorie/go-open-service-broker-client
-  version: 50dc046133ca9f1216e570c7efda008a01e088a6
+  version: 9e257974620c1db53c4d3549fd9eddaa2d2d653e 

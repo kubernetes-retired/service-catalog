@@ -2147,10 +2147,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	}
 }
 
-// TestPollServiceInstanceFailureDeprovisioningWithOperation tests polling an
-// instance that has a async deprovision in progress.  Current poll status is
-// failed.  Verify instance state is set to unknown.
-func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
+// TestPollServiceInstanceFailureDeprovisioning tests polling an
+// instance that has a async deprovision in progress where the broker responds
+// with Failed.
+func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
 			Response: &osb.LastOperationResponse{
@@ -2164,6 +2164,78 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	err := testController.pollServiceInstance(instance)
+	if err != nil {
+		t.Fatalf("pollServiceInstance failed: %s", err)
+	}
+
+	if testController.pollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have record of seeing test instance once")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	operationKey := osb.OperationKey(testOperation)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testClusterServiceClassGUID),
+		PlanID:       strPtr(testClusterServicePlanGUID),
+		OperationKey: &operationKey,
+	})
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceRequestRetriableError(
+		t,
+		updatedServiceInstance,
+		v1beta1.ServiceInstanceOperationDeprovision,
+		errorDeprovisionCalledReason,
+		"", // plan name
+		"", // plan ID
+		instance,
+	)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+	expectedEvent := corev1.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "Deprovision call failed: (no description provided)"
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	}
+}
+
+// TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout tests
+// polling an instance that has a async deprovision in progress where the
+// broker responds with Failed and the reconciliation retry duration has been
+// exhausted.
+func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateFailed,
+			},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	instance.Status.OperationStartTime = &startTime
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
 	if testController.pollingQueue.NumRequeues(instanceKey) != 0 {
@@ -2202,18 +2274,22 @@ func TestPollServiceInstanceFailureDeprovisioningWithOperation(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
-		errorDeprovisionCalledReason,
-		errorDeprovisionCalledReason,
+		errorReconciliationRetryTimeoutReason,
+		errorReconciliationRetryTimeoutReason,
 		instance,
 	)
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 1)
-	expectedEvent := corev1.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "Deprovision call failed: (no description provided)"
-	if e, a := expectedEvent, events[0]; e != a {
-		t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+	expectedEvents := []string{
+		corev1.EventTypeWarning + " " + errorDeprovisionCalledReason + " " + "Deprovision call failed: (no description provided)",
+		corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries on ServiceInstance because too much time has elapsed",
 	}
-
+	assertNumEvents(t, events, len(expectedEvents))
+	for i, expectedEvent := range expectedEvents {
+		if e, a := expectedEvent, events[i]; e != a {
+			t.Fatalf("Received unexpected event: %v\nExpected: %v", a, e)
+		}
+	}
 }
 
 // TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer test
@@ -3320,7 +3396,18 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fakeosb.AsyncRequiredError(),
 			},
+			finishedOrphanMitigation:     false,
+			shouldError:                  true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorDeprovisionCalledReason,
+		},
+		{
+			name: "sync - http error - retry duration exceeded",
+			deprovReaction: &fakeosb.DeprovisionReaction{
+				Error: fakeosb.AsyncRequiredError(),
+			},
 			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
@@ -3391,6 +3478,19 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			},
 			async: true,
 			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
+		},
+		{
+			name: "poll - failed - retry duration exceeded",
+			pollReaction: &fakeosb.PollLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State: osb.StateFailed,
+				},
+			},
+			async: true,
+			finishedOrphanMitigation:     false,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
@@ -3769,6 +3869,10 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            nil, // no change to plan
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
 		Parameters: map[string]interface{}{
 			"args": map[string]interface{}{
 				"first":  "first-arg",
@@ -3970,7 +4074,11 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Parameters:        nil, // no change to parameters
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+		Parameters: nil, // no change to parameters
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4038,6 +4146,10 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
 	})
 
 	// verify no kube resources created
@@ -4099,6 +4211,10 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
 	})
 
 	// verify one kube action occurred
@@ -4375,6 +4491,10 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
 	})
 
 	actions := fakeCatalogClient.Actions()

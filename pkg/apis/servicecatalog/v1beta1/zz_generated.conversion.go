@@ -259,6 +259,7 @@ func autoConvert_v1beta1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterSer
 	out.Conditions = *(*[]servicecatalog.ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
+	out.LastCatalogRetrievalTime = (*v1.Time)(unsafe.Pointer(in.LastCatalogRetrievalTime))
 	return nil
 }
 
@@ -271,6 +272,7 @@ func autoConvert_servicecatalog_ClusterServiceBrokerStatus_To_v1beta1_ClusterSer
 	out.Conditions = *(*[]ServiceBrokerCondition)(unsafe.Pointer(&in.Conditions))
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
+	out.LastCatalogRetrievalTime = (*v1.Time)(unsafe.Pointer(in.LastCatalogRetrievalTime))
 	return nil
 }
 

@@ -368,13 +368,28 @@ func getTestClusterServiceBroker() *v1beta1.ClusterServiceBroker {
 }
 
 func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1beta1.ClusterServiceBroker {
+	lastTransitionTime := metav1.NewTime(time.Now().Add(-5 * time.Minute))
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
 		Conditions: []v1beta1.ServiceBrokerCondition{{
 			Type:               v1beta1.ServiceBrokerConditionReady,
 			Status:             status,
-			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+			LastTransitionTime: lastTransitionTime,
 		}},
+		LastCatalogRetrievalTime: &lastTransitionTime,
+	}
+	return broker
+}
+
+func getTestClusterServiceBrokerWithStatusAndTime(status v1beta1.ConditionStatus, lastTransitionTime, lastRelistTime metav1.Time) *v1beta1.ClusterServiceBroker {
+	broker := getTestClusterServiceBroker()
+	broker.Status = v1beta1.ClusterServiceBrokerStatus{
+		Conditions: []v1beta1.ServiceBrokerCondition{{
+			Type:               v1beta1.ServiceBrokerConditionReady,
+			Status:             status,
+			LastTransitionTime: lastTransitionTime,
+		}},
+		LastCatalogRetrievalTime: &lastRelistTime,
 	}
 	return broker
 }
@@ -2270,6 +2285,15 @@ func assertServiceBindingErrorBeforeRequest(t *testing.T, obj runtime.Object, re
 	assertServiceBindingCurrentOperationClear(t, obj)
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
+	assertServiceBindingInProgressPropertiesNil(t, obj)
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
+}
+
+func assertServiceBindingFailedBeforeRequest(t *testing.T, obj runtime.Object, reason string, originalBinding *v1beta1.ServiceBinding) {
+	assertServiceBindingReadyFalse(t, obj, reason)
+	assertServiceBindingCurrentOperationClear(t, obj)
+	assertServiceBindingOperationStartTimeSet(t, obj, false)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
 }
