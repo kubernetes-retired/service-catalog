@@ -395,7 +395,8 @@ PLUGIN_EXES=bind-service create-service-broker create-service-instance
 plugins: .init .generate_files \
 		$(BINDIR)/bind-service/bind-service \
 		$(BINDIR)/create-service-broker/create-service-broker \
-		$(BINDIR)/create-service-instance/create-service-instance
+		$(BINDIR)/create-service-instance/create-service-instance \
+		$(BINDIR)/relist-service-broker/relist-service-broker
 
 $(BINDIR)/bind-service/bind-service: \
 		plugin/cmd/kubectl/bind-service/bind-service.go \
@@ -421,3 +422,10 @@ $(BINDIR)/create-service-instance/create-service-instance: \
 	$(DOCKER_CMD) cp plugin/cmd/kubectl/create-service-instance/*yaml \
 		$(BINDIR)/create-service-instance/
 
+$(BINDIR)/relist-service-broker/relist-service-broker: \
+		plugin/cmd/kubectl/relist-service-broker/relist-service-broker.go \
+		plugin/cmd/kubectl/relist-service-broker/plugin.yaml
+	rm -rf $(BINDIR)/relist-service-broker
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $<
+	$(DOCKER_CMD) cp plugin/cmd/kubectl/relist-service-broker/*yaml \
+		$(BINDIR)/relist-service-broker/
