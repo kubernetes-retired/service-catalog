@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -40,6 +41,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	pretty "github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
@@ -176,7 +178,10 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
 		createWorker(c.bindingQueue, "ServiceBinding", maxRetries, true, c.reconcileServiceBindingKey, stopCh, &waitGroup)
 		createWorker(c.instancePollingQueue, "InstancePoller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, &waitGroup)
-		createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
+
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
+		}
 	}
 
 	<-stopCh
@@ -492,15 +497,18 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	for i, svc := range in.Services {
 		serviceClasses[i] = &v1beta1.ClusterServiceClass{
 			Spec: v1beta1.ClusterServiceClassSpec{
-				BindingRetrievable: svc.BindingRetrievable,
-				Bindable:           svc.Bindable,
-				PlanUpdatable:      (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
-				ExternalID:         svc.ID,
-				ExternalName:       svc.Name,
-				Tags:               svc.Tags,
-				Description:        svc.Description,
-				Requires:           svc.Requires,
+				Bindable:      svc.Bindable,
+				PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
+				ExternalID:    svc.ID,
+				ExternalName:  svc.Name,
+				Tags:          svc.Tags,
+				Description:   svc.Description,
+				Requires:      svc.Requires,
 			},
+		}
+
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+			serviceClasses[i].Spec.BindingRetrievable = svc.BindingRetrievable
 		}
 
 		if svc.Metadata != nil {

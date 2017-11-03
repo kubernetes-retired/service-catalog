@@ -2751,7 +2751,7 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
 
@@ -2832,7 +2832,7 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
 
@@ -3078,31 +3078,11 @@ func TestPollServiceBinding(t *testing.T) {
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
 			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
-				assertServiceBindingErrorFetchingBinding(t, updatedBinding, originalBinding)
-			},
-			shouldFinishPolling: false,
-			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorFetchingBindingFailedReason + " " + "Could not do a GET on binding resource: some error"},
-		},
-		{
-			name:    "bind - operation succeeded but GET failed - retry duration exceeded",
-			binding: getTestServiceBindingAsyncBindingRetryDurationExceeded(testOperation),
-			pollReaction: &fakeosb.PollBindingLastOperationReaction{
-				Response: &osb.LastOperationResponse{
-					State:       osb.StateSucceeded,
-					Description: strPtr(lastOperationDescription),
-				},
-			},
-			getBindingReaction: &fakeosb.GetBindingReaction{
-				Error: fmt.Errorf("some error"),
-			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
-				assertServiceBindingAsyncBindRetryDurationExceededAfterSuccess(t, updatedBinding, originalBinding)
+				assertServiceBindingAsyncBindErrorAfterStateSucceeded(t, updatedBinding, errorFetchingBindingFailedReason, originalBinding)
 			},
 			shouldFinishPolling: true,
 			expectedEvents: []string{
 				corev1.EventTypeWarning + " " + errorFetchingBindingFailedReason + " " + "Could not do a GET on binding resource: some error",
-				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
 				corev1.EventTypeWarning + " " + errorServiceBindingOrphanMitigation + " " + `ServiceBinding "test-binding/test-ns": Starting orphan mitigation`,
 			},
 		},
@@ -3125,7 +3105,7 @@ func TestPollServiceBinding(t *testing.T) {
 			},
 			environmentSetupFunc: func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface) {
 				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
 				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
 
@@ -3147,58 +3127,11 @@ func TestPollServiceBinding(t *testing.T) {
 				}
 			},
 			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
-				assertServiceBindingErrorInjectingCredentials(t, updatedBinding, originalBinding)
+				assertServiceBindingAsyncBindErrorAfterStateSucceeded(t, updatedBinding, errorInjectingBindResultReason, originalBinding)
 			},
-			shouldFinishPolling: false, // should not be requeued in polling queue; will drop back to default rate limiting
-			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorInjectingBindResultReason + " " + `Error injecting bind results: Secret "test-ns/test-binding" is not owned by ServiceBinding, controllerRef: nil`},
-		},
-		{
-			name:    "bind - operation succeeded but binding injection failed - retry duration exceeded",
-			binding: getTestServiceBindingAsyncBindingRetryDurationExceeded(testOperation),
-			pollReaction: &fakeosb.PollBindingLastOperationReaction{
-				Response: &osb.LastOperationResponse{
-					State:       osb.StateSucceeded,
-					Description: strPtr(lastOperationDescription),
-				},
-			},
-			getBindingReaction: &fakeosb.GetBindingReaction{
-				Response: &osb.GetBindingResponse{
-					Credentials: map[string]interface{}{
-						"a": "b",
-						"c": "d",
-					},
-				},
-			},
-			environmentSetupFunc: func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface) {
-				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
-
-				addGetNamespaceReaction(fakeKubeClient)
-				addGetSecretReaction(fakeKubeClient, &corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{Name: testServiceBindingName, Namespace: testNamespace},
-				})
-			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
-			validateKubeActionsFunc: func(t *testing.T, actions []clientgotesting.Action) {
-				assertNumberOfActions(t, actions, 1)
-
-				action := actions[0].(clientgotesting.GetAction)
-				if e, a := "get", action.GetVerb(); e != a {
-					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-				}
-				if e, a := "secrets", action.GetResource().Resource; e != a {
-					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-				}
-			},
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
-				assertServiceBindingAsyncBindRetryDurationExceededAfterSuccess(t, updatedBinding, originalBinding)
-			},
-			shouldFinishPolling: true,
+			shouldFinishPolling: true, // should not be requeued in polling queue; will drop back to default rate limiting
 			expectedEvents: []string{
 				corev1.EventTypeWarning + " " + errorInjectingBindResultReason + " " + `Error injecting bind results: Secret "test-ns/test-binding" is not owned by ServiceBinding, controllerRef: nil`,
-				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
 				corev1.EventTypeWarning + " " + errorServiceBindingOrphanMitigation + " " + `ServiceBinding "test-binding/test-ns": Starting orphan mitigation`,
 			},
 		},
@@ -3221,7 +3154,7 @@ func TestPollServiceBinding(t *testing.T) {
 			},
 			environmentSetupFunc: func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface) {
 				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
 				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
 
@@ -3533,7 +3466,7 @@ func TestPollServiceBinding(t *testing.T) {
 			} else {
 				// default
 				sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+				sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
 				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 				sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
 			}

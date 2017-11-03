@@ -89,7 +89,13 @@ func (c *controller) bindingAdd(obj interface{}) {
 }
 
 func (c *controller) bindingUpdate(oldObj, newObj interface{}) {
-	c.bindingAdd(newObj)
+	// Bindings with ongoing asynchronous operations will be manually added
+	// to the polling queue by the reconciler. They should be ignored here in
+	// order to enforce polling rate-limiting.
+	binding := newObj.(*v1beta1.ServiceBinding)
+	if !binding.Status.AsyncOpInProgress {
+		c.bindingAdd(newObj)
+	}
 }
 
 func (c *controller) bindingDelete(obj interface{}) {
@@ -409,6 +415,11 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			BindResource: &osb.BindResource{AppGUID: &appGUID},
 		}
 
+		// Asynchronous binding operations is currently ALPHA and not
+		// enabled by default. To use this feature, you must enable the
+		// AsyncBindingOperations feature gate. This may be easily set
+		// by setting `asyncBindingOperationsEnabled=true` when
+		// deploying the Service Catalog via the Helm charts.
 		if serviceClass.Spec.BindingRetrievable &&
 			utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
 
@@ -660,6 +671,11 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			PlanID:     servicePlan.Spec.ExternalID,
 		}
 
+		// Asynchronous binding operations is currently ALPHA and not
+		// enabled by default. To use this feature, you must enable the
+		// AsyncBindingOperations feature gate. This may be easily set
+		// by setting `asyncBindingOperationsEnabled=true` when
+		// deploying the Service Catalog via the Helm charts.
 		if serviceClass.Spec.BindingRetrievable &&
 			utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
 
@@ -1162,7 +1178,6 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 	// deleting or mitigating an orphan; this is more readable than
 	// checking the timestamps in various places.
 	mitigatingOrphan := binding.Status.OrphanMitigationInProgress
-	creating := binding.Status.CurrentOperation == v1beta1.ServiceBindingOperationBind && !mitigatingOrphan
 	deleting := false
 	if binding.Status.CurrentOperation == v1beta1.ServiceBindingOperationUnbind || mitigatingOrphan {
 		deleting = true
@@ -1191,7 +1206,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			)
 		}
 
-		if !creating {
+		if deleting {
 			clearServiceBindingCurrentOperation(binding)
 
 			if _, err := c.updateServiceBindingStatus(binding); err != nil {
@@ -1306,8 +1321,8 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		glog.V(4).Info(pcb.Message(s))
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorPollingLastOperationReason, s)
 
-		if err := c.checkPollingServiceBindingForReconciliationRetryTimeout(binding); err != nil {
-			return nil
+		if c.isServiceBindingReconciliationRetryDurationExceeded(binding) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceBinding(binding)
 		}
 
 		return c.continuePollingServiceBinding(binding)
@@ -1342,8 +1357,8 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			)
 		}
 
-		if err := c.checkPollingServiceBindingForReconciliationRetryTimeout(binding); err != nil {
-			return nil
+		if c.isServiceBindingReconciliationRetryDurationExceeded(binding) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceBinding(binding)
 		}
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
@@ -1415,21 +1430,17 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 			setServiceBindingCondition(
 				binding,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
+				v1beta1.ServiceBindingConditionFailed,
+				v1beta1.ConditionTrue,
 				errorFetchingBindingFailedReason,
 				s,
 			)
 
-			if err := c.checkPollingServiceBindingForReconciliationRetryTimeout(binding); err != nil {
-				return nil
-			}
-
-			if _, err := c.updateServiceBindingStatus(binding); err != nil {
+			if err := c.setAndUpdateServiceBindingStartOrphanMitigation(binding); err != nil {
 				return err
 			}
 
-			return c.continuePollingServiceBinding(binding)
+			return c.finishPollingServiceBinding(binding)
 		}
 
 		if err := c.injectServiceBinding(binding, getBindingResponse.Credentials); err != nil {
@@ -1439,21 +1450,17 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 			setServiceBindingCondition(
 				binding,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
+				v1beta1.ServiceBindingConditionFailed,
+				v1beta1.ConditionTrue,
 				errorInjectingBindResultReason,
 				s,
 			)
 
-			if err := c.checkPollingServiceBindingForReconciliationRetryTimeout(binding); err != nil {
-				return nil
-			}
-
-			if _, err := c.updateServiceBindingStatus(binding); err != nil {
+			if err := c.setAndUpdateServiceBindingStartOrphanMitigation(binding); err != nil {
 				return err
 			}
 
-			return c.continuePollingServiceBinding(binding)
+			return c.finishPollingServiceBinding(binding)
 		}
 
 		glog.V(4).Info(pcb.Message(successInjectedBindResultMessage))
@@ -1530,29 +1537,37 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 	default:
 		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
 
-		if err := c.checkPollingServiceBindingForReconciliationRetryTimeout(binding); err != nil {
-			return nil
+		if c.isServiceBindingReconciliationRetryDurationExceeded(binding) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceBinding(binding)
 		}
 
 		return c.continuePollingServiceBinding(binding)
 	}
 }
 
-// checkPollingServiceBindingForReconciliationTimeout checks to see whether the
-// polling binding that has exceeded its reconciliation retry duration. If so, it will
-// mark the operation as failed and return an error.
+// reconciliationTimeExpired tests if the current Operation State time has
+// elapsed the reconciliationRetryDuration time period
+func (c *controller) isServiceBindingReconciliationRetryDurationExceeded(binding *v1beta1.ServiceBinding) bool {
+	if time.Now().After(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		return true
+	}
+	return false
+}
+
+// reconciliationRetryDurationExceededFinishPollingServiceBinding marks the
+// binding as failed due to the reconciliation retry duration having been
+// exceeded.
 //
 // The binding resource passed will be directly modified, so make sure it is
 // not directly from the cache.
-func (c *controller) checkPollingServiceBindingForReconciliationRetryTimeout(binding *v1beta1.ServiceBinding) error {
-	if time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-		return nil
-	}
-
+func (c *controller) reconciliationRetryDurationExceededFinishPollingServiceBinding(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
 
 	mitigatingOrphan := binding.Status.OrphanMitigationInProgress
-	creating := binding.Status.CurrentOperation == v1beta1.ServiceBindingOperationBind && !mitigatingOrphan
+	deleting := false
+	if binding.Status.CurrentOperation == v1beta1.ServiceBindingOperationUnbind || mitigatingOrphan {
+		deleting = true
+	}
 
 	s := "Stopping reconciliation retries because too much time has elapsed"
 	glog.Infof(pcb.Message(s))
@@ -1576,7 +1591,7 @@ func (c *controller) checkPollingServiceBindingForReconciliationRetryTimeout(bin
 		)
 	}
 
-	if !creating {
+	if deleting {
 		clearServiceBindingCurrentOperation(binding)
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
@@ -1588,9 +1603,5 @@ func (c *controller) checkPollingServiceBindingForReconciliationRetryTimeout(bin
 		}
 	}
 
-	if err := c.finishPollingServiceBinding(binding); err != nil {
-		return err
-	}
-
-	return fmt.Errorf(s)
+	return c.finishPollingServiceBinding(binding)
 }

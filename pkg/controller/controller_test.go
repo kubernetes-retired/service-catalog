@@ -409,7 +409,6 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 			Description:              "a test service",
 			ExternalName:             testClusterServiceClassName,
 			ExternalID:               testClusterServiceClassGUID,
-			BindingRetrievable:       true,
 			Bindable:                 true,
 		},
 	}
@@ -437,6 +436,20 @@ func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 			Description:              "a test service that should be removed",
 			ExternalName:             testRemovedClusterServiceClassName,
 			ExternalID:               testRemovedClusterServiceClassGUID,
+			Bindable:                 true,
+		},
+	}
+}
+
+func getTestBindingRetrievableClusterServiceClass() *v1beta1.ClusterServiceClass {
+	return &v1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
+		Spec: v1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			Description:              "a test service",
+			ExternalName:             testClusterServiceClassName,
+			ExternalID:               testClusterServiceClassGUID,
+			BindingRetrievable:       true,
 			Bindable:                 true,
 		},
 	}
@@ -522,11 +535,10 @@ func getTestCatalog() *osb.CatalogResponse {
 	return &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:               testClusterServiceClassName,
-				ID:                 testClusterServiceClassGUID,
-				Description:        "a test service",
-				BindingRetrievable: true,
-				Bindable:           true,
+				Name:        testClusterServiceClassName,
+				ID:          testClusterServiceClassGUID,
+				Description: "a test service",
+				Bindable:    true,
 				Plans: []osb.Plan{
 					{
 						Name:        testClusterServicePlanName,
@@ -876,9 +888,6 @@ func getTestServiceBindingWithFailedStatus() *v1beta1.ServiceBinding {
 // getTestServiceBindingAsyncBinding returns an instance credential in async mode
 func getTestServiceBindingAsyncBinding(operation string) *v1beta1.ServiceBinding {
 	binding := getTestServiceBinding()
-	if operation != "" {
-		binding.Status.LastOperation = &operation
-	}
 
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	binding.Status = v1beta1.ServiceBindingStatus{
@@ -2535,9 +2544,9 @@ func assertServiceBindingAsyncBindRetryDurationExceeded(t *testing.T, obj runtim
 	assertCatalogFinalizerExists(t, obj)
 }
 
-func assertServiceBindingAsyncBindRetryDurationExceededAfterSuccess(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
+func assertServiceBindingAsyncBindErrorAfterStateSucceeded(t *testing.T, obj runtime.Object, failureReason string, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionFalse, errorServiceBindingOrphanMitigation)
-	assertServiceBindingCondition(t, obj, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason)
+	assertServiceBindingCondition(t, obj, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, failureReason)
 	assertServiceBindingCurrentOperation(t, obj, v1beta1.ServiceBindingOperationBind)
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
