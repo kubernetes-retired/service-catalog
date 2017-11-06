@@ -422,6 +422,8 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			request.OriginatingIdentity = originatingIdentity
 		}
 
+		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
+
 		if toUpdate.Status.CurrentOperation == "" {
 			toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationBind)
 			if err != nil {
@@ -430,8 +432,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				return err
 			}
 		}
-
-		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 
 		response, err := brokerClient.Bind(request)
 		// orphan mitigation: looking for timeout
