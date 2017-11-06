@@ -1005,23 +1005,10 @@ func TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference(t *
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
 	// 0. Updating the current operation
-	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 2)
-
-	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
-	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+	assertNumberOfActions(t, actions, 1)
 
 	events := getRecordedEvents(testController)
-
-	expectedEvent := normalEventBuilder(successUnboundReason).msg("This binding was deleted successfully")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
-	}
+	assertNumEvents(t, events, 0)
 }
 
 // TestSetServiceBindingCondition verifies setting a condition on a binding yields
@@ -2763,9 +2750,8 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
 	// 0. Updating the current operation
-	// 1. Update the unbind status
-	// 2. Updating the ready condition
-	assertNumberOfActions(t, actions, 3)
+	// 1. Updating the ready condition
+	assertNumberOfActions(t, actions, 2)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)

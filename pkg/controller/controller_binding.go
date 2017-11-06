@@ -637,6 +637,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 			return err
 		}
+		return nil
 	}
 
 	err = c.ejectServiceBinding(binding)
