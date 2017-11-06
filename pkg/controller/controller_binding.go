@@ -71,14 +71,18 @@ func (c *controller) bindingAdd(obj interface{}) {
 		glog.Errorf(pcb.Messagef("Couldn't get key for object %+v: %v", obj, err))
 		return
 	}
+	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, "", key)
 
 	acc, err := meta.Accessor(obj)
 	if err != nil {
-		glog.Errorf("error creating meta accessor: %v", err)
+		glog.Errorf(pcb.Messagef("error creating meta accessor: %v", err))
 		return
 	}
 
-	glog.V(6).Infof("ServiceBinding %v: received ADD/UPDATE event for: resourceVersion: %v", key, acc.GetResourceVersion())
+	glog.V(6).Info(pcb.Messagef(
+		"received ADD/UPDATE event for: resourceVersion: %v",
+		acc.GetResourceVersion()),
+	)
 
 	c.bindingQueue.Add(key)
 }
