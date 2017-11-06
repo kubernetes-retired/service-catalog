@@ -632,8 +632,6 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 		toUpdate.Finalizers = finalizers.List()
 
-		toUpdate.Status.ExternalProperties = nil
-		clearServiceBindingCurrentOperation(toUpdate)
 		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 			return err
 		}
