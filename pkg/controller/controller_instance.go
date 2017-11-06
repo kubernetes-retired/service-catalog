@@ -1247,51 +1247,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		glog.V(4).Info(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorPollingLastOperationReason, s)
 
-		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			clone, err := api.Scheme.DeepCopy(instance)
-			if err != nil {
-				return err
-			}
-			toUpdate := clone.(*v1beta1.ServiceInstance)
-			s := "Stopping reconciliation retries because too much time has elapsed"
-			glog.Info(pcb.Message(s))
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-
-			if mitigatingOrphan {
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionUnknown,
-					errorOrphanMitigationFailedReason,
-					"Orphan mitigation failed: "+s)
-			} else if deleting || provisioning {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionFailed,
-					v1beta1.ConditionTrue,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			} else {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionFalse,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			}
-
-			if !provisioning {
-				clearServiceInstanceCurrentOperation(toUpdate)
-			} else {
-				c.setServiceInstanceStartOrphanMitigation(toUpdate)
-			}
-
-			if deleting {
-				toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
-			}
-
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return c.finishPollingServiceInstance(instance)
+		if c.isReconciliationRetryDurationExceeded(instance) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
 		}
 
 		return c.continuePollingServiceInstance(instance)
@@ -1589,55 +1546,73 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 	default:
 		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
-		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			clone, err := api.Scheme.DeepCopy(instance)
-			if err != nil {
-				return err
-			}
-			toUpdate := clone.(*v1beta1.ServiceInstance)
-			s := "Stopping reconciliation retries on ServiceInstance because too much time has elapsed"
-			glog.Info(pcb.Message(s))
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-
-			if mitigatingOrphan {
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionUnknown,
-					errorOrphanMitigationFailedReason,
-					"Orphan mitigation failed: "+s)
-			} else if deleting || provisioning {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionFailed,
-					v1beta1.ConditionTrue,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			} else {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionFalse,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			}
-
-			if !provisioning {
-				clearServiceInstanceCurrentOperation(toUpdate)
-			} else {
-				c.setServiceInstanceStartOrphanMitigation(toUpdate)
-			}
-
-			if deleting {
-				toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
-			}
-
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return c.finishPollingServiceInstance(instance)
+		if c.isReconciliationRetryDurationExceeded(instance) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
 		}
 		return fmt.Errorf(`Got invalid state in LastOperationResponse: %q`, response.State)
 	}
 	return nil
+}
+
+// isReconciliationRetryDurationExceeded tests if the current Operation State time has
+// elapsed the reconciliationRetryDuration time period
+func (c *controller) isReconciliationRetryDurationExceeded(instance *v1beta1.ServiceInstance) bool {
+	if time.Now().After(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		return true
+	}
+	return false
+}
+
+// reconciliationRetryDurationExceededFinishPollingServiceInstance marks the instance as
+// failed from time expired based on current state and then prepares the
+// instance for removal from reconciliation
+func (c *controller) reconciliationRetryDurationExceededFinishPollingServiceInstance(instance *v1beta1.ServiceInstance, mitigatingOrphan, provisioning, deleting bool) error {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+
+	clone, err := api.Scheme.DeepCopy(instance)
+	if err != nil {
+		return err
+	}
+	toUpdate := clone.(*v1beta1.ServiceInstance)
+	s := "Stopping reconciliation retries on ServiceInstance because too much time has elapsed"
+	glog.Info(pcb.Message(s))
+	c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+
+	if mitigatingOrphan {
+		setServiceInstanceCondition(
+			toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionUnknown,
+			errorOrphanMitigationFailedReason,
+			"Orphan mitigation failed: "+s)
+	} else if deleting || provisioning {
+		setServiceInstanceCondition(toUpdate,
+			v1beta1.ServiceInstanceConditionFailed,
+			v1beta1.ConditionTrue,
+			errorReconciliationRetryTimeoutReason,
+			s)
+	} else {
+		setServiceInstanceCondition(toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			errorReconciliationRetryTimeoutReason,
+			s)
+	}
+
+	if !provisioning {
+		clearServiceInstanceCurrentOperation(toUpdate)
+	} else {
+		c.setServiceInstanceStartOrphanMitigation(toUpdate)
+	}
+
+	if deleting {
+		toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
+	}
+
+	if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+		return err
+	}
+	return c.finishPollingServiceInstance(instance)
 }
 
 // resolveReferences checks to see if ClusterServiceClassRef and/or ClusterServicePlanRef are
