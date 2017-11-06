@@ -750,7 +750,7 @@ type ServiceBindingStatus struct {
 	// mitigation is in progress.
 	OrphanMitigationInProgress bool
 
-	// UnbindStatus describes what has been done to unbind a Binding
+	// UnbindStatus describes what has been done to unbind a ServiceBinding
 	UnbindStatus ServiceBindingUnbindStatus
 }
 

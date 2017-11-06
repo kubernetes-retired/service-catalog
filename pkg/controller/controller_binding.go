@@ -431,6 +431,8 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			}
 		}
 
+		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
+
 		response, err := brokerClient.Bind(request)
 		// orphan mitigation: looking for timeout
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
@@ -565,7 +567,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		}
 
 		clearServiceBindingCurrentOperation(toUpdate)
-		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 
 		setServiceBindingCondition(
 			toUpdate,
@@ -621,6 +622,23 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return err
 	}
 
+	// If unbinding succeeded or is not needed, then clear out the finalizers
+	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusNotRequired ||
+		binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusSucceeded {
+
+		glog.V(5).Info(pcb.Message("Clearing catalog finalizer"))
+
+		// Clear the finalizer
+		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+		toUpdate.Finalizers = finalizers.List()
+
+		toUpdate.Status.ExternalProperties = nil
+		clearServiceBindingCurrentOperation(toUpdate)
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return err
+		}
+	}
+
 	err = c.ejectServiceBinding(binding)
 	if err != nil {
 		s := fmt.Sprintf(`Error deleting secret: %s`, err)
@@ -658,10 +676,9 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		}
 	}
 
-	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusRequired {
-		if ok, err := c.serviceBindingRequestUnbinding(binding, toUpdate, pcb); !ok || err != nil {
-			return err
-		}
+	// Make unbinding request to broker
+	if ok, err := c.serviceBindingRequestUnbinding(binding, toUpdate, pcb); !ok || err != nil {
+		return err
 	}
 
 	if toUpdate.Status.OrphanMitigationInProgress {
@@ -697,6 +714,8 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 	return nil
 }
 
+// serviceBindingRequestUnbinding validates and makes the binding request to the broker.
+// Returns if reconciliation should continue and any error produced.
 func (c *controller) serviceBindingRequestUnbinding(binding *v1beta1.ServiceBinding, toUpdate *v1beta1.ServiceBinding, pcb *pretty.ContextBuilder) (bool, error) {
 	glog.V(4).Info(pcb.Message("Going to make request to unbind"))
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
@@ -741,9 +760,6 @@ func (c *controller) serviceBindingRequestUnbinding(binding *v1beta1.ServiceBind
 	}
 
 	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
-		// Do not retry if the user wants to cancel/abort a binding request.
-		// This is a special case where no service class is resolved and a binding delete request
-		// has come in in the mean time. In general this should be fixed more generally per issue #1524.
 		return false, fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
 	}
 

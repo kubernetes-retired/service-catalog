@@ -2763,8 +2763,9 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
 	// 0. Updating the current operation
-	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 2)
+	// 1. Update the unbind status
+	// 2. Updating the ready condition
+	assertNumberOfActions(t, actions, 3)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
