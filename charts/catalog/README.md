@@ -55,6 +55,7 @@ chart and their default values.
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
 | `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator | `true` |
 | `rbacEnable` | If true, create & use RBAC resources | `true` |
+| `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

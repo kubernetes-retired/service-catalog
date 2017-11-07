@@ -257,6 +257,13 @@ type ClusterServiceClassSpec struct {
 	// Bindable which overrides the value of this field.
 	Bindable bool
 
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// BindingRetrievable indicates whether fetching a binding via a GET on
+	// its endpoint is supported for all plans.
+	BindingRetrievable bool
+
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ClusterServiceClass may change ClusterServicePlans after being provisioned.
 	PlanUpdatable bool
@@ -723,6 +730,21 @@ type ServiceBindingSpec struct {
 // ServiceBindingStatus represents the current status of a ServiceBinding.
 type ServiceBindingStatus struct {
 	Conditions []ServiceBindingCondition
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this ServiceBinding in progress.
+	AsyncOpInProgress bool
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// LastOperation is the string that the broker may have returned when
+	// an async operation started, it should be sent back to the broker
+	// on poll requests as a query param.
+	LastOperation *string
 
 	// CurrentOperation is the operation the Controller is currently performing
 	// on the ServiceBinding.
