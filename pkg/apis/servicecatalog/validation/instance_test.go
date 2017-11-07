@@ -631,30 +631,49 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 		name              string
 		newSpecChange     bool
 		onGoingSpecChange bool
+		onGoingOperation  bool
 		valid             bool
 	}{
 		{
 			name:              "spec change when no on-going spec change",
 			newSpecChange:     true,
 			onGoingSpecChange: false,
+			onGoingOperation:  false,
 			valid:             true,
 		},
 		{
-			name:              "spec change when on-going spec change",
+			name:              "spec change when on-going spec change but no on-going operation",
 			newSpecChange:     true,
 			onGoingSpecChange: true,
+			onGoingOperation:  false,
+			valid:             true,
+		},
+		{
+			name:              "spec change when on-going spec change and on-going operation",
+			newSpecChange:     true,
+			onGoingSpecChange: true,
+			onGoingOperation:  true,
 			valid:             false,
 		},
 		{
 			name:              "meta change when no on-going spec change",
 			newSpecChange:     false,
 			onGoingSpecChange: false,
+			onGoingOperation:  false,
 			valid:             true,
 		},
 		{
-			name:              "meta change when on-going spec change",
+			name:              "meta change when on-going spec change but no on-going operation",
 			newSpecChange:     false,
 			onGoingSpecChange: true,
+			onGoingOperation:  false,
+			valid:             true,
+		},
+		{
+			name:              "meta change when on-going spec change and on-going operation",
+			newSpecChange:     false,
+			onGoingSpecChange: true,
+			onGoingOperation:  true,
 			valid:             true,
 		},
 	}
@@ -678,6 +697,9 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 			oldInstance.Generation = 1
 		}
 		oldInstance.Status.ReconciledGeneration = 1
+		if tc.onGoingOperation {
+			oldInstance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
+		}
 
 		newInstance := &servicecatalog.ServiceInstance{
 			ObjectMeta: metav1.ObjectMeta{
