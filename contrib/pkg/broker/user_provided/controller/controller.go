@@ -70,7 +70,7 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 					Name:        "premium",
 					ID:          "cc0d7529-18e8-416d-8946-6f7456acd589",
 					Description: "Premium plan",
-					Free:        true,
+					Free:        false,
 				},
 				},
 				Bindable:       true,
