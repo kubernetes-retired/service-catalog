@@ -132,7 +132,7 @@ func (c *controller) instanceDelete(obj interface{}) {
 //     an instance, it calls its beginPollingServiceInstance method (or
 //     calls continuePollingServiceInstance, an alias of that method)
 // 2.  begin/continuePollingServiceInstance do a rate-limited add to the polling queue
-// 3.  the pollingQueue calls requeueServiceInstanceForPoll, which adds the instance's
+// 3.  the instancePollingQueue calls requeueServiceInstanceForPoll, which adds the instance's
 //     key to the instance work queue
 // 4.  the worker servicing the instance polling queue forgets the instances key,
 //     requiring the controller to call continuePollingServiceInstance if additional
@@ -165,7 +165,7 @@ func (c *controller) beginPollingServiceInstance(instance *v1beta1.ServiceInstan
 		return fmt.Errorf(s)
 	}
 
-	c.pollingQueue.AddRateLimited(key)
+	c.instancePollingQueue.AddRateLimited(key)
 
 	return nil
 }
@@ -187,7 +187,7 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 		return fmt.Errorf(s)
 	}
 
-	c.pollingQueue.Forget(key)
+	c.instancePollingQueue.Forget(key)
 
 	return nil
 }
