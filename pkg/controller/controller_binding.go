@@ -215,6 +215,29 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 	glog.V(4).Info(pcb.Message("Processing"))
 
+	// If unbinding succeeded or is not needed, then clear out the finalizers
+	if (binding.DeletionTimestamp != nil || binding.Status.OrphanMitigationInProgress) &&
+		(binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusNotRequired ||
+			binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusSucceeded) {
+
+		glog.V(5).Info(pcb.Message("Clearing catalog finalizer"))
+
+		finalizerToken := v1beta1.FinalizerServiceCatalog
+		finalizers := sets.NewString(binding.Finalizers...)
+		if !finalizers.Has(finalizerToken) {
+			return nil
+		}
+
+		// Clear the finalizer
+		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+		toUpdate.Finalizers = finalizers.List()
+
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
@@ -287,6 +310,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			errorNonbindableClusterServiceClassReason,
 			s,
 		)
+		binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 		clearServiceBindingCurrentOperation(toUpdate)
 		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 			return err
@@ -402,6 +426,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			}
 		}
 
+		binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 		toUpdate.Status.InProgressProperties = &v1beta1.ServiceBindingPropertiesState{
 			Parameters:         rawParametersWithRedaction,
 			ParametersChecksum: parametersChecksum,
@@ -506,6 +531,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 					v1beta1.ConditionFalse,
 					errorBindCallReason,
 					"Bind call failed. "+s)
+				binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 				clearServiceBindingCurrentOperation(toUpdate)
 				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 					return err
@@ -536,6 +562,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 					errorReconciliationRetryTimeoutReason,
 					s)
 				clearServiceBindingCurrentOperation(toUpdate)
+				toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 					return err
 				}
@@ -750,6 +777,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 						"Unbind call failed. "+s)
 				}
 				clearServiceBindingCurrentOperation(toUpdate)
+				toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 					return err
 				}
@@ -784,6 +812,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 						s)
 				}
 				clearServiceBindingCurrentOperation(toUpdate)
+				toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 					return err
 				}
@@ -850,6 +879,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 		toUpdate.Status.ExternalProperties = nil
 		clearServiceBindingCurrentOperation(toUpdate)
+		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 			return err
 		}
@@ -1279,6 +1309,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			}
 
 			clearServiceBindingCurrentOperation(binding)
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 			binding.Status.ExternalProperties = nil
 
 			setServiceBindingCondition(
@@ -1388,6 +1419,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			}
 
 			clearServiceBindingCurrentOperation(binding)
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 			binding.Status.ExternalProperties = nil
 
 			setServiceBindingCondition(
@@ -1477,6 +1509,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			successInjectedBindResultReason,
 			successInjectedBindResultMessage,
 		)
+		binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 		clearServiceBindingCurrentOperation(binding)
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
@@ -1500,14 +1533,17 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			readyCond = v1beta1.ConditionUnknown
 			reason = errorOrphanMitigationFailedReason
 			message = "Orphan mitigation failed: " + description
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 		case deleting:
 			readyCond = v1beta1.ConditionUnknown
 			reason = errorUnbindCallReason
 			message = "Unbind call failed: " + description
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 		default:
 			readyCond = v1beta1.ConditionFalse
 			reason = errorBindCallReason
 			message = "Bind call failed: " + description
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 		}
 
 		glog.Warning(pcb.Message(message))

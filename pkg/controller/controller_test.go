@@ -847,6 +847,9 @@ func getTestServiceBinding() *v1beta1.ServiceBinding {
 			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
+		Status: v1beta1.ServiceBindingStatus{
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+		},
 	}
 }
 
