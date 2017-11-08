@@ -847,9 +847,6 @@ func getTestServiceBinding() *v1beta1.ServiceBinding {
 			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
-		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
-		},
 	}
 }
 
@@ -883,7 +880,6 @@ func getTestServiceBindingWithFailedStatus() *v1beta1.ServiceBinding {
 			Type:   v1beta1.ServiceBindingConditionFailed,
 			Status: v1beta1.ConditionTrue,
 		}},
-		UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 	}
 
 	return binding
@@ -2490,24 +2486,16 @@ func assertServiceBindingOperationSuccess(t *testing.T, obj runtime.Object, oper
 
 func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, externalParameters map[string]interface{}, externalParametersChecksum string, originalBinding *v1beta1.ServiceBinding) {
 	var (
-		reason       string
-		readyStatus  v1beta1.ConditionStatus
-		unbindStatus v1beta1.ServiceBindingUnbindStatus
+		reason      string
+		readyStatus v1beta1.ConditionStatus
 	)
 	switch operation {
 	case v1beta1.ServiceBindingOperationBind:
 		reason = successInjectedBindResultReason
 		readyStatus = v1beta1.ConditionTrue
-		unbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 	case v1beta1.ServiceBindingOperationUnbind:
 		reason = successUnboundReason
 		readyStatus = v1beta1.ConditionFalse
-		switch originalBinding.Status.UnbindStatus {
-		case v1beta1.ServiceBindingUnbindStatusNotRequired:
-			unbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
-		case v1beta1.ServiceBindingUnbindStatusRequired:
-			unbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
-		}
 	}
 	assertServiceBindingReadyCondition(t, obj, readyStatus, reason)
 	assertServiceBindingCurrentOperationClear(t, obj)
@@ -2525,21 +2513,15 @@ func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtim
 	case v1beta1.ServiceBindingOperationUnbind:
 		assertServiceBindingExternalPropertiesNil(t, obj)
 	}
-	assertServiceBindingUbindStatus(t, obj, unbindStatus)
 }
 
 func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, readyReason string, failureReason string, originalBinding *v1beta1.ServiceBinding) {
-	var (
-		readyStatus  v1beta1.ConditionStatus
-		unbindStatus v1beta1.ServiceBindingUnbindStatus
-	)
+	var readyStatus v1beta1.ConditionStatus
 	switch operation {
 	case v1beta1.ServiceBindingOperationBind:
 		readyStatus = v1beta1.ConditionFalse
-		unbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 	case v1beta1.ServiceBindingOperationUnbind:
 		readyStatus = v1beta1.ConditionUnknown
-		unbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 	}
 	assertServiceBindingReadyCondition(t, obj, readyStatus, readyReason)
 	assertServiceBindingCondition(t, obj, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, failureReason)
@@ -2548,7 +2530,6 @@ func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, o
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
-	assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2560,7 +2541,6 @@ func assertServiceBindingAsyncBindRetryDurationExceeded(t *testing.T, obj runtim
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	assertServiceBindingInProgressPropertiesParameters(t, obj, nil, "")
 	assertServiceBindingExternalPropertiesNil(t, obj)
-	// TODO: assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2572,7 +2552,6 @@ func assertServiceBindingAsyncBindErrorAfterStateSucceeded(t *testing.T, obj run
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	assertServiceBindingExternalPropertiesParameters(t, obj, nil, "")
 	assertServiceBindingInProgressPropertiesNil(t, obj)
-	// TODO: assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2584,7 +2563,6 @@ func assertServiceBindingAsyncUnbindRetryDurationExceeded(t *testing.T, obj runt
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
-	// TODO: assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2595,7 +2573,6 @@ func assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t *testing.T
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingExternalPropertiesNil(t, obj)
-	// TODO: assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2608,7 +2585,6 @@ func assertServiceBindingErrorFetchingBinding(t *testing.T, obj runtime.Object, 
 	assertServiceBindingExternalPropertiesParameters(t, obj, nil, "")
 	assertServiceBindingAsyncOpInProgressTrue(t, obj)
 	assertServiceBindingOrphanMitigationSet(t, obj, false)
-	// TODO: assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2622,7 +2598,6 @@ func assertServiceBindingErrorInjectingCredentials(t *testing.T, obj runtime.Obj
 	assertServiceBindingExternalPropertiesParameters(t, obj, nil, "")
 	assertServiceBindingAsyncOpInProgressTrue(t, obj)
 	assertServiceBindingOrphanMitigationSet(t, obj, false)
-	// TODO: assertServiceBindingUbindStatus(t, obj, unbindStatus)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2810,17 +2785,6 @@ func assertServiceBindingOrphanMitigationSet(t *testing.T, obj runtime.Object, i
 
 	if e, a := inProgress, binding.Status.OrphanMitigationInProgress; e != a {
 		fatalf(t, "expected OrphanMitigationInProgress to be %v, but was not", a)
-	}
-}
-
-func assertServiceBindingUbindStatus(t *testing.T, obj runtime.Object, unbindStatus v1beta1.ServiceBindingUnbindStatus) {
-	binding, ok := obj.(*v1beta1.ServiceBinding)
-	if !ok {
-		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBinding", obj)
-	}
-
-	if e, a := unbindStatus, binding.Status.UnbindStatus; e != a {
-		fatalf(t, "unexpected UnbindStatus, %s", expectedGot(e, a))
 	}
 }
 
