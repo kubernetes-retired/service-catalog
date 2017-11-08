@@ -205,7 +205,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"relistDuration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration.",
+								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration. Users are cautioned against configuring low values for the RelistDuration, as this can easily overload the controller manager in an environment with many brokers. The actual interval is intrinsically governed by the configured resync interval of the controller, which acts as a minimum bound. For example, with a resync interval of 5m and a RelistDuration of 2m, relists will occur at the resync interval of 5m.",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 							},
 						},
@@ -250,6 +250,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"operationStartTime": {
 							SchemaProps: spec.SchemaProps{
 								Description: "OperationStartTime is the time at which the current operation began.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
+						"lastCatalogRetrievalTime": {
+							SchemaProps: spec.SchemaProps{
+								Description: "LastCatalogRetrievalTime is the time the Catalog was last fetched from the Service Broker",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 							},
 						},
@@ -384,6 +390,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
+						"binding_retrievable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 						"planUpdatable": {
 							SchemaProps: spec.SchemaProps{
 								Description: "PlanUpdatable indicates whether instances provisioned from this ClusterServiceClass may change ClusterServicePlans after being provisioned.",
@@ -426,7 +439,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"clusterServiceBrokerName", "externalName", "externalID", "description", "bindable", "planUpdatable"},
+					Required: []string{"clusterServiceBrokerName", "externalName", "externalID", "description", "bindable", "binding_retrievable", "planUpdatable"},
 				},
 			},
 			Dependencies: []string{
@@ -991,6 +1004,20 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								},
 							},
 						},
+						"asyncOpInProgress": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nAsyncOpInProgress is set to true if there is an ongoing async operation against this ServiceBinding in progress.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"lastOperation": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nLastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"currentOperation": {
 							SchemaProps: spec.SchemaProps{
 								Description: "CurrentOperation is the operation the Controller is currently performing on the ServiceBinding.",
@@ -1031,7 +1058,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"conditions", "reconciledGeneration", "orphanMitigationInProgress"},
+					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration", "orphanMitigationInProgress"},
 				},
 			},
 			Dependencies: []string{

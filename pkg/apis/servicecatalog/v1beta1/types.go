@@ -70,6 +70,12 @@ type ClusterServiceBrokerSpec struct {
 
 	// RelistDuration is the frequency by which a controller will relist the
 	// broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration.
+	// Users are cautioned against configuring low values for the RelistDuration,
+	// as this can easily overload the controller manager in an environment with
+	// many brokers. The actual interval is intrinsically governed by the
+	// configured resync interval of the controller, which acts as a minimum bound.
+	// For example, with a resync interval of 5m and a RelistDuration of 2m, relists
+	// will occur at the resync interval of 5m.
 	RelistDuration *metav1.Duration `json:"relistDuration,omitempty"`
 
 	// RelistRequests is a strictly increasing, non-negative integer counter that
@@ -145,6 +151,10 @@ type ClusterServiceBrokerStatus struct {
 
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
+
+	// LastCatalogRetrievalTime is the time the Catalog was last fetched from
+	// the Service Broker
+	LastCatalogRetrievalTime *metav1.Time `json:"lastCatalogRetrievalTime,omitempty"`
 }
 
 // ServiceBrokerCondition contains condition information for a Broker.
@@ -248,6 +258,13 @@ type ClusterServiceClassSpec struct {
 	// has an optional field called Bindable which overrides the value of
 	// this field.
 	Bindable bool `json:"bindable"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// BindingRetrievable indicates whether fetching a binding via a GET on
+	// its endpoint is supported for all plans.
+	BindingRetrievable bool `json:"binding_retrievable"`
 
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ClusterServiceClass may change ClusterServicePlans after being
@@ -736,6 +753,21 @@ type ServiceBindingSpec struct {
 // ServiceBindingStatus represents the current status of a ServiceBinding.
 type ServiceBindingStatus struct {
 	Conditions []ServiceBindingCondition `json:"conditions"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this ServiceBinding in progress.
+	AsyncOpInProgress bool `json:"asyncOpInProgress"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// LastOperation is the string that the broker may have returned when
+	// an async operation started, it should be sent back to the broker
+	// on poll requests as a query param.
+	LastOperation *string `json:"lastOperation,omitempty"`
 
 	// CurrentOperation is the operation the Controller is currently performing
 	// on the ServiceBinding.

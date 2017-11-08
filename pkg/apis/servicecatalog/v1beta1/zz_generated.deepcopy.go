@@ -367,6 +367,15 @@ func (in *ClusterServiceBrokerStatus) DeepCopyInto(out *ClusterServiceBrokerStat
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	if in.LastCatalogRetrievalTime != nil {
+		in, out := &in.LastCatalogRetrievalTime, &out.LastCatalogRetrievalTime
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(v1.Time)
+			(*in).DeepCopyInto(*out)
+		}
+	}
 	return
 }
 
@@ -888,6 +897,15 @@ func (in *ServiceBindingStatus) DeepCopyInto(out *ServiceBindingStatus) {
 		*out = make([]ServiceBindingCondition, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.LastOperation != nil {
+		in, out := &in.LastOperation, &out.LastOperation
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
 		}
 	}
 	if in.OperationStartTime != nil {

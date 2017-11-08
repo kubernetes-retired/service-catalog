@@ -131,7 +131,7 @@ func (c *controller) instanceDelete(obj interface{}) {
 //     an instance, it calls its beginPollingServiceInstance method (or
 //     calls continuePollingServiceInstance, an alias of that method)
 // 2.  begin/continuePollingServiceInstance do a rate-limited add to the polling queue
-// 3.  the pollingQueue calls requeueServiceInstanceForPoll, which adds the instance's
+// 3.  the instancePollingQueue calls requeueServiceInstanceForPoll, which adds the instance's
 //     key to the instance work queue
 // 4.  the worker servicing the instance polling queue forgets the instances key,
 //     requiring the controller to call continuePollingServiceInstance if additional
@@ -164,7 +164,7 @@ func (c *controller) beginPollingServiceInstance(instance *v1beta1.ServiceInstan
 		return fmt.Errorf(s)
 	}
 
-	c.pollingQueue.AddRateLimited(key)
+	c.instancePollingQueue.AddRateLimited(key)
 
 	return nil
 }
@@ -186,7 +186,7 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 		return fmt.Errorf(s)
 	}
 
-	c.pollingQueue.Forget(key)
+	c.instancePollingQueue.Forget(key)
 
 	return nil
 }
@@ -323,7 +323,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 				s)
 		}
 
-		c.clearServiceInstanceCurrentOperation(toUpdate)
+		clearServiceInstanceCurrentOperation(toUpdate)
 		toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 
 		if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -465,7 +465,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 					s)
 			}
 
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
@@ -516,7 +516,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 	glog.V(5).Info(pcb.Message("Deprovision call to broker succeeded, finalizing"))
 
-	c.clearServiceInstanceCurrentOperation(toUpdate)
+	clearServiceInstanceCurrentOperation(toUpdate)
 	toUpdate.Status.ExternalProperties = nil
 	toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
 
@@ -694,6 +694,13 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		}
 	}
 
+	// osb client handles whether or not to really send this based
+	// on the version of the client.
+	requestContext := map[string]interface{}{
+		"platform":  ContextProfilePlatformKubernetes,
+		"namespace": instance.Namespace,
+	}
+
 	var (
 		isProvisioning             bool
 		provisionRequest           *osb.ProvisionRequest
@@ -705,12 +712,6 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	)
 	if toUpdate.Status.ReconciledGeneration == 0 {
 		isProvisioning = true
-		// osb client handles whether or not to really send this based
-		// on the version of the client.
-		requestContext := map[string]interface{}{
-			"platform":  ContextProfilePlatformKubernetes,
-			"namespace": instance.Namespace,
-		}
 		provisionRequest = &osb.ProvisionRequest{
 			AcceptsIncomplete:   true,
 			InstanceID:          instance.Spec.ExternalID,
@@ -733,6 +734,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 			AcceptsIncomplete:   true,
 			InstanceID:          instance.Spec.ExternalID,
 			ServiceID:           serviceClass.Spec.ExternalID,
+			Context:             requestContext,
 			OriginatingIdentity: originatingIdentity,
 		}
 		// Only send the plan ID if the plan ID has changed from what the Broker has
@@ -820,7 +822,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 				reason,
 				fmt.Sprintf("ClusterServiceBroker returned a failure for %v call; operation will not be retried: %v", provisionOrUpdateText, s))
 
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
@@ -867,7 +869,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 					v1beta1.ConditionFalse,
 					reason,
 					message)
-				c.clearServiceInstanceCurrentOperation(toUpdate)
+				clearServiceInstanceCurrentOperation(toUpdate)
 			}
 
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
@@ -901,7 +903,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 					errorReconciliationRetryTimeoutReason,
 					s)
 			}
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 				return err
 			}
@@ -990,7 +992,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		))
 
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
-		c.clearServiceInstanceCurrentOperation(toUpdate)
+		clearServiceInstanceCurrentOperation(toUpdate)
 
 		// TODO: process response
 		setServiceInstanceCondition(
@@ -1067,7 +1069,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		}
 
 		if !provisioning {
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 		} else {
 			c.setServiceInstanceStartOrphanMitigation(toUpdate)
@@ -1141,7 +1143,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 				message = successDeprovisionMessage
 			}
 
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.ExternalProperties = nil
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
 
@@ -1190,51 +1192,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		glog.V(4).Info(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorPollingLastOperationReason, s)
 
-		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			clone, err := api.Scheme.DeepCopy(instance)
-			if err != nil {
-				return err
-			}
-			toUpdate := clone.(*v1beta1.ServiceInstance)
-			s := "Stopping reconciliation retries because too much time has elapsed"
-			glog.Info(pcb.Message(s))
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-
-			if mitigatingOrphan {
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionUnknown,
-					errorOrphanMitigationFailedReason,
-					"Orphan mitigation failed: "+s)
-			} else if deleting || provisioning {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionFailed,
-					v1beta1.ConditionTrue,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			} else {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionFalse,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			}
-
-			if !provisioning {
-				c.clearServiceInstanceCurrentOperation(toUpdate)
-			} else {
-				c.setServiceInstanceStartOrphanMitigation(toUpdate)
-			}
-
-			if deleting {
-				toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
-			}
-
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return c.finishPollingServiceInstance(instance)
+		if c.isReconciliationRetryDurationExceeded(instance) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
 		}
 
 		return c.continuePollingServiceInstance(instance)
@@ -1320,7 +1279,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			}
 
 			if !provisioning {
-				c.clearServiceInstanceCurrentOperation(toUpdate)
+				clearServiceInstanceCurrentOperation(toUpdate)
 			} else {
 				c.setServiceInstanceStartOrphanMitigation(toUpdate)
 			}
@@ -1386,7 +1345,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		toUpdate := clone.(*v1beta1.ServiceInstance)
 
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
-		c.clearServiceInstanceCurrentOperation(toUpdate)
+		clearServiceInstanceCurrentOperation(toUpdate)
 		if deleting {
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
 		}
@@ -1452,7 +1411,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		toUpdate := clone.(*v1beta1.ServiceInstance)
 
 		if !deleting {
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 			setServiceInstanceCondition(
 				toUpdate,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1480,7 +1439,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			glog.Info(pcb.Message(s))
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
 
-			c.clearServiceInstanceCurrentOperation(toUpdate)
+			clearServiceInstanceCurrentOperation(toUpdate)
 			toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 
 			setServiceInstanceCondition(
@@ -1532,55 +1491,73 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 	default:
 		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
-		if !time.Now().Before(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-			clone, err := api.Scheme.DeepCopy(instance)
-			if err != nil {
-				return err
-			}
-			toUpdate := clone.(*v1beta1.ServiceInstance)
-			s := "Stopping reconciliation retries on ServiceInstance because too much time has elapsed"
-			glog.Info(pcb.Message(s))
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-
-			if mitigatingOrphan {
-				setServiceInstanceCondition(
-					toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionUnknown,
-					errorOrphanMitigationFailedReason,
-					"Orphan mitigation failed: "+s)
-			} else if deleting || provisioning {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionFailed,
-					v1beta1.ConditionTrue,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			} else {
-				setServiceInstanceCondition(toUpdate,
-					v1beta1.ServiceInstanceConditionReady,
-					v1beta1.ConditionFalse,
-					errorReconciliationRetryTimeoutReason,
-					s)
-			}
-
-			if !provisioning {
-				c.clearServiceInstanceCurrentOperation(toUpdate)
-			} else {
-				c.setServiceInstanceStartOrphanMitigation(toUpdate)
-			}
-
-			if deleting {
-				toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
-			}
-
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return c.finishPollingServiceInstance(instance)
+		if c.isReconciliationRetryDurationExceeded(instance) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceInstance(instance, mitigatingOrphan, provisioning, deleting)
 		}
 		return fmt.Errorf(`Got invalid state in LastOperationResponse: %q`, response.State)
 	}
 	return nil
+}
+
+// isReconciliationRetryDurationExceeded tests if the current Operation State time has
+// elapsed the reconciliationRetryDuration time period
+func (c *controller) isReconciliationRetryDurationExceeded(instance *v1beta1.ServiceInstance) bool {
+	if time.Now().After(instance.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		return true
+	}
+	return false
+}
+
+// reconciliationRetryDurationExceededFinishPollingServiceInstance marks the instance as
+// failed from time expired based on current state and then prepares the
+// instance for removal from reconciliation
+func (c *controller) reconciliationRetryDurationExceededFinishPollingServiceInstance(instance *v1beta1.ServiceInstance, mitigatingOrphan, provisioning, deleting bool) error {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+
+	clone, err := api.Scheme.DeepCopy(instance)
+	if err != nil {
+		return err
+	}
+	toUpdate := clone.(*v1beta1.ServiceInstance)
+	s := "Stopping reconciliation retries on ServiceInstance because too much time has elapsed"
+	glog.Info(pcb.Message(s))
+	c.recorder.Event(instance, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+
+	if mitigatingOrphan {
+		setServiceInstanceCondition(
+			toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionUnknown,
+			errorOrphanMitigationFailedReason,
+			"Orphan mitigation failed: "+s)
+	} else if deleting || provisioning {
+		setServiceInstanceCondition(toUpdate,
+			v1beta1.ServiceInstanceConditionFailed,
+			v1beta1.ConditionTrue,
+			errorReconciliationRetryTimeoutReason,
+			s)
+	} else {
+		setServiceInstanceCondition(toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			errorReconciliationRetryTimeoutReason,
+			s)
+	}
+
+	if !provisioning {
+		clearServiceInstanceCurrentOperation(toUpdate)
+	} else {
+		c.setServiceInstanceStartOrphanMitigation(toUpdate)
+	}
+
+	if deleting {
+		toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
+	}
+
+	if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
+		return err
+	}
+	return c.finishPollingServiceInstance(instance)
 }
 
 // resolveReferences checks to see if ClusterServiceClassRef and/or ClusterServicePlanRef are
@@ -1923,19 +1900,6 @@ func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.Ser
 	return c.updateServiceInstanceStatus(toUpdate)
 }
 
-// clearServiceInstanceCurrentOperation sets the fields of the instance's Status
-// to indicate that there is no current operation being performed. The Status
-// is *not* recorded in the registry.
-func (c *controller) clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
-	toUpdate.Status.CurrentOperation = ""
-	toUpdate.Status.OperationStartTime = nil
-	toUpdate.Status.AsyncOpInProgress = false
-	toUpdate.Status.OrphanMitigationInProgress = false
-	toUpdate.Status.LastOperation = nil
-	toUpdate.Status.InProgressProperties = nil
-	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
-}
-
 // setServiceInstanceStartOrphanMitigation sets the fields of the instance's
 // Status to indicate that orphan mitigation is starting. The Status is *not*
 // recorded in the registry.
@@ -2024,6 +1988,19 @@ func (c *controller) checkForRemovedClassAndPlan(instance *v1beta1.ServiceInstan
 		return err
 	}
 	return fmt.Errorf(s)
+}
+
+// clearServiceInstanceCurrentOperation sets the fields of the instance's Status
+// to indicate that there is no current operation being performed. The Status
+// is *not* recorded in the registry.
+func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
+	toUpdate.Status.CurrentOperation = ""
+	toUpdate.Status.OperationStartTime = nil
+	toUpdate.Status.AsyncOpInProgress = false
+	toUpdate.Status.OrphanMitigationInProgress = false
+	toUpdate.Status.LastOperation = nil
+	toUpdate.Status.InProgressProperties = nil
+	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status
