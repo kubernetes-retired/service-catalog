@@ -1,5 +1,5 @@
-hash: 38f3b63d31dba3a1610768b533a3fb1efb3318c42f6993bc2ff7f91e3f8541c2
-updated: 2017-11-09T10:01:45.543223759-05:00
+hash: ee8643441675c68b31a407670ad2549ecec1822964130fc7d618306a89471fa6
+updated: 2017-11-09T17:12:48.919866503-05:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -253,7 +253,7 @@ imports:
 - name: github.com/pkg/errors
   version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/pmorie/go-open-service-broker-client
-  version: 9e257974620c1db53c4d3549fd9eddaa2d2d653e
+  version: 31d8027f493f8f23f850415d171c7c52a972a6f2
   subpackages:
   - v2
   - v2/fake
