@@ -610,7 +610,7 @@ func TestBindingFailure(t *testing.T) {
 		},
 		UnbindReaction: &fakeosb.UnbindReaction{
 			Response: &osb.UnbindResponse{
-				Async:false,
+				Async: false,
 			},
 		},
 		ProvisionReaction: &fakeosb.ProvisionReaction{

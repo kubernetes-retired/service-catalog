@@ -132,3 +132,43 @@ func generateChecksumOfParameters(params map[string]interface{}) (string, error)
 	hash := sha256.Sum256(paramsAsJSON)
 	return fmt.Sprintf("%x", hash), nil
 }
+
+// prepareInProgressPropertyParameters generates the required parameters for setting
+// the in-progress status of a Type.
+// Returns (parameters, parametersChecksum, rawParametersWithRedaction, err)
+func prepareInProgressPropertyParameters(kubeClient kubernetes.Interface, namespace string, specParameters *runtime.RawExtension, specParametersFrom []v1beta1.ParametersFromSource) (map[string]interface{}, string, *runtime.RawExtension, error) {
+	var (
+		parameters                 map[string]interface{}
+		parametersChecksum         string
+		rawParametersWithRedaction *runtime.RawExtension
+		err                        error
+	)
+	if specParameters != nil || specParametersFrom != nil {
+		var parametersWithSecretsRedacted map[string]interface{}
+		parameters, parametersWithSecretsRedacted, err = buildParameters(kubeClient, namespace, specParametersFrom, specParameters)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf(
+				"failed to prepare parameters %s: %s",
+				specParameters, err,
+			)
+		}
+
+		parametersChecksum, err = generateChecksumOfParameters(parameters)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("failed to generate the parameters checksum to store in Status: %s", err)
+		}
+
+		marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf(
+				"failed to marshal the parameters to store in the Status: %s",
+				err,
+			)
+		}
+
+		rawParametersWithRedaction = &runtime.RawExtension{
+			Raw: marshalledParametersWithRedaction,
+		}
+	}
+	return parameters, parametersChecksum, rawParametersWithRedaction, err
+}

@@ -651,15 +651,25 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		return err
 	}
 
-	parameters, parametersChecksum, rawParametersWithRedaction, err := c.prepareInProgressProperties(
-		instance,
-		toUpdate,
+	parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
+		c.kubeClient,
 		instance.Namespace,
 		instance.Spec.Parameters,
 		instance.Spec.ParametersFrom,
-		pcb,
 	)
 	if err != nil {
+		glog.Warning(pcb.Message(err.Error()))
+		c.recorder.Event(toUpdate, corev1.EventTypeWarning, errorWithParameters, err.Error())
+		setCondition(
+			toUpdate,
+			ConditionReady,
+			v1beta1.ConditionFalse,
+			errorWithParameters,
+			err.Error(),
+		)
+		if _, err := c.updateStatus(toUpdate, pcb); err != nil {
+			return err
+		}
 		return err
 	}
 

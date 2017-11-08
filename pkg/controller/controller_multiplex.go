@@ -23,9 +23,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
-	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Conditions
@@ -62,7 +59,9 @@ func setCondition(obj interface{},
 		case ConditionReady:
 			conditionType = v1beta1.ServiceInstanceConditionReady
 		case ConditionFailed:
-			conditionType = v1beta1.ServiceInstanceConditionReady
+			conditionType = v1beta1.ServiceInstanceConditionFailed
+		default:
+			glog.Errorf("Service Instance: unable to set set unknown condition: %+v", condition)
 		}
 		setServiceInstanceCondition(toUpdate, conditionType, status, reason, message)
 		return
@@ -73,6 +72,8 @@ func setCondition(obj interface{},
 			conditionType = v1beta1.ServiceBindingConditionReady
 		case ConditionFailed:
 			conditionType = v1beta1.ServiceBindingConditionFailed
+		default:
+			glog.Errorf("Service Binding: unable to set set unknown condition: %+v", condition)
 		}
 		setServiceBindingCondition(toUpdate, conditionType, status, reason, message)
 		return
@@ -98,78 +99,4 @@ func (c *controller) updateStatus(obj interface{}, pcb *pretty.ContextBuilder) (
 		glog.Errorf(pcb.Message(s))
 		return obj, fmt.Errorf(s)
 	}
-}
-
-// prepareInProgressProperties generates the required properties for setting
-// the in-progress status of a Type
-func (c *controller) prepareInProgressProperties(object runtime.Object, toUpdate interface{}, namespace string, specParameters *runtime.RawExtension, specParametersFrom []v1beta1.ParametersFromSource, pcb *pretty.ContextBuilder) (map[string]interface{}, string, *runtime.RawExtension, error) {
-	var (
-		parameters                 map[string]interface{}
-		parametersChecksum         string
-		rawParametersWithRedaction *runtime.RawExtension
-		err                        error
-	)
-	if specParameters != nil || specParametersFrom != nil {
-		var parametersWithSecretsRedacted map[string]interface{}
-		parameters, parametersWithSecretsRedacted, err = buildParameters(c.kubeClient, namespace, specParametersFrom, specParameters)
-		if err != nil {
-			s := fmt.Sprintf(
-				"Failed to prepare ServiceInstance parameters %s: %s",
-				specParameters, err,
-			)
-			glog.Warning(pcb.Message(s))
-			c.recorder.Event(object, corev1.EventTypeWarning, errorWithParameters, s)
-			setCondition(
-				toUpdate,
-				ConditionReady,
-				v1beta1.ConditionFalse,
-				errorWithParameters,
-				s,
-			)
-			if _, err := c.updateStatus(toUpdate, pcb); err != nil {
-				return parameters, parametersChecksum, rawParametersWithRedaction, err
-			}
-
-			return parameters, parametersChecksum, rawParametersWithRedaction, err
-		}
-
-		parametersChecksum, err = generateChecksumOfParameters(parameters)
-		if err != nil {
-			s := fmt.Sprintf("Failed to generate the parameters checksum to store in Status: %s", err)
-			glog.Info(pcb.Message(s))
-			c.recorder.Eventf(object, corev1.EventTypeWarning, errorWithParameters, s)
-			setCondition(
-				toUpdate,
-				ConditionReady,
-				v1beta1.ConditionFalse,
-				errorWithParameters,
-				s)
-			if _, err := c.updateStatus(toUpdate, pcb); err != nil {
-				return parameters, parametersChecksum, rawParametersWithRedaction, err
-			}
-			return parameters, parametersChecksum, rawParametersWithRedaction, err
-		}
-
-		marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
-		if err != nil {
-			s := fmt.Sprintf("Failed to marshal the parameters to store in the Status: %s", err)
-			glog.Info(pcb.Message(s))
-			c.recorder.Eventf(object, corev1.EventTypeWarning, errorWithParameters, s)
-			setCondition(
-				toUpdate,
-				ConditionReady,
-				v1beta1.ConditionFalse,
-				errorWithParameters,
-				s)
-			if _, err := c.updateStatus(toUpdate, pcb); err != nil {
-				return parameters, parametersChecksum, rawParametersWithRedaction, err
-			}
-			return parameters, parametersChecksum, rawParametersWithRedaction, err
-		}
-
-		rawParametersWithRedaction = &runtime.RawExtension{
-			Raw: marshalledParametersWithRedaction,
-		}
-	}
-	return parameters, parametersChecksum, rawParametersWithRedaction, err
 }

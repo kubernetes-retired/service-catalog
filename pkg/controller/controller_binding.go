@@ -334,16 +334,25 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			return nil
 		}
 
-		parameters, parametersChecksum, rawParametersWithRedaction, err := c.prepareInProgressProperties(
-			instance,
-			toUpdate,
+		parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
+			c.kubeClient,
 			binding.Namespace,
 			binding.Spec.Parameters,
 			binding.Spec.ParametersFrom,
-			pcb,
 		)
 		if err != nil {
-			return err
+			glog.Warning(pcb.Message(err.Error()))
+			c.recorder.Event(toUpdate, corev1.EventTypeWarning, errorWithParameters, err.Error())
+			setCondition(
+				toUpdate,
+				ConditionReady,
+				v1beta1.ConditionFalse,
+				errorWithParameters,
+				err.Error(),
+			)
+			if _, err := c.updateStatus(toUpdate, pcb); err != nil {
+				return err
+			}
 		}
 
 		toUpdate.Status.InProgressProperties = &v1beta1.ServiceBindingPropertiesState{
