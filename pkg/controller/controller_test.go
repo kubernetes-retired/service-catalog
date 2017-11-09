@@ -946,6 +946,7 @@ func getTestServiceBindingAsyncUnbinding(operation string) *v1beta1.ServiceBindi
 		CurrentOperation:     v1beta1.ServiceBindingOperationUnbind,
 		ReconciledGeneration: 1,
 		ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
+		UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
 	}
 	if operation != "" {
 		binding.Status.LastOperation = &operation
@@ -2508,7 +2509,7 @@ func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtim
 		switch originalBinding.Status.UnbindStatus {
 		case v1beta1.ServiceBindingUnbindStatusNotRequired:
 			unbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
-		case v1beta1.ServiceBindingUnbindStatusRequired:
+		default:
 			unbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 		}
 	}
@@ -2539,7 +2540,7 @@ func assertServiceBindingRequestFailingError(t *testing.T, obj runtime.Object, o
 	switch operation {
 	case v1beta1.ServiceBindingOperationBind:
 		readyStatus = v1beta1.ConditionFalse
-		unbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
+		unbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 	case v1beta1.ServiceBindingOperationUnbind:
 		readyStatus = v1beta1.ConditionUnknown
 		unbindStatus = v1beta1.ServiceBindingUnbindStatusFailed

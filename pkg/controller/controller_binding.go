@@ -513,7 +513,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 					errorBindCallReason,
 					"Bind call failed. "+s)
 				clearServiceBindingCurrentOperation(toUpdate)
-				toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 					return err
 				}
@@ -543,7 +542,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 					errorReconciliationRetryTimeoutReason,
 					s)
 				clearServiceBindingCurrentOperation(toUpdate)
-				toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 					return err
 				}
