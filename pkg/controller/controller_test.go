@@ -946,7 +946,7 @@ func getTestServiceBindingAsyncUnbinding(operation string) *v1beta1.ServiceBindi
 		CurrentOperation:     v1beta1.ServiceBindingOperationUnbind,
 		ReconciledGeneration: 1,
 		ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
-		UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+		UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
 	}
 	if operation != "" {
 		binding.Status.LastOperation = &operation
