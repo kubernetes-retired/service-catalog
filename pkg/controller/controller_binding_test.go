@@ -338,9 +338,8 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	assertServiceBindingCurrentOperation(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind)
 	assertServiceBindingOperationStartTimeSet(t, updatedServiceBinding, true)
 	assertServiceBindingReconciledGeneration(t, updatedServiceBinding, binding.Status.ReconciledGeneration)
-	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
-	// External properties are updated because the bind request with the Broker was successful
-	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
+	assertServiceBindingInProgressPropertiesParameters(t, updatedServiceBinding, nil, "")
+	assertServiceBindingExternalPropertiesNil(t, updatedServiceBinding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	kubeActions := fakeKubeClient.Actions()
@@ -2116,8 +2115,6 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionFalse, errorServiceBindingOrphanMitigation)
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason)
 	assertServiceBindingStartingOrphanMitigation(t, updatedServiceBinding, binding)
-	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
-	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)

@@ -2490,6 +2490,8 @@ func assertServiceBindingStartingOrphanMitigation(t *testing.T, obj runtime.Obje
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	assertServiceBindingOrphanMitigationSet(t, obj, true)
+	assertServiceBindingInProgressPropertiesParameters(t, obj, nil, "")
+	assertServiceBindingExternalPropertiesNil(t, obj)
 	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
 }
 
