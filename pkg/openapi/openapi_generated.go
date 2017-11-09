@@ -1057,8 +1057,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
+						"unbindStatus": {
+							SchemaProps: spec.SchemaProps{
+								Description: "UnbindStatus describes what has been done to unbind the ServiceBinding.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration", "orphanMitigationInProgress"},
+					Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration", "orphanMitigationInProgress", "unbindStatus"},
 				},
 			},
 			Dependencies: []string{
