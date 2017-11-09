@@ -4,6 +4,9 @@ import:
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
   - swagger
+# This is a dependency of github.com/emicklei/go-restful
+- package: google.golang.org/appengine
+  version: 24e4144ec923c2374f6b06610c0df16a9222c3d9
 - package: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - package: github.com/spf13/pflag
