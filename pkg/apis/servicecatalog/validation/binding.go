@@ -120,6 +120,10 @@ func validateServiceBindingStatus(status *sc.ServiceBindingStatus, fldPath *fiel
 	}
 
 	if status.InProgressProperties != nil {
+		if status.ExternalProperties != nil {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties and externalProperties cannot both be present`))
+		}
+
 		allErrs = append(allErrs, validateServiceBindingPropertiesState(status.InProgressProperties, fldPath.Child("inProgressProperties"), create)...)
 	}
 
