@@ -109,17 +109,15 @@ func validateServiceBindingStatus(status *sc.ServiceBindingStatus, fldPath *fiel
 		}
 	}
 
-	if status.CurrentOperation == sc.ServiceBindingOperationBind {
-		if status.InProgressProperties == nil {
-			allErrs = append(allErrs, field.Required(fldPath.Child("inProgressProperties"), `inProgressProperties is required when currentOperation is "Bind"`))
-		}
-	} else {
-		if status.InProgressProperties != nil {
+	if status.InProgressProperties != nil {
+		if status.CurrentOperation != sc.ServiceBindingOperationBind {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties must not be present when currentOperation is not "Bind"`))
 		}
-	}
 
-	if status.InProgressProperties != nil {
+		if status.ExternalProperties != nil {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties and externalProperties cannot both be present`))
+		}
+
 		allErrs = append(allErrs, validateServiceBindingPropertiesState(status.InProgressProperties, fldPath.Child("inProgressProperties"), create)...)
 	}
 

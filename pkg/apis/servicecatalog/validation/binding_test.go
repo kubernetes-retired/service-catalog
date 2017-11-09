@@ -196,10 +196,10 @@ func TestValidateServiceBinding(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "in-progress bind with missing InProgressParameters",
+			name: "in-progress bind with existing externalProperties",
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBindingWithInProgressBind()
-				b.Status.InProgressProperties = nil
+				b.Status.ExternalProperties = validServiceBindingPropertiesState()
 				return b
 			}(),
 			valid: false,
