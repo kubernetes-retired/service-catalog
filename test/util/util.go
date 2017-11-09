@@ -46,9 +46,13 @@ func WaitForBrokerCondition(client v1beta1servicecatalog.ServicecatalogV1beta1In
 				return false, nil
 			}
 
+			glog.V(5).Infof("Conditions = %#v", broker.Status.Conditions)
+
 			for _, cond := range broker.Status.Conditions {
 				if condition.Type == cond.Type && condition.Status == cond.Status {
-					return true, nil
+					if condition.Reason == "" || condition.Reason == cond.Reason {
+						return true, nil
+					}
 				}
 			}
 
@@ -164,9 +168,13 @@ func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1
 				return false, nil
 			}
 
+			glog.V(5).Infof("Conditions = %#v", instance.Status.Conditions)
+
 			for _, cond := range instance.Status.Conditions {
 				if condition.Type == cond.Type && condition.Status == cond.Status {
-					return true, nil
+					if condition.Reason == "" || condition.Reason == cond.Reason {
+						return true, nil
+					}
 				}
 			}
 
@@ -232,9 +240,13 @@ func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1I
 				return false, nil
 			}
 
+			glog.V(5).Infof("Conditions = %#v", binding.Status.Conditions)
+
 			for _, cond := range binding.Status.Conditions {
 				if condition.Type == cond.Type && condition.Status == cond.Status {
-					return true, nil
+					if condition.Reason == "" || condition.Reason == cond.Reason {
+						return true, nil
+					}
 				}
 			}
 
