@@ -628,53 +628,34 @@ func TestValidateServiceInstance(t *testing.T) {
 
 func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 	cases := []struct {
-		name              string
-		newSpecChange     bool
-		onGoingSpecChange bool
-		onGoingOperation  bool
-		valid             bool
+		name             string
+		specChange       bool
+		onGoingOperation bool
+		valid            bool
 	}{
 		{
-			name:              "spec change when no on-going spec change",
-			newSpecChange:     true,
-			onGoingSpecChange: false,
-			onGoingOperation:  false,
-			valid:             true,
+			name:             "spec change when no on-going operation",
+			specChange:       true,
+			onGoingOperation: false,
+			valid:            true,
 		},
 		{
-			name:              "spec change when on-going spec change but no on-going operation",
-			newSpecChange:     true,
-			onGoingSpecChange: true,
-			onGoingOperation:  false,
-			valid:             true,
+			name:             "spec change when on-going operation",
+			specChange:       true,
+			onGoingOperation: true,
+			valid:            false,
 		},
 		{
-			name:              "spec change when on-going spec change and on-going operation",
-			newSpecChange:     true,
-			onGoingSpecChange: true,
-			onGoingOperation:  true,
-			valid:             false,
+			name:             "meta change when no on-going operation",
+			specChange:       false,
+			onGoingOperation: false,
+			valid:            true,
 		},
 		{
-			name:              "meta change when no on-going spec change",
-			newSpecChange:     false,
-			onGoingSpecChange: false,
-			onGoingOperation:  false,
-			valid:             true,
-		},
-		{
-			name:              "meta change when on-going spec change but no on-going operation",
-			newSpecChange:     false,
-			onGoingSpecChange: true,
-			onGoingOperation:  false,
-			valid:             true,
-		},
-		{
-			name:              "meta change when on-going spec change and on-going operation",
-			newSpecChange:     false,
-			onGoingSpecChange: true,
-			onGoingOperation:  true,
-			valid:             true,
+			name:             "meta change when on-going operation",
+			specChange:       false,
+			onGoingOperation: true,
+			valid:            true,
 		},
 	}
 
@@ -691,12 +672,7 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 				},
 			},
 		}
-		if tc.onGoingSpecChange {
-			oldInstance.Generation = 2
-		} else {
-			oldInstance.Generation = 1
-		}
-		oldInstance.Status.ReconciledGeneration = 1
+		oldInstance.Generation = 1
 		if tc.onGoingOperation {
 			oldInstance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
 		}
@@ -708,17 +684,16 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
 				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: "test-serviceclass",
-					ClusterServicePlanExternalName:  "test-plan",
+					ClusterServiceClassExternalName: clusterServiceClassExternalName,
+					ClusterServicePlanExternalName:  clusterServicePlanExternalName,
 				},
 			},
 		}
-		if tc.newSpecChange {
+		if tc.specChange {
 			newInstance.Generation = oldInstance.Generation + 1
 		} else {
 			newInstance.Generation = oldInstance.Generation
 		}
-		newInstance.Status.ReconciledGeneration = 1
 
 		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
