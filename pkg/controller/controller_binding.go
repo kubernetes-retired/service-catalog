@@ -181,12 +181,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 	glog.V(6).Info(pcb.Messagef(`beginning to process resourceVersion: %v`, binding.ResourceVersion))
 
 	if binding.Status.AsyncOpInProgress {
-		toUpdate, err := makeServiceBindingClone(binding)
-		if err != nil {
-			return err
-		}
-
-		return c.pollServiceBinding(toUpdate)
+		return c.pollServiceBinding(binding)
 	}
 
 	if isServiceBindingFailed(binding) && binding.ObjectMeta.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress {
@@ -1282,6 +1277,11 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Name, binding.Namespace)
 
 	glog.V(4).Infof(pcb.Message("Processing"))
+
+	binding, err := makeServiceBindingClone(binding)
+	if err != nil {
+		return err
+	}
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
