@@ -33,7 +33,7 @@ func Install(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *r
 		&announced.GroupMetaFactoryArgs{
 			GroupName:                  servicecatalog.GroupName,
 			VersionPreferenceOrder:     []string{v1beta1.SchemeGroupVersion.Version},
-			RootScopedKinds:            sets.NewString("ClusterServiceBroker", "ClusterServiceClass", "ClusterServicePlan"),
+			RootScopedKinds:            sets.NewString("ClusterServiceBroker", "ClusterServiceClass", "ClusterServicePlan", "ClusterID"),
 			AddInternalObjectsToScheme: servicecatalog.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{

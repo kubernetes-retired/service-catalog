@@ -71,11 +71,19 @@ func TestV1Alpha1Storage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting v1beta1 storage (%s)", err)
 	}
+
+	_, clusteridStorageExists := storageMap["clusterids"]
+	if !clusteridStorageExists {
+		t.Fatalf("no clusterid storage found")
+	}
+	// TODO: do stuff with clusterid storage
+
 	_, brokerStorageExists := storageMap["clusterservicebrokers"]
 	if !brokerStorageExists {
 		t.Fatalf("no broker storage found")
 	}
 	// TODO: do stuff with broker storage
+
 	_, brokerStatusStorageExists := storageMap["clusterservicebrokers/status"]
 	if !brokerStatusStorageExists {
 		t.Fatalf("no service broker status storage found")

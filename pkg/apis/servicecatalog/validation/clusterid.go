@@ -15,3 +15,25 @@ limitations under the License.
 */
 
 package validation
+
+import (
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+)
+
+// ValidateClusterID validates a single clusterid
+func ValidateClusterID(broker *sc.ClusterID) field.ErrorList {
+	allErrs := field.ErrorList{}
+	return allErrs
+}
+
+// ValidateClusterIDUpdate validates an update of a clusterid
+func ValidateClusterIDUpdate(new *sc.ClusterID, old *sc.ClusterID) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if new.ID != old.ID {
+		allErrs = append(allErrs, field.Required(field.NewPath("spec"),
+			"ID cannot change. New ID must equal Old ID."))
+	}
+	return allErrs
+}
