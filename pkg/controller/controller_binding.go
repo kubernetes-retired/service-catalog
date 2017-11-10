@@ -586,6 +586,13 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 		// The Bind request has returned successfully from the Broker. Continue
 		// with the success case of creating the ServiceBinding.
+
+		// Save off the external properties here even if the subsequent
+		// credentials injection fails. The Broker has already processed the
+		// request, so this is what the Broker knows about the state of the
+		// binding.
+		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
+
 		err = c.injectServiceBinding(binding, response.Credentials)
 		if err != nil {
 			s := fmt.Sprintf(`Error injecting binding results: %s`, err)
@@ -619,7 +626,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			return err
 		}
 
-		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
 		clearServiceBindingCurrentOperation(toUpdate)
 
 		setServiceBindingCondition(
@@ -1530,7 +1536,6 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		// Update the in progress/external properties, as the changes have been
 		// persisted in the broker
 		binding.Status.ExternalProperties = binding.Status.InProgressProperties
-		binding.Status.InProgressProperties = nil
 
 		getBindingRequest := &osb.GetBindingRequest{
 			InstanceID: instance.Spec.ExternalID,
