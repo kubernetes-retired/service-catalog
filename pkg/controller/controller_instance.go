@@ -756,7 +756,11 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		// Only send the parameters if they have changed from what the Broker has
 		if toUpdate.Status.ExternalProperties == nil ||
 			toUpdate.Status.InProgressProperties.ParametersChecksum != toUpdate.Status.ExternalProperties.ParametersChecksum {
-			updateRequest.Parameters = parameters
+			if parameters != nil {
+				updateRequest.Parameters = parameters
+			} else {
+				updateRequest.Parameters = make(map[string]interface{})
+			}
 		}
 		currentOperation = v1beta1.ServiceInstanceOperationUpdate
 		provisionOrUpdateText = "update"
