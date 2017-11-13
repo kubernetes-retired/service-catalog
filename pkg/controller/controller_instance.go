@@ -660,14 +660,14 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	if err != nil {
 		glog.Warning(pcb.Message(err.Error()))
 		c.recorder.Event(toUpdate, corev1.EventTypeWarning, errorWithParameters, err.Error())
-		setCondition(
+		setServiceInstanceCondition(
 			toUpdate,
-			ConditionReady,
+			v1beta1.ServiceInstanceConditionReady,
 			v1beta1.ConditionFalse,
 			errorWithParameters,
 			err.Error(),
 		)
-		if _, err := c.updateStatus(toUpdate, pcb); err != nil {
+		if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 			return err
 		}
 		return err

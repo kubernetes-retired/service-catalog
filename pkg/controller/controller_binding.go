@@ -343,14 +343,14 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		if err != nil {
 			glog.Warning(pcb.Message(err.Error()))
 			c.recorder.Event(toUpdate, corev1.EventTypeWarning, errorWithParameters, err.Error())
-			setCondition(
+			setServiceBindingCondition(
 				toUpdate,
-				ConditionReady,
+				v1beta1.ServiceBindingConditionReady,
 				v1beta1.ConditionFalse,
 				errorWithParameters,
 				err.Error(),
 			)
-			if _, err := c.updateStatus(toUpdate, pcb); err != nil {
+			if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 				return err
 			}
 		}
