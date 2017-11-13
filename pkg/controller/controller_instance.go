@@ -896,16 +896,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 
 		urlErr, ok := err.(*url.Error)
 		if ok && urlErr.Timeout() {
-			var (
-				reason  string
-				message string
-			)
-			if isProvisioning {
-				reason = errorErrorCallingProvisionReason
-			} else {
-				reason = errorErrorCallingUpdateInstanceReason
-			}
-			message = "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
+			message := "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
 			// Communication to the broker timed out. Treat as terminal failure and
 			// begin orphan mitigation.
 
