@@ -1032,13 +1032,13 @@ func TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference(t *
 			ExternalID:         testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
 	err := testController.reconcileServiceBinding(binding)
-	if err == nil {
-		t.Fatal("serviceclassref was nil + generation was 1: reconcile should abort the binding")
+	if err != nil {
+		t.Fatal("should have deleted the binding")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
