@@ -291,7 +291,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			s,
 		)
 		clearServiceBindingCurrentOperation(toUpdate)
-		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
 		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
 			return err
 		}
@@ -629,7 +628,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		}
 
 		clearServiceBindingCurrentOperation(toUpdate)
-		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
 
 		setServiceBindingCondition(
 			toUpdate,
@@ -824,9 +822,9 @@ func (c *controller) serviceBindingRequestUnbinding(binding *v1beta1.ServiceBind
 	}
 
 	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
-		// Do not retry if the user wants to cancel/abort a binding request.
-		// This is a special case where no service class is resolved and a binding delete request
-		// has come in in the mean time. In general this should be fixed more generally per issue #1524.
+		// TODO(#1562): ultimately here we need to use logic similar to what is done to determine the plan ID for
+		// deprovisioning. We need to allow a ServiceBinding to be deleted, with an unbind request sent to the broker,
+		// even if the ServiceInstance has been changed to a non-existent plan.
 		return false, fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
 	}
 
