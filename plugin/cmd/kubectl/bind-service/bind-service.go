@@ -28,19 +28,20 @@ import (
 )
 
 const usage = `Usage:
-  kubectl plugin bind-service INSTANCE_NAME BINDING_NAME NAMESPACE`
+  kubectl plugin bind-service INSTANCE_NAME BINDING_NAME [--namespace]`
 
 func main() {
+	namespace := utils.Namespace()
 	svcURL := utils.SCUrlEnv()
 
-	if len(os.Args) != 4 {
+	if len(os.Args) != 3 {
 		utils.Exit1(usage)
 	}
 
 	binding := v1beta1.ServiceBinding{}
 	binding.Kind = "binding"
 	binding.Name = os.Args[2]
-	binding.Namespace = os.Args[3]
+	binding.Namespace = namespace
 	binding.Spec.ServiceInstanceRef = v1beta1.LocalObjectReference{
 		Name: os.Args[1],
 	}

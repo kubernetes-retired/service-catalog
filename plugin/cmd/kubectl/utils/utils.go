@@ -19,6 +19,8 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -35,18 +37,47 @@ type metadata struct {
 // KubeGet makes a --raw GET call to the specified core api server endpoint.
 // The "endpoint" parameter must begin without a slash and contain both a
 // <resource_kind_plural>/<resource_name>: namespaces/foo
-func KubeGet(endpoint string) ([]byte, error) {
+func KubeGet(endpoint string) (stdout, stderr io.ReadCloser, err error) {
+	v, logLevel := Loglevel()
 	caller := os.Getenv("KUBECTL_PLUGINS_CALLER")
-	kubeCmd := exec.Command(caller, "get", "--raw", "/api/v1/"+endpoint)
-	return kubeCmd.Output()
+	kubeCmd := exec.Command(caller, "--namespace", Namespace(), v, logLevel, "get", "--raw", "/api/v1/"+endpoint)
+
+	stdout, err = kubeCmd.StdoutPipe()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	stderr, err = kubeCmd.StderrPipe()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = kubeCmd.Start()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return stdout, stderr, nil
 }
 
 // CheckNamespaceExists will query our kube apiserver to see if the
 // specified namespace exists - if not it returns an error
 func CheckNamespaceExists(name string) error {
-	result, err := KubeGet("namespaces/" + name)
+	stdout, stderr, err := KubeGet("namespaces/" + name)
 	if err != nil {
 		return fmt.Errorf("error: unable to perform namespace lookup: %v", err)
+	}
+	defer stdout.Close()
+	defer stderr.Close()
+
+	result, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		return fmt.Errorf("error: unable to read standard output while performing a namespace lookup: %v", err)
+	}
+
+	errOutput, err := ioutil.ReadAll(stderr)
+	if err == nil && len(errOutput) > 0 {
+		fmt.Fprintf(os.Stderr, "%v\n", string(errOutput))
 	}
 
 	ns := namespace{}
@@ -65,6 +96,23 @@ func CheckNamespaceExists(name string) error {
 // SCUrlEnv will return the value of the SERVICE_CATALOG_URL env var
 func SCUrlEnv() string {
 	return os.Getenv("SERVICE_CATALOG_URL")
+}
+
+// Namespace will return the value of KUBECTL_PLUGINS_CURRENT_NAMESPACE env var
+func Namespace() string {
+	return os.Getenv("KUBECTL_PLUGINS_CURRENT_NAMESPACE")
+}
+
+func Loglevel() (flagName, flagValue string) {
+	kubeLoglevel := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_V")
+	otherLoglevel := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_LOGLEVEL")
+	if len(otherLoglevel) > 0 {
+		return "--loglevel", otherLoglevel
+	}
+	if len(kubeLoglevel) == 0 {
+		kubeLoglevel = "0"
+	}
+	return "--v", kubeLoglevel
 }
 
 // Exit1 will print the specified error string to the screen and

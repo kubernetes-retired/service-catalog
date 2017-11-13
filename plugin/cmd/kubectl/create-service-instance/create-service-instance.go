@@ -28,19 +28,20 @@ import (
 )
 
 const usage = `Usage:
-  kubectl plugin create-service-instance SERVICE_CLASS_NAME PLAN_NAME INSTANCE_NAME NAMESPACE`
+  kubectl plugin create-service-instance SERVICE_CLASS_NAME PLAN_NAME INSTANCE_NAME`
 
 func main() {
+	namespace := utils.Namespace()
 	svcURL := utils.SCUrlEnv()
 
-	if len(os.Args) != 5 {
+	if len(os.Args) != 4 {
 		utils.Exit1(usage)
 	}
 
 	instance := v1beta1.ServiceInstance{}
 	instance.Kind = "Instance"
 	instance.Name = os.Args[3]
-	instance.Namespace = os.Args[4]
+	instance.Namespace = namespace
 	instance.Spec.ClusterServicePlanRef.Name = os.Args[2]
 	instance.Spec.ClusterServiceClassRef.Name = os.Args[1]
 
