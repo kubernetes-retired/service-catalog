@@ -25,6 +25,10 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
+// This multiplexer extension is to allow the writing of generic functions that
+// perform the same actions of multiple types of objects where the actions are
+// the same but the implementations are tied to the object Type.
+
 // Conditions
 
 // ConditionType can be translated to a ServiceInstanceCondition or
@@ -41,11 +45,9 @@ const (
 	ConditionFailed ConditionType = "Failed"
 )
 
-// setCondition sets a single condition on a type's status. This delegates to
-// the correct type implementation.
-//
-// Note: objects coming from informers should never be mutated; always pass a
-// deep copy as the instance parameter.
+// setCondition sets a single condition on a objects status. This delegates to
+// the correct implementation for obj based on Type inspection, calls the
+// appropriate setService[Instance|Binding]Condition function.
 func setCondition(obj interface{},
 	condition ConditionType,
 	status v1beta1.ConditionStatus,
@@ -84,7 +86,8 @@ func setCondition(obj interface{},
 
 // Status
 
-// updateStatus inspects then updates status based on type
+// updateStatus inspects obj's Type to delegate to the appropriate ServiceInstance
+// or ServiceBinding implementations of updateService[Instance|Binding]Status.
 func (c *controller) updateStatus(obj interface{}, pcb *pretty.ContextBuilder) (interface{}, error) {
 	switch toUpdate := obj.(type) {
 	case *v1beta1.ServiceInstance:

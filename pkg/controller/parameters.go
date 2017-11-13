@@ -135,7 +135,11 @@ func generateChecksumOfParameters(params map[string]interface{}) (string, error)
 
 // prepareInProgressPropertyParameters generates the required parameters for setting
 // the in-progress status of a Type.
-// Returns (parameters, parametersChecksum, rawParametersWithRedaction, err)
+// Returns (parameters, parametersChecksum, rawParametersWithRedaction, err) where
+// 1 - a map of parameters to send to the Broker, including secret values.
+// 2 - a checksum for the map of parameters. This checksum is used to determine if parameters have changed.
+// 3 - the map of parameters marshaled into JSON as a RawExtension
+// 4 - any error that caused the function to fail.
 func prepareInProgressPropertyParameters(kubeClient kubernetes.Interface, namespace string, specParameters *runtime.RawExtension, specParametersFrom []v1beta1.ParametersFromSource) (map[string]interface{}, string, *runtime.RawExtension, error) {
 	var (
 		parameters                 map[string]interface{}
