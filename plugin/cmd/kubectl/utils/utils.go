@@ -19,8 +19,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 )
@@ -34,47 +32,31 @@ type metadata struct {
 	Name string `json:"name"`
 }
 
+// KubeGet makes a --raw GET call to the specified core api server endpoint.
+// The "endpoint" parameter must begin without a slash and contain both a
+// <resource_kind_plural>/<resource_name>: namespaces/foo
+func KubeGet(endpoint string) ([]byte, error) {
+	caller := os.Getenv("KUBECTL_PLUGINS_CALLER")
+	kubeCmd := exec.Command(caller, "get", "--raw", "/api/v1/"+endpoint)
+	return kubeCmd.Output()
+}
+
 // CheckNamespaceExists will query our kube apiserver to see if the
 // specified namespace exists - if not it returns an error
 func CheckNamespaceExists(name string) error {
-	proxyURL := "http://127.0.0.1"
-	proxyPort := "8881"
-
-	kubeProxy := exec.Command("kubectl", "proxy", "-p", proxyPort)
-	defer func() {
-		if err := kubeProxy.Process.Kill(); err != nil {
-			Exit1(fmt.Sprintf("failed to kill kubectl proxy (%s)", err))
-		}
-	}()
-
-	err := kubeProxy.Start()
+	result, err := KubeGet("namespaces/" + name)
 	if err != nil {
-		return fmt.Errorf("Cannot start kubectl proxy (%s)", err)
-	}
-
-	resp, err := http.Get(fmt.Sprintf("%s:%s/api/v1/namespaces/%s", proxyURL, proxyPort, name))
-	if err != nil {
-		return fmt.Errorf("Error looking up namespace from core api server (%s)", err)
-	}
-
-	defer func() {
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error retrieving core api server response body during namespace lookup (%s)", err)
+		return fmt.Errorf("error: unable to perform namespace lookup: %v", err)
 	}
 
 	ns := namespace{}
-	err = json.Unmarshal(body, &ns)
+	err = json.Unmarshal(result, &ns)
 	if err != nil {
-		return fmt.Errorf("Error parsing core api server response body during namespace lookup (%s)", err)
+		return fmt.Errorf("error: unable to parse core api server response during namespace lookup: %v", err)
 	}
 
-	if ns.Code == 404 || ns.Metadata.Name == "" {
-		return fmt.Errorf("Namespace not found")
+	if ns.Code == 404 || len(ns.Metadata.Name) == 0 {
+		return fmt.Errorf("error: namespace %q does not exist", name)
 	}
 
 	return nil
@@ -82,11 +64,7 @@ func CheckNamespaceExists(name string) error {
 
 // SCUrlEnv will return the value of the SERVICE_CATALOG_URL env var
 func SCUrlEnv() string {
-	url := os.Getenv("SERVICE_CATALOG_URL")
-	if url == "" {
-		return ""
-	}
-	return url
+	return os.Getenv("SERVICE_CATALOG_URL")
 }
 
 // Exit1 will print the specified error string to the screen and

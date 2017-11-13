@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/plugin/cmd/kubectl/utils"
 
