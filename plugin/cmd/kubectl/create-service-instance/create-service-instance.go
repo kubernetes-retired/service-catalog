@@ -20,51 +20,34 @@ import (
 	"fmt"
 	"os"
 
-	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/plugin/cmd/kubectl/utils"
-
-	"k8s.io/client-go/rest"
 )
 
 const usage = `Usage:
   kubectl plugin create-service-instance SERVICE_CLASS_NAME PLAN_NAME INSTANCE_NAME`
 
 func main() {
-	namespace := utils.Namespace()
-	svcURL := utils.SCUrlEnv()
-
 	if len(os.Args) != 4 {
 		utils.Exit1(usage)
 	}
 
+	scClient, config := utils.NewClient()
+
 	instance := v1beta1.ServiceInstance{}
 	instance.Kind = "Instance"
 	instance.Name = os.Args[3]
-	instance.Namespace = namespace
+	instance.Namespace = utils.Namespace()
 	instance.Spec.ClusterServicePlanRef.Name = os.Args[2]
 	instance.Spec.ClusterServiceClassRef.Name = os.Args[1]
 
-	fmt.Printf("Looking up Namespace %s...\n", utils.Entity(instance.Namespace))
-	if err := utils.CheckNamespaceExists(instance.Namespace); err != nil {
-		utils.Exit1(err.Error())
-	}
+	utils.CheckNamespaceExists(instance.Namespace, config)
 	utils.Ok()
 
-	restConfig := rest.Config{
-		Host:    svcURL,
-		APIPath: "/apis/servicecatalog.k8s.io/v1beta1",
-	}
-
-	svcClient, err := clientset.NewForConfig(&restConfig)
-	if err != nil {
-		utils.Exit1(fmt.Sprintf("Failed to initializing client for service catalog (%s)", err))
-	}
-
 	fmt.Printf("Creating service instance %s in Namespace %s...\n", utils.Entity(instance.Name), utils.Entity(instance.Namespace))
-	resp, err := svcClient.ServiceInstances(instance.Namespace).Create(&instance)
+	resp, err := scClient.ServicecatalogV1beta1().ServiceInstances(instance.Namespace).Create(&instance)
 	if err != nil {
-		utils.Exit1(fmt.Sprintf("Failed to creating service instance (%s)", err))
+		utils.Exit1(fmt.Sprintf("Failed to create service instance (%s)", err))
 	}
 	utils.Ok()
 

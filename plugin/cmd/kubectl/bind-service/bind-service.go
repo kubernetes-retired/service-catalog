@@ -20,54 +20,37 @@ import (
 	"fmt"
 	"os"
 
-	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/plugin/cmd/kubectl/utils"
-
-	"k8s.io/client-go/rest"
 )
 
 const usage = `Usage:
   kubectl plugin bind-service INSTANCE_NAME BINDING_NAME [--namespace]`
 
 func main() {
-	namespace := utils.Namespace()
-	svcURL := utils.SCUrlEnv()
-
 	if len(os.Args) != 3 {
 		utils.Exit1(usage)
 	}
 
+	scClient, config := utils.NewClient()
+
 	binding := v1beta1.ServiceBinding{}
 	binding.Kind = "binding"
 	binding.Name = os.Args[2]
-	binding.Namespace = namespace
+	binding.Namespace = utils.Namespace()
 	binding.Spec.ServiceInstanceRef = v1beta1.LocalObjectReference{
 		Name: os.Args[1],
 	}
 	binding.Spec.SecretName = os.Args[2]
 
-	fmt.Printf("Looking up Namespace %s...\n", utils.Entity(binding.Namespace))
-	if err := utils.CheckNamespaceExists(binding.Namespace); err != nil {
-		utils.Exit1(err.Error())
-	}
+	utils.CheckNamespaceExists(binding.Namespace, config)
 	utils.Ok()
-
-	restConfig := rest.Config{
-		Host:    svcURL,
-		APIPath: "/apis/servicecatalog.k8s.io/v1beta1",
-	}
-
-	svcClient, err := clientset.NewForConfig(&restConfig)
-	if err != nil {
-		utils.Exit1(fmt.Sprintf("Error initializing client for service catalog (%s)", err))
-	}
 
 	fmt.Printf("Creating binding %s to %s in Namespace %s...\n",
 		utils.Entity(binding.Name),
 		utils.Entity(binding.Spec.ServiceInstanceRef.Name),
 		utils.Entity(binding.Namespace))
-	resp, err := svcClient.ServiceBindings(binding.Namespace).Create(&binding)
+	resp, err := scClient.ServicecatalogV1beta1().ServiceBindings(binding.Namespace).Create(&binding)
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Error binding service instance (%s)", err))
 	}
