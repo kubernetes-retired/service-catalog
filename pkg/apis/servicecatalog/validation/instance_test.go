@@ -82,6 +82,17 @@ func validServiceInstanceWithInProgressProvision() *servicecatalog.ServiceInstan
 	return instance
 }
 
+func validServiceInstanceWithInProgressDeprovision() *servicecatalog.ServiceInstance {
+	instance := validServiceInstance()
+	instance.Generation = 2
+	instance.Status.ReconciledGeneration = 1
+	instance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationDeprovision
+	now := metav1.Now()
+	instance.Status.OperationStartTime = &now
+	instance.Status.ExternalProperties = validServiceInstancePropertiesState()
+	return instance
+}
+
 func validServiceInstancePropertiesState() *servicecatalog.ServiceInstancePropertiesState {
 	return &servicecatalog.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: "plan-name",
@@ -516,10 +527,69 @@ func TestValidateServiceInstance(t *testing.T) {
 			valid:  false,
 		},
 		{
-			name: "in-progress operation with missing service plan ref",
+			name: "in-progress provision with missing service plan ref",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
 				i.Spec.ClusterServicePlanRef = nil
+				return i
+			}(),
+			create: false,
+			valid:  false,
+		},
+		{
+			name:     "valid in-progress deprovision",
+			instance: validServiceInstanceWithInProgressDeprovision(),
+			create:   false,
+			valid:    true,
+		},
+		{
+			name: "in-progress deprovision with missing service plan ref",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressDeprovision()
+				i.Spec.ClusterServicePlanRef = nil
+				return i
+			}(),
+			create: false,
+			valid:  true,
+		},
+		{
+			name: "in-progress deprovision with missing external properties",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressDeprovision()
+				i.Status.ExternalProperties = nil
+				return i
+			}(),
+			create: false,
+			valid:  true,
+		},
+		{
+			name: "in-progress deprovision with missing external properties plan ID",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressDeprovision()
+				i.Status.ExternalProperties.ClusterServicePlanExternalID = ""
+				return i
+			}(),
+			create: false,
+			// not valid because ClusterServicePlanExternalID is required when ExternalProperties is present
+			valid: false,
+		},
+		{
+			name: "in-progress deprovision with missing service plan ref and external properties",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressDeprovision()
+				i.Spec.ClusterServicePlanRef = nil
+				i.Status.ExternalProperties = nil
+				return i
+			}(),
+			create: false,
+			valid:  false,
+		},
+		{
+			name: "in-progress deprovision with missing service plan ref and external properties plan ID",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressDeprovision()
+				i.Spec.ClusterServicePlanRef = nil
+				i.Status.ExternalProperties.ClusterServicePlanExternalID = ""
 				return i
 			}(),
 			create: false,
