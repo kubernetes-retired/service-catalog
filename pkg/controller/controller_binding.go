@@ -207,13 +207,16 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			return nil
 		}
 	}
+	if binding.DeletionTimestamp != nil || binding.Status.OrphanMitigationInProgress {
+		return c.reconcileServiceBindingDelete(binding)
+	}
+
+	glog.V(4).Info(pcb.Message("Processing"))
 
 	toUpdate, err := makeServiceBindingClone(binding)
 	if err != nil {
 		return err
 	}
-
-	glog.V(4).Info(pcb.Message("Processing"))
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
@@ -451,6 +454,8 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 			request.OriginatingIdentity = originatingIdentity
 		}
 
+		toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusRequired
+
 		if toUpdate.Status.CurrentOperation == "" {
 			toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationBind)
 			if err != nil {
@@ -645,119 +650,234 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		return nil
 	}
 
-	// All updates not having a DeletingTimestamp will have been handled above
-	// and returned early, except in the case of orphan mitigation. Otherwise,
-	// when we reach this point, we're dealing with an update that's actually
-	// a soft delete-- i.e. we have some finalization to do.
-	if finalizers := sets.NewString(binding.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) || binding.Status.OrphanMitigationInProgress {
-		err := c.ejectServiceBinding(binding)
+	return nil
+}
+
+func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBinding) error {
+	// All updates having a DeletingTimestamp will have been handled here.
+	// We're dealing with an update that's actually a soft delete-- i.e. we
+	// have some finalization to do.
+
+	if binding.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress {
+		// nothing to do...
+		return nil
+	}
+
+	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	glog.V(4).Info(pcb.Message("Processing Delete"))
+
+	finalizerToken := v1beta1.FinalizerServiceCatalog
+	finalizers := sets.NewString(binding.Finalizers...)
+	if !finalizers.Has(finalizerToken) {
+		return nil
+	}
+
+	// If unbind has failed, do not do anything more
+	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusFailed {
+		glog.V(4).Info(pcb.Message("Not processing delete event because unbinding has failed"))
+		return nil
+	}
+
+	toUpdate, err := makeServiceBindingClone(binding)
+	if err != nil {
+		return err
+	}
+
+	// If unbinding succeeded or is not needed, then clear out the finalizers
+	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusNotRequired ||
+		binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusSucceeded {
+
+		glog.V(5).Info(pcb.Message("Clearing catalog finalizer"))
+
+		// Clear the finalizer
+		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+		toUpdate.Finalizers = finalizers.List()
+
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	err = c.ejectServiceBinding(binding)
+	if err != nil {
+		s := fmt.Sprintf(`Error deleting secret: %s`, err)
+		glog.Warning(pcb.Message(s))
+		c.recorder.Eventf(binding, corev1.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
+		setServiceBindingCondition(
+			toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionUnknown,
+			errorEjectingBindReason,
+			errorEjectingBindMessage+s,
+		)
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if toUpdate.DeletionTimestamp == nil {
+		if toUpdate.Status.OperationStartTime == nil {
+			now := metav1.Now()
+			toUpdate.Status.OperationStartTime = &now
+		}
+	} else {
+		if toUpdate.Status.CurrentOperation != v1beta1.ServiceBindingOperationUnbind {
+			// Cancel any pending orphan mitigation since the resource is being deleted
+			toUpdate.Status.OrphanMitigationInProgress = false
+
+			toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationUnbind)
+			if err != nil {
+				// There has been an update to the binding. Start reconciliation
+				// over with a fresh view of the binding.
+				return err
+			}
+		}
+	}
+
+	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusRequired {
+		if ok, err := c.serviceBindingRequestUnbinding(binding, toUpdate, pcb); !ok || err != nil {
+			return err
+		}
+	}
+
+	if toUpdate.Status.OrphanMitigationInProgress {
+		s := "Orphan mitigation successful"
+		setServiceBindingCondition(toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
+			successOrphanMitigationReason,
+			s)
+	} else {
+		s := "The binding was deleted successfully"
+		setServiceBindingCondition(
+			toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
+			successUnboundReason,
+			s,
+		)
+		// Clear the finalizer
+		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+		toUpdate.Finalizers = finalizers.List()
+	}
+
+	toUpdate.Status.ExternalProperties = nil
+	clearServiceBindingCurrentOperation(toUpdate)
+	if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+		return err
+	}
+
+	c.recorder.Event(binding, corev1.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
+	glog.V(5).Info(pcb.Message("Successfully deleted ServiceBinding"))
+
+	return nil
+}
+
+// serviceBindingRequestUnbinding validates and makes the binding request to the broker.
+// Returns if reconciliation should continue and any error produced.
+func (c *controller) serviceBindingRequestUnbinding(binding *v1beta1.ServiceBinding, toUpdate *v1beta1.ServiceBinding, pcb *pretty.ContextBuilder) (bool, error) {
+	glog.V(4).Info(pcb.Message("Going to make request to unbind"))
+	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
+	if err != nil {
+		s := fmt.Sprintf(
+			`References a non-existent %s "%s/%s"`,
+			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+		)
+		glog.Warningf(pcb.Messagef("%s (%s)", s, err))
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentServiceInstanceReason, s)
+		setServiceBindingCondition(
+			toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
+			errorNonexistentServiceInstanceReason,
+			"The binding references an ServiceInstance that does not exist. "+s,
+		)
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return false, err
+
+		}
+		return false, err
+	}
+
+	if instance.Status.AsyncOpInProgress {
+		s := fmt.Sprintf(
+			`trying to unbind to %s "%s/%s" that has ongoing asynchronous operation`,
+			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+		)
+		glog.Info(pcb.Message(s))
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorWithOngoingAsyncOperation, s)
+		setServiceBindingCondition(
+			toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
+			errorWithOngoingAsyncOperation,
+			errorWithOngoingAsyncOperationMessage,
+		)
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return false, err
+		}
+		return false, fmt.Errorf("Ongoing Asynchronous operation")
+	}
+
+	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
+		// TODO(#1562): ultimately here we need to use logic similar to what is done to determine the plan ID for
+		// deprovisioning. We need to allow a ServiceBinding to be deleted, with an unbind request sent to the broker,
+		// even if the ServiceInstance has been changed to a non-existent plan.
+		return false, fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
+	}
+
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
+	if err != nil {
+		return false, err // retry later
+	}
+
+	unbindRequest := &osb.UnbindRequest{
+		BindingID:  binding.Spec.ExternalID,
+		InstanceID: instance.Spec.ExternalID,
+		ServiceID:  serviceClass.Spec.ExternalID,
+		PlanID:     servicePlan.Spec.ExternalID,
+	}
+
+	// Asynchronous binding operations is currently ALPHA and not
+	// enabled by default. To use this feature, you must enable the
+	// AsyncBindingOperations feature gate. This may be easily set
+	// by setting `asyncBindingOperationsEnabled=true` when
+	// deploying the Service Catalog via the Helm charts.
+	if serviceClass.Spec.BindingRetrievable &&
+		utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+
+		unbindRequest.AcceptsIncomplete = true
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
 		if err != nil {
-			s := fmt.Sprintf(`Error deleting secret: %s`, err)
+			s := fmt.Sprintf(`Error building originating identity headers while unbinding: %v`, err)
 			glog.Warning(pcb.Message(s))
-			c.recorder.Eventf(binding, corev1.EventTypeWarning, errorEjectingBindReason, "%v %v", errorEjectingBindMessage, s)
+			c.recorder.Event(binding, corev1.EventTypeWarning, errorWithOriginatingIdentity, s)
 			setServiceBindingCondition(
 				toUpdate,
 				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionUnknown,
-				errorEjectingBindReason,
-				errorEjectingBindMessage+s,
+				v1beta1.ConditionFalse,
+				errorWithOriginatingIdentity,
+				s,
 			)
 			if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-				return err
+				return false, err
 			}
-			return err
+			return false, err
 		}
+		unbindRequest.OriginatingIdentity = originatingIdentity
+	}
 
-		unbindRequest := &osb.UnbindRequest{
-			BindingID:  binding.Spec.ExternalID,
-			InstanceID: instance.Spec.ExternalID,
-			ServiceID:  serviceClass.Spec.ExternalID,
-			PlanID:     servicePlan.Spec.ExternalID,
-		}
-
-		// Asynchronous binding operations is currently ALPHA and not
-		// enabled by default. To use this feature, you must enable the
-		// AsyncBindingOperations feature gate. This may be easily set
-		// by setting `asyncBindingOperationsEnabled=true` when
-		// deploying the Service Catalog via the Helm charts.
-		if serviceClass.Spec.BindingRetrievable &&
-			utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
-
-			unbindRequest.AcceptsIncomplete = true
-		}
-
-		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
-			originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
-			if err != nil {
-				s := fmt.Sprintf(`Error building originating identity headers while unbinding: %v`, err)
-				glog.Warning(pcb.Message(s))
-				c.recorder.Event(binding, corev1.EventTypeWarning, errorWithOriginatingIdentity, s)
-				setServiceBindingCondition(
-					toUpdate,
-					v1beta1.ServiceBindingConditionReady,
-					v1beta1.ConditionFalse,
-					errorWithOriginatingIdentity,
-					s,
-				)
-				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-					return err
-				}
-				return err
-			}
-			unbindRequest.OriginatingIdentity = originatingIdentity
-		}
-
-		if toUpdate.DeletionTimestamp == nil {
-			if toUpdate.Status.OperationStartTime == nil {
-				now := metav1.Now()
-				toUpdate.Status.OperationStartTime = &now
-			}
-		} else {
-			if toUpdate.Status.CurrentOperation != v1beta1.ServiceBindingOperationUnbind {
-				// Cancel any pending orphan mitigation since the resource is being deleted
-				toUpdate.Status.OrphanMitigationInProgress = false
-
-				toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationUnbind)
-				if err != nil {
-					// There has been an update to the binding. Start reconciliation
-					// over with a fresh view of the binding.
-					return err
-				}
-			}
-		}
-
-		response, err := brokerClient.Unbind(unbindRequest)
-		if err != nil {
-			if httpErr, ok := osb.IsHTTPError(err); ok {
-				s := fmt.Sprintf(
-					`Error unbinding from %s: %s`,
-					pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), httpErr.Error(),
-				)
-				glog.Warning(pcb.Message(s))
-				c.recorder.Event(binding, corev1.EventTypeWarning, errorUnbindCallReason, s)
-				setServiceBindingCondition(
-					toUpdate,
-					v1beta1.ServiceBindingConditionReady,
-					v1beta1.ConditionUnknown,
-					errorUnbindCallReason,
-					"Unbind call failed. "+s)
-				if !toUpdate.Status.OrphanMitigationInProgress {
-					setServiceBindingCondition(
-						toUpdate,
-						v1beta1.ServiceBindingConditionFailed,
-						v1beta1.ConditionTrue,
-						errorUnbindCallReason,
-						"Unbind call failed. "+s)
-				}
-				clearServiceBindingCurrentOperation(toUpdate)
-				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-					return err
-				}
-				return nil
-			}
+	response, err := brokerClient.Unbind(unbindRequest)
+	if err != nil {
+		if httpErr, ok := osb.IsHTTPError(err); ok {
 			s := fmt.Sprintf(
 				`Error unbinding from %s: %s`,
-				pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), err,
+				pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), httpErr.Error(),
 			)
 			glog.Warning(pcb.Message(s))
 			c.recorder.Event(binding, corev1.EventTypeWarning, errorUnbindCallReason, s)
@@ -767,100 +887,95 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 				v1beta1.ConditionUnknown,
 				errorUnbindCallReason,
 				"Unbind call failed. "+s)
-
-			if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-				if toUpdate.Status.OrphanMitigationInProgress {
-					s := "Stopping reconciliation retries, too much time has elapsed during orphan mitigation"
-					glog.Info(pcb.Message(s))
-					c.recorder.Event(binding, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-				} else {
-					s := "Stopping reconciliation retries, too much time has elapsed"
-					glog.Info(pcb.Message(s))
-					c.recorder.Event(binding, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
-					setServiceBindingCondition(toUpdate,
-						v1beta1.ServiceBindingConditionFailed,
-						v1beta1.ConditionTrue,
-						errorReconciliationRetryTimeoutReason,
-						s)
-				}
-				clearServiceBindingCurrentOperation(toUpdate)
-				if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-					return err
-				}
-				return nil
+			if !toUpdate.Status.OrphanMitigationInProgress {
+				setServiceBindingCondition(
+					toUpdate,
+					v1beta1.ServiceBindingConditionFailed,
+					v1beta1.ConditionTrue,
+					errorUnbindCallReason,
+					"Unbind call failed. "+s)
 			}
-
+			clearServiceBindingCurrentOperation(toUpdate)
+			toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 			if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-				return err
+				return false, err
 			}
-			return err
+			return false, nil
 		}
+		s := fmt.Sprintf(
+			`Error unbinding from %s: %s`,
+			pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), err,
+		)
+		glog.Warning(pcb.Message(s))
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorUnbindCallReason, s)
+		setServiceBindingCondition(
+			toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionUnknown,
+			errorUnbindCallReason,
+			"Unbind call failed. "+s)
 
-		if response.Async {
-			glog.Info(pcb.Message("Received asynchronous unbind response"))
-
-			if response.OperationKey != nil && *response.OperationKey != "" {
-				key := string(*response.OperationKey)
-				toUpdate.Status.LastOperation = &key
+		if !time.Now().Before(toUpdate.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+			if toUpdate.Status.OrphanMitigationInProgress {
+				s := "Stopping reconciliation retries, too much time has elapsed during orphan mitigation"
+				glog.Info(pcb.Message(s))
+				c.recorder.Event(binding, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+			} else {
+				s := "Stopping reconciliation retries, too much time has elapsed"
+				glog.Info(pcb.Message(s))
+				c.recorder.Event(binding, corev1.EventTypeWarning, errorReconciliationRetryTimeoutReason, s)
+				setServiceBindingCondition(toUpdate,
+					v1beta1.ServiceBindingConditionFailed,
+					v1beta1.ConditionTrue,
+					errorReconciliationRetryTimeoutReason,
+					s)
 			}
-
-			toUpdate.Status.AsyncOpInProgress = true
-
-			setServiceBindingCondition(
-				toUpdate,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
-				asyncUnbindingReason,
-				asyncUnbindingMessage,
-			)
-
+			clearServiceBindingCurrentOperation(toUpdate)
+			toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 			if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-				return err
+				return false, err
 			}
-
-			if err := c.beginPollingServiceBinding(binding); err != nil {
-				return err
-			}
-
-			c.recorder.Eventf(binding, corev1.EventTypeNormal, asyncUnbindingReason, asyncUnbindingMessage)
-
-			return nil
+			return false, nil
 		}
 
-		if toUpdate.Status.OrphanMitigationInProgress {
-			s := "Orphan mitigation successful"
-			setServiceBindingCondition(toUpdate,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
-				successOrphanMitigationReason,
-				s)
-		} else {
-			s := "The binding was deleted successfully"
-			setServiceBindingCondition(
-				toUpdate,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
-				successUnboundReason,
-				s,
-			)
-			// Clear the finalizer
-			finalizers.Delete(v1beta1.FinalizerServiceCatalog)
-			toUpdate.Finalizers = finalizers.List()
-		}
-
-		toUpdate.Status.ExternalProperties = nil
-		clearServiceBindingCurrentOperation(toUpdate)
 		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-			return err
+			return false, err
+		}
+		return false, err
+	}
+
+	if response.Async {
+		glog.Info(pcb.Message("Received asynchronous unbind response"))
+
+		if response.OperationKey != nil && *response.OperationKey != "" {
+			key := string(*response.OperationKey)
+			toUpdate.Status.LastOperation = &key
 		}
 
-		c.recorder.Event(binding, corev1.EventTypeNormal, successUnboundReason, "This binding was deleted successfully")
-		glog.V(5).Info(pcb.Messagef(
-			"Successfully deleted ServiceBinding of %s",
-			pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName),
-		))
+		toUpdate.Status.AsyncOpInProgress = true
+
+		setServiceBindingCondition(
+			toUpdate,
+			v1beta1.ServiceBindingConditionReady,
+			v1beta1.ConditionFalse,
+			asyncUnbindingReason,
+			asyncUnbindingMessage,
+		)
+
+		if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
+			return false, err
+		}
+
+		if err := c.beginPollingServiceBinding(binding); err != nil {
+			return false, err
+		}
+
+		c.recorder.Eventf(binding, corev1.EventTypeNormal, asyncUnbindingReason, asyncUnbindingMessage)
+
+		return false, nil
 	}
-	return nil
+	toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
+	return true, nil
 }
 
 // isPlanBindable returns whether the given ClusterServiceClass and ClusterServicePlan
@@ -1212,6 +1327,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 		if deleting {
 			clearServiceBindingCurrentOperation(binding)
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 
 			if _, err := c.updateServiceBindingStatus(binding); err != nil {
 				return err
@@ -1279,6 +1395,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			}
 
 			clearServiceBindingCurrentOperation(binding)
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 			binding.Status.ExternalProperties = nil
 
 			setServiceBindingCondition(
@@ -1388,6 +1505,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			}
 
 			clearServiceBindingCurrentOperation(binding)
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 			binding.Status.ExternalProperties = nil
 
 			setServiceBindingCondition(
@@ -1533,6 +1651,10 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 		clearServiceBindingCurrentOperation(binding)
 
+		if deleting {
+			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
+		}
+
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
 			return err
 		}
@@ -1597,6 +1719,7 @@ func (c *controller) reconciliationRetryDurationExceededFinishPollingServiceBind
 
 	if deleting {
 		clearServiceBindingCurrentOperation(binding)
+		binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
 			return err
