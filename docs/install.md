@@ -129,6 +129,6 @@ executable.
 Use Helm to install the Service Catalog. From the root of this repository:
 
 ```console
-helm install svc-cat/catalog \
+helm install charts/catalog \
     --name catalog --namespace catalog
 ```
