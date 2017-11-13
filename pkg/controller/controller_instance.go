@@ -24,7 +24,6 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
@@ -652,70 +651,26 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		return err
 	}
 
-	var (
-		parameters                 map[string]interface{}
-		parametersChecksum         string
-		rawParametersWithRedaction *runtime.RawExtension
+	parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
+		c.kubeClient,
+		instance.Namespace,
+		instance.Spec.Parameters,
+		instance.Spec.ParametersFrom,
 	)
-	if instance.Spec.Parameters != nil || instance.Spec.ParametersFrom != nil {
-		var parametersWithSecretsRedacted map[string]interface{}
-		parameters, parametersWithSecretsRedacted, err = buildParameters(c.kubeClient, instance.Namespace, instance.Spec.ParametersFrom, instance.Spec.Parameters)
-		if err != nil {
-			s := fmt.Sprintf(`Failed to prepare ServiceInstance parameters %s: %s`, instance.Spec.Parameters, err)
-			glog.Warning(pcb.Message(s))
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorWithParameters, s)
-
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorWithParameters,
-				s,
-			)
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-
+	if err != nil {
+		glog.Warning(pcb.Message(err.Error()))
+		c.recorder.Event(toUpdate, corev1.EventTypeWarning, errorWithParameters, err.Error())
+		setServiceInstanceCondition(
+			toUpdate,
+			v1beta1.ServiceInstanceConditionReady,
+			v1beta1.ConditionFalse,
+			errorWithParameters,
+			err.Error(),
+		)
+		if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
 			return err
 		}
-
-		parametersChecksum, err = generateChecksumOfParameters(parameters)
-		if err != nil {
-			s := fmt.Sprintf("Failed to generate the parameters checksum to store in Status: %s", err)
-			glog.Info(pcb.Message(s))
-			c.recorder.Eventf(instance, corev1.EventTypeWarning, errorWithParameters, s)
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorWithParameters,
-				s)
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return err
-		}
-
-		marshalledParametersWithRedaction, err := MarshalRawParameters(parametersWithSecretsRedacted)
-		if err != nil {
-			s := fmt.Sprintf("Failed to marshal the parameters to store in the Status: %s", err)
-			glog.Info(pcb.Message(s))
-			c.recorder.Eventf(instance, corev1.EventTypeWarning, errorWithParameters, s)
-			setServiceInstanceCondition(
-				toUpdate,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorWithParameters,
-				s)
-			if _, err := c.updateServiceInstanceStatus(toUpdate); err != nil {
-				return err
-			}
-			return err
-		}
-
-		rawParametersWithRedaction = &runtime.RawExtension{
-			Raw: marshalledParametersWithRedaction,
-		}
+		return err
 	}
 
 	toUpdate.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
