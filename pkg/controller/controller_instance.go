@@ -408,8 +408,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	} else {
 		if toUpdate.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
-			// Cancel any pending orphan mitigation since the resource is being deleted
-			toUpdate.Status.OrphanMitigationInProgress = false
+			// Cancel any in-progress operation or pending orphan mitigation since the resource is being deleted.
+			// Do not update the reconciled generation since the operation was aborted and not finished.
+			currentReconciledGeneration := toUpdate.Status.ReconciledGeneration
+			clearServiceInstanceCurrentOperation(toUpdate)
+			toUpdate.Status.ReconciledGeneration = currentReconciledGeneration
 
 			toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1beta1.ServiceInstanceOperationDeprovision)
 			if err != nil {
