@@ -17,8 +17,10 @@ limitations under the License.
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,13 +29,30 @@ import (
 	kclientset "k8s.io/client-go/kubernetes"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	//clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 )
 
 // NewClient uses the KUBECONFIG environment variable to create a new client
 // based on an existing configuration
 func NewClient() (*clientset.Clientset, *restclient.Config) {
-	kubeconfig := os.Getenv("KUBECONFIG")
+	// resolve kubeconfig location, prioritizing the --config global flag,
+	// then the value of the KUBECONFIG env var (if any), and defaulting
+	// to ~/.kube/config as a last resort.
+	home := os.Getenv("HOME")
+	kubeconfig := home + "/.kube/config"
+
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	if len(kubeconfigEnv) > 0 {
+		kubeconfig = kubeconfigEnv
+	}
+
+	configFile := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CONFIG")
+	kubeConfigFile := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_KUBECONFIG")
+	if len(configFile) > 0 {
+		kubeconfig = configFile
+	} else if len(kubeConfigFile) > 0 {
+		kubeconfig = kubeConfigFile
+	}
+
 	if len(kubeconfig) == 0 {
 		Exit1(fmt.Sprintf("error iniializing client. The KUBECONFIG environment variable must be defined."))
 	}
@@ -43,12 +62,96 @@ func NewClient() (*clientset.Clientset, *restclient.Config) {
 		Exit1(fmt.Sprintf("error obtaining client configuration: %v", err))
 	}
 
+	applyGlobalOptionsToConfig(clientConfig)
+
 	c, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
 		Exit1(fmt.Sprintf("error obtaining a client from existing configuration: %v", err))
 	}
 
 	return c, clientConfig
+}
+
+func applyGlobalOptionsToConfig(config *restclient.Config) {
+	// impersonation config
+	impersonateUser := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_AS")
+	if len(impersonateUser) > 0 {
+		config.Impersonate.UserName = impersonateUser
+	}
+
+	impersonateGroup := []string{}
+	err := json.Unmarshal([]byte(os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_AS_GROUP")), &impersonateGroup)
+	if err != nil {
+		Exit1(fmt.Sprintf("error parsing global option %q: %v", "--as-group", err))
+	}
+	if len(impersonateGroup) > 0 {
+		config.Impersonate.Groups = impersonateGroup
+	}
+
+	// tls config
+
+	caFile := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CERTIFICATE_AUTHORITY")
+	if len(caFile) > 0 {
+		config.TLSClientConfig.CAFile = caFile
+	}
+
+	clientCertFile := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CLIENT_CERTIFICATE")
+	if len(clientCertFile) > 0 {
+		config.TLSClientConfig.CertFile = clientCertFile
+	}
+
+	clientKey := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CLIENT_KEY")
+	if len(clientKey) > 0 {
+		config.TLSClientConfig.KeyFile = clientKey
+	}
+
+	// kubeconfig config
+
+	cluster := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CLUSTER")
+	if len(cluster) > 0 {
+		// TODO(jvallejo): figure out how to override kubeconfig options
+	}
+
+	context := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CONTEXT")
+	if len(context) > 0 {
+		// TODO(jvallejo): figure out how to override kubeconfig options
+	}
+
+	user := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_USER")
+	if len(user) > 0 {
+		// TODO(jvallejo): figure out how to override kubeconfig options
+	}
+
+	// user / misc request config
+
+	requestTimeout := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_REQUEST_TIMEOUT")
+	if len(requestTimeout) > 0 {
+		t, err := time.ParseDuration(requestTimeout)
+		if err != nil {
+			Exit1(fmt.Sprintf("%v", err))
+		}
+		config.Timeout = t
+	}
+
+	server := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_SERVER")
+	if len(server) > 0 {
+		config.ServerName = server
+	}
+
+	token := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_TOKEN")
+	if len(token) > 0 {
+		config.BearerToken = token
+	}
+
+	username := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_USERNAME")
+	if len(username) > 0 {
+		config.Username = username
+	}
+
+	password := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_PASSWORD")
+	if len(password) > 0 {
+		config.Username = password
+	}
 }
 
 func clientFromConfig(path string) (*restclient.Config, string, error) {
