@@ -2681,9 +2681,10 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			CurrentOperation:   v1beta1.ServiceBindingOperationBind,
-			OperationStartTime: &startTime,
-			UnbindStatus:       v1beta1.ServiceBindingUnbindStatusRequired,
+			CurrentOperation:     v1beta1.ServiceBindingOperationBind,
+			OperationStartTime:   &startTime,
+			InProgressProperties: &v1beta1.ServiceBindingPropertiesState{},
+			UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
 		},
 	}
 
