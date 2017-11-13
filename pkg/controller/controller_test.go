@@ -2511,12 +2511,7 @@ func assertServiceBindingOperationSuccessWithParameters(t *testing.T, obj runtim
 	case v1beta1.ServiceBindingOperationUnbind:
 		reason = successUnboundReason
 		readyStatus = v1beta1.ConditionFalse
-		switch originalBinding.Status.UnbindStatus {
-		case v1beta1.ServiceBindingUnbindStatusNotRequired:
-			unbindStatus = v1beta1.ServiceBindingUnbindStatusNotRequired
-		default:
-			unbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
-		}
+		unbindStatus = v1beta1.ServiceBindingUnbindStatusSucceeded
 	}
 	assertServiceBindingReadyCondition(t, obj, readyStatus, reason)
 	assertServiceBindingCurrentOperationClear(t, obj)
