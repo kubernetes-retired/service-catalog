@@ -2481,7 +2481,7 @@ func assertServiceBindingOperationInProgressWithParameters(t *testing.T, obj run
 		assertServiceBindingInProgressPropertiesNil(t, obj)
 	}
 	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
-	assertServiceBindingUnbindStatus(t, obj, originalBinding.Status.UnbindStatus)
+	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
 }
 
 func assertServiceBindingStartingOrphanMitigation(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
@@ -2490,7 +2490,7 @@ func assertServiceBindingStartingOrphanMitigation(t *testing.T, obj runtime.Obje
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	assertServiceBindingOrphanMitigationSet(t, obj, true)
-	assertServiceBindingUnbindStatus(t, obj, originalBinding.Status.UnbindStatus)
+	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
 }
 
 func assertServiceBindingOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, originalBinding *v1beta1.ServiceBinding) {
@@ -2680,12 +2680,7 @@ func assertServiceBindingOrphanMitigationSuccess(t *testing.T, obj runtime.Objec
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingExternalPropertiesNil(t, obj)
-	switch originalBinding.Status.UnbindStatus {
-	case v1beta1.ServiceBindingUnbindStatusNotRequired:
-		assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusNotRequired)
-	default:
-		assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusSucceeded)
-	}
+	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusSucceeded)
 	assertCatalogFinalizerExists(t, obj)
 }
 
@@ -2696,12 +2691,7 @@ func assertServiceBindingOrphanMitigationFailure(t *testing.T, obj runtime.Objec
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Generation)
 	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingExternalPropertiesNil(t, obj)
-	switch originalBinding.Status.UnbindStatus {
-	case v1beta1.ServiceBindingUnbindStatusNotRequired:
-		assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusNotRequired)
-	default:
-		assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusFailed)
-	}
+	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusFailed)
 	assertCatalogFinalizerExists(t, obj)
 }
 

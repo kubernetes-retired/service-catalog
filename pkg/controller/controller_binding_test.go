@@ -126,6 +126,9 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
 		},
+		Status: v1beta1.ServiceBindingStatus{
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+		},
 	}
 
 	err := testController.reconcileServiceBinding(binding)
@@ -174,6 +177,9 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 		Spec: v1beta1.ServiceBindingSpec{
 			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -225,6 +231,9 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 		Spec: v1beta1.ServiceBindingSpec{
 			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:         testServiceBindingGUID,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -295,7 +304,7 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -392,7 +401,7 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -604,7 +613,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -1023,12 +1032,12 @@ func TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference(t *
 			ExternalID:         testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
 		},
 	}
 
 	err := testController.reconcileServiceBinding(binding)
-	if err != nil {
+	if err == nil {
 		t.Fatal("serviceclassref was nil + generation was 1: reconcile should abort the binding")
 	}
 
@@ -1292,7 +1301,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -1356,7 +1365,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -2226,7 +2235,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 			SecretName:         testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
 
@@ -2428,7 +2437,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 					SecretName:         testServiceBindingSecretName,
 				},
 				Status: v1beta1.ServiceBindingStatus{
-					UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+					UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 				},
 			}
 			startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
