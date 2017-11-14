@@ -24,7 +24,7 @@ source "${KUBE_ROOT}/hack/lib/init.sh"
 GOROOT=$(go env GOROOT)
 
 runTests() {
-  kube::etcd::start
+  # kube::etcd::start
 
   if [[ -w ${GOROOT}/pkg ]]; then
     FLAGS="-i"
@@ -39,7 +39,7 @@ runTests() {
 }
 
 # Run cleanup to stop etcd on interrupt or other kill signal.
-trap kube::etcd::cleanup EXIT
+# trap kube::etcd::cleanup EXIT
 
 runTests $@
 

@@ -17,11 +17,14 @@ limitations under the License.
 package integration
 
 import (
+	"fmt"
 	"github.com/coreos/etcd/embed"
+	"github.com/golang/glog"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 )
 
 const (
@@ -29,25 +32,39 @@ const (
 	EtcdClientURLs = "http://localhost:2378"
 )
 
-var etcdTempDir string
-var etcd *embed.Etcd
-
-func startEtcd(t *testing.T) {
-	etcdTempDir, err := ioutil.TempDir(os.TempDir(), "service_catalog_integration_test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg := embed.NewConfig()
-	cfg.Dir = etcdTempDir
-
-	if etcd, err = embed.StartEtcd(cfg); err != nil {
-		t.Fatalf("Failed starting etcd: %+v", err)
-	}
+type EtcdContext struct {
+	etcd     *embed.Etcd
+	dir      string
+	Endpoint string
 }
 
-func stopEtcd(t *testing.T) {
-	etcd.Server.Stop()
-	os.RemoveAll(etcdTempDir)
+var etcdContext = EtcdContext{}
+
+func startEtcd() error {
+	var err error
+	if etcdContext.dir, err = ioutil.TempDir(os.TempDir(), "service_catalog_integration_test"); err != nil {
+		return fmt.Errorf("Could not create TempDir: %v", err)
+	}
+	cfg := embed.NewConfig()
+	cfg.Dir = etcdContext.dir
+
+	if etcdContext.etcd, err = embed.StartEtcd(cfg); err != nil {
+		return fmt.Errorf("Failed starting etcd: %+v", err)
+	}
+
+	select {
+	case <-etcdContext.etcd.Server.ReadyNotify():
+		glog.Info("Server is ready!")
+	case <-time.After(60 * time.Second):
+		etcdContext.etcd.Server.Stop() // trigger a shutdown
+		glog.Error("Server took too long to start!")
+	}
+	return nil
+}
+
+func stopEtcd() {
+	etcdContext.etcd.Server.Stop()
+	os.RemoveAll(etcdContext.dir)
 }
 
 func TestStartEtcd(t *testing.T) {
@@ -68,4 +85,19 @@ func TestStartEtcd(t *testing.T) {
 	if _, err = embed.StartEtcd(cfg); err != nil {
 		t.Fatalf("got %+v", err)
 	}
+}
+
+func TestMain(m *testing.M) {
+	// Setup
+	if err := startEtcd(); err != nil {
+		fmt.Println("Failed to start etcd, %v", err)
+		os.Exit(1)
+	}
+
+	// Tests
+	result := m.Run()
+
+	// Teardown
+	stopEtcd()
+	os.Exit(result)
 }
