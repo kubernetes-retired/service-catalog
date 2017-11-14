@@ -64,8 +64,7 @@ func stopEtcd() {
 func TestMain(m *testing.M) {
 	// Setup
 	if err := startEtcd(); err != nil {
-		fmt.Println("Failed to start etcd, %v", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Failed to start etcd, %v", err))
 	}
 
 	// Tests
