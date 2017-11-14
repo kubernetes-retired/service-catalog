@@ -21,8 +21,6 @@ import (
 	"github.com/coreos/etcd/embed"
 	"github.com/golang/glog"
 	"io/ioutil"
-	"net"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -39,7 +37,7 @@ var etcdContext = EtcdContext{}
 func startEtcd() error {
 	var err error
 	if etcdContext.dir, err = ioutil.TempDir(os.TempDir(), "service_catalog_integration_test"); err != nil {
-		return fmt.Errorf("Could not create TempDir: %v", err)
+		return fmt.Errorf("could not create TempDir: %v", err)
 	}
 	cfg := embed.NewConfig()
 	cfg.Dir = etcdContext.dir
@@ -50,10 +48,10 @@ func startEtcd() error {
 
 	select {
 	case <-etcdContext.etcd.Server.ReadyNotify():
-		glog.Info("Server is ready!")
+		glog.Info("server is ready!")
 	case <-time.After(60 * time.Second):
 		etcdContext.etcd.Server.Stop() // trigger a shutdown
-		glog.Error("Server took too long to start!")
+		glog.Error("server took too long to start!")
 	}
 	return nil
 }
@@ -61,38 +59,6 @@ func startEtcd() error {
 func stopEtcd() {
 	etcdContext.etcd.Server.Stop()
 	os.RemoveAll(etcdContext.dir)
-}
-
-func TestStartEtcd(t *testing.T) {
-	tdir, err := ioutil.TempDir(os.TempDir(), "start-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tdir)
-	cfg := embed.NewConfig()
-	cfg.Dir = tdir
-
-	etcdPeerURLs, _ := allocateLocalAddress()
-	etcdClientURLs, _ := allocateLocalAddress()
-
-	lpurl, _ := url.Parse(etcdPeerURLs)
-	lcurl, _ := url.Parse(etcdClientURLs)
-
-	cfg.LPUrls = []url.URL{*lpurl}
-	cfg.LCUrls = []url.URL{*lcurl}
-
-	if _, err = embed.StartEtcd(cfg); err != nil {
-		t.Fatalf("got %+v", err)
-	}
-}
-
-func allocateLocalAddress() (string, error) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return "", err
-	}
-	defer l.Close()
-	return l.Addr().String(), nil
 }
 
 func TestMain(m *testing.M) {
