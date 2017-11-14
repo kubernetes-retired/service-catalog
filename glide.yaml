@@ -95,4 +95,4 @@ import:
 - package: github.com/pmorie/go-open-service-broker-client
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
-+  version: ^3.2.9
+  version: ^3.2.9
