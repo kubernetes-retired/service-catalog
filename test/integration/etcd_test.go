@@ -19,8 +19,13 @@ package integration
 import (
 	"github.com/coreos/etcd/embed"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"testing"
+)
+
+const (
+	EtcdURLs = "http://localhost:2381"
 )
 
 func TestStartEtcd(t *testing.T) {
@@ -32,6 +37,9 @@ func TestStartEtcd(t *testing.T) {
 	cfg := embed.NewConfig()
 	cfg.Dir = tdir
 
+	lpurl, _ := url.Parse(EtcdURLs)
+
+	cfg.LPUrls = []url.URL{*lpurl}
 	if _, err = embed.StartEtcd(cfg); err != nil {
 		t.Fatalf("got %+v", err)
 	}
