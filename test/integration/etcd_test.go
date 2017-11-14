@@ -21,15 +21,11 @@ import (
 	"github.com/coreos/etcd/embed"
 	"github.com/golang/glog"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"testing"
 	"time"
-)
-
-const (
-	EtcdPeerURLs   = "http://localhost:2381"
-	EtcdClientURLs = "http://localhost:2378"
 )
 
 type EtcdContext struct {
@@ -76,8 +72,11 @@ func TestStartEtcd(t *testing.T) {
 	cfg := embed.NewConfig()
 	cfg.Dir = tdir
 
-	lpurl, _ := url.Parse(EtcdPeerURLs)
-	lcurl, _ := url.Parse(EtcdClientURLs)
+	etcdPeerURLs, _ := allocateLocalAddress()
+	etcdClientURLs, _ := allocateLocalAddress()
+
+	lpurl, _ := url.Parse(etcdPeerURLs)
+	lcurl, _ := url.Parse(etcdClientURLs)
 
 	cfg.LPUrls = []url.URL{*lpurl}
 	cfg.LCUrls = []url.URL{*lcurl}
@@ -85,6 +84,15 @@ func TestStartEtcd(t *testing.T) {
 	if _, err = embed.StartEtcd(cfg); err != nil {
 		t.Fatalf("got %+v", err)
 	}
+}
+
+func allocateLocalAddress() (string, error) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", err
+	}
+	defer l.Close()
+	return l.Addr().String(), nil
 }
 
 func TestMain(m *testing.M) {
