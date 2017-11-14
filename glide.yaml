@@ -4,6 +4,7 @@ import:
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
   - swagger
+# This is a dependency of github.com/emicklei/go-restful
 - package: google.golang.org/appengine
   version: 24e4144ec923c2374f6b06610c0df16a9222c3d9
 - package: github.com/PuerkitoBio/purell
@@ -11,6 +12,8 @@ import:
 - package: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - package: github.com/golang/glog
+  # We want Nov 4, 2014 version as the Jul 24, 2015 version (latest version)
+  # introduces bug documented in issue 1187
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - package: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
@@ -63,27 +66,27 @@ import:
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo
-  version: 9e661e9308f078838e266cca1c673922088c0ea4
+  version: 9e661e9308f078838e266cca1c673922088c0ea4 # see https://github.com/kubernetes/code-generator/blob/release-1.8/Godeps/Godeps.json
   subpackages:
   - args
 - package: github.com/kubernetes/repo-infra
-  version: e26fc85d14a1d3dc25569831acc06919673c545a
+  version: e26fc85d14a1d3dc25569831acc06919673c545a # latest (Oct 4, 2017)
 - package: k8s.io/client-go
-  version: afb4606c45bae77c4dc2c15291d4d7d6d792196c
+  version: afb4606c45bae77c4dc2c15291d4d7d6d792196c # release-5.0, latest (Oct 4, 2017)
 - package: k8s.io/apimachinery
-  version: 9d38e20d609d27e00d4ec18f7b9db67105a2bde0
+  version: 9d38e20d609d27e00d4ec18f7b9db67105a2bde0 # release-1.8, latest (Oct 4, 2017)
 - package: k8s.io/kube-openapi
-  version: 868f2f29720b192240e18284659231b440f9cda5
+  version: 868f2f29720b192240e18284659231b440f9cda5 # k8s.io 1.8 (Oct 4, 2017)
 - package: k8s.io/api
-  version: fe29995db37613b9c5b2a647544cf627bfa8d299
+  version: fe29995db37613b9c5b2a647544cf627bfa8d299 # release-1.8, latest (Oct 4, 2017)
 - package: k8s.io/apiserver
-  version: f9b476d61dbdf6474e3d42cc5e854d0d8b7f759e
+  version: f9b476d61dbdf6474e3d42cc5e854d0d8b7f759e # release-1.8, latest (Oct 4, 2017)
 - package: k8s.io/code-generator
-  version: 42f0582fc47a42652cfb1d4ea5d5306f765507e5
+  version: 42f0582fc47a42652cfb1d4ea5d5306f765507e5 # release-1.8, latest (Oct 4, 2017)
 - package: github.com/onsi/gomega
-  version: d59fa0ac68bb5dd932ee8d24eed631cdd519efc3
+  version: d59fa0ac68bb5dd932ee8d24eed631cdd519efc3 # wanted by k8s.io/kubernetes
 - package: github.com/onsi/ginkgo
-  version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8
+  version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8 # wanted by k8s.io/kubernetes
 - package: github.com/pivotal-cf/brokerapi
 - package: code.cloudfoundry.org/lager
   version: dfcbcba2dd4a5228c43b0292d219d5c010daed3a
@@ -92,4 +95,4 @@ import:
 - package: github.com/pmorie/go-open-service-broker-client
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
-  version: ^3.2.9
++  version: ^3.2.9
