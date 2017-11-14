@@ -25,8 +25,30 @@ import (
 )
 
 const (
-	EtcdURLs = "http://localhost:2381"
+	EtcdPeerURLs   = "http://localhost:2381"
+	EtcdClientURLs = "http://localhost:2378"
 )
+
+var etcdTempDir string
+var etcd *embed.Etcd
+
+func startEtcd(t *testing.T) {
+	etcdTempDir, err := ioutil.TempDir(os.TempDir(), "service_catalog_integration_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := embed.NewConfig()
+	cfg.Dir = etcdTempDir
+
+	if etcd, err = embed.StartEtcd(cfg); err != nil {
+		t.Fatalf("Failed starting etcd: %+v", err)
+	}
+}
+
+func stopEtcd(t *testing.T) {
+	etcd.Server.Stop()
+	os.RemoveAll(etcdTempDir)
+}
 
 func TestStartEtcd(t *testing.T) {
 	tdir, err := ioutil.TempDir(os.TempDir(), "start-test")
@@ -37,9 +59,12 @@ func TestStartEtcd(t *testing.T) {
 	cfg := embed.NewConfig()
 	cfg.Dir = tdir
 
-	lpurl, _ := url.Parse(EtcdURLs)
+	lpurl, _ := url.Parse(EtcdPeerURLs)
+	lcurl, _ := url.Parse(EtcdClientURLs)
 
 	cfg.LPUrls = []url.URL{*lpurl}
+	cfg.LCUrls = []url.URL{*lcurl}
+
 	if _, err = embed.StartEtcd(cfg); err != nil {
 		t.Fatalf("got %+v", err)
 	}
