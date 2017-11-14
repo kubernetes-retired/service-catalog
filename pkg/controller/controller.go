@@ -25,6 +25,7 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
@@ -183,6 +184,25 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
 		}
 	}
+
+	func() {
+		waitGroup.Add(1)
+		go func() {
+			wait.Until(func() {
+				fmt.Println("cluster ID monitor loop enter")
+				cid, err := c.serviceCatalogClient.ClusterIDs().Get("cluster-id", metav1.GetOptions{})
+				if errors.IsNotFound(err) {
+					clusterID := &v1beta1.ClusterID{ID: "abcdefg"}
+					cid, err := c.serviceCatalogClient.ClusterIDs().Create(clusterID)
+					fmt.Println(cid, err)
+				} else {
+					fmt.Println(cid, err)
+				}
+				fmt.Println("cluster ID monitor loop exit")
+			}, time.Second, stopCh)
+			waitGroup.Done()
+		}()
+	}()
 
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
