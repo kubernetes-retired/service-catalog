@@ -240,9 +240,44 @@ func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1I
 				return false, nil
 			}
 
-			glog.V(5).Infof("Conditions = %#v", binding.Status.Conditions)
+			glog.Infof("Conditions = %#v", binding.Status.Conditions)
 
 			for _, cond := range binding.Status.Conditions {
+				if condition.Type == cond.Type && condition.Status == cond.Status {
+					if condition.Reason == "" || condition.Reason == cond.Reason {
+						return true, nil
+					}
+				}
+			}
+
+			return false, nil
+		},
+	)
+}
+
+// WaitForBindingCondition waits for the status of the named binding to
+// contain a condition whose type and status matches the supplied one.
+func WaitForBindingConditionLastSeenOfType(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceBindingCondition) (*v1beta1.ServiceBindingCondition, error) {
+	var lastSeenCondition *v1beta1.ServiceBindingCondition
+	return lastSeenCondition, wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
+		func() (bool, error) {
+			glog.V(5).Infof("Waiting for binding %v/%v condition %#v", namespace, name, condition)
+
+			binding, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
+			if nil != err {
+				return false, fmt.Errorf("error getting Binding %v/%v: %v", namespace, name, err)
+			}
+
+			if len(binding.Status.Conditions) == 0 {
+				return false, nil
+			}
+
+			glog.Infof("Conditions = %#v", binding.Status.Conditions)
+
+			for _, cond := range binding.Status.Conditions {
+				if condition.Type == cond.Type {
+					lastSeenCondition = &cond
+				}
 				if condition.Type == cond.Type && condition.Status == cond.Status {
 					if condition.Reason == "" || condition.Reason == cond.Reason {
 						return true, nil

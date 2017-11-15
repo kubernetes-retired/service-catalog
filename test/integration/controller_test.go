@@ -39,6 +39,7 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
@@ -57,6 +58,7 @@ const (
 	testClusterServiceClassName  = "test-service"
 	testClusterServiceClassGUID  = "12345"
 	testClusterServicePlanName   = "test-plan"
+	testInstanceLastOperation    = "InstanceLastOperation"
 	testPlanExternalID           = "34567"
 	testInstanceName             = "test-instance"
 	testBindingName              = "test-binding"
@@ -602,6 +604,9 @@ func getTestInstance() *v1beta1.ServiceInstance {
 			},
 			ExternalID: testExternalID,
 		},
+		Status: v1beta1.ServiceInstanceStatus{
+			LastOperation: to.StringPtr(testInstanceLastOperation),
+		},
 	}
 }
 
@@ -724,6 +729,9 @@ type controllerTest struct {
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingBindingSuccess bool
+	// true if the test expects there to be an error returned from calling
+	// create binding,
+	skipBindingCreateError bool
 
 	// function to run before creating any resources. This is useful for setting
 	// up reactions for the fake components.
@@ -833,7 +841,7 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 			ct.preCreateBinding(ct)
 		}
 		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
-		if err != nil {
+		if !ct.skipBindingCreateError && err != nil {
 			ct.t.Fatalf("error creating Binding: %v", err)
 		}
 		if !ct.skipVerifyingBindingSuccess {
@@ -846,7 +854,7 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 
 	test(ct)
 
-	if ct.binding != nil {
+	if ct.binding != nil && !ct.skipBindingCreateError {
 		if ct.preDeleteBinding != nil {
 			ct.preDeleteBinding(ct)
 		}
