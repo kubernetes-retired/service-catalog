@@ -269,7 +269,7 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 // to the spec to go through.
 func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	errors := field.ErrorList{}
-	if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
+	if old.Generation != new.Generation && old.Status.CurrentOperation != "" {
 		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
 	}
 	if old.Spec.ClusterServicePlanExternalName != new.Spec.ClusterServicePlanExternalName && new.Spec.ClusterServicePlanRef != nil {
