@@ -32,7 +32,10 @@ type ClusterServiceBroker struct {
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServiceBrokerSpec   `json:"spec"`
+	Spec ClusterServiceBrokerSpec `json:"spec"`
+
+	// Status represents the current status of a broker.
+	// +optional
 	Status ClusterServiceBrokerStatus `json:"status"`
 }
 
@@ -66,6 +69,7 @@ type ClusterServiceBrokerSpec struct {
 
 	// RelistBehavior specifies the type of relist behavior the catalog should
 	// exhibit when relisting ClusterServiceClasses available from a broker.
+	// +optional
 	RelistBehavior ServiceBrokerRelistBehavior `json:"relistBehavior"`
 
 	// RelistDuration is the frequency by which a controller will relist the
@@ -431,7 +435,12 @@ type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceInstanceSpec   `json:"spec"`
+	// Spec defines the behavior of the service instance.
+	// +optional
+	Spec ServiceInstanceSpec `json:"spec"`
+
+	// Status represents the current status of a service instance.
+	// +optional
 	Status ServiceInstanceStatus `json:"status"`
 }
 
@@ -511,6 +520,7 @@ type ServiceInstanceSpec struct {
 	// ExternalID is the identity of this object for use with the OSB SB API.
 	//
 	// Immutable.
+	// +optional
 	ExternalID string `json:"externalID"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -695,7 +705,12 @@ type ServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceBindingSpec   `json:"spec"`
+	// Spec represents the desired state of a ServiceBinding.
+	// +optional
+	Spec ServiceBindingSpec `json:"spec"`
+
+	// Status represents the current status of a ServiceBinding.
+	// +optional
 	Status ServiceBindingStatus `json:"status"`
 }
 
@@ -738,6 +753,7 @@ type ServiceBindingSpec struct {
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
+	// +optional
 	ExternalID string `json:"externalID"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
