@@ -17,8 +17,8 @@
 set -o nounset
 set -o errexit
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. "${ROOT}/hack/utilities.sh" || { echo 'Cannot load utilities.'; exit 1; }
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+. "${ROOT}/contrib/hack/utilities.sh" || { echo 'Cannot load utilities.'; exit 1; }
 
 function usage() {
   [[ -n "${1:-}" ]] && { echo "${1}"; echo ; }
