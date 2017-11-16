@@ -4911,6 +4911,7 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{}
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil

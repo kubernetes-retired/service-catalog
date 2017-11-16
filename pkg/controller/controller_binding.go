@@ -672,8 +672,11 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		}
 	} else {
 		if toUpdate.Status.CurrentOperation != v1beta1.ServiceBindingOperationUnbind {
-			// Cancel any pending orphan mitigation since the resource is being deleted
-			toUpdate.Status.OrphanMitigationInProgress = false
+			// Cancel any in-progress operation or pending orphan mitigation since the resource is being deleted.
+			// Do not update the reconciled generation since the operation was aborted and not finished.
+			currentReconciledGeneration := toUpdate.Status.ReconciledGeneration
+			clearServiceBindingCurrentOperation(toUpdate)
+			toUpdate.Status.ReconciledGeneration = currentReconciledGeneration
 
 			toUpdate, err = c.recordStartOfServiceBindingOperation(toUpdate, v1beta1.ServiceBindingOperationUnbind)
 			if err != nil {
