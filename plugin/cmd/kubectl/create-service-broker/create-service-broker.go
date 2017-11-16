@@ -42,7 +42,7 @@ func main() {
 	fmt.Printf("Creating broker %s...\n", utils.Entity(broker.Name))
 	resp, err := scClient.ServicecatalogV1beta1().ClusterServiceBrokers().Create(&broker)
 	if err != nil {
-		utils.Exit1(fmt.Sprintf("Creating broker resource (%s)", err))
+		utils.Exit1(fmt.Sprintf("Error creating broker resource (%s)", err))
 	}
 
 	utils.Ok()

@@ -54,8 +54,8 @@ func (t *Table) Print() error {
 	fmt.Fprintln(w, printStr)
 
 	//Print rows
-	printStr = ""
 	for _, rows := range t.rows {
+		printStr = ""
 		for _, row := range rows {
 			printStr = printStr + row + "\t"
 		}
