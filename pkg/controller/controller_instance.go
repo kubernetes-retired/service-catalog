@@ -408,11 +408,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	} else {
 		if toUpdate.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
-			// Cancel any in-progress operation or pending orphan mitigation since the resource is being deleted.
-			// Do not update the reconciled generation since the operation was aborted and not finished.
-			currentReconciledGeneration := toUpdate.Status.ReconciledGeneration
-			clearServiceInstanceCurrentOperation(toUpdate)
-			toUpdate.Status.ReconciledGeneration = currentReconciledGeneration
+			// Cancel any pending orphan mitigation since the resource is being deleted
+			toUpdate.Status.OrphanMitigationInProgress = false
 
 			toUpdate, err = c.recordStartOfServiceInstanceOperation(toUpdate, v1beta1.ServiceInstanceOperationDeprovision)
 			if err != nil {
@@ -759,11 +756,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		// Only send the parameters if they have changed from what the Broker has
 		if toUpdate.Status.ExternalProperties == nil ||
 			toUpdate.Status.InProgressProperties.ParametersChecksum != toUpdate.Status.ExternalProperties.ParametersChecksum {
-			if parameters != nil {
-				updateRequest.Parameters = parameters
-			} else {
-				updateRequest.Parameters = make(map[string]interface{})
-			}
+			updateRequest.Parameters = parameters
 		}
 		currentOperation = v1beta1.ServiceInstanceOperationUpdate
 		provisionOrUpdateText = "update"
