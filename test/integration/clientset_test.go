@@ -78,7 +78,7 @@ type bpStruct struct {
 func TestGroupVersion(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ClusterServiceBroker{}
 			})
 			defer shutdownServer()
@@ -97,7 +97,7 @@ func TestGroupVersion(t *testing.T) {
 func TestEtcdHealthCheckerSuccess(t *testing.T) {
 	serverConfig := NewTestServerConfig()
 	serverConfig.storageType = server.StorageTypeEtcd
-	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
+	_, _, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
 	t.Log(clientconfig.Host)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -129,7 +129,7 @@ func TestEtcdHealthCheckerFail(t *testing.T) {
 	// this server won't exist
 	serverConfig.etcdServerList = []string{""}
 	serverConfig.storageType = server.StorageTypeEtcd
-	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
+	_, _, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -164,7 +164,7 @@ func testGroupVersion(client servicecatalogclient.Interface) error {
 func TestNoName(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ClusterServiceBroker{}
 			})
 			defer shutdownServer()
@@ -209,7 +209,7 @@ func TestBrokerClient(t *testing.T) {
 	const name = "test-broker"
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ClusterServiceBroker{}
 			})
 			defer shutdownServer()
@@ -373,7 +373,7 @@ func TestClusterServiceClassClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceclass"
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ClusterServiceClass{}
 			})
 			defer shutdownServer()
@@ -583,7 +583,7 @@ func TestClusterServicePlanClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-serviceplan"
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ClusterServicePlan{}
 			})
 			defer shutdownServer()
@@ -797,7 +797,7 @@ func TestInstanceClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-instance"
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceInstance{}
 			})
 			defer shutdownServer()
@@ -1057,7 +1057,7 @@ func TestBindingClient(t *testing.T) {
 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
 		return func(t *testing.T) {
 			const name = "test-binding"
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+			client, _, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
 				return &servicecatalog.ServiceBinding{}
 			})
 			defer shutdownServer()
