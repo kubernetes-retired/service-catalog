@@ -29,6 +29,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 	"k8s.io/apimachinery/pkg/runtime"
+	"net/http"
 )
 
 // TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan tests that a ServiceInstance gets
@@ -79,12 +80,11 @@ func TestCreateServiceBinding(t *testing.T) {
 			nonbindablePlan:     true,
 			expectedErrorReason: "ErrorNonbindableServiceClass",
 		},
-		//TODO: Can't keep an instance in the not ready state.
-		//{
-		//	name:                "service instance not ready",
-		//	instanceNotReady:    true,
-		//	expectedErrorReason: "ErrorInstanceNotReady",
-		//},
+		{
+			name:                "service instance not ready",
+			instanceNotReady:    true,
+			expectedErrorReason: "ErrorInstanceNotReady",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -102,13 +102,6 @@ func TestCreateServiceBinding(t *testing.T) {
 					}
 					if tc.nonbindablePlan {
 						i.Spec.PlanReference.ClusterServicePlanExternalName = testNonbindableClusterServicePlanName
-					}
-					if tc.instanceNotReady {
-						newCondition := v1beta1.ServiceInstanceCondition{
-							Type:   v1beta1.ServiceInstanceConditionReady,
-							Status: v1beta1.ConditionFalse,
-						}
-						i.Status.Conditions = []v1beta1.ServiceInstanceCondition{newCondition}
 					}
 					return i
 				}(),
@@ -143,6 +136,18 @@ func TestCreateServiceBinding(t *testing.T) {
 					if tc.asyncForBindings {
 						ct.osbClient.BindReaction.(*fakeosb.BindReaction).Response.Async = true
 						ct.osbClient.UnbindReaction.(*fakeosb.UnbindReaction).Response.Async = true
+					}
+
+					if tc.instanceNotReady {
+						reactionError := osb.HTTPStatusCodeError{
+							StatusCode:   http.StatusBadGateway,
+							ErrorMessage: strPtr("error message"),
+							Description:  strPtr("response description"),
+						}
+						ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+							Error: reactionError,
+						}
+						ct.skipVerifyingInstanceSuccess = true
 					}
 				},
 				skipVerifyingBindingSuccess: tc.expectedErrorReason != "",
