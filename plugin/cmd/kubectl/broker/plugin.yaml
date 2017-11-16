@@ -1,0 +1,7 @@
+name: "broker"
+shortDesc: "This command interacts with Cluster Service Brokers"
+command: "./broker"
+tree:
+  - name: "list"
+    shortDesc: "Lists all Cluster Service Brokers"
+    command: "./broker list"
