@@ -20,3 +20,4 @@ contrib/build/*/tmp/*
 .pkg
 .kube
 .var
+.vscode
