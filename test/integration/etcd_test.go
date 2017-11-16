@@ -18,12 +18,14 @@ package integration
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/embed"
-	"github.com/golang/glog"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/coreos/etcd/embed"
+	"github.com/coreos/pkg/capnslog"
+	"github.com/golang/glog"
 )
 
 type EtcdContext struct {
@@ -40,6 +42,8 @@ func startEtcd() error {
 		return fmt.Errorf("could not create TempDir: %v", err)
 	}
 	cfg := embed.NewConfig()
+	// default of INFO prints useless information
+	capnslog.SetGlobalLogLevel(capnslog.WARNING)
 	cfg.Dir = etcdContext.dir
 
 	if etcdContext.etcd, err = embed.StartEtcd(cfg); err != nil {
