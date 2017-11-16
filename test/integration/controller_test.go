@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -440,6 +441,29 @@ func changeUsernameForCatalogClient(catalogClient clientset.Interface, catalogCl
 func prependGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
 	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), action.(clientgotesting.GetAction).GetName())
+	})
+}
+
+// prependGetSecretReaction prepends a reaction to getting secrets from the fake kube client
+// that returns a secret with the specified secret data when a request is made for the secret
+// with the specified secret name.
+func prependGetSecretReaction(fakeKubeClient *fake.Clientset, secretName string, secretData map[string][]byte) {
+	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		getAction, ok := action.(clientgotesting.GetAction)
+		if !ok {
+			return true, nil, apierrors.NewInternalError(fmt.Errorf("could not convert get secrets action to a GetAction: %T", action))
+		}
+		if getAction.GetName() != secretName {
+			return false, nil, nil
+		}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      secretName,
+			},
+			Data: secretData,
+		}
+		return true, secret, nil
 	})
 }
 
