@@ -25,6 +25,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -408,6 +409,10 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		c.recorder.Event(broker, corev1.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
 
+		// Update metrics with the number of serviceclass and serviceplans from this broker
+		metrics.BrokerServiceClassCount.WithLabelValues(broker.Name).Set(float64(len(payloadServiceClasses)))
+		metrics.BrokerServicePlanCount.WithLabelValues(broker.Name).Set(float64(len(payloadServicePlans)))
+
 		return nil
 	}
 
@@ -477,6 +482,10 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		c.recorder.Eventf(broker, corev1.EventTypeNormal, successClusterServiceBrokerDeletedReason, successClusterServiceBrokerDeletedMessage, broker.Name)
 		glog.V(5).Info(pcb.Message("Successfully deleted"))
+
+		// delete the metrics associated with this broker
+		metrics.BrokerServiceClassCount.DeleteLabelValues(broker.Name)
+		metrics.BrokerServicePlanCount.DeleteLabelValues(broker.Name)
 		return nil
 	}
 

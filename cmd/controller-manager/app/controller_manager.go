@@ -38,6 +38,8 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
+	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -152,6 +154,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		}
 		healthz.InstallHandler(mux, healthz.PingHealthz, apiAvailableChecker)
 		configz.InstallHandler(mux)
+		metrics.RegisterMetricsAndInstallHandler(mux)
 
 		if controllerManagerOptions.EnableProfiling {
 			mux.HandleFunc("/debug/pprof/", pprof.Index)
