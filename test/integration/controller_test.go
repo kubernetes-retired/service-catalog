@@ -23,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,7 +38,6 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
-	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
@@ -586,7 +584,7 @@ func getTestInstance() *v1beta1.ServiceInstance {
 			ExternalID: testExternalID,
 		},
 		Status: v1beta1.ServiceInstanceStatus{
-			LastOperation: to.StringPtr(testInstanceLastOperation),
+			LastOperation: strPtr(testInstanceLastOperation),
 		},
 	}
 }
