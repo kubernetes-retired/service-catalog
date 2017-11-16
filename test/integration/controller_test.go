@@ -53,19 +53,21 @@ import (
 )
 
 const (
-	testNamespace                = "test-namespace"
-	testClusterServiceBrokerName = "test-broker"
-	testClusterServiceClassName  = "test-service"
-	testClusterServiceClassGUID  = "12345"
-	testClusterServicePlanName   = "test-plan"
-	testInstanceLastOperation    = "InstanceLastOperation"
-	testPlanExternalID           = "34567"
-	testInstanceName             = "test-instance"
-	testBindingName              = "test-binding"
-	testSecretName               = "test-secret"
-	testBrokerURL                = "https://example.com"
-	testExternalID               = "9737b6ed-ca95-4439-8219-c53fcad118ab"
-	testDashboardURL             = "http://test-dashboard.example.com"
+	testNamespace                         = "test-namespace"
+	testClusterServiceBrokerName          = "test-broker"
+	testClusterServiceClassName           = "test-service"
+	testClusterServiceClassGUID           = "12345"
+	testClusterServicePlanName            = "test-plan"
+	testNonbindableClusterServicePlanName = "test-nb-plan"
+	testInstanceLastOperation             = "InstanceLastOperation"
+	testPlanExternalID                    = "34567"
+	testNonbindablePlanExternalID         = "nb34567"
+	testInstanceName                      = "test-instance"
+	testBindingName                       = "test-binding"
+	testSecretName                        = "test-secret"
+	testBrokerURL                         = "https://example.com"
+	testExternalID                        = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+	testDashboardURL                      = "http://test-dashboard.example.com"
 )
 
 // TestBasicFlows tests:
@@ -486,6 +488,13 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 						Free:        truePtr(),
 						ID:          testPlanExternalID,
 						Description: "a test plan",
+					},
+					{
+						Name:        testNonbindableClusterServicePlanName,
+						Free:        truePtr(),
+						ID:          testNonbindablePlanExternalID,
+						Description: "an non-bindable test plan",
+						Bindable:    falsePtr(),
 					},
 				},
 			},
