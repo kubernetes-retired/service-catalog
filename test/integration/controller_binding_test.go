@@ -28,6 +28,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
+	"net/http"
 )
 
 // TestCreateServiceBindingSuccess successful paths binding
@@ -249,54 +250,53 @@ func TestCreateServiceBindingNonBindable(t *testing.T) {
 	}
 }
 
-// TODO: this test is failing with controller_instance.go:1844] ServiceInstance "test-namespace/test-instance": Failed to update status: ServiceInstance.servicecatalog.k8s.io "test-instance" is invalid: status.inProgressProperties: Forbidden: inProgressProperties must not be present when currentOperation is neither "Provision" nor "Update"
-//// TestCreateServiceBindingInstanceNotReady bind to a service instance in the ready false state.
-//func TestCreateServiceBindingInstanceNotReady(t *testing.T) {
-//	cases := []struct {
-//		name             string
-//		instanceNotReady bool
-//		condition        v1beta1.ServiceBindingCondition
-//	}{
-//		{
-//			name:             "service instance not ready",
-//			instanceNotReady: true,
-//			condition: v1beta1.ServiceBindingCondition{
-//				Type:   v1beta1.ServiceBindingConditionReady,
-//				Status: v1beta1.ConditionFalse,
-//				Reason: "ErrorInstanceNotReady",
-//			},
-//		},
-//	}
-//	for _, tc := range cases {
-//		t.Run(tc.name, func(t *testing.T) {
-//			ct := &controllerTest{
-//				t:        t,
-//				broker:   getTestBroker(),
-//				instance: getTestInstance(),
-//				binding:  getTestBinding(),
-//				setup: func(ct *controllerTest) {
-//					if tc.instanceNotReady {
-//						reactionError := osb.HTTPStatusCodeError{
-//							StatusCode:   http.StatusBadGateway,
-//							ErrorMessage: strPtr("error message"),
-//							Description:  strPtr("response description"),
-//						}
-//						ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-//							Error: reactionError,
-//						}
-//						ct.skipVerifyingInstanceSuccess = true
-//					}
-//				},
-//				skipVerifyingBindingSuccess: true,
-//			}
-//			ct.run(func(ct *controllerTest) {
-//				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, tc.condition); err != nil {
-//					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, tc.condition, cond)
-//				}
-//			})
-//		})
-//	}
-//}
+// TestCreateServiceBindingInstanceNotReady bind to a service instance in the ready false state.
+func TestCreateServiceBindingInstanceNotReady(t *testing.T) {
+	cases := []struct {
+		name             string
+		instanceNotReady bool
+		condition        v1beta1.ServiceBindingCondition
+	}{
+		{
+			name:             "service instance not ready",
+			instanceNotReady: true,
+			condition: v1beta1.ServiceBindingCondition{
+				Type:   v1beta1.ServiceBindingConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "ErrorInstanceNotReady",
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				binding:  getTestBinding(),
+				setup: func(ct *controllerTest) {
+					if tc.instanceNotReady {
+						reactionError := osb.HTTPStatusCodeError{
+							StatusCode:   http.StatusBadGateway,
+							ErrorMessage: strPtr("error message"),
+							Description:  strPtr("response description"),
+						}
+						ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+							Error: reactionError,
+						}
+						ct.skipVerifyingInstanceSuccess = true
+					}
+				},
+				skipVerifyingBindingSuccess: true,
+			}
+			ct.run(func(ct *controllerTest) {
+				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, tc.condition); err != nil {
+					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, tc.condition, cond)
+				}
+			})
+		})
+	}
+}
 
 // TestCreateServiceBindingWithParameters tests creating a ServiceBinding
 // with parameters.
