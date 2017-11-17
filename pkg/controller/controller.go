@@ -627,3 +627,12 @@ func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authC
 	clientConfig.CAData = broker.Spec.CABundle
 	return clientConfig
 }
+
+// reconciliationRetryDurationExceeded returns whether the given operation
+// start time has exceeded the controller's set reconciliation retry duration.
+func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *metav1.Time) bool {
+	if time.Now().Before(operationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		return false
+	}
+	return true
+}
