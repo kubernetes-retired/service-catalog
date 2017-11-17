@@ -338,7 +338,7 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	assertServiceBindingCurrentOperation(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind)
 	assertServiceBindingOperationStartTimeSet(t, updatedServiceBinding, true)
 	assertServiceBindingReconciledGeneration(t, updatedServiceBinding, binding.Status.ReconciledGeneration)
-	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
+	assertServiceBindingInProgressPropertiesParameters(t, updatedServiceBinding, nil, "")
 	// External properties are updated because the bind request with the Broker was successful
 	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
@@ -2116,7 +2116,6 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionFalse, errorServiceBindingOrphanMitigation)
 	assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason)
 	assertServiceBindingStartingOrphanMitigation(t, updatedServiceBinding, binding)
-	assertServiceBindingInProgressPropertiesNil(t, updatedServiceBinding)
 	assertServiceBindingExternalPropertiesParameters(t, updatedServiceBinding, nil, "")
 
 	kubeActions := fakeKubeClient.Actions()
@@ -2478,13 +2477,14 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 
 			updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 
+			assertServiceBindingExternalPropertiesNil(t, updatedServiceBinding)
+
 			if tc.setOrphanMitigation {
 				assertServiceBindingStartingOrphanMitigation(t, updatedServiceBinding, binding)
 			} else {
 				assertServiceBindingReadyFalse(t, updatedServiceBinding)
 				assertServiceBindingCondition(t, updatedServiceBinding, v1beta1.ServiceBindingConditionReady, v1beta1.ConditionFalse)
-				assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, tc.setOrphanMitigation)
-				assertServiceBindingExternalPropertiesNil(t, updatedServiceBinding)
+				assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 			}
 		})
 	}

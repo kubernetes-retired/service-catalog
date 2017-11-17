@@ -540,7 +540,6 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 		// request, so this is what the Broker knows about the state of the
 		// binding.
 		toUpdate.Status.ExternalProperties = toUpdate.Status.InProgressProperties
-		toUpdate.Status.InProgressProperties = nil
 
 		err = c.injectServiceBinding(binding, response.Credentials)
 		if err != nil {
@@ -1493,7 +1492,6 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		// Update the in progress/external properties, as the changes have been
 		// persisted in the broker
 		binding.Status.ExternalProperties = binding.Status.InProgressProperties
-		binding.Status.InProgressProperties = nil
 
 		getBindingRequest := &osb.GetBindingRequest{
 			InstanceID: instance.Spec.ExternalID,

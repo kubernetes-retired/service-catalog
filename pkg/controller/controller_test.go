@@ -2490,6 +2490,7 @@ func assertServiceBindingStartingOrphanMitigation(t *testing.T, obj runtime.Obje
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	assertServiceBindingOrphanMitigationSet(t, obj, true)
+	assertServiceBindingInProgressPropertiesParameters(t, obj, nil, "")
 	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
 }
 
@@ -2575,8 +2576,8 @@ func assertServiceBindingAsyncBindErrorAfterStateSucceeded(t *testing.T, obj run
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
 	assertServiceBindingExternalPropertiesParameters(t, obj, nil, "")
-	assertServiceBindingInProgressPropertiesNil(t, obj)
 	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
+	assertServiceBindingInProgressPropertiesParameters(t, obj, nil, "")
 	assertCatalogFinalizerExists(t, obj)
 }
 

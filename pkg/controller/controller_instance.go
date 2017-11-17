@@ -759,7 +759,11 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 		// Only send the parameters if they have changed from what the Broker has
 		if toUpdate.Status.ExternalProperties == nil ||
 			toUpdate.Status.InProgressProperties.ParametersChecksum != toUpdate.Status.ExternalProperties.ParametersChecksum {
-			updateRequest.Parameters = parameters
+			if parameters != nil {
+				updateRequest.Parameters = parameters
+			} else {
+				updateRequest.Parameters = make(map[string]interface{})
+			}
 		}
 		currentOperation = v1beta1.ServiceInstanceOperationUpdate
 		provisionOrUpdateText = "update"
@@ -854,16 +858,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 
 		urlErr, ok := err.(*url.Error)
 		if ok && urlErr.Timeout() {
-			var (
-				reason  string
-				message string
-			)
-			if isProvisioning {
-				reason = errorErrorCallingProvisionReason
-			} else {
-				reason = errorErrorCallingUpdateInstanceReason
-			}
-			message = "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
+			message := "Communication with the ClusterServiceBroker timed out; operation will not be retried: " + s
 			// Communication to the broker timed out. Treat as terminal failure and
 			// begin orphan mitigation.
 

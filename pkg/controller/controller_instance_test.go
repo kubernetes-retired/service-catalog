@@ -32,6 +32,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -354,97 +355,340 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 
 // TestReconcileServiceInstanceWithParameters tests a simple successful reconciliation
 func TestReconcileServiceInstanceWithParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		ProvisionReaction: &fakeosb.ProvisionReaction{
-			Response: &osb.ProvisionResponse{},
-		},
-	})
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	instance := getTestServiceInstanceWithRefs()
-
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	type secretDef struct {
+		name string
+		data map[string][]byte
 	}
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
-
-	if err = testController.reconcileServiceInstance(instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
-
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
-	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
-		AcceptsIncomplete: true,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
+	cases := []struct {
+		name                              string
+		params                            []byte
+		paramsFrom                        []v1beta1.ParametersFromSource
+		secrets                           []secretDef
+		expectedParams                    map[string]interface{}
+		expectedParamsWithSecretsRedacted map[string]interface{}
+		expectedError                     bool
+	}{
+		{
+			name:           "no params",
+			expectedParams: nil,
 		},
-		Parameters: map[string]interface{}{
-			"args": map[string]interface{}{
-				"first":  "first-arg",
-				"second": "second-arg",
+		{
+			name:   "plain params",
+			params: []byte(`{"Name":"test-param","Args":{"first":"first-arg","second":"second-arg"}}`),
+			expectedParams: map[string]interface{}{
+				"Name": "test-param",
+				"Args": map[string]interface{}{
+					"first":  "first-arg",
+					"second": "second-arg",
+				},
 			},
-			"name": "test-param",
+			expectedParamsWithSecretsRedacted: map[string]interface{}{
+				"Name": "test-param",
+				"Args": map[string]interface{}{
+					"first":  "first-arg",
+					"second": "second-arg",
+				},
+			},
 		},
-	})
-
-	expectedParameters := map[string]interface{}{
-		"args": map[string]interface{}{
-			"first":  "first-arg",
-			"second": "second-arg",
+		{
+			name: "secret params",
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "secret-key",
+					},
+				},
+			},
+			secrets: []secretDef{
+				{
+					name: "secret-name",
+					data: map[string][]byte{
+						"secret-key": []byte(`{"A":"B","C":{"D":"E","F":"G"}}`),
+					},
+				},
+			},
+			expectedParams: map[string]interface{}{
+				"A": "B",
+				"C": map[string]interface{}{
+					"D": "E",
+					"F": "G",
+				},
+			},
+			expectedParamsWithSecretsRedacted: map[string]interface{}{
+				"A": "<redacted>",
+				"C": "<redacted>",
+			},
 		},
-		"name": "test-param",
+		{
+			name:   "plain and secret params",
+			params: []byte(`{"Name":"test-param","Args":{"first":"first-arg","second":"second-arg"}}`),
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "secret-key",
+					},
+				},
+			},
+			secrets: []secretDef{
+				{
+					name: "secret-name",
+					data: map[string][]byte{
+						"secret-key": []byte(`{"A":"B","C":{"D":"E","F":"G"}}`),
+					},
+				},
+			},
+			expectedParams: map[string]interface{}{
+				"Name": "test-param",
+				"Args": map[string]interface{}{
+					"first":  "first-arg",
+					"second": "second-arg",
+				},
+				"A": "B",
+				"C": map[string]interface{}{
+					"D": "E",
+					"F": "G",
+				},
+			},
+			expectedParamsWithSecretsRedacted: map[string]interface{}{
+				"Name": "test-param",
+				"Args": map[string]interface{}{
+					"first":  "first-arg",
+					"second": "second-arg",
+				},
+				"A": "<redacted>",
+				"C": "<redacted>",
+			},
+		},
+		{
+			name:          "bad params",
+			params:        []byte("bad"),
+			expectedError: true,
+		},
+		{
+			name: "missing secret",
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "secret-key",
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "missing secret key",
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "other-secret-key",
+					},
+				},
+			},
+			secrets: []secretDef{
+				{
+					name: "secret-name",
+					data: map[string][]byte{
+						"secret-key": []byte(`bad`),
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "empty secret data",
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "secret-key",
+					},
+				},
+			},
+			secrets: []secretDef{
+				{
+					name: "secret-name",
+					data: map[string][]byte{},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "bad secret data",
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "secret-key",
+					},
+				},
+			},
+			secrets: []secretDef{
+				{
+					name: "secret-name",
+					data: map[string][]byte{
+						"secret-key": []byte(`bad`),
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "no params in secret data",
+			paramsFrom: []v1beta1.ParametersFromSource{
+				{
+					SecretKeyRef: &v1beta1.SecretKeyReference{
+						Name: "secret-name",
+						Key:  "secret-key",
+					},
+				},
+			},
+			secrets: []secretDef{
+				{
+					name: "secret-name",
+					data: map[string][]byte{
+						"secret-key": []byte(`{}`),
+					},
+				},
+			},
+		},
 	}
-	expectedParametersChecksum, err := generateChecksumOfParameters(expectedParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				ProvisionReaction: &fakeosb.ProvisionReaction{
+					Response: &osb.ProvisionResponse{},
+				},
+			})
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
+			for _, s := range tc.secrets {
+				fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+					getAction, ok := action.(clientgotesting.GetAction)
+					if !ok {
+						return true, nil, apierrors.NewInternalError(fmt.Errorf("could not convert get secrets action to a GetAction: %T", action))
+					}
+					if getAction.GetName() != s.name {
+						return false, nil, nil
+					}
+					secret := &corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: testNamespace,
+							Name:      s.name,
+						},
+						Data: s.data,
+					}
+					return true, secret, nil
+				})
+			}
 
-	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
+			instance := getTestServiceInstanceWithRefs()
 
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
-	}
+			if tc.params != nil {
+				instance.Spec.Parameters = &runtime.RawExtension{Raw: tc.params}
+			}
 
-	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
-	}
+			instance.Spec.ParametersFrom = tc.paramsFrom
 
-	// verify no kube resources created
-	// One single action comes from getting namespace uid
-	kubeActions := fakeKubeClient.Actions()
-	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
-		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
-	}); err != nil {
-		t.Fatal(err)
-	}
+			err := testController.reconcileServiceInstance(instance)
+			if tc.expectedError {
+				if err == nil {
+					t.Fatalf("Reconcile expected to fail")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Reconcile not expected to fail : %v", err)
+				}
+			}
 
-	events := getRecordedEvents(testController)
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			if tc.expectedError {
+				assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+			} else {
+				assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+				assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+					AcceptsIncomplete: true,
+					InstanceID:        testServiceInstanceGUID,
+					ServiceID:         testClusterServiceClassGUID,
+					PlanID:            testClusterServicePlanGUID,
+					Context: map[string]interface{}{
+						"platform":  "kubernetes",
+						"namespace": "test-ns",
+					},
+					Parameters: tc.expectedParams,
+				})
+			}
 
-	expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
+			actions := fakeCatalogClient.Actions()
+			if tc.expectedError {
+				assertNumberOfActions(t, actions, 1)
+				updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+				assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParameters, instance)
+			} else {
+				expectedParametersChecksum, err := generateChecksumOfParameters(tc.expectedParams)
+				if err != nil {
+					t.Fatalf("Failed to generate parameters checksum: %v", err)
+				}
+
+				assertNumberOfActions(t, actions, 2)
+
+				updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+				assertServiceInstanceOperationInProgressWithParameters(t,
+					updatedServiceInstance,
+					v1beta1.ServiceInstanceOperationProvision,
+					testClusterServicePlanName,
+					testClusterServicePlanGUID,
+					tc.expectedParamsWithSecretsRedacted,
+					expectedParametersChecksum,
+					instance,
+				)
+
+				updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+				assertServiceInstanceOperationSuccessWithParameters(t,
+					updatedServiceInstance,
+					v1beta1.ServiceInstanceOperationProvision,
+					testClusterServicePlanName,
+					testClusterServicePlanGUID,
+					tc.expectedParamsWithSecretsRedacted,
+					expectedParametersChecksum,
+					instance,
+				)
+			}
+
+			// verify one action comes from getting namespace uid and one
+			// action for each secret referenced in paramsFrom
+			expectedActions := []kubeClientAction{
+				{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+			}
+			for range tc.paramsFrom {
+				expectedActions = append(expectedActions,
+					kubeClientAction{verb: "get", resourceName: "secrets", checkType: checkGetActionType})
+			}
+			kubeActions := fakeKubeClient.Actions()
+			if err := checkKubeClientActions(kubeActions, expectedActions); err != nil {
+				t.Fatal(err)
+			}
+
+			events := getRecordedEvents(testController)
+
+			if tc.expectedError {
+				expectedEvent := warningEventBuilder(errorWithParameters).msg("failed to prepare parameters")
+				if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
+				if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
 	}
 }
 
@@ -648,54 +892,6 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 
 	expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// TestReconcileServiceInstanceWithInvalidParameters tests that reconcileInstance
-// fails with an error when the service parameters are invalid
-func TestReconcileServiceInstanceWithInvalidParameters(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	instance := getTestServiceInstanceWithRefs()
-	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
-	parameters.Args["first"] = "first-arg"
-	parameters.Args["second"] = "second-arg"
-
-	b, err := json.Marshal(parameters)
-	if err != nil {
-		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
-	}
-	// corrupt the byte slice to begin with a '!' instead of an opening JSON bracket '{'
-	b[0] = 0x21
-	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
-
-	if err = testController.reconcileServiceInstance(instance); err == nil {
-		t.Fatalf("this should fail due to a parse error")
-	}
-
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	// There should only be one action that says that the parameters were invalid.
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParameters, instance)
-
-	// only action should be a get on the namespace
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-
-	events := getRecordedEvents(testController)
-
-	expectedEvent := warningEventBuilder(errorWithParameters).msg("failed to prepare parameters")
-	if err := checkEventContains(events[0], expectedEvent.String()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -3942,6 +4138,104 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceDeleteParameters tests updating a
+// ServiceInstance to delete all its paramaters
+func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
+	instance.Status.ReconciledGeneration = 1
+	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+
+	oldParameters := map[string]interface{}{
+		"args": map[string]interface{}{
+			"first":  "first-arg",
+			"second": "second-arg",
+		},
+		"name": "test-param",
+	}
+	oldParametersMarshaled, err := MarshalRawParameters(oldParameters)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters: %v", err)
+	}
+	oldParametersRaw := &runtime.RawExtension{
+		Raw: oldParametersMarshaled,
+	}
+
+	oldParametersChecksum, err := generateChecksumOfParameters(oldParameters)
+	if err != nil {
+		t.Fatalf("Failed to generate parameters checksum: %v", err)
+	}
+
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		Parameters:                     oldParametersRaw,
+		ParametersChecksum:             oldParametersChecksum,
+	}
+
+	if err = testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertUpdateInstance(t, brokerActions[0], &osb.UpdateInstanceRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            nil, // no change to plan
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+		Parameters: make(map[string]interface{}),
+	})
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	}
+
+	if updateObject.Spec.Parameters != nil {
+		t.Fatalf("Parameters was unexpectedly not empty")
+	}
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	events := getRecordedEvents(testController)
+
+	expectedEvent := normalEventBuilder(successUpdateInstanceReason).msg("The instance was updated successfully")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // TestResolveReferencesNoClusterServicePlan tests that resolveReferences fails
 // with the expected failure case when no ClusterServicePlan exists
 func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
@@ -4813,6 +5107,7 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{}
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
