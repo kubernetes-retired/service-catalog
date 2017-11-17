@@ -247,6 +247,15 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 	}
 }
 
+// operationError is a user-facing error that can be easily embedded in a
+// resource's Condition.
+type operationError struct {
+	reason  string
+	message string
+}
+
+func (e *operationError) Error() string { return e.message }
+
 // getClusterServiceClassPlanAndClusterServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
@@ -257,20 +266,13 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf(
-			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
-		)
-		glog.Info(pcb.Message(s))
-		c.updateServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorNonexistentClusterServiceClassReason,
-			"The instance references a ClusterServiceClass that does not exist. "+s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, &operationError{
+			reason: errorNonexistentClusterServiceClassReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
+				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
+			),
+		}
 	}
 
 	var servicePlan *v1beta1.ClusterServicePlan
@@ -278,57 +280,41 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 		var err error
 		servicePlan, err = c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 		if nil != err {
-			s := fmt.Sprintf(
-				"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
-				instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, serviceClass.Name, serviceClass.Spec.ExternalName,
-			)
-			glog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentClusterServicePlanReason,
-				"The instance references a ClusterServicePlan that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-			return nil, nil, "", nil, fmt.Errorf(s)
+			return nil, nil, "", nil, &operationError{
+				reason: errorNonexistentClusterServicePlanReason,
+				message: fmt.Sprintf(
+					"The instance references a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass %v",
+					instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, pretty.ClusterServiceClassName(serviceClass),
+				),
+			}
 		}
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("References a non-existent broker %q", serviceClass.Spec.ClusterServiceBrokerName)
-		glog.Warning(pcb.Message(s))
-		c.updateServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorNonexistentClusterServiceBrokerReason,
-			"The instance references a ClusterServiceBroker that does not exist. "+s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, &operationError{
+			reason: errorNonexistentClusterServiceBrokerReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent broker %q",
+				serviceClass.Spec.ClusterServiceBrokerName,
+			),
+		}
+
 	}
 
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
-		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Info(pcb.Message(s))
-		c.updateServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorAuthCredentialsReason,
-			"Error getting auth credentials. "+s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, &operationError{
+			reason: errorAuthCredentialsReason,
+			message: fmt.Sprintf(
+				"Error getting broker auth credentials for broker %q: %s",
+				broker.Name, err,
+			),
+		}
 	}
 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
-
-	s := fmt.Sprintf("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
-	glog.V(4).Info(pcb.Message(s))
+	glog.V(4).Info(pcb.Messagef("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -631,7 +617,7 @@ func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authC
 // reconciliationRetryDurationExceeded returns whether the given operation
 // start time has exceeded the controller's set reconciliation retry duration.
 func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *metav1.Time) bool {
-	if time.Now().Before(operationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+	if operationStartTime == nil || time.Now().Before(operationStartTime.Time.Add(c.reconciliationRetryDuration)) {
 		return false
 	}
 	return true
