@@ -607,9 +607,6 @@ func getTestInstance() *v1beta1.ServiceInstance {
 			},
 			ExternalID: testExternalID,
 		},
-		Status: v1beta1.ServiceInstanceStatus{
-			LastOperation: strPtr(testInstanceLastOperation),
-		},
 	}
 }
 

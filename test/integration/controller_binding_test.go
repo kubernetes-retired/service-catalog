@@ -28,29 +28,49 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 )
 
-// TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan tests that a ServiceInstance gets
-// a Failed condition when the service class or service plan it references does not exist.
-func TestCreateServiceBinding(t *testing.T) {
+// TestCreateServiceBindingSuccess successful paths binding
+func TestCreateServiceBindingSuccess(t *testing.T) {
+	cases := []struct {
+		name string
+	}{
+		{
+			name: "defaults",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				binding:  getTestBinding(),
+			}
+			ct.run(func(ct *controllerTest) {
+				{
+					condition := v1beta1.ServiceBindingCondition{
+						Type:   v1beta1.ServiceBindingConditionReady,
+						Status: v1beta1.ConditionTrue,
+					}
+					if cond, err := util.WaitForBindingConditionLastSeenOfType(ct.client, testNamespace, testBindingName, condition); err != nil {
+						t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
+					}
+				}
+			})
+		})
+	}
+}
+
+// TestCreateServiceBindingInvalidInstance try to bind to invalid service instance names
+func TestCreateServiceBindingInvalidInstance(t *testing.T) {
 	cases := []struct {
 		name                string
 		instanceName        *string
-		instanceClassName   *string
-		instancePlanName    *string
-		instanceNotReady    bool
-		asyncForInstances   bool
-		asyncForBindings    bool
 		expectedErrorReason string
 		expectedFailure     bool
-		nonbindablePlan     bool
-		duplicateParameters bool
 	}{
-		{
-			name: "happy",
-		},
 		{
 			name:                "non-existent service instance name",
 			instanceName:        strPtr("nothereinstance"),
@@ -62,25 +82,190 @@ func TestCreateServiceBinding(t *testing.T) {
 			expectedErrorReason: "ReferencesNonexistentInstance",
 			expectedFailure:     true,
 		},
-		// TODO: this test is flaky. Which could be a bug?
-		//{
-		//	name:                "bind to async-in-progress service instance",
-		//	asyncForInstances:   true,
-		//	expectedErrorReason: "ErrorAsyncOperationInProgress",
-		//},
-		// TODO: Can't seem to get the test in this state.
-		//{
-		//	name: "unresolved ClusterServiceClass",
-		//},
-		// TODO: Can't seem to get the test in this state.
-		//{
-		//	name: "unresolved ClusterServicePlan",
-		//},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t: t,
+				skipBindingCreateError: tc.expectedFailure,
+				broker:                 getTestBroker(),
+				instance:               getTestInstance(),
+				binding: func() *v1beta1.ServiceBinding {
+					b := getTestBinding()
+					if tc.instanceName != nil {
+						b.Spec.ServiceInstanceRef.Name = *tc.instanceName
+					}
+					return b
+				}(),
+				skipVerifyingBindingSuccess: tc.expectedErrorReason != "",
+			}
+			ct.run(func(ct *controllerTest) {
+				{
+					status := v1beta1.ConditionTrue
+					if tc.expectedErrorReason != "" {
+						status = v1beta1.ConditionFalse
+					}
+					condition := v1beta1.ServiceBindingCondition{
+						Type:   v1beta1.ServiceBindingConditionReady,
+						Status: status,
+						Reason: tc.expectedErrorReason,
+					}
+					if ct.skipBindingCreateError {
+						if err := util.WaitForBindingToNotExist(ct.client, testNamespace, testBindingName); err != nil {
+							t.Fatalf("error waiting for binding to not exist: %v", err)
+						}
+					} else {
+						if cond, err := util.WaitForBindingConditionLastSeenOfType(ct.client, testNamespace, testBindingName, condition); err != nil {
+							t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
+						}
+					}
+
+				}
+			})
+		})
+	}
+}
+
+// TODO: this one is still broken:
+// E1116 16:10:21.295296    8302 controller_instance.go:1844] ServiceInstance "test-namespace/test-instance": Failed to update status: ServiceInstance.servicecatalog.k8s.io "test-instance" is invalid: status.currentOperation: Forbidden: currentOperation must not be present when reconciledGeneration and generation are equal
+// TestCreateServiceBindingAsyncServiceInstance try to bind to a in progress service instance.
+//func TestCreateServiceBindingAsync(t *testing.T) {
+//	cases := []struct {
+//		name                string
+//		asyncForInstances   bool
+//		expectedErrorReason string
+//	}{
+//		{
+//			name:                "bind to async-in-progress service instance",
+//			asyncForInstances:   true,
+//			expectedErrorReason: "ErrorAsyncOperationInProgress",
+//		},
+//	}
+//	for _, tc := range cases {
+//		t.Run(tc.name, func(t *testing.T) {
+//			ct := &controllerTest{
+//				t:        t,
+//				broker:   getTestBroker(),
+//				instance: getTestInstance(),
+//				binding:  getTestBinding(),
+//				setup: func(ct *controllerTest) {
+//					if tc.asyncForInstances {
+//						ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.Async = true
+//						ct.osbClient.UpdateInstanceReaction.(*fakeosb.UpdateInstanceReaction).Response.Async = true
+//						ct.osbClient.DeprovisionReaction.(*fakeosb.DeprovisionReaction).Response.Async = true
+//
+//						key := osb.OperationKey(testInstanceLastOperation)
+//
+//						ct.osbClient.PollLastOperationReactions = map[osb.OperationKey]*fakeosb.PollLastOperationReaction{
+//							key: {
+//								Response: &osb.LastOperationResponse{
+//									State:       osb.StateInProgress,
+//									Description: strPtr("StateInProgress"),
+//								},
+//							},
+//						}
+//
+//						ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.OperationKey = &key
+//
+//						ct.skipVerifyingInstanceSuccess = true
+//					}
+//
+//				},
+//				preDeleteInstance: func(ct *controllerTest) {
+//					// Let the instance finish.
+//					ct.osbClient.PollLastOperationReactions = map[osb.OperationKey]*fakeosb.PollLastOperationReaction{}
+//				},
+//				skipVerifyingBindingSuccess: tc.expectedErrorReason != "",
+//			}
+//			ct.run(func(ct *controllerTest) {
+//				{
+//					status := v1beta1.ConditionTrue
+//					if tc.expectedErrorReason != "" {
+//						status = v1beta1.ConditionFalse
+//					}
+//					condition := v1beta1.ServiceBindingCondition{
+//						Type:   v1beta1.ServiceBindingConditionReady,
+//						Status: status,
+//						Reason: tc.expectedErrorReason,
+//					}
+//					if ct.skipBindingCreateError {
+//						if err := util.WaitForBindingToNotExist(ct.client, testNamespace, testBindingName); err != nil {
+//							t.Fatalf("error waiting for binding to not exist: %v", err)
+//						}
+//					} else {
+//						if cond, err := util.WaitForBindingConditionLastSeenOfType(ct.client, testNamespace, testBindingName, condition); err != nil {
+//							t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
+//						}
+//					}
+//
+//				}
+//			})
+//		})
+//	}
+//}
+
+// TestCreateServiceBindingNonBindable bind to a non-bindable service class / plan.
+func TestCreateServiceBindingNonBindable(t *testing.T) {
+	cases := []struct {
+		name                string
+		expectedErrorReason string
+		nonbindablePlan     bool
+	}{
 		{
 			name:                "non-bindable plan",
 			nonbindablePlan:     true,
 			expectedErrorReason: "ErrorNonbindableServiceClass",
 		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:      t,
+				broker: getTestBroker(),
+				instance: func() *v1beta1.ServiceInstance {
+					i := getTestInstance()
+					if tc.nonbindablePlan {
+						i.Spec.PlanReference.ClusterServicePlanExternalName = testNonbindableClusterServicePlanName
+					}
+					return i
+				}(),
+				binding:                     getTestBinding(),
+				skipVerifyingBindingSuccess: tc.expectedErrorReason != "",
+			}
+			ct.run(func(ct *controllerTest) {
+				{
+					status := v1beta1.ConditionTrue
+					if tc.expectedErrorReason != "" {
+						status = v1beta1.ConditionFalse
+					}
+					condition := v1beta1.ServiceBindingCondition{
+						Type:   v1beta1.ServiceBindingConditionReady,
+						Status: status,
+						Reason: tc.expectedErrorReason,
+					}
+					if ct.skipBindingCreateError {
+						if err := util.WaitForBindingToNotExist(ct.client, testNamespace, testBindingName); err != nil {
+							t.Fatalf("error waiting for binding to not exist: %v", err)
+						}
+					} else {
+						if cond, err := util.WaitForBindingConditionLastSeenOfType(ct.client, testNamespace, testBindingName, condition); err != nil {
+							t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
+						}
+					}
+
+				}
+			})
+		})
+	}
+}
+
+// TestCreateServiceBindingInstanceNotReady bind to a service instance in the ready false state.
+func TestCreateServiceBindingInstanceNotReady(t *testing.T) {
+	cases := []struct {
+		name                string
+		instanceNotReady    bool
+		expectedErrorReason string
+	}{
 		{
 			name:                "service instance not ready",
 			instanceNotReady:    true,
@@ -90,55 +275,11 @@ func TestCreateServiceBinding(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			ct := &controllerTest{
-				t: t,
-				skipBindingCreateError: tc.expectedFailure,
-				broker:                 getTestBroker(),
-				instance: func() *v1beta1.ServiceInstance {
-					i := getTestInstance()
-					if tc.instanceClassName != nil {
-						i.Spec.PlanReference.ClusterServiceClassExternalName = *tc.instanceClassName
-					}
-					if tc.instancePlanName != nil {
-						i.Spec.PlanReference.ClusterServicePlanExternalName = *tc.instancePlanName
-					}
-					if tc.nonbindablePlan {
-						i.Spec.PlanReference.ClusterServicePlanExternalName = testNonbindableClusterServicePlanName
-					}
-					return i
-				}(),
-				binding: func() *v1beta1.ServiceBinding {
-					b := getTestBinding()
-					if tc.instanceName != nil {
-						b.Spec.ServiceInstanceRef.Name = *tc.instanceName
-					}
-					if tc.duplicateParameters {
-						b.Spec.Parameters = &runtime.RawExtension{Raw: []byte(`{"a":"1","a":"2"}`)}
-					}
-					return b
-				}(),
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				binding:  getTestBinding(),
 				setup: func(ct *controllerTest) {
-					if tc.asyncForInstances {
-						ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.Async = true
-						ct.osbClient.UpdateInstanceReaction.(*fakeosb.UpdateInstanceReaction).Response.Async = true
-						ct.osbClient.DeprovisionReaction.(*fakeosb.DeprovisionReaction).Response.Async = true
-
-						ct.osbClient.PollLastOperationReactions = map[osb.OperationKey]*fakeosb.PollLastOperationReaction{
-							testInstanceLastOperation: {
-								Response: &osb.LastOperationResponse{
-									State:       osb.StateInProgress,
-									Description: strPtr("StateInProgress"),
-								},
-							},
-						}
-
-						ct.skipVerifyingInstanceSuccess = true
-					}
-
-					if tc.asyncForBindings {
-						ct.osbClient.BindReaction.(*fakeosb.BindReaction).Response.Async = true
-						ct.osbClient.UnbindReaction.(*fakeosb.UnbindReaction).Response.Async = true
-					}
-
 					if tc.instanceNotReady {
 						reactionError := osb.HTTPStatusCodeError{
 							StatusCode:   http.StatusBadGateway,
