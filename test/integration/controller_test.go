@@ -173,11 +173,12 @@ func TestBindingFailure(t *testing.T) {
 		},
 	}
 	ct.run(func(ct *controllerTest) {
-		if err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, v1beta1.ServiceBindingCondition{
+		condition := v1beta1.ServiceBindingCondition{
 			Type:   v1beta1.ServiceBindingConditionFailed,
 			Status: v1beta1.ConditionTrue,
-		}); err != nil {
-			t.Fatalf("error waiting for binding to become failed: %v", err)
+		}
+		if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
+			t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 		}
 	})
 }
@@ -290,11 +291,12 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		},
 	}
 	ct.run(func(ct *controllerTest) {
-		if err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, v1beta1.ServiceBindingCondition{
+		condition := v1beta1.ServiceBindingCondition{
 			Type:   v1beta1.ServiceBindingConditionFailed,
 			Status: v1beta1.ConditionTrue,
-		}); err != nil {
-			t.Fatalf("error waiting for binding to become failed: %v", err)
+		}
+		if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
+			t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 		}
 
 		if err := util.WaitForBindingReconciledGeneration(ct.client, testNamespace, testBindingName, 1); err != nil {
@@ -657,11 +659,12 @@ func getTestBinding() *v1beta1.ServiceBinding {
 // verifyBindingCreated verifies that the specified binding has been created
 // and reconciled successfully.
 func verifyBindingCreated(t *testing.T, client clientsetsc.ServicecatalogV1beta1Interface, binding *v1beta1.ServiceBinding) *v1beta1.ServiceBinding {
-	if err := util.WaitForBindingCondition(client, binding.Namespace, binding.Name, v1beta1.ServiceBindingCondition{
+	condition := v1beta1.ServiceBindingCondition{
 		Type:   v1beta1.ServiceBindingConditionReady,
 		Status: v1beta1.ConditionTrue,
-	}); err != nil {
-		t.Fatalf("error waiting for binding to become ready: %v", err)
+	}
+	if cond, err := util.WaitForBindingCondition(client, testNamespace, testBindingName, condition); err != nil {
+		t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 	}
 
 	retBinding, err := client.ServiceBindings(binding.Namespace).Get(binding.Name, metav1.GetOptions{})
@@ -729,9 +732,6 @@ type controllerTest struct {
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingBindingSuccess bool
-	// true if the test expects there to be an error returned from calling
-	// create binding,
-	skipBindingCreateError bool
 
 	// function to run before creating any resources. This is useful for setting
 	// up reactions for the fake components.
@@ -841,7 +841,7 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 			ct.preCreateBinding(ct)
 		}
 		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
-		if !ct.skipBindingCreateError && err != nil {
+		if err != nil {
 			ct.t.Fatalf("error creating Binding: %v", err)
 		}
 		if !ct.skipVerifyingBindingSuccess {
@@ -854,7 +854,7 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 
 	test(ct)
 
-	if ct.binding != nil && !ct.skipBindingCreateError {
+	if ct.binding != nil {
 		if ct.preDeleteBinding != nil {
 			ct.preDeleteBinding(ct)
 		}

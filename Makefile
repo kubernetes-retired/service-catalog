@@ -237,7 +237,7 @@ verify: .init .generate_files verify-client-gen
 	@rm .out
 	@#
 	@echo Running href checker:
-	@$(DOCKER_CMD) verify-links.sh -t .
+	@$(DOCKER_CMD) verify-links.sh -t .9
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
