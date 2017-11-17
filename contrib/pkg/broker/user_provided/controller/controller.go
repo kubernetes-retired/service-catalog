@@ -76,6 +76,21 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 				Bindable:       true,
 				PlanUpdateable: true,
 			},
+			{
+				Name:        "user-provided-service-single-plan",
+				ID:          "5f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
+				Description: "A user provided service",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "96064792-7ea2-467b-af93-ac9694d96d52",
+						Description: "Sample plan description",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
 		},
 	}, nil
 }
