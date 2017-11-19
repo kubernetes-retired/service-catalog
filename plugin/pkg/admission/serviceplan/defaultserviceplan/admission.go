@@ -113,7 +113,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	// check if more than one service plan was specified and error
 	if len(plans) > 1 {
-		msg := fmt.Sprintf("ServiceClass %q has more than one plan, PlanName must be specified", instance.Spec.ClusterServiceClassExternalName)
+		msg := fmt.Sprintf("ClusterServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", instance.Spec.ClusterServiceClassName, instance.Spec.ClusterServiceClassExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
