@@ -252,9 +252,8 @@ spec:
     name: 86064792-7ea2-467b-af93-ac9694d96d52
   externalID: 10ca3610-8200-4b5d-b788-897365f191fa
   parameters:
-    credentials:
-      param-1: value-1
-      param-2: value-2
+    param-1: value-1
+    param-2: value-2
   updateRequests: 0
 status:
   asyncOpInProgress: false
@@ -269,9 +268,8 @@ status:
     clusterServicePlanExternalName: default
     parameterChecksum: e65c764db8429f9afef45f1e8f71bcbf9fdbe9a13306b86fd5dcc3c5d11e5dd3
     parameters:
-      credentials:
-        param-1: value-1
-        param-2: value-2
+      param-1: value-1
+      param-2: value-2
   orphanMitigationInProgress: false
   reconciledGeneration: 1
 ```
