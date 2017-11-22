@@ -119,7 +119,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 				VendorExtensible: spec.VendorExtensible{
 					Extensions: spec.Extensions{
-						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,URL:.spec.url,STATUS:.status.conditions[*].reason",
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,URL:.spec.url,STATUS:.status.conditions[*].reason,AGE:.metadata.creationTimestamp.elapsedTimeString()",
 					},
 				},
 			},
@@ -310,7 +310,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 				VendorExtensible: spec.VendorExtensible{
 					Extensions: spec.Extensions{
-						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,BINDABLE:.spec.bindable",
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,BINDABLE:.spec.bindable,AGE:.metadata.creationTimestamp.elapsedTimeString()",
 					},
 				},
 			},
@@ -512,7 +512,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 				VendorExtensible: spec.VendorExtensible{
 					Extensions: spec.Extensions{
-						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,CLASS:.spec.clusterServiceClassRef.name",
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,CLASS:.spec.clusterServiceClassRef.name,AGE:.metadata.creationTimestamp.elapsedTimeString()",
 					},
 				},
 			},
@@ -824,7 +824,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 				VendorExtensible: spec.VendorExtensible{
 					Extensions: spec.Extensions{
-						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,INSTANCE:.spec.instanceRef.name,SECRET:.spec.secretName,STATUS:.status.conditions[*].reason",
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,INSTANCE:.spec.instanceRef.name,SECRET:.spec.secretName,STATUS:.status.conditions[*].reason,AGE:.metadata.creationTimestamp.elapsedTimeString()",
 					},
 				},
 			},
@@ -1199,7 +1199,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 				VendorExtensible: spec.VendorExtensible{
 					Extensions: spec.Extensions{
-						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,CLASS:.spec.clusterServiceClassExternalName,PLAN:.spec.clusterServicePlanExternalName,STATUS:.status.conditions[*].reason",
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,CLASS:.spec.clusterServiceClassExternalName,PLAN:.spec.clusterServicePlanExternalName,STATUS:.status.conditions[*].reason,AGE:.metadata.creationTimestamp.elapsedTimeString()",
 					},
 				},
 			},
