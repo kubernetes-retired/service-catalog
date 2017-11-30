@@ -398,6 +398,7 @@ func newTestController(t *testing.T) (
 		osb.LatestAPIVersion().HeaderValue(),
 		fakeRecorder,
 		7*24*time.Hour,
+		7*24*time.Hour,
 	)
 	t.Log("controller start")
 	if err != nil {
