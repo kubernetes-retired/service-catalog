@@ -1547,6 +1547,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		osb.LatestAPIVersion().HeaderValue(),
 		fakeRecorder,
 		7*24*time.Hour,
+		7*24*time.Hour,
 	)
 	if err != nil {
 		t.Fatal(err)
