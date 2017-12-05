@@ -29,14 +29,19 @@ import (
 // ClusterServiceClasses for use in the service catalog.
 type ClusterServiceBroker struct {
 	metav1.TypeMeta `json:",inline"`
+
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ClusterServiceBrokerSpec `json:"spec"`
+	// Spec defines the behavior of the broker.
+	// +optional
+	Spec ClusterServiceBrokerSpec `json:"spec,omitempty"`
 
 	// Status represents the current status of a broker.
 	// +optional
-	Status ClusterServiceBrokerStatus `json:"status"`
+	Status ClusterServiceBrokerStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -230,11 +235,20 @@ type ClusterServiceClassList struct {
 
 // ClusterServiceClass represents an offering in the service catalog.
 type ClusterServiceClass struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServiceClassSpec   `json:"spec"`
-	Status ClusterServiceClassStatus `json:"status"`
+	// Spec defines the behavior of the service class.
+	// +optional
+	Spec ClusterServiceClassSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of the service class.
+	// +optional
+	Status ClusterServiceClassStatus `json:"status,omitempty"`
 }
 
 // ClusterServiceClassSpec represents details about the ClusterServicePlan
@@ -325,11 +339,20 @@ type ClusterServicePlanList struct {
 
 // ClusterServicePlan represents a tier of a ServiceClass.
 type ClusterServicePlan struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServicePlanSpec   `json:"spec"`
-	Status ClusterServicePlanStatus `json:"status"`
+	// Spec defines the behavior of the service plan.
+	// +optional
+	Spec ClusterServicePlanSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of the service plan.
+	// +optional
+	Status ClusterServicePlanStatus `json:"status,omitempty"`
 }
 
 // ClusterServicePlanSpec represents details about a ClusterServicePlan.
@@ -432,16 +455,20 @@ type ExtraValue []string
 // the ServiceInstance should have the plan and/or parameters updated at the
 // ClusterServiceBroker.
 type ServiceInstance struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the behavior of the service instance.
 	// +optional
-	Spec ServiceInstanceSpec `json:"spec"`
+	Spec ServiceInstanceSpec `json:"spec,omitempty"`
 
 	// Status represents the current status of a service instance.
 	// +optional
-	Status ServiceInstanceStatus `json:"status"`
+	Status ServiceInstanceStatus `json:"status,omitempty"`
 }
 
 // PlanReference defines the user specification for the desired
@@ -702,16 +729,20 @@ type ServiceBindingList struct {
 // ServiceBinding represents a "used by" relationship between an application and an
 // ServiceInstance.
 type ServiceBinding struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec represents the desired state of a ServiceBinding.
 	// +optional
-	Spec ServiceBindingSpec `json:"spec"`
+	Spec ServiceBindingSpec `json:"spec,omitempty"`
 
 	// Status represents the current status of a ServiceBinding.
 	// +optional
-	Status ServiceBindingStatus `json:"status"`
+	Status ServiceBindingStatus `json:"status,omitempty"`
 }
 
 // ServiceBindingSpec represents the desired state of a
