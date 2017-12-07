@@ -89,7 +89,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
 				},
 			},
 			userInfo: &user.DefaultInfo{
@@ -105,7 +106,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Basic: &servicecatalog.BasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -129,7 +131,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -153,7 +156,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -169,6 +173,49 @@ func TestAdmissionBroker(t *testing.T) {
 				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
 			},
 			allowed: false,
+		},
+		{
+			name: "broker with empty authInfo",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
+					AuthInfo:       &servicecatalog.ServiceBrokerAuthInfo{},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:forbidden",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
+		},
+		{
+			name: "broker with authInfo, empty strings for Namespace/Name",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					URL:            "http://example.com",
+					RelistBehavior: "Manual",
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &servicecatalog.ObjectReference{
+								Namespace: "",
+								Name:      "",
+							},
+						},
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:catalog",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
 		},
 	}
 

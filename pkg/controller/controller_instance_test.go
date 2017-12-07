@@ -1572,9 +1572,8 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 		return true, instance, nil
 	})
 
-	err := testController.reconcileServiceInstance(instance)
-	if err != nil {
-		t.Fatalf("reconcileServiceInstance() returned an error:  %v", err.Error())
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatalf("expected reconcileServiceInstance to return an error, but there was none")
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
@@ -1593,7 +1592,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorDeprovisionBlockedByCredentialsReason).msg(
-		"Delete instance blocked by existing ServiceBindings associated with this instance.  All credentials must be removed first",
+		"All associated ServiceBindings must be removed before this ServiceInstance can be deleted",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1608,8 +1607,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	// credentials were removed, verify the next reconcilation removes
 	// the instance
 
-	err = testController.reconcileServiceInstance(instance)
-	if err != nil {
+	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -2029,7 +2027,6 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertEmptyFinalizers(t, updatedServiceInstance)
 
-	// no events because no external deprovision was needed
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
 }
@@ -3608,7 +3605,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			},
 			finishedOrphanMitigation:     false,
 			shouldError:                  true,
-			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
 			expectedReadyConditionReason: errorDeprovisionCalledReason,
 		},
 		{
@@ -3628,7 +3625,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			},
 			finishedOrphanMitigation:     false,
 			shouldError:                  true,
-			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
+			expectedReadyConditionStatus: v1beta1.ConditionFalse,
 			expectedReadyConditionReason: errorDeprovisionCalledReason,
 		},
 		{

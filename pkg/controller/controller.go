@@ -52,9 +52,8 @@ const (
 	//
 	// 5ms, 10ms, 20ms, 40ms, 80ms, 160ms, 320ms, 640ms, 1.3s, 2.6s, 5.1s, 10.2s, 20.4s, 41s, 82s
 	maxRetries = 15
-	//
-	pollingStartInterval      = 1 * time.Second
-	pollingMaxBackoffDuration = 1 * time.Hour
+	// pollingStartInterval is the initial interval to use when polling async OSB operations.
+	pollingStartInterval = 1 * time.Second
 
 	// ContextProfilePlatformKubernetes is the platform name sent in the OSB
 	// ContextProfile for requests coming from Kubernetes.
@@ -75,6 +74,7 @@ func NewController(
 	osbAPIPreferredVersion string,
 	recorder record.EventRecorder,
 	reconciliationRetryDuration time.Duration,
+	operationPollingMaximumBackoffDuration time.Duration,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
@@ -89,8 +89,8 @@ func NewController(
 		servicePlanQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-plan"),
 		instanceQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance"),
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
-		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "instance-poller"),
-		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "binding-poller"),
+		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "instance-poller"),
+		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
 	}
 
 	controller.brokerLister = brokerInformer.Lister()
@@ -626,4 +626,13 @@ func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authC
 	clientConfig.Insecure = broker.Spec.InsecureSkipTLSVerify
 	clientConfig.CAData = broker.Spec.CABundle
 	return clientConfig
+}
+
+// reconciliationRetryDurationExceeded returns whether the given operation
+// start time has exceeded the controller's set reconciliation retry duration.
+func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *metav1.Time) bool {
+	if time.Now().Before(operationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		return false
+	}
+	return true
 }
