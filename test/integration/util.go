@@ -16,7 +16,7 @@ limitations under the License.
 
 package integration
 
-// strPrt, String Pointer, returns the address of s. useful for filling struct
+// strPtr, String Pointer, returns the address of s. useful for filling struct
 // fields that require a *string (for json decoding purposes).
 func strPtr(s string) *string {
 	return &s

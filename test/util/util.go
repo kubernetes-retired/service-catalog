@@ -225,8 +225,8 @@ func WaitForInstanceReconciledGeneration(client v1beta1servicecatalog.Servicecat
 }
 
 // WaitForBindingCondition waits for the status of the named binding to contain
-// a condition whose type and status matches the supplied one but also returns
-// back the last binding condition of the same type requested during polling.
+// a condition whose type and status matches the supplied one and then returns
+// back the last binding condition of the same type requested during polling if found.
 func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceBindingCondition) (*v1beta1.ServiceBindingCondition, error) {
 	var lastSeenCondition *v1beta1.ServiceBindingCondition
 	return lastSeenCondition, wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,

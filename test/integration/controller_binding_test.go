@@ -49,14 +49,12 @@ func TestCreateServiceBindingSuccess(t *testing.T) {
 				binding:  getTestBinding(),
 			}
 			ct.run(func(ct *controllerTest) {
-				{
-					condition := v1beta1.ServiceBindingCondition{
-						Type:   v1beta1.ServiceBindingConditionReady,
-						Status: v1beta1.ConditionTrue,
-					}
-					if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
-						t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
-					}
+				condition := v1beta1.ServiceBindingCondition{
+					Type:   v1beta1.ServiceBindingConditionReady,
+					Status: v1beta1.ConditionTrue,
+				}
+				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
+					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 				}
 			})
 		})
@@ -136,78 +134,6 @@ func TestCreateServiceBindingInvalidInstance(t *testing.T) {
 		})
 	}
 }
-
-// TODO: this one is still broken:
-// E1116 16:10:21.295296    8302 controller_instance.go:1844] ServiceInstance "test-namespace/test-instance": Failed to update status: ServiceInstance.servicecatalog.k8s.io "test-instance" is invalid: status.currentOperation: Forbidden: currentOperation must not be present when reconciledGeneration and generation are equal
-// TestCreateServiceBindingAsyncServiceInstance try to bind to a in progress service instance.
-//func TestCreateServiceBindingAsync(t *testing.T) {
-//	cases := []struct {
-//		name                string
-//		asyncForInstances   bool
-//		expectedErrorReason string
-//	}{
-//		{
-//			name:                "bind to async-in-progress service instance",
-//			asyncForInstances:   true,
-//			expectedErrorReason: "ErrorAsyncOperationInProgress",
-//		},
-//	}
-//	for _, tc := range cases {
-//		t.Run(tc.name, func(t *testing.T) {
-//			ct := &controllerTest{
-//				t:        t,
-//				broker:   getTestBroker(),
-//				instance: getTestInstance(),
-//				binding:  getTestBinding(),
-//				setup: func(ct *controllerTest) {
-//					if tc.asyncForInstances {
-//						ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.Async = true
-//						ct.osbClient.UpdateInstanceReaction.(*fakeosb.UpdateInstanceReaction).Response.Async = true
-//						ct.osbClient.DeprovisionReaction.(*fakeosb.DeprovisionReaction).Response.Async = true
-//
-//						key := osb.OperationKey(testInstanceLastOperation)
-//
-//						ct.osbClient.PollLastOperationReactions = map[osb.OperationKey]*fakeosb.PollLastOperationReaction{
-//							key: {
-//								Response: &osb.LastOperationResponse{
-//									State:       osb.StateInProgress,
-//									Description: strPtr("StateInProgress"),
-//								},
-//							},
-//						}
-//
-//						ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.OperationKey = &key
-//
-//						ct.skipVerifyingInstanceSuccess = true
-//					}
-//
-//				},
-//				preDeleteInstance: func(ct *controllerTest) {
-//					// Let the instance finish.
-//					ct.osbClient.PollLastOperationReactions = map[osb.OperationKey]*fakeosb.PollLastOperationReaction{}
-//				},
-//				skipVerifyingBindingSuccess: tc.expectedErrorReason != "",
-//			}
-//			ct.run(func(ct *controllerTest) {
-//				{
-//					status := v1beta1.ConditionTrue
-//					if tc.expectedErrorReason != "" {
-//						status = v1beta1.ConditionFalse
-//					}
-//					condition := v1beta1.ServiceBindingCondition{
-//						Type:   v1beta1.ServiceBindingConditionReady,
-//						Status: status,
-//						Reason: tc.expectedErrorReason,
-//					}
-//						if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
-//							t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
-//						}
-//
-//				}
-//			})
-//		})
-//	}
-//}
 
 // TestCreateServiceBindingNonBindable bind to a non-bindable service class / plan.
 func TestCreateServiceBindingNonBindable(t *testing.T) {
