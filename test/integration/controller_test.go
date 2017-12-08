@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,18 +52,21 @@ import (
 )
 
 const (
-	testNamespace                = "test-namespace"
-	testClusterServiceBrokerName = "test-broker"
-	testClusterServiceClassName  = "test-service"
-	testClusterServiceClassGUID  = "12345"
-	testClusterServicePlanName   = "test-plan"
-	testPlanExternalID           = "34567"
-	testInstanceName             = "test-instance"
-	testBindingName              = "test-binding"
-	testSecretName               = "test-secret"
-	testBrokerURL                = "https://example.com"
-	testExternalID               = "9737b6ed-ca95-4439-8219-c53fcad118ab"
-	testDashboardURL             = "http://test-dashboard.example.com"
+	testNamespace                         = "test-namespace"
+	testClusterServiceBrokerName          = "test-broker"
+	testClusterServiceClassName           = "test-service"
+	testClusterServiceClassGUID           = "12345"
+	testClusterServicePlanName            = "test-plan"
+	testNonbindableClusterServicePlanName = "test-nb-plan"
+	testInstanceLastOperation             = "InstanceLastOperation"
+	testPlanExternalID                    = "34567"
+	testNonbindablePlanExternalID         = "nb34567"
+	testInstanceName                      = "test-instance"
+	testBindingName                       = "test-binding"
+	testSecretName                        = "test-secret"
+	testBrokerURL                         = "https://example.com"
+	testExternalID                        = "9737b6ed-ca95-4439-8219-c53fcad118ab"
+	testDashboardURL                      = "http://test-dashboard.example.com"
 )
 
 // TestBasicFlows tests:
@@ -169,11 +173,12 @@ func TestBindingFailure(t *testing.T) {
 		},
 	}
 	ct.run(func(ct *controllerTest) {
-		if err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, v1beta1.ServiceBindingCondition{
+		condition := v1beta1.ServiceBindingCondition{
 			Type:   v1beta1.ServiceBindingConditionFailed,
 			Status: v1beta1.ConditionTrue,
-		}); err != nil {
-			t.Fatalf("error waiting for binding to become failed: %v", err)
+		}
+		if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
+			t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 		}
 	})
 }
@@ -286,11 +291,12 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 		},
 	}
 	ct.run(func(ct *controllerTest) {
-		if err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, v1beta1.ServiceBindingCondition{
+		condition := v1beta1.ServiceBindingCondition{
 			Type:   v1beta1.ServiceBindingConditionFailed,
 			Status: v1beta1.ConditionTrue,
-		}); err != nil {
-			t.Fatalf("error waiting for binding to become failed: %v", err)
+		}
+		if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
+			t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 		}
 
 		if err := util.WaitForBindingReconciledGeneration(ct.client, testNamespace, testBindingName, 1); err != nil {
@@ -441,6 +447,29 @@ func prependGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
 	})
 }
 
+// prependGetSecretReaction prepends a reaction to getting secrets from the fake kube client
+// that returns a secret with the specified secret data when a request is made for the secret
+// with the specified secret name.
+func prependGetSecretReaction(fakeKubeClient *fake.Clientset, secretName string, secretData map[string][]byte) {
+	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		getAction, ok := action.(clientgotesting.GetAction)
+		if !ok {
+			return true, nil, apierrors.NewInternalError(fmt.Errorf("could not convert get secrets action to a GetAction: %T", action))
+		}
+		if getAction.GetName() != secretName {
+			return false, nil, nil
+		}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      secretName,
+			},
+			Data: secretData,
+		}
+		return true, secret, nil
+	})
+}
+
 // getTestCatalogResponse returns a sample response to a get catalog request.
 func getTestCatalogResponse() *osb.CatalogResponse {
 	return &osb.CatalogResponse{
@@ -456,6 +485,13 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 						Free:        truePtr(),
 						ID:          testPlanExternalID,
 						Description: "a test plan",
+					},
+					{
+						Name:        testNonbindableClusterServicePlanName,
+						Free:        truePtr(),
+						ID:          testNonbindablePlanExternalID,
+						Description: "an non-bindable test plan",
+						Bindable:    falsePtr(),
 					},
 				},
 			},
@@ -624,11 +660,12 @@ func getTestBinding() *v1beta1.ServiceBinding {
 // verifyBindingCreated verifies that the specified binding has been created
 // and reconciled successfully.
 func verifyBindingCreated(t *testing.T, client clientsetsc.ServicecatalogV1beta1Interface, binding *v1beta1.ServiceBinding) *v1beta1.ServiceBinding {
-	if err := util.WaitForBindingCondition(client, binding.Namespace, binding.Name, v1beta1.ServiceBindingCondition{
+	condition := v1beta1.ServiceBindingCondition{
 		Type:   v1beta1.ServiceBindingConditionReady,
 		Status: v1beta1.ConditionTrue,
-	}); err != nil {
-		t.Fatalf("error waiting for binding to become ready: %v", err)
+	}
+	if cond, err := util.WaitForBindingCondition(client, testNamespace, testBindingName, condition); err != nil {
+		t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
 	}
 
 	retBinding, err := client.ServiceBindings(binding.Namespace).Get(binding.Name, metav1.GetOptions{})
@@ -861,4 +898,15 @@ func getLastBrokerAction(t *testing.T, osbClient *fakeosb.FakeClient, actionType
 		t.Fatalf("unexpected action type: expected %s, got %s", e, a)
 	}
 	return brokerAction
+}
+
+// convertParametersIntoRawExtension converts the specified map of parameters
+// into a RawExtension object that can be used in the Parameters field of
+// ServiceInstanceSpec or ServiceBindingSpec.
+func convertParametersIntoRawExtension(t *testing.T, parameters map[string]interface{}) *runtime.RawExtension {
+	marshalledParams, err := json.Marshal(parameters)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	}
+	return &runtime.RawExtension{Raw: marshalledParams}
 }
