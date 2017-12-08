@@ -33,6 +33,7 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/golang/glog"
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
@@ -67,6 +68,7 @@ const (
 	testBrokerURL                         = "https://example.com"
 	testExternalID                        = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 	testDashboardURL                      = "http://test-dashboard.example.com"
+	testOperation                         = "test-operation"
 )
 
 // TestBasicFlows tests:
@@ -198,6 +200,8 @@ func verifyUsernameInLastBrokerAction(t *testing.T, osbClient *fakeosb.FakeClien
 	case *osb.BindRequest:
 		oi = request.OriginatingIdentity
 	case *osb.UnbindRequest:
+		oi = request.OriginatingIdentity
+	case *osb.LastOperationRequest:
 		oi = request.OriginatingIdentity
 	default:
 		t.Fatalf("unexpected request type: %T", request)
@@ -350,6 +354,67 @@ func TestAsyncProvisionWithMultiplePolls(t *testing.T) {
 
 		verifyInstanceCreated(t, ct.client, ct.instance)
 	})
+}
+
+func getUpdateInstanceResponseByPollCountReactions(numOfResponses int, stateProgressions []fakeosb.UpdateInstanceReaction) fakeosb.DynamicUpdateInstanceReaction {
+	numberOfPolls := 0
+	numberOfStates := len(stateProgressions)
+
+	return func(_ *osb.UpdateInstanceRequest) (*osb.UpdateInstanceResponse, error) {
+		var reaction fakeosb.UpdateInstanceReaction
+		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
+			reaction = stateProgressions[numberOfStates-1]
+			glog.V(5).Infof("Update instance state progressions done, ended on %v", reaction)
+		} else {
+			idx := numberOfPolls / numOfResponses
+			reaction = stateProgressions[idx]
+			glog.V(5).Infof("Update instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+		}
+		numberOfPolls++
+		if reaction.Response != nil {
+			return &osb.UpdateInstanceResponse{
+				Async:        reaction.Response.Async,
+				OperationKey: reaction.Response.OperationKey,
+			}, nil
+		}
+		return nil, reaction.Error
+	}
+}
+
+func getLastOperationResponseByPollCountReactions(numOfResponses int, stateProgressions []fakeosb.PollLastOperationReaction) fakeosb.DynamicPollLastOperationReaction {
+	numberOfPolls := 0
+	numberOfStates := len(stateProgressions)
+
+	return func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+		var reaction fakeosb.PollLastOperationReaction
+		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
+			reaction = stateProgressions[numberOfStates-1]
+			glog.V(5).Infof("Last operation state progressions done, ended on %v", reaction)
+		} else {
+			idx := numberOfPolls / numOfResponses
+			reaction = stateProgressions[idx]
+			glog.V(5).Infof("Last operation state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+		}
+		numberOfPolls++
+		if reaction.Response != nil {
+			return &osb.LastOperationResponse{State: reaction.Response.State}, nil
+		}
+		return nil, reaction.Error
+	}
+}
+
+func getLastOperationResponseByPollCountStates(numOfResponses int, stateProgressions []osb.LastOperationState) func(*osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+	reactionProgressions := make([]fakeosb.PollLastOperationReaction, len(stateProgressions))
+	for i, item := range stateProgressions {
+		newReaction := fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: item,
+			},
+		}
+		reactionProgressions[i] = newReaction
+	}
+
+	return getLastOperationResponseByPollCountReactions(numOfResponses, reactionProgressions)
 }
 
 // newTestController creates a new test controller injected with fake clients
@@ -858,7 +923,9 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 		}
 	}
 
-	test(ct)
+	if test != nil {
+		test(ct)
+	}
 
 	if ct.binding != nil {
 		if ct.preDeleteBinding != nil {
