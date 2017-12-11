@@ -96,20 +96,13 @@ and therefore a separate persistent storage (from Kubernetes) is not needed.
 storage. The plan is to add support for CRDs to the `rest.storage` interface
 of the API Server in the near future.*
 
-The Service Catalog resource model is defined within a file called
-`pkg/apis/servicecatalog/types.go` and the initial (current) version
-of the model is in `pkg/apis/servicecatalog/v1alpha1/`.  As of now there is
-only one version of the model but over time additional versions will be
-created and each will have its own sub-directory under
-`pkg/apis/servicecatalog/`.
+The Service Catalog API resources are defined within a file called
+`pkg/apis/servicecatalog/types.go` and the version
+of the api is in `pkg/apis/servicecatalog/v1beta1/`.
 
-**TODO** add a brief discussion of how resources are created and we'll
-use the Status section to know when its fully realized.  Instead of the
-"claim" model that is used by other parts of Kube.
-
-The Controller is the brains of the Service Catalog. It monitors the
-resource model (via watches on the API server), and takes the appropriate
-actions based on the changes it detects.
+The controller implements the behaviors of the service-catalog API. It monitors the
+API resources (by watching the API server), and takes the appropriate
+actions based on the user's desired intent.
 
 To understand the Service Catalog resource model, it is best to walk through
 a typical workflow:
@@ -123,41 +116,51 @@ can be in different NS's than the rest (which must all be in the same).
 Before a Service can be used by an Application it must first be registered
 with the Kubernetes platform. Since Services are managed by Service Brokers
 we must first register the Service Broker by creating an instance of a
-`ServiceBroker`:
+`ClusterServiceBroker`:
 
     kubectl create -f broker.yaml
 
 where `broker.yaml` might look like:
 
-    apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: ServiceBroker
+    apiVersion: servicecatalog.k8s.io/v1beta1
+    kind: ClusterServiceBroker
     metadata:
-      name: BestDataBase
+      name: best-db-broker
     spec:
       url: http://bestdatabase.com
 
-**TODO** beef-up theses sample resource snippets
+**Note:** As the name implies, the `ClusterServiceBroker` resource is cluster-scoped, ie,
+outside of any namespace.
 
-After a `ServiceBroker` resource is created the Service Catalog Controller will
+**TODO** beef-up these sample resource snippets
+
+After a `ClusterServiceBroker` resource is created the Service Catalog Controller will
 receive an event indicating its addition to the datastore. The Controller
 will then query the Service Broker (at the `url` specified) for the list
 of available Services. Each Service will then have a corresponding
-`ServiceClass` resource created:
+`ClusterServiceClass` resource created:
 
-    apiVersion: servicecatalog.k8s.io/v1alpha1
-    kind: ServiceClass
+    apiVersion: servicecatalog.k8s.io/v1beta1
+    kind: ClusterServiceClass
     metadata:
       name: smallDB
-      brokerName: BestDataBase
-      plans...
+    spec:
+      bindable: true
+      clusterServiceBrokerName: ups-broker
+      description: A user provided service
+      externalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+      externalName: user-provided-service
+      planUpdatable: false
 
-Notice that each Service can have one or more Plans associated with it.
+Each Service has one or more Plans associated with it.
+
+For each plan of each service, a `ClusterServicePlan` will be created.
 
 **TODO** Anything special about the CF flows we need to discuss?
 
 Users can then query for the list of available Services:
 
-    kubectl get services
+    kubectl get clusterserviceclasses
 
 ### Creating a Service Instance
 
@@ -168,18 +171,20 @@ done by creating a new `ServiceInstance` resource:
 
 where `instance.yaml` might look like:
 
-    apiVersion: servicecatalog.k8s.io/v1alpha1
+    apiVersion: servicecatalog.k8s.io/v1beta1
     kind: ServiceInstance
     metadata:
-      name: johnsDB
+      namespace: example-ns
+      name: test-database
     spec:
-      serviceClassName: smallDB
+        clusterServiceClassExternalName: small-db
+        clusterServicePlanExternalName: free
 
 Within the `ServiceInstance` resource is the specified Plan to be used. This allows
 for the user of the Service to indicate which variant of the Service they
 want - perhaps based on QoS type of variants.
 
-When creating a ServiceInstance, extra metadata (called "parameters") can be
+When creating a `ServiceInstance`, extra metadata (called "parameters") can be
 passed in to help configure the new Service being provisioned. Parameters
 can be provided two different ways: raw JSON or referencing a Kubernetes
 Secret. In the case of a Secret, the Secret name and key holding the
@@ -196,6 +201,8 @@ update to occur you must manually change something within the
 ServiceInstanceSpec resource that would cause a reconciliation to occur.
 Within the ServiceInstanceSpec is a property called `UpdateRequests` which
 can be incremented to cause this to happen.
+
+For more information, see the documentation on [parameters](parameters.md).
 
 **TODO** Discuss the parameters that can be passed in
 
@@ -240,13 +247,15 @@ Service Instance must be established. This is done by creating a new
 
 where `instance.yaml` might look like:
 
-    apiVersion: servicecatalog.k8s.io/v1alpha1
+    apiVersion: servicecatalog.k8s.io/v1beta1
     kind: ServiceBinding
     metadata:
-      name: johnsServiceBinding
+      namespace: example-ns
+      name: test-database-binding
     spec:
-      secretName: johnSecret
-      ...Pod selector labels...
+      instanceRef:
+        name: test-database
+      secretName: db-secret
 
 The Controller, upon being notified of the new `ServiceBinding` resource, will
 then talk to the Service Broker to create a new ServiceBinding for the specified
@@ -267,49 +276,12 @@ by reading the documentation of the Service.
 The Credentials will not be stored in the Service Catalog's datastore.
 Rather, they will be stored in the Kubenetes core as Secrets and a reference
 to the Secret will be saved within the `ServiceBinding` resource. If the
-ServiceBinding `Spec.SecretName` is not specified then the Controller will
-use the ServiceBinding `Name` property as the name of the Secret.
+ServiceBinding `spec.secretName` is not specified then the Controller will
+use the ServiceBinding `metadata.name` property as the name of the Secret.
 
 ServiceBindings are not required to be in the same Kubenetes Namespace
 as the Service Instance. This allows for sharing of Service Instances
 across Applications and Namespaces.
-
-In addition to the Secret, the Controller will also create a Pod Injection
-Policy (PIP) resource in the Kubernetes core. See the
-[PIP Proposal](https://github.com/kubernetes/community/pull/254) for more
-information, but in short, the PIP defines how to modify the specification
-of a Pod during its creation to include additional volumes and environment
-variables.
-In particular, Service Catalog will use PIPs to allow the Application
-owner to indicate how the Secret should be made available to its Pods. For
-example, they may define a PIP to indicate that the Secret should be mounted
-into its Pods. Or perhaps the Secret's names/values should be exposed as
-environment variables.
-
-PIPs will use label selectors to indicate which Pods will be modified.
-For example:
-
-    kind: PodInjectionPolicy
-    apiVersion: extensions/v1alpha1
-    metadata:
-      name: allow-database
-      namespace: myns
-    spec:
-      selector:
-        matchLabels:
-          role: frontend
-      env:
-        - name: DB_PORT
-          value: 6379
-
-defines a PIP that will add an environment variable called `DB_PORT` with
-a value of `6379` to all Pods that have a label of `role` with a value
-of `frontend`.
-
-Eventually, the OSB API specification will hopefully have additional metadata
-about the Credentials to indicate which fields are considered "secret" and
-which are not. When that support is available expect the non-secret Credential
-information to be placed into a ConfigMap instead of a Secret.
 
 Once the Secret is made available to the Application's Pods, it is then up
 to the Application code to use that information to talk to the Service
@@ -321,12 +293,9 @@ As with all resources in Kubernetes, you can delete any of the Service
 Catalog resource by doing an HTTP DELETE to the resource's URL. However,
 it is important to note the you can not delete a Service Instance while
 there are ServiceBindings associated with it.  In other words, before a Service
-ServiceInstance can be delete, you must first delete all of its ServiceBindings.
-Attempting to delete an ServiceInstance that still has a ServiceBinding will fail
-and generate an error.
+ServiceInstance can be deleted, you must first delete all of its ServiceBindings.
 
-Deleting a ServiceBinding will also, automatically, delete any Secrets or ConfigMaps
-that might be associated with it.
+Deleting a `ServiceBinding` indicates a user's intent to unbind.  The service-catalog controller handles deleting any Secrets associated with a binding.
 
 **TODO** what happens to the Pods using them?
 
