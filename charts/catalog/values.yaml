@@ -89,6 +89,8 @@ controllerManager:
   serviceAccount: service-catalog-controller-manager
   # Controls whether the API server's TLS verification should be skipped.
   apiserverSkipVerify: true
+  # Whether the controller will expose metrics on /metrics
+  enablePrometheusScrape: false
 # Whether the OriginatingIdentity alpha feature should be enabled
 originatingIdentityEnabled: false
 # Whether the AsyncBindingOperations alpha feature should be enabled
