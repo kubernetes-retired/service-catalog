@@ -40,7 +40,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/healthz"
@@ -216,21 +215,22 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	glog.V(5).Infof("Using namespace %v for leader election lock", controllerManagerOptions.LeaderElectionNamespace)
 
 	// Lock required for leader election
-	rl := resourcelock.EndpointsLock{
-		EndpointsMeta: metav1.ObjectMeta{
-			Namespace: controllerManagerOptions.LeaderElectionNamespace,
-			Name:      "service-catalog-controller-manager",
-		},
-		Client: leaderElectionClient.CoreV1(),
-		LockConfig: resourcelock.ResourceLockConfig{
+	rl, err := resourcelock.New(
+		controllerManagerOptions.LeaderElection.ResourceLock,
+		controllerManagerOptions.LeaderElectionNamespace,
+		"service-catalog-controller-manager",
+		leaderElectionClient.CoreV1(),
+		resourcelock.ResourceLockConfig{
 			Identity:      id + "-external-service-catalog-controller",
 			EventRecorder: recorder,
-		},
+		})
+	if err != nil {
+		return err
 	}
 
 	// Try and become the leader and start cloud controller manager loops
 	leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
-		Lock:          &rl,
+		Lock:          rl,
 		LeaseDuration: controllerManagerOptions.LeaderElection.LeaseDuration.Duration,
 		RenewDeadline: controllerManagerOptions.LeaderElection.RenewDeadline.Duration,
 		RetryPeriod:   controllerManagerOptions.LeaderElection.RetryPeriod.Duration,

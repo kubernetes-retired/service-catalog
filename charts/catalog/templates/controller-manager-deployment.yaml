@@ -44,7 +44,8 @@ spec:
         - --port
         - "8080"
         {{ if .Values.controllerManager.leaderElection.activated -}}
-        - "--leader-election-namespace=$(K8S_NAMESPACE)"
+        - "--leader-election-namespace={{ .Release.Namespace }}"
+        - "--leader-elect-resource-lock=configmaps"
         {{- else }}
         - "--leader-elect=false"
         {{- end }}

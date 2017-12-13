@@ -84,7 +84,7 @@ controllerManager:
     # Enables lock contention profiling, if profiling is enabled.
     contentionProfiling: false
   leaderElection:
-    # Whether the controller has option to set leader election namespace.
+    # Whether the controller has leader election enabled.
     activated: false
   serviceAccount: service-catalog-controller-manager
   # Controls whether the API server's TLS verification should be skipped.
