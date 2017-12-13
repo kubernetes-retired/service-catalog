@@ -343,6 +343,11 @@ func TestAsyncProvisionWithMultiplePolls(t *testing.T) {
 		},
 	}
 	ct.run(func(ct *controllerTest) {
+		// Polling is going to take at least 3 seconds, with a 1-second break between the first poll and the second
+		// and a 2-second break between the second poll and the third. Let's sleep here so that we don't risk
+		// timing out while waiting for the instance condition to be ready in the following wait.
+		//time.Sleep(3 * time.Second)
+
 		verifyInstanceCreated(t, ct.client, ct.instance)
 	})
 }
