@@ -60,12 +60,25 @@ var (
 		},
 		[]string{"broker"},
 	)
+
+	// OSBRequestCount exposes the number of HTTP requests made to Open Service
+	// Brokers.  The metric is broken out by broker name and response status
+	// (100/200/300/400/500 or 'client-error')
+	OSBRequestCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: catalogNamespace,
+			Name:      "osb_request_count",
+			Help:      "Cumulative number of HTTP requests from the OSB Client to the specified Service Broker grouped by name and response status.",
+		},
+		[]string{"broker", "status"},
+	)
 )
 
 func register() {
 	registerMetrics.Do(func() {
 		prometheus.MustRegister(BrokerServiceClassCount)
 		prometheus.MustRegister(BrokerServicePlanCount)
+		prometheus.MustRegister(OSBRequestCount)
 	})
 }
 
