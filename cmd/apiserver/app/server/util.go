@@ -90,17 +90,21 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 		return nil, nil, err
 	}
 
-	genericConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
-		openapi.GetOpenAPIDefinitions, api.Scheme)
-	if genericConfig.OpenAPIConfig.Info == nil {
-		genericConfig.OpenAPIConfig.Info = &spec.Info{}
-	}
-	if genericConfig.OpenAPIConfig.Info.Version == "" {
-		if genericConfig.Version != nil {
-			genericConfig.OpenAPIConfig.Info.Version = strings.Split(genericConfig.Version.String(), "-")[0]
-		} else {
-			genericConfig.OpenAPIConfig.Info.Version = "unversioned"
+	if s.ServeOpenAPISpec {
+		genericConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
+			openapi.GetOpenAPIDefinitions, api.Scheme)
+		if genericConfig.OpenAPIConfig.Info == nil {
+			genericConfig.OpenAPIConfig.Info = &spec.Info{}
 		}
+		if genericConfig.OpenAPIConfig.Info.Version == "" {
+			if genericConfig.Version != nil {
+				genericConfig.OpenAPIConfig.Info.Version = strings.Split(genericConfig.Version.String(), "-")[0]
+			} else {
+				genericConfig.OpenAPIConfig.Info.Version = "unversioned"
+			}
+		}
+	} else {
+		glog.Warning("OpenAPI spec will not be served")
 	}
 
 	genericConfig.SwaggerConfig = genericapiserver.DefaultSwaggerConfig()

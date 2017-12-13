@@ -67,6 +67,8 @@ apiserver:
     # If specified, audit log goes to specified path.
     logPath: "/tmp/service-catalog-apiserver-audit.log"
   serviceAccount: service-catalog-apiserver
+  # if true, makes the API server serve the OpenAPI schema (which is problematic with older versions of kubectl)
+  serveOpenAPISpec: false
 controllerManager:
   # Log level; valid values are in the range 0 - 10
   verbosity: 10

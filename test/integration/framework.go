@@ -98,6 +98,7 @@ func withConfigGetFreshApiserverAndClient(
 			AuditOptions:            genericserveroptions.NewAuditOptions(),
 			DisableAuth:             true,
 			StandaloneMode:          true, // this must be true because we have no kube server for integration.
+			ServeOpenAPISpec:        true,
 		}
 		options.SecureServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
