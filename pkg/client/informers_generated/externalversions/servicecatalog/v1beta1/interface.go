@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// ClusterIDs returns a ClusterIDInformer.
+	ClusterIDs() ClusterIDInformer
 	// ClusterServiceBrokers returns a ClusterServiceBrokerInformer.
 	ClusterServiceBrokers() ClusterServiceBrokerInformer
 	// ClusterServiceClasses returns a ClusterServiceClassInformer.
@@ -43,6 +45,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory) Interface {
 	return &version{f}
+}
+
+// ClusterIDs returns a ClusterIDInformer.
+func (v *version) ClusterIDs() ClusterIDInformer {
+	return &clusterIDInformer{factory: v.SharedInformerFactory}
 }
 
 // ClusterServiceBrokers returns a ClusterServiceBrokerInformer.

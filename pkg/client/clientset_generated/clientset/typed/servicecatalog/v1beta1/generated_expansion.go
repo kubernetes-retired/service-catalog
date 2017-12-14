@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1beta1
 
+type ClusterIDExpansion interface{}
+
 type ClusterServiceBrokerExpansion interface{}
 
 type ClusterServiceClassExpansion interface{}

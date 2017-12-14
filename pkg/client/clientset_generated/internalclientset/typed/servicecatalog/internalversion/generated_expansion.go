@@ -16,6 +16,8 @@ limitations under the License.
 
 package internalversion
 
+type ClusterIDExpansion interface{}
+
 type ClusterServiceBrokerExpansion interface{}
 
 type ClusterServiceClassExpansion interface{}

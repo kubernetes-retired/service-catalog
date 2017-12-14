@@ -18,6 +18,10 @@ limitations under the License.
 
 package internalversion
 
+// ClusterIDListerExpansion allows custom methods to be added to
+// ClusterIDLister.
+type ClusterIDListerExpansion interface{}
+
 // ClusterServiceBrokerListerExpansion allows custom methods to be added to
 // ClusterServiceBrokerLister.
 type ClusterServiceBrokerListerExpansion interface{}

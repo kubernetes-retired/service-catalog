@@ -26,6 +26,10 @@ type FakeServicecatalogV1beta1 struct {
 	*testing.Fake
 }
 
+func (c *FakeServicecatalogV1beta1) ClusterIDs() v1beta1.ClusterIDInterface {
+	return &FakeClusterIDs{c}
+}
+
 func (c *FakeServicecatalogV1beta1) ClusterServiceBrokers() v1beta1.ClusterServiceBrokerInterface {
 	return &FakeClusterServiceBrokers{c}
 }
