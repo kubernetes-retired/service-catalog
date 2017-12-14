@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -189,16 +190,18 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		waitGroup.Add(1)
 		go func() {
 			wait.Until(func() {
-				fmt.Println("cluster ID monitor loop enter")
-				cid, err := c.serviceCatalogClient.ClusterIDs().Get("cluster-id", metav1.GetOptions{})
+				glog.V(9).Info("cluster ID monitor loop enter")
+				_, err := c.serviceCatalogClient.ClusterIDs().Get("cluster-id", metav1.GetOptions{})
 				if errors.IsNotFound(err) {
-					clusterID := &v1beta1.ClusterID{ID: "abcdefg"}
-					cid, err := c.serviceCatalogClient.ClusterIDs().Create(clusterID)
-					fmt.Println(cid, err)
+					clusterID := &v1beta1.ClusterID{ID: string(uuid.NewUUID())}
+					c.serviceCatalogClient.ClusterIDs().Create(clusterID)
+					// if we fail to set the id,
+					// it could be due to permissions
+					// or due to being already set while we were trying
 				} else {
-					fmt.Println(cid, err)
+					// cluster id exists and is set
 				}
-				fmt.Println("cluster ID monitor loop exit")
+				glog.V(9).Info("cluster ID monitor loop exit")
 			}, time.Second, stopCh)
 			waitGroup.Done()
 		}()

@@ -23,8 +23,11 @@ import (
 )
 
 // ValidateClusterID validates a single clusterid
-func ValidateClusterID(broker *sc.ClusterID) field.ErrorList {
+func ValidateClusterID(id *sc.ClusterID) field.ErrorList {
 	allErrs := field.ErrorList{}
+	if id.ID == "" {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("ID"), id.ID, "cluster-id ID must have content when setting"))
+	}
 	return allErrs
 }
 
