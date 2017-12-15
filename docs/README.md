@@ -1,16 +1,22 @@
-## service-catalog docs
+# Service Catalog docs
 
-Start by checking out the [introduction](introduction.md).
+Welcome to the documentation for Service Catalog. This page is an index for
+the articles in here. We recommend you start by reading the 
+[introduction](introduction.md), and then move on to the 
+[installation instructions](./install.md).
 
-Topics for users:
-- [Installation instructions](install.md)
-- [Walkthrough](walkthrough.md)
-- [Passing parameters to ServiceInstances and ServiceBindings](parameters.md)
+Afterward, see the below list of topics:
 
-Topics for developers:
-- [Code conventions](code-standards.md)
-- [Developer guide](devguide.md)
-- [Design](design.md)
-- [Notes on authentication](auth.md)
+## Topics for users:
+- [Passing parameters to ServiceInstances and ServiceBindings](./parameters.md)
 
-We are collecting use-cases and other fundamental documentation for our eventual [V1 GA release here](./v1).
+## Topics for developers:
+- [Code conventions](./code-standards.md)
+- [Developer guide](./devguide.md)
+- [Design](./design.md)
+- [Notes on authentication](./auth.md)
+
+## Request for Comments
+
+As Service Catalog is in beta, we are collecting use-cases and other 
+fundamental documentation for our eventual [V1 GA release here](./v1).
