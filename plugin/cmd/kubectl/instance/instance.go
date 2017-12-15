@@ -25,15 +25,19 @@ import (
 )
 
 const usage = `Usage:
-  kubectl plugin broker SUBCOMMAND
+  kubectl plugin instance SUBCOMMAND
 
 Available subcommands:
   list
   get
 `
 
+const listUsage = `Usage:
+  kubectl plugin instance list NAMESPACE
+`
+
 const getUsage = `Usage:
-  kubectl plugin broker get BROKERNAME
+  kubectl plugin instance get NAMESPACE INSTANCENAME
 `
 
 func main() {
@@ -46,30 +50,35 @@ func main() {
 		utils.Exit1(fmt.Sprintf("Unable to initialize service catalog client (%s)", err))
 	}
 	if os.Args[1] == "list" {
-		brokers, err := client.ListBrokers()
+		if len(os.Args) != 3 {
+			utils.Exit1(listUsage)
+		}
+		namespace := os.Args[2]
+		instances, err := client.ListInstances(namespace)
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to list brokers (%s)", err))
+			utils.Exit1(fmt.Sprintf("Unable to list instances in namespace %s (%s)", namespace, err))
 		}
 
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		for _, v := range brokers.Items {
-			table.AddRow(v.Name, v.Namespace, v.Spec.URL)
+		table := utils.NewTable("INSTANCE NAME", "NAMESPACE", "CLASS NAME", "PLAN NAME")
+		for _, v := range instances.Items {
+			table.AddRow(v.Name, v.Namespace, v.Spec.ClusterServiceClassRef.Name, v.Spec.ClusterServicePlanRef.Name)
 			err = table.Print()
 		}
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
 		}
 	} else if os.Args[1] == "get" {
-		if len(os.Args) != 3 {
+		if len(os.Args) != 4 {
 			utils.Exit1(getUsage)
 		}
-		brokerName := os.Args[2]
-		broker, err := client.GetBroker(brokerName)
+		namespace := os.Args[2]
+		instanceName := os.Args[3]
+		instance, err := client.GetInstance(instanceName, namespace)
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to find broker %s (%s)", brokerName, err))
+			utils.Exit1(fmt.Sprintf("Unable to find instance %s in namespace %s (%s)", instanceName, namespace, err))
 		}
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		table.AddRow(broker.Name, broker.Namespace, broker.Spec.URL)
+		table := utils.NewTable("INSTANCE NAME", "NAMESPACE", "CLASS NAME", "PLAN NAME")
+		table.AddRow(instance.Name, instance.Namespace, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServicePlanRef.Name)
 		err = table.Print()
 	} else {
 		utils.Exit1(usage)

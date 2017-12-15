@@ -1,0 +1,10 @@
+name: "class"
+shortDesc: "This command interacts with Cluster Service Classes"
+command: "./class"
+tree:
+  - name: "list"
+    shortDesc: "Lists all Cluster Service Classes"
+    command: "./class list"
+  - name: "get"
+    shortDesc: "Gets a particular Cluster Service Class"
+    command: "./class get"

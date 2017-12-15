@@ -1,3 +1,0 @@
-name: "relist-service-broker"
-shortDesc: "This relists a service broker to update its offerings with the service catalog"
-command: "./relist-service-broker"

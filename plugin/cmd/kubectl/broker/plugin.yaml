@@ -5,3 +5,6 @@ tree:
   - name: "list"
     shortDesc: "Lists all Cluster Service Brokers"
     command: "./broker list"
+  - name: "get"
+    shortDesc: "Gets a particular Cluster Service Broker"
+    command: "./broker get"

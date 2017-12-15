@@ -1,3 +1,0 @@
-name: "bind-service"
-shortDesc: "This command binds a service class to a service instance"
-command: "./bind-service"

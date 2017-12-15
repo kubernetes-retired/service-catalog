@@ -25,7 +25,7 @@ import (
 )
 
 const usage = `Usage:
-  kubectl plugin broker SUBCOMMAND
+  kubectl plugin class SUBCOMMAND
 
 Available subcommands:
   list
@@ -33,7 +33,7 @@ Available subcommands:
 `
 
 const getUsage = `Usage:
-  kubectl plugin broker get BROKERNAME
+  kubectl plugin class get CLASSNAME
 `
 
 func main() {
@@ -46,14 +46,14 @@ func main() {
 		utils.Exit1(fmt.Sprintf("Unable to initialize service catalog client (%s)", err))
 	}
 	if os.Args[1] == "list" {
-		brokers, err := client.ListBrokers()
+		classes, err := client.ListClasses()
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to list brokers (%s)", err))
+			utils.Exit1(fmt.Sprintf("Unable to list classes (%s)", err))
 		}
 
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		for _, v := range brokers.Items {
-			table.AddRow(v.Name, v.Namespace, v.Spec.URL)
+		table := utils.NewTable("CLASS NAME", "NAMESPACE", "BROKER NAME")
+		for _, v := range classes.Items {
+			table.AddRow(v.Name, v.Namespace, v.Spec.ClusterServiceBrokerName)
 			err = table.Print()
 		}
 		if err != nil {
@@ -63,13 +63,13 @@ func main() {
 		if len(os.Args) != 3 {
 			utils.Exit1(getUsage)
 		}
-		brokerName := os.Args[2]
-		broker, err := client.GetBroker(brokerName)
+		className := os.Args[2]
+		class, err := client.GetClass(className)
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to find broker %s (%s)", brokerName, err))
+			utils.Exit1(fmt.Sprintf("Unable to find class %s (%s)", className, err))
 		}
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		table.AddRow(broker.Name, broker.Namespace, broker.Spec.URL)
+		table := utils.NewTable("CLASS NAME", "NAMESPACE", "BROKER NAME")
+		table.AddRow(class.Name, class.Namespace, class.Spec.ClusterServiceBrokerName)
 		err = table.Print()
 	} else {
 		utils.Exit1(usage)

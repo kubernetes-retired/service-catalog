@@ -25,7 +25,7 @@ import (
 )
 
 const usage = `Usage:
-  kubectl plugin broker SUBCOMMAND
+  kubectl plugin plan SUBCOMMAND
 
 Available subcommands:
   list
@@ -33,7 +33,7 @@ Available subcommands:
 `
 
 const getUsage = `Usage:
-  kubectl plugin broker get BROKERNAME
+  kubectl plugin plan get PLANNAME
 `
 
 func main() {
@@ -46,14 +46,14 @@ func main() {
 		utils.Exit1(fmt.Sprintf("Unable to initialize service catalog client (%s)", err))
 	}
 	if os.Args[1] == "list" {
-		brokers, err := client.ListBrokers()
+		plans, err := client.ListPlans()
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to list brokers (%s)", err))
+			utils.Exit1(fmt.Sprintf("Unable to list plans (%s)", err))
 		}
 
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		for _, v := range brokers.Items {
-			table.AddRow(v.Name, v.Namespace, v.Spec.URL)
+		table := utils.NewTable("PLAN NAME", "DESCRIPTION", "BROKER NAME")
+		for _, v := range plans.Items {
+			table.AddRow(v.Name, v.Spec.Description, v.Spec.ClusterServiceBrokerName)
 			err = table.Print()
 		}
 		if err != nil {
@@ -63,13 +63,13 @@ func main() {
 		if len(os.Args) != 3 {
 			utils.Exit1(getUsage)
 		}
-		brokerName := os.Args[2]
-		broker, err := client.GetBroker(brokerName)
+		planName := os.Args[2]
+		plan, err := client.GetPlan(planName)
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to find broker %s (%s)", brokerName, err))
+			utils.Exit1(fmt.Sprintf("Unable to find plan %s (%s)", planName, err))
 		}
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		table.AddRow(broker.Name, broker.Namespace, broker.Spec.URL)
+		table := utils.NewTable("PLAN NAME", "DESCRIPTIONS", "BROKER NAME")
+		table.AddRow(plan.Name, plan.Spec.Description, plan.Spec.ClusterServiceBrokerName)
 		err = table.Print()
 	} else {
 		utils.Exit1(usage)

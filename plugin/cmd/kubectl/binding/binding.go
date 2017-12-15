@@ -25,15 +25,19 @@ import (
 )
 
 const usage = `Usage:
-  kubectl plugin broker SUBCOMMAND
+  kubectl plugin binding SUBCOMMAND
 
 Available subcommands:
   list
   get
 `
 
+const listUsage = `Usage:
+  kubectl plugin binding list NAMESPACE
+`
+
 const getUsage = `Usage:
-  kubectl plugin broker get BROKERNAME
+  kubectl plugin binding get NAMESPACE INSTANCENAME
 `
 
 func main() {
@@ -46,30 +50,35 @@ func main() {
 		utils.Exit1(fmt.Sprintf("Unable to initialize service catalog client (%s)", err))
 	}
 	if os.Args[1] == "list" {
-		brokers, err := client.ListBrokers()
+		if len(os.Args) != 3 {
+			utils.Exit1(listUsage)
+		}
+		namespace := os.Args[2]
+		bindings, err := client.ListBindings(namespace)
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to list brokers (%s)", err))
+			utils.Exit1(fmt.Sprintf("Unable to list bindings in namespace %s (%s)", namespace, err))
 		}
 
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		for _, v := range brokers.Items {
-			table.AddRow(v.Name, v.Namespace, v.Spec.URL)
+		table := utils.NewTable("BINDING NAME", "NAMESPACE", "INSTANCE NAME")
+		for _, v := range bindings.Items {
+			table.AddRow(v.Name, v.Namespace, v.Spec.ServiceInstanceRef.Name)
 			err = table.Print()
 		}
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
 		}
 	} else if os.Args[1] == "get" {
-		if len(os.Args) != 3 {
+		if len(os.Args) != 4 {
 			utils.Exit1(getUsage)
 		}
-		brokerName := os.Args[2]
-		broker, err := client.GetBroker(brokerName)
+		namespace := os.Args[2]
+		bindingName := os.Args[3]
+		binding, err := client.GetBinding(bindingName, namespace)
 		if err != nil {
-			utils.Exit1(fmt.Sprintf("Unable to find broker %s (%s)", brokerName, err))
+			utils.Exit1(fmt.Sprintf("Unable to find binding %s in namespae %s (%s)", bindingName, namespace, err))
 		}
-		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
-		table.AddRow(broker.Name, broker.Namespace, broker.Spec.URL)
+		table := utils.NewTable("BINDINGNAME", "NAMESPACE", "INSTANCE NAME")
+		table.AddRow(binding.Name, binding.Namespace, binding.Spec.ServiceInstanceRef.Name)
 		err = table.Print()
 	} else {
 		utils.Exit1(usage)

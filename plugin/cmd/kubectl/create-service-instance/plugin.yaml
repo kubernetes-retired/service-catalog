@@ -1,3 +1,0 @@
-name: "create-service-instance"
-shortDesc: "This command creates a service instance that is ready to be bound to"
-command: "./create-service-instance"
