@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin_client
+package client
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *PluginClient) GetBroker(brokerName string) (*v1beta1.ClusterServiceBroker, error) {
-	broker, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceBrokers().Get(brokerName, v1.GetOptions{})
-	return broker, err
+//GetBinding retrieves  a binding by external name in a given namespace
+func (c *PluginClient) GetBinding(bindingName, namespace string) (*v1beta1.ServiceBinding, error) {
+	binding, err := c.ScClient.ServicecatalogV1beta1().ServiceBindings(namespace).Get(bindingName, v1.GetOptions{})
+	return binding, err
 }
 
-func (c *PluginClient) ListBrokers() (*v1beta1.ClusterServiceBrokerList, error) {
-	brokers, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceBrokers().List(v1.ListOptions{})
-	return brokers, err
+//ListBindings returns a list of all bindings in a namespace
+func (c *PluginClient) ListBindings(namespace string) (*v1beta1.ServiceBindingList, error) {
+	bindings, err := c.ScClient.ServicecatalogV1beta1().ServiceBindings(namespace).List(v1.ListOptions{})
+	return bindings, err
 }

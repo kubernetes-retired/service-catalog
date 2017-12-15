@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin_client
+package client
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -29,6 +28,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
+//PluginClient is a client for interacting with the service catalog
+//via generated clientset interface
 type PluginClient struct {
 	ScClient clientset.Interface
 	Config   *restclient.Config
@@ -57,22 +58,22 @@ func NewClient() (*PluginClient, error) {
 	}
 
 	if len(kubeconfig) == 0 {
-		return nil, errors.New(fmt.Sprintf("error iniializing client. The KUBECONFIG environment variable must be defined."))
+		return nil, fmt.Errorf("error iniializing client. The KUBECONFIG environment variable must be defined")
 	}
 
 	clientConfig, _, err := clientFromConfig(kubeconfig)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error obtaining client configuration: %v", err))
+		return nil, fmt.Errorf("error obtaining client configuration: %v", err)
 	}
 
 	err = applyGlobalOptionsToConfig(clientConfig)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error processing global plugin options: %v", err))
+		return nil, fmt.Errorf("error processing global plugin options: %v", err)
 	}
 
 	c, err := clientset.NewForConfig(clientConfig)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error obtaining a client from existing configuration: %v", err))
+		return nil, fmt.Errorf("error obtaining a client from existing configuration: %v", err)
 	}
 
 	pluginClient := PluginClient{c, clientConfig}
@@ -116,7 +117,7 @@ func applyGlobalOptionsToConfig(config *restclient.Config) error {
 		impersonateGroup := []string{}
 		err := json.Unmarshal([]byte(impersonateGroupRaw), &impersonateGroup)
 		if err != nil {
-			return errors.New(fmt.Sprintf("error parsing global option %q: %v", "--as-group", err))
+			return fmt.Errorf("error parsing global option %q: %v", "--as-group", err)
 		}
 		if len(impersonateGroup) > 0 {
 			config.Impersonate.Groups = impersonateGroup
@@ -162,7 +163,7 @@ func applyGlobalOptionsToConfig(config *restclient.Config) error {
 	if len(requestTimeout) > 0 {
 		t, err := time.ParseDuration(requestTimeout)
 		if err != nil {
-			return errors.New(fmt.Sprintf("%v", err))
+			return fmt.Errorf("%v", err)
 		}
 		config.Timeout = t
 	}

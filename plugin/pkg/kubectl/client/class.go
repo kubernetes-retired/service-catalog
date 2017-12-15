@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin_client
+package client
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *PluginClient) GetBinding(bindingName, namespace string) (*v1beta1.ServiceBinding, error) {
-	binding, err := c.ScClient.ServicecatalogV1beta1().ServiceBindings(namespace).Get(bindingName, v1.GetOptions{})
-	return binding, err
+//GetClass retrieves a class by external name
+func (c *PluginClient) GetClass(className string) (*v1beta1.ClusterServiceClass, error) {
+	class, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceClasses().Get(className, v1.GetOptions{})
+	return class, err
 }
 
-func (c *PluginClient) ListBindings(namespace string) (*v1beta1.ServiceBindingList, error) {
-	bindings, err := c.ScClient.ServicecatalogV1beta1().ServiceBindings(namespace).List(v1.ListOptions{})
-	return bindings, err
+//ListClasses returns a list of all service classes
+func (c *PluginClient) ListClasses() (*v1beta1.ClusterServiceClassList, error) {
+	classes, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceClasses().List(v1.ListOptions{})
+	return classes, err
 }

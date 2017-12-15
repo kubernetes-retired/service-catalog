@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin_client
+package client
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *PluginClient) GetClass(className string) (*v1beta1.ClusterServiceClass, error) {
-	class, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceClasses().Get(className, v1.GetOptions{})
-	return class, err
+//GetPlan retrieves a plan by external name
+func (c *PluginClient) GetPlan(planName string) (*v1beta1.ClusterServicePlan, error) {
+	plan, err := c.ScClient.ServicecatalogV1beta1().ClusterServicePlans().Get(planName, v1.GetOptions{})
+	return plan, err
 }
 
-func (c *PluginClient) ListClasses() (*v1beta1.ClusterServiceClassList, error) {
-	classes, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceClasses().List(v1.ListOptions{})
-	return classes, err
+//ListPlans lists all service plans
+func (c *PluginClient) ListPlans() (*v1beta1.ClusterServicePlanList, error) {
+	plans, err := c.ScClient.ServicecatalogV1beta1().ClusterServicePlans().List(v1.ListOptions{})
+	return plans, err
 }

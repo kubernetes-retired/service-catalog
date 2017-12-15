@@ -1,10 +1,26 @@
-package plugin_client_test
+/*
+Copyright 2016 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package client_test
 
 import (
 	"errors"
 
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/plugin_client"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/plugin_client/fakes"
+	. "github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client"
+	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,7 +28,7 @@ import (
 
 var _ = Describe("Binding", func() {
 	var (
-		client                *plugin_client.PluginClient
+		client                *PluginClient
 		err                   error
 		FakeScClient          *fakes.FakeInterface
 		ServicecatalogV1beta1 *fakes.FakeServicecatalogV1beta1Interface
@@ -20,7 +36,7 @@ var _ = Describe("Binding", func() {
 	)
 
 	BeforeEach(func() {
-		client, err = plugin_client.NewClient()
+		client, err = NewClient()
 		Expect(err).NotTo(HaveOccurred())
 		FakeScClient = &fakes.FakeInterface{}
 		ServicecatalogV1beta1 = &fakes.FakeServicecatalogV1beta1Interface{}

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/plugin_client"
+	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/utils"
 )
 
@@ -41,7 +41,7 @@ func main() {
 		utils.Exit1(usage)
 	}
 
-	client, err := plugin_client.NewClient()
+	client, err := client.NewClient()
 	if err != nil {
 		utils.Exit1(fmt.Sprintf("Unable to initialize service catalog client (%s)", err))
 	}

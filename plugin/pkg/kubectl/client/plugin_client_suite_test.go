@@ -14,19 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugin_client
+package client_test
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"testing"
 )
 
-func (c *PluginClient) GetPlan(planName string) (*v1beta1.ClusterServicePlan, error) {
-	plan, err := c.ScClient.ServicecatalogV1beta1().ClusterServicePlans().Get(planName, v1.GetOptions{})
-	return plan, err
+func TestPluginClient(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "PluginClient Suite")
 }
 
-func (c *PluginClient) ListPlans() (*v1beta1.ClusterServicePlanList, error) {
-	plans, err := c.ScClient.ServicecatalogV1beta1().ClusterServicePlans().List(v1.ListOptions{})
-	return plans, err
-}
+var _ = BeforeEach(func() {
+	os.Setenv("KUBECTL_PLUGINS_GLOBAL_FLAG_KUBECONFIG", "assets/config")
+})

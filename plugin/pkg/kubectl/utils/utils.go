@@ -184,6 +184,8 @@ func Namespace() string {
 	return os.Getenv("KUBECTL_PLUGINS_CURRENT_NAMESPACE")
 }
 
+//CheckNamespaceExists checks if a specified namespace exists
+//the targeted cluster
 func CheckNamespaceExists(ns string, config *restclient.Config) {
 	fmt.Printf("Looking up Namespace %s...\n", Entity(ns))
 	kubeClient, err := kclientset.NewForConfig(config)
@@ -196,6 +198,8 @@ func CheckNamespaceExists(ns string, config *restclient.Config) {
 	}
 }
 
+//Loglevel returns the loglevel value set by the calling
+//kubectl plugin framework
 func Loglevel() (flagName, flagValue string) {
 	kubeLoglevel := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_V")
 	otherLoglevel := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_LOGLEVEL")
