@@ -63,14 +63,14 @@ var (
 
 	// OSBRequestCount exposes the number of HTTP requests made to Open Service
 	// Brokers.  The metric is broken out by broker name and response status
-	// (100/200/300/400/500 or 'client-error')
+	// group (1xx/2xx/3xx/4xx/5xx or 'client-error')
 	OSBRequestCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: catalogNamespace,
 			Name:      "osb_request_count",
-			Help:      "Cumulative number of HTTP requests from the OSB Client to the specified Service Broker grouped by name and response status.",
+			Help:      "Cumulative number of HTTP requests from the OSB Client to the specified Service Broker grouped by broker name, broker method, and response status.",
 		},
-		[]string{"broker", "status"},
+		[]string{"broker", "method", "status"},
 	)
 )
 
