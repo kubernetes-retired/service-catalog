@@ -74,7 +74,7 @@ You should see the following output:
 
 ```console
 NAME           	VERSION	DESCRIPTION
-svc-cat/catalog	0.0.1  	service-catalog API server and controller-manag...
+svc-cat/catalog	x,y.z  	service-catalog API server and controller-manag...
 ```
 
 If you see it, your repository is properly added.
