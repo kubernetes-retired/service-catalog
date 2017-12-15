@@ -8,7 +8,6 @@ This document covers the architecture and design of Service Catalog.
 - [Terminology](#terminology)
 - [Open Service Broker API](#open-service-broker-api)
 - [Service Catalog Design](#service-catalog-design)
-- [Current Design](#current-design)
 
 ## Overview
 
