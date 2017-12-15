@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
@@ -25,6 +26,19 @@ import (
 // ValidateClusterID validates a single clusterid
 func ValidateClusterID(id *sc.ClusterID) field.ErrorList {
 	allErrs := field.ErrorList{}
+
+	// standard metadata validation
+	metadataField := field.NewPath("metadata")
+	allErrs = append(allErrs,
+		validation.ValidateObjectMeta(&id.ObjectMeta,
+			false, /* namespace required */
+			validation.NameIsDNSSubdomain,
+			metadataField)...)
+
+	// only one with a specific name allowed.
+	if id.Name != "cluster-id" {
+		allErrs = append(allErrs, field.Invalid(metadataField.Child("name"), id.Name, "cluster-id name must be cluster-id"))
+	}
 	if id.ID == "" {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("ID"), id.ID, "cluster-id ID must have content when setting"))
 	}

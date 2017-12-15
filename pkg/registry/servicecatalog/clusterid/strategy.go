@@ -71,13 +71,10 @@ func (clusterIDRESTStrategy) NamespaceScoped() bool {
 // PrepareForCreate receives a the incoming ClusterServiceClusterID and clears it's
 // Status. Status is not a user settable field.
 func (clusterIDRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	ClusterID, ok := obj.(*sc.ClusterID)
+	_, ok := obj.(*sc.ClusterID)
 	if !ok {
 		glog.Fatal("received a non-ClusterID object to create")
 	}
-
-	// only one with a specific name allowed.
-	ClusterID.Name = "cluster-id"
 }
 
 func (clusterIDRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
