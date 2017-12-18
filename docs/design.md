@@ -60,8 +60,8 @@ Service Catalog and broker.
   cost, capacity, or quality of services (QoS).
   This resource is global - it doesn't have a namespace.
 - **ServiceInstance**: a Kubernetes resource that Service Catalog recognizes.
-  A Kubernetes user may submit a `ServiceInstance` to provision a new service.
-  The details of the service and the plan are listed in the resource, and 
+  A Kubernetes user may submit a `ServiceInstance` to provision a new instance of a 
+  service. The details of the service and the plan are listed in the resource, and 
   ServiceCatalog passes that information to the broker that can provision
   the service. This resource is not global - it has a namespace.
 - **ServiceBinding**: a Kubernetes resource that Service Catalog recognizes.
