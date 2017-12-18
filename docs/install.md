@@ -19,13 +19,12 @@ The rest of this document details how to:
 
 ## Kubernetes Version
 
-Service Catalog requires a Kubernetes cluster v1.7.0 or later. You'll also need a 
+Service Catalog requires a Kubernetes cluster v1.7 or later. You'll also need a 
 [Kubernetes configuration file](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) 
 installed on your host. You need this file so you can use `kubectl` and 
-[`helm`](https://helm.sh) to communicate with the cluster.
-
-Many Kubernetes installation tools and/or cloud providers will set up this 
-configuration file for you. Please check with your tool for details.
+[`helm`](https://helm.sh) to communicate with the cluster. Many Kubernetes installation 
+tools and/or cloud providers will set this configuration file up for you. Please
+check with your tool or provider for details.
 
 ### `kubectl` Version
 
@@ -39,7 +38,7 @@ First, check your version of `kubectl`:
 kubectl version
 ```
 
-Ensure that the server version and client versions are both `1.7.0` or above.
+Ensure that the server version and client versions are both `1.7` or above.
 
 If you need to upgrade your client, follow the 
 [installation instructions](https://kubernetes.io/docs/tasks/kubectl/install/) 
