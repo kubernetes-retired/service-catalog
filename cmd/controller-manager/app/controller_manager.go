@@ -39,6 +39,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
+	"github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -57,7 +58,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
 	"github.com/golang/glog"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -330,7 +330,7 @@ func StartControllers(s *options.ControllerManagerServer,
 			serviceCatalogSharedInformers.ServiceInstances(),
 			serviceCatalogSharedInformers.ServiceBindings(),
 			serviceCatalogSharedInformers.ClusterServicePlans(),
-			osb.NewClient,
+			osbclientproxy.NewClient,
 			s.ServiceBrokerRelistInterval,
 			s.OSBAPIPreferredVersion,
 			recorder,
