@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
-//PluginClient is a client for interacting with the service catalog
-//via generated clientset interface
+// PluginClient is a client for interacting with the service catalog
+// via generated clientset interface
 type PluginClient struct {
 	ScClient clientset.Interface
 	Config   *restclient.Config

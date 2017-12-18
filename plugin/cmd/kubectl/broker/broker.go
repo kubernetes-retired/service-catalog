@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ Available subcommands:
 `
 
 const getUsage = `Usage:
-  kubectl plugin broker get BROKERNAME
+  kubectl plugin broker get BROKER_NAME
 `
 
 func main() {
@@ -54,8 +54,8 @@ func main() {
 		table := utils.NewTable("BROKER NAME", "NAMESPACE", "URL")
 		for _, v := range brokers.Items {
 			table.AddRow(v.Name, v.Namespace, v.Spec.URL)
-			err = table.Print()
 		}
+		err = table.Print()
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
 		}

@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ Available subcommands:
 `
 
 const getUsage = `Usage:
-  kubectl plugin class get CLASSNAME
+  kubectl plugin class get CLASS_NAME
 `
 
 func main() {
@@ -54,8 +54,8 @@ func main() {
 		table := utils.NewTable("CLASS NAME", "NAMESPACE", "BROKER NAME")
 		for _, v := range classes.Items {
 			table.AddRow(v.Name, v.Namespace, v.Spec.ClusterServiceBrokerName)
-			err = table.Print()
 		}
+		err = table.Print()
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
 		}

@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//GetInstance retrieves a service instance by external name in a given namespace
+// GetInstance retrieves a service instance by external name in a given namespace
 func (c *PluginClient) GetInstance(instanceName, namespace string) (*v1beta1.ServiceInstance, error) {
 	instance, err := c.ScClient.ServicecatalogV1beta1().ServiceInstances(namespace).Get(instanceName, v1.GetOptions{})
 	return instance, err
 }
 
-//ListInstances returns all service instances in a given namespace
+// ListInstances returns all service instances in a given namespace
 func (c *PluginClient) ListInstances(namespace string) (*v1beta1.ServiceInstanceList, error) {
 	instances, err := c.ScClient.ServicecatalogV1beta1().ServiceInstances(namespace).List(v1.ListOptions{})
 	return instances, err

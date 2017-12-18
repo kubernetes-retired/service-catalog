@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ const listUsage = `Usage:
 `
 
 const getUsage = `Usage:
-  kubectl plugin binding get NAMESPACE INSTANCENAME
+  kubectl plugin binding get NAMESPACE INSTANCE_NAME
 `
 
 func main() {
@@ -62,8 +62,8 @@ func main() {
 		table := utils.NewTable("BINDING NAME", "NAMESPACE", "INSTANCE NAME")
 		for _, v := range bindings.Items {
 			table.AddRow(v.Name, v.Namespace, v.Spec.ServiceInstanceRef.Name)
-			err = table.Print()
 		}
+		err = table.Print()
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
 		}
@@ -77,7 +77,7 @@ func main() {
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Unable to find binding %s in namespae %s (%s)", bindingName, namespace, err))
 		}
-		table := utils.NewTable("BINDINGNAME", "NAMESPACE", "INSTANCE NAME")
+		table := utils.NewTable("BINDING NAME", "NAMESPACE", "INSTANCE NAME")
 		table.AddRow(binding.Name, binding.Namespace, binding.Spec.ServiceInstanceRef.Name)
 		err = table.Print()
 	} else {

@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ Available subcommands:
 `
 
 const getUsage = `Usage:
-  kubectl plugin plan get PLANNAME
+  kubectl plugin plan get PLAN_NAME
 `
 
 func main() {
@@ -53,9 +53,9 @@ func main() {
 
 		table := utils.NewTable("PLAN NAME", "DESCRIPTION", "BROKER NAME")
 		for _, v := range plans.Items {
-			table.AddRow(v.Name, v.Spec.Description, v.Spec.ClusterServiceBrokerName)
-			err = table.Print()
+			table.AddRow(v.Spec.ExternalName, v.Spec.Description, v.Spec.ClusterServiceBrokerName)
 		}
+		err = table.Print()
 		if err != nil {
 			utils.Exit1(fmt.Sprintf("Error printing result (%s)", err))
 		}

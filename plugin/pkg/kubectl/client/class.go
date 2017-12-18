@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//GetClass retrieves a class by external name
+// GetClass retrieves a class by external name
 func (c *PluginClient) GetClass(className string) (*v1beta1.ClusterServiceClass, error) {
 	class, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceClasses().Get(className, v1.GetOptions{})
 	return class, err
 }
 
-//ListClasses returns a list of all service classes
+// ListClasses returns a list of all service classes
 func (c *PluginClient) ListClasses() (*v1beta1.ClusterServiceClassList, error) {
 	classes, err := c.ScClient.ServicecatalogV1beta1().ClusterServiceClasses().List(v1.ListOptions{})
 	return classes, err

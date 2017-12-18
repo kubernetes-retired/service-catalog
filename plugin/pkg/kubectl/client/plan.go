@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//GetPlan retrieves a plan by external name
+// GetPlan retrieves a plan by external name
 func (c *PluginClient) GetPlan(planName string) (*v1beta1.ClusterServicePlan, error) {
 	plan, err := c.ScClient.ServicecatalogV1beta1().ClusterServicePlans().Get(planName, v1.GetOptions{})
 	return plan, err
 }
 
-//ListPlans lists all service plans
+// ListPlans lists all service plans
 func (c *PluginClient) ListPlans() (*v1beta1.ClusterServicePlanList, error) {
 	plans, err := c.ScClient.ServicecatalogV1beta1().ClusterServicePlans().List(v1.ListOptions{})
 	return plans, err

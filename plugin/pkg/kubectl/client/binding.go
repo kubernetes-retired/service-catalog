@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//GetBinding retrieves  a binding by external name in a given namespace
+// GetBinding retrieves  a binding by external name in a given namespace
 func (c *PluginClient) GetBinding(bindingName, namespace string) (*v1beta1.ServiceBinding, error) {
 	binding, err := c.ScClient.ServicecatalogV1beta1().ServiceBindings(namespace).Get(bindingName, v1.GetOptions{})
 	return binding, err
 }
 
-//ListBindings returns a list of all bindings in a namespace
+// ListBindings returns a list of all bindings in a namespace
 func (c *PluginClient) ListBindings(namespace string) (*v1beta1.ServiceBindingList, error) {
 	bindings, err := c.ScClient.ServicecatalogV1beta1().ServiceBindings(namespace).List(v1.ListOptions{})
 	return bindings, err
