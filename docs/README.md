@@ -5,12 +5,17 @@ the articles in here. We recommend you start by reading the
 [introduction](introduction.md), and then move on to the 
 [installation instructions](./install.md).
 
-Afterward, see the below list of topics:
+Afterward, see the topics below.
 
 ## Topics for users:
-- [Passing parameters to ServiceInstances and ServiceBindings](./parameters.md)
+
+- [Installation instructions](install.md)
+- [Walkthrough](walkthrough.md)
+- [The Service Catalog Resources In Depth](./resources.md)
+- [Passing parameters to ServiceInstances and ServiceBindings](parameters.md)
 
 ## Topics for developers:
+
 - [Code conventions](./code-standards.md)
 - [Developer guide](./devguide.md)
 - [Design](./design.md)
