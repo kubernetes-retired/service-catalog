@@ -19,8 +19,10 @@ package server
 import (
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
+	"github.com/go-openapi/spec"
 	"github.com/golang/glog"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -36,6 +38,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver/authenticator"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
+	"github.com/kubernetes-incubator/service-catalog/pkg/openapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
 )
 
@@ -87,8 +90,19 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 		return nil, nil, err
 	}
 
-	// TODO: add support for OpenAPI config
-	// see https://github.com/kubernetes-incubator/service-catalog/issues/721
+	genericConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
+		openapi.GetOpenAPIDefinitions, api.Scheme)
+	if genericConfig.OpenAPIConfig.Info == nil {
+		genericConfig.OpenAPIConfig.Info = &spec.Info{}
+	}
+	if genericConfig.OpenAPIConfig.Info.Version == "" {
+		if genericConfig.Version != nil {
+			genericConfig.OpenAPIConfig.Info.Version = strings.Split(genericConfig.Version.String(), "-")[0]
+		} else {
+			genericConfig.OpenAPIConfig.Info.Version = "unversioned"
+		}
+	}
+
 	genericConfig.SwaggerConfig = genericapiserver.DefaultSwaggerConfig()
 	// TODO: investigate if we need metrics unique to service catalog, but take defaults for now
 	// see https://github.com/kubernetes-incubator/service-catalog/issues/677
