@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -29,10 +28,8 @@ func init() { grpclog.SetLogger(plog) }
 type Stresser interface {
 	// Stress starts to stress the etcd cluster
 	Stress() error
-	// Pause stops the stresser from sending requests to etcd. Resume by calling Stress.
-	Pause()
-	// Close releases all of the Stresser's resources.
-	Close()
+	// Cancel cancels the stress test on the etcd cluster
+	Cancel()
 	// ModifiedKeys reports the number of keys created and deleted by stresser
 	ModifiedKeys() int64
 	// Checker returns an invariant checker for after the stresser is canceled.
@@ -46,8 +43,7 @@ type nopStresser struct {
 }
 
 func (s *nopStresser) Stress() error { return nil }
-func (s *nopStresser) Pause()        {}
-func (s *nopStresser) Close()        {}
+func (s *nopStresser) Cancel()       {}
 func (s *nopStresser) ModifiedKeys() int64 {
 	return 0
 }
@@ -63,7 +59,7 @@ func (cs *compositeStresser) Stress() error {
 	for i, s := range cs.stressers {
 		if err := s.Stress(); err != nil {
 			for j := 0; j < i; j++ {
-				cs.stressers[i].Close()
+				cs.stressers[i].Cancel()
 			}
 			return err
 		}
@@ -71,25 +67,13 @@ func (cs *compositeStresser) Stress() error {
 	return nil
 }
 
-func (cs *compositeStresser) Pause() {
+func (cs *compositeStresser) Cancel() {
 	var wg sync.WaitGroup
 	wg.Add(len(cs.stressers))
 	for i := range cs.stressers {
 		go func(s Stresser) {
 			defer wg.Done()
-			s.Pause()
-		}(cs.stressers[i])
-	}
-	wg.Wait()
-}
-
-func (cs *compositeStresser) Close() {
-	var wg sync.WaitGroup
-	wg.Add(len(cs.stressers))
-	for i := range cs.stressers {
-		go func(s Stresser) {
-			defer wg.Done()
-			s.Close()
+			s.Cancel()
 		}(cs.stressers[i])
 	}
 	wg.Wait()
@@ -124,8 +108,6 @@ type stressConfig struct {
 	keysPerLease int
 
 	rateLimiter *rate.Limiter
-
-	etcdRunnerPath string
 }
 
 // NewStresser creates stresser from a comma separated list of stresser types.
@@ -167,49 +149,6 @@ func NewStresser(s string, sc *stressConfig, m *member) Stresser {
 			keysPerLease: sc.keysPerLease,
 			rateLimiter:  sc.rateLimiter,
 		}
-	case "election-runner":
-		reqRate := 100
-		args := []string{
-			"election",
-			fmt.Sprintf("%v", time.Now().UnixNano()), // election name as current nano time
-			"--dial-timeout=10s",
-			"--endpoints", m.grpcAddr(),
-			"--total-client-connections=10",
-			"--rounds=0", // runs forever
-			"--req-rate", fmt.Sprintf("%v", reqRate),
-		}
-		return newRunnerStresser(sc.etcdRunnerPath, args, sc.rateLimiter, reqRate)
-	case "watch-runner":
-		reqRate := 100
-		args := []string{
-			"watcher",
-			"--prefix", fmt.Sprintf("%v", time.Now().UnixNano()), // prefix all keys with nano time
-			"--total-keys=1",
-			"--total-prefixes=1",
-			"--watch-per-prefix=1",
-			"--endpoints", m.grpcAddr(),
-			"--rounds=0", // runs forever
-			"--req-rate", fmt.Sprintf("%v", reqRate),
-		}
-		return newRunnerStresser(sc.etcdRunnerPath, args, sc.rateLimiter, reqRate)
-	case "lock-racer-runner":
-		reqRate := 100
-		args := []string{
-			"lock-racer",
-			fmt.Sprintf("%v", time.Now().UnixNano()), // locker name as current nano time
-			"--endpoints", m.grpcAddr(),
-			"--total-client-connections=10",
-			"--rounds=0", // runs forever
-			"--req-rate", fmt.Sprintf("%v", reqRate),
-		}
-		return newRunnerStresser(sc.etcdRunnerPath, args, sc.rateLimiter, reqRate)
-	case "lease-runner":
-		args := []string{
-			"lease-renewer",
-			"--ttl=30",
-			"--endpoints", m.grpcAddr(),
-		}
-		return newRunnerStresser(sc.etcdRunnerPath, args, sc.rateLimiter, 0)
 	default:
 		plog.Panicf("unknown stresser type: %s\n", s)
 	}

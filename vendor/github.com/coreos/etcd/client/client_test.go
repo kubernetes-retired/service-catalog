@@ -16,7 +16,6 @@ package client
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -29,7 +28,6 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/pkg/testutil"
-	"github.com/coreos/etcd/version"
 	"golang.org/x/net/context"
 )
 
@@ -305,9 +303,7 @@ func TestHTTPClusterClientDo(t *testing.T) {
 	fakeErr := errors.New("fake!")
 	fakeURL := url.URL{}
 	tests := []struct {
-		client *httpClusterClient
-		ctx    context.Context
-
+		client     *httpClusterClient
 		wantCode   int
 		wantErr    error
 		wantPinned int
@@ -398,30 +394,10 @@ func TestHTTPClusterClientDo(t *testing.T) {
 			wantCode:   http.StatusTeapot,
 			wantPinned: 1,
 		},
-
-		// 500-level errors cause one shot Do to fallthrough to next endpoint
-		{
-			client: &httpClusterClient{
-				endpoints: []url.URL{fakeURL, fakeURL},
-				clientFactory: newStaticHTTPClientFactory(
-					[]staticHTTPResponse{
-						{resp: http.Response{StatusCode: http.StatusBadGateway}},
-						{resp: http.Response{StatusCode: http.StatusTeapot}},
-					},
-				),
-				rand: rand.New(rand.NewSource(0)),
-			},
-			ctx:        context.WithValue(context.Background(), &oneShotCtxValue, &oneShotCtxValue),
-			wantErr:    fmt.Errorf("client: etcd member  returns server error [Bad Gateway]"),
-			wantPinned: 1,
-		},
 	}
 
 	for i, tt := range tests {
-		if tt.ctx == nil {
-			tt.ctx = context.Background()
-		}
-		resp, _, err := tt.client.Do(tt.ctx, nil)
+		resp, _, err := tt.client.Do(context.Background(), nil)
 		if !reflect.DeepEqual(tt.wantErr, err) {
 			t.Errorf("#%d: got err=%v, want=%v", i, err, tt.wantErr)
 			continue
@@ -430,9 +406,11 @@ func TestHTTPClusterClientDo(t *testing.T) {
 		if resp == nil {
 			if tt.wantCode != 0 {
 				t.Errorf("#%d: resp is nil, want=%d", i, tt.wantCode)
-				continue
 			}
-		} else if resp.StatusCode != tt.wantCode {
+			continue
+		}
+
+		if resp.StatusCode != tt.wantCode {
 			t.Errorf("#%d: resp code=%d, want=%d", i, resp.StatusCode, tt.wantCode)
 			continue
 		}
@@ -879,34 +857,6 @@ func TestHTTPClusterClientAutoSyncFail(t *testing.T) {
 	err = hc.AutoSync(context.Background(), time.Hour)
 	if !strings.HasPrefix(err.Error(), ErrClusterUnavailable.Error()) {
 		t.Fatalf("incorrect error value: want=%v got=%v", ErrClusterUnavailable, err)
-	}
-}
-
-func TestHTTPClusterClientGetVersion(t *testing.T) {
-	body := []byte(`{"etcdserver":"2.3.2","etcdcluster":"2.3.0"}`)
-	cf := newStaticHTTPClientFactory([]staticHTTPResponse{
-		{
-			resp: http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Length": []string{"44"}}},
-			body: body,
-		},
-	})
-
-	hc := &httpClusterClient{
-		clientFactory: cf,
-		rand:          rand.New(rand.NewSource(0)),
-	}
-	err := hc.SetEndpoints([]string{"http://127.0.0.1:4003", "http://127.0.0.1:2379", "http://127.0.0.1:4001", "http://127.0.0.1:4002"})
-	if err != nil {
-		t.Fatalf("unexpected error during setup: %#v", err)
-	}
-
-	actual, err := hc.GetVersion(context.Background())
-	if err != nil {
-		t.Errorf("non-nil error: %#v", err)
-	}
-	expected := version.Versions{Server: "2.3.2", Cluster: "2.3.0"}
-	if !reflect.DeepEqual(&expected, actual) {
-		t.Errorf("incorrect Response: want=%#v got=%#v", expected, actual)
 	}
 }
 

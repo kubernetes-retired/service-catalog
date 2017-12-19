@@ -140,16 +140,11 @@ func (s *keyStresser) run(ctx context.Context) {
 	}
 }
 
-func (s *keyStresser) Pause() {
-	s.Close()
-}
-
-func (s *keyStresser) Close() {
+func (s *keyStresser) Cancel() {
 	s.cancel()
 	s.conn.Close()
 	s.wg.Wait()
-	plog.Infof("keyStresser %q is closed", s.Endpoint)
-
+	plog.Infof("keyStresser %q is canceled", s.Endpoint)
 }
 
 func (s *keyStresser) ModifiedKeys() int64 {

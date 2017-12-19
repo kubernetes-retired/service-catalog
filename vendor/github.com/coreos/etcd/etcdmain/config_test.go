@@ -78,7 +78,9 @@ func TestConfigFileMemberFields(t *testing.T) {
 	tmpfile := mustCreateCfgFile(t, b)
 	defer os.Remove(tmpfile.Name())
 
-	args := []string{fmt.Sprintf("--config-file=%s", tmpfile.Name())}
+	args := []string{
+		fmt.Sprintf("--config-file=%s", tmpfile.Name()),
+	}
 
 	cfg := newConfig()
 	if err = cfg.parse(args); err != nil {
@@ -131,7 +133,9 @@ func TestConfigFileClusteringFields(t *testing.T) {
 	tmpfile := mustCreateCfgFile(t, b)
 	defer os.Remove(tmpfile.Name())
 
-	args := []string{fmt.Sprintf("--config-file=%s", tmpfile.Name())}
+	args := []string{
+		fmt.Sprintf("--config-file=%s", tmpfile.Name()),
+	}
 	cfg := newConfig()
 	err = cfg.parse(args)
 	if err != nil {
@@ -139,60 +143,6 @@ func TestConfigFileClusteringFields(t *testing.T) {
 	}
 
 	validateClusteringFlags(t, cfg)
-}
-
-func TestConfigFileClusteringFlags(t *testing.T) {
-	tests := []struct {
-		Name           string `json:"name"`
-		InitialCluster string `json:"initial-cluster"`
-		DNSCluster     string `json:"discovery-srv"`
-		Durl           string `json:"discovery"`
-	}{
-		{
-		// Use default name and generate a default initial-cluster
-		},
-		{
-			Name: "non-default",
-		},
-		{
-			InitialCluster: "0=localhost:8000",
-		},
-		{
-			Name:           "non-default",
-			InitialCluster: "0=localhost:8000",
-		},
-		{
-			DNSCluster: "example.com",
-		},
-		{
-			Name:       "non-default",
-			DNSCluster: "example.com",
-		},
-		{
-			Durl: "http://example.com/abc",
-		},
-		{
-			Name: "non-default",
-			Durl: "http://example.com/abc",
-		},
-	}
-
-	for i, tt := range tests {
-		b, err := yaml.Marshal(&tt)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		tmpfile := mustCreateCfgFile(t, b)
-		defer os.Remove(tmpfile.Name())
-
-		args := []string{fmt.Sprintf("--config-file=%s", tmpfile.Name())}
-
-		cfg := newConfig()
-		if err := cfg.parse(args); err != nil {
-			t.Errorf("%d: err = %v", i, err)
-		}
-	}
 }
 
 func TestConfigParsingOtherFlags(t *testing.T) {
@@ -222,7 +172,9 @@ func TestConfigFileOtherFields(t *testing.T) {
 	tmpfile := mustCreateCfgFile(t, b)
 	defer os.Remove(tmpfile.Name())
 
-	args := []string{fmt.Sprintf("--config-file=%s", tmpfile.Name())}
+	args := []string{
+		fmt.Sprintf("--config-file=%s", tmpfile.Name()),
+	}
 
 	cfg := newConfig()
 	err = cfg.parse(args)
@@ -296,7 +248,9 @@ func TestConfigFileConflictClusteringFlags(t *testing.T) {
 		tmpfile := mustCreateCfgFile(t, b)
 		defer os.Remove(tmpfile.Name())
 
-		args := []string{fmt.Sprintf("--config-file=%s", tmpfile.Name())}
+		args := []string{
+			fmt.Sprintf("--config-file=%s", tmpfile.Name()),
+		}
 
 		cfg := newConfig()
 		if err := cfg.parse(args); err != embed.ErrConflictBootstrapFlags {
@@ -474,7 +428,9 @@ func TestConfigFileElectionTimeout(t *testing.T) {
 		tmpfile := mustCreateCfgFile(t, b)
 		defer os.Remove(tmpfile.Name())
 
-		args := []string{fmt.Sprintf("--config-file=%s", tmpfile.Name())}
+		args := []string{
+			fmt.Sprintf("--config-file=%s", tmpfile.Name()),
+		}
 
 		cfg := newConfig()
 		if err := cfg.parse(args); err == nil || !strings.Contains(err.Error(), tt.errStr) {

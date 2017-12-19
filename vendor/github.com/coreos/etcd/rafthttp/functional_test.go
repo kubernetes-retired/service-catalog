@@ -140,7 +140,9 @@ func TestSendMessageWhenStreamIsBroken(t *testing.T) {
 }
 
 func newServerStats() *stats.ServerStats {
-	return stats.NewServerStats("", "")
+	ss := &stats.ServerStats{}
+	ss.Initialize()
+	return ss
 }
 
 func waitStreamWorking(p *peer) bool {

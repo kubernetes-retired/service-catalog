@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"os"
 	"testing"
 )
 
@@ -44,17 +45,13 @@ func TestNewKeepAliveListener(t *testing.T) {
 	ln.Close()
 
 	ln, err = net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("unexpected Listen error: %v", err)
-	}
-
 	// tls
-	tlsinfo, del, err := createSelfCert()
+	tmp, err := createTempFile([]byte("XXX"))
 	if err != nil {
 		t.Fatalf("unable to create tmpfile: %v", err)
 	}
-	defer del()
-	tlsInfo := TLSInfo{CertFile: tlsinfo.CertFile, KeyFile: tlsinfo.KeyFile}
+	defer os.Remove(tmp)
+	tlsInfo := TLSInfo{CertFile: tmp, KeyFile: tmp}
 	tlsInfo.parseFunc = fakeCertificateParserFunc(tls.Certificate{}, nil)
 	tlscfg, err := tlsInfo.ServerConfig()
 	if err != nil {

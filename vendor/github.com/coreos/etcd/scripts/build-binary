@@ -59,32 +59,23 @@ function main {
 
 	for os in darwin windows linux; do
 		export GOOS=${os}
-		TARGET_ARCHS=("amd64")
+		export GOARCH="amd64"
+
+		pushd etcd >/dev/null
+			GO_LDFLAGS="-s" ./build
+		popd >/dev/null
+
+		TARGET="etcd-${VER}-${GOOS}-${GOARCH}"
+		mkdir ${TARGET}
+		package ${TARGET} ${PROJ}
 
 		if [ ${GOOS} == "linux" ]; then
-			TARGET_ARCHS+=("arm64")
-			TARGET_ARCHS+=("ppc64le")
+			tar cfz ${TARGET}.tar.gz ${TARGET}
+			echo "Wrote release/${TARGET}.tar.gz"
+		else
+			zip -qr ${TARGET}.zip ${TARGET}
+			echo "Wrote release/${TARGET}.zip"
 		fi
-
-		for TARGET_ARCH in "${TARGET_ARCHS[@]}"; do
-			export GOARCH=${TARGET_ARCH}
-
-			pushd etcd >/dev/null
-			GO_LDFLAGS="-s" ./build
-			popd >/dev/null
-
-			TARGET="etcd-${VER}-${GOOS}-${GOARCH}"
-			mkdir ${TARGET}
-			package ${TARGET} ${PROJ}
-
-			if [ ${GOOS} == "linux" ]; then
-				tar cfz ${TARGET}.tar.gz ${TARGET}
-				echo "Wrote release/${TARGET}.tar.gz"
-			else
-				zip -qr ${TARGET}.zip ${TARGET}
-				echo "Wrote release/${TARGET}.zip"
-			fi
-		done
 	done
 }
 

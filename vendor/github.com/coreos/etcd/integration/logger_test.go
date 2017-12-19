@@ -16,8 +16,6 @@ package integration
 
 import "github.com/coreos/pkg/capnslog"
 
-const defaultLogLevel = capnslog.CRITICAL
-
 func init() {
-	capnslog.SetGlobalLogLevel(defaultLogLevel)
+	capnslog.SetGlobalLogLevel(capnslog.CRITICAL)
 }

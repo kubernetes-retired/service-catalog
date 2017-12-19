@@ -49,11 +49,7 @@ func testRepair(t *testing.T, ents [][]raftpb.Entry, corrupt corruptFunc, expect
 	defer os.RemoveAll(p)
 	// create WAL
 	w, err := Create(p, nil)
-	defer func() {
-		if err = w.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	defer w.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +60,7 @@ func testRepair(t *testing.T, ents [][]raftpb.Entry, corrupt corruptFunc, expect
 		}
 	}
 
-	offset, err := w.tail().Seek(0, io.SeekCurrent)
+	offset, err := w.tail().Seek(0, os.SEEK_CUR)
 	if err != nil {
 		t.Fatal(err)
 	}

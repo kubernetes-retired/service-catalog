@@ -20,44 +20,39 @@ import (
 	"fmt"
 
 	"github.com/coreos/etcd/clientv3/concurrency"
-
 	"github.com/spf13/cobra"
 )
 
 // NewElectionCommand returns the cobra command for "election runner".
 func NewElectionCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "election [election name (defaults to 'elector')]",
+		Use:   "election",
 		Short: "Performs election operation",
 		Run:   runElectionFunc,
 	}
+	cmd.Flags().IntVar(&rounds, "rounds", 100, "number of rounds to run")
 	cmd.Flags().IntVar(&totalClientConnections, "total-client-connections", 10, "total number of client connections")
 	return cmd
 }
 
 func runElectionFunc(cmd *cobra.Command, args []string) {
-	election := "elector"
-	if len(args) == 1 {
-		election = args[0]
-	}
-	if len(args) > 1 {
-		ExitWithError(ExitBadArgs, errors.New("election takes at most one argument"))
+	if len(args) > 0 {
+		ExitWithError(ExitBadArgs, errors.New("election does not take any argument"))
 	}
 
 	rcs := make([]roundClient, totalClientConnections)
-	validatec := make(chan struct{}, len(rcs))
-	// nextc closes when election is ready for next round.
-	nextc := make(chan struct{})
+	validatec, releasec := make(chan struct{}, len(rcs)), make(chan struct{}, len(rcs))
+	for range rcs {
+		releasec <- struct{}{}
+	}
+
 	eps := endpointsFromFlag(cmd)
+	dialTimeout := dialTimeoutFromCmd(cmd)
 
 	for i := range rcs {
 		v := fmt.Sprintf("%d", i)
 		observedLeader := ""
 		validateWaiters := 0
-		var rcNextc chan struct{}
-		setRcNextc := func() {
-			rcNextc = nextc
-		}
 
 		rcs[i].c = newClient(eps, dialTimeout)
 		var (
@@ -70,26 +65,20 @@ func runElectionFunc(cmd *cobra.Command, args []string) {
 				break
 			}
 		}
+		e := concurrency.NewElection(s, "electors")
 
-		e := concurrency.NewElection(s, election)
-		rcs[i].acquire = func() (err error) {
+		rcs[i].acquire = func() error {
+			<-releasec
 			ctx, cancel := context.WithCancel(context.Background())
-			donec := make(chan struct{})
 			go func() {
-				defer close(donec)
-				for ctx.Err() == nil {
-					if ol, ok := <-e.Observe(ctx); ok {
-						observedLeader = string(ol.Kvs[0].Value)
-						break
+				if ol, ok := <-e.Observe(ctx); ok {
+					observedLeader = string(ol.Kvs[0].Value)
+					if observedLeader != v {
+						cancel()
 					}
-				}
-				if observedLeader != v {
-					cancel()
 				}
 			}()
 			err = e.Campaign(ctx, v)
-			cancel()
-			<-donec
 			if err == nil {
 				observedLeader = v
 			}
@@ -100,18 +89,14 @@ func runElectionFunc(cmd *cobra.Command, args []string) {
 			case <-ctx.Done():
 				return nil
 			default:
+				cancel()
 				return err
 			}
 		}
 		rcs[i].validate = func() error {
-			l, err := e.Leader(context.TODO())
-			if err == nil && string(l.Kvs[0].Value) != observedLeader {
-				return fmt.Errorf("expected leader %q, got %q", observedLeader, l.Kvs[0].Value)
+			if l, err := e.Leader(context.TODO()); err == nil && l != observedLeader {
+				return fmt.Errorf("expected leader %q, got %q", observedLeader, l)
 			}
-			if err != nil {
-				return err
-			}
-			setRcNextc()
 			validatec <- struct{}{}
 			return nil
 		}
@@ -128,17 +113,14 @@ func runElectionFunc(cmd *cobra.Command, args []string) {
 				return err
 			}
 			if observedLeader == v {
-				oldNextc := nextc
-				nextc = make(chan struct{})
-				close(oldNextc)
-
+				for range rcs {
+					releasec <- struct{}{}
+				}
 			}
-			<-rcNextc
 			observedLeader = ""
 			return nil
 		}
 	}
-	// each client creates 1 key from Campaign() and delete it from Resign()
-	// a round involves in 2*len(rcs) requests.
-	doRounds(rcs, rounds, 2*len(rcs))
+
+	doRounds(rcs, rounds)
 }

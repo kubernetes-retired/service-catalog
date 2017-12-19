@@ -261,10 +261,10 @@ func snapshotTestWithAuth(cx ctlCtx) {
 	fpath := "test.snapshot"
 	defer os.RemoveAll(fpath)
 
-	// ordinary user cannot save a snapshot
+	// ordinal user cannot save a snapshot
 	cx.user, cx.pass = "test-user", "pass"
 	if err := ctlV3SnapshotSave(cx, fpath); err == nil {
-		cx.t.Fatal("ordinary user should not be able to save a snapshot")
+		cx.t.Fatal("ordinal user should not be able to save a snapshot")
 	}
 
 	// root can save a snapshot

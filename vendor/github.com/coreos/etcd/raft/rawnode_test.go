@@ -273,13 +273,11 @@ func TestRawNodeStart(t *testing.T) {
 			CommittedEntries: []raftpb.Entry{
 				{Type: raftpb.EntryConfChange, Term: 1, Index: 1, Data: ccdata},
 			},
-			MustSync: true,
 		},
 		{
 			HardState:        raftpb.HardState{Term: 2, Commit: 3, Vote: 1},
 			Entries:          []raftpb.Entry{{Term: 2, Index: 3, Data: []byte("foo")}},
 			CommittedEntries: []raftpb.Entry{{Term: 2, Index: 3, Data: []byte("foo")}},
-			MustSync:         true,
 		},
 	}
 
@@ -328,7 +326,6 @@ func TestRawNodeRestart(t *testing.T) {
 		HardState: emptyState,
 		// commit up to commit index in st
 		CommittedEntries: entries[:st.Commit],
-		MustSync:         true,
 	}
 
 	storage := NewMemoryStorage()
@@ -365,7 +362,6 @@ func TestRawNodeRestartFromSnapshot(t *testing.T) {
 		HardState: emptyState,
 		// commit up to commit index in st
 		CommittedEntries: entries,
-		MustSync:         true,
 	}
 
 	s := NewMemoryStorage()

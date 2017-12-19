@@ -361,17 +361,13 @@ func (ls *leaseStresser) randomlyDropLease(leaseID int64) (bool, error) {
 	return false, ls.ctx.Err()
 }
 
-func (ls *leaseStresser) Pause() {
-	ls.Close()
-}
-
-func (ls *leaseStresser) Close() {
-	plog.Debugf("lease stresser %q is closing...", ls.endpoint)
+func (ls *leaseStresser) Cancel() {
+	plog.Debugf("lease stresser %q is canceling...", ls.endpoint)
 	ls.cancel()
 	ls.runWg.Wait()
 	ls.aliveWg.Wait()
 	ls.conn.Close()
-	plog.Infof("lease stresser %q is closed", ls.endpoint)
+	plog.Infof("lease stresser %q is canceled", ls.endpoint)
 }
 
 func (ls *leaseStresser) ModifiedKeys() int64 {

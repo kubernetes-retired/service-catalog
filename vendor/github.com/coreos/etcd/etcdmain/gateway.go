@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/coreos/etcd/client"
+	"github.com/coreos/etcd/pkg/transport"
 	"github.com/coreos/etcd/proxy/tcpproxy"
 
 	"github.com/spf13/cobra"
@@ -91,28 +93,34 @@ func stripSchema(eps []string) []string {
 
 	return endpoints
 }
-
 func startGateway(cmd *cobra.Command, args []string) {
-	srvs := discoverEndpoints(gatewayDNSCluster, gatewayCA, gatewayInsecureDiscovery)
-	if len(srvs.Endpoints) == 0 {
-		// no endpoints discovered, fall back to provided endpoints
-		srvs.Endpoints = gatewayEndpoints
-	}
-	// Strip the schema from the endpoints because we start just a TCP proxy
-	srvs.Endpoints = stripSchema(srvs.Endpoints)
-	if len(srvs.SRVs) == 0 {
-		for _, ep := range srvs.Endpoints {
-			h, p, err := net.SplitHostPort(ep)
-			if err != nil {
-				plog.Fatalf("error parsing endpoint %q", ep)
+	endpoints := gatewayEndpoints
+	if gatewayDNSCluster != "" {
+		eps, err := client.NewSRVDiscover().Discover(gatewayDNSCluster)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		plog.Infof("discovered the cluster %s from %s", eps, gatewayDNSCluster)
+		// confirm TLS connections are good
+		if !gatewayInsecureDiscovery {
+			tlsInfo := transport.TLSInfo{
+				TrustedCAFile: gatewayCA,
+				ServerName:    gatewayDNSCluster,
 			}
-			var port uint16
-			fmt.Sscanf(p, "%d", &port)
-			srvs.SRVs = append(srvs.SRVs, &net.SRV{Target: h, Port: port})
+			plog.Infof("validating discovered endpoints %v", eps)
+			endpoints, err = transport.ValidateSecureEndpoints(tlsInfo, eps)
+			if err != nil {
+				plog.Warningf("%v", err)
+			}
+			plog.Infof("using discovered endpoints %v", endpoints)
 		}
 	}
 
-	if len(srvs.Endpoints) == 0 {
+	// Strip the schema from the endpoints because we start just a TCP proxy
+	endpoints = stripSchema(endpoints)
+
+	if len(endpoints) == 0 {
 		plog.Fatalf("no endpoints found")
 	}
 
@@ -124,7 +132,7 @@ func startGateway(cmd *cobra.Command, args []string) {
 
 	tp := tcpproxy.TCPProxy{
 		Listener:        l,
-		Endpoints:       srvs.SRVs,
+		Endpoints:       endpoints,
 		MonitorInterval: getewayRetryDelay,
 	}
 

@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	v3 "github.com/coreos/etcd/clientv3"
-	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 )
@@ -37,22 +36,11 @@ type Election struct {
 	leaderKey     string
 	leaderRev     int64
 	leaderSession *Session
-	hdr           *pb.ResponseHeader
 }
 
 // NewElection returns a new election on a given key prefix.
 func NewElection(s *Session, pfx string) *Election {
 	return &Election{session: s, keyPrefix: pfx + "/"}
-}
-
-// ResumeElection initializes an election with a known leader.
-func ResumeElection(s *Session, pfx string, leaderKey string, leaderRev int64) *Election {
-	return &Election{
-		session:       s,
-		leaderKey:     leaderKey,
-		leaderRev:     leaderRev,
-		leaderSession: s,
-	}
 }
 
 // Campaign puts a value as eligible for the election. It blocks until
@@ -81,7 +69,7 @@ func (e *Election) Campaign(ctx context.Context, val string) error {
 		}
 	}
 
-	_, err = waitDeletes(ctx, client, e.keyPrefix, e.leaderRev-1)
+	err = waitDeletes(ctx, client, e.keyPrefix, e.leaderRev-1)
 	if err != nil {
 		// clean up in case of context cancel
 		select {
@@ -92,7 +80,6 @@ func (e *Election) Campaign(ctx context.Context, val string) error {
 		}
 		return err
 	}
-	e.hdr = resp.Header
 
 	return nil
 }
@@ -114,8 +101,6 @@ func (e *Election) Proclaim(ctx context.Context, val string) error {
 		e.leaderKey = ""
 		return ErrElectionNotLeader
 	}
-
-	e.hdr = tresp.Header
 	return nil
 }
 
@@ -125,36 +110,28 @@ func (e *Election) Resign(ctx context.Context) (err error) {
 		return nil
 	}
 	client := e.session.Client()
-	cmp := v3.Compare(v3.CreateRevision(e.leaderKey), "=", e.leaderRev)
-	resp, err := client.Txn(ctx).If(cmp).Then(v3.OpDelete(e.leaderKey)).Commit()
-	if err == nil {
-		e.hdr = resp.Header
-	}
+	_, err = client.Delete(ctx, e.leaderKey)
 	e.leaderKey = ""
 	e.leaderSession = nil
 	return err
 }
 
 // Leader returns the leader value for the current election.
-func (e *Election) Leader(ctx context.Context) (*v3.GetResponse, error) {
+func (e *Election) Leader(ctx context.Context) (string, error) {
 	client := e.session.Client()
 	resp, err := client.Get(ctx, e.keyPrefix, v3.WithFirstCreate()...)
 	if err != nil {
-		return nil, err
+		return "", err
 	} else if len(resp.Kvs) == 0 {
 		// no leader currently elected
-		return nil, ErrElectionNoLeader
+		return "", ErrElectionNoLeader
 	}
-	return resp, nil
+	return string(resp.Kvs[0].Value), nil
 }
 
-// Observe returns a channel that reliably observes ordered leader proposals
-// as GetResponse values on every current elected leader key. It will not
-// necessarily fetch all historical leader updates, but will always post the
-// most recent leader value.
-//
-// The channel closes when the context is canceled or the underlying watcher
-// is otherwise disrupted.
+// Observe returns a channel that observes all leader proposal values as
+// GetResponse values on the current leader key. The channel closes when
+// the context is cancelled or the underlying watcher is otherwise disrupted.
 func (e *Election) Observe(ctx context.Context) <-chan v3.GetResponse {
 	retc := make(chan v3.GetResponse)
 	go e.observe(ctx, retc)
@@ -172,13 +149,13 @@ func (e *Election) observe(ctx context.Context, ch chan<- v3.GetResponse) {
 		}
 
 		var kv *mvccpb.KeyValue
-		var hdr *pb.ResponseHeader
 
+		cctx, cancel := context.WithCancel(ctx)
 		if len(resp.Kvs) == 0 {
-			cctx, cancel := context.WithCancel(ctx)
 			// wait for first key put on prefix
 			opts := []v3.OpOption{v3.WithRev(resp.Header.Revision), v3.WithPrefix()}
 			wch := client.Watch(cctx, e.keyPrefix, opts...)
+
 			for kv == nil {
 				wr, ok := <-wch
 				if !ok || wr.Err() != nil {
@@ -188,27 +165,16 @@ func (e *Election) observe(ctx context.Context, ch chan<- v3.GetResponse) {
 				// only accept PUTs; a DELETE will make observe() spin
 				for _, ev := range wr.Events {
 					if ev.Type == mvccpb.PUT {
-						hdr, kv = &wr.Header, ev.Kv
-						// may have multiple revs; hdr.rev = the last rev
-						// set to kv's rev in case batch has multiple PUTs
-						hdr.Revision = kv.ModRevision
+						kv = ev.Kv
 						break
 					}
 				}
 			}
-			cancel()
 		} else {
-			hdr, kv = resp.Header, resp.Kvs[0]
+			kv = resp.Kvs[0]
 		}
 
-		select {
-		case ch <- v3.GetResponse{Header: hdr, Kvs: []*mvccpb.KeyValue{kv}}:
-		case <-ctx.Done():
-			return
-		}
-
-		cctx, cancel := context.WithCancel(ctx)
-		wch := client.Watch(cctx, string(kv.Key), v3.WithRev(hdr.Revision+1))
+		wch := client.Watch(cctx, string(kv.Key), v3.WithRev(kv.ModRevision))
 		keyDeleted := false
 		for !keyDeleted {
 			wr, ok := <-wch
@@ -235,9 +201,3 @@ func (e *Election) observe(ctx context.Context, ch chan<- v3.GetResponse) {
 
 // Key returns the leader key if elected, empty string otherwise.
 func (e *Election) Key() string { return e.leaderKey }
-
-// Rev returns the leader key's creation revision, if elected.
-func (e *Election) Rev() int64 { return e.leaderRev }
-
-// Header is the response header from the last successful election proposal.
-func (m *Election) Header() *pb.ResponseHeader { return m.hdr }

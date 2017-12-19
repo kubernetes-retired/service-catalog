@@ -16,7 +16,6 @@ package httpproxy
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,9 +24,11 @@ import (
 	"net/url"
 	"strings"
 	"sync/atomic"
+
 	"time"
 
 	"github.com/coreos/etcd/etcdserver/api/v2http/httptypes"
+	"github.com/coreos/etcd/pkg/httputil"
 	"github.com/coreos/pkg/capnslog"
 )
 
@@ -109,9 +110,7 @@ func (p *reverseProxy) ServeHTTP(rw http.ResponseWriter, clientreq *http.Request
 	var requestClosed int32
 	completeCh := make(chan bool, 1)
 	closeNotifier, ok := rw.(http.CloseNotifier)
-	ctx, cancel := context.WithCancel(context.Background())
-	proxyreq = proxyreq.WithContext(ctx)
-	defer cancel()
+	cancel := httputil.RequestCanceler(proxyreq)
 	if ok {
 		closeCh := closeNotifier.CloseNotify()
 		go func() {
@@ -119,6 +118,7 @@ func (p *reverseProxy) ServeHTTP(rw http.ResponseWriter, clientreq *http.Request
 			case <-closeCh:
 				atomic.StoreInt32(&requestClosed, 1)
 				plog.Printf("client %v closed request prematurely", clientreq.RemoteAddr)
+				cancel()
 			case <-completeCh:
 			}
 		}()

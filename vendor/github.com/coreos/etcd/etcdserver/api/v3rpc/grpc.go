@@ -16,7 +16,6 @@ package v3rpc
 
 import (
 	"crypto/tls"
-	"math"
 
 	"github.com/coreos/etcd/etcdserver"
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
@@ -24,8 +23,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 )
-
-const maxStreams = math.MaxUint32
 
 func init() {
 	grpclog.SetLogger(plog)
@@ -39,9 +36,8 @@ func Server(s *etcdserver.EtcdServer, tls *tls.Config) *grpc.Server {
 	}
 	opts = append(opts, grpc.UnaryInterceptor(newUnaryInterceptor(s)))
 	opts = append(opts, grpc.StreamInterceptor(newStreamInterceptor(s)))
-	opts = append(opts, grpc.MaxConcurrentStreams(maxStreams))
-	grpcServer := grpc.NewServer(opts...)
 
+	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterKVServer(grpcServer, NewQuotaKVServer(s))
 	pb.RegisterWatchServer(grpcServer, NewWatchServer(s))
 	pb.RegisterLeaseServer(grpcServer, NewQuotaLeaseServer(s))

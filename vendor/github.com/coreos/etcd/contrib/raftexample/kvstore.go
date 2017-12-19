@@ -58,7 +58,7 @@ func (s *kvstore) Propose(k string, v string) {
 	if err := gob.NewEncoder(&buf).Encode(kv{k, v}); err != nil {
 		log.Fatal(err)
 	}
-	s.proposeC <- buf.String()
+	s.proposeC <- string(buf.Bytes())
 }
 
 func (s *kvstore) readCommits(commitC <-chan *string, errorC <-chan error) {

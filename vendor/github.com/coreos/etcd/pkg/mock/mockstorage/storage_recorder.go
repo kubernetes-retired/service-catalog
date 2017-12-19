@@ -15,6 +15,8 @@
 package mockstorage
 
 import (
+	"fmt"
+
 	"github.com/coreos/etcd/pkg/testutil"
 	"github.com/coreos/etcd/raft"
 	"github.com/coreos/etcd/raft/raftpb"
@@ -43,6 +45,15 @@ func (p *storageRecorder) SaveSnap(st raftpb.Snapshot) error {
 		p.Record(testutil.Action{Name: "SaveSnap"})
 	}
 	return nil
+}
+
+func (p *storageRecorder) DBFilePath(id uint64) (string, error) {
+	p.Record(testutil.Action{Name: "DBFilePath"})
+	path := p.dbPath
+	if path != "" {
+		path = path + "/"
+	}
+	return fmt.Sprintf("%s%016x.snap.db", path, id), nil
 }
 
 func (p *storageRecorder) Close() error { return nil }

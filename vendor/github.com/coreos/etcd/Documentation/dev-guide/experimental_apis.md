@@ -4,4 +4,8 @@ For the most part, the etcd project is stable, but we are still moving fast! We 
 
 ## The current experimental API/features are:
 
-(none currently)
+- [gateway][gateway]: beta, to be stable in 3.2 release
+- [gRPC proxy][grpc-proxy]: alpha, to be stable in 3.2 release
+
+[gateway]: ../op-guide/gateway.md
+[grpc-proxy]: ../op-guide/grpc_proxy.md

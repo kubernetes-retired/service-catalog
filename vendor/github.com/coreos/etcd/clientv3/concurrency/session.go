@@ -41,14 +41,11 @@ func NewSession(client *v3.Client, opts ...SessionOption) (*Session, error) {
 		opt(ops)
 	}
 
-	id := ops.leaseID
-	if id == v3.NoLease {
-		resp, err := client.Grant(ops.ctx, int64(ops.ttl))
-		if err != nil {
-			return nil, err
-		}
-		id = v3.LeaseID(resp.ID)
+	resp, err := client.Grant(ops.ctx, int64(ops.ttl))
+	if err != nil {
+		return nil, err
 	}
+	id := v3.LeaseID(resp.ID)
 
 	ctx, cancel := context.WithCancel(ops.ctx)
 	keepAlive, err := client.KeepAlive(ctx, id)
@@ -101,9 +98,8 @@ func (s *Session) Close() error {
 }
 
 type sessionOptions struct {
-	ttl     int
-	leaseID v3.LeaseID
-	ctx     context.Context
+	ttl int
+	ctx context.Context
 }
 
 // SessionOption configures Session.
@@ -116,15 +112,6 @@ func WithTTL(ttl int) SessionOption {
 		if ttl > 0 {
 			so.ttl = ttl
 		}
-	}
-}
-
-// WithLease specifies the existing leaseID to be used for the session.
-// This is useful in process restart scenario, for example, to reclaim
-// leadership from an election prior to restart.
-func WithLease(leaseID v3.LeaseID) SessionOption {
-	return func(so *sessionOptions) {
-		so.leaseID = leaseID
 	}
 }
 

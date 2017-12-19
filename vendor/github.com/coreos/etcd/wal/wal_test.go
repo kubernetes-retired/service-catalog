@@ -46,7 +46,7 @@ func TestNew(t *testing.T) {
 	defer w.Close()
 
 	// file is preallocated to segment size; only read data written by wal
-	off, err := w.tail().Seek(0, io.SeekCurrent)
+	off, err := w.tail().Seek(0, os.SEEK_CUR)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -546,11 +546,7 @@ func TestReleaseLockTo(t *testing.T) {
 	defer os.RemoveAll(p)
 	// create WAL
 	w, err := Create(p, nil)
-	defer func() {
-		if err = w.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	defer w.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -623,7 +619,7 @@ func TestTailWriteNoSlackSpace(t *testing.T) {
 		}
 	}
 	// get rid of slack space by truncating file
-	off, serr := w.tail().Seek(0, io.SeekCurrent)
+	off, serr := w.tail().Seek(0, os.SEEK_CUR)
 	if serr != nil {
 		t.Fatal(serr)
 	}
@@ -716,11 +712,7 @@ func TestOpenOnTornWrite(t *testing.T) {
 	}
 	defer os.RemoveAll(p)
 	w, err := Create(p, nil)
-	defer func() {
-		if err = w.Close(); err != nil && err != os.ErrInvalid {
-			t.Fatal(err)
-		}
-	}()
+	defer w.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -732,7 +724,7 @@ func TestOpenOnTornWrite(t *testing.T) {
 		if err = w.Save(raftpb.HardState{}, es); err != nil {
 			t.Fatal(err)
 		}
-		if offsets[i], err = w.tail().Seek(0, io.SeekCurrent); err != nil {
+		if offsets[i], err = w.tail().Seek(0, os.SEEK_CUR); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -746,7 +738,7 @@ func TestOpenOnTornWrite(t *testing.T) {
 		t.Fatal(ferr)
 	}
 	defer f.Close()
-	_, err = f.Seek(offsets[clobberIdx], io.SeekStart)
+	_, err = f.Seek(offsets[clobberIdx], os.SEEK_SET)
 	if err != nil {
 		t.Fatal(err)
 	}

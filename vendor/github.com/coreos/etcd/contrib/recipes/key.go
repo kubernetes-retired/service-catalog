@@ -73,7 +73,7 @@ func putNewKV(kv v3.KV, key, val string, leaseID v3.LeaseID) (int64, error) {
 }
 
 // newSequentialKV allocates a new sequential key <prefix>/nnnnn with a given
-// prefix and value. Note: a bookkeeping node __<prefix> is also allocated.
+// value and lease.  Note: a bookkeeping node __<prefix> is also allocated.
 func newSequentialKV(kv v3.KV, prefix, val string) (*RemoteKV, error) {
 	resp, err := kv.Get(context.TODO(), prefix, v3.WithLastKey()...)
 	if err != nil {

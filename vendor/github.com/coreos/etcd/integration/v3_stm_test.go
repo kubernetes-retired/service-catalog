@@ -15,7 +15,6 @@
 package integration
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -23,7 +22,7 @@ import (
 
 	v3 "github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/coreos/etcd/pkg/testutil"
+	"golang.org/x/net/context"
 )
 
 // TestSTMConflict tests that conflicts are retried.
@@ -64,8 +63,7 @@ func TestSTMConflict(t *testing.T) {
 			return nil
 		}
 		go func() {
-			iso := concurrency.WithIsolation(concurrency.RepeatableReads)
-			_, err := concurrency.NewSTM(curEtcdc, applyf, iso)
+			_, err := concurrency.NewSTMRepeatable(context.TODO(), curEtcdc, applyf)
 			errc <- err
 		}()
 	}
@@ -102,9 +100,7 @@ func TestSTMPutNewKey(t *testing.T) {
 		stm.Put("foo", "bar")
 		return nil
 	}
-
-	iso := concurrency.WithIsolation(concurrency.RepeatableReads)
-	if _, err := concurrency.NewSTM(etcdc, applyf, iso); err != nil {
+	if _, err := concurrency.NewSTMRepeatable(context.TODO(), etcdc, applyf); err != nil {
 		t.Fatalf("error on stm txn (%v)", err)
 	}
 
@@ -130,10 +126,7 @@ func TestSTMAbort(t *testing.T) {
 		stm.Put("foo", "bap")
 		return nil
 	}
-
-	iso := concurrency.WithIsolation(concurrency.RepeatableReads)
-	sctx := concurrency.WithAbortContext(ctx)
-	if _, err := concurrency.NewSTM(etcdc, applyf, iso, sctx); err == nil {
+	if _, err := concurrency.NewSTMRepeatable(ctx, etcdc, applyf); err == nil {
 		t.Fatalf("no error on stm txn")
 	}
 
@@ -193,8 +186,7 @@ func TestSTMSerialize(t *testing.T) {
 			return nil
 		}
 		go func() {
-			iso := concurrency.WithIsolation(concurrency.Serializable)
-			_, err := concurrency.NewSTM(curEtcdc, applyf, iso)
+			_, err := concurrency.NewSTMSerializable(context.TODO(), curEtcdc, applyf)
 			errc <- err
 		}()
 	}
@@ -237,9 +229,7 @@ func TestSTMApplyOnConcurrentDeletion(t *testing.T) {
 		stm.Put("foo2", "bar2")
 		return nil
 	}
-
-	iso := concurrency.WithIsolation(concurrency.RepeatableReads)
-	if _, err := concurrency.NewSTM(etcdc, applyf, iso); err != nil {
+	if _, err := concurrency.NewSTMRepeatable(context.TODO(), etcdc, applyf); err != nil {
 		t.Fatalf("error on stm txn (%v)", err)
 	}
 	if try != 2 {
@@ -252,38 +242,5 @@ func TestSTMApplyOnConcurrentDeletion(t *testing.T) {
 	}
 	if string(resp.Kvs[0].Value) != "bar2" {
 		t.Fatalf("bad value. got %+v, expected 'bar2' value", resp)
-	}
-}
-
-func TestSTMSerializableSnapshotPut(t *testing.T) {
-	clus := NewClusterV3(t, &ClusterConfig{Size: 1})
-	defer clus.Terminate(t)
-
-	cli := clus.Client(0)
-	// key with lower create/mod revision than keys being updated
-	_, err := cli.Put(context.TODO(), "a", "0")
-	testutil.AssertNil(t, err)
-
-	tries := 0
-	applyf := func(stm concurrency.STM) error {
-		if tries > 2 {
-			return fmt.Errorf("too many retries")
-		}
-		tries++
-		stm.Get("a")
-		stm.Put("b", "1")
-		return nil
-	}
-
-	iso := concurrency.WithIsolation(concurrency.SerializableSnapshot)
-	_, err = concurrency.NewSTM(cli, applyf, iso)
-	testutil.AssertNil(t, err)
-	_, err = concurrency.NewSTM(cli, applyf, iso)
-	testutil.AssertNil(t, err)
-
-	resp, err := cli.Get(context.TODO(), "b")
-	testutil.AssertNil(t, err)
-	if resp.Kvs[0].Version != 2 {
-		t.Fatalf("bad version. got %+v, expected version 2", resp)
 	}
 }

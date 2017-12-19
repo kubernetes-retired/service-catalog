@@ -153,11 +153,7 @@ func (s *simplePrinter) RoleGet(role string, r v3.AuthRoleGetResponse) {
 	printRange := func(perm *v3.Permission) {
 		sKey := string(perm.Key)
 		sRangeEnd := string(perm.RangeEnd)
-		if strings.Compare(sRangeEnd, "\x00") != 0 {
-			fmt.Printf("\t[%s, %s)", sKey, sRangeEnd)
-		} else {
-			fmt.Printf("\t[%s, <open ended>", sKey)
-		}
+		fmt.Printf("\t[%s, %s)", sKey, sRangeEnd)
 		if strings.Compare(v3.GetPrefixRangeEnd(sKey), sRangeEnd) == 0 {
 			fmt.Printf(" (prefix %s)", sKey)
 		}
@@ -204,11 +200,7 @@ func (s *simplePrinter) RoleRevokePermission(role string, key string, end string
 		fmt.Printf("Permission of key %s is revoked from role %s\n", key, role)
 		return
 	}
-	if strings.Compare(end, "\x00") != 0 {
-		fmt.Printf("Permission of range [%s, %s) is revoked from role %s\n", key, end, role)
-	} else {
-		fmt.Printf("Permission of range [%s, <open ended> is revoked from role %s\n", key, role)
-	}
+	fmt.Printf("Permission of range [%s, %s) is revoked from role %s\n", key, end, role)
 }
 
 func (s *simplePrinter) UserAdd(name string, r v3.AuthUserAddResponse) {

@@ -4,15 +4,14 @@
 
 The following table lists etcd support status for common architectures and operating systems,
 
-| Architecture | Operating System | Status       | Maintainers                 |
-| ------------ | ---------------- | ------------ | --------------------------- |
-| amd64        | Darwin           | Experimental | etcd maintainers            | 
-| amd64        | Linux            | Stable       | etcd maintainers            |
-| amd64        | Windows          | Experimental |                             |
-| arm64        | Linux            | Experimental | @glevand                    |
-| arm          | Linux            | Unstable     |                             |
-| 386          | Linux            | Unstable     |                             |
-| ppc64le      | Linux            | Stable       | etcd maintainers, @mkumatag |
+| Architecture | Operating System | Status       | Maintainers      |
+| ------------ | ---------------- | ------------ | ---------------- |
+| amd64        | Darwin           | Experimental | etcd maintainers | 
+| amd64        | Linux            | Stable       | etcd maintainers |
+| amd64        | Windows          | Experimental |                  |
+| arm64        | Linux            | Experimental | @glevand         |
+| arm          | Linux            | Unstable     |                  |
+| 386          | Linux            | Unstable     |                  |
 
 * etcd-maintainers are listed in https://github.com/coreos/etcd/blob/master/MAINTAINERS.
 
@@ -34,7 +33,7 @@ etcd has known issues on 32-bit systems due to a bug in the Go runtime. See the 
 
 To avoid inadvertently running a possibly unstable etcd server, `etcd` on unstable or unsupported architectures will print a warning message and immediately exit if the environment variable `ETCD_UNSUPPORTED_ARCH` is not set to the target architecture.
 
-Currently amd64 and ppc64le architectures are officially supported by `etcd`.
+Currently only the amd64 architecture is officially supported by `etcd`.
 
 [go-issue]: https://github.com/golang/go/issues/599
 [go-atomic]: https://golang.org/pkg/sync/atomic/#pkg-note-BUG

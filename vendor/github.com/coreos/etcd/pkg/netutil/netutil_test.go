@@ -15,7 +15,6 @@
 package netutil
 
 import (
-	"context"
 	"errors"
 	"net"
 	"net/url"
@@ -23,10 +22,12 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 func TestResolveTCPAddrs(t *testing.T) {
-	defer func() { resolveTCPAddr = resolveTCPAddrDefault }()
+	defer func() { resolveTCPAddr = net.ResolveTCPAddr }()
 	tests := []struct {
 		urls     [][]url.URL
 		expected [][]url.URL
@@ -112,7 +113,7 @@ func TestResolveTCPAddrs(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		resolveTCPAddr = func(ctx context.Context, addr string) (*net.TCPAddr, error) {
+		resolveTCPAddr = func(network, addr string) (*net.TCPAddr, error) {
 			host, port, err := net.SplitHostPort(addr)
 			if err != nil {
 				return nil, err
@@ -142,17 +143,14 @@ func TestResolveTCPAddrs(t *testing.T) {
 }
 
 func TestURLsEqual(t *testing.T) {
-	defer func() { resolveTCPAddr = resolveTCPAddrDefault }()
+	defer func() { resolveTCPAddr = net.ResolveTCPAddr }()
 	hostm := map[string]string{
 		"example.com": "10.0.10.1",
 		"first.com":   "10.0.11.1",
 		"second.com":  "10.0.11.2",
 	}
-	resolveTCPAddr = func(ctx context.Context, addr string) (*net.TCPAddr, error) {
-		host, port, herr := net.SplitHostPort(addr)
-		if herr != nil {
-			return nil, herr
-		}
+	resolveTCPAddr = func(network, addr string) (*net.TCPAddr, error) {
+		host, port, err := net.SplitHostPort(addr)
 		if _, ok := hostm[host]; !ok {
 			return nil, errors.New("cannot resolve host.")
 		}

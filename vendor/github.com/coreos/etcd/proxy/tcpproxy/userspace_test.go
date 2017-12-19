@@ -42,11 +42,9 @@ func TestUserspaceProxy(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var port uint16
-	fmt.Sscanf(u.Port(), "%d", &port)
 	p := TCPProxy{
 		Listener:  l,
-		Endpoints: []*net.SRV{{Target: u.Hostname(), Port: port}},
+		Endpoints: []string{u.Host},
 	}
 	go p.Run()
 	defer p.Stop()

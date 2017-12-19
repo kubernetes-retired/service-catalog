@@ -60,5 +60,5 @@ func printPB(v interface{}) {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
 	}
-	fmt.Print(string(b))
+	fmt.Printf(string(b))
 }

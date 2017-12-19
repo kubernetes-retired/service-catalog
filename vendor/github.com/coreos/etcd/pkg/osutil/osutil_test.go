@@ -23,8 +23,6 @@ import (
 	"time"
 )
 
-func init() { setDflSignal = func(syscall.Signal) {} }
-
 func TestUnsetenv(t *testing.T) {
 	tests := []string{
 		"data",

@@ -42,7 +42,7 @@ func TestEvent(t *testing.T) {
 				ModRevision:    4,
 			},
 		},
-		isModify: true,
+		isModify: false,
 	}}
 	for i, tt := range tests {
 		if tt.isCreate && !tt.ev.IsCreate() {

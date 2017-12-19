@@ -310,14 +310,14 @@ func makeDB(snapdir, dbfile string, commit int) {
 	defer f.Close()
 
 	// get snapshot integrity hash
-	if _, err := f.Seek(-sha256.Size, io.SeekEnd); err != nil {
+	if _, err := f.Seek(-sha256.Size, os.SEEK_END); err != nil {
 		ExitWithError(ExitIO, err)
 	}
 	sha := make([]byte, sha256.Size)
 	if _, err := f.Read(sha); err != nil {
 		ExitWithError(ExitIO, err)
 	}
-	if _, err := f.Seek(0, io.SeekStart); err != nil {
+	if _, err := f.Seek(0, os.SEEK_SET); err != nil {
 		ExitWithError(ExitIO, err)
 	}
 
@@ -335,7 +335,7 @@ func makeDB(snapdir, dbfile string, commit int) {
 	}
 
 	// truncate away integrity hash, if any.
-	off, serr := db.Seek(0, io.SeekEnd)
+	off, serr := db.Seek(0, os.SEEK_END)
 	if serr != nil {
 		ExitWithError(ExitIO, serr)
 	}
@@ -353,7 +353,7 @@ func makeDB(snapdir, dbfile string, commit int) {
 
 	if hasHash && !skipHashCheck {
 		// check for match
-		if _, err := db.Seek(0, io.SeekStart); err != nil {
+		if _, err := db.Seek(0, os.SEEK_SET); err != nil {
 			ExitWithError(ExitIO, err)
 		}
 		h := sha256.New()
@@ -375,12 +375,13 @@ func makeDB(snapdir, dbfile string, commit int) {
 	be := backend.NewDefaultBackend(dbpath)
 	// a lessor never timeouts leases
 	lessor := lease.NewLessor(be, math.MaxInt64)
+
 	s := mvcc.NewStore(be, lessor, (*initIndex)(&commit))
-	txn := s.Write()
+	id := s.TxnBegin()
 	btx := be.BatchTx()
 	del := func(k, v []byte) error {
-		txn.DeleteRange(k, nil)
-		return nil
+		_, _, err := s.TxnDeleteRange(id, k, nil)
+		return err
 	}
 
 	// delete stored members from old cluster since using new members
@@ -388,7 +389,7 @@ func makeDB(snapdir, dbfile string, commit int) {
 	// todo: add back new members when we start to deprecate old snap file.
 	btx.UnsafeForEach([]byte("members_removed"), del)
 	// trigger write-out of new consistent index
-	txn.End()
+	s.TxnEnd(id)
 	s.Commit()
 	s.Close()
 }

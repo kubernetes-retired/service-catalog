@@ -34,6 +34,8 @@ type agentConfig struct {
 	clientPort    int
 	peerPort      int
 	failpointPort int
+
+	datadir string
 }
 
 type cluster struct {
@@ -76,9 +78,9 @@ func (c *cluster) bootstrap() error {
 	for i, m := range members {
 		flags := append(
 			m.Flags(),
+			"--data-dir", c.agents[i].datadir,
 			"--initial-cluster-token", token,
-			"--initial-cluster", clusterStr,
-			"--snapshot-count", "10000")
+			"--initial-cluster", clusterStr)
 
 		if _, err := m.Agent.Start(flags...); err != nil {
 			// cleanup

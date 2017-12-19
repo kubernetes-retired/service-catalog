@@ -57,9 +57,11 @@ func BenchmarkWatchableStoreTxnPut(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		txn := s.Write()
-		txn.Put(keys[i], vals[i], lease.NoLease)
-		txn.End()
+		id := s.TxnBegin()
+		if _, err := s.TxnPut(id, keys[i], vals[i], lease.NoLease); err != nil {
+			plog.Fatalf("txn put error: %v", err)
+		}
+		s.TxnEnd(id)
 	}
 }
 

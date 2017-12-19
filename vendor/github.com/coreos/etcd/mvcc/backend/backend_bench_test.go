@@ -22,9 +22,9 @@ import (
 )
 
 func BenchmarkBackendPut(b *testing.B) {
-	backend, tmppath := NewTmpBackend(100*time.Millisecond, 10000)
+	backend := New("test", 100*time.Millisecond, 10000)
 	defer backend.Close()
-	defer os.Remove(tmppath)
+	defer os.Remove("test")
 
 	// prepare keys
 	keys := make([][]byte, b.N)
