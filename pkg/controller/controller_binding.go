@@ -26,7 +26,6 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
@@ -130,14 +129,6 @@ func (c *controller) reconcileServiceBindingKey(key string) error {
 	return c.reconcileServiceBinding(binding)
 }
 
-func makeServiceBindingClone(binding *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
-	clone, err := api.Scheme.DeepCopy(binding)
-	if err != nil {
-		return nil, err
-	}
-	return clone.(*v1beta1.ServiceBinding), nil
-}
-
 func isServiceBindingFailed(binding *v1beta1.ServiceBinding) bool {
 	for _, condition := range binding.Status.Conditions {
 		if condition.Type == v1beta1.ServiceBindingConditionFailed && condition.Status == v1beta1.ConditionTrue {
@@ -207,10 +198,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 
 	glog.V(4).Info(pcb.Message("Processing"))
 
-	toUpdate, err := makeServiceBindingClone(binding)
-	if err != nil {
-		return err
-	}
+	toUpdate := binding.DeepCopy()
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
@@ -625,10 +613,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return nil
 	}
 
-	toUpdate, err := makeServiceBindingClone(binding)
-	if err != nil {
-		return err
-	}
+	toUpdate := binding.DeepCopy()
 
 	// If unbinding succeeded or is not needed, then clear out the finalizers
 	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusNotRequired ||
@@ -646,7 +631,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return nil
 	}
 
-	err = c.ejectServiceBinding(binding)
+	err := c.ejectServiceBinding(binding)
 	if err != nil {
 		s := fmt.Sprintf(`Error deleting secret: %s`, err)
 		glog.Warning(pcb.Message(s))
@@ -1092,11 +1077,7 @@ func (c *controller) updateServiceBindingCondition(
 	reason, message string) error {
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
-
-	toUpdate, err := makeServiceBindingClone(binding)
-	if err != nil {
-		return err
-	}
+	toUpdate := binding.DeepCopy()
 
 	setServiceBindingCondition(toUpdate, conditionType, status, reason, message)
 
@@ -1104,7 +1085,7 @@ func (c *controller) updateServiceBindingCondition(
 		"Updating %v condition to %v (Reason: %q, Message: %q)",
 		conditionType, status, reason, message,
 	))
-	_, err = c.serviceCatalogClient.ServiceBindings(binding.Namespace).UpdateStatus(toUpdate)
+	_, err := c.serviceCatalogClient.ServiceBindings(binding.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf(pcb.Messagef(
 			"Error updating %v condition to %v: %v",
@@ -1205,10 +1186,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 	glog.V(4).Infof(pcb.Message("Processing"))
 
-	binding, err := makeServiceBindingClone(binding)
-	if err != nil {
-		return err
-	}
+	binding = binding.DeepCopy()
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {

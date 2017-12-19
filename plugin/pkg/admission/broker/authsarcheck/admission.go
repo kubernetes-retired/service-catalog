@@ -135,7 +135,7 @@ func (s *sarcheck) SetKubeClientSet(client kubeclientset.Interface) {
 	s.client = client
 }
 
-func (s *sarcheck) Validate() error {
+func (s *sarcheck) ValidateInitialization() error {
 	if s.client == nil {
 		return fmt.Errorf("missing client")
 	}
