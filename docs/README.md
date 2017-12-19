@@ -3,7 +3,8 @@
 Welcome to the documentation for Service Catalog. This page is an index for
 the articles in here. We recommend you start by reading the 
 [introduction](introduction.md), and then move on to the 
-[installation instructions](./install.md).
+[installation instructions](./install.md). After you install, see our
+[walkthrough](./walkthrough.md) document to get started using Service Catalog.
 
 Afterward, see the topics below.
 
