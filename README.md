@@ -70,7 +70,8 @@ for more information.
 
 Our goal is to have extensive use-case and functional documentation.
 
-See [here](./docs/v1) for detailed documentation.
+See the [main Kubernetes docs](https://kubernetes.io/docs/concepts/service-catalog/)
+and additional documentation [here](./docs/v1).
 
 See [here](https://github.com/kubernetes-incubator/service-catalog/wiki/Examples) for examples and
 [here](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md) for
