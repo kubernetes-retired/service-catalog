@@ -1261,6 +1261,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 				}
 			},
 		},
+		// #1611 introduced #1625, a data race exists in this test
 		// {
 		// 	name: "deprovision instance after in progress provision",
 		// 	skipVerifyingInstanceSuccess: true,
