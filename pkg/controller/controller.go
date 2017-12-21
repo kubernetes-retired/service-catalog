@@ -26,9 +26,11 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -162,6 +164,7 @@ type controller struct {
 	bindingQueue                workqueue.RateLimitingInterface
 	instancePollingQueue        workqueue.RateLimitingInterface
 	bindingPollingQueue         workqueue.RateLimitingInterface
+	clusterID                   string
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -184,6 +187,46 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
 		}
 	}
+
+	func() {
+		waitGroup.Add(1)
+		go func() {
+			wait.Until(func() {
+				glog.V(9).Info("cluster ID monitor loop enter")
+				cm, err := c.kubeClient.CoreV1().ConfigMaps("default").Get("cluster-info", metav1.GetOptions{})
+				if errors.IsNotFound(err) {
+					m := make(map[string]string)
+					m["id"] = string(uuid.NewUUID())
+					cm := &corev1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "cluster-info",
+						},
+						Data: m,
+					}
+					c.kubeClient.CoreV1().ConfigMaps("default").Create(cm)
+					// if we fail to set the id,
+					// it could be due to permissions
+					// or due to being already set while we were trying
+					glog.Warning("could not set clusterid configmap", cm)
+				} else {
+					// cluster id exists and is set
+					// get id out of cm
+					if id, ok := cm.Data["id"]; ok {
+						// set it if it has not been set
+						if "" == c.clusterID {
+							c.clusterID = id
+						} else if id != c.clusterID {
+							glog.Warningf("got a different cluster id than what was stored. controller had %q, got %q.", c.clusterID, id)
+						}
+					} else {
+						glog.Warning("got a clusterid configmap, but it had no id")
+					}
+				}
+				glog.V(9).Info("cluster ID monitor loop exit")
+			}, time.Second, stopCh)
+			waitGroup.Done()
+		}()
+	}()
 
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
