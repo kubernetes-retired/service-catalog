@@ -1,5 +1,5 @@
-hash: 67611ed70f03a6eab0e752b444f3f435a712525ef3626f8d0dfec88a156eb086
-updated: 2017-12-28T14:46:17.951598155+11:00
+hash: eccd613bff02fdd561ff43e46a68cd7217ac7a299f1ffdd9011ea8cf24e3c1d1
+updated: 2017-12-28T15:04:10.859005082+11:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -371,11 +371,13 @@ imports:
   - googleapis/api/annotations
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: d2e1b51f33ff8c5e4a15560ff049d200e83726c5
+  version: 5b3c4e850e90a4cf6a20ebd46c8b32a0a3afcb9e
   subpackages:
+  - balancer
   - codes
+  - connectivity
   - credentials
-  - grpclb/grpc_lb_v1
+  - grpclb/grpc_lb_v1/messages
   - grpclog
   - health/grpc_health_v1
   - internal
@@ -383,6 +385,7 @@ imports:
   - metadata
   - naming
   - peer
+  - resolver
   - stats
   - status
   - tap
