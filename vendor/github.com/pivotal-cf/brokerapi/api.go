@@ -2,6 +2,7 @@ package brokerapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -34,6 +35,14 @@ const (
 	unknownErrorKey               = "unknown-error"
 	invalidRawParamsKey           = "invalid-raw-params"
 	appGuidNotProvidedErrorKey    = "app-guid-not-provided"
+	apiVersionInvalidKey          = "broker-api-version-invalid"
+	serviceIdMissingKey           = "service-id-missing"
+	planIdMissingKey              = "plan-id-missing"
+)
+
+var (
+	serviceIdError = errors.New("service-id missing")
+	planIdError    = errors.New("plan-id missing")
 )
 
 type BrokerCredentials struct {
@@ -168,14 +177,11 @@ func (h serviceBrokerHandler) deprovision(w http.ResponseWriter, req *http.Reque
 		instanceIDLogKey: instanceID,
 	})
 
-	apiVersion := req.Header.Get("X-Broker-API-Version")
-	if apiVersion == "" {
-		h.respond(w, http.StatusPreconditionFailed, "X-Broker-API-Version Header not set")
-		return
-	}
-
-	if !strings.HasPrefix(apiVersion, "2.") {
-		h.respond(w, http.StatusPreconditionFailed, "X-Broker-API-Version Header must be 2.x")
+	if err := checkBrokerAPIVersionHdr(req); err != nil {
+		h.respond(w, http.StatusPreconditionFailed, ErrorResponse{
+			Description: err.Error(),
+		})
+		logger.Error(apiVersionInvalidKey, err)
 		return
 	}
 
@@ -185,14 +191,21 @@ func (h serviceBrokerHandler) deprovision(w http.ResponseWriter, req *http.Reque
 	}
 
 	if details.ServiceID == "" {
-		h.respond(w, http.StatusBadRequest, "service_id empty")
+		h.respond(w, http.StatusBadRequest, ErrorResponse{
+			Description: serviceIdError.Error(),
+		})
+		logger.Error(serviceIdMissingKey, serviceIdError)
 		return
 	}
 
 	if details.PlanID == "" {
-		h.respond(w, http.StatusBadRequest, "plan_id empty")
+		h.respond(w, http.StatusBadRequest, ErrorResponse{
+			Description: planIdError.Error(),
+		})
+		logger.Error(planIdMissingKey, planIdError)
 		return
 	}
+
 	asyncAllowed := req.FormValue("accepts_incomplete") == "true"
 
 	deprovisionSpec, err := h.serviceBroker.Deprovision(req.Context(), instanceID, details, asyncAllowed)
@@ -306,9 +319,33 @@ func (h serviceBrokerHandler) unbind(w http.ResponseWriter, req *http.Request) {
 		bindingIDLogKey:  bindingID,
 	})
 
+	if err := checkBrokerAPIVersionHdr(req); err != nil {
+		h.respond(w, http.StatusPreconditionFailed, ErrorResponse{
+			Description: err.Error(),
+		})
+		logger.Error(apiVersionInvalidKey, err)
+		return
+	}
+
 	details := UnbindDetails{
 		PlanID:    req.FormValue("plan_id"),
 		ServiceID: req.FormValue("service_id"),
+	}
+
+	if details.ServiceID == "" {
+		h.respond(w, http.StatusBadRequest, ErrorResponse{
+			Description: serviceIdError.Error(),
+		})
+		logger.Error(serviceIdMissingKey, serviceIdError)
+		return
+	}
+
+	if details.PlanID == "" {
+		h.respond(w, http.StatusBadRequest, ErrorResponse{
+			Description: planIdError.Error(),
+		})
+		logger.Error(planIdMissingKey, planIdError)
+		return
 	}
 
 	if err := h.serviceBroker.Unbind(req.Context(), instanceID, bindingID, details); err != nil {
@@ -374,4 +411,16 @@ func (h serviceBrokerHandler) respond(w http.ResponseWriter, status int, respons
 	if err != nil {
 		h.logger.Error("encoding response", err, lager.Data{"status": status, "response": response})
 	}
+}
+
+func checkBrokerAPIVersionHdr(req *http.Request) error {
+	apiVersion := req.Header.Get("X-Broker-API-Version")
+	if apiVersion == "" {
+		return errors.New("X-Broker-API-Version Header not set")
+	}
+
+	if !strings.HasPrefix(apiVersion, "2.") {
+		return errors.New("X-Broker-API-Version Header must be 2.x")
+	}
+	return nil
 }

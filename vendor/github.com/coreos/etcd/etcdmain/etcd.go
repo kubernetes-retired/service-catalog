@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -188,7 +187,7 @@ func startEtcd(cfg *embed.Config) (<-chan struct{}, <-chan error, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	osutil.RegisterInterruptHandler(e.Server.Stop)
+	osutil.RegisterInterruptHandler(e.Close)
 	select {
 	case <-e.Server.ReadyNotify(): // wait for e.Server to join the cluster
 	case <-e.Server.StopNotify(): // publish aborted from 'ErrStopped'
@@ -305,18 +304,7 @@ func startProxy(cfg *config) error {
 	}
 	// Start a proxy server goroutine for each listen address
 	for _, u := range cfg.LCUrls {
-		var (
-			l      net.Listener
-			tlscfg *tls.Config
-		)
-		if !cfg.ClientTLSInfo.Empty() {
-			tlscfg, err = cfg.ClientTLSInfo.ServerConfig()
-			if err != nil {
-				return err
-			}
-		}
-
-		l, err := transport.NewListener(u.Host, u.Scheme, tlscfg)
+		l, err := transport.NewListener(u.Host, u.Scheme, &cfg.ClientTLSInfo)
 		if err != nil {
 			return err
 		}
@@ -368,10 +356,27 @@ func identifyDataDirOrDie(dir string) dirType {
 	return dirEmpty
 }
 
+func logTLSHandshakeFailure(conn *tls.Conn, err error) {
+	state := conn.ConnectionState()
+	remoteAddr := conn.RemoteAddr().String()
+	serverName := state.ServerName
+	if len(state.PeerCertificates) > 0 {
+		cert := state.PeerCertificates[0]
+		ips, dns := cert.IPAddresses, cert.DNSNames
+		plog.Infof("rejected connection from %q (error %q, ServerName %q, IPAddresses %q, DNSNames %q)", remoteAddr, err.Error(), serverName, ips, dns)
+	} else {
+		plog.Infof("rejected connection from %q (error %q, ServerName %q)", remoteAddr, err.Error(), serverName)
+	}
+}
+
 func setupLogging(cfg *config) {
+	cfg.ClientTLSInfo.HandshakeFailure = logTLSHandshakeFailure
+	cfg.PeerTLSInfo.HandshakeFailure = logTLSHandshakeFailure
+
 	capnslog.SetGlobalLogLevel(capnslog.INFO)
 	if cfg.Debug {
 		capnslog.SetGlobalLogLevel(capnslog.DEBUG)
+		grpc.EnableTracing = true
 	}
 	if cfg.LogPkgLevels != "" {
 		repoLog := capnslog.MustRepoLogger("github.com/coreos/etcd")
@@ -399,7 +404,7 @@ func setupLogging(cfg *config) {
 
 func checkSupportArch() {
 	// TODO qualify arm64
-	if runtime.GOARCH == "amd64" {
+	if runtime.GOARCH == "amd64" || runtime.GOARCH == "ppc64le" {
 		return
 	}
 	if env, ok := os.LookupEnv("ETCD_UNSUPPORTED_ARCH"); ok && env == runtime.GOARCH {

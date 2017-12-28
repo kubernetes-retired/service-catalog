@@ -91,4 +91,4 @@ import:
 - package: github.com/pmorie/go-open-service-broker-client
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
-  version: 3.1.10 # in sync with https://github.com/kubernetes/kubernetes/blob/v1.9.0/Godeps/Godeps.json
+  version: 3.2.12 # different from Kubernetes etcd version (3.1.10), but has some improvements for embedded mode? https://github.com/kubernetes/kubernetes/blob/v1.9.0/Godeps/Godeps.json
