@@ -731,6 +731,98 @@ func getLastOperationResponseByPollCountStates(numOfResponses int, stateProgress
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
+func newControllerTestTestController(ct *controllerTest) (
+	*fake.Clientset,
+	clientset.Interface,
+	*restclient.Config,
+	*fakeosb.FakeClient,
+	controller.Controller,
+	informers.Interface,
+	func(),
+	func()) {
+	t := ct.t
+
+	// create a fake kube client
+	fakeKubeClient := &fake.Clientset{}
+	prependGetSecretNotFoundReaction(fakeKubeClient)
+
+	// create an sc client and running server
+	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
+		return &servicecatalog.ClusterServiceBroker{}
+	})
+
+	fakeOSBClient := fakeosb.NewFakeClient(getTestHappyPathBrokerClientConfig())
+	brokerClFunc := fakeosb.ReturnFakeClientFunc(fakeOSBClient)
+
+	// create informers
+	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
+	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
+
+	// WARNING: Should you try to record more events than the buffer size
+	// passed here, the recording function will hang indefinitely.
+	fakeRecorder := record.NewFakeRecorder(50)
+
+	// create a test controller
+	testController, err := controller.NewController(
+		fakeKubeClient,
+		catalogClient.ServicecatalogV1beta1(),
+		serviceCatalogSharedInformers.ClusterServiceBrokers(),
+		serviceCatalogSharedInformers.ClusterServiceClasses(),
+		serviceCatalogSharedInformers.ServiceInstances(),
+		serviceCatalogSharedInformers.ServiceBindings(),
+		serviceCatalogSharedInformers.ClusterServicePlans(),
+		brokerClFunc,
+		24*time.Hour,
+		osb.LatestAPIVersion().HeaderValue(),
+		fakeRecorder,
+		7*24*time.Hour,
+		7*24*time.Hour,
+	)
+	t.Log("controller start")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ct.setup != nil {
+		ct.kubeClient = fakeKubeClient
+		ct.catalogClient = catalogClient
+		ct.catalogClientConfig = catalogClientConfig
+		ct.osbClient = fakeOSBClient
+		ct.controller = testController
+		ct.informers = serviceCatalogSharedInformers
+		ct.setup(ct)
+	}
+
+	stopCh := make(chan struct{})
+	controllerStopped := make(chan struct{})
+	go func() {
+		testController.Run(1, stopCh)
+		controllerStopped <- struct{}{}
+	}()
+	informerFactory.Start(stopCh)
+	t.Log("informers start")
+
+	shutdownController := func() {
+		close(stopCh)
+		<-controllerStopped
+	}
+
+	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer, shutdownController
+}
+
+// newTestController creates a new test controller injected with fake clients
+// and returns:
+//
+// - a fake kubernetes core api client
+// - a fake service catalog api client
+// - a fake osb client, with configuration for happy path testing
+// - a test controller
+// - the shared informers for the service catalog v1beta1 api
+// - a function for shutting down the API server
+// - a function for shutting down the controller.
+//
+// If there is an error, newTestController calls 'Fatal' on the injected
+// testing.T.
 func newTestController(t *testing.T) (
 	*fake.Clientset,
 	clientset.Interface,
@@ -1162,7 +1254,7 @@ type controllerTest struct {
 // - delete broker
 // - clean up controller and API server
 func (ct *controllerTest) run(test func(*controllerTest)) {
-	kubeClient, catalogClient, catalogClientConfig, osbClient, controller, informers, shutdownServer, shutdownController := newTestController(ct.t)
+	kubeClient, catalogClient, catalogClientConfig, osbClient, controller, informers, shutdownServer, shutdownController := newControllerTestTestController(ct)
 	defer shutdownController()
 	defer shutdownServer()
 
@@ -1174,10 +1266,6 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	ct.informers = informers
 
 	ct.client = catalogClient.ServicecatalogV1beta1()
-
-	if ct.setup != nil {
-		ct.setup(ct)
-	}
 
 	if ct.broker != nil {
 		if ct.preCreateBroker != nil {
