@@ -791,6 +791,54 @@ func newControllerTestTestController(ct *controllerTest) (
 		ct.controller = testController
 		ct.informers = serviceCatalogSharedInformers
 		ct.setup(ct)
+		ct.client = catalogClient.ServicecatalogV1beta1()
+	}
+
+	if ct.broker != nil {
+		if ct.preCreateBroker != nil {
+			ct.preCreateBroker(ct)
+		}
+		_, err := ct.client.ClusterServiceBrokers().Create(ct.broker)
+		if nil != err {
+			ct.t.Fatalf("error creating the broker %q (%q)", ct.broker.Name, err)
+		}
+		if !ct.skipVerifyingBrokerSuccess {
+			ct.broker = verifyBrokerCreated(ct.t, ct.client, ct.broker)
+		}
+		if ct.postCreateBroker != nil {
+			ct.postCreateBroker(ct)
+		}
+	}
+
+	if ct.instance != nil {
+		if ct.preCreateInstance != nil {
+			ct.preCreateInstance(ct)
+		}
+		if _, err := ct.client.ServiceInstances(ct.instance.Namespace).Create(ct.instance); err != nil {
+			ct.t.Fatalf("error creating Instance: %v", err)
+		}
+		if !ct.skipVerifyingInstanceSuccess {
+			ct.instance = verifyInstanceCreated(ct.t, ct.client, ct.instance)
+		}
+		if ct.postCreateInstance != nil {
+			ct.postCreateInstance(ct)
+		}
+	}
+
+	if ct.binding != nil {
+		if ct.preCreateBinding != nil {
+			ct.preCreateBinding(ct)
+		}
+		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
+		if err != nil {
+			ct.t.Fatalf("error creating Binding: %v", err)
+		}
+		if !ct.skipVerifyingBindingSuccess {
+			ct.binding = verifyBindingCreated(ct.t, ct.client, ct.binding)
+		}
+		if ct.postCreateBinding != nil {
+			ct.postCreateBinding(ct)
+		}
 	}
 
 	stopCh := make(chan struct{})
@@ -1266,53 +1314,6 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	ct.informers = informers
 
 	ct.client = catalogClient.ServicecatalogV1beta1()
-
-	if ct.broker != nil {
-		if ct.preCreateBroker != nil {
-			ct.preCreateBroker(ct)
-		}
-		_, err := ct.client.ClusterServiceBrokers().Create(ct.broker)
-		if nil != err {
-			ct.t.Fatalf("error creating the broker %q (%q)", ct.broker.Name, err)
-		}
-		if !ct.skipVerifyingBrokerSuccess {
-			ct.broker = verifyBrokerCreated(ct.t, ct.client, ct.broker)
-		}
-		if ct.postCreateBroker != nil {
-			ct.postCreateBroker(ct)
-		}
-	}
-
-	if ct.instance != nil {
-		if ct.preCreateInstance != nil {
-			ct.preCreateInstance(ct)
-		}
-		if _, err := ct.client.ServiceInstances(ct.instance.Namespace).Create(ct.instance); err != nil {
-			ct.t.Fatalf("error creating Instance: %v", err)
-		}
-		if !ct.skipVerifyingInstanceSuccess {
-			ct.instance = verifyInstanceCreated(ct.t, ct.client, ct.instance)
-		}
-		if ct.postCreateInstance != nil {
-			ct.postCreateInstance(ct)
-		}
-	}
-
-	if ct.binding != nil {
-		if ct.preCreateBinding != nil {
-			ct.preCreateBinding(ct)
-		}
-		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
-		if err != nil {
-			ct.t.Fatalf("error creating Binding: %v", err)
-		}
-		if !ct.skipVerifyingBindingSuccess {
-			ct.binding = verifyBindingCreated(ct.t, ct.client, ct.binding)
-		}
-		if ct.postCreateBinding != nil {
-			ct.postCreateBinding(ct)
-		}
-	}
 
 	if test != nil {
 		test(ct)
