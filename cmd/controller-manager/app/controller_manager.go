@@ -32,7 +32,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/discovery"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -248,7 +248,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 // groups are available in the endpoint reachable from the given client and
 // returns a map of them.
 func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.GroupVersionResource]bool, error) {
-	var discoveryClient discovery.DiscoveryInterface
+	var resourceMap []*metav1.APIResourceList
 
 	// If apiserver is not running we should wait for some time and fail only then. This is particularly
 	// important when we start apiserver and controller manager at the same time.
@@ -261,17 +261,17 @@ func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.G
 
 		glog.V(4).Info("Created client for API discovery")
 
-		discoveryClient = client.Discovery()
+		discoveryClient := client.Discovery()
+		resourceMap, err = discoveryClient.ServerResources()
+		if err != nil {
+			return false, fmt.Errorf("failed to get supported resources from server: %v", err)
+		}
+
 		return true, nil
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get api versions from server: %v", err)
-	}
-
-	resourceMap, err := discoveryClient.ServerResources()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get supported resources from server: %v", err)
 	}
 
 	allResources := map[schema.GroupVersionResource]bool{}
