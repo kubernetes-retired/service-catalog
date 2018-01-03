@@ -59,4 +59,9 @@ NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceplan.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/instance.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/binding.yaml
+
+NO_TTY=1 kubectl create -f contrib/examples/podpresets/db_config.yaml
+NO_TTY=1 kubectl get podpresets -o yaml
+NO_TTY=1 kubectl get podpresets db-config -o yaml
+NO_TTY=1 kubectl delete -f contrib/examples/podpresets/db_config.yaml
 set +x
