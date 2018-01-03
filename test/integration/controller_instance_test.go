@@ -214,6 +214,10 @@ func TestCreateServiceInstanceWithAuthError(t *testing.T) {
 		instance:                     getTestInstance(),
 		skipVerifyingInstanceSuccess: true,
 		preCreateBroker: func(ct *controllerTest) {
+			ct.kubeClient.Lock()
+			t.Log(ct.kubeClient)
+			ct.kubeClient.Unlock()
+
 			prependGetSecretReaction(ct.kubeClient, "secret-name", map[string][]byte{
 				"username": []byte("user"),
 				"password": []byte("pass"),

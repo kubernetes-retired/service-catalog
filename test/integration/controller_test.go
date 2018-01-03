@@ -783,15 +783,31 @@ func newControllerTestTestController(ct *controllerTest) (
 		t.Fatal(err)
 	}
 
+	ct.client = catalogClient.ServicecatalogV1beta1()
+
+	ct.kubeClient = fakeKubeClient
+	ct.catalogClient = catalogClient
+	ct.catalogClientConfig = catalogClientConfig
+	ct.osbClient = fakeOSBClient
+	ct.controller = testController
+	ct.informers = serviceCatalogSharedInformers
+
 	if ct.setup != nil {
-		ct.kubeClient = fakeKubeClient
-		ct.catalogClient = catalogClient
-		ct.catalogClientConfig = catalogClientConfig
-		ct.osbClient = fakeOSBClient
-		ct.controller = testController
-		ct.informers = serviceCatalogSharedInformers
 		ct.setup(ct)
-		ct.client = catalogClient.ServicecatalogV1beta1()
+	}
+
+	stopCh := make(chan struct{})
+	controllerStopped := make(chan struct{})
+	go func() {
+		testController.Run(1, stopCh)
+		controllerStopped <- struct{}{}
+	}()
+	informerFactory.Start(stopCh)
+	t.Log("informers start")
+
+	shutdownController := func() {
+		close(stopCh)
+		<-controllerStopped
 	}
 
 	if ct.broker != nil {
@@ -839,20 +855,6 @@ func newControllerTestTestController(ct *controllerTest) (
 		if ct.postCreateBinding != nil {
 			ct.postCreateBinding(ct)
 		}
-	}
-
-	stopCh := make(chan struct{})
-	controllerStopped := make(chan struct{})
-	go func() {
-		testController.Run(1, stopCh)
-		controllerStopped <- struct{}{}
-	}()
-	informerFactory.Start(stopCh)
-	t.Log("informers start")
-
-	shutdownController := func() {
-		close(stopCh)
-		<-controllerStopped
 	}
 
 	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer, shutdownController
