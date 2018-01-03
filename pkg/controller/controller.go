@@ -94,6 +94,7 @@ func NewController(
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
 		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "instance-poller"),
 		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
+		//clusteIDConfigMapQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusteIDConfigMap"),
 	}
 
 	controller.brokerLister = brokerInformer.Lister()
@@ -186,10 +187,19 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
 			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
 		}
+
+		//createWorker(c.ClusteIDConfigMapQueue, "ClusteIDConfigMap", maxRetries, true, c.reconcileClusteIDConfigMapKey, stopCh, &waitGroup)
 	}
 
 	func() {
 		waitGroup.Add(1)
+		// Cannot wait for the informer to push something into a queue.
+		// What we're waiting on may never exist without us configuring
+		// it, so we have to poll/ ask for it the first time to get it set.
+
+		// Can we ask 'through' an informer? Is it a writeback cache? I
+		// only ever want to monitor and be notified about one configmap
+		// in a hardcoded place.
 		go func() {
 			wait.Until(func() {
 				glog.V(9).Info("cluster ID monitor loop enter")
