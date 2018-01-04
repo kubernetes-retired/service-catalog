@@ -1261,43 +1261,43 @@ func TestDeleteServiceInstance(t *testing.T) {
 				}
 			},
 		},
-		// {
-		// 	name: "deprovision instance after in progress provision",
-		// 	skipVerifyingInstanceSuccess: true,
-		// 	setup: func(ct *controllerTest) {
-		// 		ct.osbClient.PollLastOperationReaction = &fakeosb.PollLastOperationReaction{
-		// 			Response: &osb.LastOperationResponse{
-		// 				State: osb.StateInProgress,
-		// 			},
-		// 		}
-		// 		ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-		// 			Response: &osb.ProvisionResponse{
-		// 				Async: true,
-		// 			},
-		// 		}
-		// 		ct.osbClient.DeprovisionReaction = &fakeosb.DeprovisionReaction{
-		// 			Response: &osb.DeprovisionResponse{},
-		// 		}
-		// 	},
-		// 	testFunction: func(ct *controllerTest) {
-		// 		verifyCondition := v1beta1.ServiceInstanceCondition{
-		// 			Type:   v1beta1.ServiceInstanceConditionReady,
-		// 			Status: v1beta1.ConditionFalse,
-		// 			Reason: "ProvisionRequestInFlight",
-		// 		}
-		// 		if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, verifyCondition); err != nil {
-		// 			t.Fatalf("error waiting for instance condition: %v", err)
-		// 		}
-		// 		ct.osbClient.PollLastOperationReaction = &fakeosb.PollLastOperationReaction{
-		// 			Response: &osb.LastOperationResponse{
-		// 				State: osb.StateSucceeded,
-		// 			},
-		// 		}
-		// 		if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
-		// 			t.Fatalf("error waiting for instance to reconcile: %v", err)
-		// 		}
-		// 	},
-		// },
+		{
+			name: "deprovision instance after in progress provision",
+			skipVerifyingInstanceSuccess: true,
+			setup: func(ct *controllerTest) {
+				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+					getLastOperationResponseByPollCountReactions(2, []fakeosb.PollLastOperationReaction{
+						fakeosb.PollLastOperationReaction{
+							Response: &osb.LastOperationResponse{
+								State: osb.StateInProgress,
+							},
+						},
+						fakeosb.PollLastOperationReaction{
+							Response: &osb.LastOperationResponse{
+								State: osb.StateSucceeded,
+							},
+						},
+					}))
+				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+					Response: &osb.ProvisionResponse{
+						Async: true,
+					},
+				}
+				ct.osbClient.DeprovisionReaction = &fakeosb.DeprovisionReaction{
+					Response: &osb.DeprovisionResponse{},
+				}
+			},
+			testFunction: func(ct *controllerTest) {
+				verifyCondition := v1beta1.ServiceInstanceCondition{
+					Type:   v1beta1.ServiceInstanceConditionReady,
+					Status: v1beta1.ConditionTrue,
+					Reason: "ProvisionedSuccessfully",
+				}
+				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, verifyCondition); err != nil {
+					t.Fatalf("error waiting for instance condition: %v", err)
+				}
+			},
+		},
 	}
 
 	for _, tc := range cases {
