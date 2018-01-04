@@ -27,7 +27,7 @@ import (
 
 // ClusterServiceBroker represents an entity that provides
 // ClusterServiceClasses for use in the service catalog.
-// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,URL:.spec.url,STATUS:.status.conditions[*].reason
+// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,URL:.spec.url
 type ClusterServiceBroker struct {
 	metav1.TypeMeta `json:",inline"`
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
@@ -430,7 +430,7 @@ type ExtraValue []string
 // In the future, this will be allowed and will represent the intention that
 // the ServiceInstance should have the plan and/or parameters updated at the
 // ClusterServiceBroker.
-// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,CLASS:.spec.clusterServiceClassExternalName,PLAN:.spec.clusterServicePlanExternalName,STATUS:.status.conditions[*].reason
+// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,CLASS:.spec.clusterServiceClassExternalName,PLAN:.spec.clusterServicePlanExternalName
 type ServiceInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -695,7 +695,7 @@ type ServiceBindingList struct {
 
 // ServiceBinding represents a "used by" relationship between an application and an
 // ServiceInstance.
-// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,INSTANCE:.spec.instanceRef.name,SECRET:.spec.secretName,STATUS:.status.conditions[*].reason
+// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,INSTANCE:.spec.instanceRef.name,SECRET:.spec.secretName
 type ServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
