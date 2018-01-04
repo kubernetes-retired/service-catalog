@@ -310,7 +310,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 				VendorExtensible: spec.VendorExtensible{
 					Extensions: spec.Extensions{
-						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,BINDABLE:.spec.bindable",
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,BINDABLE:.spec.bindable,PLAN UPDATABLE:.spec.planUpdatable",
 					},
 				},
 			},
