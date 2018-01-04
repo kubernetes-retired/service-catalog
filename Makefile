@@ -281,7 +281,9 @@ test-integration: .init $(scBuildImageTarget) build
 clean-e2e:
 	rm -f $(BINDIR)/e2e.test
 
-test-e2e: .generate_files $(BINDIR)/e2e.test
+build-e2e: .generate_files $(BINDIR)/e2e.test
+
+test-e2e: build-e2e
 	$(BINDIR)/e2e.test
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
