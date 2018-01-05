@@ -34,6 +34,13 @@ TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
 BUILD_LDFLAGS  = $(shell build/version.sh $(ROOT) $(SC_PKG))
+GIT_BRANCH    ?= $(shell git rev-parse --abbrev-ref HEAD)
+
+# Only skip the verification of external href's if we're not on 'master'
+SKIP_HTTP=-x
+ifeq ($(GIT_BRANCH),master)
+SKIP_HTTP=
+endif
 
 # Run stat against /dev/null and check if it has any stdout output.
 # If stdout is blank, we are detecting bsd-stat because stat it has
@@ -237,7 +244,7 @@ verify: .init .generate_files verify-client-gen
 	@rm .out
 	@#
 	@echo Running href checker:
-	@$(DOCKER_CMD) verify-links.sh -t .
+	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 
