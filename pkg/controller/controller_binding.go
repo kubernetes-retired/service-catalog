@@ -824,34 +824,6 @@ func (c *controller) serviceBindingRequestUnbinding(binding *v1beta1.ServiceBind
 
 	response, err := brokerClient.Unbind(unbindRequest)
 	if err != nil {
-		if httpErr, ok := osb.IsHTTPError(err); ok {
-			s := fmt.Sprintf(
-				`Error unbinding from %s: %s`,
-				pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), httpErr.Error(),
-			)
-			glog.Warning(pcb.Message(s))
-			c.recorder.Event(binding, corev1.EventTypeWarning, errorUnbindCallReason, s)
-			setServiceBindingCondition(
-				toUpdate,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionUnknown,
-				errorUnbindCallReason,
-				"Unbind call failed. "+s)
-			if !toUpdate.Status.OrphanMitigationInProgress {
-				setServiceBindingCondition(
-					toUpdate,
-					v1beta1.ServiceBindingConditionFailed,
-					v1beta1.ConditionTrue,
-					errorUnbindCallReason,
-					"Unbind call failed. "+s)
-			}
-			clearServiceBindingCurrentOperation(toUpdate)
-			toUpdate.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
-			if _, err := c.updateServiceBindingStatus(toUpdate); err != nil {
-				return false, err
-			}
-			return false, nil
-		}
 		s := fmt.Sprintf(
 			`Error unbinding from %s: %s`,
 			pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), err,
@@ -1593,7 +1565,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			message,
 		)
 
-		if !mitigatingOrphan {
+		if !deleting {
 			setServiceBindingCondition(
 				binding,
 				v1beta1.ServiceBindingConditionFailed,
@@ -1601,19 +1573,31 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 				reason,
 				message,
 			)
+			clearServiceBindingCurrentOperation(binding)
+
+			if _, err := c.updateServiceBindingStatus(binding); err != nil {
+				return err
+			}
+
+			return c.finishPollingServiceBinding(binding)
+		}
+		if !time.Now().Before(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+			return c.reconciliationRetryDurationExceededFinishPollingServiceBinding(binding)
 		}
 
-		clearServiceBindingCurrentOperation(binding)
-
-		if deleting {
-			binding.Status.UnbindStatus = v1beta1.ServiceBindingUnbindStatusFailed
-		}
+		// we must trigger a new unbind attempt entirely (as opposed to
+		// retrying querying the failed operation endpoint). Finish
+		// polling, and return an error in order to requeue in the
+		// standard binding queue.
+		binding.Status.AsyncOpInProgress = false
+		binding.Status.LastOperation = nil
 
 		if _, err := c.updateServiceBindingStatus(binding); err != nil {
 			return err
 		}
 
-		return c.finishPollingServiceBinding(binding)
+		c.finishPollingServiceBinding(binding)
+		return fmt.Errorf(message)
 	default:
 		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
 

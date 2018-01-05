@@ -1813,8 +1813,8 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 	if err := scmeta.AddFinalizer(binding, v1beta1.FinalizerServiceCatalog); err != nil {
 		t.Fatalf("Finalizer error: %v", err)
 	}
-	if err := testController.reconcileServiceBinding(binding); err != nil {
-		t.Fatalf("reconcileServiceBinding should not have returned an error: %v", err)
+	if err := testController.reconcileServiceBinding(binding); err == nil {
+		t.Fatalf("reconcileServiceBinding should have returned an error")
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -1825,7 +1825,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
-	assertServiceBindingRequestFailingError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, errorUnbindCallReason, errorUnbindCallReason, binding)
+	assertServiceBindingRequestRetriableError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, errorUnbindCallReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
 	events := getRecordedEvents(testController)
@@ -3068,6 +3068,7 @@ func TestPollServiceBinding(t *testing.T) {
 		validateBrokerActionsFunc func(t *testing.T, actions []fakeosb.Action)
 		validateKubeActionsFunc   func(t *testing.T, actions []clientgotesting.Action)
 		validateConditionsFunc    func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding)
+		shouldError               bool
 		shouldFinishPolling       bool
 		expectedEvents            []string
 	}{
@@ -3371,7 +3372,7 @@ func TestPollServiceBinding(t *testing.T) {
 			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
 		},
 		{
-			name:    "unbind - failed",
+			name:    "unbind - failed (retries)",
 			binding: getTestServiceBindingAsyncUnbinding(testOperation),
 			pollReaction: &fakeosb.PollBindingLastOperationReaction{
 				Response: &osb.LastOperationResponse{
@@ -3381,15 +3382,15 @@ func TestPollServiceBinding(t *testing.T) {
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
 			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
-				assertServiceBindingRequestFailingError(
+				assertServiceBindingRequestRetriableError(
 					t,
 					updatedBinding,
 					v1beta1.ServiceBindingOperationUnbind,
 					errorUnbindCallReason,
-					errorUnbindCallReason,
 					originalBinding,
 				)
 			},
+			shouldError:         true,
 			shouldFinishPolling: true,
 			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Unbind call failed: " + lastOperationDescription},
 		},
@@ -3453,6 +3454,32 @@ func TestPollServiceBinding(t *testing.T) {
 			shouldFinishPolling: true,
 			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed"},
 		},
+		{
+			name:    "unbind - failed - retry duration exceeded",
+			binding: getTestServiceBindingAsyncUnbindingRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateFailed,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingRequestFailingError(
+					t,
+					updatedBinding,
+					v1beta1.ServiceBindingOperationUnbind,
+					errorUnbindCallReason,
+					errorReconciliationRetryTimeoutReason,
+					originalBinding,
+				)
+			},
+			shouldFinishPolling: true,
+			expectedEvents: []string{
+				corev1.EventTypeWarning + " " + errorUnbindCallReason + " " + "Unbind call failed: " + lastOperationDescription,
+				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
+			},
+		},
 		// Unbind as part of orphan mitigation
 		{
 			name:    "orphan mitigation - succeeded",
@@ -3513,7 +3540,7 @@ func TestPollServiceBinding(t *testing.T) {
 			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
 		},
 		{
-			name:    "orphan mitigation - failed",
+			name:    "orphan mitigation - failed (retries)",
 			binding: getTestServiceBindingAsyncOrphanMitigation(testOperation),
 			pollReaction: &fakeosb.PollBindingLastOperationReaction{
 				Response: &osb.LastOperationResponse{
@@ -3523,8 +3550,9 @@ func TestPollServiceBinding(t *testing.T) {
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
 			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
-				assertServiceBindingOrphanMitigationFailure(t, updatedBinding, originalBinding)
+				assertServiceBindingRequestRetriableOrphanMitigation(t, updatedBinding, originalBinding)
 			},
+			shouldError:         true,
 			shouldFinishPolling: true,
 			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorOrphanMitigationFailedReason + " " + "Orphan mitigation failed: " + lastOperationDescription},
 		},
@@ -3574,6 +3602,25 @@ func TestPollServiceBinding(t *testing.T) {
 			shouldFinishPolling: true,
 			expectedEvents:      []string{corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed"},
 		},
+		{
+			name:    "orphan mitigation - failed - retry duration exceeded",
+			binding: getTestServiceBindingAsyncOrphanMitigationRetryDurationExceeded(testOperation),
+			pollReaction: &fakeosb.PollBindingLastOperationReaction{
+				Response: &osb.LastOperationResponse{
+					State:       osb.StateFailed,
+					Description: strPtr(lastOperationDescription),
+				},
+			},
+			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
+			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+				assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t, updatedBinding, originalBinding)
+			},
+			shouldFinishPolling: true,
+			expectedEvents: []string{
+				corev1.EventTypeWarning + " " + errorOrphanMitigationFailedReason + " " + "Orphan mitigation failed: " + lastOperationDescription,
+				corev1.EventTypeWarning + " " + errorReconciliationRetryTimeoutReason + " " + "Stopping reconciliation retries because too much time has elapsed",
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -3595,7 +3642,10 @@ func TestPollServiceBinding(t *testing.T) {
 
 			bindingKey := tc.binding.Namespace + "/" + tc.binding.Name
 
-			if err := testController.pollServiceBinding(tc.binding); err != nil {
+			err := testController.pollServiceBinding(tc.binding)
+			if tc.shouldError && err == nil {
+				t.Fatalf("expected error when polling service binding but there was none")
+			} else if !tc.shouldError && err != nil {
 				t.Fatalf("unexpected error when polling service binding: %v", err)
 			}
 
