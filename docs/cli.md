@@ -10,8 +10,8 @@ Kubernetes cluster.
 
 [agg-api]: https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/
 
-This document assumes that you've installed Service Catalog and the Service Catalog CLI, svcat, onto your cluster.
-If you haven't, please see [install.md](install.md).
+This document assumes that you've installed Service Catalog and the Service Catalog CLI
+onto your cluster. If you haven't, please see [install.md](install.md).
 
 ## Plugin
 To use svcat as a plugin, run the following command after downloading:
