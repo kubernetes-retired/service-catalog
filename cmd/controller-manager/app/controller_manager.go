@@ -296,59 +296,69 @@ func StartControllers(s *options.ControllerManagerServer,
 	recorder record.EventRecorder,
 	stop <-chan struct{}) error {
 
-	// Get available service-catalog resources
-	glog.V(5).Info("Getting available resources")
-	availableResources, err := getAvailableResources(serviceCatalogClientBuilder)
+	// When Catalog Controller and Catalog API Server are started at the
+	// same time with API Aggregation enabled, it may take some time before
+	// Catalog registration shows up in API Server.  Attempt to get resources
+	// every 10 seconds and quit after 3 minutes if unsuccessful.
+	var availableResources map[schema.GroupVersionResource]bool
+	err := wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) {
+		var err error
+		availableResources, err = getAvailableResources(serviceCatalogClientBuilder)
+		if err != nil {
+			return false, err
+		}
+		return availableResources[catalogGVR], nil
+	},
+	)
+
 	if err != nil {
+		if err == wait.ErrWaitTimeout {
+			return fmt.Errorf("unable to start service-catalog controller: API GroupVersion %q is not available; found %#v", catalogGVR, availableResources)
+		}
 		return err
 	}
 
+	// Launch service-catalog controller
 	coreKubeconfig = rest.AddUserAgent(coreKubeconfig, controllerManagerAgentName)
 	coreClient, err := kubernetes.NewForConfig(coreKubeconfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
+	glog.V(5).Infof("Creating shared informers; resync interval: %v", s.ResyncInterval)
 
-	// Launch service-catalog controller
-	if availableResources[catalogGVR] {
-		glog.V(5).Infof("Creating shared informers; resync interval: %v", s.ResyncInterval)
+	// Build the informer factory for service-catalog resources
+	informerFactory := servicecataloginformers.NewSharedInformerFactory(
+		serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
+		s.ResyncInterval,
+	)
+	// All shared informers are v1beta1 API level
+	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
-		// Build the informer factory for service-catalog resources
-		informerFactory := servicecataloginformers.NewSharedInformerFactory(
-			serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
-			s.ResyncInterval,
-		)
-		// All shared informers are v1beta1 API level
-		serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
-
-		glog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
-		serviceCatalogController, err := controller.NewController(
-			coreClient,
-			serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1beta1(),
-			serviceCatalogSharedInformers.ClusterServiceBrokers(),
-			serviceCatalogSharedInformers.ClusterServiceClasses(),
-			serviceCatalogSharedInformers.ServiceInstances(),
-			serviceCatalogSharedInformers.ServiceBindings(),
-			serviceCatalogSharedInformers.ClusterServicePlans(),
-			osbclientproxy.NewClient,
-			s.ServiceBrokerRelistInterval,
-			s.OSBAPIPreferredVersion,
-			recorder,
-			s.ReconciliationRetryDuration,
-			s.OperationPollingMaximumBackoffDuration,
-		)
-		if err != nil {
-			return err
-		}
-
-		glog.V(5).Info("Running controller")
-		go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
-
-		glog.V(1).Info("Starting shared informers")
-		informerFactory.Start(stop)
-	} else {
-		return fmt.Errorf("unable to start service-catalog controller: API GroupVersion %q is not available; found %#v", catalogGVR, availableResources)
+	glog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
+	serviceCatalogController, err := controller.NewController(
+		coreClient,
+		serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1beta1(),
+		serviceCatalogSharedInformers.ClusterServiceBrokers(),
+		serviceCatalogSharedInformers.ClusterServiceClasses(),
+		serviceCatalogSharedInformers.ServiceInstances(),
+		serviceCatalogSharedInformers.ServiceBindings(),
+		serviceCatalogSharedInformers.ClusterServicePlans(),
+		osbclientproxy.NewClient,
+		s.ServiceBrokerRelistInterval,
+		s.OSBAPIPreferredVersion,
+		recorder,
+		s.ReconciliationRetryDuration,
+		s.OperationPollingMaximumBackoffDuration,
+	)
+	if err != nil {
+		return err
 	}
+
+	glog.V(5).Info("Running controller")
+	go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
+
+	glog.V(1).Info("Starting shared informers")
+	informerFactory.Start(stop)
 
 	select {}
 }
