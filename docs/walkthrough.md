@@ -35,7 +35,7 @@ that chart in the chart's
 
 Otherwise, to install with sensible defaults, run the following command:
 
-```console
+```
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
@@ -233,7 +233,7 @@ Unlike `ClusterServiceBroker` and `ClusterServiceClass` resources, `ServiceInsta
 resources must be namespaced, so we'll need to create a namespace to start.
 Do so with this command:
 
-```console
+```
 kubectl create namespace test-ns
 ```
 
@@ -375,7 +375,7 @@ ready to use!  If we look at the `Secret`s in our `test-ns` namespace, we should
 see a new one:
 
 ```console
-kubectl get secrets -n test-ns
+$ kubectl get secrets -n test-ns
 NAME                              TYPE                                  DATA      AGE
 default-token-3k61z               kubernetes.io/service-account-token   3         29m
 ups-binding                       Opaque                                2         1m
@@ -397,7 +397,7 @@ servicebinding "ups-binding" deleted
 After the deletion is complete, we should see that the `Secret` is gone:
 
 ```console
-kubectl get secrets -n test-ns
+$ kubectl get secrets -n test-ns
 NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
@@ -419,7 +419,7 @@ Next, we should remove the `ClusterServiceBroker` resource. This tells the servi
 catalog to remove the broker's services from the catalog. Do so with this
 command:
 
-```console
+```
 kubectl delete clusterservicebrokers ups-broker
 ```
 
@@ -441,20 +441,20 @@ No resources found.
 
 To clean up, delete the helm deployment:
 
-```console
+```
 helm delete --purge ups-broker
 ```
 
 Then, delete all the namespaces we created:
 
-```console
+```
 kubectl delete ns test-ns ups-broker
 ```
 ## Cleaning up the Service Catalog
 
 Delete the helm deployment and the namespace:
 
-```console
+```
 helm delete --purge catalog
 kubectl delete ns catalog
 ```
@@ -466,6 +466,6 @@ kubectl delete ns catalog
 If you are using Google Cloud Platform, you may need to run the following
 commands to setup proper firewall rules to allow your traffic get in.
 
-```console
+```
 gcloud compute firewall-rules create allow-service-catalog-secure --allow tcp:30443 --description "Allow incoming traffic on 30443 port."
 ```
