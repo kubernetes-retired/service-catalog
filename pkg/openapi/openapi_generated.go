@@ -100,22 +100,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"metadata": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.",
+								Description: "Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
 								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 							},
 						},
 						"spec": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec"),
+								Description: "Spec defines the behavior of the broker.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec"),
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus"),
+								Description: "Status represents the current status of a broker.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus"),
 							},
 						},
 					},
-					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
@@ -217,7 +218,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"url", "relistBehavior"},
+					Required: []string{"url"},
 				},
 			},
 			Dependencies: []string{
@@ -287,21 +288,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"metadata": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+								Description: "Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 							},
 						},
 						"spec": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec"),
+								Description: "Spec defines the behavior of the service class.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec"),
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus"),
+								Description: "Status represents the current status of the service class.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus"),
 							},
 						},
 					},
-					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
@@ -484,21 +487,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"metadata": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+								Description: "Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 							},
 						},
 						"spec": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec"),
+								Description: "Spec defines the behavior of the service plan.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec"),
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus"),
+								Description: "Status represents the current status of the service plan.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus"),
 							},
 						},
 					},
-					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
@@ -791,21 +796,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"metadata": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+								Description: "The name of this resource in etcd is in ObjectMeta.Name. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 							},
 						},
 						"spec": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec"),
+								Description: "Spec represents the desired state of a ServiceBinding.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec"),
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus"),
+								Description: "Status represents the current status of a ServiceBinding.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus"),
 							},
 						},
 					},
-					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
@@ -981,7 +988,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"instanceRef", "externalID"},
+					Required: []string{"instanceRef"},
 				},
 			},
 			Dependencies: []string{
@@ -1161,21 +1168,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"metadata": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+								Description: "The name of this resource in etcd is in ObjectMeta.Name. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 							},
 						},
 						"spec": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec"),
+								Description: "Spec defines the behavior of the service instance.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec"),
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus"),
+								Description: "Status represents the current status of a service instance.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus"),
 							},
 						},
 					},
-					Required: []string{"spec", "status"},
 				},
 			},
 			Dependencies: []string{
@@ -1400,7 +1409,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"externalID"},
 				},
 			},
 			Dependencies: []string{
