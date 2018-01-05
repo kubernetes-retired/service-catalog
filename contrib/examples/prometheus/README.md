@@ -7,10 +7,12 @@ scraped by the Prometheus monitoring application which persists metrics and
 facilitates analysis through a Web UI and powerful query language.
 
 Many metrics are not created and exposed until Service Catalog performs
-operations which would impact the metrics.  IE if you have no Service Brokers
-defined, there will be no metrics around class or plan count and likely no OSB
-Client operation metrics.  So before proceeding, it's recommended you have a
-Broker defined and created a Service Instance.
+operations which would impact the metrics.  If you have no Service Brokers
+defined, there will be no metrics for class or plan count and likely no OSB
+Client operation metrics.  This just means the metric names will not show up, it
+may look like Prometheus isn't collecting metrics from Service Catalog.  So
+before proceeding, it's recommended you have a Broker defined and created a
+Service Instance.
 
 To view the raw metrics:
 
@@ -39,11 +41,11 @@ Alternatively, and the more common approach to utlizing metrics, deploy
 Prometheus.  [This YAML](prometheus.yml) creates a Prometheus instance
 preconfigured to gather Kubernetes platform and node metrics.  If you deploy the
 Service Catalog Controller Manager via Helm with the optional
-`enablePrometheusScrape` parameter set to true (see
-[charts/catalog/values.yaml](../../../charts/catalog/values.yaml)), this
-configuration will direct Prometheus to automatically scrape custom metrics
-exposed from Service Catalog as well.  Most any Prometheus configuration for
-Kubernetes (ie [Prometheus
+`enablePrometheusScrape` parameter set to true (either edit the parameter in
+[charts/catalog/values.yaml](../../../charts/catalog/values.yaml) or specify
+"--set enablePrometheusScrape=true" when installing Catalog with helm), this configuration will direct Prometheus
+to automatically scrape custom metrics exposed from Service Catalog as well.
+Most any Prometheus configuration for Kubernetes (ie [Prometheus
 Operator](https://github.com/coreos/prometheus-operator)) will pick up the
 Service Catalog metrics as long as it's looking for pods with the
 `prometheus.io/scrape` annotation.

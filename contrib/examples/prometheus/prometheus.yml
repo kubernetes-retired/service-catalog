@@ -1,7 +1,4 @@
-#
-# Prometheus will run under the "prometheus" Service Account, create
-# access to the necessary resources
-#
+# Prometheus will run under the "prometheus" Service Account.
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
