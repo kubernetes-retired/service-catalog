@@ -1,5 +1,5 @@
 #
-# Prometheus will run uner the "prometheus" Service Account, create
+# Prometheus will run under the "prometheus" Service Account, create
 # access to the necessary resources
 #
 apiVersion: rbac.authorization.k8s.io/v1beta1

@@ -1,15 +1,15 @@
 # Prometheus Metrics
 
 Service Catalog maintains metrics through the Prometheus client library and
-exposes them through the Prometheus http adapter at the /metrics endpoint.
-These metrics can be accessed directly via HTTP GET or more commonly scraped by
-the Prometheus monitoring application which persists metrics and facilitates
-analysis through a Web UI and powerful query language.
+exposes them through the Prometheus http adapter at the Controller's /metrics
+endpoint. These metrics can be accessed directly via HTTP GET or more commonly
+scraped by the Prometheus monitoring application which persists metrics and
+facilitates analysis through a Web UI and powerful query language.
 
 Many metrics are not created and exposed until Service Catalog performs
 operations which would impact the metrics.  IE if you have no Service Brokers
 defined, there will be no metrics around class or plan count and likely no OSB
-Client operation metrics.  So before proceeding, its recommnded to you have a
+Client operation metrics.  So before proceeding, it's recommended you have a
 Broker defined and created a Service Instance.
 
 To view the raw metrics:
