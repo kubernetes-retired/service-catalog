@@ -6,6 +6,18 @@ If you haven't, please see [install.md](./install.md).
 All commands in this document assume that you're operating out of the root
 of this repository.
 
+Commands are shown below for both `kubectl` and `svcat`. The [Service Catalog CLI](https://github.com/azure/service-catalog-cli),
+ `svcat` is an optional tool for interacting with the service catalog, simplifying
+many common tasks such as querying the service catalog or provisioning an instance.
+Run the following command to install `svcat`:
+
+```
+curl -sLO https://servicecatalogcli.blob.core.windows.net/cli/latest/$(uname -s)/$(uname -m)/svcat
+chmod +x ./svcat
+mv ./svcat /usr/local/bin/
+svcat --version
+```
+
 # Step 1 - Installing the UPS Broker Server
 
 Since the Service Catalog provides a Kubernetes-native interface to an 
@@ -23,17 +35,22 @@ that chart in the chart's
 
 Otherwise, to install with sensible defaults, run the following command:
 
-```console
+```
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
 # Step 2 - Creating a `ClusterServiceBroker` Resource
 
 Because we haven't created any resources in the service-catalog API server yet,
-`kubectl get` will return an empty list of resources.
+querying service catalog returns an empty list. You can verify that by running
+one of the following commands:
 
 ```console
-kubectl get clusterservicebrokers,clusterserviceclasses,serviceinstances,servicebindings
+$ svcat get brokers
+  NAME   URL   STATUS
++------+-----+--------+
+
+$ kubectl get clusterservicebrokers
 No resources found.
 ```
 
@@ -42,12 +59,7 @@ We'll register a broker server with the catalog by creating a new
 Do so with the following command:
 
 ```console
-kubectl create -f contrib/examples/walkthrough/ups-broker.yaml
-```
-
-The output of that command should be the following:
-
-```console
+$ kubectl create -f contrib/examples/walkthrough/ups-broker.yaml
 servicebroker "ups-broker" created
 ```
 
@@ -55,15 +67,15 @@ When we create this `ClusterServiceBroker` resource, the service catalog control
 by querying the broker server to see what services it offers and creates a
 `ClusterServiceClass` for each.
 
-We can check the status of the broker using `kubectl get`:
+We can check the status of the broker using one of the following commands:
 
 ```console
-kubectl get clusterservicebrokers ups-broker -o yaml
-```
+$ svcat describe broker ups-broker
+  Name:     ups-broker
+  URL:      http://ups-broker-ups-broker.ups-broker.svc.cluster.local
+  Status:   Ready - Successfully fetched catalog entries from broker @ 2018-01-04 09:26:18 -0600 CST
 
-We should see something like:
-
-```yaml
+$ kubectl get clusterservicebrokers ups-broker -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServiceBroker
 metadata:
@@ -90,7 +102,7 @@ status:
   reconciledGeneration: 1
 ```
 
-Notice that the `status` field has been set to reflect that the broker server's
+Notice that the status reflects that the broker server's
 catalog of service offerings has been successfully added to our cluster's
 service catalog.
 
@@ -98,34 +110,43 @@ service catalog.
 
 The controller created a `ClusterServiceClass` for each service that the UPS broker
 provides. We can view the `ClusterServiceClass` resources available in the cluster by
-executing:
+executing one of the following commands:
 
 ```console
+$ svcat get classes
+          NAME                  DESCRIPTION                         UUID
++-----------------------+-------------------------+--------------------------------------+
+  user-provided-service   A user provided service   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+
 $ kubectl get clusterserviceclasses -o=custom-columns=NAME:.metadata.name,EXTERNAL\ NAME:.spec.externalName
-```
-
-We should see something like:
-
-```console
 NAME                                   EXTERNAL NAME
 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468   user-provided-service
 ```
 
-**NOTE:** The above command uses a custom set of columns.  The `NAME` field is
+**NOTE:** The above `kubectl` command uses a custom set of columns.  The `NAME` field is
 the Kubernetes name of the `ClusterServiceClass` and the `EXTERNAL NAME` field is the
 human-readable name for the service that the broker returns.
 
 The UPS broker provides a service with the external name
-`user-provided-service`. Run the following command to see the details of this
+`user-provided-service`. Run one of the following commands to see the details of this
 offering:
 
 ```console
-kubectl get clusterserviceclasses 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 -o yaml
-```
+$ svcat describe class user-provided-service
+  Name:          user-provided-service
+  Description:   A user provided service
+  UUID:          4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  Status:        Active
+  Tags:
+  Broker:        ups-broker
 
-We should see something like:
+Plans:
+   NAME           DESCRIPTION
++---------+-------------------------+
+  default   Sample plan description
+  premium   Premium plan
 
-```yaml
+$ kubectl get clusterserviceclasses 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServiceClass
 metadata:
@@ -147,33 +168,41 @@ status:
 
 Additionally, the controller created a `ClusterServicePlan` for each of the
 plans for the broker's services. We can view the `ClusterServicePlan`
-resources available in the cluster by executing:
+resources available in the cluster by executing one of the following commands:
 
 ```console
+$ svcat get plans
+   NAME             CLASS                 DESCRIPTION                         UUID
++---------+-----------------------+-------------------------+--------------------------------------+
+  default   user-provided-service   Sample plan description   86064792-7ea2-467b-af93-ac9694d96d52
+  premium   user-provided-service   Premium plan              cc0d7529-18e8-416d-8946-6f7456acd589
+
 $ kubectl get clusterserviceplans -o=custom-columns=NAME:.metadata.name,EXTERNAL\ NAME:.spec.externalName
-```
-
-We should see something like:
-
-```console
 NAME                                   EXTERNAL NAME
 86064792-7ea2-467b-af93-ac9694d96d52   default
+cc0d7529-18e8-416d-8946-6f7456acd589   premium
 ```
 
-**NOTE:** Just like in the command above, we used a custom set of columns.
+**NOTE:** Just like in the `kubectl` command above, we used a custom set of columns.
 The `NAME` field is the Kubernetes name of the `ClusterServicePlan` and the
 `EXTERNAL NAME` field is the human-readable name for the service that the
 broker returns.
 
-You can view the details of this `ClusterServicePlan` with this command:
+You can view the details of this `ClusterServicePlan` with one of the following commands:
 
 ```console
-kubectl get clusterserviceplans 86064792-7ea2-467b-af93-ac9694d96d52 -o yaml
-```
+$ svcat describe plan default
+  Name:          default
+  Description:   Sample plan description
+  UUID:          86064792-7ea2-467b-af93-ac9694d96d52
+  Status:        Active
+  Free:          true
+  Class:         user-provided-service
 
-We should see something like:
+Instances:
+No instances defined
 
-```yaml
+$ kubectl get clusterserviceplans 86064792-7ea2-467b-af93-ac9694d96d52 -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServicePlan
 metadata:
@@ -204,33 +233,40 @@ Unlike `ClusterServiceBroker` and `ClusterServiceClass` resources, `ServiceInsta
 resources must be namespaced, so we'll need to create a namespace to start.
 Do so with this command:
 
-```console
+```
 kubectl create namespace test-ns
 ```
 
-Then, create the `ServiceInstance`:
+Then, create the `ServiceInstance` by running one of the following commands:
 
 ```console
-kubectl create -f contrib/examples/walkthrough/ups-instance.yaml
-```
+$ svcat provision -n test-ns ups-instance --class user-provided-service --plan default
+  Name:        ups-instance
+  Namespace:   test-ns
+  Status:
+  Class:       user-provided-service
+  Plan:        default
 
-That operation should output:
-
-```console
+$ kubectl create -f contrib/examples/walkthrough/ups-instance.yaml
 serviceinstance "ups-instance" created
 ```
 
 After the `ServiceInstance` is created, the service catalog controller will 
 communicate with the appropriate broker server to initiate provisioning. 
-Check the status of that process with this command:
+Check the status of that process with one of the following commands:
 
 ```console
-kubectl get serviceinstances -n test-ns ups-instance -o yaml
-```
+$ svcat describe instance -n test-ns ups-instance
+  Name:        ups-instance
+  Namespace:   test-ns
+  Status:      Ready - The instance was provisioned successfully @ 2018-01-05 14:55:44 -0600 CST
+  Class:       user-provided-service
+  Plan:        default
 
-We should see something like:
+Bindings:
+No bindings defined
 
-```yaml
+$ kubectl get serviceinstances -n test-ns ups-instance -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
@@ -277,16 +313,17 @@ status:
 # Step 5 - Requesting a `ServiceBinding` to use the `ServiceInstance`
 
 Now that our `ServiceInstance` has been created, we can bind to it. To accomplish this,
-we'll create a `ServiceBinding` resource. Do so with the following
-command:
+we'll create a `ServiceBinding` resource. Do so by running one of the following
+commands:
 
 ```console
-kubectl create -f contrib/examples/walkthrough/ups-binding.yaml
-```
+$ svcat bind -n test-ns ups-instance --name ups-binding
+  Name:        ups-binding
+  Namespace:   test-ns
+  Status:
+  Instance:    ups-instance
 
-That command should output:
-
-```console
+$ kubectl create -f contrib/examples/walkthrough/ups-binding.yaml
 servicebinding "ups-binding" created
 ```
 
@@ -294,15 +331,16 @@ After the `ServiceBinding` resource is created, the service catalog controller w
 communicate with the appropriate broker server to initiate binding. Generally,
 this will cause the broker server to create and issue credentials that the
 service catalog controller will insert into a Kubernetes `Secret`. We can check
-the status of this process like so:
+the status of this process with one of the following commands:
 
 ```console
-kubectl get servicebindings -n test-ns ups-binding -o yaml
-```
+$ svcat describe binding -n test-ns ups-binding
+  Name:        ups-binding
+  Namespace:   test-ns
+  Status:      Ready - Injected bind result @ 2018-01-05 14:58:32 -0600 CST
+  Instance:    ups-instance
 
-We should see something like:
-
-```yaml
+$ kubectl get servicebindings -n test-ns ups-binding -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
@@ -337,7 +375,7 @@ ready to use!  If we look at the `Secret`s in our `test-ns` namespace, we should
 see a new one:
 
 ```console
-kubectl get secrets -n test-ns
+$ kubectl get secrets -n test-ns
 NAME                              TYPE                                  DATA      AGE
 default-token-3k61z               kubernetes.io/service-account-token   3         29m
 ups-binding                       Opaque                                2         1m
@@ -347,28 +385,32 @@ Notice that a new `Secret` named `ups-binding` has been created.
 
 # Step 6 - Deleting the `ServiceBinding`
 
-Now, let's unbind from the instance. To do this, we simply *delete* the
-`ServiceBinding` resource that we previously created:
+Now, let's unbind from the instance by running one of the following commands:
 
 ```console
-kubectl delete -n test-ns servicebindings ups-binding
+$ svcat unbind -n test-ns --name ups-binding
+
+$ kubectl delete -n test-ns servicebindings ups-binding
+servicebinding "ups-binding" deleted
 ```
 
 After the deletion is complete, we should see that the `Secret` is gone:
 
 ```console
-kubectl get secrets -n test-ns
+$ kubectl get secrets -n test-ns
 NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
 # Step 7 - Deleting the `ServiceInstance`
 
-Now, we can deprovision the instance. To do this, we simply *delete* the
-`ServiceInstance` resource that we previously created:
+Now, we can deprovision the instance by running one of the following commands:
 
 ```console
-kubectl delete -n test-ns serviceinstances ups-instance
+$ svcat deprovision -n test-ns ups-instance
+
+$ kubectl delete -n test-ns serviceinstances ups-instance
+serviceinstance "ups-instance" deleted
 ```
 
 # Step 8 - Deleting the `ClusterServiceBroker`
@@ -377,15 +419,19 @@ Next, we should remove the `ClusterServiceBroker` resource. This tells the servi
 catalog to remove the broker's services from the catalog. Do so with this
 command:
 
-```console
+```
 kubectl delete clusterservicebrokers ups-broker
 ```
 
 We should then see that all the `ClusterServiceClass` resources that came from that
-broker have also been deleted:
+broker have also been deleted by running one of the following commands:
 
 ```console
-kubectl get clusterserviceclasses
+$ svcat get classes
+  NAME   DESCRIPTION   UUID
++------+-------------+------+
+
+$ kubectl get clusterserviceclasses
 No resources found.
 ```
 
@@ -395,20 +441,20 @@ No resources found.
 
 To clean up, delete the helm deployment:
 
-```console
+```
 helm delete --purge ups-broker
 ```
 
 Then, delete all the namespaces we created:
 
-```console
+```
 kubectl delete ns test-ns ups-broker
 ```
 ## Cleaning up the Service Catalog
 
 Delete the helm deployment and the namespace:
 
-```console
+```
 helm delete --purge catalog
 kubectl delete ns catalog
 ```
@@ -420,6 +466,6 @@ kubectl delete ns catalog
 If you are using Google Cloud Platform, you may need to run the following
 commands to setup proper firewall rules to allow your traffic get in.
 
-```console
+```
 gcloud compute firewall-rules create allow-service-catalog-secure --allow tcp:30443 --description "Allow incoming traffic on 30443 port."
 ```
