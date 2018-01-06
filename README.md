@@ -71,7 +71,7 @@ for more information.
 Our goal is to have extensive use-case and functional documentation.
 
 See the [Service Catalog documentation](https://kubernetes.io/docs/concepts/service-catalog/)
-on the main Kubernetes site, and the [project documentation](./docs/v1) here on GitHub.
+on the main Kubernetes site, and the [project documentation](./docs/README.md) here on GitHub.
 
 The project Wiki will contain [examples](https://github.com/kubernetes-incubator/service-catalog/wiki/Examples),
 and the Open Service Broker API project's [Getting Started guide](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md)
