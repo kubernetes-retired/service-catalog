@@ -106,7 +106,9 @@ func TestBasicFlows(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			if tc.asyncForBindings {
 				// Enable the AsyncBindingOperations feature
 				utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))

@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -28,7 +29,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
-	"net/http"
 )
 
 // TestCreateServiceBindingSuccess successful paths binding
@@ -416,7 +416,9 @@ func TestCreateServiceBindingWithParameters(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			ct := &controllerTest{
 				t:        t,
 				broker:   getTestBroker(),
