@@ -10,9 +10,12 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/environment"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/environment"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 // These are build-time values, set during an official release
@@ -32,6 +35,7 @@ func buildRootCommand() *cobra.Command {
 	// root command context
 	cxt := &command.Context{}
 	env := environment.EnvSettings{}
+	vip := viper.New()
 
 	// root command flags
 	var opts struct {
@@ -48,6 +52,7 @@ func buildRootCommand() *cobra.Command {
 
 			// Initialize flags from environment variables
 			env.Init()
+			bindViperToCobra(vip, cmd)
 
 			app, err := svcat.NewApp(env.KubeConfig, env.KubeContext)
 			cxt.App = app
@@ -67,6 +72,10 @@ func buildRootCommand() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&opts.Version, "version", "v", false, "Show the application version")
 	env.AddFlags(cmd.PersistentFlags())
+
+	if plugin.IsPlugin() {
+		plugin.BindEnvironmentVariables(vip)
+	}
 
 	cmd.AddCommand(newGetCmd(cxt))
 	cmd.AddCommand(newDescribeCmd(cxt))
@@ -124,4 +133,17 @@ func newDescribeCmd(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(plan.NewDescribeCmd(cxt))
 
 	return cmd
+}
+
+// Bind the viper configuration back to the cobra command flags.
+// Allows us to interact with the cobra flags normally, and while still
+// using viper's automatic environment variable binding.
+func bindViperToCobra(vip *viper.Viper, cmd *cobra.Command) {
+	vip.BindPFlags(cmd.Flags())
+	vip.AutomaticEnv()
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if !f.Changed && vip.IsSet(f.Name) {
+			cmd.Flags().Set(f.Name, vip.GetString(f.Name))
+		}
+	})
 }
