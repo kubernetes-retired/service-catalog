@@ -2658,6 +2658,16 @@ func assertServiceBindingRequestRetriableErrorWithParameters(t *testing.T, obj r
 	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
 }
 
+func assertServiceBindingRequestRetriableOrphanMitigation(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
+	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionUnknown, errorOrphanMitigationFailedReason)
+	assertServiceBindingCurrentOperation(t, obj, v1beta1.ServiceBindingOperationBind)
+	assertServiceBindingOperationStartTimeSet(t, obj, true)
+	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
+	assertServiceBindingInProgressPropertiesParameters(t, obj, nil, "")
+	assertServiceBindingExternalPropertiesUnchanged(t, obj, originalBinding)
+	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
+}
+
 func assertServiceBindingAsyncInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, reason string, operationKey string, originalBinding *v1beta1.ServiceBinding) {
 	assertServiceBindingReadyFalse(t, obj, reason)
 	assertServiceBindingLastOperation(t, obj, operationKey)

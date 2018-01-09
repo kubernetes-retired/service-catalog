@@ -458,3 +458,30 @@ func TestCreateServiceBindingWithParameters(t *testing.T) {
 		})
 	}
 }
+
+// TestDeleteServiceBindingRetry tests whether deletion of a service binding
+// retries after failing.
+func TestDeleteServiceBindingFailureRetry(t *testing.T) {
+	const NumberOfUnbindFailures = 2
+	numberOfAttempts := 0
+	ct := &controllerTest{
+		t:        t,
+		broker:   getTestBroker(),
+		instance: getTestInstance(),
+		binding:  getTestBinding(),
+		setup: func(ct *controllerTest) {
+			ct.osbClient.UnbindReaction = fakeosb.DynamicUnbindReaction(
+				func(_ *osb.UnbindRequest) (*osb.UnbindResponse, error) {
+					numberOfAttempts++
+					if numberOfAttempts > NumberOfUnbindFailures {
+						return &osb.UnbindResponse{}, nil
+					}
+					return nil, osb.HTTPStatusCodeError{
+						StatusCode: 500,
+						Description: strPtr("test error unbinding"),
+					}
+				})
+		},
+	}
+	ct.run(func(_ *controllerTest) {})
+}
