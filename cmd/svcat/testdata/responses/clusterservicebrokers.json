@@ -1,0 +1,50 @@
+{
+  "kind": "ClusterServiceBrokerList",
+  "apiVersion": "servicecatalog.k8s.io/v1beta1",
+  "metadata": {
+    "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers",
+    "resourceVersion": "522"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "osba",
+        "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/osba",
+        "uid": "00a92e92-df7c-11e7-85f8-0242ac110006",
+        "resourceVersion": "522",
+        "generation": 2,
+        "creationTimestamp": "2017-12-12T20:35:33Z",
+        "finalizers": [
+          "kubernetes-incubator/service-catalog"
+        ]
+      },
+      "spec": {
+        "url": "http://osba-open-service-broker-azure.osba.svc.cluster.local",
+        "authInfo": {
+          "basic": {
+            "secretRef": {
+              "namespace": "osba",
+              "name": "osba-open-service-broker-azure-auth"
+            }
+          }
+        },
+        "relistBehavior": "Duration",
+        "relistDuration": "15m0s",
+        "relistRequests": 1
+      },
+      "status": {
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True",
+            "lastTransitionTime": "2017-12-12T20:36:45Z",
+            "reason": "FetchedCatalog",
+            "message": "Successfully fetched catalog entries from broker."
+          }
+        ],
+        "reconciledGeneration": 2,
+        "lastCatalogRetrievalTime": "2017-12-14T01:12:11Z"
+      }
+    }
+  ]
+}

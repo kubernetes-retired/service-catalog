@@ -1,0 +1,66 @@
+{
+  "kind": "ServiceInstance",
+  "apiVersion": "servicecatalog.k8s.io/v1beta1",
+  "metadata": {
+    "name": "quickstart-wordpress-mysql-instance",
+    "namespace": "default",
+    "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/namespaces/default/serviceinstances/quickstart-wordpress-mysql-instance",
+    "uid": "47877a24-df7c-11e7-85f8-0242ac110006",
+    "resourceVersion": "698",
+    "generation": 2,
+    "creationTimestamp": "2017-12-12T20:37:32Z",
+    "deletionTimestamp": "2017-12-12T21:13:25Z",
+    "deletionGracePeriodSeconds": 0,
+    "labels": {
+      "app": "quickstart-wordpress",
+      "chart": "wordpress-0.6.12",
+      "heritage": "Tiller",
+      "release": "quickstart"
+    },
+    "finalizers": [
+      "kubernetes-incubator/service-catalog"
+    ]
+  },
+  "spec": {
+    "clusterServiceClassExternalName": "azure-mysqldb",
+    "clusterServicePlanExternalName": "standard800",
+    "clusterServiceClassRef": {
+      "name": "997b8372-8dac-40ac-ae65-758b4a5075a5"
+    },
+    "clusterServicePlanRef": {
+      "name": "08e4b43a-36bc-447e-a81f-8202b13e339c"
+    },
+    "parameters": {
+      "location": "eastus",
+      "resourceGroup": "default",
+      "sslEnforcement": "disabled"
+    },
+    "externalID": "9593d632-41b3-48f7-96e3-8af120f49cde",
+    "updateRequests": 0
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "False",
+        "lastTransitionTime": "2017-12-13T23:47:48Z",
+        "reason": "ReferencesNonexistentServicePlan",
+        "message": "The instance references a ClusterServicePlan that does not exist. References a non-existent ClusterServicePlan (K8S: \"\" ExternalName: \"standard800\") on ClusterServiceClass (K8S: \"997b8372-8dac-40ac-ae65-758b4a5075a5\" ExternalName: \"azure-mysqldb\")"
+      }
+    ],
+    "asyncOpInProgress": false,
+    "orphanMitigationInProgress": false,
+    "reconciledGeneration": 2,
+    "externalProperties": {
+      "clusterServicePlanExternalName": "standard800",
+      "clusterServicePlanExternalID": "08e4b43a-36bc-447e-a81f-8202b13e339c",
+      "parameters": {
+        "location": "eastus",
+        "resourceGroup": "default",
+        "sslEnforcement": "disabled"
+      },
+      "parameterChecksum": "7f9258f4bea38e2e39295fa9b23ed0f38f3d40a16a6dbe1edfc1add76eea7609"
+    },
+    "deprovisionStatus": "Required"
+  }
+}

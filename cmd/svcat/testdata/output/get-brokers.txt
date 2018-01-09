@@ -1,0 +1,3 @@
+  NAME                               URL                                STATUS  
++------+--------------------------------------------------------------+--------+
+  osba   http://osba-open-service-broker-azure.osba.svc.cluster.local   Ready   

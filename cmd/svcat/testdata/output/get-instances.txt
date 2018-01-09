@@ -1,0 +1,6 @@
+                  NAME                   NAMESPACE       CLASS          PLAN                    STATUS               
++--------------------------------------+-----------+---------------+-------------+----------------------------------+
+  blog-ghost-mysql-instance              default     azure-mysqldb   standard800   Provisioning                      
+  quickstart-wordpress-mysql-instance    default     azure-mysqldb   standard800   ReferencesNonexistentServicePlan  
+  quickstart2-wordpress-mysql-instance   default     azure-mysqldb   standard800   Ready                             
+  wordpress-mysql-instance               default     azure-mysqldb   standard800   Failed                            
