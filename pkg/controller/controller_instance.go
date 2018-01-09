@@ -190,6 +190,32 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 	return nil
 }
 
+// ReconciliationAction reprents a type of action the reconciler should take
+// for a resource.
+type ReconciliationAction string
+
+const (
+	reconcileAdd    ReconciliationAction = "Add"
+	reconcileUpdate ReconciliationAction = "Update"
+	reconcileDelete ReconciliationAction = "Delete"
+	reconcilePoll   ReconciliationAction = "Poll"
+)
+
+// getReconciliationActionForServiceInstance gets the action the reconciler
+// should be taking on the given instance.
+func getReconciliationActionForServiceInstance(instance *v1beta1.ServiceInstance) ReconciliationAction {
+	switch {
+	case instance.Status.AsyncOpInProgress:
+		return reconcilePoll
+	case instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress:
+		return reconcileDelete
+	case instance.Status.ReconciledGeneration != 0:
+		return reconcileUpdate
+	default: // instance.Status.ReconciledGeneration == 0
+		return reconcileAdd
+	}
+}
+
 func (c *controller) reconcileServiceInstanceKey(key string) error {
 	// For namespace-scoped resources, SplitMetaNamespaceKey splits the key
 	// i.e. "namespace/name" into two separate strings
@@ -215,15 +241,19 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 // error is returned to indicate that the instance has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance) error {
-	switch {
-	case instance.Status.AsyncOpInProgress:
-		return c.pollServiceInstance(instance)
-	case instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress:
-		return c.reconcileServiceInstanceDelete(instance)
-	case instance.Status.ReconciledGeneration != 0:
-		return c.reconcileServiceInstanceUpdate(instance)
-	default: // instance.Status.ReconciledGeneration == 0
+	reconciliationAction := getReconciliationActionForServiceInstance(instance)
+	switch reconciliationAction {
+	case reconcileAdd:
 		return c.reconcileServiceInstanceAdd(instance)
+	case reconcileUpdate:
+		return c.reconcileServiceInstanceUpdate(instance)
+	case reconcileDelete:
+		return c.reconcileServiceInstanceDelete(instance)
+	case reconcilePoll:
+		return c.pollServiceInstance(instance)
+	default:
+		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		return fmt.Errorf(pcb.Messagef("Unknown reconciliation action %v", reconciliationAction))
 	}
 }
 
@@ -1103,33 +1133,6 @@ func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.Ser
 	return c.updateServiceInstanceStatus(toUpdate)
 }
 
-// setServiceInstanceStartOrphanMitigation sets the fields of the instance's
-// Status to indicate that orphan mitigation is starting. The Status is *not*
-// recorded in the registry.
-func (c *controller) setServiceInstanceStartOrphanMitigation(toUpdate *v1beta1.ServiceInstance) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
-	glog.V(5).Info(pcb.Message(startingInstanceOrphanMitigationMessage))
-
-	c.recorder.Event(
-		toUpdate,
-		corev1.EventTypeWarning,
-		startingInstanceOrphanMitigationReason,
-		startingInstanceOrphanMitigationMessage,
-	)
-
-	toUpdate.Status.OperationStartTime = nil
-	toUpdate.Status.AsyncOpInProgress = false
-	toUpdate.Status.OrphanMitigationInProgress = true
-
-	setServiceInstanceCondition(
-		toUpdate,
-		v1beta1.ServiceInstanceConditionReady,
-		v1beta1.ConditionFalse,
-		startingInstanceOrphanMitigationReason,
-		startingInstanceOrphanMitigationMessage,
-	)
-}
-
 // checkForRemovedClassAndPlan looks at serviceClass and servicePlan and
 // if either has been deleted, will block a new instance creation. If
 //
@@ -1242,7 +1245,8 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 		rh.originatingIdentity = originatingIdentity
 	}
 
-	if instance.Status.AsyncOpInProgress || instance.Status.OrphanMitigationInProgress || instance.DeletionTimestamp != nil {
+	reconciliationAction := getReconciliationActionForServiceInstance(instance)
+	if reconciliationAction == reconcileDelete || reconciliationAction == reconcilePoll {
 		return rh, nil
 	}
 
@@ -1483,7 +1487,14 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 	// requeue this resource.
 	var err error
 	if shouldMitigateOrphan {
-		c.setServiceInstanceStartOrphanMitigation(instance)
+		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
+		c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
+		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
+
+		instance.Status.OperationStartTime = nil
+		instance.Status.AsyncOpInProgress = false
+		instance.Status.OrphanMitigationInProgress = true
+
 		err = fmt.Errorf(failedCond.Message)
 	} else {
 		clearServiceInstanceCurrentOperation(instance)
