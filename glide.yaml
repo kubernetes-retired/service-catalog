@@ -102,3 +102,9 @@ import:
   version: v1.3.0 # compatible with etcd 3.2.13
 - package: github.com/grpc-ecosystem/go-grpc-prometheus
   version: v1.1 # compatible with etcd 3.2.13
+- package: github.com/olekukonko/tablewriter
+  version: 96aac992fc8b1a4c83841a6c3e7178d20d989625
+- package: github.com/hashicorp/go-multierror
+  version: b7773ae218740a7be65057fc60b366a49b538a44
+- package: github.com/spf13/viper
+  version: ~1.0.0
