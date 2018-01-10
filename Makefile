@@ -38,8 +38,10 @@ GIT_BRANCH    ?= $(shell git rev-parse --abbrev-ref HEAD)
 
 # Only skip the verification of external href's if we're not on 'master'
 SKIP_HTTP=-x
+SKIP_COMMENT=" (Skipping external hrefs)"
 ifeq ($(GIT_BRANCH),master)
 SKIP_HTTP=
+SKIP_COMMENT=" (Checking external hrefs)"
 endif
 
 # Run stat against /dev/null and check if it has any stdout output.
@@ -243,7 +245,7 @@ verify: .init .generate_files verify-client-gen
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
-	@echo Running href checker:
+	@echo Running href checker$(SKIP_COMMENT):
 	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
