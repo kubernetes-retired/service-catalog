@@ -12,7 +12,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/environment"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -36,11 +35,12 @@ func buildRootCommand() *cobra.Command {
 	cxt := &command.Context{
 		Viper: viper.New(),
 	}
-	env := environment.EnvSettings{}
 
 	// root command flags
 	var opts struct {
-		Version bool
+		Version     bool
+		KubeConfig  string
+		KubeContext string
 	}
 
 	cmd := &cobra.Command{
@@ -52,10 +52,9 @@ func buildRootCommand() *cobra.Command {
 			cxt.Output = cmd.OutOrStdout()
 
 			// Initialize flags from environment variables
-			env.Init()
 			bindViperToCobra(cxt.Viper, cmd)
 
-			app, err := svcat.NewApp(env.KubeConfig, env.KubeContext)
+			app, err := svcat.NewApp(opts.KubeConfig, opts.KubeContext)
 			cxt.App = app
 
 			return err
@@ -72,10 +71,12 @@ func buildRootCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&opts.Version, "version", "v", false, "Show the application version")
-	env.AddFlags(cmd.PersistentFlags())
 
 	if plugin.IsPlugin() {
 		plugin.BindEnvironmentVariables(cxt.Viper)
+	} else {
+		cmd.PersistentFlags().StringVar(&opts.KubeContext, "kube-context", "", "name of the kube context to use")
+		cmd.PersistentFlags().StringVar(&opts.KubeConfig, "kubeconfig", "", "path to kubeconfig file. Overrides $KUBECONFIG")
 	}
 
 	cmd.AddCommand(newGetCmd(cxt))
