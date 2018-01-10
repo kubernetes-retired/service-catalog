@@ -30,7 +30,9 @@ runTests() {
   fi
 
   go test -race $FLAGS github.com/kubernetes-incubator/service-catalog/test/integration/... -c \
-      && ./integration.test -test.v $@
+      && for test in $(./integration.test -test.list .); do
+             ./integration.test -test.v -test.run $test $@ 
+          done        
 }
 
 runTests $@
