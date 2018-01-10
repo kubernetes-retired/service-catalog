@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	"github.com/spf13/viper"
 )
 
 // Context is ambient data necessary to run any svcat command.
@@ -13,4 +14,7 @@ type Context struct {
 
 	// svcat application, the library behind the cli
 	App *svcat.App
+
+	// Viper configuration
+	Viper *viper.Viper
 }

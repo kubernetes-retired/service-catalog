@@ -8,9 +8,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	Name                     = "svcat"
+	EnvPluginCaller          = "KUBECTL_PLUGINS_CALLER"
+	EnvPluginLocalFlagPrefix = "KUBECTL_PLUGINS_LOCAL_FLAG"
+	EnvPluginNamespace       = "KUBECTL_PLUGINS_CURRENT_NAMESPACE"
+	EnvPluginPath            = "KUBECTL_PLUGINS_PATH"
+)
+
 // IsPlugin determines if the cli is running as a kubectl plugin
 func IsPlugin() bool {
-	_, ok := os.LookupEnv("KUBECTL_PLUGINS_CALLER")
+	_, ok := os.LookupEnv(EnvPluginCaller)
 	return ok
 }
 
@@ -18,10 +26,10 @@ func IsPlugin() bool {
 func BindEnvironmentVariables(vip *viper.Viper) {
 	// KUBECTL_PLUGINS_CURRENT_NAMESPACE provides the final namespace
 	// computed by kubectl.
-	vip.BindEnv("namespace", "KUBECTL_PLUGINS_CURRENT_NAMESPACE")
+	vip.BindEnv("namespace", EnvPluginNamespace)
 
 	// kubectl intercepts all flags passed to a plugin, and replaces them
 	// with prefixed environment variables
 	// --foo becomes KUBECTL_PLUGINS_LOCAL_FLAG_FOO
-	vip.SetEnvPrefix("KUBECTL_PLUGINS_LOCAL_FLAG")
+	vip.SetEnvPrefix(EnvPluginLocalFlagPrefix)
 }

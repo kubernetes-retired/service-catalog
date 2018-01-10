@@ -33,9 +33,10 @@ func main() {
 
 func buildRootCommand() *cobra.Command {
 	// root command context
-	cxt := &command.Context{}
+	cxt := &command.Context{
+		Viper: viper.New(),
+	}
 	env := environment.EnvSettings{}
-	vip := viper.New()
 
 	// root command flags
 	var opts struct {
@@ -52,7 +53,7 @@ func buildRootCommand() *cobra.Command {
 
 			// Initialize flags from environment variables
 			env.Init()
-			bindViperToCobra(vip, cmd)
+			bindViperToCobra(cxt.Viper, cmd)
 
 			app, err := svcat.NewApp(env.KubeConfig, env.KubeContext)
 			cxt.App = app
@@ -74,7 +75,7 @@ func buildRootCommand() *cobra.Command {
 	env.AddFlags(cmd.PersistentFlags())
 
 	if plugin.IsPlugin() {
-		plugin.BindEnvironmentVariables(vip)
+		plugin.BindEnvironmentVariables(cxt.Viper)
 	}
 
 	cmd.AddCommand(newGetCmd(cxt))
@@ -84,6 +85,7 @@ func buildRootCommand() *cobra.Command {
 	cmd.AddCommand(binding.NewBindCmd(cxt))
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
+	cmd.AddCommand(newInstallCmd(cxt))
 
 	return cmd
 }
@@ -131,6 +133,15 @@ func newDescribeCmd(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(class.NewDescribeCmd(cxt))
 	cmd.AddCommand(instance.NewDescribeCmd(cxt))
 	cmd.AddCommand(plan.NewDescribeCmd(cxt))
+
+	return cmd
+}
+
+func newInstallCmd(cxt *command.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "install",
+	}
+	cmd.AddCommand(plugin.NewInstallCmd(cxt))
 
 	return cmd
 }
