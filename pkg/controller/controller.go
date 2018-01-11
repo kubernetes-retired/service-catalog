@@ -622,3 +622,14 @@ func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *met
 	}
 	return true
 }
+
+// ReconciliationAction reprents a type of action the reconciler should take
+// for a resource.
+type ReconciliationAction string
+
+const (
+	reconcileAdd    ReconciliationAction = "Add"
+	reconcileUpdate ReconciliationAction = "Update"
+	reconcileDelete ReconciliationAction = "Delete"
+	reconcilePoll   ReconciliationAction = "Poll"
+)

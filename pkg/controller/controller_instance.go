@@ -189,17 +189,6 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 	return nil
 }
 
-// ReconciliationAction reprents a type of action the reconciler should take
-// for a resource.
-type ReconciliationAction string
-
-const (
-	reconcileAdd    ReconciliationAction = "Add"
-	reconcileUpdate ReconciliationAction = "Update"
-	reconcileDelete ReconciliationAction = "Delete"
-	reconcilePoll   ReconciliationAction = "Poll"
-)
-
 // getReconciliationActionForServiceInstance gets the action the reconciler
 // should be taking on the given instance.
 func getReconciliationActionForServiceInstance(instance *v1beta1.ServiceInstance) ReconciliationAction {
