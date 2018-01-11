@@ -169,39 +169,10 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init .generate_exes $(TYPES_FILES)
-	# Generate defaults
-	$(DOCKER_CMD) $(BINDIR)/defaulter-gen \
-		--v 1 --logtostderr \
-		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
-	  	--extra-peer-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--extra-peer-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
-		--output-file-base "zz_generated.defaults"
-	# Generate deep copies
-	$(DOCKER_CMD) $(BINDIR)/deepcopy-gen \
-		--v 1 --logtostderr \
-		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
-		--bounding-dirs "github.com/kubernetes-incubator/service-catalog" \
-		--output-file-base zz_generated.deepcopy
-	# Generate conversions
-	$(DOCKER_CMD) $(BINDIR)/conversion-gen \
-		--v 1 --logtostderr \
-		--extra-peer-dirs k8s.io/api/core/v1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
-		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog" \
-		--input-dirs "$(SC_PKG)/pkg/apis/servicecatalog/v1beta1" \
-		--output-file-base zz_generated.conversion
+	# generate apiserver deps
+	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh
 	# generate all pkg/client contents
 	$(DOCKER_CMD) $(BUILD_DIR)/update-client-gen.sh
-	# generate openapi
-	$(DOCKER_CMD) $(BINDIR)/openapi-gen \
-		--v 1 --logtostderr \
-		--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
-		--input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1,k8s.io/api/core/v1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/version,k8s.io/apimachinery/pkg/runtime" \
-		--output-package "github.com/kubernetes-incubator/service-catalog/pkg/openapi"
 	touch $@
 
 # Some prereq stuff
@@ -217,8 +188,8 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 
 # Util targets
 ##############
-.PHONY: verify verify-client-gen
-verify: .init .generate_files verify-client-gen
+.PHONY: verify verify-generated verify-client-gen
+verify: .init .generate_files verify-generated verify-client-gen
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -249,6 +220,9 @@ verify: .init .generate_files verify-client-gen
 	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
+
+verify-generated: .init .generate_files
+	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only
 
 verify-client-gen: .init .generate_files
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
