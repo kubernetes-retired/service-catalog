@@ -3,9 +3,9 @@ package svcat
 import (
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"k8s.io/client-go/rest"
 )
 
