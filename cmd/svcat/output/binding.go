@@ -24,7 +24,7 @@ func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
-// WriteBindingDetails prints a list of bindings.
+// WriteBindingList prints a list of bindings.
 func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
 	t := NewListTable(w)
 	t.SetHeader([]string{

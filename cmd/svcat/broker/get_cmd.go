@@ -33,10 +33,10 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 func (c *getCmd) run(args []string) error {
 	if len(args) == 0 {
 		return c.getAll()
-	} else {
-		c.name = args[0]
-		return c.get()
 	}
+
+	c.name = args[0]
+	return c.get()
 }
 
 func (c *getCmd) getAll() error {

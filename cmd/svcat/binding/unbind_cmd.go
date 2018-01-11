@@ -52,8 +52,8 @@ func (c *unbindCmd) run(args []string) error {
 		}
 
 		return c.App.DeleteBinding(c.ns, c.bindingName)
-	} else {
-		c.instanceName = args[0]
-		return c.App.Unbind(c.ns, c.instanceName)
 	}
+
+	c.instanceName = args[0]
+	return c.App.Unbind(c.ns, c.instanceName)
 }

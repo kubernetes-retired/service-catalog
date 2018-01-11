@@ -9,9 +9,11 @@ import (
 )
 
 const (
+	// FieldExternalClassName is the jsonpath to a class's external name.
 	FieldExternalClassName = "spec.externalName"
 )
 
+// RetrieveClasses lists all classes defined in the cluster.
 func (sdk *SDK) RetrieveClasses() ([]v1beta1.ClusterServiceClass, error) {
 	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
 	if err != nil {
@@ -21,6 +23,7 @@ func (sdk *SDK) RetrieveClasses() ([]v1beta1.ClusterServiceClass, error) {
 	return classes.Items, nil
 }
 
+// RetrieveClassByName gets a class by its external name.
 func (sdk *SDK) RetrieveClassByName(name string) (*v1beta1.ClusterServiceClass, error) {
 	opts := v1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalClassName, name).String(),
@@ -38,6 +41,7 @@ func (sdk *SDK) RetrieveClassByName(name string) (*v1beta1.ClusterServiceClass, 
 	return &searchResults.Items[0], nil
 }
 
+// RetrieveClassByID gets a class by its UUID.
 func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, error) {
 	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(uuid, v1.GetOptions{})
 	if err != nil {
@@ -46,6 +50,7 @@ func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, er
 	return class, nil
 }
 
+// RetrieveClassByPlan gets the class associated to a plan.
 func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 ) (*v1beta1.ClusterServiceClass, error) {
 	// Retrieve the class as well because plans don't have the external class name

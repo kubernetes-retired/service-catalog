@@ -8,7 +8,7 @@ import (
 
 var keymapRegex = regexp.MustCompile(`^([^\[]+)\[(.+)\]\s*$`)
 
-// ParseVariableAssignment converts a string array of variable assignments
+// ParseVariableAssignments converts a string array of variable assignments
 // into a map of keys and values
 // Example:
 // [a=b c=abc1232===] becomes map[a:b c:abc1232===]

@@ -86,44 +86,6 @@ func executeCommand(t *testing.T, cmd string) string {
 	return output.String()
 }
 
-// executeCommand runs a svcat command against a fake k8s api,
-// returning the cli output.
-func executePluginCommand(t *testing.T, cmd string) string {
-	// Fake the k8s api server
-	apisvr := newAPIServer(t)
-	defer apisvr.Close()
-
-	// Generate a test kubeconfig pointing at the server
-	kubeconfig, err := writeTestKubeconfig(apisvr.URL)
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	defer os.Remove(kubeconfig)
-
-	// Setup the svcat command
-	svcat := buildRootCommand()
-
-	// Inject plugin variables
-	defer func() {
-		os.Unsetenv("KUBECTL_PLUGINS_CALLER")
-	}()
-	os.Setenv("KUBECTL_PLUGINS_CALLER", "test")
-
-	args := strings.Split(cmd, " ")
-
-	args = append(args, "--kubeconfig", kubeconfig)
-	svcat.SetArgs(args)
-
-	// Capture all output: stderr and stdout
-	output := &bytes.Buffer{}
-	svcat.SetOutput(output)
-
-	// Ignoring errors, we only care about diffing output
-	svcat.Execute()
-
-	return output.String()
-}
-
 func newAPIServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apihandler(t, w, r)
@@ -160,14 +122,14 @@ func apihandler(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-func writeTestKubeconfig(fakeUrl string) (string, error) {
+func writeTestKubeconfig(fakeURL string) (string, error) {
 	_, configT, err := test.GetTestdata("kubeconfig.tmpl.yaml")
 	if err != nil {
 		return "", err
 	}
 
 	data := map[string]string{
-		"Server": fakeUrl,
+		"Server": fakeURL,
 	}
 	t := template.Must(template.New("kubeconfig").Parse(string(configT)))
 

@@ -40,27 +40,51 @@ var reservedFlags = map[string]struct{}{
 	"vmodule":         {},
 }
 
+// Manifest is the root structure of the kubectl plugin manifest.
 type Manifest struct {
 	Plugin `yaml:",inline"`
 }
 
+// Plugin describes a command exposed by the plugin.
 type Plugin struct {
-	Name      string   `yaml:"name"`
-	ShortDesc string   `yaml:"shortDesc"`
-	LongDesc  string   `yaml:"longDesc,omitempty"`
-	Example   string   `yaml:"example,omitempty"`
-	Command   string   `yaml:"command"`
-	Flags     []Flag   `yaml:"flags,omitempty"`
-	Tree      []Plugin `yaml:"tree,omitempty"`
+	// Name of the command for the help text. Required.
+	Name string `yaml:"name"`
+
+	// ShortDesc is a one-line description of the command. Required.
+	ShortDesc string `yaml:"shortDesc"`
+
+	// LongDesc is the optional full description of the command.
+	LongDesc string `yaml:"longDesc,omitempty"`
+
+	// Example contains optional examples of how to use the command.
+	Example string `yaml:"example,omitempty"`
+
+	// Command that the kubectl plugin runner should execute. Required.
+	Command string `yaml:"command"`
+
+	// Flags supported by the command.
+	Flags []Flag `yaml:"flags,omitempty"`
+
+	// Tree of child commands.
+	Tree []Plugin `yaml:"tree,omitempty"`
 }
 
+// Flag describes a flag exposed by a plugin command.
 type Flag struct {
-	Name      string `yaml:"name"`
+	// Name of the flag. Required.
+	Name string `yaml:"name"`
+
+	// Shorthand flag, must be a single character.
 	Shorthand string `yaml:"shorthand,omitempty"`
-	Desc      string `yaml:"desc"`
-	DefValue  string `yaml:"defValue,omitempty"`
+
+	// Desc of the flag for the help text. Required.
+	Desc string `yaml:"desc"`
+
+	// DefValue is the default value to use when the flag is not specified.
+	DefValue string `yaml:"defValue,omitempty"`
 }
 
+// Load a cli command into the plugin manifest structure.
 func (m *Manifest) Load(rootCmd *cobra.Command) {
 	m.Plugin = m.convertToPlugin(rootCmd)
 }

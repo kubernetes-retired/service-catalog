@@ -9,10 +9,14 @@ import (
 )
 
 const (
+	// FieldExternalPlanName is the jsonpath to a plan's external name.
 	FieldExternalPlanName = "spec.externalName"
-	FieldServiceClassRef  = "spec.clusterServiceClassRef.name"
+
+	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
+	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
 )
 
+// RetrievePlans lists all plans defined in the cluster.
 func (sdk *SDK) RetrievePlans() ([]v1beta1.ClusterServicePlan, error) {
 	plans, err := sdk.ServiceCatalog().ClusterServicePlans().List(v1.ListOptions{})
 	if err != nil {
@@ -22,6 +26,7 @@ func (sdk *SDK) RetrievePlans() ([]v1beta1.ClusterServicePlan, error) {
 	return plans.Items, nil
 }
 
+// RetrievePlanByName gets a plan by its external name.
 func (sdk *SDK) RetrievePlanByName(name string) (*v1beta1.ClusterServicePlan, error) {
 	opts := v1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalPlanName, name).String(),
@@ -39,6 +44,7 @@ func (sdk *SDK) RetrievePlanByName(name string) (*v1beta1.ClusterServicePlan, er
 	return &searchResults.Items[0], nil
 }
 
+// RetrievePlanByID gets a plan by its UUID.
 func (sdk *SDK) RetrievePlanByID(uuid string) (*v1beta1.ClusterServicePlan, error) {
 	plan, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, v1.GetOptions{})
 	if err != nil {

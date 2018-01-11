@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// RetrieveBindings lists all bindings in a namespace.
 func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error) {
 	bindings, err := sdk.ServiceCatalog().ServiceBindings(ns).List(v1.ListOptions{})
 	if err != nil {
@@ -19,6 +20,7 @@ func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error)
 	return bindings, nil
 }
 
+// RetrieveBinding gets a binding by its name.
 func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error) {
 	binding, err := sdk.ServiceCatalog().ServiceBindings(ns).Get(name, v1.GetOptions{})
 	if err != nil {
@@ -27,7 +29,7 @@ func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error
 	return binding, nil
 }
 
-// RetrieveBindingsByInstance retrieves all child bindings for an instance.
+// RetrieveBindingsByInstance gets all child bindings for an instance.
 func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 ) ([]v1beta1.ServiceBinding, error) {
 	// Not using a filtered list operation because it's not supported yet.
@@ -46,6 +48,7 @@ func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 	return bindings, nil
 }
 
+// Bind an instance to a secret.
 func (sdk *SDK) Bind(namespace, bindingName, instanceName, secretName string,
 	params map[string]string, secrets map[string]string) (*v1beta1.ServiceBinding, error) {
 
@@ -78,6 +81,7 @@ func (sdk *SDK) Bind(namespace, bindingName, instanceName, secretName string,
 	return result, nil
 }
 
+// Unbind deletes all bindings associated to an instance.
 func (sdk *SDK) Unbind(ns, instanceName string) error {
 	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: v1.ObjectMeta{
@@ -116,6 +120,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) error {
 	return bindErr.ErrorOrNil()
 }
 
+// DeleteBinding by name.
 func (sdk *SDK) DeleteBinding(ns, bindingName string) error {
 	err := sdk.ServiceCatalog().ServiceBindings(ns).Delete(bindingName, &v1.DeleteOptions{})
 	if err != nil {

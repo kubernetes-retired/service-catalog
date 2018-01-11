@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// RetrieveBrokers lists all brokers defined in the cluster.
 func (sdk *SDK) RetrieveBrokers() ([]v1beta1.ClusterServiceBroker, error) {
 	brokers, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(v1.ListOptions{})
 	if err != nil {
@@ -16,6 +17,8 @@ func (sdk *SDK) RetrieveBrokers() ([]v1beta1.ClusterServiceBroker, error) {
 
 	return brokers.Items, nil
 }
+
+// RetrieveBroker gets a broker by its name.
 func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, error) {
 	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(name, v1.GetOptions{})
 	if err != nil {
@@ -25,7 +28,7 @@ func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, erro
 	return broker, nil
 }
 
-// RetrieveBrokerByClass retrieves the parent broker of a class.
+// RetrieveBrokerByClass gets the parent broker of a class.
 func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 ) (*v1beta1.ClusterServiceBroker, error) {
 	brokerName := class.Spec.ClusterServiceBrokerName
@@ -36,6 +39,7 @@ func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 	return broker, nil
 }
 
+// Sync or relist a broker to refresh its catalog metadata.
 func (sdk *SDK) Sync(name string, retries int) error {
 	for j := 0; j < retries; j++ {
 		catalog, err := sdk.RetrieveBroker(name)

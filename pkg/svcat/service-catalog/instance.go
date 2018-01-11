@@ -9,9 +9,11 @@ import (
 )
 
 const (
+	// FieldServicePlanRef is the jsonpath to an instance's plan name (uuid).
 	FieldServicePlanRef = "spec.clusterServicePlanRef.name"
 )
 
+// RetrieveInstances lists all instances in a namespace.
 func (sdk *SDK) RetrieveInstances(ns string) (*v1beta1.ServiceInstanceList, error) {
 	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(v1.ListOptions{})
 	if err != nil {
@@ -21,6 +23,7 @@ func (sdk *SDK) RetrieveInstances(ns string) (*v1beta1.ServiceInstanceList, erro
 	return instances, nil
 }
 
+// RetrieveInstance gets an instance by its name.
 func (sdk *SDK) RetrieveInstance(ns, name string) (*v1beta1.ServiceInstance, error) {
 	instance, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(name, v1.GetOptions{})
 	if err != nil {
@@ -121,6 +124,7 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 	}
 }
 
+// Provision creates an instance of a service class and plan.
 func (sdk *SDK) Provision(namespace, instanceName, className, planName string,
 	params map[string]string, secrets map[string]string) (*v1beta1.ServiceInstance, error) {
 
@@ -146,6 +150,7 @@ func (sdk *SDK) Provision(namespace, instanceName, className, planName string,
 	return result, nil
 }
 
+// Deprovision deletes an instance.
 func (sdk *SDK) Deprovision(namespace, instanceName string) error {
 	err := sdk.ServiceCatalog().ServiceInstances(namespace).Delete(instanceName, &v1.DeleteOptions{})
 	if err != nil {
