@@ -170,7 +170,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceBrokerReason).msgf(
-		"References a non-existent broker %q",
+		"The instance references a non-existent broker %q",
 		"test-broker",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -949,9 +949,10 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorErrorCallingProvisionReason).msgf(
-		"Error communicating with broker for %q:",
-		"provisioning",
+	expectedEvent := warningEventBuilder(errorErrorCallingProvisionReason).msg(
+		"The provision call failed and will be retried:",
+	).msgf(
+		"Error communicating with broker for provisioning:",
 	).msg("fake creation failure")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1021,15 +1022,16 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorProvisionCallFailedReason).msgf(
-		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"SCGUID", "test-serviceclass", "test-broker",
-	).msgf(
-		"Status: %v; ErrorMessage: %s",
-		409, "OutOfQuota; Description: You're out of quota!; ResponseError: <nil>",
+	message := fmt.Sprintf(
+		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
+		"SCGUID", "test-serviceclass", "test-broker", 409, "OutOfQuota; Description: You're out of quota!; ResponseError: <nil>",
 	)
+	expectedEvents := []string{
+		warningEventBuilder(errorProvisionCallFailedReason).msg(message).String(),
+		warningEventBuilder("ClusterServiceBrokerReturnedFailure").msg(message).String(),
+	}
 
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+	if err := checkEvents(events, expectedEvents); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1147,8 +1149,8 @@ func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorDeletedClusterServicePlanReason).msgf(
-		"Service Plan %q (K8S name: %q) has been deleted, can not provision.",
-		"test-plan", "PGUID",
+		"ClusterServicePlan (K8S: %q ExternalName: %q) has been deleted; cannot provision.",
+		"PGUID", "test-plan",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1197,8 +1199,8 @@ func TestReconcileServiceInstanceFailsWithDeletedClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorDeletedClusterServiceClassReason).msgf(
-		"Service Class %q (K8S name: %q) has been deleted, can not provision.",
-		"test-serviceclass", "SCGUID",
+		"ClusterServiceClass (K8S: %q ExternalName: %q) has been deleted; cannot provision.",
+		"SCGUID", "test-serviceclass",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1466,7 +1468,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorFindingNamespaceServiceInstanceReason).msgf(
-		"Failed to get namespace %q during instance create:",
+		"Failed to get namespace %q:",
 		"test-ns",
 	).msg("No namespace")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -2485,7 +2487,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *te
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
-		errorReconciliationRetryTimeoutReason,
+		errorDeprovisionCalledReason,
 		errorReconciliationRetryTimeoutReason,
 		instance,
 	)
@@ -2493,7 +2495,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *te
 	events := getRecordedEvents(testController)
 	expectedEvents := []string{
 		warningEventBuilder(errorDeprovisionCalledReason).msg("Deprovision call failed: (no description provided)").String(),
-		warningEventBuilder(errorReconciliationRetryTimeoutReason).msg("Stopping reconciliation retries on ServiceInstance because too much time has elapsed").String(),
+		warningEventBuilder(errorReconciliationRetryTimeoutReason).msg("Stopping reconciliation retries because too much time has elapsed").String(),
 	}
 
 	if err := checkEvents(events, expectedEvents); err != nil {
@@ -2703,6 +2705,10 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+	}
 
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
@@ -2896,8 +2902,8 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.pollServiceInstance(instance); err != nil {
-		t.Fatalf("Should have return no error because the retry duration has elapsed: %v", err)
+	if err := testController.pollServiceInstance(instance); err == nil {
+		t.Fatalf("Expected error to be returned in order to requeue instance for orphan mitigation")
 	}
 
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
@@ -3605,7 +3611,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			},
 			finishedOrphanMitigation:     false,
 			shouldError:                  true,
-			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorDeprovisionCalledReason,
 		},
 		{
@@ -3625,7 +3631,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			},
 			finishedOrphanMitigation:     false,
 			shouldError:                  true,
-			expectedReadyConditionStatus: v1beta1.ConditionFalse,
+			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorDeprovisionCalledReason,
 		},
 		{
@@ -3697,7 +3703,8 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     false,
+			finishedOrphanMitigation:     true,
+			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
 		},
@@ -3743,78 +3750,78 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-			DeprovisionReaction:       tc.deprovReaction,
-			PollLastOperationReaction: tc.pollReaction,
-		})
+		t.Run(tc.name, func(t *testing.T) {
+			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				DeprovisionReaction:       tc.deprovReaction,
+				PollLastOperationReaction: tc.pollReaction,
+			})
 
-		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-		sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-		instance := getTestServiceInstanceWithRefs()
-		instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
-		instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
-		instance.Status.OrphanMitigationInProgress = true
-		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+			instance := getTestServiceInstanceWithRefs()
+			instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+			instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+			instance.Status.OrphanMitigationInProgress = true
+			instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
-		if tc.async {
-			instance.Status.AsyncOpInProgress = true
-		}
-
-		var startTime metav1.Time
-		if tc.retryDurationExceeded {
-			startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
-		} else {
-			startTime = metav1.NewTime(time.Now())
-		}
-		instance.Status.OperationStartTime = &startTime
-
-		fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-			return true, instance, nil
-		})
-
-		err := testController.reconcileServiceInstance(instance)
-
-		// The action should be:
-		// 0. Updating the status
-		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-			continue
-		}
-
-		updatedObject, ok := expectUpdateStatus(t, tc.name, actions[0], instance)
-		if !ok {
-			continue
-		}
-		updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
-
-		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
-			continue
-		}
-
-		//TODO(mkibbe): change asserts to expects
-		assertServiceInstanceReadyCondition(
-			t,
-			updatedServiceInstance,
-			tc.expectedReadyConditionStatus,
-			tc.expectedReadyConditionReason,
-		)
-
-		// validate reconciliation error response
-		if tc.shouldError {
-			if err == nil {
-				t.Errorf("%v: Expected error; this should not be a terminal state", tc.name)
-				continue
+			if tc.async {
+				instance.Status.AsyncOpInProgress = true
 			}
-		} else {
-			if err != nil {
-				t.Errorf("%v: Unexpected error; this should be a terminal state", tc.name)
-				continue
-			}
-		}
 
-		expectCatalogFinalizerExists(t, tc.name, updatedServiceInstance)
+			var startTime metav1.Time
+			if tc.retryDurationExceeded {
+				startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+			} else {
+				startTime = metav1.NewTime(time.Now())
+			}
+			instance.Status.OperationStartTime = &startTime
+
+			fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+				return true, instance, nil
+			})
+
+			err := testController.reconcileServiceInstance(instance)
+
+			// The action should be:
+			// 0. Updating the status
+			actions := fakeCatalogClient.Actions()
+			if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
+				t.Fatalf("continue")
+			}
+
+			updatedObject, ok := expectUpdateStatus(t, tc.name, actions[0], instance)
+			if !ok {
+				t.Fatalf("continue")
+			}
+			updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
+
+			if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
+				t.Fatalf("continue")
+			}
+
+			//TODO(mkibbe): change asserts to expects
+			assertServiceInstanceReadyCondition(
+				t,
+				updatedServiceInstance,
+				tc.expectedReadyConditionStatus,
+				tc.expectedReadyConditionReason,
+			)
+
+			// validate reconciliation error response
+			if tc.shouldError {
+				if err == nil {
+					t.Fatalf("%v: Expected error; this should not be a terminal state", tc.name)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("%v: Unexpected error; this should be a terminal state", tc.name)
+				}
+			}
+
+			expectCatalogFinalizerExists(t, tc.name, updatedServiceInstance)
+		})
 	}
 }
 
@@ -4472,10 +4479,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorErrorCallingUpdateInstanceReason).msgf(
-		"Error communicating with broker for %q:",
-		"updating",
-	).msg("fake update failure")
+	expectedEvent := warningEventBuilder(errorErrorCallingUpdateInstanceReason).msg("The update call failed and will be retried:").msg("Error communicating with broker for updating:").msg("fake update failure")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -4538,10 +4542,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorUpdateInstanceCallFailedReason).msgf(
-		`Error updating ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s`,
-		"SCGUID", "test-serviceclass", "test-broker", 409, `OutOfQuota; Description: You're out of quota!; ResponseError: <nil>`,
-	)
+	expectedEvent := warningEventBuilder(errorUpdateInstanceCallFailedReason).msg("ClusterServiceBroker returned a failure for update call; update will not be retried:").msg("Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -5009,7 +5010,7 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 			plan:           getTestMarkedAsRemovedClusterServicePlan(),
 			success:        false,
 			expectedReason: errorDeletedClusterServicePlanReason,
-			expectedErrors: []string{"Service Plan", "has been deleted"},
+			expectedErrors: []string{"ClusterServicePlan", "has been deleted"},
 		},
 		{
 			name:           "deleted class fails",
@@ -5018,7 +5019,7 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 			plan:           getTestClusterServicePlan(),
 			success:        false,
 			expectedReason: errorDeletedClusterServiceClassReason,
-			expectedErrors: []string{"Service Class", "has been deleted"},
+			expectedErrors: []string{"ClusterServiceClass", "has been deleted"},
 		},
 		{
 			name:           "deleted plan and class fails",
@@ -5027,7 +5028,7 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 			plan:           getTestMarkedAsRemovedClusterServicePlan(),
 			success:        false,
 			expectedReason: errorDeletedClusterServicePlanReason,
-			expectedErrors: []string{"Service Plan", "has been deleted"},
+			expectedErrors: []string{"ClusterServicePlan", "has been deleted"},
 		},
 		{
 			name:           "Updating plan fails",
@@ -5036,7 +5037,7 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 			plan:           getTestMarkedAsRemovedClusterServicePlan(),
 			success:        false,
 			expectedReason: errorDeletedClusterServicePlanReason,
-			expectedErrors: []string{"Service Plan", "has been deleted"},
+			expectedErrors: []string{"ClusterServicePlan", "has been deleted"},
 		},
 		{
 			name:     "Updating parameters works",
@@ -5064,24 +5065,12 @@ func TestCheckClassAndPlanForDeletion(t *testing.T) {
 			t.Errorf("%q: Did not get a failure when expected one", tc.name)
 		}
 
-		// no kube or broker actions ever
+		// no actions ever
 		assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
 		brokerActions := fakeClusterServiceBrokerClient.Actions()
 		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
-
-		// If things succeeded, make sure no actions on the catalog client
-		// and if things fail, make sure instance status is updated and
-		// an event is generated
 		actions := fakeCatalogClient.Actions()
-		if tc.success {
-			assertNumberOfActions(t, actions, 0)
-		} else {
-			assertNumberOfActions(t, actions, 1)
-			assertUpdateStatus(t, actions[0], tc.instance)
-			assertServiceInstanceReadyFalse(t, tc.instance, tc.expectedReason)
-			events := getRecordedEvents(testController)
-			assertNumEvents(t, events, 1)
-		}
+		assertNumberOfActions(t, actions, 0)
 	}
 }
 
