@@ -37,10 +37,10 @@ func ValidateClusterID(id *sc.ClusterID) field.ErrorList {
 
 	// only one with a specific name allowed.
 	if id.Name != "cluster-id" {
-		allErrs = append(allErrs, field.Invalid(metadataField.Child("name"), id.Name, "cluster-id name must be cluster-id"))
+		allErrs = append(allErrs, field.Required(metadataField.Child("name"), "cluster-id name must be cluster-id"))
 	}
 	if id.ID == "" {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("ID"), id.ID, "cluster-id ID must have content when setting"))
+		allErrs = append(allErrs, field.Required(field.NewPath("ID"), "cluster-id ID must have content when setting"))
 	}
 	return allErrs
 }
