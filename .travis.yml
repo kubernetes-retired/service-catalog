@@ -6,7 +6,7 @@ cache:
   directories:
   - .glide
 script:
-- make verify build build-e2e test images
+- make verify build build-integration build-e2e test images
 deploy:
   skip_cleanup: true
   provider: script
