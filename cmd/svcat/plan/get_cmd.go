@@ -96,9 +96,12 @@ func (c *getCmd) get() error {
 	} else {
 		plan, err = c.App.RetrievePlanByName(c.name)
 	}
+	if err != nil {
+		return err
+	}
 
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := c.App.RetrieveClassByName(plan.Spec.ClusterServiceClassRef.Name)
+	class, err := c.App.RetrieveClassByID(plan.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		return err
 	}
