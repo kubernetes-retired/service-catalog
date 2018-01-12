@@ -3,31 +3,23 @@
   "apiVersion": "servicecatalog.k8s.io/v1beta1",
   "metadata": {
     "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers",
-    "resourceVersion": "522"
+    "resourceVersion": "106"
   },
   "items": [
     {
       "metadata": {
-        "name": "osba",
-        "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/osba",
-        "uid": "00a92e92-df7c-11e7-85f8-0242ac110006",
-        "resourceVersion": "522",
+        "name": "ups-broker",
+        "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/ups-broker",
+        "uid": "7b0ce3d1-f711-11e7-aa44-0242ac110005",
+        "resourceVersion": "103",
         "generation": 2,
-        "creationTimestamp": "2017-12-12T20:35:33Z",
+        "creationTimestamp": "2018-01-11T20:53:30Z",
         "finalizers": [
           "kubernetes-incubator/service-catalog"
         ]
       },
       "spec": {
-        "url": "http://osba-open-service-broker-azure.osba.svc.cluster.local",
-        "authInfo": {
-          "basic": {
-            "secretRef": {
-              "namespace": "osba",
-              "name": "osba-open-service-broker-azure-auth"
-            }
-          }
-        },
+        "url": "http://ups-broker-ups-broker.ups-broker.svc.cluster.local",
         "relistBehavior": "Duration",
         "relistDuration": "15m0s",
         "relistRequests": 1
@@ -37,13 +29,13 @@
           {
             "type": "Ready",
             "status": "True",
-            "lastTransitionTime": "2017-12-12T20:36:45Z",
+            "lastTransitionTime": "2018-01-11T20:53:31Z",
             "reason": "FetchedCatalog",
             "message": "Successfully fetched catalog entries from broker."
           }
         ],
         "reconciledGeneration": 2,
-        "lastCatalogRetrievalTime": "2017-12-14T01:12:11Z"
+        "lastCatalogRetrievalTime": "2018-01-12T02:10:27Z"
       }
     }
   ]

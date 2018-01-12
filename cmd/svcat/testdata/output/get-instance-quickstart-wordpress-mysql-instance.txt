@@ -1,3 +1,0 @@
-                 NAME                   NAMESPACE       CLASS          PLAN                    STATUS               
-+-------------------------------------+-----------+---------------+-------------+----------------------------------+
-  quickstart-wordpress-mysql-instance   default     azure-mysqldb   standard800   ReferencesNonexistentServicePlan  

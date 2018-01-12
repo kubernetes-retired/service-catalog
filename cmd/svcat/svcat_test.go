@@ -18,9 +18,11 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -38,21 +40,39 @@ var catalogRequestRegex = regexp.MustCompile("/apis/servicecatalog.k8s.io/v1beta
 
 func TestCommandOutput(t *testing.T) {
 	testcases := []struct {
-		name   string // Test Name
-		cmd    string // Command to run
-		golden string // Relative path to a golden file, compared to the command output
+		name            string // Test Name
+		cmd             string // Command to run
+		golden          string // Relative path to a golden file, compared to the command output
+		continueOnError bool   // Should the test stop immediately if the command fails or continue and capture the console output
 	}{
-		{"list all brokers", "get brokers", "output/get-brokers.txt"},
-		{"list all instances", "get instances", "output/get-instances.txt"},
-		{"get instance", "get instance quickstart-wordpress-mysql-instance",
-			"output/get-instance-quickstart-wordpress-mysql-instance.txt"},
+		{name: "list all brokers", cmd: "get brokers", golden: "output/get-brokers.txt"},
+		{name: "get broker", cmd: "get broker ups-broker", golden: "output/get-broker.txt"},
+		{name: "describe broker", cmd: "describe broker ups-broker", golden: "output/describe-broker.txt"},
+
+		{name: "list all classes", cmd: "get classes", golden: "output/get-classes.txt"},
+		{name: "get class by name", cmd: "get class user-provided-service", golden: "output/get-class.txt"},
+		{name: "get class by uuid", cmd: "get class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-class.txt"},
+		{name: "describe class by name", cmd: "describe class user-provided-service", golden: "output/describe-class.txt"},
+		{name: "describe class uuid", cmd: "describe class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/describe-class.txt"},
+
+		{name: "list all plans", cmd: "get plans", golden: "output/get-plans.txt"},
+		{name: "get plan by name", cmd: "get plan default", golden: "output/get-plan.txt"},
+		{name: "get plan by uuid", cmd: "get plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/get-plan.txt"},
+		{name: "describe plan by name", cmd: "describe plan default", golden: "output/describe-plan.txt"},
+		{name: "describe plan by uuid", cmd: "describe plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-plan.txt"},
+
+		{name: "list all instances", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
+		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
+		{name: "describe instance", cmd: "describe instance ups-instance -n test-ns", golden: "output/describe-instance.txt"},
+
+		{name: "list all bindings", cmd: "get bindings -n test-ns", golden: "output/get-bindings.txt"},
+		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
+		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			output := executeCommand(t, tc.cmd)
+			output := executeCommand(t, tc.cmd, tc.continueOnError)
 			test.AssertEqualsGoldenFile(t, tc.golden, output)
 		})
 	}
@@ -74,9 +94,9 @@ func TestGenerateManifest(t *testing.T) {
 
 // executeCommand runs a svcat command against a fake k8s api,
 // returning the cli output.
-func executeCommand(t *testing.T, cmd string) string {
+func executeCommand(t *testing.T, cmd string, continueOnErr bool) string {
 	// Fake the k8s api server
-	apisvr := newAPIServer(t)
+	apisvr := newAPIServer()
 	defer apisvr.Close()
 
 	// Generate a test kubeconfig pointing at the server
@@ -96,45 +116,49 @@ func executeCommand(t *testing.T, cmd string) string {
 	output := &bytes.Buffer{}
 	svcat.SetOutput(output)
 
-	// Ignoring errors, we only care about diffing output
-	svcat.Execute()
+	err = svcat.Execute()
+	if err != nil && !continueOnErr {
+		t.Fatalf("%+v", err)
+	}
 
 	return output.String()
 }
 
-func newAPIServer(t *testing.T) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		apihandler(t, w, r)
-	}))
+func newAPIServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(apihandler))
 }
 
 // apihandler handles requests to the service catalog endpoint.
 // When a request is received, it looks up the response from the testdata directory.
 // Example:
 // GET /apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers responds with testdata/clusterservicebrokers.json
-func apihandler(t *testing.T, w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func apihandler(w http.ResponseWriter, r *http.Request) {
 	match := catalogRequestRegex.FindStringSubmatch(r.RequestURI)
 
 	if len(match) == 0 {
-		t.Fatalf("unexpected request %s", r.RequestURI)
-		return
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("unexpected request %s %s", r.Method, r.RequestURI)))
 	}
 
 	if r.Method != http.MethodGet {
 		// Anything more interesting than a GET, i.e. it relies upon server behavior
 		// probably should be an integration test instead
-		w.WriteHeader(200)
-		return
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("unexpected request %s %s", r.Method, r.RequestURI)))
 	}
 
-	_, response, err := test.GetTestdata(filepath.Join("responses", match[1]+".json"))
+	relpath, err := url.PathUnescape(match[1])
 	if err != nil {
-		t.Fatalf("unexpected request %s with no matching testdata (%s)", r.RequestURI, err)
-		return
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("could not unescape path %s (%s)", match[1], err)))
+	}
+	_, response, err := test.GetTestdata(filepath.Join("responses", relpath+".json"))
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("unexpected request %s with no matching testdata (%s)", r.RequestURI, err)))
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(response)
 }
 
