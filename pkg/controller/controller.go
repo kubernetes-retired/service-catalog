@@ -193,7 +193,9 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 				glog.V(9).Info("cluster ID monitor loop enter")
 				_, err := c.serviceCatalogClient.ClusterIDs().Get("cluster-id", metav1.GetOptions{})
 				if errors.IsNotFound(err) {
+					glog.V(9).Info("cluster ID not found, creating")
 					clusterID := &v1beta1.ClusterID{ID: string(uuid.NewUUID())}
+					clusterID.SetName("cluster-id")
 					c.serviceCatalogClient.ClusterIDs().Create(clusterID)
 					// if we fail to set the id,
 					// it could be due to permissions
