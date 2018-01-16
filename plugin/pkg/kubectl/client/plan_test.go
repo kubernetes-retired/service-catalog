@@ -17,10 +17,15 @@ limitations under the License.
 package client_test
 
 import (
-	"errors"
+	"fmt"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/testing"
 
 	. "github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,62 +33,70 @@ import (
 
 var _ = Describe("Plan", func() {
 	var (
-		client                *PluginClient
-		err                   error
-		FakeScClient          *fakes.FakeInterface
-		ServicecatalogV1beta1 *fakes.FakeServicecatalogV1beta1Interface
-		ClusterServicePlans   *fakes.FakeClusterServicePlanInterface
+		client       *PluginClient
+		err          error
+		svcCatClient *fake.Clientset
+		sp           *v1beta1.ClusterServicePlan
+		sp2          *v1beta1.ClusterServicePlan
 	)
 
 	BeforeEach(func() {
 		client, err = NewClient()
 		Expect(err).NotTo(HaveOccurred())
-		FakeScClient = &fakes.FakeInterface{}
-		ServicecatalogV1beta1 = &fakes.FakeServicecatalogV1beta1Interface{}
-		ClusterServicePlans = &fakes.FakeClusterServicePlanInterface{}
 
-		client.ScClient = FakeScClient
-		FakeScClient.ServicecatalogV1beta1Returns(ServicecatalogV1beta1)
-		ServicecatalogV1beta1.ClusterServicePlansReturns(ClusterServicePlans)
+		sp = &v1beta1.ClusterServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
+		sp2 = &v1beta1.ClusterServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
+		svcCatClient = fake.NewSimpleClientset(sp, sp2)
+		client.ScClient = svcCatClient
 	})
 
 	Describe("Get", func() {
 		It("Calls the generated v1beta1 List method with the passed in plan", func() {
 			planName := "foobar"
-			_, err = client.GetPlan(planName)
 
-			Expect(ClusterServicePlans.GetCallCount()).To(Equal(1))
-			name, _ := ClusterServicePlans.GetArgsForCall(0)
-			Expect(name).To(Equal(planName))
+			plan, err := client.GetPlan(planName)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(plan.Name).To(Equal(planName))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(planName))
+
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "plan not found"
-			ClusterServicePlans.GetReturns(nil, errors.New(errorMessage))
+			planName := "not_real"
 
-			_, err := client.GetPlan("banana")
+			plan, err := client.GetPlan(planName)
 
+			Expect(plan).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(ClusterServicePlans.GetCallCount()).To(Equal(1))
+			Expect(err.Error()).Should(ContainSubstring("not found"))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(planName))
 		})
 	})
 
 	Describe("List", func() {
 		It("Calls the generated v1beta1 List method", func() {
-			_, err := client.ListPlans()
+			plans, err := client.ListPlans()
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ClusterServicePlans.ListCallCount()).To(Equal(1))
+			Expect(plans.Items).Should(ConsistOf(*sp, *sp2))
+			Expect(svcCatClient.Actions()[0].Matches("list", "clusterserviceplans")).To(BeTrue())
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "foobar"
-			ClusterServicePlans.ListReturns(nil, errors.New(errorMessage))
-
+			badClient := &fake.Clientset{}
+			errorMessage := "error retrieving list"
+			badClient.AddReactor("list", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			client.ScClient = badClient
 			_, err := client.ListPlans()
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(ClusterServicePlans.ListCallCount()).To(Equal(1))
+			Expect(badClient.Actions()[0].Matches("list", "clusterserviceplans")).To(BeTrue())
 		})
 	})
 })

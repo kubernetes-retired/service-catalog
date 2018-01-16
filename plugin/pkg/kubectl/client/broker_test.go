@@ -17,10 +17,15 @@ limitations under the License.
 package client_test
 
 import (
-	"errors"
+	"fmt"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/testing"
 
 	. "github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,62 +33,69 @@ import (
 
 var _ = Describe("Broker", func() {
 	var (
-		client                *PluginClient
-		err                   error
-		FakeScClient          *fakes.FakeInterface
-		ServicecatalogV1beta1 *fakes.FakeServicecatalogV1beta1Interface
-		ClusterServiceBrokers *fakes.FakeClusterServiceBrokerInterface
+		client       *PluginClient
+		err          error
+		svcCatClient *fake.Clientset
+		sb           *v1beta1.ClusterServiceBroker
+		sb2          *v1beta1.ClusterServiceBroker
 	)
 
 	BeforeEach(func() {
 		client, err = NewClient()
 		Expect(err).NotTo(HaveOccurred())
-		FakeScClient = &fakes.FakeInterface{}
-		ServicecatalogV1beta1 = &fakes.FakeServicecatalogV1beta1Interface{}
-		ClusterServiceBrokers = &fakes.FakeClusterServiceBrokerInterface{}
 
-		client.ScClient = FakeScClient
-		FakeScClient.ServicecatalogV1beta1Returns(ServicecatalogV1beta1)
-		ServicecatalogV1beta1.ClusterServiceBrokersReturns(ClusterServiceBrokers)
+		sb = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
+		sb2 = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
+		svcCatClient = fake.NewSimpleClientset(sb, sb2)
+		client.ScClient = svcCatClient
 	})
 
 	Describe("Get", func() {
 		It("Calls the generated v1beta1 List method with the passed in broker", func() {
 			brokerName := "foobar"
-			_, err = client.GetBroker(brokerName)
 
-			Expect(ClusterServiceBrokers.GetCallCount()).To(Equal(1))
-			name, _ := ClusterServiceBrokers.GetArgsForCall(0)
-			Expect(name).To(Equal(brokerName))
+			broker, err := client.GetBroker(brokerName)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker.Name).To(Equal(brokerName))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "clusterservicebrokers")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(brokerName))
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "broker not found"
-			ClusterServiceBrokers.GetReturns(nil, errors.New(errorMessage))
+			brokerName := "banana"
 
-			_, err := client.GetBroker("banana")
+			broker, err := client.GetBroker(brokerName)
 
+			Expect(broker).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(ClusterServiceBrokers.GetCallCount()).To(Equal(1))
+			Expect(err.Error()).Should(ContainSubstring("not found"))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "clusterservicebrokers")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(brokerName))
 		})
 	})
 
 	Describe("List", func() {
 		It("Calls the generated v1beta1 List method", func() {
-			_, err := client.ListBrokers()
+			brokers, err := client.ListBrokers()
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ClusterServiceBrokers.ListCallCount()).To(Equal(1))
+			Expect(brokers.Items).Should(ConsistOf(*sb, *sb2))
+			Expect(svcCatClient.Actions()[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "foobar"
-			ClusterServiceBrokers.ListReturns(nil, errors.New(errorMessage))
-
+			badClient := &fake.Clientset{}
+			errorMessage := "error retrieving list"
+			badClient.AddReactor("list", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			client.ScClient = badClient
 			_, err := client.ListBrokers()
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(ClusterServiceBrokers.ListCallCount()).To(Equal(1))
+			Expect(badClient.Actions()[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
 		})
 	})
 })

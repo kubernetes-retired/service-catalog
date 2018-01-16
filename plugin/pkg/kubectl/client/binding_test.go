@@ -17,10 +17,15 @@ limitations under the License.
 package client_test
 
 import (
-	"errors"
+	"fmt"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/testing"
 
 	. "github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,46 +33,48 @@ import (
 
 var _ = Describe("Binding", func() {
 	var (
-		client                *PluginClient
-		err                   error
-		FakeScClient          *fakes.FakeInterface
-		ServicecatalogV1beta1 *fakes.FakeServicecatalogV1beta1Interface
-		ServiceBindings       *fakes.FakeServiceBindingInterface
+		client       *PluginClient
+		err          error
+		svcCatClient *fake.Clientset
+		sb           *v1beta1.ServiceBinding
+		sb2          *v1beta1.ServiceBinding
 	)
 
 	BeforeEach(func() {
 		client, err = NewClient()
 		Expect(err).NotTo(HaveOccurred())
-		FakeScClient = &fakes.FakeInterface{}
-		ServicecatalogV1beta1 = &fakes.FakeServicecatalogV1beta1Interface{}
-		ServiceBindings = &fakes.FakeServiceBindingInterface{}
 
-		client.ScClient = FakeScClient
-		FakeScClient.ServicecatalogV1beta1Returns(ServicecatalogV1beta1)
-		ServicecatalogV1beta1.ServiceBindingsReturns(ServiceBindings)
+		sb = &v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "foobar_namespace"}}
+		sb2 = &v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", Namespace: "foobar_namespace"}}
+		svcCatClient = fake.NewSimpleClientset(sb, sb2)
+		client.ScClient = svcCatClient
 	})
 
 	Describe("Get", func() {
 		It("Calls the generated v1beta1 List method with the passed in binding and namespace", func() {
+			bindingName := "foobar"
 			namespace := "foobar_namespace"
-			bindingName := "potato_binding"
 
-			_, err := client.GetBinding(bindingName, namespace)
+			binding, err := client.GetBinding(bindingName, namespace)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ServicecatalogV1beta1.ServiceBindingsArgsForCall(0)).To(Equal(namespace))
-			returnedName, _ := ServiceBindings.GetArgsForCall(0)
-			Expect(returnedName).To(Equal(bindingName))
-			Expect(ServiceBindings.GetCallCount()).To(Equal(1))
+			Expect(binding.Name).To(Equal(bindingName))
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(bindingName))
+			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(namespace))
 		})
 		It("Bubbles up errors", func() {
+			bindingName := "not_a_real_binding"
 			namespace := "foobar_namespace"
-			bindingName := "potato_binding"
-			errorMessage := "binding not found"
 
-			ServiceBindings.GetReturns(nil, errors.New(errorMessage))
 			_, err := client.GetBinding(bindingName, namespace)
 			Expect(err).To(HaveOccurred())
-			Expect(ServiceBindings.GetCallCount()).To(Equal(1))
+			Expect(err.Error()).Should(ContainSubstring("not found"))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(bindingName))
+			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(namespace))
 		})
 	})
 
@@ -75,22 +82,26 @@ var _ = Describe("Binding", func() {
 		It("Calls the generated v1beta1 List method with the specified namespace", func() {
 			namespace := "foobar_namespace"
 
-			_, err := client.ListBindings(namespace)
+			bindings, err := client.ListBindings(namespace)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ServicecatalogV1beta1.ServiceBindingsArgsForCall(0)).To(Equal(namespace))
-			Expect(ServiceBindings.ListCallCount()).To(Equal(1))
+			Expect(bindings.Items).Should(ConsistOf(*sb, *sb2))
+			Expect(svcCatClient.Actions()[0].Matches("list", "servicebindings")).To(BeTrue())
 		})
 		It("Bubbles up errors", func() {
-			ServiceBindings.ListReturns(nil, errors.New("foobar"))
+			badClient := &fake.Clientset{}
+			errorMessage := "error retrieving list"
+			badClient.AddReactor("list", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			client.ScClient = badClient
 			namespace := "foobar_namespace"
 
 			_, err := client.ListBindings(namespace)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring("foobar"))
-			Expect(ServicecatalogV1beta1.ServiceBindingsArgsForCall(0)).To(Equal(namespace))
-			Expect(ServiceBindings.ListCallCount()).To(Equal(1))
+			Expect(err.Error()).Should(ContainSubstring(errorMessage))
+			Expect(badClient.Actions()[0].Matches("list", "servicebindings")).To(BeTrue())
 		})
 	})
 })

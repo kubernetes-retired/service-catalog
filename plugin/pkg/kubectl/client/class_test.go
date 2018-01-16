@@ -17,10 +17,15 @@ limitations under the License.
 package client_test
 
 import (
-	"errors"
+	"fmt"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/testing"
 
 	. "github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/kubectl/client/fakes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,62 +33,69 @@ import (
 
 var _ = Describe("Class", func() {
 	var (
-		client                *PluginClient
-		err                   error
-		FakeScClient          *fakes.FakeInterface
-		ServicecatalogV1beta1 *fakes.FakeServicecatalogV1beta1Interface
-		ClusterServiceClasses *fakes.FakeClusterServiceClassInterface
+		client       *PluginClient
+		err          error
+		svcCatClient *fake.Clientset
+		sc           *v1beta1.ClusterServiceClass
+		sc2          *v1beta1.ClusterServiceClass
 	)
 
 	BeforeEach(func() {
 		client, err = NewClient()
 		Expect(err).NotTo(HaveOccurred())
-		FakeScClient = &fakes.FakeInterface{}
-		ServicecatalogV1beta1 = &fakes.FakeServicecatalogV1beta1Interface{}
-		ClusterServiceClasses = &fakes.FakeClusterServiceClassInterface{}
 
-		client.ScClient = FakeScClient
-		FakeScClient.ServicecatalogV1beta1Returns(ServicecatalogV1beta1)
-		ServicecatalogV1beta1.ClusterServiceClassesReturns(ClusterServiceClasses)
+		sc = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
+		sc2 = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
+		svcCatClient = fake.NewSimpleClientset(sc, sc2)
+		client.ScClient = svcCatClient
 	})
 
 	Describe("Get", func() {
 		It("Calls the generated v1beta1 List method with the passed in class", func() {
 			className := "foobar"
-			_, err = client.GetClass(className)
+			class, err := client.GetClass(className)
 
-			Expect(ClusterServiceClasses.GetCallCount()).To(Equal(1))
-			name, _ := ClusterServiceClasses.GetArgsForCall(0)
-			Expect(name).To(Equal(className))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(class.Name).To(Equal(className))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(className))
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "class not found"
-			ClusterServiceClasses.GetReturns(nil, errors.New(errorMessage))
+			className := "banana"
 
-			_, err := client.GetClass("banana")
+			class, err := client.GetClass(className)
 
+			Expect(class).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(ClusterServiceClasses.GetCallCount()).To(Equal(1))
+			Expect(err.Error()).Should(ContainSubstring("not found"))
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(className))
 		})
 	})
 
 	Describe("List", func() {
 		It("Calls the generated v1beta1 List method", func() {
-			_, err := client.ListClasses()
+			classes, err := client.ListClasses()
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ClusterServiceClasses.ListCallCount()).To(Equal(1))
+			Expect(classes.Items).Should(ConsistOf(*sc, *sc2))
+			Expect(svcCatClient.Actions()[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "foobar"
-			ClusterServiceClasses.ListReturns(nil, errors.New(errorMessage))
+			badClient := &fake.Clientset{}
+			errorMessage := "error retrieving list"
+			badClient.AddReactor("list", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			client.ScClient = badClient
 
 			_, err := client.ListClasses()
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(ClusterServiceClasses.ListCallCount()).To(Equal(1))
+			Expect(badClient.Actions()[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
 		})
 	})
 })
