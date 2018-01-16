@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kclientset "k8s.io/client-go/kubernetes"
 
+	"github.com/fatih/color"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
@@ -187,7 +188,7 @@ func Namespace() string {
 //CheckNamespaceExists checks if a specified namespace exists
 //the targeted cluster
 func CheckNamespaceExists(ns string, config *restclient.Config) {
-	fmt.Printf("Looking up Namespace %s...\n", Entity(ns))
+	fmt.Printf("Looking up Namespace '%s'...\n", ns)
 	kubeClient, err := kclientset.NewForConfig(config)
 	if err != nil {
 		Exit1(fmt.Sprintf("%v", err))
@@ -215,6 +216,6 @@ func Loglevel() (flagName, flagValue string) {
 // Exit1 will print the specified error string to the screen and
 // then stop the program, with an exit code of 1
 func Exit1(errStr string) {
-	Error(errStr)
+	color.Red("Error\n\n%s\n", errStr)
 	os.Exit(1)
 }
