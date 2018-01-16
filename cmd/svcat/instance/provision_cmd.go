@@ -44,8 +44,8 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		Use:   "provision NAME --plan PLAN --class CLASS",
 		Short: "Create a new instance of a service",
 		Example: `
-  svcat provision wordpress-mysql-instance --class azure-mysqldb --plan standard800 -p location=eastus -p sslEnforcement=disabled
-  svcat provision wordpress-mysql-instance --class azure-mysqldb --plan standard800 -s mysecret[dbparams]
+  svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
+  svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return provisionCmd.run(args)

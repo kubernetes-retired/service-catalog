@@ -39,7 +39,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Short:   "List classes, optionally filtered by name",
 		Example: `
   svcat get classes
-  svcat get class azure-mysqldb
+  svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {

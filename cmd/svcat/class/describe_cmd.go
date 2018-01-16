@@ -41,7 +41,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Aliases: []string{"classes", "cl"},
 		Short:   "Show details of a specific class",
 		Example: `
-  svcat describe class azure-mysqldb
+  svcat describe class mysqldb
   svcat describe class -uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
