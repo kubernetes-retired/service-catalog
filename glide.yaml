@@ -66,23 +66,23 @@ import:
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo
-  version: b58fc7edb82e0c6ffc9b8aef61813c7261b785d4 # in sync with https://github.com/kubernetes/code-generator/blob/kubernetes-1.9.0/Godeps/Godeps.json
+  version: b58fc7edb82e0c6ffc9b8aef61813c7261b785d4 # in sync with https://github.com/kubernetes/code-generator/blob/kubernetes-1.9.1/Godeps/Godeps.json
   subpackages:
   - args
 - package: github.com/kubernetes/repo-infra
   version: 2d2eb5e12b4663fc4d764b5db9daab39334d3f37 # master, latest (Dec 18, 2017)
 - package: k8s.io/client-go
-  version: kubernetes-1.9.0 # tag/kubernetes-1.9.0
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/apimachinery
-  version: kubernetes-1.9.0 # tag/kubernetes-1.9.0
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/kube-openapi
-  version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1 # in sync with https://github.com/kubernetes/kubernetes/blob/v1.9.0/Godeps/Godeps.json
+  version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1 # in sync with https://github.com/kubernetes/kubernetes/blob/v1.9.1/Godeps/Godeps.json
 - package: k8s.io/api
-  version: kubernetes-1.9.0 # tag/kubernetes-1.9.0
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/apiserver
-  version: kubernetes-1.9.0 # tag/kubernetes-1.9.0
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/code-generator
-  version: kubernetes-1.9.0 # tag/kubernetes-1.9.0
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: github.com/pivotal-cf/brokerapi
 - package: code.cloudfoundry.org/lager
   version: dfcbcba2dd4a5228c43b0292d219d5c010daed3a
@@ -91,7 +91,10 @@ import:
 - package: github.com/pmorie/go-open-service-broker-client
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
-  version: 3.2.13 # different from Kubernetes etcd version (3.1.10), but has some improvements for embedded mode? https://github.com/kubernetes/kubernetes/blob/v1.9.0/Godeps/Godeps.json
+  # in sync with Kubernetes master (k8s 1.10 future release), but different from Kubernetes etcd version (3.1.10),
+  # but has some improvements for embedded mode used in integration tests?
+  # see https://github.com/kubernetes/kubernetes/blob/v1.9.1/Godeps/Godeps.json
+  version: 3.2.13
 - package: google.golang.org/grpc
   version: v1.7.5 # compatible with etcd 3.2.13
 - package: github.com/grpc-ecosystem/grpc-gateway
