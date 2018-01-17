@@ -92,7 +92,8 @@ import:
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
   # in sync with Kubernetes master (k8s 1.10 future release), but different from Kubernetes etcd version (3.1.10),
-  # but has some improvements for embedded mode used in integration tests?
+  # but seems to have some improvements in memory consumption for embedded mode used in integration tests?
+  # (with v3.1.10 etcd pod crashes in Travis CI while we run tests)
   # see https://github.com/kubernetes/kubernetes/blob/v1.9.1/Godeps/Godeps.json
   version: 3.2.13
 - package: google.golang.org/grpc
