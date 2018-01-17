@@ -1,5 +1,5 @@
-hash: 084ab70c7d3a239795eece8f17fa0e7ed6908ab67cdcaf3650f242fe8a121e7f
-updated: 2017-12-28T15:25:27.218484682+11:00
+hash: 714a8b5ad9dd71056828e894251e26348a83f396b522613f1909c4078afb933e
+updated: 2018-01-17T11:48:13.031141793+11:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -22,7 +22,7 @@ imports:
   subpackages:
   - quantile
 - name: github.com/coreos/etcd
-  version: b19dae00651b890498bcca38ac2cc3cad471281e
+  version: 95a726a27e09030f9ccbd9982a1508f5a6d25ada
   subpackages:
   - alarm
   - auth
@@ -257,7 +257,7 @@ imports:
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pivotal-cf/brokerapi
-  version: 09b839892604e7aef056ad499d5cd46980bebcf9
+  version: 35946a0079bda144d0c9ed68df36899451f90209
   subpackages:
   - auth
 - name: github.com/pkg/errors

@@ -91,10 +91,10 @@ import:
 - package: github.com/pmorie/go-open-service-broker-client
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
-  version: 3.2.12 # different from Kubernetes etcd version (3.1.10), but has some improvements for embedded mode? https://github.com/kubernetes/kubernetes/blob/v1.9.0/Godeps/Godeps.json
+  version: 3.2.13 # different from Kubernetes etcd version (3.1.10), but has some improvements for embedded mode? https://github.com/kubernetes/kubernetes/blob/v1.9.0/Godeps/Godeps.json
 - package: google.golang.org/grpc
-  version: v1.7.5 # compatible with etcd 3.2.12
+  version: v1.7.5 # compatible with etcd 3.2.13
 - package: github.com/grpc-ecosystem/grpc-gateway
-  version: v1.3.0 # compatible with etcd 3.2.12
+  version: v1.3.0 # compatible with etcd 3.2.13
 - package: github.com/grpc-ecosystem/go-grpc-prometheus
-  version: v1.1 # compatible with etcd 3.2.12
+  version: v1.1 # compatible with etcd 3.2.13

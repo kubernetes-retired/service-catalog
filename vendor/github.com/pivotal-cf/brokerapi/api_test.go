@@ -674,6 +674,9 @@ var _ = Describe("Service Broker API", func() {
 						"organization_id": "org-id",
 						"space_id":        "space-id",
 					},
+					"context": map[string]interface{}{
+						"new-context": "new-context-value",
+					},
 				}
 			})
 
@@ -713,6 +716,12 @@ var _ = Describe("Service Broker API", func() {
 						detailsWithRawParameters := brokerapi.DetailsWithRawParameters(fakeServiceBroker.UpdateDetails)
 						rawParameters := detailsWithRawParameters.GetRawParameters()
 						Expect(rawParameters).To(Equal(json.RawMessage(`{"new-param":"new-param-value"}`)))
+					})
+
+					It("calls update with details with raw context", func() {
+						Expect(fakeServiceBroker.UpdateDetails.RawContext).To(
+							Equal(json.RawMessage(`{"new-context":"new-context-value"}`)),
+						)
 					})
 
 					Context("when accepts_incomplete=true", func() {
