@@ -59,4 +59,12 @@ NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceplan.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/instance.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/binding.yaml
+
+# should any of this succeed?
+# create once
+NO_TTY=1 kubectl create -f contrib/examples/apiserver/clusterid.yaml
+# get always available
+NO_TTY=1 kubectl get clusterids cluster-id -o yaml
+# this should never succeed. ID should not be deleteable.
+NO_TTY=1 kubectl delete -f contrib/examples/apiserver/clusterid.yaml
 set +x

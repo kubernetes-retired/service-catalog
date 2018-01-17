@@ -1,0 +1,5 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterID
+metadata:
+  name: cluster-id
+id: a-test-id

@@ -22,6 +22,7 @@ import (
 	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterid"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
@@ -154,6 +155,25 @@ func (p StorageProvider) v1beta1Storage(
 		p.StorageType,
 	)
 
+	clusteridRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterids"))
+	if err != nil {
+		return nil, err
+	}
+	clusterIDOpts := server.NewOptions(
+		etcd.Options{
+			RESTOptions:   clusteridRESTOptions,
+			Capacity:      1,
+			ObjectType:    clusterid.EmptyObject(),
+			ScopeStrategy: clusterid.NewScopeStrategy(),
+			NewListFunc:   clusterid.NewList,
+			GetAttrsFunc:  nil,
+			Trigger:       storage.NoTriggerPublisher,
+		},
+		p.StorageType,
+	)
+
+	clusterIDStorage := clusterid.NewStorage(*clusterIDOpts)
+
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
 	servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
@@ -164,6 +184,7 @@ func (p StorageProvider) v1beta1Storage(
 	}
 
 	return map[string]rest.Storage{
+		"clusterids":                   clusterIDStorage,
 		"clusterservicebrokers":        brokerStorage,
 		"clusterservicebrokers/status": brokerStatusStorage,
 		"clusterserviceclasses":        serviceClassStorage,

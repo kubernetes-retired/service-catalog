@@ -21,14 +21,17 @@ import (
 	"time"
 
 	"fmt"
-	"github.com/google/gofuzz"
+
+	fuzz "github.com/google/gofuzz"
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/api/testing/fuzzer"
 	genericfuzzer "k8s.io/apimachinery/pkg/apis/meta/fuzzer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	kuuid "k8s.io/apimachinery/pkg/util/uuid"
 )
 
 type serviceMetadata struct {
@@ -156,6 +159,10 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			sp.Spec.ServiceBindingCreateParameterSchema = metadata
 			sp.Spec.ServiceInstanceCreateParameterSchema = metadata
 			sp.Spec.ServiceInstanceUpdateParameterSchema = metadata
+		},
+		func(cid *servicecatalog.ClusterID, c fuzz.Continue) {
+			c.FuzzNoCustom(cid)
+			cid.ID = string(kuuid.NewUUID())
 		},
 	}
 }

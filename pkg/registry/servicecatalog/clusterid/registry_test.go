@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package internalversion
+package clusterid
 
-type ClusterIDExpansion interface{}
+import "testing"
 
-type ClusterServiceBrokerExpansion interface{}
-
-type ClusterServiceClassExpansion interface{}
-
-type ClusterServicePlanExpansion interface{}
-
-type ServiceBindingExpansion interface{}
-
-type ServiceInstanceExpansion interface{}
+func TestGenerateName(t *testing.T) {
+	if "cluster-id" != clusterIDStrategies.GenerateName("") {
+		t.Error("failed to return singular hardcoded name")
+	}
+	if "cluster-id" != clusterIDStrategies.GenerateName("something-somewhere") {
+		t.Error("failed to return singular hardcoded name")
+	}
+}

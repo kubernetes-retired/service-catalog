@@ -25,6 +25,7 @@ import (
 
 type ServicecatalogV1beta1Interface interface {
 	RESTClient() rest.Interface
+	ClusterIDsGetter
 	ClusterServiceBrokersGetter
 	ClusterServiceClassesGetter
 	ClusterServicePlansGetter
@@ -35,6 +36,10 @@ type ServicecatalogV1beta1Interface interface {
 // ServicecatalogV1beta1Client is used to interact with features provided by the servicecatalog.k8s.io group.
 type ServicecatalogV1beta1Client struct {
 	restClient rest.Interface
+}
+
+func (c *ServicecatalogV1beta1Client) ClusterIDs() ClusterIDInterface {
+	return newClusterIDs(c)
 }
 
 func (c *ServicecatalogV1beta1Client) ClusterServiceBrokers() ClusterServiceBrokerInterface {

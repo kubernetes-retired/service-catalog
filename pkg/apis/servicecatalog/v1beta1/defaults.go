@@ -17,10 +17,13 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/satori/go.uuid"
+	"time"
+
+	uuid "github.com/satori/go.uuid"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"time"
+	kuuid "k8s.io/apimachinery/pkg/util/uuid"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
@@ -53,5 +56,11 @@ func SetDefaults_ServiceBinding(binding *ServiceBinding) {
 	// If not specified, make the SecretName default to the binding name
 	if binding.Spec.SecretName == "" {
 		binding.Spec.SecretName = binding.Name
+	}
+}
+
+func SetDefaults_ClusterID(c *ClusterID) {
+	if c.ID == "" {
+		c.ID = string(kuuid.NewUUID())
 	}
 }

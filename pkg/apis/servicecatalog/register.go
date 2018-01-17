@@ -58,6 +58,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ServiceInstanceList{},
 		&ServiceBinding{},
 		&ServiceBindingList{},
+		&ClusterID{},
+		&ClusterIDList{},
 	)
 	return nil
 }
