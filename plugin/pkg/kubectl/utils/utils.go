@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	restclient "k8s.io/client-go/rest"
@@ -39,7 +41,13 @@ func NewClient() (*clientset.Clientset, *restclient.Config) {
 	// then the value of the KUBECONFIG env var (if any), and defaulting
 	// to ~/.kube/config as a last resort.
 	home := os.Getenv("HOME")
-	kubeconfig := home + "/.kube/config"
+	if runtime.GOOS == "windows" {
+		home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+	}
+	kubeconfig := filepath.Join(home, ".kube", "config")
 
 	kubeconfigEnv := os.Getenv("KUBECONFIG")
 	if len(kubeconfigEnv) > 0 {
