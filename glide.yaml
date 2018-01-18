@@ -26,11 +26,11 @@ import:
 - package: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - package: github.com/go-openapi/spec
-  version: 6aced65f8501fe1217321abf0749d354824ba2ff
+  version: 7abd5745472fff5eb3685386d5fb8bf38683154d # in sync with k8s.io/apimachinery
 - package: github.com/go-openapi/swag
-  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590 # in sync with k8s.io/apimachinery
 - package: github.com/mailru/easyjson
-  version: d5b7844b561a7bc640052f1b935f7b800330d7e0
+  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d # in sync with k8s.io/apimachinery
   subpackages:
   - jlexer
 - package: golang.org/x/text
@@ -46,7 +46,7 @@ import:
   subpackages:
   - http2
 - package: github.com/golang/protobuf
-  version: 4bd1920723d7b7c925de087aa32e2187708897f7
+  version: 1643683e1b54a9e88ad26d98f81400c8c9d9f4f9 # in sync with k8s.io/apimachinery
   subpackages:
   - proto
 - package: gopkg.in/natefinch/lumberjack.v2
@@ -66,27 +66,23 @@ import:
 - package: github.com/spf13/cobra
   version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/gengo
-  version: 9e661e9308f078838e266cca1c673922088c0ea4 # see https://github.com/kubernetes/code-generator/blob/release-1.8/Godeps/Godeps.json
+  version: b58fc7edb82e0c6ffc9b8aef61813c7261b785d4 # in sync with https://github.com/kubernetes/code-generator/blob/kubernetes-1.9.1/Godeps/Godeps.json
   subpackages:
   - args
 - package: github.com/kubernetes/repo-infra
-  version: e26fc85d14a1d3dc25569831acc06919673c545a # latest (Oct 4, 2017)
+  version: 2d2eb5e12b4663fc4d764b5db9daab39334d3f37 # master, latest (Dec 18, 2017)
 - package: k8s.io/client-go
-  version: afb4606c45bae77c4dc2c15291d4d7d6d792196c # release-5.0, latest (Oct 4, 2017)
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/apimachinery
-  version: 9d38e20d609d27e00d4ec18f7b9db67105a2bde0 # release-1.8, latest (Oct 4, 2017)
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/kube-openapi
-  version: 868f2f29720b192240e18284659231b440f9cda5 # k8s.io 1.8 (Oct 4, 2017)
+  version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1 # in sync with https://github.com/kubernetes/kubernetes/blob/v1.9.1/Godeps/Godeps.json
 - package: k8s.io/api
-  version: fe29995db37613b9c5b2a647544cf627bfa8d299 # release-1.8, latest (Oct 4, 2017)
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/apiserver
-  version: f9b476d61dbdf6474e3d42cc5e854d0d8b7f759e # release-1.8, latest (Oct 4, 2017)
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: k8s.io/code-generator
-  version: 42f0582fc47a42652cfb1d4ea5d5306f765507e5 # release-1.8, latest (Oct 4, 2017)
-- package: github.com/onsi/gomega
-  version: d59fa0ac68bb5dd932ee8d24eed631cdd519efc3 # wanted by k8s.io/kubernetes
-- package: github.com/onsi/ginkgo
-  version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8 # wanted by k8s.io/kubernetes
+  version: kubernetes-1.9.1 # tag/kubernetes-1.9.1
 - package: github.com/pivotal-cf/brokerapi
 - package: code.cloudfoundry.org/lager
   version: dfcbcba2dd4a5228c43b0292d219d5c010daed3a
@@ -95,4 +91,14 @@ import:
 - package: github.com/pmorie/go-open-service-broker-client
   version: 31d8027f493f8f23f850415d171c7c52a972a6f2
 - package: github.com/coreos/etcd
-  version: ^3.2.9
+  # in sync with Kubernetes master (k8s 1.10 future release), but different from Kubernetes etcd version (3.1.10),
+  # but seems to have some improvements in memory consumption for embedded mode used in integration tests?
+  # (with v3.1.10 etcd pod crashes in Travis CI while we run tests)
+  # see https://github.com/kubernetes/kubernetes/blob/v1.9.1/Godeps/Godeps.json
+  version: 3.2.13
+- package: google.golang.org/grpc
+  version: v1.7.5 # compatible with etcd 3.2.13
+- package: github.com/grpc-ecosystem/grpc-gateway
+  version: v1.3.0 # compatible with etcd 3.2.13
+- package: github.com/grpc-ecosystem/go-grpc-prometheus
+  version: v1.1 # compatible with etcd 3.2.13

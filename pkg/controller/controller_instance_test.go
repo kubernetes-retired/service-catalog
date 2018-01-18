@@ -40,7 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	corev1 "k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
@@ -3228,14 +3227,9 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 	for _, tc := range cases {
 		_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
-		clone, err := api.Scheme.DeepCopy(tc.input)
-		if err != nil {
-			t.Errorf("%v: deep copy failed", tc.name)
-			continue
-		}
-		inputClone := clone.(*v1beta1.ServiceInstance)
+		inputClone := tc.input.DeepCopy()
 
-		err = testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
+		err := testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue

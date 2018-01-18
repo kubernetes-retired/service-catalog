@@ -39,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
@@ -1649,14 +1648,9 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 	for _, tc := range cases {
 		_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
-		clone, err := api.Scheme.DeepCopy(tc.input)
-		if err != nil {
-			t.Errorf("%v: deep copy failed", tc.name)
-			continue
-		}
-		inputClone := clone.(*v1beta1.ServiceBinding)
+		inputClone := tc.input.DeepCopy()
 
-		err = testController.updateServiceBindingCondition(tc.input, v1beta1.ServiceBindingConditionReady, tc.status, tc.reason, tc.message)
+		err := testController.updateServiceBindingCondition(tc.input, v1beta1.ServiceBindingConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
 			continue
