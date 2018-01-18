@@ -101,7 +101,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 
 	// make the server
 	glog.V(4).Infoln("Completing API server configuration")
-	server, err := completed.NewServer()
+	server, err := completed.NewServer(stopCh)
 	if err != nil {
 		return fmt.Errorf("error completing API server configuration: %v", err)
 	}
