@@ -1,0 +1,10 @@
+name: "plan"
+shortDesc: "This command interacts with Cluster Service Plans"
+command: "./plan"
+tree:
+  - name: "list"
+    shortDesc: "Lists all Cluster Service Plans"
+    command: "./plan list"
+  - name: "get"
+    shortDesc: "Gets a particular Cluster Service Plan"
+    command: "./plan get"

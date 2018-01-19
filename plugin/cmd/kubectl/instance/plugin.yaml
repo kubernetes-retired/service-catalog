@@ -1,0 +1,10 @@
+name: "instance"
+shortDesc: "This command interacts with Service Instances"
+command: "./instance"
+tree:
+  - name: "list"
+    shortDesc: "Lists all Service Instances in a particular namespace"
+    command: "./instance list"
+  - name: "get"
+    shortDesc: "Gets a particular Service Instance in a particular namespace"
+    command: "./instance get"

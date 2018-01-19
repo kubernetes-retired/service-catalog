@@ -119,7 +119,8 @@ NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 #########################################################################
 build: .init .generate_files \
 	$(BINDIR)/service-catalog \
-	$(BINDIR)/user-broker
+	$(BINDIR)/user-broker \
+	   plugins
 
 user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
@@ -370,3 +371,55 @@ release-push-%:
 	$(MAKE) clean-bin
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* push
+
+
+# kubectl plugin stuff
+######################
+PLUGIN_EXES=binding broker class instance plan
+
+plugins: .init .generate_files \
+		$(BINDIR)/binding/binding \
+		$(BINDIR)/broker/broker \
+		$(BINDIR)/class/class \
+		$(BINDIR)/instance/instance \
+		$(BINDIR)/plan/plan
+
+$(BINDIR)/binding/binding: \
+		plugin/cmd/kubectl/binding/binding.go \
+		plugin/cmd/kubectl/binding/plugin.yaml
+	rm -rf $(BINDIR)/binding
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $<
+	$(DOCKER_CMD) cp plugin/cmd/kubectl/binding/*yaml \
+		$(BINDIR)/binding/
+
+$(BINDIR)/broker/broker: \
+		plugin/cmd/kubectl/broker/broker.go \
+		plugin/cmd/kubectl/broker/plugin.yaml
+	rm -rf $(BINDIR)/broker
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $<
+	$(DOCKER_CMD) cp plugin/cmd/kubectl/broker/*yaml \
+		$(BINDIR)/broker/
+
+$(BINDIR)/class/class: \
+		plugin/cmd/kubectl/class/class.go \
+		plugin/cmd/kubectl/class/plugin.yaml
+	rm -rf $(BINDIR)/class
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $<
+	$(DOCKER_CMD) cp plugin/cmd/kubectl/class/*yaml \
+		$(BINDIR)/class/
+
+$(BINDIR)/instance/instance: \
+		plugin/cmd/kubectl/instance/instance.go \
+		plugin/cmd/kubectl/instance/plugin.yaml
+	rm -rf $(BINDIR)/instance
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $<
+	$(DOCKER_CMD) cp plugin/cmd/kubectl/instance/*yaml \
+		$(BINDIR)/instance/
+
+$(BINDIR)/plan/plan: \
+		plugin/cmd/kubectl/plan/plan.go \
+		plugin/cmd/kubectl/plan/plugin.yaml
+	rm -rf $(BINDIR)/plan
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $<
+	$(DOCKER_CMD) cp plugin/cmd/kubectl/plan/*yaml \
+		$(BINDIR)/plan/

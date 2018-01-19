@@ -1,0 +1,10 @@
+name: "binding"
+shortDesc: "This command interacts with Service Bindings"
+command: "./binding"
+tree:
+  - name: "list"
+    shortDesc: "Lists all Service Bindings in a particular namespace"
+    command: "./binding list"
+  - name: "get"
+    shortDesc: "Gets a particular Service Bindings in a particular namespace"
+    command: "./binding get"
