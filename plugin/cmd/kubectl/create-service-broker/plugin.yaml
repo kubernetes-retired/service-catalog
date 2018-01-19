@@ -1,0 +1,3 @@
+name: "create-service-broker"
+shortDesc: "This registers a service broker with the service catalog"
+command: "./create-service-broker"
