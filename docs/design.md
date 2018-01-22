@@ -91,7 +91,7 @@ the basic concepts of the OSB API.
 
 ## Service Catalog Design
 
-<img src="images/desired.png" width="75%" height="75%">
+<img src="images/current.png" width="75%" height="75%">
 
 The above is the high level architecture of Service Catalog.
 
