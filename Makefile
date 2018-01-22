@@ -220,6 +220,8 @@ verify: .init .generate_files verify-generated verify-client-gen
 	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
+	@echo Running tag verification:
+	@$(DOCKER_CMD) build/verify-tags.sh
 
 verify-generated: .init .generate_files
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only
