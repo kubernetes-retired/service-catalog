@@ -34,30 +34,30 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
-// TestPodPresetClient exercises the PodPreset client.
-func TestPodPresetClient(t *testing.T) {
-	// enable PodPreset APIs since they aren't enabled by default
-	enablePodPresetFeature()
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			const name = "test-podpreset"
+// // TestPodPresetClient exercises the PodPreset client.
+// func TestPodPresetClient(t *testing.T) {
+// 	// enable PodPreset APIs since they aren't enabled by default
+// 	enablePodPresetFeature()
+// 	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
+// 		return func(t *testing.T) {
+// 			const name = "test-podpreset"
 
-			client, _, shutdown := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &settingsapi.PodPreset{}
-			})
-			defer shutdown()
+// 			client, _, shutdown := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+// 				return &settingsapi.PodPreset{}
+// 			})
+// 			defer shutdown()
 
-			if err := testPodPresetClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range []server.StorageType{server.StorageTypeEtcd} {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%s test failed", sType)
-		}
-	}
-}
+// 			if err := testPodPresetClient(sType, client, name); err != nil {
+// 				t.Fatal(err)
+// 			}
+// 		}
+// 	}
+// 	for _, sType := range []server.StorageType{server.StorageTypeEtcd} {
+// 		if !t.Run(sType.String(), rootTestFunc(sType)) {
+// 			t.Errorf("%s test failed", sType)
+// 		}
+// 	}
+// }
 
 // convenient helper function to enable PodPreset feature.
 func enablePodPresetFeature() {

@@ -21,10 +21,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
-	// utilfeature "k8s.io/apiserver/pkg/util/feature"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
-	// "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
 
 // ServiceCatalogAPIServer contains the base GenericAPIServer along with other
@@ -43,9 +43,9 @@ func DefaultAPIResourceConfigSource() *serverstorage.ResourceConfig {
 	ret := serverstorage.NewResourceConfig()
 	versions := []schema.GroupVersion{servicecatalogv1beta1.SchemeGroupVersion}
 
-	// if utilfeature.DefaultFeatureGate.Enabled(features.PodPreset) {
-	versions = append(versions, settingsv1alpha1.SchemeGroupVersion)
-	// }
+	if utilfeature.DefaultFeatureGate.Enabled(features.PodPreset) {
+		versions = append(versions, settingsv1alpha1.SchemeGroupVersion)
+	}
 	ret.EnableVersions(versions...)
 
 	return ret
