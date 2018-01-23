@@ -189,7 +189,7 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 # Util targets
 ##############
 .PHONY: verify verify-generated verify-client-gen
-verify: .init .generate_files verify-generated verify-client-gen
+verify: .init .generate_files verify-generated verify-client-gen verify-vendor
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -236,7 +236,7 @@ coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init build test-unit test-integration
+test: .init build test-unit test-integration test-dep
 
 # this target checks to see if the go binary is installed on the host
 .PHONY: check-go
@@ -246,7 +246,7 @@ check-go:
 	  exit 1; \
 	fi
 
-# this target uses the host-local go installation to test 
+# this target uses the host-local go installation to test
 .PHONY: test-unit-native
 test-unit-native: check-go
 	go test $(addprefix ${SC_PKG}/,${TEST_DIRS})
@@ -382,3 +382,30 @@ release-push-%:
 svcat: $(BINDIR)/svcat
 $(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
+
+# Dependency management via dep (https://github.com/golang/dep)
+PHONHY: check-dep get-dep verify-vendor test-dep
+check-dep:
+	@if [ -z "$$(which dep)" ]; then \
+		echo 'Missing `dep` client which is required for development'; \
+		exit 2; \
+	else \
+		dep version; \
+	fi
+
+get-dep:
+	# Install the latest release of dep
+	go get -d -u github.com/golang/dep
+	cd $(go env GOPATH)/src/github.com/golang/dep && \
+	DEP_TAG=$$(git describe --abbrev=0 --tags) && \
+	git checkout $$DEP_TAG && \
+	go install -ldflags="-X main.version=$$DEP_TAG" ./cmd/dep; \
+	git checkout master # Make go get happy by switching back to master
+
+verify-vendor: .init
+	# Verify that vendor/ is in sync with Gopkg.lock
+	$(DOCKER_CMD) $(BUILD_DIR)/verify-vendor.sh
+
+test-dep: .init
+	# Test that a downstream consumer of our client library can use dep
+	$(DOCKER_CMD) test/test-dep.sh
