@@ -81,12 +81,6 @@ SERVICE_CATALOG_MUTABLE_IMAGE     = $(REGISTRY)service-catalog-$(ARCH):$(MUTABLE
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker-$(ARCH):$(MUTABLE_TAG)
 
-# precheck to avoid kubernetes-incubator/service-catalog#361
-$(if $(realpath vendor/k8s.io/apimachinery/vendor), \
-	$(error the vendor directory exists in the apimachinery \
-		vendored source and must be flattened. \
-		run 'glide i -v'))
-
 ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
@@ -111,6 +105,7 @@ else
 	scBuildImageTarget = .scBuildImage
 endif
 
+# Even though we migrated to dep, it doesn't replace the `glide nv` command
 NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 
 # This section builds the output binaries.
@@ -212,7 +207,7 @@ verify: .init .generate_files verify-generated verify-client-gen verify-vendor
 	@#
 	$(DOCKER_CMD) go vet $(NON_VENDOR_DIRS)
 	@echo Running repo-infra verify scripts
-	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
+	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated | grep -v .pkg > .out 2>&1 || true
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#

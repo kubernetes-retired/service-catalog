@@ -4,7 +4,7 @@ services:
 - docker
 cache:
   directories:
-  - .glide
+    - $GOPATH/pkg/dep
 script:
 - make verify build build-integration build-e2e test images svcat
 deploy:
