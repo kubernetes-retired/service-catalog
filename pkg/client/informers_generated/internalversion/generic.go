@@ -64,7 +64,7 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	case servicecatalog.SchemeGroupVersion.WithResource("serviceinstances"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Servicecatalog().InternalVersion().ServiceInstances().Informer()}, nil
 
-		// Group=Settings, Version=InternalVersion
+		// Group=settings.servicecatalog.k8s.io, Version=internalVersion
 	case settings.SchemeGroupVersion.WithResource("podpresets"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Settings().InternalVersion().PodPresets().Informer()}, nil
 
