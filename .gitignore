@@ -21,3 +21,4 @@ contrib/build/*/tmp/*
 .kube
 .var
 .vscode
+vendor/github.com/petar/GoLLRB/doc/*
