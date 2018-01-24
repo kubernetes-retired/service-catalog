@@ -493,7 +493,7 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	}
 	value, ok = actionSecret.Data["c"]
 	if !ok {
-		t.Fatal("Didn't find secret key 'a' in created secret")
+		t.Fatal("Didn't find secret key 'c' in created secret")
 	}
 	if e, a := "d", string(value); e != a {
 		t.Fatalf("Unexpected value of key 'c' in created secret; %s", expectedGot(e, a))
