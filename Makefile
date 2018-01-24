@@ -188,8 +188,8 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 
 # Util targets
 ##############
-.PHONY: verify verify-generated verify-client-gen
-verify: .init .generate_files verify-generated verify-client-gen
+.PHONY: verify verify-generated verify-client-gen verify-docs
+verify: .init .generate_files verify-generated verify-client-gen verify-docs
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -216,12 +216,14 @@ verify: .init .generate_files verify-generated verify-client-gen
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
-	@echo Running href checker$(SKIP_COMMENT):
-	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
+
+verify-docs: .init
+	@echo Running href checker$(SKIP_COMMENT):
+	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
 
 verify-generated: .init .generate_files
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only

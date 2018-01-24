@@ -5,8 +5,23 @@ services:
 cache:
   directories:
   - .glide
+before_install:
+- |
+    if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+      TRAVIS_COMMIT_RANGE="FETCH_HEAD...$TRAVIS_BRANCH"
+    fi
+    DOCS_REGEX='(OWNERS|LICENSE)|(\.md$)|(^docs/)'
+    [[ -z "$(git diff --name-only $TRAVIS_COMMIT_RANGE | grep -vE $DOCS_REGEX)" ]]
+    DOCS_ONLY=$?
 script:
-- make verify build build-integration build-e2e test images
+- |
+    if (( $DOCS_ONLY == 0 )); then
+        echo "Running verify-docs"
+        make verify-docs
+    else
+        echo "Running full build"
+        make verify build build-integration build-e2e test images
+    fi
 deploy:
   skip_cleanup: true
   provider: script
