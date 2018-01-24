@@ -19,7 +19,6 @@ package controller
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -203,7 +202,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
 	if err != nil {
-		return err // retry later
+		return c.handleServiceBindingReconciliationError(binding, err)
 	}
 
 	if !isPlanBindable(serviceClass, servicePlan) {
@@ -728,7 +727,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 	serviceClass, servicePlan, _, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
 	if err != nil {
-		return err
+		return c.handleServiceBindingReconciliationError(binding, err)
 	}
 
 	// There are some conditions that are different if we're
@@ -899,15 +898,6 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 		return c.continuePollingServiceBinding(binding)
 	}
-}
-
-// reconciliationTimeExpired tests if the current Operation State time has
-// elapsed the reconciliationRetryDuration time period
-func (c *controller) isServiceBindingReconciliationRetryDurationExceeded(binding *v1beta1.ServiceBinding) bool {
-	if time.Now().After(binding.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
-		return true
-	}
-	return false
 }
 
 // processServiceBindingPollingFailureRetryTimeout marks the binding as having
