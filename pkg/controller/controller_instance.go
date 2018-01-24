@@ -1415,7 +1415,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 	// osb client handles whether or not to really send this based
 	// on the version of the client.
 	rh.requestContext = map[string]interface{}{
-		"platform":  ContextProfilePlatformKubernetes,
+		"platform": ContextProfilePlatformKubernetes,
 		"namespace": instance.Namespace,
 		"cluster-id": c.clusterID,
 	}
