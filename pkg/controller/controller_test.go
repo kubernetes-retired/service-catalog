@@ -245,6 +245,9 @@ const alphaParameterSchemaCatalogBytes = `{
       	  "create": {
 	  	  	"parameters": {
       	  	  "zoo": "blu"
+      	    },
+	  	  	"response": {
+      	  	  "qux": "qax"
       	    }
       	  }
       	}
@@ -1128,7 +1131,17 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	m = make(map[string]string)
 	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateParameterSchema.Raw, &m); err == nil {
 		if e, a := "blu", m["zoo"]; e != a {
-			t.Fatalf("Unexpected value of alphaServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
+			t.Fatalf("Unexpected value of ServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
+		}
+	}
+
+	if plan.Spec.ServiceBindingCreateResponseSchema == nil {
+		t.Fatalf("Expected plan.ServiceBindingCreateResponseSchema to be set, but was nil")
+	}
+	m = make(map[string]string)
+	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateResponseSchema.Raw, &m); err == nil {
+		if e, a := "qax", m["qux"]; e != a {
+			t.Fatalf("Unexpected value of ServiceBindingCreateResponseSchema; expected %v, got %v", e, a)
 		}
 	}
 }

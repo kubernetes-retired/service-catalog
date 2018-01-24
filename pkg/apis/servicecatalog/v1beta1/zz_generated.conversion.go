@@ -585,6 +585,7 @@ func autoConvert_v1beta1_CommonServicePlanSpec_To_servicecatalog_CommonServicePl
 	out.ServiceInstanceCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceCreateParameterSchema))
 	out.ServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceUpdateParameterSchema))
 	out.ServiceBindingCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateParameterSchema))
+	out.ServiceBindingCreateResponseSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateResponseSchema))
 	return nil
 }
 
@@ -603,6 +604,7 @@ func autoConvert_servicecatalog_CommonServicePlanSpec_To_v1beta1_CommonServicePl
 	out.ServiceInstanceCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceCreateParameterSchema))
 	out.ServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceUpdateParameterSchema))
 	out.ServiceBindingCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateParameterSchema))
+	out.ServiceBindingCreateResponseSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateResponseSchema))
 	return nil
 }
 
