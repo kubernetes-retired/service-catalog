@@ -187,53 +187,13 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
 			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
 		}
-
-		//createWorker(c.ClusteIDConfigMapQueue, "ClusteIDConfigMap", maxRetries, true, c.reconcileClusteIDConfigMapKey, stopCh, &waitGroup)
 	}
 
+	c.clusterID = string(uuid.NewUUID())
 	func() {
 		waitGroup.Add(1)
-		// Cannot wait for the informer to push something into a queue.
-		// What we're waiting on may never exist without us configuring
-		// it, so we have to poll/ ask for it the first time to get it set.
-
-		// Can we ask 'through' an informer? Is it a writeback cache? I
-		// only ever want to monitor and be notified about one configmap
-		// in a hardcoded place.
 		go func() {
-			wait.Until(func() {
-				glog.V(9).Info("cluster ID monitor loop enter")
-				cm, err := c.kubeClient.CoreV1().ConfigMaps("default").Get("cluster-info", metav1.GetOptions{})
-				if errors.IsNotFound(err) {
-					m := make(map[string]string)
-					m["id"] = string(uuid.NewUUID())
-					cm := &corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "cluster-info",
-						},
-						Data: m,
-					}
-					c.kubeClient.CoreV1().ConfigMaps("default").Create(cm)
-					// if we fail to set the id,
-					// it could be due to permissions
-					// or due to being already set while we were trying
-					glog.Warning("could not set clusterid configmap", cm)
-				} else {
-					// cluster id exists and is set
-					// get id out of cm
-					if id, ok := cm.Data["id"]; ok {
-						// set it if it has not been set
-						if "" == c.clusterID {
-							c.clusterID = id
-						} else if id != c.clusterID {
-							glog.Warningf("got a different cluster id than what was stored. controller had %q, got %q.", c.clusterID, id)
-						}
-					} else {
-						glog.Warning("got a clusterid configmap, but it had no id")
-					}
-				}
-				glog.V(9).Info("cluster ID monitor loop exit")
-			}, time.Second, stopCh)
+			wait.Until(c.monitorConfigMap, time.Second, stopCh)
 			waitGroup.Done()
 		}()
 	}()
@@ -261,6 +221,58 @@ func createWorker(queue workqueue.RateLimitingInterface, resourceType string, ma
 		wait.Until(worker(queue, resourceType, maxRetries, forgetAfterSuccess, reconciler), time.Second, stopCh)
 		waitGroup.Done()
 	}()
+}
+
+func (c *controller) monitorConfigMap() {
+	// Cannot wait for the informer to push something into a queue.
+	// What we're waiting on may never exist without us configuring
+	// it, so we have to poll/ ask for it the first time to get it set.
+
+	// Can we ask 'through' an informer? Is it a writeback cache? I
+	// only ever want to monitor and be notified about one configmap
+	// in a hardcoded place.
+	glog.V(9).Info("cluster ID monitor loop enter")
+	cm, err := c.kubeClient.CoreV1().ConfigMaps("default").Get("cluster-info", metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		m := make(map[string]string)
+		m["id"] = c.clusterID
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cluster-info",
+			},
+			Data: m,
+		}
+		_, err := c.kubeClient.CoreV1().ConfigMaps("default").Create(cm)
+		// if we fail to set the id,
+		// it could be due to permissions
+		// or due to being already set while we were trying
+		if nil != err {
+			glog.Warning("could not set clusterid configmap", cm)
+		}
+	} else {
+		// cluster id exists and is set
+		// get id out of cm
+		if id, idPresent := cm.Data["id"]; idPresent {
+			// set it if it has not been set
+			if "" == c.clusterID {
+				c.clusterID = id
+			} else if id != c.clusterID {
+				glog.Warningf("got a different cluster id than what was stored. controller had %q, got %q. changing to what was given in request", c.clusterID, id)
+				// someone changed the configmap
+				// we can take the new one, or reset it back to what we have stored
+				// configmap semantics
+				// trust people know what they're doing,
+				// or that it was set by a previous controller
+				// set the internal one to the configmap value
+				c.clusterID = id
+			}
+		} else {
+			glog.Warning("got a clusterid configmap, but it had no id, deleting to let it be recreated")
+			c.kubeClient.CoreV1().ConfigMaps("default").Delete("cluster-info", &metav1.DeleteOptions{})
+		}
+	}
+	glog.V(9).Info("cluster ID monitor loop exit")
+
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
