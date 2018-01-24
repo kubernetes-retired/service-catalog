@@ -212,7 +212,7 @@ verify: .init .generate_files verify-generated verify-client-gen verify-vendor
 	@rm .out
 	@#
 	@echo Running href checker$(SKIP_COMMENT):
-	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
+	@$(DOCKER_CMD) verify-links.sh -s .pkg -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 	@echo Running tag verification:
