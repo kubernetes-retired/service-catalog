@@ -376,7 +376,7 @@ release-push-%:
 
 # SvCat Kubectl plugin stuff
 ############################
+.PHONY: $(BINDIR)/svcat
 svcat: $(BINDIR)/svcat
 $(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
-	rm -f $(BINDIR)/svcat
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
