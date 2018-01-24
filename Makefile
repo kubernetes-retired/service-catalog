@@ -378,25 +378,8 @@ svcat: $(BINDIR)/svcat
 $(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
-# Dependency management via dep (https://github.com/golang/dep)
-PHONHY: check-dep get-dep verify-vendor test-dep
-check-dep:
-	@if [ -z "$$(which dep)" ]; then \
-		echo 'Missing `dep` client which is required for development'; \
-		exit 2; \
-	else \
-		dep version; \
-	fi
-
-get-dep:
-	# Install the latest release of dep
-	go get -d -u github.com/golang/dep
-	cd $(go env GOPATH)/src/github.com/golang/dep && \
-	DEP_TAG=$$(git describe --abbrev=0 --tags) && \
-	git checkout $$DEP_TAG && \
-	go install -ldflags="-X main.version=$$DEP_TAG" ./cmd/dep; \
-	git checkout master # Make go get happy by switching back to master
-
+# Dependency management via dep (https://golang.github.io/dep)
+PHONHY: verify-vendor test-dep
 verify-vendor: .init
 	# Verify that vendor/ is in sync with Gopkg.lock
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-vendor.sh
