@@ -375,3 +375,10 @@ release-push-%:
 	$(MAKE) clean-bin
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* push
+
+# SvCat Kubectl plugin stuff
+############################
+.PHONY: $(BINDIR)/svcat
+svcat: $(BINDIR)/svcat
+$(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
