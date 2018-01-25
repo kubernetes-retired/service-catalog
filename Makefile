@@ -105,9 +105,6 @@ else
 	scBuildImageTarget = .scBuildImage
 endif
 
-# Even though we migrated to dep, it doesn't replace the `glide nv` command
-NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
-
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
 # "service-catalog" instead of "bin/service-catalog".
@@ -205,7 +202,7 @@ verify: .init .generate_files verify-generated verify-client-gen verify-vendor
 	   golint --set_exit_status $$i || exit 1; \
 	  done'
 	@#
-	$(DOCKER_CMD) go vet $(NON_VENDOR_DIRS)
+	$(DOCKER_CMD) go vet $(SC_PKG)/...
 	@echo Running repo-infra verify scripts
 	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated | grep -v .pkg > .out 2>&1 || true
 	@[ ! -s .out ] || (cat .out && rm .out && false)
