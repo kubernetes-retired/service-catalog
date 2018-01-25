@@ -81,12 +81,6 @@ SERVICE_CATALOG_MUTABLE_IMAGE     = $(REGISTRY)service-catalog-$(ARCH):$(MUTABLE
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker-$(ARCH):$(MUTABLE_TAG)
 
-# precheck to avoid kubernetes-incubator/service-catalog#361
-$(if $(realpath vendor/k8s.io/apimachinery/vendor), \
-	$(error the vendor directory exists in the apimachinery \
-		vendored source and must be flattened. \
-		run 'glide i -v'))
-
 ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
@@ -111,6 +105,7 @@ else
 	scBuildImageTarget = .scBuildImage
 endif
 
+# Even though we migrated to dep, it doesn't replace the `glide nv` command
 NON_VENDOR_DIRS = $(shell $(DOCKER_CMD) glide nv)
 
 # This section builds the output binaries.
@@ -189,7 +184,7 @@ $(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
 # Util targets
 ##############
 .PHONY: verify verify-generated verify-client-gen
-verify: .init .generate_files verify-generated verify-client-gen
+verify: .init .generate_files verify-generated verify-client-gen verify-vendor
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -212,12 +207,12 @@ verify: .init .generate_files verify-generated verify-client-gen
 	@#
 	$(DOCKER_CMD) go vet $(NON_VENDOR_DIRS)
 	@echo Running repo-infra verify scripts
-	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated > .out 2>&1 || true
+	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated | grep -v .pkg > .out 2>&1 || true
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
 	@echo Running href checker$(SKIP_COMMENT):
-	@$(DOCKER_CMD) verify-links.sh -t $(SKIP_HTTP) .
+	@$(DOCKER_CMD) verify-links.sh -s .pkg -t $(SKIP_HTTP) .
 	@echo Running errexit checker:
 	@$(DOCKER_CMD) build/verify-errexit.sh
 	@echo Running tag verification:
@@ -236,7 +231,7 @@ coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
-test: .init build test-unit test-integration
+test: .init build test-unit test-integration test-dep
 
 # this target checks to see if the go binary is installed on the host
 .PHONY: check-go
@@ -246,7 +241,7 @@ check-go:
 	  exit 1; \
 	fi
 
-# this target uses the host-local go installation to test 
+# this target uses the host-local go installation to test
 .PHONY: test-unit-native
 test-unit-native: check-go
 	go test $(addprefix ${SC_PKG}/,${TEST_DIRS})
@@ -382,3 +377,13 @@ release-push-%:
 svcat: $(BINDIR)/svcat
 $(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
+
+# Dependency management via dep (https://golang.github.io/dep)
+PHONHY: verify-vendor test-dep
+verify-vendor: .init
+	# Verify that vendor/ is in sync with Gopkg.lock
+	$(DOCKER_CMD) $(BUILD_DIR)/verify-vendor.sh
+
+test-dep: .init
+	# Test that a downstream consumer of our client library can use dep
+	$(DOCKER_CMD) test/test-dep.sh

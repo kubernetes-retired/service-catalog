@@ -63,7 +63,7 @@ def _go_genrule_impl(ctx):
 
   for dep in ctx.attr.go_deps:
     lib = dep[GoLibrary]
-    all_srcs += lib.srcs
+    all_srcs += lib.package.srcs
     for transitive_lib in lib.transitive:
       all_srcs += transitive_lib.srcs
 

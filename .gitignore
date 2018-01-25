@@ -10,7 +10,6 @@ bin/**
 coverage.html
 .idea/
 .DS_Store
-.glide
 .scBuildImage
 .init
 .generate*
@@ -21,3 +20,7 @@ contrib/build/*/tmp/*
 .kube
 .var
 .vscode
+vendor/github.com/petar/GoLLRB/doc/*
+contrib/examples/consumer/Gopkg.lock
+contrib/examples/consumer
+contrib/examples/vendor/*
