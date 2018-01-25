@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 const (
@@ -111,6 +112,7 @@ func (s *ServiceCatalogServerOptions) AddFlags(flags *pflag.FlagSet) {
 	s.AuthorizationOptions.AddFlags(flags)
 	s.EtcdOptions.addFlags(flags)
 	s.AuditOptions.AddFlags(flags)
+	utilfeature.DefaultFeatureGate.AddFlag(flags)
 }
 
 // StorageType returns the storage type configured on s, or a non-nil error if s holds an
