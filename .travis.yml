@@ -6,7 +6,7 @@ cache:
   directories:
     - $GOPATH/pkg/dep
 script:
-- make verify build build-integration build-e2e test images svcat
+- make verify build compile-integration build-e2e test images svcat
 deploy:
   skip_cleanup: true
   provider: script

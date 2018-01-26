@@ -251,10 +251,11 @@ test-unit: .init build
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS)) $(UNIT_TEST_LOG_FLAGS)
 
-build-integration: .generate_files
-	$(DOCKER_CMD) go test -race github.com/kubernetes-incubator/service-catalog/test/integration/... -c
+.PHONY: compile-integration
+compile-integration: .generate_files
+	$(DOCKER_CMD) go test -race -i github.com/kubernetes-incubator/service-catalog/test/integration/... $(GOFLAGS)
 
-test-integration: .init $(scBuildImageTarget) build build-integration
+test-integration: .init $(scBuildImageTarget) build compile-integration
 	# test kubectl
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh

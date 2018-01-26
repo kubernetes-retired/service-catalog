@@ -36,4 +36,3 @@ runTests() {
 }
 
 runTests $@
-
