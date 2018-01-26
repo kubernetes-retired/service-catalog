@@ -47,6 +47,14 @@ func TestCommandValidation(t *testing.T) {
 	}{
 		{"viper bug workaround: provision", "provision name --class class --plan plan", ""},
 		{"viper bug workaround: bind", "bind name", ""},
+		{"describe broker requires name", "describe broker", "name is required"},
+		{"describe class requires name", "describe class", "name or uuid is required"},
+		{"describe plan requires name", "describe plan", "name or uuid is required"},
+		{"describe instance requires name", "describe instance", "name is required"},
+		{"describe binding requires name", "describe binding", "name is required"},
+		{"unbind requires arg", "unbind", "instance or binding name is required"},
+		{"sync requires names", "sync broker", "name is required"},
+		{"deprovision requires name", "deprovision", "name is required"},
 	}
 
 	for _, tc := range testcases {
