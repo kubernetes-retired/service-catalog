@@ -231,6 +231,7 @@ coverage: .init
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
+.PHONY: test test-unit test-integration test-e2e
 test: .init build test-unit test-integration test-dep
 
 # this target checks to see if the go binary is installed on the host
@@ -379,7 +380,7 @@ $(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
 # Dependency management via dep (https://golang.github.io/dep)
-PHONHY: verify-vendor test-dep
+.PHONY: verify-vendor test-dep
 verify-vendor: .init
 	# Verify that vendor/ is in sync with Gopkg.lock
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-vendor.sh
