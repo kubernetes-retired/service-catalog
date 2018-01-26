@@ -47,9 +47,8 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
   svcat bind wordpress
   svcat bind wordpress-mysql-instance --name wordpress-mysql-binding --secret-name wordpress-mysql-secret
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return bindCmd.run(args)
-		},
+		PreRunE: command.PreRunE(bindCmd),
+		RunE:    command.RunE(bindCmd),
 	}
 	cmd.Flags().StringVarP(
 		&bindCmd.ns,
@@ -80,7 +79,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *bindCmd) run(args []string) error {
+func (c *bindCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("instance is required")
 	}
@@ -97,6 +96,10 @@ func (c *bindCmd) run(args []string) error {
 		return fmt.Errorf("invalid --secret value (%s)", err)
 	}
 
+	return nil
+}
+
+func (c *bindCmd) Run() error {
 	return c.bind()
 }
 
