@@ -58,9 +58,9 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 	cmd.Flags().StringVar(&provisionCmd.planName, "plan", "",
 		"The plan name (Required)")
 	cmd.MarkFlagRequired("plan")
-	cmd.Flags().StringArrayVarP(&provisionCmd.rawParams, "param", "p", nil,
+	cmd.Flags().StringSliceVarP(&provisionCmd.rawParams, "param", "p", nil,
 		"Additional parameter to use when provisioning the service, format: NAME=VALUE")
-	cmd.Flags().StringArrayVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
+	cmd.Flags().StringSliceVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
 	return cmd
 }

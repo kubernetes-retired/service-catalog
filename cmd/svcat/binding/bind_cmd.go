@@ -71,9 +71,9 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"",
 		"The name of the secret. Defaults to the name of the instance.",
 	)
-	cmd.Flags().StringArrayVarP(&bindCmd.rawParams, "param", "p", nil,
+	cmd.Flags().StringSliceVarP(&bindCmd.rawParams, "param", "p", nil,
 		"Additional parameter to use when binding the instance, format: NAME=VALUE")
-	cmd.Flags().StringArrayVarP(&bindCmd.rawSecrets, "secret", "s", nil,
+	cmd.Flags().StringSliceVarP(&bindCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when binding the instance, format: SECRET[KEY]")
 
 	return cmd
