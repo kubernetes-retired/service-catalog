@@ -53,12 +53,6 @@ else
 STAT           = stat -c '%Y %n'
 endif
 
-NEWEST_GO_FILE = $(shell find $(SRC_DIRS) -name \*.go -exec $(STAT) {} \; \
-                   | sort -r | head -n 1 | sed "s/.* //")
-
-NEWEST_E2ETEST_SOURCE = $(shell find test/e2e -name \*.go -exec $(STAT) {} \; \
-                   | sort -r | head -n 1 | sed "s/.* //")
-
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION     = 1.9
 
@@ -116,15 +110,16 @@ build: .init .generate_files \
 	$(BINDIR)/service-catalog \
 	$(BINDIR)/user-broker
 
+.PHONY: $(BINDIR)/user-broker
 user-broker: $(BINDIR)/user-broker
 $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f) \
 	  $(shell find contrib/pkg/broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
 
-# We'll rebuild service-catalog if any go file has changed (ie. NEWEST_GO_FILE)
+.PHONY: $(BINDIR)/service-catalog
 service-catalog: $(BINDIR)/service-catalog
-$(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog $(NEWEST_GO_FILE)
+$(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog 
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # This section contains the code generation stuff
@@ -159,7 +154,8 @@ $(BINDIR)/informer-gen: .init
 $(BINDIR)/openapi-gen: vendor/k8s.io/code-generator/cmd/openapi-gen
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
 
-$(BINDIR)/e2e.test: .init $(NEWEST_E2ETEST_SOURCE) $(NEWEST_GO_FILE)
+.PHONY: $(BINDIR)/e2e.test
+$(BINDIR)/e2e.test: .init
 	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
@@ -311,7 +307,6 @@ images: user-broker-image service-catalog-image
 
 images-all: $(addprefix arch-image-,$(ALL_ARCH))
 arch-image-%:
-	$(MAKE) clean-bin
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* images
 
@@ -368,7 +363,6 @@ endif
 
 release-push: $(addprefix release-push-,$(ALL_ARCH))
 release-push-%:
-	$(MAKE) clean-bin
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* push
 
