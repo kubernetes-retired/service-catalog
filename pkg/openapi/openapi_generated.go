@@ -393,7 +393,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
-						"binding_retrievable": {
+						"bindingRetrievable": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
 								Type:        []string{"boolean"},
@@ -442,7 +442,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"clusterServiceBrokerName", "externalName", "externalID", "description", "bindable", "binding_retrievable", "planUpdatable"},
+					Required: []string{"clusterServiceBrokerName", "externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable"},
 				},
 			},
 			Dependencies: []string{
