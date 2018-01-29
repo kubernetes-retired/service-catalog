@@ -282,7 +282,7 @@ type ClusterServiceClassSpec struct {
 	//
 	// BindingRetrievable indicates whether fetching a binding via a GET on
 	// its endpoint is supported for all plans.
-	BindingRetrievable bool `json:"binding_retrievable"`
+	BindingRetrievable bool `json:"bindingRetrievable"`
 
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ClusterServiceClass may change ClusterServicePlans after being

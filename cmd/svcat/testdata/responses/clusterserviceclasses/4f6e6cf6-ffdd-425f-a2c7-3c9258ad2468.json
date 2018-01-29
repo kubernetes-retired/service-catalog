@@ -14,7 +14,7 @@
     "externalID": "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
     "description": "A user provided service",
     "bindable": true,
-    "binding_retrievable": false,
+    "bindingRetrievable": false,
     "planUpdatable": true
   },
   "status": {
