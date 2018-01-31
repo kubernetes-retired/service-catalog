@@ -347,7 +347,7 @@ const testOriginatingIdentityValue = `{
 	"username": "fakeusername",
 	"uid": "fakeuid",
 	"groups": ["fakegroup1"],
-	"fakekey": ["fakevalue"]
+        "extra": {"fakekey": ["fakevalue"]}
 }`
 
 var testOriginatingIdentity = &osb.OriginatingIdentity{
