@@ -21,6 +21,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
+	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/storage"
 )
@@ -115,13 +116,13 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 			// we've sucessfully installed, so hook the stopCh to the destroy func of all the sucessfully installed apigroups
 			for _, mappings := range groupInfo.VersionedResourcesStorageMap { // gv to resource mappings
 				for _, storage := range mappings { // resource name (brokers, brokers/status) to backing storage
-					go func() {
-						s, ok := storage.(*registry.Store)
+					go func(store rest.Storage) {
+						s, ok := store.(*registry.Store)
 						if ok {
 							<-stopCh
 							s.DestroyFunc()
 						}
-					}()
+					}(storage)
 				}
 			}
 		}
