@@ -1434,7 +1434,15 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 	setServiceInstanceDashboardURL(instance, dashboardURL)
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
+
+	if instance.DeletionTimestamp != nil {
+		// A request to delete the Instance was received during provisioning, don't bump
+		// ReconciledGeneration as that will prevent processing the delete.
+		glog.V(4).Infof("Not updating ReconciledGeneration after instance provisioning because there is a deletion pending.")
+		instance.Status.ReconciledGeneration = currentReconciledGeneration
+	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
