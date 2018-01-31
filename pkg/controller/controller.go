@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -622,3 +623,25 @@ func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *met
 	}
 	return true
 }
+
+// shouldStartOrphanMitigation returns whether an error with the given status
+// code indicates that orphan migitation should start.
+func shouldStartOrphanMitigation(statusCode int) bool {
+	is2XX := (statusCode >= 200 && statusCode < 300)
+	is5XX := (statusCode >= 500 && statusCode < 600)
+
+	return (is2XX && statusCode != http.StatusOK) ||
+		statusCode == http.StatusRequestTimeout ||
+		is5XX
+}
+
+// ReconciliationAction reprents a type of action the reconciler should take
+// for a resource.
+type ReconciliationAction string
+
+const (
+	reconcileAdd    ReconciliationAction = "Add"
+	reconcileUpdate ReconciliationAction = "Update"
+	reconcileDelete ReconciliationAction = "Delete"
+	reconcilePoll   ReconciliationAction = "Poll"
+)

@@ -18,7 +18,6 @@ package controller
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/golang/glog"
@@ -188,17 +187,6 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 
 	return nil
 }
-
-// ReconciliationAction reprents a type of action the reconciler should take
-// for a resource.
-type ReconciliationAction string
-
-const (
-	reconcileAdd    ReconciliationAction = "Add"
-	reconcileUpdate ReconciliationAction = "Update"
-	reconcileDelete ReconciliationAction = "Delete"
-	reconcilePoll   ReconciliationAction = "Poll"
-)
 
 // getReconciliationActionForServiceInstance gets the action the reconciler
 // should be taking on the given instance.
@@ -1179,17 +1167,6 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.LastOperation = nil
 	toUpdate.Status.InProgressProperties = nil
 	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
-}
-
-// shouldStartOrphanMitigation returns whether an error with the given status
-// code indicates that orphan migitation should start.
-func shouldStartOrphanMitigation(statusCode int) bool {
-	is2XX := (statusCode >= 200 && statusCode < 300)
-	is5XX := (statusCode >= 500 && statusCode < 600)
-
-	return (is2XX && statusCode != http.StatusOK) ||
-		statusCode == http.StatusRequestTimeout ||
-		is5XX
 }
 
 // serviceInstanceHasExistingBindings returns true if there are any existing

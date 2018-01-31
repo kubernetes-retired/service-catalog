@@ -2583,7 +2583,7 @@ func assertServiceBindingAsyncBindErrorAfterStateSucceeded(t *testing.T, obj run
 }
 
 func assertServiceBindingAsyncUnbindRetryDurationExceeded(t *testing.T, obj runtime.Object, operation v1beta1.ServiceBindingOperation, readyReason string, failureReason string, originalBinding *v1beta1.ServiceBinding) {
-	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionFalse, readyReason)
+	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionUnknown, readyReason)
 	assertServiceBindingCondition(t, obj, v1beta1.ServiceBindingConditionFailed, v1beta1.ConditionTrue, failureReason)
 	assertServiceBindingCurrentOperationClear(t, obj)
 	assertServiceBindingOperationStartTimeSet(t, obj, false)
@@ -2658,8 +2658,8 @@ func assertServiceBindingRequestRetriableErrorWithParameters(t *testing.T, obj r
 	assertServiceBindingUnbindStatus(t, obj, v1beta1.ServiceBindingUnbindStatusRequired)
 }
 
-func assertServiceBindingRequestRetriableOrphanMitigation(t *testing.T, obj runtime.Object, originalBinding *v1beta1.ServiceBinding) {
-	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionUnknown, errorOrphanMitigationFailedReason)
+func assertServiceBindingRequestRetriableOrphanMitigation(t *testing.T, obj runtime.Object, reason string, originalBinding *v1beta1.ServiceBinding) {
+	assertServiceBindingReadyCondition(t, obj, v1beta1.ConditionUnknown, reason)
 	assertServiceBindingCurrentOperation(t, obj, v1beta1.ServiceBindingOperationBind)
 	assertServiceBindingOperationStartTimeSet(t, obj, true)
 	assertServiceBindingReconciledGeneration(t, obj, originalBinding.Status.ReconciledGeneration)
