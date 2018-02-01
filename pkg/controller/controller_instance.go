@@ -1455,6 +1455,7 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 // processProvisionFailure handles the logging and updating of a
 // ServiceInstance that hit a terminal failure during provision reconciliation.
 func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition, shouldMitigateOrphan bool) error {
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	if failedCond == nil {
 		return fmt.Errorf("failedCond must not be nil")
 	}
@@ -1482,6 +1483,13 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		err = fmt.Errorf(failedCond.Message)
 	} else {
 		clearServiceInstanceCurrentOperation(instance)
+
+		if instance.DeletionTimestamp != nil {
+			// A request to delete the Instance was received during provisioning, don't bump
+			// ReconciledGeneration as that will prevent processing the delete.
+			glog.V(4).Infof("Not updating ReconciledGeneration after instance provisioning failure because there is a deletion pending.")
+			instance.Status.ReconciledGeneration = currentReconciledGeneration
+		}
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1513,7 +1521,15 @@ func (c *controller) processProvisionAsyncResponse(instance *v1beta1.ServiceInst
 func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.ServiceInstance) error {
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successUpdateInstanceReason, successUpdateInstanceMessage)
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
+
+	if instance.DeletionTimestamp != nil {
+		// A request to delete the Instance was received during async update, don't bump
+		// ReconciledGeneration as that will prevent processing the update
+		glog.V(4).Infof("Not updating ReconciledGeneration after async update because there is a deletion pending.")
+		instance.Status.ReconciledGeneration = currentReconciledGeneration
+	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1527,9 +1543,17 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 // ServiceInstance that hit a terminal failure during update reconciliation.
 func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	clearServiceInstanceCurrentOperation(instance)
+
+	if instance.DeletionTimestamp != nil {
+		// A request to delete the Instance was received during async update, don't bump
+		// ReconciledGeneration as that will prevent processing the update
+		glog.V(4).Infof("Not updating ReconciledGeneration after async update failure because there is a deletion pending.")
+		instance.Status.ReconciledGeneration = currentReconciledGeneration
+	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err

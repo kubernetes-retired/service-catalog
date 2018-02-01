@@ -359,6 +359,9 @@ func TestAsyncProvisionWithMultiplePolls(t *testing.T) {
 }
 
 func TestServiceInstanceDeleteWithAsyncOperationInProgress(t *testing.T) {
+	const NumberOfInProgressResponses = 2
+	numberOfPolls := 0
+
 	ct := controllerTest{
 		t:                            t,
 		broker:                       getTestBroker(),
@@ -366,11 +369,15 @@ func TestServiceInstanceDeleteWithAsyncOperationInProgress(t *testing.T) {
 		skipVerifyingInstanceSuccess: true,
 		setup: func(ct *controllerTest) {
 			ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.Async = true
-			ct.osbClient.PollLastOperationReaction = &fakeosb.PollLastOperationReaction{
-				Response: &osb.LastOperationResponse{
-					State: osb.StateInProgress,
-				},
-			}
+			ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+				func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+					numberOfPolls++
+					state := osb.StateInProgress
+					if numberOfPolls > NumberOfInProgressResponses {
+						state = osb.StateSucceeded
+					}
+					return &osb.LastOperationResponse{State: state}, nil
+				})
 		},
 	}
 	ct.run(func(ct *controllerTest) {
@@ -382,19 +389,55 @@ func TestServiceInstanceDeleteWithAsyncOperationInProgress(t *testing.T) {
 			}); err != nil {
 			t.Fatalf("error waiting for instance to be provisioning asynchronously: %v", err)
 		}
-
 		if err := ct.client.ServiceInstances(ct.instance.Namespace).Delete(ct.instance.Name, &metav1.DeleteOptions{}); err != nil {
 			t.Fatalf("failed to delete instance: %v", err)
-		}
-		ct.osbClient.PollLastOperationReaction = &fakeosb.PollLastOperationReaction{
-			Response: &osb.LastOperationResponse{
-				State: osb.StateSucceeded,
-			},
 		}
 		if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 			t.Fatalf("error waiting for instance to not exist: %v", err)
 		}
+		// We deleted the instance above, clear it so test cleanup doesn't fail
+		// attempting to delete the instance again.
+		ct.instance = nil
+	})
+}
 
+func TestServiceInstanceDeleteWithFailedAsyncOperationInProgress(t *testing.T) {
+	const NumberOfInProgressResponses = 2
+	numberOfPolls := 0
+
+	ct := controllerTest{
+		t:                            t,
+		broker:                       getTestBroker(),
+		instance:                     getTestInstance(),
+		skipVerifyingInstanceSuccess: true,
+		setup: func(ct *controllerTest) {
+			ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.Async = true
+			ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+				func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+					numberOfPolls++
+					state := osb.StateInProgress
+					if numberOfPolls > NumberOfInProgressResponses {
+						state = osb.StateFailed
+					}
+					t.Logf("%s - xxx returning %s\n", time.Now().String(), state)
+					return &osb.LastOperationResponse{State: state}, nil
+				})
+		},
+	}
+	ct.run(func(ct *controllerTest) {
+		if err := util.WaitForInstanceCondition(ct.client, ct.instance.Namespace, ct.instance.Name,
+			v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "Provisioning",
+			}); err != nil {
+		}
+		if err := ct.client.ServiceInstances(ct.instance.Namespace).Delete(ct.instance.Name, &metav1.DeleteOptions{}); err != nil {
+			t.Fatalf("failed to delete instance: %v", err)
+		}
+		if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
+			t.Fatalf("error waiting for instance to not exist: %v", err)
+		}
 		// We deleted the instance above, clear it so test cleanup doesn't fail
 		// attempting to delete the instance again.
 		ct.instance = nil
