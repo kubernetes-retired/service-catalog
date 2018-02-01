@@ -94,7 +94,6 @@ func NewController(
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
 		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "instance-poller"),
 		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
-		//clusteIDConfigMapQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusteIDConfigMap"),
 	}
 
 	controller.brokerLister = brokerInformer.Lister()
@@ -252,23 +251,13 @@ func (c *controller) monitorConfigMap() {
 	} else {
 		// cluster id exists and is set
 		// get id out of cm
-		if id, idPresent := cm.Data["id"]; idPresent {
-			// set it if it has not been set
-			if "" == c.clusterID {
-				c.clusterID = id
-			} else if id != c.clusterID {
-				glog.Warningf("got a different cluster id than what was stored. controller had %q, got %q. changing to what was given in request", c.clusterID, id)
-				// someone changed the configmap
-				// we can take the new one, or reset it back to what we have stored
-				// configmap semantics
-				// trust people know what they're doing,
-				// or that it was set by a previous controller
-				// set the internal one to the configmap value
-				c.clusterID = id
-			}
+		if id := cm.Data["id"]; "" != id {
+			c.clusterID = id
 		} else {
-			glog.Warning("got a clusterid configmap, but it had no id, deleting to let it be recreated")
-			c.kubeClient.CoreV1().ConfigMaps("default").Delete("cluster-info", &metav1.DeleteOptions{})
+			m := make(map[string]string)
+			cm.Data = m
+			cm.Data["id"] = c.clusterID
+			c.kubeClient.CoreV1().ConfigMaps("default").Update(cm)
 		}
 	}
 	glog.V(9).Info("cluster ID monitor loop exit")
