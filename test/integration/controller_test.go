@@ -718,7 +718,7 @@ func getLastOperationResponseByPollCountStates(numOfResponses int, stateProgress
 	return getLastOperationResponseByPollCountReactions(numOfResponses, reactionProgressions)
 }
 
-// newTestController creates a new test controller injected with fake clients
+// newControllerTestTestController creates a new test controller injected with fake clients
 // and returns:
 //
 // - a fake kubernetes core api client
@@ -812,7 +812,9 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	if ct.broker != nil {
 		if ct.preCreateBroker != nil {
+			ct.kubeClient.Lock()
 			ct.preCreateBroker(ct)
+			ct.kubeClient.Unlock()
 		}
 		_, err := ct.client.ClusterServiceBrokers().Create(ct.broker)
 		if nil != err {
@@ -828,7 +830,9 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	if ct.instance != nil {
 		if ct.preCreateInstance != nil {
+			ct.kubeClient.Lock()
 			ct.preCreateInstance(ct)
+			ct.kubeClient.Unlock()
 		}
 		if _, err := ct.client.ServiceInstances(ct.instance.Namespace).Create(ct.instance); err != nil {
 			ct.t.Fatalf("error creating Instance: %v", err)
@@ -843,7 +847,9 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	if ct.binding != nil {
 		if ct.preCreateBinding != nil {
+			ct.kubeClient.Lock()
 			ct.preCreateBinding(ct)
+			ct.kubeClient.Unlock()
 		}
 		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
 		if err != nil {
@@ -955,6 +961,8 @@ func changeUsernameForCatalogClient(catalogClient clientset.Interface, catalogCl
 // prependGetSecretNotFoundReaction prepends a reaction to getting secrets from the fake kube client
 // that returns a not found error.
 func prependGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
+	fakeKubeClient.Lock()
+	defer fakeKubeClient.Unlock()
 	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), action.(clientgotesting.GetAction).GetName())
 	})
@@ -964,6 +972,8 @@ func prependGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
 // that returns a secret with the specified secret data when a request is made for the secret
 // with the specified secret name.
 func prependGetSecretReaction(fakeKubeClient *fake.Clientset, secretName string, secretData map[string][]byte) {
+	fakeKubeClient.Lock()
+	defer fakeKubeClient.Unlock()
 	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		getAction, ok := action.(clientgotesting.GetAction)
 		if !ok {
