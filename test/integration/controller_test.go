@@ -744,8 +744,10 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
+	fakeKubeClient.Lock()
 	prependGetSecretNotFoundReaction(fakeKubeClient)
-
+	fakeKubeClient.Unlock()
+	
 	// create an sc client and running server
 	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
@@ -891,8 +893,10 @@ func newTestController(t *testing.T) (
 
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
+	fakeKubeClient.Lock()
 	prependGetSecretNotFoundReaction(fakeKubeClient)
-
+	fakeKubeClient.Unlock()
+	
 	// create an sc client and running server
 	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
@@ -961,8 +965,6 @@ func changeUsernameForCatalogClient(catalogClient clientset.Interface, catalogCl
 // prependGetSecretNotFoundReaction prepends a reaction to getting secrets from the fake kube client
 // that returns a not found error.
 func prependGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
-	fakeKubeClient.Lock()
-	defer fakeKubeClient.Unlock()
 	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, apierrors.NewNotFound(action.GetResource().GroupResource(), action.(clientgotesting.GetAction).GetName())
 	})
@@ -972,8 +974,6 @@ func prependGetSecretNotFoundReaction(fakeKubeClient *fake.Clientset) {
 // that returns a secret with the specified secret data when a request is made for the secret
 // with the specified secret name.
 func prependGetSecretReaction(fakeKubeClient *fake.Clientset, secretName string, secretData map[string][]byte) {
-	fakeKubeClient.Lock()
-	defer fakeKubeClient.Unlock()
 	fakeKubeClient.PrependReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		getAction, ok := action.(clientgotesting.GetAction)
 		if !ok {
@@ -1318,6 +1318,7 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	defer shutdownController()
 	defer shutdownServer()
 
+	t := ct.t
 	ct.kubeClient = kubeClient
 	ct.catalogClient = catalogClient
 	ct.catalogClientConfig = catalogClientConfig
@@ -1328,6 +1329,7 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	ct.client = catalogClient.ServicecatalogV1beta1()
 
 	if test != nil {
+		t.Log("running test")
 		test(ct)
 	}
 
