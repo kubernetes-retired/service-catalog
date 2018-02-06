@@ -118,6 +118,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 					},
 				},
+				VendorExtensible: spec.VendorExtensible{
+					Extensions: spec.Extensions{
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,URL:.spec.url",
+					},
+				},
 			},
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
@@ -304,6 +309,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus"),
 							},
 						},
+					},
+				},
+				VendorExtensible: spec.VendorExtensible{
+					Extensions: spec.Extensions{
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,BINDABLE:.spec.bindable,PLAN UPDATABLE:.spec.planUpdatable",
 					},
 				},
 			},
@@ -503,6 +513,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus"),
 							},
 						},
+					},
+				},
+				VendorExtensible: spec.VendorExtensible{
+					Extensions: spec.Extensions{
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,CLASS:.spec.clusterServiceClassRef.name",
 					},
 				},
 			},
@@ -812,6 +827,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus"),
 							},
 						},
+					},
+				},
+				VendorExtensible: spec.VendorExtensible{
+					Extensions: spec.Extensions{
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,INSTANCE:.spec.instanceRef.name,SECRET:.spec.secretName",
 					},
 				},
 			},
@@ -1184,6 +1204,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus"),
 							},
 						},
+					},
+				},
+				VendorExtensible: spec.VendorExtensible{
+					Extensions: spec.Extensions{
+						"x-kubernetes-print-columns": "custom-columns=NAME:.metadata.name,CLASS:.spec.clusterServiceClassExternalName,PLAN:.spec.clusterServicePlanExternalName",
 					},
 				},
 			},
