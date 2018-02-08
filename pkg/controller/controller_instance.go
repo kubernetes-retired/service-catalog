@@ -469,11 +469,6 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 	instance = instance.DeepCopy()
 
-	// We don't want to delete the instance if there are any bindings associated.
-	if err := c.checkServiceInstanceHasExistingBindings(instance); err != nil {
-		return c.handleServiceInstanceReconciliationError(instance, err)
-	}
-
 	// If the deprovisioning succeeded or is not needed, then no need to
 	// make a request to the broker.
 	if instance.Status.DeprovisionStatus == v1beta1.ServiceInstanceDeprovisionStatusNotRequired ||
@@ -490,6 +485,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorInvalidDeprovisionStatusReason, msg)
 		failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorInvalidDeprovisionStatusReason, msg)
 		return c.processDeprovisionFailure(instance, readyCond, failedCond)
+	}
+
+	// We don't want to delete the instance if there are any bindings associated.
+	if err := c.checkServiceInstanceHasExistingBindings(instance); err != nil {
+		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
@@ -1179,7 +1179,11 @@ func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.S
 	if err != nil {
 		return err
 	}
+
 	for _, binding := range bindingList {
+		// Note that as we are potentially looking at a stale binding resource
+		// and cannot rely on UnbindStatus == ServiceBindingUnbindStatusNotRequired
+		// to filter out binding requests that have yet to be sent to the broker.
 		if instance.Name == binding.Spec.ServiceInstanceRef.Name {
 			return &operationError{
 				reason:  errorDeprovisionBlockedByCredentialsReason,
