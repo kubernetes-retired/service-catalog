@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
@@ -27,6 +28,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
+	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -108,11 +110,8 @@ func buildRootCommand() *cobra.Command {
 }
 
 func printVersion(cxt *command.Context) {
-	if commit == "" { // commit is empty for Homebrew builds
-		fmt.Fprintf(cxt.Output, "svcat %s\n", version)
-	} else {
-		fmt.Fprintf(cxt.Output, "svcat %s (%s)\n", version, commit)
-	}
+	v := strings.Replace(pkg.VERSION, "svcat-", "", 1)
+	fmt.Fprintf(cxt.Output, "svcat %s\n", v)
 }
 
 func newSyncCmd(cxt *command.Context) *cobra.Command {

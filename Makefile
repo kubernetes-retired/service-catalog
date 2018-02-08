@@ -32,7 +32,8 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
-VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
+VERSION       ?= $(shell git describe --tags --abbrev=7 --dirty --match=v*)
+SVCAT_VERSION ?= $(shell git describe --tags --abbrev=7 --dirty --match=svcat* &> /dev/null | echo v0)
 BUILD_LDFLAGS  = $(shell build/version.sh $(ROOT) $(SC_PKG))
 GIT_BRANCH    ?= $(shell git rev-parse --abbrev-ref HEAD)
 
