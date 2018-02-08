@@ -57,9 +57,18 @@ TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION    ?= 1.9
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
+ALL_CLIENT_PLATFORM=darwin linux windows
 
 PLATFORM ?= linux
+# This is the current platform, so that we can build a native client binary by default
+CLIENT_PLATFORM?=$(shell uname -s | tr A-Z a-z)
 ARCH     ?= amd64
+
+ifeq ($(PLATFORM),windows)
+FILE_EXT=.exe
+else
+FILE_EXT=
+endif
 
 # TODO: Consider using busybox instead of debian
 BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.2
@@ -367,11 +376,21 @@ release-push-%:
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* push
 
-# SvCat Kubectl plugin stuff
+# svcat kubectl plugin
 ############################
-.PHONY: $(BINDIR)/svcat
-svcat: $(BINDIR)/svcat
-$(BINDIR)/svcat: .init .generate_files cmd/svcat/main.go
+.PHONY: $(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
+svcat:
+	# Compile a native binary for local dev/test
+	$(MAKE) svcat-for-$(CLIENT_PLATFORM)
+	cp $(BINDIR)/svcat/$(SVCAT_VERSION)/$(CLIENT_PLATFORM)/$(ARCH)/svcat$(FILE_EXT) $(BINDIR)/svcat/
+
+svcat-all: $(addprefix svcat-for-,$(ALL_CLIENT_PLATFORM))
+
+svcat-for-%:
+	$(MAKE) PLATFORM=$* VERSION=$(SVCAT_VERSION) svcat-xbuild
+
+svcat-xbuild: $(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
+$(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
 # Dependency management via dep (https://golang.github.io/dep)
