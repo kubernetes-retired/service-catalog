@@ -105,7 +105,7 @@ ifdef NO_DOCKER
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --security-opt label:disable --rm -v $(PWD):/go/src/$(SC_PKG) \
-	  -v $(PWD)/.pkg:/go/pkg scbuildimage
+	  -v $(PWD)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
 	scBuildImageTarget = .scBuildImage
 endif
 
