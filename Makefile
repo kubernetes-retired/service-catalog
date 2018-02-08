@@ -394,6 +394,13 @@ svcat-xbuild: $(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_E
 $(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
+svcat-publish: clean-bin svcat-all
+	# Download the latest client with https://download.svcat.sh/cli/latest/darwin/amd64/svcat
+	# Download an older client with  https://download.svcat.sh/cli/VERSION/darwin/amd64/svcat
+	cp -R $(BINDIR)/svcat/$(SVCAT_VERSION) $(BINDIR)/svcat/$(MUTABLE_TAG)
+	# AZURE_STORAGE_CONNECTION_STRING will be used for auth in the following command
+	$(DOCKER_CMD) az storage blob upload-batch -d cli -s $(BINDIR)/svcat
+
 # Dependency management via dep (https://golang.github.io/dep)
 .PHONY: verify-vendor test-dep
 verify-vendor: .init
