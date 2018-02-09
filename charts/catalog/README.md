@@ -48,6 +48,10 @@ chart and their default values.
 | `apiserver.storage.type` | The storage backend to use; the only valid value is `etcd`, left for other storages support in future, e.g. `crd` | `etcd` |
 | `apiserver.storage.etcd.useEmbedded` | If storage type is `etcd`: Whether to embed an etcd container in the apiserver pod; THIS IS INADEQUATE FOR PRODUCTION USE! | `true` |
 | `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd | `http://localhost:2379` |
+| `apiserver.storage.etcd.persistence.enabled` | Enable persistence using PVC | `false` |
+| `apiserver.storage.etcd.persistence.storageClass` | PVC Storage Class | `nil` (uses alpha storage class annotation) |
+| `apiserver.storage.etcd.persistence.accessMode` | PVC Access Mode | `ReadWriteOnce` |
+| `apiserver.storage.etcd.persistence.size` | PVC Storage Request | `4Gi` |
 | `apiserver.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `apiserver.auth.enabled` | Enable authentication and authorization | `true` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
