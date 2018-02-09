@@ -60,12 +60,12 @@ NEWEST_E2ETEST_SOURCE = $(shell find test/e2e -name \*.go -exec $(STAT) {} \; \
                    | sort -r | head -n 1 | sed "s/.* //")
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION     = 1.9
+GO_VERSION    ?= 1.9
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 
-PLATFORM?=linux
-ARCH?=amd64
+PLATFORM ?= linux
+ARCH     ?= amd64
 
 # TODO: Consider using busybox instead of debian
 BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.2
