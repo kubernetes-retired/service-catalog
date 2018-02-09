@@ -232,7 +232,7 @@ coverage: .init
 	  $(addprefix ./,$(TEST_DIRS))
 
 .PHONY: test test-unit test-integration test-e2e
-test: .init build test-unit test-integration test-dep
+test: .init build test-unit test-integration
 
 # this target checks to see if the go binary is installed on the host
 .PHONY: check-go
