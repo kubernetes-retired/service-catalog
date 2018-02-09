@@ -32,7 +32,7 @@ function cleanup() {
 pushd contrib/examples/consumer
 trap "cleanup" EXIT
 
-dep ensure
+dep ensure -v
 go build .
 
 echo "Verified that our Gopkg.toml is sufficient for a downstream consumer of our client library."
