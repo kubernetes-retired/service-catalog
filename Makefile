@@ -255,8 +255,8 @@ test-integration: .init $(scBuildImageTarget) build build-integration
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh $(INT_TEST_FLAGS)
 
-clean-e2e:
-	rm -f $(BINDIR)/e2e.test
+clean-e2e: .init $(scBuildImageTarget)
+	$(DOCKER_CMD) rm -f $(BINDIR)/e2e.test
 
 build-e2e: .generate_files $(BINDIR)/e2e.test
 
@@ -265,12 +265,12 @@ test-e2e: build-e2e
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
 
-clean-bin:
-	rm -rf $(BINDIR)
+clean-bin: .init $(scBuildImageTarget)
+	$(DOCKER_CMD) rm -rf $(BINDIR)
 	rm -f .generate_exes
 
-clean-build-image:
-	rm -rf .pkg
+clean-build-image: .init $(scBuildImageTarget)
+	$(DOCKER_CMD) rm -rf .pkg
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
 
@@ -289,11 +289,13 @@ clean-generated:
 	git checkout -- pkg/openapi/openapi_generated.go
 
 # purge-generated removes generated files from the filesystem.
-purge-generated:
-	find $(TOP_SRC_DIRS) -name zz_generated* -exec rm {} \;
-	find $(TOP_SRC_DIRS) -type d -name *_generated -exec rm -rf {} \;
-	rm -f pkg/openapi/openapi_generated.go
+purge-generated: .init $(scBuildImageTarget)
+	find $(TOP_SRC_DIRS) -name zz_generated* -exec $(DOCKER_CMD) rm {} \;
+	find $(TOP_SRC_DIRS) -depth -type d -name *_generated \
+	  -exec $(DOCKER_CMD) rm -rf {} \;
+	$(DOCKER_CMD) rm -f pkg/openapi/openapi_generated.go
 	echo 'package v1beta1' > pkg/apis/servicecatalog/v1beta1/types.generated.go
+	rm -f .generate_files
 
 clean-coverage:
 	rm -f $(COVERAGE)
