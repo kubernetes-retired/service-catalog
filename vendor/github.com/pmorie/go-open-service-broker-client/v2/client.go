@@ -204,16 +204,26 @@ func (c *client) unmarshalResponse(response *http.Response, obj interface{}) err
 // response.
 func (c *client) handleFailureResponse(response *http.Response) error {
 	glog.Info("handling failure responses")
-	brokerResponse := &failureResponseBody{}
-	if err := c.unmarshalResponse(response, brokerResponse); err != nil {
-		return HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
+
+	httpErr := HTTPStatusCodeError{
+		StatusCode: response.StatusCode,
 	}
 
-	return HTTPStatusCodeError{
-		StatusCode:   response.StatusCode,
-		ErrorMessage: brokerResponse.Err,
-		Description:  brokerResponse.Description,
+	brokerResponse := make(map[string]interface{})
+	if err := c.unmarshalResponse(response, &brokerResponse); err != nil {
+		httpErr.ResponseError = err
+		return httpErr
 	}
+
+	if errorMessage, ok := brokerResponse["error"].(string); ok {
+		httpErr.ErrorMessage = &errorMessage
+	}
+
+	if description, ok := brokerResponse["description"].(string); ok {
+		httpErr.Description = &description
+	}
+
+	return httpErr
 }
 
 func buildOriginatingIdentityHeaderValue(i *OriginatingIdentity) (string, error) {
