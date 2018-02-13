@@ -24,7 +24,7 @@ RUN curl -sSL https://github.com/Masterminds/glide/releases/download/$GLIDE_VERS
     | tar -vxz -C /usr/local/bin --strip=1
 
 # Install dep as root
-ENV DEP_VERSION=v0.3.2
+ENV DEP_VERSION=v0.4.1
 RUN curl -sSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && \
     chmod +x /usr/local/bin/dep
 
