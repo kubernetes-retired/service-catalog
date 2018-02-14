@@ -382,8 +382,7 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			const NumberOfInProgressResponses = 2
-			numberOfPolls := 0
+			finishAsyncOp := false
 
 			ct := controllerTest{
 				t:                            t,
@@ -394,9 +393,8 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 					ct.osbClient.UpdateInstanceReaction.(*fakeosb.UpdateInstanceReaction).Response.Async = true
 					ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
 						func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
-							numberOfPolls++
 							state := osb.StateInProgress
-							if numberOfPolls > NumberOfInProgressResponses {
+							if finishAsyncOp {
 								if tc.updateSucceeds {
 									state = osb.StateSucceeded
 								} else {
@@ -442,6 +440,8 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 					t.Fatalf("failed to delete instance: %v", err)
 				}
 
+				finishAsyncOp = true
+
 				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 					t.Fatalf("error waiting for instance to not exist: %v", err)
 				}
@@ -475,8 +475,7 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			const NumberOfInProgressResponses = 2
-			numberOfPolls := 0
+			finishAsyncOp := false
 
 			ct := controllerTest{
 				t:                            t,
@@ -487,9 +486,8 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 					ct.osbClient.ProvisionReaction.(*fakeosb.ProvisionReaction).Response.Async = true
 					ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
 						func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
-							numberOfPolls++
 							state := osb.StateInProgress
-							if numberOfPolls > NumberOfInProgressResponses {
+							if finishAsyncOp {
 								if tc.provisionSucceeds {
 									state = osb.StateSucceeded
 								} else {
@@ -509,9 +507,13 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 					}); err != nil {
 					t.Fatalf("error waiting for instance to be provisioning asynchronously: %v", err)
 				}
+
 				if err := ct.client.ServiceInstances(ct.instance.Namespace).Delete(ct.instance.Name, &metav1.DeleteOptions{}); err != nil {
 					t.Fatalf("failed to delete instance: %v", err)
 				}
+
+				finishAsyncOp = true
+
 				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 					t.Fatalf("error waiting for instance to not exist: %v", err)
 				}
