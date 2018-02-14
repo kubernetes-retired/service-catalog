@@ -382,7 +382,7 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			finishAsyncOp := false
+			done := make(chan bool)
 
 			ct := controllerTest{
 				t:                            t,
@@ -394,12 +394,15 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 					ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
 						func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
 							state := osb.StateInProgress
-							if finishAsyncOp {
+							select {
+							// nonblocking check for a message to finish async update, return inProgress otherwise
+							case <-done:
 								if tc.updateSucceeds {
 									state = osb.StateSucceeded
 								} else {
 									state = osb.StateFailed
 								}
+							default:
 							}
 							return &osb.LastOperationResponse{State: state}, nil
 						})
@@ -440,7 +443,8 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 					t.Fatalf("failed to delete instance: %v", err)
 				}
 
-				finishAsyncOp = true
+				// notify the thread handling DynamicPollLastOperationReaction that it can end the async op
+				done <- true
 
 				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 					t.Fatalf("error waiting for instance to not exist: %v", err)
@@ -475,7 +479,7 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			finishAsyncOp := false
+			done := make(chan bool)
 
 			ct := controllerTest{
 				t:                            t,
@@ -487,12 +491,15 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 					ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
 						func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
 							state := osb.StateInProgress
-							if finishAsyncOp {
+							select {
+							// nonblocking check for a message to finish async provisioning, return inProgress otherwise
+							case <-done:
 								if tc.provisionSucceeds {
 									state = osb.StateSucceeded
 								} else {
 									state = osb.StateFailed
 								}
+							default:
 							}
 							return &osb.LastOperationResponse{State: state}, nil
 						})
@@ -512,7 +519,8 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 					t.Fatalf("failed to delete instance: %v", err)
 				}
 
-				finishAsyncOp = true
+				// notify the thread handling DynamicPollLastOperationReaction that it can end the async op
+				done <- true
 
 				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 					t.Fatalf("error waiting for instance to not exist: %v", err)
