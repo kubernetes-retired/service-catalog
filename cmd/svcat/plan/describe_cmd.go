@@ -117,5 +117,7 @@ func (c *describeCmd) describe() error {
 		output.WriteParentBroker(c.Output, broker)
 	}
 
+	output.WritePlanSchemas(c.Output, plan)
+
 	return nil
 }
