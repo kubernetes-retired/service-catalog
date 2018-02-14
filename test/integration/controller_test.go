@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -382,8 +383,7 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			done := make(chan bool)
-
+			var done int32 = 0
 			ct := controllerTest{
 				t:                            t,
 				broker:                       getTestBroker(),
@@ -394,15 +394,13 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 					ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
 						func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
 							state := osb.StateInProgress
-							select {
-							// nonblocking check for a message to finish async update, return inProgress otherwise
-							case <-done:
+							d := atomic.LoadInt32(&done)
+							if d > 0 {
 								if tc.updateSucceeds {
 									state = osb.StateSucceeded
 								} else {
 									state = osb.StateFailed
 								}
-							default:
 							}
 							return &osb.LastOperationResponse{State: state}, nil
 						})
@@ -444,7 +442,7 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 				}
 
 				// notify the thread handling DynamicPollLastOperationReaction that it can end the async op
-				done <- true
+				atomic.StoreInt32(&done, 1)
 
 				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 					t.Fatalf("error waiting for instance to not exist: %v", err)
@@ -479,8 +477,7 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			done := make(chan bool)
-
+			var done int32 = 0
 			ct := controllerTest{
 				t:                            t,
 				broker:                       getTestBroker(),
@@ -491,15 +488,13 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 					ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
 						func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
 							state := osb.StateInProgress
-							select {
-							// nonblocking check for a message to finish async provisioning, return inProgress otherwise
-							case <-done:
+							d := atomic.LoadInt32(&done)
+							if d > 0 {
 								if tc.provisionSucceeds {
 									state = osb.StateSucceeded
 								} else {
 									state = osb.StateFailed
 								}
-							default:
 							}
 							return &osb.LastOperationResponse{State: state}, nil
 						})
@@ -520,7 +515,7 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 				}
 
 				// notify the thread handling DynamicPollLastOperationReaction that it can end the async op
-				done <- true
+				atomic.StoreInt32(&done, 1)
 
 				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
 					t.Fatalf("error waiting for instance to not exist: %v", err)
