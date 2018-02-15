@@ -1169,6 +1169,17 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 }
 
+// rollbackReconciledGenerationOnDeletion resets the ReconciledGeneration if a
+// deletion was performed while an async provision or update is running.
+// TODO: rework saving off current generation as the start of the async
+// operation, see PR 1708/Issue 1587.
+func rollbackReconciledGenerationOnDeletion(instance *v1beta1.ServiceInstance, currentReconciledGeneration int64) {
+	if instance.DeletionTimestamp != nil {
+		glog.V(4).Infof("Not updating ReconciledGeneration after async operation because there is a deletion pending.")
+		instance.Status.ReconciledGeneration = currentReconciledGeneration
+	}
+}
+
 // serviceInstanceHasExistingBindings returns true if there are any existing
 // bindings associated with the given ServiceInstance.
 func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.ServiceInstance) error {
@@ -1434,7 +1445,9 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 	setServiceInstanceDashboardURL(instance, dashboardURL)
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
+	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1447,6 +1460,7 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 // processProvisionFailure handles the logging and updating of a
 // ServiceInstance that hit a terminal failure during provision reconciliation.
 func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition, shouldMitigateOrphan bool) error {
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	if failedCond == nil {
 		return fmt.Errorf("failedCond must not be nil")
 	}
@@ -1474,6 +1488,7 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		err = fmt.Errorf(failedCond.Message)
 	} else {
 		clearServiceInstanceCurrentOperation(instance)
+		rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1505,7 +1520,9 @@ func (c *controller) processProvisionAsyncResponse(instance *v1beta1.ServiceInst
 func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.ServiceInstance) error {
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successUpdateInstanceReason, successUpdateInstanceMessage)
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
+	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1519,9 +1536,11 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 // ServiceInstance that hit a terminal failure during update reconciliation.
 func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
+	currentReconciledGeneration := instance.Status.ReconciledGeneration
 
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	clearServiceInstanceCurrentOperation(instance)
+	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
