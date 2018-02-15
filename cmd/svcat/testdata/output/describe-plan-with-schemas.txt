@@ -8,7 +8,7 @@
 Instances:
 No instances defined
 
-Instance Create Schema:
+Instance Create Parameter Schema:
   properties:
     testInstanceProperty:
       description: A test instance property.
@@ -17,7 +17,7 @@ Instance Create Schema:
   - testInstanceProperty
   type: object
 
-Binding Create Schema:
+Binding Create Parameter Schema:
   properties:
     testBindingProperty:
       description: A test binding property.

@@ -87,6 +87,7 @@ func TestCommandOutput(t *testing.T) {
 		{name: "describe plan by name", cmd: "describe plan default", golden: "output/describe-plan.txt"},
 		{name: "describe plan by uuid", cmd: "describe plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-plan.txt"},
 		{name: "describe plan with schemas", cmd: "describe plan premium", golden: "output/describe-plan-with-schemas.txt"},
+		{name: "describe plan without schemas", cmd: "describe plan premium --show-schemas=false", golden: "output/describe-plan-without-schemas.txt"},
 
 		{name: "list all instances", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
