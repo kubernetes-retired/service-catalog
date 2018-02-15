@@ -1169,6 +1169,17 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
 }
 
+// rollbackReconciledGenerationOnDeletion resets the ReconciledGeneration if a
+// deletion was performed while an async provision or update is running.
+// TODO: rework saving off current generation as the start of the async
+// operation, see PR 1708/Issue 1587.
+func rollbackReconciledGenerationOnDeletion(instance *v1beta1.ServiceInstance, currentReconciledGeneration int64) {
+	if instance.DeletionTimestamp != nil {
+		glog.V(4).Infof("Not updating ReconciledGeneration after async operation because there is a deletion pending.")
+		instance.Status.ReconciledGeneration = currentReconciledGeneration
+	}
+}
+
 // serviceInstanceHasExistingBindings returns true if there are any existing
 // bindings associated with the given ServiceInstance.
 func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.ServiceInstance) error {
@@ -1436,13 +1447,7 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
 	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
-
-	if instance.DeletionTimestamp != nil {
-		// A request to delete the Instance was received during provisioning, don't bump
-		// ReconciledGeneration as that will prevent processing the delete.
-		glog.V(4).Infof("Not updating ReconciledGeneration after instance provisioning because there is a deletion pending.")
-		instance.Status.ReconciledGeneration = currentReconciledGeneration
-	}
+	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1483,13 +1488,7 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		err = fmt.Errorf(failedCond.Message)
 	} else {
 		clearServiceInstanceCurrentOperation(instance)
-
-		if instance.DeletionTimestamp != nil {
-			// A request to delete the Instance was received during provisioning, don't bump
-			// ReconciledGeneration as that will prevent processing the delete.
-			glog.V(4).Infof("Not updating ReconciledGeneration after instance provisioning failure because there is a deletion pending.")
-			instance.Status.ReconciledGeneration = currentReconciledGeneration
-		}
+		rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1523,13 +1522,7 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
 	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
-
-	if instance.DeletionTimestamp != nil {
-		// A request to delete the Instance was received during async update, don't bump
-		// ReconciledGeneration as that will prevent processing the update
-		glog.V(4).Infof("Not updating ReconciledGeneration after async update because there is a deletion pending.")
-		instance.Status.ReconciledGeneration = currentReconciledGeneration
-	}
+	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1547,13 +1540,7 @@ func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.Servi
 
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	clearServiceInstanceCurrentOperation(instance)
-
-	if instance.DeletionTimestamp != nil {
-		// A request to delete the Instance was received during async update, don't bump
-		// ReconciledGeneration as that will prevent processing the update
-		glog.V(4).Infof("Not updating ReconciledGeneration after async update failure because there is a deletion pending.")
-		instance.Status.ReconciledGeneration = currentReconciledGeneration
-	}
+	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
