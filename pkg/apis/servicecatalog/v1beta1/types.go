@@ -626,9 +626,10 @@ type ServiceInstance struct {
 //
 // Currently supported ways:
 //  - ClusterServiceClassExternalName and ClusterServicePlanExternalName
+//  - ClusterServiceClassExternalID and ClusterServicePlanExternalID
 //  - ClusterServiceClassName and ClusterServicePlanName
 //
-// For both of these ways, if a ClusterServiceClass only has one plan
+// For any of these ways, if a ClusterServiceClass only has one plan
 // then leaving the *ServicePlanName is optional.
 type PlanReference struct {
 	// ClusterServiceClassExternalName is the human-readable name of the
@@ -645,6 +646,14 @@ type PlanReference struct {
 	// the current name of the ClusterServicePlan, you should follow the
 	// ClusterServicePlanRef below.
 	ClusterServicePlanExternalName string `json:"clusterServicePlanExternalName,omitempty"`
+
+	// ClusterServiceClassExternalID is the broker's external id for the class.
+	//
+	// Immutable.
+	ClusterServiceClassExternalID string `json:"clusterServiceClassExternalID,omitempty"`
+
+	// ClusterServicePlanExternalID is the broker's external id for the plan.
+	ClusterServicePlanExternalID string `json:"clusterServicePlanExternalID,omitempty"`
 
 	// ClusterServiceClassName is the kubernetes name of the
 	// ClusterServiceClass.

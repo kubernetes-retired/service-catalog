@@ -750,6 +750,8 @@ func Convert_servicecatalog_ParametersFromSource_To_v1beta1_ParametersFromSource
 func autoConvert_v1beta1_PlanReference_To_servicecatalog_PlanReference(in *PlanReference, out *servicecatalog.PlanReference, s conversion.Scope) error {
 	out.ClusterServiceClassExternalName = in.ClusterServiceClassExternalName
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
+	out.ClusterServiceClassExternalID = in.ClusterServiceClassExternalID
+	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.ClusterServiceClassName = in.ClusterServiceClassName
 	out.ClusterServicePlanName = in.ClusterServicePlanName
 	return nil
@@ -763,6 +765,8 @@ func Convert_v1beta1_PlanReference_To_servicecatalog_PlanReference(in *PlanRefer
 func autoConvert_servicecatalog_PlanReference_To_v1beta1_PlanReference(in *servicecatalog.PlanReference, out *PlanReference, s conversion.Scope) error {
 	out.ClusterServiceClassExternalName = in.ClusterServiceClassExternalName
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
+	out.ClusterServiceClassExternalID = in.ClusterServiceClassExternalID
+	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.ClusterServiceClassName = in.ClusterServiceClassName
 	out.ClusterServicePlanName = in.ClusterServicePlanName
 	return nil

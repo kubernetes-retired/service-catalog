@@ -73,7 +73,10 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	// If the plan is specified, let it through and have the controller
 	// deal with finding the right plan, etc.
-	if instance.Spec.ClusterServicePlanExternalName != "" || instance.Spec.ClusterServicePlanName != "" {
+	externalPlanNameSet := instance.Spec.ClusterServicePlanExternalName != ""
+	externalPlanIDSet := instance.Spec.ClusterServicePlanExternalID != ""
+	k8sPlanSet := instance.Spec.ClusterServicePlanName != ""
+	if externalPlanNameSet || externalPlanIDSet || k8sPlanSet {
 		return nil
 	}
 
@@ -83,7 +86,15 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
 		}
-		msg := fmt.Sprintf("ClusterServiceClass %q does not exist, can not figure out the default ClusterServicePlan.", instance.Spec.ClusterServiceClassExternalName)
+		var class string
+		if externalPlanNameSet {
+			class = instance.Spec.ClusterServiceClassExternalName
+		} else if externalPlanIDSet {
+			class = instance.Spec.ClusterServiceClassExternalID
+		} else {
+			class = instance.Spec.ClusterServiceClassName
+		}
+		msg := fmt.Sprintf("ClusterServiceClass %q does not exist, can not figure out the default ClusterServicePlan.", class)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
@@ -98,7 +109,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	plans, err := d.getClusterServicePlansByClusterServiceClassName(sc.Name)
 	if err != nil {
-		msg := fmt.Sprintf("Error listing ClusterServicePlans for ClusterServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ClusterServicePlan", sc.Name, instance.Spec.ClusterServiceClassExternalName)
+		msg := fmt.Sprintf("Error listing ClusterServicePlans for ClusterServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ClusterServicePlan", sc.Name, sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
@@ -106,14 +117,14 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	// check if there were any service plans
 	// TODO: in combination with not allowing classes with no plans, this should be impossible
 	if len(plans) <= 0 {
-		msg := fmt.Sprintf("no ClusterServicePlans found at all for ClusterServiceClass %q", instance.Spec.ClusterServiceClassExternalName)
+		msg := fmt.Sprintf("no ClusterServicePlans found at all for ClusterServiceClass %q", sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
 	// check if more than one service plan was specified and error
 	if len(plans) > 1 {
-		msg := fmt.Sprintf("ClusterServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", instance.Spec.ClusterServiceClassName, instance.Spec.ClusterServiceClassExternalName)
+		msg := fmt.Sprintf("ClusterServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", sc.Name, sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
@@ -124,6 +135,8 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		instance.Namespace, instance.Name, p.Spec.ExternalName, p.Name, sc.Spec.ExternalName)
 	if instance.Spec.ClusterServiceClassExternalName != "" {
 		instance.Spec.ClusterServicePlanExternalName = p.Spec.ExternalName
+	} else if instance.Spec.ClusterServiceClassExternalID != "" {
+		instance.Spec.ClusterServicePlanExternalID = p.Spec.ExternalID
 	} else {
 		instance.Spec.ClusterServicePlanName = p.Name
 	}
@@ -157,7 +170,10 @@ func (d *defaultServicePlan) ValidateInitialization() error {
 
 func (d *defaultServicePlan) getClusterServiceClassByPlanReference(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
 	if ref.ClusterServiceClassExternalName != "" {
-		return d.getClusterServiceClassByExternalName(a, ref.ClusterServiceClassExternalName)
+		return d.getClusterServiceClassByField(a, "externalName", ref.ClusterServiceClassExternalName)
+	}
+	if ref.ClusterServiceClassExternalID != "" {
+		return d.getClusterServiceClassByField(a, "externalID", ref.ClusterServiceClassExternalID)
 	}
 	return d.getClusterServiceClassByK8SName(a, ref.ClusterServiceClassName)
 }
@@ -167,10 +183,10 @@ func (d *defaultServicePlan) getClusterServiceClassByK8SName(a admission.Attribu
 	return d.scClient.Get(scK8SName, apimachineryv1.GetOptions{})
 }
 
-func (d *defaultServicePlan) getClusterServiceClassByExternalName(a admission.Attributes, scName string) (*servicecatalog.ClusterServiceClass, error) {
-	glog.V(4).Infof("Fetching ClusterServiceClass filtered by external name %q", scName)
+func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attributes, field, value string) (*servicecatalog.ClusterServiceClass, error) {
+	glog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", field, value)
 	fieldSet := fields.Set{
-		"spec.externalName": scName,
+		"spec."+field: value,
 	}
 	fieldSelector := fields.SelectorFromSet(fieldSet).String()
 	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
@@ -183,10 +199,11 @@ func (d *defaultServicePlan) getClusterServiceClassByExternalName(a admission.At
 		glog.V(4).Infof("Found single ClusterServiceClass as %+v", serviceClasses.Items[0])
 		return &serviceClasses.Items[0], nil
 	}
-	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with name %q, found %v", scName, len(serviceClasses.Items))
+	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with %q = %q, found %v", field, value, len(serviceClasses.Items))
 	glog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
 }
+
 
 // getClusterServicePlansByClusterServiceClassName() returns a list of
 // ServicePlans for the specified service class name
