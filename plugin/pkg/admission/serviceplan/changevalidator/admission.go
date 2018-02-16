@@ -90,10 +90,7 @@ func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
 		return nil
 	}
 
-	planSet := instance.Spec.ClusterServicePlanExternalName != "" ||
-		instance.Spec.ClusterServicePlanExternalID != "" ||
-		instance.Spec.ClusterServicePlanName != ""
-	if planSet {
+	if instance.Spec.GetSpecifiedPlan() != "" {
 		lister := d.instanceLister.ServiceInstances(instance.Namespace)
 		origInstance, err := lister.Get(instance.Name)
 		if err != nil {

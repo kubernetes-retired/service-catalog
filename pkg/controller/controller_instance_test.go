@@ -92,7 +92,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msgf(
-		"References a non-existent ClusterServiceClass (ExternalName: %q) or there is more than one (found: %d)",
+		"References a non-existent ClusterServiceClass {ClassExternalName:%q} or there is more than one (found: %d)",
 		"nothere", 0,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -135,7 +135,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msgf(
-		"References a non-existent ClusterServiceClass (K8S: %q)",
+		"References a non-existent ClusterServiceClass {ClassName:%q}",
 		"nothereclass",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
@@ -290,8 +290,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		`References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
-		"", "nothere", "SCGUID", "test-serviceclass", 0,
+		`References a non-existent ClusterServicePlan {PlanExternalName:%q} on ClusterServiceClass %s {ClassExternalName:%q} or there is more than one (found: %v)`,
+		"nothere", "SCGUID", "test-serviceclass", 0,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -345,8 +345,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		"References a non-existent ClusterServicePlan with K8S name %q on ClusterServiceClass with K8S name %q",
-		"nothereplan", testClusterServiceClassGUID,
+		"References a non-existent ClusterServicePlan {ClassName:%q, PlanName:%q}",
+		testClusterServiceClassGUID, "nothereplan",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -4219,7 +4219,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msg("References a non-existent ClusterServiceClass (ExternalName: \"test-serviceclass\") or there is more than one (found: 0)")
+	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msg(`References a non-existent ClusterServiceClass {ClassExternalName:"test-serviceclass"} or there is more than one (found: 0)`)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -4511,8 +4511,8 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		`References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
-		"", "test-plan", "SCGUID", "test-serviceclass", 0,
+		`References a non-existent ClusterServicePlan {PlanExternalName:%q} on ClusterServiceClass %s {ClassExternalName:%q} or there is more than one (found: %v)`,
+		"test-plan", "SCGUID", "test-serviceclass", 0,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)

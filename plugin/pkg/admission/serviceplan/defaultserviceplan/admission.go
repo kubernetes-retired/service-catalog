@@ -73,10 +73,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 
 	// If the plan is specified, let it through and have the controller
 	// deal with finding the right plan, etc.
-	externalPlanNameSet := instance.Spec.ClusterServicePlanExternalName != ""
-	externalPlanIDSet := instance.Spec.ClusterServicePlanExternalID != ""
-	k8sPlanSet := instance.Spec.ClusterServicePlanName != ""
-	if externalPlanNameSet || externalPlanIDSet || k8sPlanSet {
+	if instance.Spec.PlanSpecified() {
 		return nil
 	}
 
@@ -86,15 +83,8 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
 		}
-		var class string
-		if externalPlanNameSet {
-			class = instance.Spec.ClusterServiceClassExternalName
-		} else if externalPlanIDSet {
-			class = instance.Spec.ClusterServiceClassExternalID
-		} else {
-			class = instance.Spec.ClusterServiceClassName
-		}
-		msg := fmt.Sprintf("ClusterServiceClass %q does not exist, can not figure out the default ClusterServicePlan.", class)
+		msg := fmt.Sprintf("ClusterServiceClass %c does not exist, can not figure out the default ClusterServicePlan.",
+			instance.Spec.PlanReference)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
@@ -140,6 +130,7 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 	} else {
 		instance.Spec.ClusterServicePlanName = p.Name
 	}
+
 	return nil
 }
 
@@ -169,13 +160,11 @@ func (d *defaultServicePlan) ValidateInitialization() error {
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByPlanReference(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
-	if ref.ClusterServiceClassExternalName != "" {
-		return d.getClusterServiceClassByField(a, "externalName", ref.ClusterServiceClassExternalName)
+	if ref.ClusterServiceClassName != "" {
+		return d.getClusterServiceClassByK8SName(a, ref.ClusterServiceClassName)
 	}
-	if ref.ClusterServiceClassExternalID != "" {
-		return d.getClusterServiceClassByField(a, "externalID", ref.ClusterServiceClassExternalID)
-	}
-	return d.getClusterServiceClassByK8SName(a, ref.ClusterServiceClassName)
+
+	return d.getClusterServiceClassByField(a, ref)
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByK8SName(a admission.Attributes, scK8SName string) (*servicecatalog.ClusterServiceClass, error) {
@@ -183,10 +172,13 @@ func (d *defaultServicePlan) getClusterServiceClassByK8SName(a admission.Attribu
 	return d.scClient.Get(scK8SName, apimachineryv1.GetOptions{})
 }
 
-func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attributes, field, value string) (*servicecatalog.ClusterServiceClass, error) {
-	glog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", field, value)
+func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
+	filterField := ref.GetClassFilterFieldName()
+	filterValue := ref.GetSpecifiedClass()
+
+	glog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", filterField, filterValue)
 	fieldSet := fields.Set{
-		"spec."+field: value,
+		filterField: filterValue,
 	}
 	fieldSelector := fields.SelectorFromSet(fieldSet).String()
 	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
@@ -199,11 +191,10 @@ func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attribute
 		glog.V(4).Infof("Found single ClusterServiceClass as %+v", serviceClasses.Items[0])
 		return &serviceClasses.Items[0], nil
 	}
-	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with %q = %q, found %v", field, value, len(serviceClasses.Items))
+	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with %q = %q, found %v", filterField, filterValue, len(serviceClasses.Items))
 	glog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
 }
-
 
 // getClusterServicePlansByClusterServiceClassName() returns a list of
 // ServicePlans for the specified service class name

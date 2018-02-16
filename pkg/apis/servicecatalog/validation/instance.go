@@ -360,7 +360,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalID"), classSetErrMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassName"), classSetErrMsg))
 	}
-	// Must specify exactly one source of the class: external id, external name, k8s name.
+	// Must specify exactly one source of the plan: external id, external name, k8s name.
 	if (b2i(externalPlanNameSet) + b2i(externalPlanIDSet) + b2i(k8sPlanSet)) != 1 {
 		planSetErrMsg := "exactly one of clusterServicePlanExternalName, clusterServicePlanExternalID, or clusterServicePlanName required"
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), planSetErrMsg))

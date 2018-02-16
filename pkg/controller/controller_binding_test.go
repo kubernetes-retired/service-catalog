@@ -255,7 +255,7 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassMessage).msgf(
-		"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
+		"References a non-existent ClusterServiceClass %q - {ClassExternalName:%q}",
 		"nosuchclassid", testNonExistentClusterServiceClassName,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
