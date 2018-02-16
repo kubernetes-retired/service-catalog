@@ -67,6 +67,7 @@ func Run(ctx context.Context, addr string, c controller.Controller) error {
 // RunTLS creates the HTTPS handler based on an implementation of a
 // controller.Controller interface, and begins to listen on the specified address.
 func RunTLS(ctx context.Context, addr string, cert string, key string, c controller.Controller) error {
+	glog.Infof("Starting secure server on %v\n", addr)
 	var decodedCert, decodedKey []byte
 	var tlsCert tls.Certificate
 	var err error
@@ -91,7 +92,7 @@ func RunTLS(ctx context.Context, addr string, cert string, key string, c control
 }
 
 func run(ctx context.Context, addr string, listenAndServe func(srv *http.Server) error, c controller.Controller) error {
-	glog.Infof("Starting server on %d\n", addr)
+	glog.Infof("Starting server on %v\n", addr)
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: createHandler(c),

@@ -28,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	coreinformers "k8s.io/client-go/informers"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
-	clientv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/record"
 )
 
@@ -80,8 +79,8 @@ func TestPodInitializeWithConflict(t *testing.T) {
 }
 
 // newPod returns an instance of test Pod
-func newPod(name, namespace string) *clientv1.Pod {
-	return &clientv1.Pod{
+func newPod(name, namespace string) *corev1.Pod {
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -94,11 +93,11 @@ func newPod(name, namespace string) *clientv1.Pod {
 				},
 			},
 		},
-		Spec: clientv1.PodSpec{
-			Containers: []clientv1.Container{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
 				{
 					Name: name,
-					Env: []clientv1.EnvVar{
+					Env: []corev1.EnvVar{
 						{Name: "abc", Value: "value2"},
 						{Name: "ABC", Value: "value3"},
 					},

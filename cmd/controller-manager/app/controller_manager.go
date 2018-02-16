@@ -27,10 +27,14 @@ import (
 	"strconv"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
+	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
+	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
+	"github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -38,10 +42,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy"
-
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -86,7 +87,7 @@ const controllerDiscoveryAgentName = "service-catalog-controller-discovery"
 
 var (
 	catalogGVR   = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1beta1", Resource: "clusterservicebrokers"}
-	podPresetGVR = schema.GroupVersionResource{Group: "settings.k8s.io", Version: "v1alpha1", Resource: "podpresets"}
+	podPresetGVR = schema.GroupVersionResource{Group: "settings.servicecatalog.k8s.io", Version: "v1alpha1", Resource: "podpresets"}
 )
 
 // Run runs the service-catalog controller-manager; should never exit.
@@ -409,7 +410,7 @@ func newPodSharedInformer(kubeClient kubernetes.Interface) cache.SharedIndexInfo
 				return kubeClient.CoreV1().Pods(v1.NamespaceAll).Watch(lo)
 			},
 		},
-		&v1core.Pod{},
+		&corev1.Pod{},
 		0,
 		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)

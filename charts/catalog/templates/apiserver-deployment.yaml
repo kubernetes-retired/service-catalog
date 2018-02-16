@@ -64,6 +64,10 @@ spec:
         {{- if .Values.apiserver.serveOpenAPISpec }}
         - --serve-openapi-spec
         {{- end }}
+        {{- if .Values.apiserver.podPresetEnabled }}
+        - --feature-gates
+        - PodPreset=true
+        {{- end }}
         ports:
         - containerPort: 8443
         volumeMounts:

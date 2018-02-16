@@ -17,21 +17,17 @@ limitations under the License.
 package podpreset
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/golang/glog"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
-	clientv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	settingsinformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/settings/v1alpha1"
@@ -94,7 +90,7 @@ func NewController(
 }
 
 func (c *Controller) addPod(obj interface{}) {
-	pod := obj.(*clientv1.Pod)
+	pod := obj.(*v1.Pod)
 	glog.V(5).Infof("new Pod: %s with meta: %+v received", pod.GetName(), pod.ObjectMeta)
 	if needsInitialization(pod) {
 		glog.Infof("found an uninitialized pod: %+v", pod.Name)
@@ -105,7 +101,7 @@ func (c *Controller) addPod(obj interface{}) {
 }
 
 func (c *Controller) updatePod(old, new interface{}) {
-	pod := new.(*clientv1.Pod)
+	pod := new.(*v1.Pod)
 	glog.V(5).Infof("Pod: %s with meta: %+v update received", pod.GetName(), pod.ObjectMeta)
 	if needsInitialization(pod) {
 		glog.Infof("found an existing uninitialized pod: %s", pod.GetName())
@@ -115,6 +111,7 @@ func (c *Controller) updatePod(old, new interface{}) {
 	}
 }
 
+// Run runs the controller until the given stop channel can be read from.
 func (c *Controller) Run(workers int, stopCh <-chan struct{}) {
 	defer func() {
 		c.podQueue.ShutDown()
@@ -178,31 +175,14 @@ func (c *Controller) initPod(key string) error {
 		return fmt.Errorf("failed to retrieve pod %s in ns: %v : %v", podName, ns, err)
 	}
 
-	if !needsInitialization(pod) {
-		glog.V(4).Infof("pod %s no longer need initialization, so skipping it", podName)
-		return nil
-	}
-
-	// this conversion is needed because admission control function uses
-	// corev1 types. This will go away in 1.8 release of client-go.
-	podCopy, err := convertClientv1PodToCorev1Pod(pod)
-	if err != nil {
-		return fmt.Errorf("failed to create copy of pod %v", err)
-	}
-
-	err = admit(podCopy, c.podpresetLister, c.recorder)
+	err = admit(pod, c.podpresetLister, c.recorder)
 	if err != nil {
 		return fmt.Errorf("failure in applying podpreset on pod %s error: %v", podName, err)
 	}
 
-	markInitializationDone(podCopy)
+	markInitializationDone(pod)
 
-	finalPod, err := convertCorev1PodToClientv1Pod(podCopy)
-	if err != nil {
-		return fmt.Errorf("error converting corev1.Pod to clientv1.Pod: %v", err)
-	}
-
-	if _, err = c.kubeClient.CoreV1().Pods(ns).Update(finalPod); err != nil {
+	if _, err = c.kubeClient.CoreV1().Pods(ns).Update(pod); err != nil {
 		return fmt.Errorf("failed to update pod : %v", err)
 	}
 
@@ -212,7 +192,7 @@ func (c *Controller) initPod(key string) error {
 // markInitializationDone removes the PodPreset initializer from the Pod's
 // pending initializer list. And if it is the only initializer in the pending
 // list, then resets the Initializers field to nil mark the initialization done.
-func markInitializationDone(pod *corev1.Pod) {
+func markInitializationDone(pod *v1.Pod) {
 	pendingInitializers := pod.GetInitializers().Pending
 	if len(pendingInitializers) == 1 {
 		pod.ObjectMeta.Initializers = nil
@@ -222,7 +202,7 @@ func markInitializationDone(pod *corev1.Pod) {
 }
 
 // isPodUninitialized determines if Pod is waiting for PodPreset initialization.
-func needsInitialization(pod *clientv1.Pod) bool {
+func needsInitialization(pod *v1.Pod) bool {
 	initializers := pod.ObjectMeta.GetInitializers()
 	if initializers != nil && len(initializers.Pending) > 0 &&
 		initializers.Pending[0].Name == podPresetInitializerName {
@@ -253,36 +233,4 @@ func (c *Controller) handleErr(err error, key interface{}) {
 
 	c.podQueue.Forget(key)
 	glog.Errorf("Dropping pod %q out of the queue: %v", key, err)
-}
-
-// TODO(droot): remove these functions when migrated to 1.8
-// helper functions below converts a corev1 Pod objects (k8s.io/api/core/v1) to
-// clientv1 Pod (k8s.io/client-go/pkg/api/v1). These will go away when we migrate
-// to client-go version released with 1.8 because client-go will be using the
-// types from corev1.
-func convertCorev1PodToClientv1Pod(in *corev1.Pod) (out *clientv1.Pod, err error) {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(b, &out)
-	return
-}
-
-func convertClientv1PodToCorev1Pod(in *clientv1.Pod) (out *corev1.Pod, err error) {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(b, &out)
-	return
-}
-
-func copyObjToPod(obj interface{}) (*clientv1.Pod, error) {
-	podCopy, err := runtime.NewScheme().DeepCopy(obj.(*clientv1.Pod))
-	if err != nil {
-		return nil, err
-	}
-	pod := podCopy.(*clientv1.Pod)
-	return pod, nil
 }

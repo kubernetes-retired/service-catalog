@@ -26,12 +26,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	clientv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/record"
 
 	settingsapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
 	settingslisters "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/settings/v1alpha1"
-	sccontroller "github.com/kubernetes-incubator/service-catalog/pkg/controller"
 )
 
 const (
@@ -296,16 +294,16 @@ func mergeVolumes(volumes []corev1.Volume, podPresets []*settingsapi.PodPreset) 
 
 func recordConflictEvent(recorder record.EventRecorder, pod *corev1.Pod, message string) {
 	// Event API doesn't support corv1.Pod object for strange reason,
-	podRef := &clientv1.ObjectReference{
+	podRef := &corev1.ObjectReference{
 		Kind:      "Pod",
 		Name:      pod.GetName(),
 		Namespace: pod.GetNamespace(),
 	}
 	recorder.Event(podRef, corev1.EventTypeWarning, "PodPreset", message)
-	ref := sccontroller.GetControllerOf(pod)
+	ref := metav1.GetControllerOf(pod)
 	if ref != nil {
 		// raise the event at the immediate parent controller as well
-		ctrl := &clientv1.ObjectReference{
+		ctrl := &corev1.ObjectReference{
 			Kind:       ref.Kind,
 			Name:       ref.Name,
 			Namespace:  pod.GetNamespace(),
@@ -332,11 +330,11 @@ func applyPodPresetsOnPod(pod *corev1.Pod, podPresets []*settingsapi.PodPreset) 
 		pod.Spec.Containers[i] = ctr
 	}
 
-	// add annotation
 	if pod.ObjectMeta.Annotations == nil {
 		pod.ObjectMeta.Annotations = map[string]string{}
 	}
 
+	// add annotation information to mark podpreset mutation has occurred
 	for _, pp := range podPresets {
 		pod.ObjectMeta.Annotations[fmt.Sprintf("%s/podpreset-%s", annotationPrefix, pp.GetName())] = pp.GetResourceVersion()
 	}

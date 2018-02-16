@@ -100,6 +100,11 @@ items:
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","serviceinstances/reference","servicebindings/status"]
     verbs:     ["update"]
+{{- if .Values.apiserver.podPresetEnabled }}
+  - apiGroups: ["settings.servicecatalog.k8s.io"]
+    resources: ["podpresets"]
+    verbs:     ["list", "watch"]
+{{- end }}
 # give the controller-manager service account access to whats defined in its role.
 - apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRoleBinding

@@ -23,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 
 	settings "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
@@ -388,19 +387,6 @@ func TestMergeVolumes(t *testing.T) {
 	}
 }
 
-// NewTestAdmission provides an admission plugin with test implementations of internal structs.  It uses
-// an authorizer that always returns true.
-// func NewTestAdmission(lister settingslisters.PodPresetLister, objects ...runtime.Object) kadmission.Interface {
-// Build a test client that the admission plugin can use to look up the service account missing from its cache
-// 	client := fake.NewSimpleClientset(objects...)
-//
-// 	return &podPresetPlugin{
-// 		client:  client,
-// 		Handler: kadmission.NewHandler(kadmission.Create),
-// 		lister:  lister,
-// 	}
-// }
-
 func TestAdmitConflictWithDifferentNamespaceShouldDoNothing(t *testing.T) {
 	containerName := "container"
 
@@ -726,13 +712,8 @@ func TestExclusionNoAdmit(t *testing.T) {
 			},
 		},
 	}
-	// originalPod, err := corev1.Scheme.Copy(pod)
-	originalPod, err := runtime.NewScheme().DeepCopy(pod)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = admitPod(pod, pip)
+	originalPod := pod.DeepCopy()
+	err := admitPod(pod, pip)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -796,12 +777,8 @@ func TestAdmitEmptyPodNamespace(t *testing.T) {
 		},
 	}
 	// originalPod, err := corev1.Scheme.Copy(pod)
-	originalPod, err := runtime.NewScheme().DeepCopy(pod)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = admitPod(pod, pip)
+	originalPod := pod.DeepCopy()
+	err := admitPod(pod, pip)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -820,7 +797,9 @@ func admitPod(pod *corev1.Pod, pip *settings.PodPreset) error {
 	)
 	// All shared informers are v1alpha1 API level
 	store := informerFactory.Settings().V1alpha1().PodPresets().Informer().GetStore()
-	store.Add(pip)
+	if err := store.Add(pip); err != nil {
+		return err
+	}
 
 	return admit(pod, informerFactory.Settings().V1alpha1().PodPresets().Lister(), recorder)
 }
