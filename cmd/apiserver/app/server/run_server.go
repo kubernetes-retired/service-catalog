@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
+	"github.com/kubernetes-incubator/service-catalog/pkg/version"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage/etcd3/preflight"
 
@@ -56,7 +57,7 @@ func RunServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error 
 
 func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error {
 	etcdOpts := opts.EtcdOptions
-	glog.V(4).Infoln("Preparing to run API server")
+	glog.Infof("Preparing to run Service Catalog API server %s (built %s)", version.Get().String(), version.Get().BuildDate)
 	genericConfig, scConfig, err := buildGenericConfig(opts)
 	if err != nil {
 		return err

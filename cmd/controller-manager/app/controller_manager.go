@@ -40,6 +40,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy"
+	"github.com/kubernetes-incubator/service-catalog/pkg/version"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -92,6 +93,8 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// } else {
 	// 	glog.Errorf("unable to register configz: %s", err)
 	// }
+
+	glog.Infof("Preparing to run Service Catalog Controller %s (built %s)", version.Get().String(), version.Get().BuildDate)
 
 	// Build the K8s kubeconfig / client / clientBuilder
 	glog.V(4).Info("Building k8s kubeconfig")
