@@ -69,6 +69,10 @@ required = [
   name = "k8s.io/code-generator"
   version = "kubernetes-1.9.1"
 
+[[constraint]]
+  name = "github.com/pmorie/go-open-service-broker-client"
+  version = "~0.0.1"
+
 [prune]
   non-go = true
   go-tests = true
