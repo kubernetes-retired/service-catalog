@@ -537,7 +537,19 @@ type ServiceInstanceStatus struct {
 	// ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
+	// Deprecated: use ObservedGeneration instead
 	ReconciledGeneration int64
+
+	// ObservedGeneration is the 'Generation' of the serviceInstanceSpec that
+	// was last processed by the controller. The observed generation is updated
+	// whenever the status is updated regardless of operation result
+	ObservedGeneration int64
+
+	// Provisioned is the flag that marks whether the instance has been
+	// successfully provisioned (i.e. it exists on the broker's side and can be
+	// updated or deprovisioned). The flag should be reset after successful
+	// deprovisioning.
+	Provisioned bool
 
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time
