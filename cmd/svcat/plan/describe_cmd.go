@@ -29,6 +29,7 @@ type describeCmd struct {
 	*command.Context
 	traverse     bool
 	lookupByUUID bool
+	showSchemas  bool
 	uuid         string
 	name         string
 }
@@ -60,6 +61,13 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		"u",
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
+	)
+	cmd.Flags().BoolVarP(
+		&describeCmd.showSchemas,
+		"show-schemas",
+		"",
+		true,
+		"Whether or not to show instance and binding parameter schemas",
 	)
 	return cmd
 }
@@ -115,6 +123,10 @@ func (c *describeCmd) describe() error {
 		}
 		output.WriteParentClass(c.Output, class)
 		output.WriteParentBroker(c.Output, broker)
+	}
+
+	if c.showSchemas {
+		output.WritePlanSchemas(c.Output, plan)
 	}
 
 	return nil
