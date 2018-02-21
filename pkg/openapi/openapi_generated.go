@@ -1495,9 +1495,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
+								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec. Deprecated: use ObservedGeneration instead",
 								Type:        []string{"integer"},
 								Format:      "int64",
+							},
+						},
+						"observedGeneration": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ObservedGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The observed generation is updated whenever the status is updated regardless of operation result",
+								Type:        []string{"integer"},
+								Format:      "int64",
+							},
+						},
+						"provisioned": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Provisioned is the flag that marks whether the instance has been successfully provisioned (i.e. it exists on the broker's side and can be updated or deprovisioned). The flag should be reset after successful deprovisioning.",
+								Type:        []string{"boolean"},
+								Format:      "",
 							},
 						},
 						"operationStartTime": {
@@ -1526,7 +1540,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "deprovisionStatus"},
+					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisioned", "deprovisionStatus"},
 				},
 			},
 			Dependencies: []string{

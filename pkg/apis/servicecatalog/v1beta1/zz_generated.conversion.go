@@ -1005,6 +1005,8 @@ func autoConvert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstance
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	out.CurrentOperation = servicecatalog.ServiceInstanceOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.ObservedGeneration = in.ObservedGeneration
+	out.Provisioned = in.Provisioned
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.InProgressProperties = (*servicecatalog.ServiceInstancePropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*servicecatalog.ServiceInstancePropertiesState)(unsafe.Pointer(in.ExternalProperties))
@@ -1025,6 +1027,8 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstance
 	out.DashboardURL = (*string)(unsafe.Pointer(in.DashboardURL))
 	out.CurrentOperation = ServiceInstanceOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
+	out.ObservedGeneration = in.ObservedGeneration
+	out.Provisioned = in.Provisioned
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.InProgressProperties = (*ServiceInstancePropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*ServiceInstancePropertiesState)(unsafe.Pointer(in.ExternalProperties))
