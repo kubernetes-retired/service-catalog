@@ -234,7 +234,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	}
 	if handled {
 		// Update the status and finish the iteration
-		// The updates instance will be automatically added to the instance queue
+		// The updated instance will be automatically added back to the queue
 		// and be processed again
 		return nil
 	}
