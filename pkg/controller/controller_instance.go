@@ -286,11 +286,6 @@ func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (
 func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstance) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 
-	if isServiceInstanceFailed(instance) {
-		glog.V(4).Info(pcb.Message("Not processing event because status showed that it has failed"))
-		return nil
-	}
-
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
 		return nil
@@ -393,11 +388,6 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 // or parameters of a service instance.
 func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceInstance) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-
-	if isServiceInstanceFailed(instance) {
-		glog.V(4).Info(pcb.Message("Not processing event because status showed that it has failed"))
-		return nil
-	}
 
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
