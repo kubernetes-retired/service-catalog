@@ -29,15 +29,24 @@ import (
 
 const (
 	clusterServiceClassExternalName = "test-serviceclass"
+	clusterServiceClassExternalID   = "test-serviceclass-ext-id"
 	clusterServicePlanExternalName  = "test-plan"
+	clusterServicePlanExternalID    = "test-plan-ext-id"
 	clusterServiceClassName         = "test-k8s-serviceclass"
 	clusterServicePlanName          = "test-k8s-plan-name"
 )
 
-func validPlanReferenceExternal() servicecatalog.PlanReference {
+func validPlanReferenceExternalName() servicecatalog.PlanReference {
 	return servicecatalog.PlanReference{
 		ClusterServiceClassExternalName: clusterServiceClassExternalName,
 		ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+	}
+}
+
+func validPlanReferenceExternalID() servicecatalog.PlanReference {
+	return servicecatalog.PlanReference{
+		ClusterServiceClassExternalID: clusterServiceClassExternalID,
+		ClusterServicePlanExternalID:  clusterServicePlanExternalID,
 	}
 }
 
@@ -56,7 +65,7 @@ func validServiceInstanceForCreate() *servicecatalog.ServiceInstance {
 			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
-			PlanReference: validPlanReferenceExternal(),
+			PlanReference: validPlanReferenceExternalName(),
 		},
 		Status: servicecatalog.ServiceInstanceStatus{
 			DeprovisionStatus: servicecatalog.ServiceInstanceDeprovisionStatusNotRequired,
@@ -819,31 +828,72 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 }
 
 func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T) {
+	newPlanExternalName := servicecatalog.PlanReference{
+		ClusterServiceClassExternalName: clusterServiceClassExternalName,
+		ClusterServicePlanExternalName:  "new-plan",
+	}
+	newPlanExternalID := servicecatalog.PlanReference{
+		ClusterServiceClassExternalName: clusterServiceClassExternalID,
+		ClusterServicePlanExternalID:    "new-plan",
+	}
+	newPlanK8sName := servicecatalog.PlanReference{
+		ClusterServiceClassName: clusterServiceClassName,
+		ClusterServicePlanName:  "new-plan",
+	}
+
 	cases := []struct {
 		name       string
-		oldPlan    string
-		newPlan    string
+		oldPlan    servicecatalog.PlanReference
+		newPlan    servicecatalog.PlanReference
 		newPlanRef *servicecatalog.ClusterObjectReference
 		valid      bool
 	}{
 		{
-			name:       "valid plan change",
-			oldPlan:    "old-plan",
-			newPlan:    "new-plan",
+			name:       "valid plan change via external name",
+			oldPlan:    validPlanReferenceExternalName(),
+			newPlan:    newPlanExternalName,
 			newPlanRef: nil,
 			valid:      true,
 		},
 		{
-			name:       "plan ref not cleared",
-			oldPlan:    "old-plan",
-			newPlan:    "new-plan",
+			name:       "valid plan change via external id",
+			oldPlan:    validPlanReferenceExternalID(),
+			newPlan:    newPlanExternalID,
+			newPlanRef: nil,
+			valid:      true,
+		},
+		{
+			name:       "valid plan change via k8s name",
+			oldPlan:    validPlanReferenceK8S(),
+			newPlan:    newPlanK8sName,
+			newPlanRef: nil,
+			valid:      true,
+		},
+		{
+			name:       "plan ref not cleared for change via external name",
+			oldPlan:    validPlanReferenceExternalName(),
+			newPlan:    newPlanExternalName,
+			newPlanRef: &servicecatalog.ClusterObjectReference{},
+			valid:      false,
+		},
+		{
+			name:       "plan ref not cleared for change via external id",
+			oldPlan:    validPlanReferenceExternalID(),
+			newPlan:    newPlanExternalID,
+			newPlanRef: &servicecatalog.ClusterObjectReference{},
+			valid:      false,
+		},
+		{
+			name:       "plan ref not cleared for change via k8s name",
+			oldPlan:    validPlanReferenceK8S(),
+			newPlan:    newPlanK8sName,
 			newPlanRef: &servicecatalog.ClusterObjectReference{},
 			valid:      false,
 		},
 		{
 			name:       "no plan change",
-			oldPlan:    "plan-name",
-			newPlan:    "plan-name",
+			oldPlan:    validPlanReferenceExternalName(),
+			newPlan:    validPlanReferenceExternalName(),
 			newPlanRef: &servicecatalog.ClusterObjectReference{},
 			valid:      true,
 		},
@@ -856,10 +906,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: "test-serviceclass",
-					ClusterServicePlanExternalName:  tc.oldPlan,
-				},
+				PlanReference:          tc.oldPlan,
 				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
 				ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
 			},
@@ -871,10 +918,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 				Namespace: "test-ns",
 			},
 			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: clusterServiceClassExternalName,
-					ClusterServicePlanExternalName:  tc.newPlan,
-				},
+				PlanReference:          tc.newPlan,
 				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
 				ClusterServicePlanRef:  tc.newPlanRef,
 			},
@@ -1174,12 +1218,22 @@ func TestValidatePlanReference(t *testing.T) {
 			expectedError: "exactly one of clusterServicePlanExternalName",
 		},
 		{
-			name:  "valid -- external",
-			ref:   validPlanReferenceExternal(),
+			name:  "valid -- external names",
+			ref:   validPlanReferenceExternalName(),
 			valid: true,
 		},
 		{
-			name: "invalid -- external name, k8s plan",
+			name:  "valid -- external ids",
+			ref:   validPlanReferenceExternalID(),
+			valid: true,
+		},
+		{
+			name:  "valid -- k8s",
+			ref:   validPlanReferenceK8S(),
+			valid: true,
+		},
+		{
+			name: "invalid -- external class name, k8s plan",
 			ref: servicecatalog.PlanReference{
 				ClusterServiceClassExternalName: clusterServiceClassExternalName,
 				ClusterServicePlanName:          clusterServicePlanExternalName,
@@ -1188,12 +1242,25 @@ func TestValidatePlanReference(t *testing.T) {
 			expectedError: "must specify clusterServicePlanExternalName",
 		},
 		{
-			name:  "valid -- k8s",
-			ref:   validPlanReferenceK8S(),
-			valid: true,
+			name: "invalid -- external class name, external plan id",
+			ref: servicecatalog.PlanReference{
+				ClusterServiceClassExternalName: clusterServiceClassExternalName,
+				ClusterServicePlanExternalID:    clusterServicePlanExternalID,
+			},
+			valid:         false,
+			expectedError: "must specify clusterServicePlanExternalName",
 		},
 		{
-			name: "invalid -- valid k8s name, external plan",
+			name: "invalid -- external class id, k8s plan",
+			ref: servicecatalog.PlanReference{
+				ClusterServiceClassExternalID: clusterServiceClassExternalID,
+				ClusterServicePlanName:        clusterServicePlanName,
+			},
+			valid:         false,
+			expectedError: "must specify clusterServicePlanExternalID",
+		},
+		{
+			name: "invalid -- k8s class, external plan name",
 			ref: servicecatalog.PlanReference{
 				ClusterServiceClassName:        clusterServiceClassName,
 				ClusterServicePlanExternalName: clusterServicePlanExternalName,
@@ -1202,21 +1269,64 @@ func TestValidatePlanReference(t *testing.T) {
 			expectedError: "must specify clusterServicePlanName",
 		},
 		{
-			name: "invalid -- external and k8s name specified",
+			name: "invalid -- k8s class, external plan id",
+			ref: servicecatalog.PlanReference{
+				ClusterServiceClassName:      clusterServiceClassName,
+				ClusterServicePlanExternalID: clusterServicePlanExternalID,
+			},
+			valid:         false,
+			expectedError: "must specify clusterServicePlanName",
+		},
+		{
+			name: "invalid -- k8s class, external class name",
 			ref: servicecatalog.PlanReference{
 				ClusterServiceClassName:         clusterServiceClassName,
 				ClusterServiceClassExternalName: clusterServiceClassExternalName,
-				ClusterServicePlanExternalName:  clusterServicePlanExternalName,
 			},
 			valid:         false,
 			expectedError: "exactly one of clusterServiceClassExternalName",
 		},
 		{
-			name: "invalid -- external and k8s plan specified",
+			name: "invalid -- k8s class, external class id",
+			ref: servicecatalog.PlanReference{
+				ClusterServiceClassName:       clusterServiceClassName,
+				ClusterServiceClassExternalID: clusterServiceClassExternalID,
+			},
+			valid:         false,
+			expectedError: "exactly one of clusterServiceClassExternalName",
+		},
+		{
+			name: "invalid -- external class name, external class id",
 			ref: servicecatalog.PlanReference{
 				ClusterServiceClassExternalName: clusterServiceClassExternalName,
-				ClusterServicePlanExternalName:  clusterServicePlanExternalName,
-				ClusterServicePlanName:          clusterServicePlanName,
+				ClusterServiceClassExternalID:   clusterServiceClassExternalID,
+			},
+			valid:         false,
+			expectedError: "exactly one of clusterServiceClassExternalName",
+		},
+		{
+			name: "invalid -- k8s plan, external plan name",
+			ref: servicecatalog.PlanReference{
+				ClusterServicePlanName:         clusterServicePlanName,
+				ClusterServicePlanExternalName: clusterServicePlanExternalName,
+			},
+			valid:         false,
+			expectedError: "exactly one of clusterServicePlanExternalName",
+		},
+		{
+			name: "invalid -- k8s plan, external plan id",
+			ref: servicecatalog.PlanReference{
+				ClusterServicePlanName:       clusterServicePlanName,
+				ClusterServicePlanExternalID: clusterServicePlanExternalID,
+			},
+			valid:         false,
+			expectedError: "exactly one of clusterServicePlanExternalName",
+		},
+		{
+			name: "invalid -- external plan name, external plan id",
+			ref: servicecatalog.PlanReference{
+				ClusterServicePlanExternalName: clusterServicePlanExternalName,
+				ClusterServicePlanExternalID:   clusterServicePlanExternalID,
 			},
 			valid:         false,
 			expectedError: "exactly one of clusterServicePlanExternalName",
@@ -1255,8 +1365,8 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 	}{
 		{
 			name:  "valid -- no changes external",
-			old:   validPlanReferenceExternal(),
-			new:   validPlanReferenceExternal(),
+			old:   validPlanReferenceExternalName(),
+			new:   validPlanReferenceExternalName(),
 			valid: true,
 		},
 		{
@@ -1267,9 +1377,9 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 		},
 		{
 			name: "invalid -- changing external class name",
-			old:  validPlanReferenceExternal(),
+			old:  validPlanReferenceExternalName(),
 			new: servicecatalog.PlanReference{
-				ClusterServiceClassExternalName: clusterServiceClassName,
+				ClusterServiceClassExternalName: "new-class",
 				ClusterServicePlanExternalName:  clusterServicePlanExternalName,
 			},
 			valid:         false,
@@ -1277,10 +1387,29 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 		},
 		{
 			name: "valid -- changing external plan name",
-			old:  validPlanReferenceExternal(),
+			old:  validPlanReferenceExternalName(),
 			new: servicecatalog.PlanReference{
 				ClusterServiceClassExternalName: clusterServiceClassExternalName,
-				ClusterServicePlanExternalName:  clusterServicePlanName,
+				ClusterServicePlanExternalName:  "new-plan",
+			},
+			valid: true,
+		},
+		{
+			name: "invalid -- changing external class id",
+			old:  validPlanReferenceExternalID(),
+			new: servicecatalog.PlanReference{
+				ClusterServiceClassExternalID: "new-class",
+				ClusterServicePlanExternalID:  clusterServicePlanExternalID,
+			},
+			valid:         false,
+			expectedError: "clusterServiceClassExternalID",
+		},
+		{
+			name: "valid -- changing external plan id",
+			old:  validPlanReferenceExternalID(),
+			new: servicecatalog.PlanReference{
+				ClusterServiceClassExternalID: clusterServiceClassExternalID,
+				ClusterServicePlanExternalID:  "new-plan",
 			},
 			valid: true,
 		},
@@ -1288,18 +1417,18 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 			name: "invalid -- changing k8s class name",
 			old:  validPlanReferenceK8S(),
 			new: servicecatalog.PlanReference{
-				ClusterServiceClassName: clusterServiceClassExternalName,
+				ClusterServiceClassName: "new-class",
 				ClusterServicePlanName:  clusterServicePlanName,
 			},
 			valid:         false,
 			expectedError: "clusterServiceClassName",
 		},
 		{
-			name: "alid -- changing k8s plan name",
+			name: "valid -- changing k8s plan name",
 			old:  validPlanReferenceK8S(),
 			new: servicecatalog.PlanReference{
 				ClusterServiceClassName: clusterServiceClassName,
-				ClusterServicePlanName:  clusterServicePlanExternalName,
+				ClusterServicePlanName:  "new-plan",
 			},
 			valid: true,
 		},
