@@ -687,6 +687,8 @@ func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
+		ObservedGeneration:   1,
+		Provisioned:          true,
 		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
 
@@ -707,6 +709,8 @@ func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
+		ObservedGeneration:   1,
+		Provisioned:          true,
 		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
 
@@ -727,6 +731,8 @@ func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceIns
 		},
 		// It's been provisioned successfully.
 		ReconciledGeneration: 1,
+		ObservedGeneration:   1,
+		Provisioned:          true,
 		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
 
@@ -770,6 +776,8 @@ func getTestServiceInstanceAsyncUpdating(operation string) *v1beta1.ServiceInsta
 	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status = v1beta1.ServiceInstanceStatus{
 		ReconciledGeneration: 1,
+		ObservedGeneration:   1,
+		Provisioned:          true,
 		Conditions: []v1beta1.ServiceInstanceCondition{{
 			Type:               v1beta1.ServiceInstanceConditionReady,
 			Status:             v1beta1.ConditionFalse,
@@ -812,6 +820,8 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1beta1.Servic
 		OperationStartTime:   &operationStartTime,
 		CurrentOperation:     v1beta1.ServiceInstanceOperationDeprovision,
 		ReconciledGeneration: 1,
+		ObservedGeneration:   1,
+		Provisioned:          true,
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
 			ClusterServicePlanExternalName: testClusterServicePlanName,
 			ClusterServicePlanExternalID:   testClusterServicePlanGUID,

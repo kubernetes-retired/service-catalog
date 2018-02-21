@@ -257,7 +257,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 // initObservedGeneration implements ObservedGeneration initialization based on
 // ReconciledGeneration for status API migration
 func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (bool, error) {
-	if instance.Status.ObservedGeneration == 0 && instance.Status.ReconciledGeneration == 0 {
+	if instance.Status.ObservedGeneration == 0 && instance.Status.ReconciledGeneration != 0 {
 		instance.Status.ObservedGeneration = instance.Status.ReconciledGeneration
 		// Before we implement https://github.com/kubernetes-incubator/service-catalog/issues/1715
 		// and switch to non-terminal errors, the "Failed":"True" is a sign that the provisioning failed
