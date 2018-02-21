@@ -196,9 +196,9 @@ func getReconciliationActionForServiceInstance(instance *v1beta1.ServiceInstance
 		return reconcilePoll
 	case instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress:
 		return reconcileDelete
-	case instance.Status.ReconciledGeneration != 0:
+	case instance.Status.Provisioned:
 		return reconcileUpdate
-	default: // instance.Status.ReconciledGeneration == 0
+	default: // instance.Status.Provisioned == false
 		return reconcileAdd
 	}
 }
@@ -281,8 +281,8 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		return nil
 	}
 
-	if instance.Status.ReconciledGeneration == instance.Generation {
-		glog.V(4).Info(pcb.Message("Not processing event because reconciled generation showed there is no work to do"))
+	if isServiceInstanceProcessedAlready(instance) {
+		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
 		return nil
 	}
 
@@ -385,8 +385,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	if instance.Status.ReconciledGeneration == instance.Generation {
-		glog.V(4).Info(pcb.Message("Not processing event because reconciled generation showed there is no work to do"))
+	if isServiceInstanceProcessedAlready(instance) {
+		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
 		return nil
 	}
 
@@ -741,6 +741,13 @@ func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 	}
 
 	return false
+}
+
+// isServiceInstanceProcessedAlready returns true if there is no further processing
+// needed for the instance based on ObservedGeneration
+func isServiceInstanceProcessedAlready(instance *v1beta1.ServiceInstance) bool {
+	return instance.Status.ObservedGeneration >= instance.Generation &&
+		(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance))
 }
 
 // processServiceInstancePollingFailureRetryTimeout marks the instance as having
@@ -1155,10 +1162,7 @@ func (c *controller) checkForRemovedClassAndPlan(instance *v1beta1.ServiceInstan
 		return nil
 	}
 
-	isProvisioning := false
-	if instance.Status.ReconciledGeneration == 0 {
-		isProvisioning = true
-	}
+	isProvisioning := !instance.Status.Provisioned
 
 	// Regardless of what's been deleted, you can always update
 	// parameters (ie, not change plans)
