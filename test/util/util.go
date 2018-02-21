@@ -216,13 +216,38 @@ func WaitForInstanceReconciledGeneration(client v1beta1servicecatalog.Servicecat
 				return false, fmt.Errorf("error getting Instance %v/%v: %v", namespace, name, err)
 			}
 
-			if instance.Status.ReconciledGeneration == reconciledGeneration {
+			if instance.Status.ObservedGeneration >= reconciledGeneration &&
+				(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance)) {
 				return true, nil
 			}
 
 			return false, nil
 		},
 	)
+}
+
+// isServiceInstanceReady returns whether the given instance has a ready condition
+// with status true.
+func isServiceInstanceReady(instance *v1beta1.ServiceInstance) bool {
+	for _, cond := range instance.Status.Conditions {
+		if cond.Type == v1beta1.ServiceInstanceConditionReady {
+			return cond.Status == v1beta1.ConditionTrue
+		}
+	}
+
+	return false
+}
+
+// isServiceInstanceFailed returns whether the instance has a failed condition with
+// status true.
+func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
+	for _, condition := range instance.Status.Conditions {
+		if condition.Type == v1beta1.ServiceInstanceConditionFailed && condition.Status == v1beta1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
 }
 
 // WaitForBindingCondition waits for the status of the named binding to contain
