@@ -19,7 +19,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
@@ -110,8 +109,7 @@ func buildRootCommand() *cobra.Command {
 }
 
 func printVersion(cxt *command.Context) {
-	v := strings.Replace(pkg.VERSION, "svcat-", "", 1)
-	fmt.Fprintf(cxt.Output, "svcat %s\n", v)
+	fmt.Fprintf(cxt.Output, "svcat %s\n", pkg.VERSION)
 }
 
 func newSyncCmd(cxt *command.Context) *cobra.Command {

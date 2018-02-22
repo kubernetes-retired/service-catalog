@@ -32,8 +32,10 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
-VERSION       ?= $(shell git describe --tags --abbrev=7 --dirty --match=v*)
-SVCAT_VERSION ?= $(shell git describe --tags --abbrev=7 --dirty --match=svcat* &> /dev/null | echo v0)
+# Either the tag name, e.g. v1.2.3 or the commit hash for untagged commits, e.g. abc123
+VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
+# Either the tag name, e.g. v1.2.3 or a combination of the closest tag combined with the commit hash, e.g. v1.2.3-2-gabc123
+TAG_VERSION   ?= $(shell git describe --tags --abbrev=7 --dirty)
 BUILD_LDFLAGS  = $(shell build/version.sh $(ROOT) $(SC_PKG))
 GIT_BRANCH    ?= $(shell git rev-parse --abbrev-ref HEAD)
 
@@ -379,25 +381,25 @@ release-push-%:
 
 # svcat kubectl plugin
 ############################
-.PHONY: $(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
+.PHONY: $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
 svcat:
 	# Compile a native binary for local dev/test
 	$(MAKE) svcat-for-$(CLIENT_PLATFORM)
-	cp $(BINDIR)/svcat/$(SVCAT_VERSION)/$(CLIENT_PLATFORM)/$(ARCH)/svcat$(FILE_EXT) $(BINDIR)/svcat/
+	cp $(BINDIR)/svcat/$(TAG_VERSION)/$(CLIENT_PLATFORM)/$(ARCH)/svcat$(FILE_EXT) $(BINDIR)/svcat/
 
 svcat-all: $(addprefix svcat-for-,$(ALL_CLIENT_PLATFORM))
 
 svcat-for-%:
-	$(MAKE) PLATFORM=$* VERSION=$(SVCAT_VERSION) svcat-xbuild
+	$(MAKE) PLATFORM=$* VERSION=$(TAG_VERSION) svcat-xbuild
 
-svcat-xbuild: $(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
-$(BINDIR)/svcat/$(SVCAT_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
+svcat-xbuild: $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
+$(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
 svcat-publish: clean-bin svcat-all
 	# Download the latest client with https://download.svcat.sh/cli/latest/darwin/amd64/svcat
 	# Download an older client with  https://download.svcat.sh/cli/VERSION/darwin/amd64/svcat
-	cp -R $(BINDIR)/svcat/$(SVCAT_VERSION) $(BINDIR)/svcat/$(MUTABLE_TAG)
+	cp -R $(BINDIR)/svcat/$(TAG_VERSION) $(BINDIR)/svcat/$(MUTABLE_TAG)
 	# AZURE_STORAGE_CONNECTION_STRING will be used for auth in the following command
 	$(DOCKER_CMD) az storage blob upload-batch -d cli -s $(BINDIR)/svcat
 
