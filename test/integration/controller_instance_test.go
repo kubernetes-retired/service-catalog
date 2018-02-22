@@ -566,7 +566,7 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 					t.Fatalf("error updating Instance: %v", err)
 				}
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
+				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
@@ -837,7 +837,7 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 					t.Fatalf("error updating Instance: %v", err)
 				}
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
+				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
