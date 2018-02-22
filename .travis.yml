@@ -1,4 +1,11 @@
 language: generic
+env:
+  - GO_VERSION=1.9
+  - GO_VERSION=rc
+matrix:
+  allow_failures:
+    - env: GO_VERSION=rc
+  fast_finish: true
 sudo: required
 services:
 - docker
@@ -19,18 +26,19 @@ before_install:
           [[ -z "$(git diff --name-only $TRAVIS_COMMIT_RANGE | grep -vE $DOCS_REGEX)" ]]
           DOCS_ONLY=$?
       fi
+# Test
+script:
+  - |
+    if (( $DOCS_ONLY == 0 )); then
+      echo "Running verify-docs"
+      make verify-docs
+    else
+      echo "Running full build"
+      make verify build build-integration build-e2e test images svcat
+    fi
 jobs:
   include:
-    # Test
-    - script:
-      - |
-          if (( $DOCS_ONLY == 0 )); then
-              echo "Running verify-docs"
-              make verify-docs
-          else
-              echo "Running full build"
-              make verify build build-integration build-e2e test images svcat
-          fi
+    # Test is implicit from the build matrix
     # Deploy
     - stage: deploy
       deploy:
