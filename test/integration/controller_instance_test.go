@@ -34,7 +34,6 @@ import (
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
-	"encoding/json"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
@@ -570,15 +569,6 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 				ct.instance = updatedInstance
 
 				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
-					latestInstance, err := ct.client.ServiceInstances(testNamespace).Get(testInstanceName, metav1.GetOptions{})
-					if err != nil {
-						t.Fatalf("unable to retrieve instance: %v", err)
-					}
-					instanceJson, err := json.Marshal(latestInstance)
-					if err != nil {
-						t.Fatalf("unable to marshal instance: %v", err)
-					}
-					t.Logf("instance: %s", string(instanceJson))
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
