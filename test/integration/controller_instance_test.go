@@ -562,9 +562,11 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 					ct.instance.Spec.ClusterServicePlanName = otherPlanID
 				}
 
-				if _, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance); err != nil {
+				updatedInstance, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance)
+				if err != nil {
 					t.Fatalf("error updating Instance: %v", err)
 				}
+				ct.instance = updatedInstance
 
 				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
@@ -833,9 +835,11 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 					ct.instance.Spec.UpdateRequests++
 				}
 
-				if _, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance); err != nil {
+				updatedInstance, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance)
+				if err != nil {
 					t.Fatalf("error updating Instance: %v", err)
 				}
+				ct.instance = updatedInstance
 
 				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
