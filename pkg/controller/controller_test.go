@@ -2193,7 +2193,7 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
 	case v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceConditionsCount(t, obj, 1)
+		assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
 	}
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)

@@ -437,7 +437,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		if httpErr, ok := osb.IsHTTPError(err); ok {
 			msg := fmt.Sprintf("ClusterServiceBroker returned a failure for update call; update will not be retried: %v", httpErr)
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
-			return c.processUpdateServiceInstanceFailure(instance, readyCond, true)
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorUpdateInstanceCallFailedReason, msg)
+			return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond, true)
 		}
 
 		reason := errorErrorCallingUpdateInstanceReason
@@ -445,7 +446,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
 			msg := fmt.Sprintf("Communication with the ClusterServiceBroker timed out; update will not be retried: %v", urlErr)
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, msg)
-			return c.processUpdateServiceInstanceFailure(instance, readyCond, true)
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, msg)
+			return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond, true)
 		}
 
 		msg := fmt.Sprintf("The update call failed and will be retried: Error communicating with broker for updating: %s", err)
@@ -458,7 +460,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 
 			msg = "Stopping reconciliation retries because too much time has elapsed"
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorReconciliationRetryTimeoutReason, msg)
-			return c.processUpdateServiceInstanceFailure(instance, readyCond, true)
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
+			return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond, true)
 		}
 
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, msg)
@@ -711,9 +714,11 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, message)
 			err = c.processProvisionFailure(instance, readyCond, failedCond, false, false)
 		default:
-			msg := "Update call failed: " + description
-			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
-			err = c.processUpdateServiceInstanceFailure(instance, readyCond, false)
+			reason := errorUpdateInstanceCallFailedReason
+			message := "Update call failed: " + description
+			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, message)
+			err = c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond, false)
 		}
 		if err != nil {
 			return c.handleServiceInstancePollingError(instance, err)
@@ -770,7 +775,7 @@ func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *
 		return c.processProvisionFailure(instance, readyCond, failedCond, true, false)
 	default:
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorReconciliationRetryTimeoutReason, msg)
-		err = c.processUpdateServiceInstanceFailure(instance, readyCond, false)
+		err = c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond, false)
 	}
 	if err != nil {
 		return c.handleServiceInstancePollingError(instance, err)
@@ -1569,11 +1574,13 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 
 // processUpdateServiceInstanceFailure handles the logging and updating of a
 // ServiceInstance that hit a terminal failure during update reconciliation.
-func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition, updateObservedGeneration bool) error {
+func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition, updateObservedGeneration bool) error {
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
 	currentReconciledGeneration := instance.Status.ReconciledGeneration
 
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
+	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionFailed, failedCond.Status, failedCond.Reason, failedCond.Message)
+
 	clearServiceInstanceCurrentOperation(instance, updateObservedGeneration)
 	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
 
