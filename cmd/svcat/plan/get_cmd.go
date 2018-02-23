@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -30,8 +31,11 @@ type getCmd struct {
 	*command.Context
 	lookupByUUID bool
 	uuid         string
-	classFilter  string
 	name         string
+
+	filterByClass bool
+	classUUID     string
+	className     string
 }
 
 // NewGetCmd builds a "svcat get plans" command
@@ -43,10 +47,11 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Short:   "List plans, optionally filtered by name or class",
 		Example: `
   svcat get plans
-  svcat get plan standard800
-  svcat get plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
-  svcat get plan --class PoshMink
-  svcat get plan --class 1c6ee7f7-6c5a-4813-a56d-ad56b76dfd45 --uuid
+  svcat get plan <plan name>
+  svcat get plan <class name>/<plan name>
+  svcat get plan --uuid <plan UUID>
+  svcat get plan --class <class name>
+  svcat get plan --class <class UUID> --uuid
 `,
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -58,22 +63,38 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		false,
 		"Whether or not to get the plan by UUID (the default is by name)",
 	)
-	cmd.Flags().StringVarP(
-		&getCmd.classFilter,
+	cmd.Flags().BoolVarP(
+		&getCmd.filterByClass,
 		"class",
 		"c",
-		"",
-		"Whether or not to filter the plan based on class (the default is no filter)",
+		false,
+		"Filter the plan based on class. When --uuid is specified, the class name is interpreted as a uuid.",
 	)
 	return cmd
 }
 
 func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
-		if c.lookupByUUID {
-			c.uuid = args[0]
+		if c.filterByClass {
+			if c.lookupByUUID {
+				c.classUUID = args[0]
+			} else {
+				c.className = args[0]
+			}
 		} else {
-			c.name = args[0]
+			if c.lookupByUUID {
+				c.uuid = args[0]
+			} else if strings.Contains(args[0], "/") {
+				names := strings.Split(args[0], "/")
+				if len(names) != 2 {
+					return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
+				}
+				c.className = names[0]
+				c.name = names[1]
+			} else {
+				c.name = args[0]
+			}
+
 		}
 	}
 
@@ -89,10 +110,8 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	plans, err := c.App.RetrievePlans()
-	if err != nil {
-		return fmt.Errorf("unable to list plans (%s)", err)
-	}
+
+	var opts *servicecatalog.FilterOptions
 
 	// Retrieve the classes as well because plans don't have the external class name
 	classes, err := c.App.RetrieveClasses()
@@ -100,23 +119,25 @@ func (c *getCmd) getAll() error {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
 
-	if c.classFilter != "" {
+	if c.filterByClass {
 		if !c.lookupByUUID {
 			// Map the external class name to the class name.
 			for _, class := range classes {
-				if c.classFilter == class.Spec.ExternalName {
-					c.classFilter = class.Name
+				if c.className == class.Spec.ExternalName {
+					c.classUUID = class.Name
+					opts.ClassID = class.Name
 					break
 				}
 			}
 		}
-		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
-		for _, p := range plans {
-			if p.Spec.ClusterServiceClassRef.Name == c.classFilter {
-				plansFiltered = append(plansFiltered, p)
-			}
+		opts = &servicecatalog.FilterOptions{
+			ClassID: c.classUUID,
 		}
-		plans = plansFiltered
+	}
+
+	plans, err := c.App.RetrievePlans(opts)
+	if err != nil {
+		return fmt.Errorf("unable to list plans (%s)", err)
 	}
 
 	output.WritePlanList(c.Output, plans, classes)
@@ -130,12 +151,8 @@ func (c *getCmd) get() error {
 	case c.lookupByUUID:
 		plan, err = c.App.RetrievePlanByID(c.uuid)
 
-	case strings.Contains(c.name, "/"):
-		names := strings.Split(c.name, "/")
-		if len(names) != 2 {
-			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
-		}
-		plan, err = c.App.RetrievePlanByClassAndPlanNames(names[0], names[1])
+	case c.className != "":
+		plan, err = c.App.RetrievePlanByClassAndPlanNames(c.className, c.name)
 
 	default:
 		plan, err = c.App.RetrievePlanByName(c.name)
