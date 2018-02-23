@@ -34,7 +34,7 @@ script:
       make verify-docs
     else
       echo "Running full build"
-      make verify build build-integration build-e2e test images svcat
+              make verify build build-integration build-e2e test images svcat-all
     fi
 jobs:
   include:

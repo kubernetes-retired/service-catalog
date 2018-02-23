@@ -147,7 +147,7 @@ git remote -v
 ## Building
 
 First `cd` to the root of the cloned repository tree.
-To build the service-catalog:
+To build the service-catalog server components:
 
     $ make build
 
@@ -155,6 +155,10 @@ The above will build all executables and place them in the `bin` directory. This
 is done within a Docker container-- meaning you do not need to have all of the
 necessary tooling installed on your host (such as a golang compiler or dep).
 Building outside the container is possible, but not officially supported.
+
+To build the service-catalog client, `svcat`:
+
+    $ make svcat
 
 Note, this will do the basic build of the service catalog. There are more
 more [advanced build steps](#advanced-build-steps) below as well.
@@ -262,6 +266,29 @@ they can be accessed by your Kubernetes cluster.
 The images are tagged with the current Git commit SHA:
 
     $ docker images
+
+### svcat targets
+These are targets for the service-catalog client, `svcat`:
+
+* `make svcat-all` builds all supported client platforms (darwin, linux, windows).
+* `make svcat-for-X` builds a specific platform.
+* `make svcat` builds for the current dev's platform.
+* `make svcat-publish` compiles everything and uploads the binaries.
+
+The same tags are used for both client and server. The cli uses the format that 
+always includes a tag, so that it's clear which release you are "closest" to, 
+e.g. v1.2.3 for official releases and v1.2.3-2-gabc123 for untagged commits.
+
+### Deploying Releases
+
+* Merge to master - A docker image for the server is pushed to [quay.io/kubernetes-service-catalog/service-catalog](http://quay.io/kubernetes-service-catalog/service-catalog),
+  tagged with the abbreviated commit hash. Nothing is deployed for the client, `svcat`.
+* Tag a commit on master with vX.Y.Z - A docker image for the server is pushed,
+  tagged with the version, e.g. vX.Y.Z. The client binaries are published to 
+  https://download.svcat.sh/cli/latest/OS/ARCH/svcat and https://download.svcat.sh/cli/VERSION/OS/ARCH/svcat.
+
+The idea behind "latest" link is that we can provide a permanent link to the most recent stable release of `svcat`. 
+If someone wants to install a unreleased version, they must build it locally.
 
 ----
 
