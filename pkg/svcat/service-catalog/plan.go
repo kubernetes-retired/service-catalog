@@ -39,7 +39,7 @@ func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan
 		return nil, fmt.Errorf("unable to list plans (%s)", err)
 	}
 
-	if opts.ClassID != "" {
+	if opts != nil && opts.ClassID != "" {
 		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
 		for _, p := range plans.Items {
 			if p.Spec.ClusterServiceClassRef.Name == opts.ClassID {
