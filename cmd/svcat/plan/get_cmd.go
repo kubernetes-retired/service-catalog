@@ -47,11 +47,11 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Short:   "List plans, optionally filtered by name or class",
 		Example: `
   svcat get plans
-  svcat get plan <plan name>
-  svcat get plan <class name>/<plan name>
-  svcat get plan --uuid <plan UUID>
-  svcat get plan --class <class name>
-  svcat get plan --class <class UUID> --uuid
+  svcat get plan PLAN_NAME
+  svcat get plan CLASS_NAME/PLAN_NAME
+  svcat get plan --uuid PLAN_UUID
+  svcat get plan --class CLASS_NAME
+  svcat get plan --class --uuid CLASS_UUID
 `,
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
