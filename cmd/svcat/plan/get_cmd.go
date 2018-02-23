@@ -30,6 +30,7 @@ type getCmd struct {
 	*command.Context
 	lookupByUUID bool
 	uuid         string
+	classFilter  string
 	name         string
 }
 
@@ -39,11 +40,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "plans [name]",
 		Aliases: []string{"plan", "pl"},
-		Short:   "List plans, optionally filtered by name",
+		Short:   "List plans, optionally filtered by name or class",
 		Example: `
   svcat get plans
   svcat get plan standard800
   svcat get plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
+  svcat get plan --class PoshMink
+  svcat get plan --class 1c6ee7f7-6c5a-4813-a56d-ad56b76dfd45 --uuid
 `,
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -54,6 +57,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"u",
 		false,
 		"Whether or not to get the plan by UUID (the default is by name)",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.classFilter,
+		"class",
+		"c",
+		"",
+		"Whether or not to filter the plan based on class (the default is no filter)",
 	)
 	return cmd
 }
@@ -90,6 +100,25 @@ func (c *getCmd) getAll() error {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
 
+	if c.classFilter != "" {
+		if !c.lookupByUUID {
+			// Map the external class name to the class name.
+			for _, class := range classes {
+				if c.classFilter == class.Spec.ExternalName {
+					c.classFilter = class.Name
+					break
+				}
+			}
+		}
+		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
+		for _, p := range plans {
+			if p.Spec.ClusterServiceClassRef.Name == c.classFilter {
+				plansFiltered = append(plansFiltered, p)
+			}
+		}
+		plans = plansFiltered
+	}
+
 	output.WritePlanList(c.Output, plans, classes)
 	return nil
 }
@@ -97,16 +126,20 @@ func (c *getCmd) getAll() error {
 func (c *getCmd) get() error {
 	var plan *v1beta1.ClusterServicePlan
 	var err error
-	if c.lookupByUUID {
+	switch {
+	case c.lookupByUUID:
 		plan, err = c.App.RetrievePlanByID(c.uuid)
-	} else if strings.Contains(c.name, "/") {
+
+	case strings.Contains(c.name, "/"):
 		names := strings.Split(c.name, "/")
 		if len(names) != 2 {
 			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
 		}
 		plan, err = c.App.RetrievePlanByClassAndPlanNames(names[0], names[1])
-	} else {
+
+	default:
 		plan, err = c.App.RetrievePlanByName(c.name)
+
 	}
 	if err != nil {
 		return err
