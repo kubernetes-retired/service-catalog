@@ -125,7 +125,6 @@ func (c *getCmd) getAll() error {
 			for _, class := range classes {
 				if c.className == class.Spec.ExternalName {
 					c.classUUID = class.Name
-					opts.ClassID = class.Name
 					break
 				}
 			}

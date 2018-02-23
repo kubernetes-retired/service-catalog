@@ -85,6 +85,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get plan by name", cmd: "get plan default", golden: "output/get-plan.txt"},
 		{name: "get plan by uuid", cmd: "get plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/get-plan.txt"},
 		{name: "get plan by class/plan name combo", cmd: "get plan user-provided-service/default", golden: "output/get-plan.txt"},
+		{name: "get plan by class name", cmd: "get plan --class user-provided-service", golden: "output/get-plans.txt"},
+		{name: "get plan by class uuid", cmd: "get plan --class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-plans.txt"},
 		{name: "describe plan by name", cmd: "describe plan default", golden: "output/describe-plan.txt"},
 		{name: "describe plan by uuid", cmd: "describe plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-plan.txt"},
 		{name: "describe plan by class/plan name combo", cmd: "describe plan user-provided-service/default", golden: "output/describe-plan.txt"},
