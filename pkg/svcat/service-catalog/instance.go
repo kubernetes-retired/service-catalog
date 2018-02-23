@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
@@ -173,4 +174,27 @@ func (sdk *SDK) Deprovision(namespace, instanceName string) error {
 		return fmt.Errorf("deprovision request failed (%s)", err)
 	}
 	return nil
+}
+
+// TouchInstance increments the relist requests on an instance to make service
+// catalog try to provision it again
+func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
+	for j := 0; j < retries; j++ {
+		inst, err := sdk.RetrieveInstance(ns, name)
+		if err != nil {
+			return err
+		}
+
+		inst.Spec.UpdateRequests = inst.Spec.UpdateRequests + 1
+
+		_, err = sdk.ServiceCatalog().ServiceInstances(ns).Update(inst)
+		if err == nil {
+			return nil
+		}
+		if !errors.IsConflict(err) {
+			return fmt.Errorf("could not touch instance (%s)", err)
+		}
+	}
+
+	return fmt.Errorf("could not sync service broker after %d tries", retries)
 }
