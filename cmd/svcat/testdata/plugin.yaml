@@ -92,7 +92,7 @@ tree:
     flags:
     - name: class
       shorthand: c
-      desc: Filter the plan based on class. When --uuid is specified, the class name
+      desc: Filter plans based on class. When --uuid is specified, the class name
         is interpreted as a uuid.
     - name: uuid
       shorthand: u

@@ -33,9 +33,9 @@ type getCmd struct {
 	uuid         string
 	name         string
 
-	filterByClass bool
-	classUUID     string
-	className     string
+	classFilter string
+	classUUID   string
+	className   string
 }
 
 // NewGetCmd builds a "svcat get plans" command
@@ -50,8 +50,10 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan PLAN_NAME
   svcat get plan CLASS_NAME/PLAN_NAME
   svcat get plan --uuid PLAN_UUID
-  svcat get plan --class CLASS_NAME
-  svcat get plan --class --uuid CLASS_UUID
+  svcat get plans --class CLASS_NAME
+  svcat get plan --class CLASS_NAME PLAN_NAME
+  svcat get plans --uuid --class CLASS_UUID
+  svcat get plan --uuid --class CLASS_UUID PLAN_UUID
 `,
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -63,38 +65,36 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		false,
 		"Whether or not to get the plan by UUID (the default is by name)",
 	)
-	cmd.Flags().BoolVarP(
-		&getCmd.filterByClass,
+	cmd.Flags().StringVarP(
+		&getCmd.classFilter,
 		"class",
 		"c",
-		false,
-		"Filter the plan based on class. When --uuid is specified, the class name is interpreted as a uuid.",
+		"",
+		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
 	)
 	return cmd
 }
 
 func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
-		if c.filterByClass {
-			if c.lookupByUUID {
-				c.classUUID = args[0]
-			} else {
-				c.className = args[0]
+		if c.lookupByUUID {
+			c.uuid = args[0]
+		} else if strings.Contains(args[0], "/") {
+			names := strings.Split(args[0], "/")
+			if len(names) != 2 {
+				return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
 			}
+			c.className = names[0]
+			c.name = names[1]
 		} else {
-			if c.lookupByUUID {
-				c.uuid = args[0]
-			} else if strings.Contains(args[0], "/") {
-				names := strings.Split(args[0], "/")
-				if len(names) != 2 {
-					return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
-				}
-				c.className = names[0]
-				c.name = names[1]
-			} else {
-				c.name = args[0]
-			}
-
+			c.name = args[0]
+		}
+	}
+	if c.classFilter != "" {
+		if c.lookupByUUID {
+			c.classUUID = c.classFilter
+		} else {
+			c.className = c.classFilter
 		}
 	}
 
@@ -119,7 +119,7 @@ func (c *getCmd) getAll() error {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
 
-	if c.filterByClass {
+	if c.classFilter != "" {
 		if !c.lookupByUUID {
 			// Map the external class name to the class name.
 			for _, class := range classes {
