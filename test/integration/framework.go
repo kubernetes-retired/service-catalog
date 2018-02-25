@@ -89,7 +89,7 @@ func withConfigGetFreshApiserverAndClient(
 			etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
 			etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
 		} else {
-			t.Fatal("no storage type specified")
+			t.Log("no storage type specified")
 		}
 
 		options := &server.ServiceCatalogServerOptions{
@@ -110,7 +110,7 @@ func withConfigGetFreshApiserverAndClient(
 
 		if err := server.RunServer(options, stopCh); err != nil {
 			close(serverFailed)
-			t.Fatalf("Error in bringing up the server: %v", err)
+			t.Logf("Error in bringing up the server: %v", err)
 		}
 	}()
 
