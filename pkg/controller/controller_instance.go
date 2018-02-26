@@ -379,7 +379,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorProvisionCallFailedReason, msg)
 			// Depending on the specific response, we may need to initiate orphan mitigation.
 			shouldMitigateOrphan := shouldStartOrphanMitigation(httpErr.StatusCode)
-			if isRetriableHttpStatus(httpErr.StatusCode) {
+			if isRetriableHTTPStatus(httpErr.StatusCode) {
 				return c.processTemporaryProvisionFailure(instance, readyCond, shouldMitigateOrphan)
 			}
 			// A failure with a given HTTP response code is treated as a terminal

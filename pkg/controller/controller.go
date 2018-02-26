@@ -669,7 +669,7 @@ func shouldStartOrphanMitigation(statusCode int) bool {
 
 // isTerminalHttpStatus returns whether an error with the given HTTP status
 // code is retriable.
-func isRetriableHttpStatus(statusCode int) bool {
+func isRetriableHTTPStatus(statusCode int) bool {
 	return statusCode != 400
 }
 
