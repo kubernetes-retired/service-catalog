@@ -668,6 +668,12 @@ func shouldStartOrphanMitigation(statusCode int) bool {
 		is5XX
 }
 
+// isTerminalHttpStatus returns whether an error with the given HTTP status
+// code is retriable.
+func isRetriableHttpStatus(statusCode int) bool {
+	return statusCode != 400
+}
+
 // ReconciliationAction reprents a type of action the reconciler should take
 // for a resource.
 type ReconciliationAction string
