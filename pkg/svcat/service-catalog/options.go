@@ -16,6 +16,7 @@ limitations under the License.
 
 package servicecatalog
 
+// FilterOptions allows for optional filtering fields to be passed to `Retrieve` methods.
 type FilterOptions struct {
 	ClassID string
 }
