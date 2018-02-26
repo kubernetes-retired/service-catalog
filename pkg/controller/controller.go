@@ -664,7 +664,6 @@ func shouldStartOrphanMitigation(statusCode int) bool {
 	is5XX := (statusCode >= 500 && statusCode < 600)
 
 	return (is2XX && statusCode != http.StatusOK) ||
-		statusCode == http.StatusRequestTimeout ||
 		is5XX
 }
 

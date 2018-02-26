@@ -381,12 +381,11 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			shouldMitigateOrphan := shouldStartOrphanMitigation(httpErr.StatusCode)
 			if isRetriableHttpStatus(httpErr.StatusCode) {
 				return c.processTemporaryProvisionFailure(instance, readyCond, shouldMitigateOrphan)
-			} else {
-				// A failure with a given HTTP response code is treated as a terminal
-				// failure.
-				failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, "ClusterServiceBrokerReturnedFailure", msg)
-				return c.processTerminalProvisionFailure(instance, readyCond, failedCond, shouldMitigateOrphan)
 			}
+			// A failure with a given HTTP response code is treated as a terminal
+			// failure.
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, "ClusterServiceBrokerReturnedFailure", msg)
+			return c.processTerminalProvisionFailure(instance, readyCond, failedCond, shouldMitigateOrphan)
 		}
 
 		reason := errorErrorCallingProvisionReason
