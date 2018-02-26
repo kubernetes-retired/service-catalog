@@ -1542,7 +1542,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	// create a fake kube client
 	fakeKubeClient := &clientgofake.Clientset{}
 	// create a fake sc client
-	fakeCatalogClient := &fake.Clientset{&servicecatalogclientset.Clientset{}}
+	fakeCatalogClient := &fake.Clientset{Clientset: &servicecatalogclientset.Clientset{}}
 
 	fakeOSBClient := fakeosb.NewFakeClient(config) // error should always be nil
 	brokerClFunc := fakeosb.ReturnFakeClientFunc(fakeOSBClient)
