@@ -1128,10 +1128,8 @@ func (c *controller) updateServiceInstanceCondition(
 //     if there was an error
 // 2 - any error that occurred
 func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.ServiceInstance, operation v1beta1.ServiceInstanceOperation, inProgressProperties *v1beta1.ServiceInstancePropertiesState) (*v1beta1.ServiceInstance, error) {
-	currentReconciledGeneration := toUpdate.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(toUpdate)
 	toUpdate.Status.ObservedGeneration = toUpdate.Generation
-	toUpdate.Status.ReconciledGeneration = currentReconciledGeneration
 	toUpdate.Status.CurrentOperation = operation
 	now := metav1.Now()
 	toUpdate.Status.OperationStartTime = &now
@@ -1208,19 +1206,6 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.OrphanMitigationInProgress = false
 	toUpdate.Status.LastOperation = nil
 	toUpdate.Status.InProgressProperties = nil
-	// TODO nilebox: update ReconciledGeneration only when operation is finished
-	toUpdate.Status.ReconciledGeneration = toUpdate.Generation
-}
-
-// rollbackReconciledGenerationOnDeletion resets the ReconciledGeneration if a
-// deletion was performed while an async provision or update is running.
-// TODO: rework saving off current generation as the start of the async
-// operation, see PR 1708/Issue 1587.
-func rollbackReconciledGenerationOnDeletion(instance *v1beta1.ServiceInstance, currentReconciledGeneration int64) {
-	if instance.DeletionTimestamp != nil {
-		glog.V(4).Infof("Not updating ReconciledGeneration after async operation because there is a deletion pending.")
-		instance.Status.ReconciledGeneration = currentReconciledGeneration
-	}
 }
 
 // serviceInstanceHasExistingBindings returns true if there are any existing
@@ -1485,13 +1470,12 @@ func (c *controller) processServiceInstanceOperationError(instance *v1beta1.Serv
 // processProvisionSuccess handles the logging and updating of a
 // ServiceInstance that has successfully been provisioned at the broker.
 func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, dashboardURL *string) error {
-	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	setServiceInstanceDashboardURL(instance, dashboardURL)
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
-	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
-	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1504,7 +1488,6 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 // processProvisionFailure handles the logging and updating of a
 // ServiceInstance that hit a terminal failure during provision reconciliation.
 func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition, shouldMitigateOrphan bool) error {
-	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	if failedCond == nil {
 		return fmt.Errorf("failedCond must not be nil")
 	}
@@ -1532,7 +1515,7 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		err = fmt.Errorf(failedCond.Message)
 	} else {
 		clearServiceInstanceCurrentOperation(instance)
-		rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
+		instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1564,9 +1547,8 @@ func (c *controller) processProvisionAsyncResponse(instance *v1beta1.ServiceInst
 func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.ServiceInstance) error {
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successUpdateInstanceReason, successUpdateInstanceMessage)
 	instance.Status.ExternalProperties = instance.Status.InProgressProperties
-	currentReconciledGeneration := instance.Status.ReconciledGeneration
 	clearServiceInstanceCurrentOperation(instance)
-	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1580,13 +1562,11 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 // ServiceInstance that hit a terminal failure during update reconciliation.
 func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition) error {
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
-	currentReconciledGeneration := instance.Status.ReconciledGeneration
 
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionFailed, failedCond.Status, failedCond.Reason, failedCond.Message)
-
 	clearServiceInstanceCurrentOperation(instance)
-	rollbackReconciledGenerationOnDeletion(instance, currentReconciledGeneration)
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1623,11 +1603,12 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 		msg = successOrphanMitigationMessage
 	}
 
-	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionFalse, reason, msg)
 	clearServiceInstanceCurrentOperation(instance)
 	instance.Status.ExternalProperties = nil
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 
 	if mitigatingOrphan {
 		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1671,6 +1652,7 @@ func (c *controller) processDeprovisionFailure(instance *v1beta1.ServiceInstance
 	}
 
 	clearServiceInstanceCurrentOperation(instance)
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
