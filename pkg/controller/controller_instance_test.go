@@ -630,10 +630,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 				assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParameters, instance)
 			} else {
-				expectedParametersChecksum, err := generateChecksumOfParameters(tc.expectedParams)
-				if err != nil {
-					t.Fatalf("Failed to generate parameters checksum: %v", err)
-				}
+				expectedParametersChecksum := generateChecksumOfParametersOrFail(t, tc.expectedParams)
 
 				assertNumberOfActions(t, actions, 2)
 
@@ -3907,13 +3904,10 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		"a": "1",
 		"b": "<redacted>",
 	}
-	expectedParametersChecksum, err := generateChecksumOfParameters(map[string]interface{}{
+	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, map[string]interface{}{
 		"a": "1",
 		"b": "2",
 	})
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 2)
@@ -4067,16 +4061,11 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		Raw: oldParametersMarshaled,
 	}
 
-	oldParametersChecksum, err := generateChecksumOfParameters(oldParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
-
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		Parameters:                     oldParametersRaw,
-		ParametersChecksum:             oldParametersChecksum,
+		ParametersChecksum:             generateChecksumOfParametersOrFail(t, oldParameters),
 	}
 
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
@@ -4120,10 +4109,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		},
 		"name": "test-param",
 	}
-	expectedParametersChecksum, err := generateChecksumOfParameters(expectedParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
+	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, expectedParameters)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 2)
@@ -4196,16 +4182,11 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		Raw: oldParametersMarshaled,
 	}
 
-	oldParametersChecksum, err := generateChecksumOfParameters(oldParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
-
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		Parameters:                     oldParametersRaw,
-		ParametersChecksum:             oldParametersChecksum,
+		ParametersChecksum:             generateChecksumOfParametersOrFail(t, oldParameters),
 	}
 
 	if err = testController.reconcileServiceInstance(instance); err != nil {
@@ -4371,10 +4352,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		Raw: oldParametersMarshaled,
 	}
 
-	oldParametersChecksum, err := generateChecksumOfParameters(oldParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
+	oldParametersChecksum := generateChecksumOfParametersOrFail(t, oldParameters)
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: "old-plan-name",
@@ -5353,4 +5331,12 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
 		t.Fatalf("The instance was expected to be marked as Provisioned")
 	}
+}
+
+func generateChecksumOfParametersOrFail(t *testing.T, params map[string]interface{}) string {
+	expectedParametersChecksum, err := generateChecksumOfParameters(params)
+	if err != nil {
+		t.Fatalf("Failed to generate parameters checksum: %v", err)
+	}
+	return expectedParametersChecksum
 }
