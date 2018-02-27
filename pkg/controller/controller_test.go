@@ -2072,7 +2072,7 @@ func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, r
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
-	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Status.ObservedGeneration)
+	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)

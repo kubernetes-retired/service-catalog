@@ -295,6 +295,10 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	}
 
 	instance = instance.DeepCopy()
+	// Any status updates from this point should have an updated observed generation
+	if instance.Status.ObservedGeneration != instance.Generation {
+		c.prepareServiceInstanceStatus(instance)
+	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
 	//
@@ -322,7 +326,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	if instance.Status.ObservedGeneration != instance.Generation {
+	if instance.Status.CurrentOperation == "" {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationProvision, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
@@ -399,6 +403,10 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	}
 
 	instance = instance.DeepCopy()
+	// Any status updates from this point should have an updated observed generation
+	if instance.Status.ObservedGeneration != instance.Generation {
+		c.prepareServiceInstanceStatus(instance)
+	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
 	//
@@ -426,7 +434,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	if instance.Status.ObservedGeneration != instance.Generation {
+	if instance.Status.CurrentOperation == "" {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
@@ -506,6 +514,10 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	glog.V(4).Info(pcb.Message("Processing deleting event"))
 
 	instance = instance.DeepCopy()
+	// Any status updates from this point should have an updated observed generation
+	if instance.Status.ObservedGeneration != instance.Generation {
+		c.prepareServiceInstanceStatus(instance)
+	}
 
 	// If the deprovisioning succeeded or is not needed, then no need to
 	// make a request to the broker.
@@ -547,7 +559,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			instance.Status.OperationStartTime = &now
 		}
 	} else {
-		if instance.Status.ObservedGeneration != instance.Generation {
+		if instance.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
 			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationDeprovision, nil)
 			if err != nil {
 				// There has been an update to the instance. Start reconciliation
@@ -997,6 +1009,13 @@ func newServiceInstanceFailedCondition(status v1beta1.ConditionStatus, reason, m
 	}
 }
 
+// resetServiceInstanceCondition sets a single condition on Instnace's status
+// to "false" with empty reason and message
+func resetServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
+	conditionType v1beta1.ServiceInstanceConditionType) {
+	setServiceInstanceConditionInternal(toUpdate, conditionType, v1beta1.ConditionFalse, "", "", metav1.Now())
+}
+
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
 // the condition already exists in the status, it is mutated; if the condition
 // does not already exist in the status, it is added.  Other conditions in the
@@ -1118,6 +1137,22 @@ func (c *controller) updateServiceInstanceCondition(
 	return err
 }
 
+// prepareServiceInstanceStatus sets the instance's observed generation
+// and clears the conditions, preparing it for any status updates that can occur
+// during the further processing.
+// It doesn't send the update request to server.
+func (c *controller) prepareServiceInstanceStatus(toUpdate *v1beta1.ServiceInstance) {
+	toUpdate.Status.ObservedGeneration = toUpdate.Generation
+	resetServiceInstanceCondition(
+		toUpdate,
+		v1beta1.ServiceInstanceConditionReady,
+	)
+	resetServiceInstanceCondition(
+		toUpdate,
+		v1beta1.ServiceInstanceConditionFailed,
+	)
+}
+
 // recordStartOfServiceInstanceOperation updates the instance to indicate that
 // there is an operation being performed. If the instance was already
 // performing a different operation, that operation is replaced. The Status of
@@ -1131,7 +1166,6 @@ func (c *controller) updateServiceInstanceCondition(
 // 2 - any error that occurred
 func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.ServiceInstance, operation v1beta1.ServiceInstanceOperation, inProgressProperties *v1beta1.ServiceInstancePropertiesState) (*v1beta1.ServiceInstance, error) {
 	clearServiceInstanceCurrentOperation(toUpdate)
-	toUpdate.Status.ObservedGeneration = toUpdate.Generation
 	toUpdate.Status.CurrentOperation = operation
 	now := metav1.Now()
 	toUpdate.Status.OperationStartTime = &now
