@@ -1818,6 +1818,25 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	return fakeRtObject, true
 }
 
+func assertRemovedFromBrokerCatalogFalse(t *testing.T, obj runtime.Object) {
+	assertRemovedFromBrokerCatalog(t, obj, false)
+}
+
+func assertRemovedFromBrokerCatalogTrue(t *testing.T, obj runtime.Object) {
+	assertRemovedFromBrokerCatalog(t, obj, true)
+}
+
+func assertRemovedFromBrokerCatalog(t *testing.T, obj runtime.Object, condition bool) {
+	clusterServiceClass, ok := obj.(*v1beta1.ClusterServiceClass)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ClusterServiceClass", obj)
+	}
+
+	if clusterServiceClass.Status.RemovedFromBrokerCatalog != condition {
+		fatalf(t, "ClusterServiceClass.RemovedFromBrokerCatalog!=%v", condition)
+	}
+}
+
 func assertClusterServiceBrokerReadyTrue(t *testing.T, obj runtime.Object) {
 	assertClusterServiceBrokerCondition(t, obj, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionTrue)
 }
