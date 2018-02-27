@@ -622,7 +622,7 @@ type ServiceInstanceStatus struct {
 	ExternalProperties *ServiceInstancePropertiesState `json:"externalProperties,omitempty"`
 
 	// ProvisionStatus describes whether the instance is in the provisioned state.
-	ProvisionStatus ServiceInstanceProvisionStatus `json:"provisioned"`
+	ProvisionStatus ServiceInstanceProvisionStatus `json:"provisionStatus"`
 
 	// DeprovisionStatus describes what has been done to deprovision the
 	// ServiceInstance.

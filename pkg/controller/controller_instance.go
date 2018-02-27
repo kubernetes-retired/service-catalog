@@ -297,7 +297,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	instance = instance.DeepCopy()
 	// Any status updates from this point should have an updated observed generation
 	if instance.Status.ObservedGeneration != instance.Generation {
-		c.prepareServiceInstanceStatus(instance)
+		c.prepareObservedGeneration(instance)
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
@@ -405,7 +405,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	instance = instance.DeepCopy()
 	// Any status updates from this point should have an updated observed generation
 	if instance.Status.ObservedGeneration != instance.Generation {
-		c.prepareServiceInstanceStatus(instance)
+		c.prepareObservedGeneration(instance)
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
@@ -516,7 +516,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	instance = instance.DeepCopy()
 	// Any status updates from this point should have an updated observed generation
 	if instance.Status.ObservedGeneration != instance.Generation {
-		c.prepareServiceInstanceStatus(instance)
+		c.prepareObservedGeneration(instance)
 	}
 
 	// If the deprovisioning succeeded or is not needed, then no need to
@@ -1093,10 +1093,14 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
 	glog.V(4).Info(pcb.Message("Updating references"))
+	status := toUpdate.Status
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
 	if err != nil {
 		glog.Errorf(pcb.Messagef("Failed to update references: %v", err))
 	}
+	// The UpdateReferences method ignores status changes.
+	// Restore status that might have changed locally to be able to update it later.
+	updatedInstance.Status = status
 	return updatedInstance, err
 }
 
@@ -1137,11 +1141,11 @@ func (c *controller) updateServiceInstanceCondition(
 	return err
 }
 
-// prepareServiceInstanceStatus sets the instance's observed generation
+// prepareObservedGeneration sets the instance's observed generation
 // and clears the conditions, preparing it for any status updates that can occur
 // during the further processing.
 // It doesn't send the update request to server.
-func (c *controller) prepareServiceInstanceStatus(toUpdate *v1beta1.ServiceInstance) {
+func (c *controller) prepareObservedGeneration(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.ObservedGeneration = toUpdate.Generation
 	resetServiceInstanceCondition(
 		toUpdate,
