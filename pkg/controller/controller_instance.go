@@ -255,7 +255,9 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 }
 
 // initObservedGeneration implements ObservedGeneration initialization based on
-// ReconciledGeneration for status API migration
+// ReconciledGeneration for status API migration.
+// Returns true if the status was updated (i.e. the iteration has finished and no
+// more processing needed).
 func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (bool, error) {
 	if instance.Status.ObservedGeneration == 0 && instance.Status.ReconciledGeneration != 0 {
 		instance.Status.ObservedGeneration = instance.Status.ReconciledGeneration
