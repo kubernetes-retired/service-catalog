@@ -1507,13 +1507,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
-						"provisioned": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Provisioned is the flag that marks whether the instance has been successfully provisioned (i.e. it exists on the broker's side and can be updated or deprovisioned). The flag should be reset after successful deprovisioning.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
 						"operationStartTime": {
 							SchemaProps: spec.SchemaProps{
 								Description: "OperationStartTime is the time at which the current operation began.",
@@ -1530,6 +1523,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalProperties is the properties state of the ServiceInstance which the broker knows about.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
+							},
+						},
+						"provisioned": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ProvisionStatus describes whether the instance is in the provisioned state.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"deprovisionStatus": {

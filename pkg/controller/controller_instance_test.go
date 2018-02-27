@@ -1495,7 +1495,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
@@ -1566,7 +1566,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
@@ -1673,7 +1673,7 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
@@ -1754,7 +1754,7 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = false
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -1860,7 +1860,7 @@ func TestReconsileServiceInstanceDeleteWithParameters(t *testing.T) {
 			instance.Generation = tc.generation
 			instance.Status.ReconciledGeneration = tc.reconciledGeneration
 			instance.Status.ObservedGeneration = 1
-			instance.Status.Provisioned = true
+			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 
 			fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 				return true, instance, nil
@@ -1910,7 +1910,7 @@ func TestReconcileServiceInstanceDeleteWhenAlreadyDeprovisionedUnsuccessfully(t 
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -1960,7 +1960,7 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 2
 	instance.Status.ObservedGeneration = 2
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
@@ -1986,12 +1986,9 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -2021,7 +2018,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	instance.Generation = 1
 	instance.Status.ReconciledGeneration = 0
 	instance.Status.ObservedGeneration = 0
-	instance.Status.Provisioned = false
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
@@ -2727,6 +2724,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 	}
+	instance.Status.ObservedGeneration = instance.Generation
 
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
@@ -2788,6 +2786,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
+	instance.Status.ObservedGeneration = instance.Generation
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("Should have returned no error because the retry duration has elapsed: %v", err)
@@ -3383,7 +3382,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 			instance.Generation = 2
 			instance.Status.ReconciledGeneration = 1
 			instance.Status.ObservedGeneration = 1
-			instance.Status.Provisioned = true
+			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 			instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 			if tc.includeUserInfo {
 				instance.Spec.UserInfo = testUserInfo
@@ -4047,7 +4046,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	oldParameters := map[string]interface{}{
@@ -4176,7 +4175,7 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	oldParameters := map[string]interface{}{
@@ -4351,7 +4350,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	oldParameters := map[string]interface{}{
@@ -4791,7 +4790,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
@@ -5260,7 +5259,7 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 	instance.Generation = 2
 	instance.Status.ReconciledGeneration = 1
 	instance.Status.ObservedGeneration = 1
-	instance.Status.Provisioned = true
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: "old-plan-name",
 		ClusterServicePlanExternalID:   "old-plan-id",
@@ -5326,7 +5325,7 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	instance.Status.ReconciledGeneration = 1
 	// Missing ObservedGeneration and Provisioned after updating Service Catalog
 	instance.Status.ObservedGeneration = 0
-	instance.Status.Provisioned = false
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
@@ -5348,7 +5347,7 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	if updatedServiceInstance.Status.ObservedGeneration == 0 || updatedServiceInstance.Status.ObservedGeneration != instance.Status.ReconciledGeneration {
 		t.Fatalf("Unexpected ObservedGeneration value: %d", updatedServiceInstance.Status.ObservedGeneration)
 	}
-	if !updatedServiceInstance.Status.Provisioned {
-		t.Fatalf("The instance was expected to have Provisioned flag set")
+	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
+		t.Fatalf("The instance was expected to be marked as Provisioned")
 	}
 }

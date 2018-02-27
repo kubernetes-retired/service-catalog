@@ -1006,10 +1006,10 @@ func autoConvert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstance
 	out.CurrentOperation = servicecatalog.ServiceInstanceOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.ObservedGeneration = in.ObservedGeneration
-	out.Provisioned = in.Provisioned
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.InProgressProperties = (*servicecatalog.ServiceInstancePropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*servicecatalog.ServiceInstancePropertiesState)(unsafe.Pointer(in.ExternalProperties))
+	out.ProvisionStatus = servicecatalog.ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = servicecatalog.ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
 	return nil
 }
@@ -1028,10 +1028,10 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstance
 	out.CurrentOperation = ServiceInstanceOperation(in.CurrentOperation)
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.ObservedGeneration = in.ObservedGeneration
-	out.Provisioned = in.Provisioned
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.InProgressProperties = (*ServiceInstancePropertiesState)(unsafe.Pointer(in.InProgressProperties))
 	out.ExternalProperties = (*ServiceInstancePropertiesState)(unsafe.Pointer(in.ExternalProperties))
+	out.ProvisionStatus = ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
 	return nil
 }

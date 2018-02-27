@@ -545,12 +545,6 @@ type ServiceInstanceStatus struct {
 	// whenever the status is updated regardless of operation result
 	ObservedGeneration int64
 
-	// Provisioned is the flag that marks whether the instance has been
-	// successfully provisioned (i.e. it exists on the broker's side and can be
-	// updated or deprovisioned). The flag should be reset after successful
-	// deprovisioning.
-	Provisioned bool
-
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time
 
@@ -562,6 +556,9 @@ type ServiceInstanceStatus struct {
 	// ExternalProperties is the properties state of the ServiceInstance which the
 	// broker knows about.
 	ExternalProperties *ServiceInstancePropertiesState
+
+	// ProvisionStatus describes whether the instance is in the provisioned state.
+	ProvisionStatus ServiceInstanceProvisionStatus
 
 	// DeprovisionStatus describes what has been done to deprovision the
 	// ServiceInstance.
@@ -663,6 +660,19 @@ const (
 	// requests have been sent for the ServiceInstance but they failed. The
 	// controller has given up on sending more deprovision requests.
 	ServiceInstanceDeprovisionStatusFailed ServiceInstanceDeprovisionStatus = "Failed"
+)
+
+// ServiceInstanceProvisionStatus is the status of provisioning a
+// ServiceInstance
+type ServiceInstanceProvisionStatus string
+
+const (
+	// ServiceInstanceProvisionStatusProvisioned indicates that the instance
+	// was provisioned.
+	ServiceInstanceProvisionStatusProvisioned ServiceInstanceProvisionStatus = "Provisioned"
+	// ServiceInstanceProvisionStatusNotProvisioned indicates that the instance
+	// was not ever provisioned or was deprovisioned.
+	ServiceInstanceProvisionStatusNotProvisioned ServiceInstanceProvisionStatus = "NotProvisioned"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
