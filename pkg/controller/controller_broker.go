@@ -17,12 +17,11 @@ limitations under the License.
 package controller
 
 import (
+	stderrors "errors"
 	"fmt"
 	"time"
 
 	"github.com/golang/glog"
-
-	stderrors "errors"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
