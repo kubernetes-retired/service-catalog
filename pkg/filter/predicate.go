@@ -31,14 +31,16 @@ import (
 //	NotIn        Operator = "notin"
 //)
 
+// Predicate is used to test if this rule accepts the properties given.
 // A Predicate wraps a label.Selector allowing us to use selectors.
 type Predicate interface {
+	// Accepts returns true if this predicate accepts the given set of properties.
 	Accepts(Properties) bool
 
-	// Empty returns true if this predicate does not restrict the selection space.
+	// Empty returns true if this predicate does not restrict the acceptance space.
 	Empty() bool
 
-	// String returns a human readable string that represents this selector.
+	// String returns a human readable string that represents this predicate.
 	String() string
 }
 
@@ -47,10 +49,15 @@ func NewPredicate() Predicate {
 	return internalPredicate{}
 }
 
+// internalPredicate is our internal representation of Predicate. It will be
+// implemented as a wrapper around labels.Selector to leverage the label
+// selector work.
 type internalPredicate struct {
 	selector labels.Selector
 }
 
+// Accepts tests to see if the given properties are allowed for this
+// predicate. If there is no predicate, then it is
 func (ip internalPredicate) Accepts(p Properties) bool {
 	if ip.Empty() {
 		return true
@@ -58,6 +65,7 @@ func (ip internalPredicate) Accepts(p Properties) bool {
 	return ip.selector.Matches(p)
 }
 
+// Empty returns true if this predicate does not restrict the acceptance space.
 func (ip internalPredicate) Empty() bool {
 	if ip.selector == nil {
 		return true
@@ -65,6 +73,7 @@ func (ip internalPredicate) Empty() bool {
 	return ip.selector.Empty()
 }
 
+// String returns a human-readable version of the selector.
 func (ip internalPredicate) String() string {
 	return ip.selector.String()
 }

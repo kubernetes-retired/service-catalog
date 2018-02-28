@@ -21,6 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+// CreatePredicateForServiceClasses creates the Predicate that will be used to
+// test if acceptance is allowed for service classes.
 func CreatePredicateForServiceClasses(requirements v1beta1.ClusterServiceClassRequirements) (Predicate, error) {
 	selector, err := labels.Parse(string(requirements))
 	if err != nil {
@@ -30,6 +32,8 @@ func CreatePredicateForServiceClasses(requirements v1beta1.ClusterServiceClassRe
 	return predicate, nil
 }
 
+// CreatePredicateForServicePlans creates the Predicate that will be used to
+// test if acceptance is allowed for service plans.
 func CreatePredicateForServicePlans(requirements v1beta1.ClusterServicePlanRequirements) (Predicate, error) {
 	selector, err := labels.Parse(string(requirements))
 	if err != nil {
@@ -39,6 +43,9 @@ func CreatePredicateForServicePlans(requirements v1beta1.ClusterServicePlanRequi
 	return predicate, nil
 }
 
+// ConvertServiceClassToProperties takes a Service Class and pulls out the
+// properties we support for filtering, converting them into a map in the
+// expected format.
 func ConvertServiceClassToProperties(serviceClass *v1beta1.ClusterServiceClass) Properties {
 	return labels.Set{
 		Name:         serviceClass.Name,
@@ -47,6 +54,9 @@ func ConvertServiceClassToProperties(serviceClass *v1beta1.ClusterServiceClass) 
 	}
 }
 
+// ConvertServicePlanToProperties takes a Service Plan and pulls out the
+// properties we support for filtering, converting them into a map in the
+// expected format.
 func ConvertServicePlanToProperties(servicePlan *v1beta1.ClusterServicePlan) Properties {
 	return labels.Set{
 		Name:                    servicePlan.Name,
