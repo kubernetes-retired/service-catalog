@@ -2192,12 +2192,25 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 }
 
 func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceReadyCondition(t, obj, v1beta1.ConditionFalse, readyReason)
+	var (
+		readyStatus       v1beta1.ConditionStatus
+		deprovisionStatus v1beta1.ServiceInstanceDeprovisionStatus
+	)
+	switch operation {
+	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+		readyStatus = v1beta1.ConditionFalse
+		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+	case v1beta1.ServiceInstanceOperationDeprovision:
+		readyStatus = v1beta1.ConditionUnknown
+		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
+	}
+
+	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
 	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
-	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
+	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
 }
 
 func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
