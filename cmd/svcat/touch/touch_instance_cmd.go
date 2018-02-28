@@ -17,7 +17,10 @@ func newTouchInstanceCmd(cxt *command.Context) *cobra.Command {
 	touchInstanceCmd := &touchInstanceCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:   "instance",
-		Short: "touch an instance to make service-catalog try to provision again",
+		Short: "Touch an instance to make service-catalog try to process the spec again",
+		Long: `Touch instance will increment the updateRequests field on the 
+instance. Then, service catalog will process the instance's spec again. It might
+do an update, a delete, or nothing.`,
 		Example: `
 svcat touch instance wordpress-mysql-instance --namespace mynamespace
 `,
