@@ -86,6 +86,8 @@ const (
 	deprovisioningInFlightMessage           string = "Deprovision request for ServiceInstance in-flight to Broker"
 	startingInstanceOrphanMitigationReason  string = "StartingInstanceOrphanMitigation"
 	startingInstanceOrphanMitigationMessage string = "The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource"
+	observedNewGenerationReason             string = "ObservedNewGeneration"
+	observedNewGenerationMessage            string = "Observed a new generation of the instance"
 )
 
 // ServiceInstance handlers and control-loop
@@ -515,7 +517,9 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 	instance = instance.DeepCopy()
 	// Any status updates from this point should have an updated observed generation
-	if instance.Status.ObservedGeneration != instance.Generation {
+	// except for the orphan mitigation (it is considered to be a continuation
+	// of the previously failed provisioning operation).
+	if !instance.Status.OrphanMitigationInProgress && instance.Status.ObservedGeneration != instance.Generation {
 		c.prepareObservedGeneration(instance)
 	}
 
@@ -754,18 +758,6 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		err := fmt.Errorf(`Got invalid state in LastOperationResponse: %q`, response.State)
 		return c.handleServiceInstancePollingError(instance, err)
 	}
-}
-
-// isServiceInstanceFailed returns whether the instance has a failed condition with
-// status true.
-func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
-	for _, condition := range instance.Status.Conditions {
-		if condition.Type == v1beta1.ServiceInstanceConditionFailed && condition.Status == v1beta1.ConditionTrue {
-			return true
-		}
-	}
-
-	return false
 }
 
 // isServiceInstanceProcessedAlready returns true if there is no further processing
@@ -1009,13 +1001,6 @@ func newServiceInstanceFailedCondition(status v1beta1.ConditionStatus, reason, m
 	}
 }
 
-// resetServiceInstanceCondition sets a single condition on Instnace's status
-// to "false" with empty reason and message
-func resetServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
-	conditionType v1beta1.ServiceInstanceConditionType) {
-	setServiceInstanceConditionInternal(toUpdate, conditionType, v1beta1.ConditionFalse, "", "", metav1.Now())
-}
-
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
 // the condition already exists in the status, it is mutated; if the condition
 // does not already exist in the status, it is added.  Other conditions in the
@@ -1147,13 +1132,21 @@ func (c *controller) updateServiceInstanceCondition(
 // It doesn't send the update request to server.
 func (c *controller) prepareObservedGeneration(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.ObservedGeneration = toUpdate.Generation
-	resetServiceInstanceCondition(
+	reason := observedNewGenerationReason
+	message := observedNewGenerationMessage
+	setServiceInstanceCondition(
 		toUpdate,
 		v1beta1.ServiceInstanceConditionReady,
+		v1beta1.ConditionFalse,
+		reason,
+		message,
 	)
-	resetServiceInstanceCondition(
+	setServiceInstanceCondition(
 		toUpdate,
 		v1beta1.ServiceInstanceConditionFailed,
+		v1beta1.ConditionFalse,
+		reason,
+		message,
 	)
 }
 

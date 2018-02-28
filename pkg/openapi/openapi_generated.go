@@ -1525,7 +1525,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
 							},
 						},
-						"provisioned": {
+						"provisionStatus": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ProvisionStatus describes whether the instance is in the provisioned state.",
 								Type:        []string{"string"},
@@ -1540,7 +1540,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisioned", "deprovisionStatus"},
+					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus"},
 				},
 			},
 			Dependencies: []string{

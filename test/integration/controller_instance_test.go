@@ -568,7 +568,7 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 				}
 				ct.instance = updatedInstance
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
+				if err := util.WaitForInstanceProcessedGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
@@ -841,7 +841,7 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 				}
 				ct.instance = updatedInstance
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
+				if err := util.WaitForInstanceProcessedGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
@@ -1036,7 +1036,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				}
 
 				if tc.expectFailCondition {
-					if err := util.WaitForInstanceReconciledGeneration(ct.client, ct.instance.Namespace, ct.instance.Name, 1); err != nil {
+					if err := util.WaitForInstanceProcessedGeneration(ct.client, ct.instance.Namespace, ct.instance.Name, 1); err != nil {
 						t.Fatalf("error waiting for instance reconciliation to complete: %v", err)
 					}
 				}
