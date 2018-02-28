@@ -27,7 +27,8 @@ const (
 	// // alpha: v1.4
 	// MyFeature() bool
 
-	// OriginatingIdentity controls whether the controller should include originating identity in the header of requests
+	// OriginatingIdentity controls whether the controller should include
+	// originating identity in the header of requests
 	// sent to brokers
 	//
 	// owner: @pmorie
@@ -46,6 +47,13 @@ const (
 	// owner: @droot
 	// alpha: v0.1.6
 	PodPreset utilfeature.Feature = "PodPreset"
+
+	// CatalogRestrictions controls weather the ClusterServiceBroker will use
+	// the catalog restrictions when doing a re-list operation for catalog
+	// ingestion from a broker.
+	// owner: @n3wscott
+	// alpha: v0.1.9
+	CatalogRestrictions utilfeature.Feature = "CatalogRestrictions"
 )
 
 func init() {

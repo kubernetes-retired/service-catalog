@@ -521,6 +521,18 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	return serviceClasses, servicePlans, nil
 }
 
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.ServiceClassCatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+	serviceClasses, servicePlans, err := convertCatalog(in)
+	if err != nil {
+		return nil, nil, err
+	}
+	// Filter Service Classes
+	// Convert Service Class IDs to additional restrictions for plans.
+	// Filter Service Plans
+	// Remove Service Classes with no plans.
+	return serviceClasses, servicePlans, nil
+}
+
 // TODO: filtering service classes out if all the plans have been filtered off.
 func filterServiceClasses(requirements v1beta1.ClusterServiceClassRequirements, serviceClasses []*v1beta1.ClusterServiceClass) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServiceClass, error) {
 	predicate, err := filter.CreatePredicateForServiceClasses(requirements)
