@@ -27,15 +27,15 @@ type Service struct {
 	// Bindable represents whether a service is bindable.  May be overridden
 	// on a per-plan basis by the Plan.Bindable field.
 	Bindable bool `json:"bindable"`
-	// BindingRetrievable is ALPHA and may change or disappear at any time.
-	// BindingRetrievable will only be provided if alpha features are
+	// BindingsRetrievable is ALPHA and may change or disappear at any time.
+	// BindingsRetrievable will only be provided if alpha features are
 	// enabled.
 	//
-	// BindingRetrievable represents whether fetching a service binding via
+	// BindingsRetrievable represents whether fetching a service binding via
 	// a GET on the binding resource's endpoint
 	// (/v2/service_instances/instance-id/service_bindings/binding-id) is
 	// supported for all plans.
-	BindingRetrievable bool `json:"binding_retrievable,omitempty"`
+	BindingsRetrievable bool `json:"bindings_retrievable,omitempty"`
 	// PlanUpdatable represents whether instances of this service may be
 	// updated to a different plan.  The serialized form 'plan_updateable' is
 	// a mistake that has become written into the API for backward
