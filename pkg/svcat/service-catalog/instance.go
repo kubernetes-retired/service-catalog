@@ -191,10 +191,12 @@ func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
 		if err == nil {
 			return nil
 		}
+		// if we didn't get a conflict, no idea what happened
 		if !errors.IsConflict(err) {
 			return fmt.Errorf("could not touch instance (%s)", err)
 		}
 	}
 
+	// conflict
 	return fmt.Errorf("could not sync service broker after %d tries", retries)
 }
