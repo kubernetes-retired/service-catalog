@@ -1280,6 +1280,66 @@ func TestCatalogConversionMultipleClusterServiceClasses(t *testing.T) {
 
 }
 
+func TestFilterServiceClasses(t *testing.T) {
+
+	cases := []struct {
+		name            string
+		requirements    v1beta1.ClusterServiceClassRequirements
+		acceptedClasses int
+		rejectedClasses int
+		catalog         string
+	}{
+		{
+			name:            "no restriction",
+			acceptedClasses: 1,
+			rejectedClasses: 0,
+			catalog:         testCatalog,
+		},
+		{
+			name:            "by external name",
+			requirements:    "externalName=fake-service",
+			acceptedClasses: 1,
+			rejectedClasses: 0,
+			catalog:         testCatalog,
+		},
+		{
+			name:            "by external name",
+			requirements:    "externalName=real-service",
+			acceptedClasses: 0,
+			rejectedClasses: 1,
+			catalog:         testCatalog,
+		},
+	}
+
+	for _, tc := range cases {
+		testName := fmt.Sprintf("%s:%s", tc.name, tc.requirements)
+		t.Run(testName, func(t *testing.T) {
+			catalog := &osb.CatalogResponse{}
+			err := json.Unmarshal([]byte(tc.catalog), &catalog)
+			if err != nil {
+				t.Fatalf("Failed to unmarshal test catalog: %v", err)
+			}
+			serviceClasses, _, err := convertCatalog(catalog)
+			if err != nil {
+				t.Fatalf("Failed to convertCatalog: %v", err)
+			}
+			totalClasses := tc.acceptedClasses + tc.rejectedClasses
+			if len(serviceClasses) != totalClasses {
+				t.Fatalf("Catalog did not cointain expected number of classes, %s", expectedGot(totalClasses, len(serviceClasses)))
+			}
+
+			acceptedServiceClass, rejectedServiceClasses, err := filterServiceClasses(tc.requirements, serviceClasses)
+			if len(acceptedServiceClass) != tc.acceptedClasses {
+				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.acceptedClasses, len(acceptedServiceClass)))
+			}
+
+			if len(rejectedServiceClasses) != tc.rejectedClasses {
+				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.rejectedClasses, len(rejectedServiceClasses)))
+			}
+		})
+	}
+}
+
 const testCatalogForClusterServicePlanBindableOverride = `{
   "services": [
     {

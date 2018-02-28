@@ -43,7 +43,8 @@ import (
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	pretty "github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
+	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
 const (
@@ -518,6 +519,31 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 		servicePlans = append(servicePlans, plans...)
 	}
 	return serviceClasses, servicePlans, nil
+}
+
+func filterServiceClasses(requirement v1beta1.ClusterServiceClassRequirements, serviceClasses []*v1beta1.ClusterServiceClass) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServiceClass, error) {
+
+	predicate, err := filter.CreatePredicateForServiceClass(requirement)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	accepted := []*v1beta1.ClusterServiceClass(nil)
+	rejected := []*v1beta1.ClusterServiceClass(nil)
+	for _, sc := range serviceClasses {
+		fields := filter.ConvertServiceClassToFields(sc)
+		if predicate.Matches(fields) {
+			accepted = append(accepted, sc)
+		} else {
+			rejected = append(rejected, sc)
+		}
+	}
+
+	return accepted, rejected, nil
+}
+
+func filterServicePlan(requirement v1beta1.ClusterServicePlanRequirements, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
+	return servicePlans, nil, nil
 }
 
 func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {

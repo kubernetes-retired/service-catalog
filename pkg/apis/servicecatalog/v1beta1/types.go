@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1/requirements"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -109,10 +108,12 @@ type ClusterServiceBrokerSpec struct {
 //
 //
 
-type ServiceClassCatalogRestrictions struct {
-	ClusterServicePlanRequirements requirements.Requirements
+type ClusterServicePlanRequirements string
+type ClusterServiceClassRequirements string
 
-	ClusterServiceClassRequirements requirements.Requirements
+type ServiceClassCatalogRestrictions struct {
+	servicePlan  ClusterServicePlanRequirements
+	serviceClass ClusterServiceClassRequirements
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
