@@ -176,8 +176,8 @@ func (sdk *SDK) Deprovision(namespace, instanceName string) error {
 	return nil
 }
 
-// TouchInstance increments the relist requests on an instance to make service
-// catalog try to provision it again
+// TouchInstance increments the updateRequests field on an instance to make
+// service process it again (might be an update, delete, or noop)
 func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
 	for j := 0; j < retries; j++ {
 		inst, err := sdk.RetrieveInstance(ns, name)
