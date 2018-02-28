@@ -16,10 +16,10 @@ type touchInstanceCmd struct {
 func newTouchInstanceCmd(cxt *command.Context) *cobra.Command {
 	touchInstanceCmd := &touchInstanceCmd{Context: cxt}
 	cmd := &cobra.Command{
-		Use:   "touch NAME --namespace NAMESPACE",
+		Use:   "instance",
 		Short: "touch an instance to make service-catalog try to provision again",
 		Example: `
-svcat touch  wordpress-mysql-instance --namespace mynamespace
+svcat touch instance wordpress-mysql-instance --namespace mynamespace
 `,
 		PreRunE: command.PreRunE(touchInstanceCmd),
 		RunE:    command.RunE(touchInstanceCmd),
