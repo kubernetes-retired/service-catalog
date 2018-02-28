@@ -95,25 +95,15 @@ type ClusterServiceBrokerSpec struct {
 
 	// CatalogRestrictions allows adding restrictions onto Class/Plans on relist.
 	// +optional
-	CatalogRestrictions *ServiceClassCatalogRestrictions
+	CatalogRestrictions *ServiceClassCatalogRestrictions `json:"catalogRestrictions,omitempty"`
 }
-
-// Focus on just external name and id at the moment.
-//
-// White list:
-// if in the following list, then allow the object to be listed.
-//
-// Black list:
-// if in the following list, then restrict
-//
-//
 
 type ClusterServicePlanRequirements string
 type ClusterServiceClassRequirements string
 
 type ServiceClassCatalogRestrictions struct {
-	servicePlan  ClusterServicePlanRequirements
-	serviceClass ClusterServiceClassRequirements
+	ServicePlan  ClusterServicePlanRequirements  `json:"servicePlan,omitempty"`
+	ServiceClass ClusterServiceClassRequirements `json:"serviceClass,omitempty"`
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.

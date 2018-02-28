@@ -81,6 +81,17 @@ type ClusterServiceBrokerSpec struct {
 	// RelistRequests is a strictly increasing, non-negative integer counter that
 	// can be manually incremented by a user to manually trigger a relist.
 	RelistRequests int64
+
+	// CatalogRestrictions allows adding restrictions onto Class/Plans on relist.
+	CatalogRestrictions *ServiceClassCatalogRestrictions
+}
+
+type ClusterServicePlanRequirements string
+type ClusterServiceClassRequirements string
+
+type ServiceClassCatalogRestrictions struct {
+	ServicePlan  ClusterServicePlanRequirements
+	ServiceClass ClusterServiceClassRequirements
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
