@@ -2087,19 +2087,27 @@ func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, 
 
 func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	reason := ""
+	var expectedObservedGeneration int64
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision:
 		reason = provisioningInFlightReason
+		expectedObservedGeneration = originalInstance.Generation
 	case v1beta1.ServiceInstanceOperationUpdate:
 		reason = instanceUpdatingInFlightReason
+		expectedObservedGeneration = originalInstance.Generation
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = deprovisioningInFlightReason
+		if originalInstance.Status.OrphanMitigationInProgress {
+			expectedObservedGeneration = originalInstance.Status.ObservedGeneration
+		} else {
+			expectedObservedGeneration = originalInstance.Generation
+		}
 	}
 	assertServiceInstanceReadyFalse(t, obj, reason)
 	assertServiceInstanceCurrentOperation(t, obj, operation)
 	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
-	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceObservedGeneration(t, obj, expectedObservedGeneration)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
@@ -2136,28 +2144,36 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 		deprovisionStatus v1beta1.ServiceInstanceDeprovisionStatus
 	)
 	var provisionStatus v1beta1.ServiceInstanceProvisionStatus
+	var observedGeneration int64
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision:
 		provisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 		reason = successProvisionReason
 		readyStatus = v1beta1.ConditionTrue
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		observedGeneration = originalInstance.Generation
 	case v1beta1.ServiceInstanceOperationUpdate:
 		provisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 		reason = successUpdateInstanceReason
 		readyStatus = v1beta1.ConditionTrue
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		observedGeneration = originalInstance.Generation
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		provisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 		reason = successDeprovisionReason
 		readyStatus = v1beta1.ConditionFalse
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
+		if originalInstance.Status.OrphanMitigationInProgress {
+			observedGeneration = originalInstance.Status.ObservedGeneration
+		} else {
+			observedGeneration = originalInstance.Generation
+		}
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, reason)
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
-	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
-	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceReconciledGeneration(t, obj, observedGeneration)
+	assertServiceInstanceObservedGeneration(t, obj, observedGeneration)
 	assertServiceInstanceProvisioned(t, obj, provisionStatus)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
