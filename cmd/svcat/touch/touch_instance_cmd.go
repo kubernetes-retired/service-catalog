@@ -26,7 +26,6 @@ svcat touch  wordpress-mysql-instance --namespace mynamespace
 	}
 	cmd.Flags().StringVarP(&touchInstanceCmd.namespace, "namespace", "n", "default",
 		"The namespace for the instance to touch")
-	cmd.MarkFlagRequired("namespace")
 	return cmd
 }
 
