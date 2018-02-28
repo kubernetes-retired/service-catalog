@@ -1283,31 +1283,59 @@ func TestCatalogConversionMultipleClusterServiceClasses(t *testing.T) {
 func TestFilterServiceClasses(t *testing.T) {
 
 	cases := []struct {
-		name            string
-		requirements    v1beta1.ClusterServiceClassRequirements
-		acceptedClasses int
-		rejectedClasses int
-		catalog         string
+		name         string
+		requirements v1beta1.ClusterServiceClassRequirements
+		accepted     int
+		rejected     int
+		catalog      string
 	}{
 		{
-			name:            "no restriction",
-			acceptedClasses: 1,
-			rejectedClasses: 0,
-			catalog:         testCatalog,
+			name:     "no restriction",
+			accepted: 1,
+			rejected: 0,
+			catalog:  testCatalog,
 		},
 		{
-			name:            "by external name",
-			requirements:    "externalName=fake-service",
-			acceptedClasses: 1,
-			rejectedClasses: 0,
-			catalog:         testCatalog,
+			name:         "by external name",
+			requirements: "externalName=fake-service",
+			accepted:     1,
+			rejected:     0,
+			catalog:      testCatalog,
 		},
 		{
-			name:            "by external name",
-			requirements:    "externalName=real-service",
-			acceptedClasses: 0,
-			rejectedClasses: 1,
-			catalog:         testCatalog,
+			name:         "by external name",
+			requirements: "externalName=real-service",
+			accepted:     0,
+			rejected:     1,
+			catalog:      testCatalog,
+		},
+		{
+			name:         "by externalID",
+			requirements: "externalID=acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+			accepted:     1,
+			rejected:     0,
+			catalog:      testCatalog,
+		},
+		{
+			name:         "by externalID",
+			requirements: "externalID=acb56d7c-YYYY-YYYY-YYYY-feb140a59a66",
+			accepted:     0,
+			rejected:     1,
+			catalog:      testCatalog,
+		},
+		{
+			name:         "by external ID and external name",
+			requirements: "externalID=acb56d7c-XXXX-XXXX-XXXX-feb140a59a66,externalName=fake-service",
+			accepted:     1,
+			rejected:     0,
+			catalog:      testCatalog,
+		},
+		{
+			name:         "by external ID and external name",
+			requirements: "externalID=acb56d7c-XXXX-XXXX-XXXX-feb140a59a66,externalName=real-service",
+			accepted:     0,
+			rejected:     1,
+			catalog:      testCatalog,
 		},
 	}
 
@@ -1323,18 +1351,78 @@ func TestFilterServiceClasses(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to convertCatalog: %v", err)
 			}
-			totalClasses := tc.acceptedClasses + tc.rejectedClasses
-			if len(serviceClasses) != totalClasses {
-				t.Fatalf("Catalog did not cointain expected number of classes, %s", expectedGot(totalClasses, len(serviceClasses)))
+			total := tc.accepted + tc.rejected
+			if len(serviceClasses) != total {
+				t.Fatalf("Catalog did not cointain expected number of classes, %s", expectedGot(total, len(serviceClasses)))
 			}
 
 			acceptedServiceClass, rejectedServiceClasses, err := filterServiceClasses(tc.requirements, serviceClasses)
-			if len(acceptedServiceClass) != tc.acceptedClasses {
-				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.acceptedClasses, len(acceptedServiceClass)))
+			if len(acceptedServiceClass) != tc.accepted {
+				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.accepted, len(acceptedServiceClass)))
 			}
 
-			if len(rejectedServiceClasses) != tc.rejectedClasses {
-				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.rejectedClasses, len(rejectedServiceClasses)))
+			if len(rejectedServiceClasses) != tc.rejected {
+				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.rejected, len(rejectedServiceClasses)))
+			}
+		})
+	}
+}
+
+func TestFilterServicePlans(t *testing.T) {
+
+	cases := []struct {
+		name         string
+		requirements v1beta1.ClusterServicePlanRequirements
+		accepted     int
+		rejected     int
+		catalog      string
+	}{
+		{
+			name:     "no restriction",
+			accepted: 2,
+			rejected: 0,
+			catalog:  testCatalog,
+		},
+		{
+			name:         "by external name",
+			requirements: "externalName=fake-plan-1",
+			accepted:     1,
+			rejected:     1,
+			catalog:      testCatalog,
+		},
+		{
+			name:         "by external name",
+			requirements: "externalName=real-plan-1",
+			accepted:     0,
+			rejected:     2,
+			catalog:      testCatalog,
+		},
+	}
+
+	for _, tc := range cases {
+		testName := fmt.Sprintf("%s:%s", tc.name, tc.requirements)
+		t.Run(testName, func(t *testing.T) {
+			catalog := &osb.CatalogResponse{}
+			err := json.Unmarshal([]byte(tc.catalog), &catalog)
+			if err != nil {
+				t.Fatalf("Failed to unmarshal test catalog: %v", err)
+			}
+			_, servicePlans, err := convertCatalog(catalog)
+			if err != nil {
+				t.Fatalf("Failed to convertCatalog: %v", err)
+			}
+			total := tc.accepted + tc.rejected
+			if len(servicePlans) != total {
+				t.Fatalf("Catalog did not cointain expected number of plans, %s", expectedGot(total, len(servicePlans)))
+			}
+
+			acceptedServiceClass, rejectedServiceClasses, err := filterServicePlans(tc.requirements, servicePlans)
+			if len(acceptedServiceClass) != tc.accepted {
+				t.Fatalf("Unexpected number of accepted service plans after filtering, %s", expectedGot(tc.accepted, len(acceptedServiceClass)))
+			}
+
+			if len(rejectedServiceClasses) != tc.rejected {
+				t.Fatalf("Unexpected number of accepted service plans after filtering, %s", expectedGot(tc.rejected, len(rejectedServiceClasses)))
 			}
 		})
 	}

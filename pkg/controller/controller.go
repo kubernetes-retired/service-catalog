@@ -521,9 +521,9 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	return serviceClasses, servicePlans, nil
 }
 
-func filterServiceClasses(requirement v1beta1.ClusterServiceClassRequirements, serviceClasses []*v1beta1.ClusterServiceClass) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServiceClass, error) {
-
-	predicate, err := filter.CreatePredicateForServiceClass(requirement)
+// TODO: filtering service classes out if all the plans have been filtered off.
+func filterServiceClasses(requirements v1beta1.ClusterServiceClassRequirements, serviceClasses []*v1beta1.ClusterServiceClass) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServiceClass, error) {
+	predicate, err := filter.CreatePredicateForServiceClasses(requirements)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -531,8 +531,8 @@ func filterServiceClasses(requirement v1beta1.ClusterServiceClassRequirements, s
 	accepted := []*v1beta1.ClusterServiceClass(nil)
 	rejected := []*v1beta1.ClusterServiceClass(nil)
 	for _, sc := range serviceClasses {
-		fields := filter.ConvertServiceClassToFields(sc)
-		if predicate.Matches(fields) {
+		fields := filter.ConvertServiceClassToProperties(sc)
+		if predicate.Accepts(fields) {
 			accepted = append(accepted, sc)
 		} else {
 			rejected = append(rejected, sc)
@@ -542,8 +542,25 @@ func filterServiceClasses(requirement v1beta1.ClusterServiceClassRequirements, s
 	return accepted, rejected, nil
 }
 
-func filterServicePlan(requirement v1beta1.ClusterServicePlanRequirements, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
-	return servicePlans, nil, nil
+// TODO: filtering service plans might have to also take in the rejected classes to wipe the plans for those classes.
+func filterServicePlans(requirements v1beta1.ClusterServicePlanRequirements, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
+	predicate, err := filter.CreatePredicateForServicePlans(requirements)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	accepted := []*v1beta1.ClusterServicePlan(nil)
+	rejected := []*v1beta1.ClusterServicePlan(nil)
+	for _, sp := range servicePlans {
+		fields := filter.ConvertServicePlanToProperties(sp)
+		if predicate.Accepts(fields) {
+			accepted = append(accepted, sp)
+		} else {
+			rejected = append(rejected, sp)
+		}
+	}
+
+	return accepted, rejected, nil
 }
 
 func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {
@@ -611,7 +628,6 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 				}
 			}
 		}
-
 	}
 	return servicePlans, nil
 }

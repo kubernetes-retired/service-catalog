@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func CreatePredicateForServiceClass(requirements v1beta1.ClusterServiceClassRequirements) (Predicate, error) {
+func CreatePredicateForServiceClasses(requirements v1beta1.ClusterServiceClassRequirements) (Predicate, error) {
 	selector, err := labels.Parse(string(requirements))
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func CreatePredicateForServiceClass(requirements v1beta1.ClusterServiceClassRequ
 	return predicate, nil
 }
 
-func CreatePredicateForServicePlan(requirements v1beta1.ClusterServicePlanRequirements) (Predicate, error) {
+func CreatePredicateForServicePlans(requirements v1beta1.ClusterServicePlanRequirements) (Predicate, error) {
 	selector, err := labels.Parse(string(requirements))
 	if err != nil {
 		return nil, err
@@ -39,10 +39,19 @@ func CreatePredicateForServicePlan(requirements v1beta1.ClusterServicePlanRequir
 	return predicate, nil
 }
 
-func ConvertServiceClassToFields(serviceClass *v1beta1.ClusterServiceClass) Fields {
+func ConvertServiceClassToProperties(serviceClass *v1beta1.ClusterServiceClass) Properties {
 	return labels.Set{
 		Name:         serviceClass.Name,
 		ExternalName: serviceClass.Spec.ExternalName,
 		ExternalID:   serviceClass.Spec.ExternalID,
+	}
+}
+
+func ConvertServicePlanToProperties(servicePlan *v1beta1.ClusterServicePlan) Properties {
+	return labels.Set{
+		Name:                    servicePlan.Name,
+		ExternalName:            servicePlan.Spec.ExternalName,
+		ExternalID:              servicePlan.Spec.ExternalID,
+		ClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
 	}
 }

@@ -20,11 +20,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// Fields allows you to present fields independently from their storage.\
-type Fields labels.Labels
+// Properties allows you to present properties independently from their storage.
+type Properties labels.Labels
 
 const (
-	Name         = "name"
-	ExternalName = "externalName"
-	ExternalID   = "externalID"
+	Name                    = "name"
+	ExternalName            = "externalName"
+	ExternalID              = "externalID"
+	ClusterServiceClassName = "clusterServiceClassName"
 )

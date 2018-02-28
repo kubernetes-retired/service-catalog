@@ -33,7 +33,7 @@ import (
 
 // A Predicate wraps a label.Selector allowing us to use selectors.
 type Predicate interface {
-	Matches(Fields) bool
+	Accepts(Properties) bool
 
 	// Empty returns true if this predicate does not restrict the selection space.
 	Empty() bool
@@ -51,20 +51,20 @@ type internalPredicate struct {
 	selector labels.Selector
 }
 
-func (p internalPredicate) Matches(f Fields) bool {
-	if p.Empty() {
+func (ip internalPredicate) Accepts(p Properties) bool {
+	if ip.Empty() {
 		return true
 	}
-	return p.selector.Matches(f)
+	return ip.selector.Matches(p)
 }
 
-func (p internalPredicate) Empty() bool {
-	if p.selector == nil {
+func (ip internalPredicate) Empty() bool {
+	if ip.selector == nil {
 		return true
 	}
-	return p.selector.Empty()
+	return ip.selector.Empty()
 }
 
-func (p internalPredicate) String() string {
-	return p.selector.String()
+func (ip internalPredicate) String() string {
+	return ip.selector.String()
 }
