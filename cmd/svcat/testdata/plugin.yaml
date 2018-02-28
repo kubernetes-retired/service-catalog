@@ -126,6 +126,13 @@ tree:
   - name: broker
     shortDesc: Syncs service catalog for a service broker
     command: ./svcat sync broker
+- name: touch
+  shortDesc: Make the service catalog attempt to re-provision an instance
+  command: ./svcat touch
+  tree:
+  - name: instance
+    shortDesc: touch an instance to make service-catalog try to provision again
+    command: ./svcat touch instance
 - name: unbind
   shortDesc: Unbinds an instance. When an instance name is specified, all of its bindings
     are removed, otherwise use --name to remove a specific binding
