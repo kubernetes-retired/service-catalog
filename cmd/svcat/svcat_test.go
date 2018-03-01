@@ -91,11 +91,13 @@ func TestCommandOutput(t *testing.T) {
 		{name: "describe plan with schemas", cmd: "describe plan premium", golden: "output/describe-plan-with-schemas.txt"},
 		{name: "describe plan without schemas", cmd: "describe plan premium --show-schemas=false", golden: "output/describe-plan-without-schemas.txt"},
 
-		{name: "list all instances", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
+		{name: "list all test-ns instances", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
+		{name: "list all instances", cmd: "get instances --all-namespaces", golden: "output/get-instances-all-namespaces.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
 		{name: "describe instance", cmd: "describe instance ups-instance -n test-ns", golden: "output/describe-instance.txt"},
 
 		{name: "list all bindings", cmd: "get bindings -n test-ns", golden: "output/get-bindings.txt"},
+		{name: "list all instances", cmd: "get bindings --all-namespaces", golden: "output/get-bindings-all-namespaces.txt"},
 		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
 	}
