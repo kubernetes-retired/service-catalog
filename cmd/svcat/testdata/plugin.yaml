@@ -131,7 +131,10 @@ tree:
   command: ./svcat touch
   tree:
   - name: instance
-    shortDesc: touch an instance to make service-catalog try to provision again
+    shortDesc: Touch an instance to make service-catalog try to process the spec again
+    longDesc: "Touch instance will increment the updateRequests field on the instance.
+      \nThen, service catalog will process the instance's spec again. It might do
+      an update, a delete, or \nnothing."
     command: ./svcat touch instance
 - name: unbind
   shortDesc: Unbinds an instance. When an instance name is specified, all of its bindings
