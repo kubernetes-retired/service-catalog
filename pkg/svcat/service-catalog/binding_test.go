@@ -115,7 +115,7 @@ var _ = Describe("Binding", func() {
 			Expect(actions[0].(testing.ListActionImpl).Namespace).To(Equal(si.Namespace))
 		})
 
-		It("Bubbles up errrors", func() {
+		It("Bubbles up errors", func() {
 			badClient := &fake.Clientset{}
 			errorMessage := "error retrieving list"
 			badClient.AddReactor("list", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
@@ -150,7 +150,7 @@ var _ = Describe("Binding", func() {
 			Expect(svcCatClient.Actions()[0].Matches("create", "servicebindings")).To(BeTrue())
 		})
 
-		It("Bubbles up errrors", func() {
+		It("Bubbles up errors", func() {
 			badClient := &fake.Clientset{}
 			errorMessage := "error retrieving list"
 			badClient.AddReactor("create", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
@@ -188,7 +188,7 @@ var _ = Describe("Binding", func() {
 			Expect(linkedClient.Actions()[1].Matches("list", "servicebindings")).To(BeTrue())
 			Expect(linkedClient.Actions()[2].Matches("delete", "servicebindings")).To(BeTrue())
 		})
-		It("Bubbles up errrors", func() {
+		It("Bubbles up errors", func() {
 			instanceNamespace := sb.Namespace
 			instanceName := "apple_instance"
 			errorMessage := "error deleting binding"
