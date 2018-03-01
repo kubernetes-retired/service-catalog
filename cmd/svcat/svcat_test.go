@@ -94,7 +94,6 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all instances", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
 		{name: "describe instance", cmd: "describe instance ups-instance -n test-ns", golden: "output/describe-instance.txt"},
-		{name: "touch instance", cmd: "touch instance ups-instance -n test-ns", golden: "output/touch-instance.txt"},
 
 		{name: "list all bindings", cmd: "get bindings -n test-ns", golden: "output/get-bindings.txt"},
 		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
