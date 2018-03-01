@@ -197,6 +197,6 @@ func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
 		}
 	}
 
-	// conflict
+	// conflict after `retries` tries
 	return fmt.Errorf("could not sync service broker after %d tries", retries)
 }
