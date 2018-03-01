@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	stderrors "errors"
 	"fmt"
 	"time"
 
@@ -266,17 +265,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			return err
 		}
 		glog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
-
-		// brokers must return at least one service; enforce this constraint
-		if len(payloadServiceClasses) == 0 {
-			s := fmt.Sprintf("Error getting catalog payload for broker %q; received zero services; at least one service is required", broker.Name)
-			glog.Warning(pcb.Message(s))
-			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
-				return err
-			}
-			return stderrors.New(s)
-		}
 
 		// get the existing services and plans for this broker so that we can
 		// detect when services and plans are removed from the broker's
