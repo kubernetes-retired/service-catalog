@@ -73,6 +73,9 @@ tree:
   - name: bindings
     shortDesc: List bindings, optionally filtered by name
     command: ./svcat get bindings
+    flags:
+    - name: all-namespaces
+      desc: List all bindings across namespaces
   - name: brokers
     shortDesc: List brokers, optionally filtered by name
     command: ./svcat get brokers
@@ -86,6 +89,9 @@ tree:
   - name: instances
     shortDesc: List instances, optionally filtered by name
     command: ./svcat get instances
+    flags:
+    - name: all-namespaces
+      desc: List all instances across namespaces
   - name: plans
     shortDesc: List plans, optionally filtered by name
     command: ./svcat get plans
