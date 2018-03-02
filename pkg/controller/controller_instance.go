@@ -763,6 +763,8 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 // isServiceInstanceProcessedAlready returns true if there is no further processing
 // needed for the instance based on ObservedGeneration
 func isServiceInstanceProcessedAlready(instance *v1beta1.ServiceInstance) bool {
+	// The observed generation is considered to be reconciled if either of the
+	// conditions is set to true and there is no orphan mitigation in progress
 	return instance.Status.ObservedGeneration >= instance.Generation &&
 		(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance)) && !instance.Status.OrphanMitigationInProgress
 }

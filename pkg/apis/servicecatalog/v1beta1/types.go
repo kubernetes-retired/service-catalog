@@ -601,12 +601,13 @@ type ServiceInstanceStatus struct {
 	// ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
-	// Deprecated: use ObservedGeneration instead
+	// Deprecated: use ObservedGeneration with conditions set to true to find
+	// whether generation was reconciled.
 	ReconciledGeneration int64 `json:"reconciledGeneration"`
 
 	// ObservedGeneration is the 'Generation' of the serviceInstanceSpec that
 	// was last processed by the controller. The observed generation is updated
-	// whenever the status is updated regardless of operation result
+	// whenever the status is updated regardless of operation result.
 	ObservedGeneration int64 `json:"observedGeneration"`
 
 	// OperationStartTime is the time at which the current operation began.
