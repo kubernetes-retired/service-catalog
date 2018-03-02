@@ -825,10 +825,9 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 
 	if instance.Spec.ClusterServicePlanRef == nil {
 		if sc == nil {
-			var scErr error
-			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
-			if scErr != nil {
-				return nil, false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, scErr.Error())
+			sc, err = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+			if err != nil {
+				return nil, false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
 			}
 		}
 
