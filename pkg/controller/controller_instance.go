@@ -805,7 +805,8 @@ func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *
 
 // resolveReferences checks to see if ClusterServiceClassRef and/or ClusterServicePlanRef are
 // nil and if so, will resolve the references and update the instance.
-// If references don't need to be resolved, the method returns false as its 2nd return value
+// If references needed to be resolved, and the instance status was successfully updated, the method returns true as
+// its 2nd return value
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
 func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, bool, error) {
@@ -837,7 +838,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 		}
 	}
 	updatedInstance, err := c.updateServiceInstanceReferences(instance)
-	return updatedInstance, true, err
+	return updatedInstance, err == nil, err
 }
 
 // resolveClusterServiceClassRef resolves a reference  to a ClusterServiceClass
