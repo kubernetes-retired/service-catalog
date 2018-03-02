@@ -27,7 +27,7 @@ Otherwise, to install with sensible defaults, run the following command:
 helm install charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 
-# Step 2 - Creating a `ClusterServiceBroker` Resource
+# Step 2 - Creating a ClusterServiceBroker Resource
 
 Because we haven't created any resources in the service-catalog API server yet,
 querying service catalog returns an empty list of resources:
@@ -64,7 +64,7 @@ Notice that the status reflects that the broker's
 catalog of service offerings has been successfully added to our cluster's
 service catalog.
 
-# Step 3 - Viewing `ClusterServiceClass`es and `ClusterServicePlan`s
+# Step 3 - Viewing ClusterServiceClasses and ClusterServicePlans
 
 The controller created a `ClusterServiceClass` for each service that the UPS broker
 provides. We can view the `ClusterServiceClass` resources available by executing:
@@ -125,7 +125,7 @@ $ svcat describe plan user-provided-service/default
   No instances defined
 ```
 
-# Step 4 - Creating a New `ServiceInstance`
+# Step 4 - Creating a New ServiceInstance
 
 Now that a `ClusterServiceClass` named `user-provided-service` exists within our
 cluster's service catalog, we can create a `ServiceInstance` that points to
@@ -162,7 +162,7 @@ Bindings:
 No bindings defined
 ```
 
-# Step 5 - Requesting a `ServiceBinding` to use the `ServiceInstance`
+# Step 5 - Requesting a ServiceBinding to use the ServiceInstance
 
 Now that our `ServiceInstance` has been created, we can bind to it.
 Create a `ServiceBinding` resource with the following command:
@@ -199,7 +199,7 @@ ups-binding                       Opaque                                2       
 
 Notice that a new `Secret` named `ups-binding` has been created.
 
-# Step 6 - Deleting the `ServiceBinding`
+# Step 6 - Deleting the ServiceBinding
 
 Now, let's unbind the instance:
 
@@ -215,7 +215,7 @@ NAME                  TYPE                                  DATA      AGE
 default-token-3k61z   kubernetes.io/service-account-token   3         30m
 ```
 
-# Step 7 - Deleting the `ServiceInstance`
+# Step 7 - Deleting the ServiceInstance
 
 Now, we can deprovision the instance:
 
@@ -223,7 +223,7 @@ Now, we can deprovision the instance:
 svcat deprovision -n test-ns ups-instance
 ```
 
-# Step 8 - Deleting the `ClusterServiceBroker`
+# Step 8 - Deleting the ClusterServiceBroker
 
 Next, we should remove the `ClusterServiceBroker` resource. This tells the service
 catalog to remove the broker's services from the catalog. Do so with this
@@ -244,7 +244,7 @@ $ svcat get classes
 
 # Step 9 - Final Cleanup
 
-## Cleaning up the UPS Service Broker Server
+## Cleaning up the User Provided Service Broker
 
 To clean up, delete the helm deployment:
 
