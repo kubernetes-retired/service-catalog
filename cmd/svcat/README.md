@@ -139,6 +139,29 @@ Additional parameters and secrets can be provided using the `--param` and `--sec
 --param p1=foo --param p2=bar --secret creds[db]
 ```
 
+You can also provide provision parameters in the form of a JSON string using the `--params` flag:
+
+```console
+svcat provision secure-instance --class mysqldb --plan secureDB --params '{
+    "encrypt" : true,
+    "firewallRules" : [
+        {
+            "name": "AllowSome",
+            "startIPAddress": "75.70.113.50",
+            "endIPAddress" : "75.70.113.131"
+        },
+        {
+            "name": "AllowMore",
+            "startIPAddress": "13.54.0.0",
+            "endIPAddress" : "13.56.0.0"
+        }
+    ]
+}
+'
+```
+
+Note: You may not combine the `--params` flag with individual `--param` flags.
+
 ## View all instances of a service plan on the cluster
 
 ```console

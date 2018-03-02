@@ -47,23 +47,22 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		Example: `
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
-  svcat provision secure-instance --class mysqldb --plan secure -params '{
-	"resourceGroup" : "demo",
-	 "location" : "eastus",
-	 "firewallRules" : [
-		 {
-			 "name": "officeA",
-			 "startIPAddress": "35.0.0.1",
-			 "endIPAddress" : "35.0.0.255"
-		 },
-		 {
-			 "name: "officeB",
-			 "startIPAddress": "67.23.10.24",
-			 "endIPAddress" : "67.23.10.255"
-		 }
-	 ]
- }
- '
+  svcat provision secure-instance --class mysqldb --plan secureDB --params '{
+    "encrypt" : true,
+    "firewallRules" : [
+        {
+            "name": "AllowSome",
+            "startIPAddress": "75.70.113.50",
+            "endIPAddress" : "75.70.113.131"
+        },
+        {
+            "name": "AllowMore",
+            "startIPAddress": "13.54.0.0",
+            "endIPAddress" : "13.56.0.0"
+        }
+    ]
+}
+'
 `,
 		PreRunE: command.PreRunE(provisionCmd),
 		RunE:    command.RunE(provisionCmd),
@@ -77,10 +76,11 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"The plan name (Required)")
 	cmd.MarkFlagRequired("plan")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when provisioning the service, format: NAME=VALUE")
+		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
-	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params", "", "Additional parameters to use when provisioning the service, provided as a JSON object")
+	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params", "",
+		"Additional parameters to use when provisioning the service, provided as a JSON object. Cannot be combined with --param")
 	return cmd
 }
 
