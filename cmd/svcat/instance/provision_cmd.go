@@ -32,7 +32,8 @@ type provisonCmd struct {
 	className    string
 	planName     string
 	rawParams    []string
-	params       map[string]string
+	jsonParams   string
+	params       interface{}
 	rawSecrets   []string
 	secrets      map[string]string
 }
@@ -46,6 +47,23 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		Example: `
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
+  svcat provision secure-instance --class mysqldb --plan secure -params '{
+	"resourceGroup" : "demo",
+	 "location" : "eastus",
+	 "firewallRules" : [
+		 {
+			 "name": "officeA",
+			 "startIPAddress": "35.0.0.1",
+			 "endIPAddress" : "35.0.0.255"
+		 },
+		 {
+			 "name: "officeB",
+			 "startIPAddress": "67.23.10.24",
+			 "endIPAddress" : "67.23.10.255"
+		 }
+	 ]
+ }
+ '
 `,
 		PreRunE: command.PreRunE(provisionCmd),
 		RunE:    command.RunE(provisionCmd),
@@ -62,6 +80,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"Additional parameter to use when provisioning the service, format: NAME=VALUE")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
+	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params", "", "Additional parameters to use when provisioning the service, provided as a JSON object")
 	return cmd
 }
 
@@ -73,9 +92,16 @@ func (c *provisonCmd) Validate(args []string) error {
 
 	var err error
 
-	c.params, err = parameters.ParseVariableAssignments(c.rawParams)
-	if err != nil {
-		return fmt.Errorf("invalid --param value (%s)", err)
+	if c.jsonParams != "" {
+		c.params, err = parameters.ParseVariableJSON(c.jsonParams)
+		if err != nil {
+			return fmt.Errorf("invalid --params value (%s)", err)
+		}
+	} else {
+		c.params, err = parameters.ParseVariableAssignments(c.rawParams)
+		if err != nil {
+			return fmt.Errorf("invalid --param value (%s)", err)
+		}
 	}
 
 	c.secrets, err = parameters.ParseKeyMaps(c.rawSecrets)
