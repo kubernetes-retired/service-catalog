@@ -47,7 +47,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		Example: `
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
-  svcat provision secure-instance --class mysqldb --plan secureDB --params '{
+  svcat provision secure-instance --class mysqldb --plan secureDB --params-json '{
     "encrypt" : true,
     "firewallRules" : [
         {
@@ -76,10 +76,10 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"The plan name (Required)")
 	cmd.MarkFlagRequired("plan")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params")
+		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params-json")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
-	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params", "",
+	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params-json", "",
 		"Additional parameters to use when provisioning the service, provided as a JSON object. Cannot be combined with --param")
 	return cmd
 }
@@ -91,6 +91,10 @@ func (c *provisonCmd) Validate(args []string) error {
 	c.instanceName = args[0]
 
 	var err error
+
+	if c.jsonParams != "" && len(c.rawParams) > 0 {
+		return fmt.Errorf("--params-json cannot be used with --param")
+	}
 
 	if c.jsonParams != "" {
 		c.params, err = parameters.ParseVariableJSON(c.jsonParams)

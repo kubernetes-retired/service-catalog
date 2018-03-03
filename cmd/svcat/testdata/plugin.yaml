@@ -113,7 +113,11 @@ tree:
     desc: The class name (Required)
   - name: param
     shorthand: p
-    desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE'
+    desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE.
+      Cannot be combined with --params-json'
+  - name: params-json
+    desc: Additional parameters to use when provisioning the service, provided as
+      a JSON object. Cannot be combined with --param
   - name: plan
     desc: The plan name (Required)
   - name: secret

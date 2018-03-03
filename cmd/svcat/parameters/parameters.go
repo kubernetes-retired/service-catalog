@@ -25,8 +25,9 @@ import (
 
 var keymapRegex = regexp.MustCompile(`^([^\[]+)\[(.+)\]\s*$`)
 
-// ParseVariableJSON converts a JSON string of variable assignments
-// into a map of keys and values
+// ParseVariableJSON converts a JSON object into a map of keys and values
+// Example:
+// `{ "location" : "east", "group" : "demo" }' becomes map[location:east group:demo]
 func ParseVariableJSON(params string) (map[string]interface{}, error) {
 	var p map[string]interface{}
 	err := json.Unmarshal([]byte(params), &p)
