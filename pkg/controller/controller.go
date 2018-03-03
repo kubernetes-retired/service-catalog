@@ -590,16 +590,28 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 	return servicePlans, nil
 }
 
-// isServiceInstanceReady returns whether the given instance has a ready condition
+// isServiceInstanceConditionTrue returns whether the given instance has a given condition
 // with status true.
-func isServiceInstanceReady(instance *v1beta1.ServiceInstance) bool {
+func isServiceInstanceConditionTrue(instance *v1beta1.ServiceInstance, conditionType v1beta1.ServiceInstanceConditionType) bool {
 	for _, cond := range instance.Status.Conditions {
-		if cond.Type == v1beta1.ServiceInstanceConditionReady {
+		if cond.Type == conditionType {
 			return cond.Status == v1beta1.ConditionTrue
 		}
 	}
 
 	return false
+}
+
+// isServiceInstanceReady returns whether the given instance has a ready condition
+// with status true.
+func isServiceInstanceReady(instance *v1beta1.ServiceInstance) bool {
+	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionReady)
+}
+
+// isServiceInstanceFailed returns whether the instance has a failed condition with
+// status true.
+func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
+	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionFailed)
 }
 
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting

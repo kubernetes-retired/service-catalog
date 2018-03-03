@@ -562,11 +562,13 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 					ct.instance.Spec.ClusterServicePlanName = otherPlanID
 				}
 
-				if _, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance); err != nil {
+				updatedInstance, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance)
+				if err != nil {
 					t.Fatalf("error updating Instance: %v", err)
 				}
+				ct.instance = updatedInstance
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
+				if err := util.WaitForInstanceProcessedGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
@@ -833,11 +835,13 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 					ct.instance.Spec.UpdateRequests++
 				}
 
-				if _, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance); err != nil {
+				updatedInstance, err := ct.client.ServiceInstances(testNamespace).Update(ct.instance)
+				if err != nil {
 					t.Fatalf("error updating Instance: %v", err)
 				}
+				ct.instance = updatedInstance
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
+				if err := util.WaitForInstanceProcessedGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Generation); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
@@ -1032,7 +1036,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				}
 
 				if tc.expectFailCondition {
-					if err := util.WaitForInstanceReconciledGeneration(ct.client, ct.instance.Namespace, ct.instance.Name, 1); err != nil {
+					if err := util.WaitForInstanceProcessedGeneration(ct.client, ct.instance.Namespace, ct.instance.Name, 1); err != nil {
 						t.Fatalf("error waiting for instance reconciliation to complete: %v", err)
 					}
 				}

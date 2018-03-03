@@ -537,7 +537,14 @@ type ServiceInstanceStatus struct {
 	// ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that
 	// was last processed by the controller. The reconciled generation is updated
 	// even if the controller failed to process the spec.
+	// Deprecated: use ObservedGeneration with conditions set to true to find
+	// whether generation was reconciled.
 	ReconciledGeneration int64
+
+	// ObservedGeneration is the 'Generation' of the serviceInstanceSpec that
+	// was last processed by the controller. The observed generation is updated
+	// whenever the status is updated regardless of operation result.
+	ObservedGeneration int64
 
 	// OperationStartTime is the time at which the current operation began.
 	OperationStartTime *metav1.Time
@@ -550,6 +557,9 @@ type ServiceInstanceStatus struct {
 	// ExternalProperties is the properties state of the ServiceInstance which the
 	// broker knows about.
 	ExternalProperties *ServiceInstancePropertiesState
+
+	// ProvisionStatus describes whether the instance is in the provisioned state.
+	ProvisionStatus ServiceInstanceProvisionStatus
 
 	// DeprovisionStatus describes what has been done to deprovision the
 	// ServiceInstance.
@@ -651,6 +661,19 @@ const (
 	// requests have been sent for the ServiceInstance but they failed. The
 	// controller has given up on sending more deprovision requests.
 	ServiceInstanceDeprovisionStatusFailed ServiceInstanceDeprovisionStatus = "Failed"
+)
+
+// ServiceInstanceProvisionStatus is the status of provisioning a
+// ServiceInstance
+type ServiceInstanceProvisionStatus string
+
+const (
+	// ServiceInstanceProvisionStatusProvisioned indicates that the instance
+	// was provisioned.
+	ServiceInstanceProvisionStatusProvisioned ServiceInstanceProvisionStatus = "Provisioned"
+	// ServiceInstanceProvisionStatusNotProvisioned indicates that the instance
+	// was not ever provisioned or was deprovisioned.
+	ServiceInstanceProvisionStatusNotProvisioned ServiceInstanceProvisionStatus = "NotProvisioned"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

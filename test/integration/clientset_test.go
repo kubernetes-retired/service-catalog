@@ -923,6 +923,8 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 	}
 	instanceServer.Status = v1beta1.ServiceInstanceStatus{
 		ReconciledGeneration: instanceServer.Generation,
+		ObservedGeneration:   instanceServer.Generation,
+		ProvisionStatus:      v1beta1.ServiceInstanceProvisionStatusProvisioned,
 		Conditions:           []v1beta1.ServiceInstanceCondition{readyConditionTrue},
 		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 	}

@@ -1495,7 +1495,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.",
+								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec. Deprecated: use ObservedGeneration instead",
+								Type:        []string{"integer"},
+								Format:      "int64",
+							},
+						},
+						"observedGeneration": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ObservedGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The observed generation is updated whenever the status is updated regardless of operation result",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
@@ -1518,6 +1525,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
 							},
 						},
+						"provisionStatus": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ProvisionStatus describes whether the instance is in the provisioned state.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"deprovisionStatus": {
 							SchemaProps: spec.SchemaProps{
 								Description: "DeprovisionStatus describes what has been done to deprovision the ServiceInstance.",
@@ -1526,7 +1540,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "deprovisionStatus"},
+					Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus"},
 				},
 			},
 			Dependencies: []string{

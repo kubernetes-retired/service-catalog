@@ -142,7 +142,7 @@ func TestBasicFlows(t *testing.T) {
 					t.Fatalf("error updating Instance: %v", err)
 				}
 
-				if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
+				if err := util.WaitForInstanceProcessedGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
 					t.Fatalf("error waiting for instance to reconcile: %v", err)
 				}
 
@@ -271,7 +271,7 @@ func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 			t.Fatalf("error updating Instance: %v", err)
 		}
 
-		if err := util.WaitForInstanceReconciledGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
+		if err := util.WaitForInstanceProcessedGeneration(ct.client, testNamespace, testInstanceName, ct.instance.Status.ReconciledGeneration+1); err != nil {
 			t.Fatalf("error waiting for instance to reconcile: %v", err)
 		}
 
