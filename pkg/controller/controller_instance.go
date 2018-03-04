@@ -86,8 +86,6 @@ const (
 	deprovisioningInFlightMessage           string = "Deprovision request for ServiceInstance in-flight to Broker"
 	startingInstanceOrphanMitigationReason  string = "StartingInstanceOrphanMitigation"
 	startingInstanceOrphanMitigationMessage string = "The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource"
-	observedNewGenerationReason             string = "ObservedNewGeneration"
-	observedNewGenerationMessage            string = "Observed a new generation of the instance"
 )
 
 // ServiceInstance handlers and control-loop
@@ -1003,6 +1001,28 @@ func newServiceInstanceFailedCondition(status v1beta1.ConditionStatus, reason, m
 	}
 }
 
+// removeServiceInstanceCondition removes a condition of a given type from an
+// instance's status if it exists.
+func removeServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
+	conditionType v1beta1.ServiceInstanceConditionType) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
+	glog.V(5).Info(pcb.Messagef(
+		"Removing condition %q", conditionType,
+	))
+
+	newStatusConditions := make([]v1beta1.ServiceInstanceCondition, 0, len(toUpdate.Status.Conditions))
+	for _, cond := range toUpdate.Status.Conditions {
+		if cond.Type == conditionType {
+			glog.V(5).Info(pcb.Messagef("Found existing condition %q: %q; removing it",
+				conditionType, cond.Status,
+			))
+			continue
+		}
+		newStatusConditions = append(newStatusConditions, cond)
+	}
+	toUpdate.Status.Conditions = newStatusConditions
+}
+
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
 // the condition already exists in the status, it is mutated; if the condition
 // does not already exist in the status, it is added.  Other conditions in the
@@ -1134,22 +1154,9 @@ func (c *controller) updateServiceInstanceCondition(
 // It doesn't send the update request to server.
 func (c *controller) prepareObservedGeneration(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.ObservedGeneration = toUpdate.Generation
-	reason := observedNewGenerationReason
-	message := observedNewGenerationMessage
-	setServiceInstanceCondition(
+	removeServiceInstanceCondition(
 		toUpdate,
-		v1beta1.ServiceInstanceConditionReady,
-		v1beta1.ConditionFalse,
-		reason,
-		message,
-	)
-	setServiceInstanceCondition(
-		toUpdate,
-		v1beta1.ServiceInstanceConditionFailed,
-		v1beta1.ConditionFalse,
-		reason,
-		message,
-	)
+		v1beta1.ServiceInstanceConditionFailed)
 }
 
 // recordStartOfServiceInstanceOperation updates the instance to indicate that
