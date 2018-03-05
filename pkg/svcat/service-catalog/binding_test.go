@@ -182,7 +182,7 @@ var _ = Describe("Binding", func() {
 			}
 
 			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
-			fmt.Printf("Deleted : %v", len(deleted))
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(deleted)).To(Equal(1))
 			Expect(linkedClient.Actions()[0].Matches("get", "serviceinstances")).To(BeTrue())
@@ -211,7 +211,7 @@ var _ = Describe("Binding", func() {
 			}
 
 			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
-			fmt.Printf("Deleted : %v", len(deleted))
+
 			Expect(err).To(HaveOccurred())
 			Expect(len(deleted)).To(Equal(0))
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
@@ -230,7 +230,7 @@ var _ = Describe("Binding", func() {
 			}
 
 			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
-			fmt.Printf("Deleted : %d", len(deleted))
+
 			Expect(err).To(HaveOccurred())
 			Expect(len(deleted)).To(Equal(0))
 			Expect(err.Error()).To(ContainSubstring("unable to get instance"))
