@@ -2310,6 +2310,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
+	// TODO nilebox: fix test: with new retry behavior we will requeue the failed provisioning/update
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
