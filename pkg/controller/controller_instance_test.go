@@ -919,16 +919,90 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	}
 }
 
-// TestReconcileServiceInstanceWithProvisionFailure tests that when the
-// provision call to the broker fails with an HTTP error, the ready condition
-// becomes false, and the failure condition is set.
-func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
+// TestReconcileServiceInstanceWithTemporaryProvisionFailure tests that when the
+// provision call to the broker fails with a retriable HTTP error, the ready condition
+// becomes false, and the failure condition is not set.
+func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Error: osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusConflict,
-				ErrorMessage: strPtr("OutOfQuota"),
-				Description:  strPtr("You're out of quota!"),
+				StatusCode:   http.StatusInternalServerError,
+				ErrorMessage: strPtr("InternalServerError"),
+				Description:  strPtr("Something went wrong!"),
+			},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatalf("Should not be able to make the ServiceInstance")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1beta1.ServiceInstanceOperationProvision,
+		startingInstanceOrphanMitigationReason,
+		"",
+		instance,
+	)
+
+	events := getRecordedEvents(testController)
+
+	expectedEvent := warningEventBuilder(errorErrorCallingProvisionReason).msg(
+		"The provision call failed and will be retried:",
+	).msgf(
+		"Error communicating with broker for provisioning:",
+	).msg("fake creation failure")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReconcileServiceInstanceWithTerminalProvisionFailure tests that when the
+// provision call to the broker fails with an 400 HTTP error, the ready condition
+// becomes false, and the failure condition is set.
+func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusBadRequest,
+				ErrorMessage: strPtr("BadRequest"),
+				Description:  strPtr("Your parameters are incorrect!"),
 			},
 		},
 	})
@@ -989,7 +1063,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
-		"SCGUID", "test-serviceclass", "test-broker", 409, "OutOfQuota; Description: You're out of quota!; ResponseError: <nil>",
+		"SCGUID", "test-serviceclass", "test-broker", 400, "BadRequest; Description: Your parameters are incorrect!; ResponseError: <nil>",
 	)
 	expectedEvents := []string{
 		warningEventBuilder(errorProvisionCallFailedReason).msg(message).String(),

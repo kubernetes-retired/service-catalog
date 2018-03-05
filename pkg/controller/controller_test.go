@@ -2243,7 +2243,11 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	}
 
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
-	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
+	if failureReason == "" {
+		assertServiceInstanceConditionMissing(t, obj, v1beta1.ServiceInstanceConditionFailed)
+	} else {
+		assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
+	}
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
