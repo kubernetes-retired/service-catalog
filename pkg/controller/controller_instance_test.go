@@ -3668,7 +3668,7 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 	}
 
 	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, errorErrorCallingProvisionReason)
-	assertServiceInstanceOrphanMitigationCondition(t, updatedServiceInstance, v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason)
+	assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
@@ -3725,7 +3725,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fakeosb.AsyncRequiredError(),
 			},
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3745,7 +3745,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fmt.Errorf("other error"),
 			},
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3796,7 +3796,8 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			// TODO nilebox: Should instance remain in orphan mitigation or not?
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3809,7 +3810,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3822,7 +3823,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				Error: fmt.Errorf("other error"),
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3835,7 +3836,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3848,7 +3849,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3912,6 +3913,12 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 
 			if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
 				t.Fatalf("continue")
+			}
+
+			if tc.finishedOrphanMitigation {
+				assertServiceInstanceOrphanMitigationMissing(t, updatedServiceInstance)
+			} else {
+				assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance)
 			}
 
 			//TODO(mkibbe): change asserts to expects

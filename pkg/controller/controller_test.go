@@ -1876,12 +1876,8 @@ func assertServiceInstanceReadyCondition(t *testing.T, obj runtime.Object, statu
 	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionReady, status, reason...)
 }
 
-func assertServiceInstanceOrphanMitigationCondition(t *testing.T, obj runtime.Object, status v1beta1.ConditionStatus, reason ...string) {
-	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation, status, reason...)
-}
-
-func assertServiceInstanceOrphanMitigationTrue(t *testing.T, obj runtime.Object, reason ...string) {
-	assertServiceInstanceOrphanMitigationCondition(t, obj, v1beta1.ConditionTrue, reason...)
+func assertServiceInstanceOrphanMitigationTrue(t *testing.T, obj runtime.Object) {
+	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation, v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason)
 }
 
 func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceInstanceConditionType, status v1beta1.ConditionStatus, reason ...string) {
@@ -1905,6 +1901,24 @@ func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionT
 
 	if !foundCondition {
 		fatalf(t, "%v condition not found", conditionType)
+	}
+}
+
+func assertServiceInstanceOrphanMitigationMissing(t *testing.T, obj runtime.Object, reason ...string) {
+	assertServiceInstanceConditionMissing(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation)
+}
+
+func assertServiceInstanceConditionMissing(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceInstanceConditionType) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
+	}
+
+	for _, condition := range instance.Status.Conditions {
+		if condition.Type == conditionType {
+			fatalf(t, "%v condition expected to be missing", conditionType)
+			return
+		}
 	}
 }
 
@@ -2131,7 +2145,7 @@ func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Obj
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
-	assertServiceInstanceOrphanMitigationTrue(t, obj, startingInstanceOrphanMitigationReason)
+	assertServiceInstanceOrphanMitigationTrue(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
 }
@@ -2246,7 +2260,7 @@ func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T,
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
-	assertServiceInstanceOrphanMitigationCondition(t, obj, v1beta1.ConditionTrue, orphanMitigationReason)
+	assertServiceInstanceOrphanMitigationTrue(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 
