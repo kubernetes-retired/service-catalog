@@ -32,6 +32,14 @@ func CreatePredicateForServiceClasses(requirements v1beta1.ClusterServiceClassRe
 	return predicate, nil
 }
 
+func CreatePredicateForServiceClassesFromRestrictions(restrictions *v1beta1.ServiceClassCatalogRestrictions) (Predicate, error) {
+	if restrictions != nil {
+		return CreatePredicateForServiceClasses(restrictions.ServiceClass)
+	} else {
+		return CreatePredicateForServiceClasses("")
+	}
+}
+
 // CreatePredicateForServicePlans creates the Predicate that will be used to
 // test if acceptance is allowed for service plans.
 func CreatePredicateForServicePlans(requirements v1beta1.ClusterServicePlanRequirements) (Predicate, error) {
@@ -41,6 +49,14 @@ func CreatePredicateForServicePlans(requirements v1beta1.ClusterServicePlanRequi
 	}
 	predicate := internalPredicate{selector: selector}
 	return predicate, nil
+}
+
+func CreatePredicateForServicePlansFromRestrictions(restrictions *v1beta1.ServiceClassCatalogRestrictions) (Predicate, error) {
+	if restrictions != nil {
+		return CreatePredicateForServicePlans(restrictions.ServicePlan)
+	} else {
+		return CreatePredicateForServicePlans("")
+	}
 }
 
 // ConvertServiceClassToProperties takes a Service Class and pulls out the

@@ -479,6 +479,8 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 // convertCatalog converts a service broker catalog into an array of
 // ClusterServiceClasses and an array of ClusterServicePlans.  The ClusterServiceClasses and
 // ClusterServicePlans returned by this method are named in K8S with the OSB ID.
+// *deprecated* use convertAndFilterCatalog
+// TODO: delete convertCatalog when features.CatalogRestrictions flag is removed.
 func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
 	serviceClasses := make([]*v1beta1.ClusterServiceClass, len(in.Services))
 	servicePlans := []*v1beta1.ClusterServicePlan{}
@@ -522,14 +524,67 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 }
 
 func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.ServiceClassCatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
-	serviceClasses, servicePlans, err := convertCatalog(in)
+	predicate, err := filter.CreatePredicateForServiceClassesFromRestrictions(restrictions)
+
 	if err != nil {
 		return nil, nil, err
 	}
-	// Filter Service Classes
-	// Convert Service Class IDs to additional restrictions for plans.
-	// Filter Service Plans
-	// Remove Service Classes with no plans.
+	serviceClasses := []*v1beta1.ClusterServiceClass(nil)
+	servicePlans := []*v1beta1.ClusterServicePlan(nil)
+	for _, svc := range in.Services {
+		serviceClass := &v1beta1.ClusterServiceClass{
+			Spec: v1beta1.ClusterServiceClassSpec{
+				Bindable:      svc.Bindable,
+				PlanUpdatable: svc.PlanUpdatable != nil && *svc.PlanUpdatable,
+				ExternalID:    svc.ID,
+				ExternalName:  svc.Name,
+				Tags:          svc.Tags,
+				Description:   svc.Description,
+				Requires:      svc.Requires,
+			},
+		}
+
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+			serviceClass.Spec.BindingRetrievable = svc.BindingRetrievable
+		}
+
+		if svc.Metadata != nil {
+			metadata, err := json.Marshal(svc.Metadata)
+			if err != nil {
+				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
+				glog.Error(err)
+				return nil, nil, err
+			}
+			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+		}
+		serviceClass.SetName(svc.ID)
+
+		// If this service class passes the predicate, process the plans for the class.
+		if fields := filter.ConvertServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
+			// set up the plans using the ClusterServiceClass Name
+			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			var servicePlanRestrictions v1beta1.ClusterServicePlanRequirements
+			if restrictions != nil {
+				servicePlanRestrictions = restrictions.ServicePlan
+			} else {
+				servicePlanRestrictions = ""
+			}
+			acceptedPlans, _, err := filterServicePlans(servicePlanRestrictions, plans)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			// If there are accepted plans, then append the class and all of the accepted plans to the master list.
+			if len(acceptedPlans) > 0 {
+				serviceClasses = append(serviceClasses, serviceClass)
+				servicePlans = append(servicePlans, acceptedPlans...)
+			}
+		}
+	}
 	return serviceClasses, servicePlans, nil
 }
 
@@ -538,6 +593,11 @@ func filterServiceClasses(requirements v1beta1.ClusterServiceClassRequirements, 
 	predicate, err := filter.CreatePredicateForServiceClasses(requirements)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// If the predicate is empty, all classes will pass. No need to run through the list.
+	if predicate.Empty() {
+		return serviceClasses, []*v1beta1.ClusterServiceClass(nil), nil
 	}
 
 	accepted := []*v1beta1.ClusterServiceClass(nil)
@@ -559,6 +619,11 @@ func filterServicePlans(requirements v1beta1.ClusterServicePlanRequirements, ser
 	predicate, err := filter.CreatePredicateForServicePlans(requirements)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// If the predicate is empty, all plans will pass. No need to run through the list.
+	if predicate.Empty() {
+		return servicePlans, []*v1beta1.ClusterServicePlan(nil), nil
 	}
 
 	accepted := []*v1beta1.ClusterServicePlan(nil)

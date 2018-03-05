@@ -292,6 +292,111 @@ const instanceParameterSchemaBytes = `{
   ]
 }`
 
+const largeTestCatalog = `
+{
+  "services": [
+    {
+      "id": "41726368-6f6e-4569-8172-63686f6e6569",
+      "name": "Archonei",
+      "description": "The contents of my chamber pot are more able than Ser Harys.",
+      "requires": [
+        "SeaBitch"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "476f6c64-656e-4772-af76-65476f6c6465",
+          "name": "Goldengrove",
+          "description": "A reader lives a thousand lives before he dies. The man who never reads lives only one. The a mind needs books as a sword needs a whetstone, if it is to keep its edge.",
+          "free": false,
+          "metadata": {
+            "CasterlyRock": "Crakehall",
+            "Nightsong": "CrowsNest",
+            "UnnamedBaelishcastle": "Feastfires"
+          }
+        }
+      ],
+      "dashboard_client": {
+        "id": "41726368-6f6e-4569-a964-417263686f6e",
+        "secret": "41726368-6f6e-4569-b365-637265744172",
+        "redirect_uri": "http://localhost:1234"
+      },
+      "metadata": {
+        "Ironoaks": "Crakehall",
+        "Pyke": "ThreeTowers"
+      }
+    },
+    {
+      "id": "41727261-7841-4272-a178-417272617841",
+      "name": "Arrax",
+      "description": "Darkness will be your cloak, your shield, your mother's milk. Darkness will make you strong.",
+      "requires": [
+        "Woe"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "45617374-7761-4463-a82d-62792d746865",
+          "name": "Eastwatch-by-the-Sea",
+          "description": "A reader lives a thousand lives before he dies. The man who never reads lives only one. The a mind needs books as a sword needs a whetstone, if it is to keep its edge.",
+          "free": true,
+          "metadata": {
+            "CasterlyRock": "CrowsNest",
+            "Nightsong": "Feastfires"
+          }
+        },
+        {
+          "id": "4f6c644f-616b-4f6c-a44f-616b4f6c644f",
+          "name": "OldOak",
+          "description": "The drapes kept out the dust and heat of the streets, but they could not keep out disappointment.",
+          "free": true,
+          "metadata": {
+            "Highgarden": "Blackhaven",
+            "Nightsong": "Whitewalls"
+          }
+        }
+      ],
+      "dashboard_client": {
+        "id": "41727261-7869-4441-b272-617869644172",
+        "secret": "41727261-7873-4563-b265-744172726178",
+        "redirect_uri": "http://localhost:1234"
+      }
+    },
+    {
+      "id": "42616c65-7269-4f6e-8261-6c6572696f6e",
+      "name": "Balerion",
+      "description": "A reader lives a thousand lives before he dies. The man who never reads lives only one. The a mind needs books as a sword needs a whetstone, if it is to keep its edge.",
+      "bindable": true,
+      "plans": [
+        {
+          "id": "49726f6e-7261-4468-8972-6f6e72617468",
+          "name": "Ironrath",
+          "description": "A reader lives a thousand lives before he dies. The man who never reads lives only one. The a mind needs books as a sword needs a whetstone, if it is to keep its edge.",
+          "free": false
+        },
+        {
+          "id": "51756565-6e73-4761-b465-517565656e73",
+          "name": "Queensgate",
+          "description": "A man will win one tourney, and fall quickly in the next. A slick spot in the grass may mean defeat, or what you ate for supper the night before. A change in the wind may bring the gift of victory.",
+          "free": true,
+          "metadata": {
+            "Runestone": "GhostHill"
+          }
+        }
+      ],
+      "dashboard_client": {
+        "id": "42616c65-7269-4f6e-a964-42616c657269",
+        "secret": "42616c65-7269-4f6e-b365-637265744261",
+        "redirect_uri": "http://localhost:1234"
+      },
+      "metadata": {
+        "CastleCerwyn": "Queensgate",
+        "VulturesRoost": "StormsEnd"
+      }
+    }
+  ]
+}`
+
 type testTimeoutError struct{}
 
 func (e testTimeoutError) Error() string {
@@ -1280,6 +1385,157 @@ func TestCatalogConversionMultipleClusterServiceClasses(t *testing.T) {
 
 }
 
+func TestConvertAndFilterCatalog(t *testing.T) {
+	cases := []struct {
+		name         string
+		restrictions *v1beta1.ServiceClassCatalogRestrictions
+		classes      []string
+		plans        []string
+		catalog      string
+		error        bool
+	}{
+		{
+			name:    "no restriction",
+			classes: []string{"Archonei", "Arrax", "Balerion"},
+			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak", "Ironrath", "Queensgate"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "bad predicate",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "bad predicate",
+			},
+			catalog: largeTestCatalog,
+			error:   true,
+		},
+		{
+			name: "by externalName",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "externalName=Archonei",
+			},
+			classes: []string{"Archonei"},
+			plans:   []string{"Goldengrove"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "by name",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "name=41727261-7841-4272-a178-417272617841",
+			},
+			classes: []string{"Arrax"},
+			plans:   []string{"Eastwatch-by-the-Sea", "OldOak"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "whitelist by eternalName",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "externalName in (Archonei, Arrax)",
+			},
+			classes: []string{"Archonei", "Arrax"},
+			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "blacklist by externalName",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "externalName notin (Balerion)",
+			},
+			classes: []string{"Archonei", "Arrax"},
+			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "blacklist by externalName",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "externalName notin (Balerion)",
+			},
+			classes: []string{"Archonei", "Arrax"},
+			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "whitelist and trim services without plans",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServicePlan: "externalName in (Goldengrove)",
+			},
+			classes: []string{"Archonei"},
+			plans:   []string{"Goldengrove"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "whitelist plans by name",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServicePlan: "name in (476f6c64-656e-4772-af76-65476f6c6465, 45617374-7761-4463-a82d-62792d746865, 49726f6e-7261-4468-8972-6f6e72617468, )",
+			},
+			classes: []string{"Archonei", "Arrax", "Balerion"},
+			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "Ironrath"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "two restrictions for plans",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServicePlan: "name!=45617374-7761-4463-a82d-62792d746865, externalName notin (OldOak)",
+			},
+			classes: []string{"Archonei", "Balerion"},
+			plans:   []string{"Goldengrove", "Ironrath", "Queensgate"},
+			catalog: largeTestCatalog,
+		},
+		{
+			name: "restrictions for both class and plan",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: "externalName in (Archonei, Balerion)",
+				ServicePlan:  "externalName notin (Ironrath)",
+			},
+			classes: []string{"Archonei", "Balerion"},
+			plans:   []string{"Goldengrove", "Queensgate"},
+			catalog: largeTestCatalog,
+		},
+	}
+	for _, tc := range cases {
+		testName := fmt.Sprintf("%s:%s", tc.name)
+		t.Run(testName, func(t *testing.T) {
+			catalog := &osb.CatalogResponse{}
+			err := json.Unmarshal([]byte(tc.catalog), &catalog)
+			if err != nil {
+				t.Fatalf("Failed to unmarshal test catalog: %v", err)
+			}
+			classes, plans, err := convertAndFilterCatalog(catalog, tc.restrictions)
+			if err != nil {
+				if tc.error {
+					return
+				}
+				t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
+			}
+
+			if len(classes) != len(tc.classes) {
+				t.Errorf("Filtered catalog did not contained expected number of classes, %s", expectedGot(len(tc.classes), len(classes)))
+			}
+			for _, class := range classes {
+				if !contains(tc.classes, class.Spec.ExternalName) {
+					t.Errorf("Unexpected class in filtered catalog, %s", class.Spec.ExternalName)
+				}
+			}
+			if len(plans) != len(tc.plans) {
+				t.Errorf("Filtered catalog did not contained expected number of plans, %s", expectedGot(len(tc.plans), len(plans)))
+			}
+			for _, plan := range plans {
+				if !contains(tc.plans, plan.Spec.ExternalName) {
+					t.Errorf("Unexpected plan in filtered catalog, %s", plan.Spec.ExternalName)
+				}
+			}
+		})
+	}
+}
+
+func contains(list []string, c string) bool {
+	for _, l := range list {
+		if l == c {
+			return true
+		}
+	}
+	return false
+}
+
 func TestFilterServiceClasses(t *testing.T) {
 
 	cases := []struct {
@@ -1353,7 +1609,7 @@ func TestFilterServiceClasses(t *testing.T) {
 			}
 			total := tc.accepted + tc.rejected
 			if len(serviceClasses) != total {
-				t.Fatalf("Catalog did not cointain expected number of classes, %s", expectedGot(total, len(serviceClasses)))
+				t.Fatalf("Catalog did not contained expected number of classes, %s", expectedGot(total, len(serviceClasses)))
 			}
 
 			acceptedServiceClass, rejectedServiceClasses, err := filterServiceClasses(tc.requirements, serviceClasses)
@@ -1413,7 +1669,7 @@ func TestFilterServicePlans(t *testing.T) {
 			}
 			total := tc.accepted + tc.rejected
 			if len(servicePlans) != total {
-				t.Fatalf("Catalog did not cointain expected number of plans, %s", expectedGot(total, len(servicePlans)))
+				t.Fatalf("Catalog did not contained expected number of plans, %s", expectedGot(total, len(servicePlans)))
 			}
 
 			acceptedServiceClass, rejectedServiceClasses, err := filterServicePlans(tc.requirements, servicePlans)
