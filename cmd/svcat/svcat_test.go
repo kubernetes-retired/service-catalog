@@ -110,6 +110,18 @@ func TestCommandOutput(t *testing.T) {
 	}
 }
 
+// If you add a new command to svcat, this test will fail, because the plugin.yaml
+// golden file will be out of date. To fix this, run:
+//
+//	go test ./cmd/svcat/... -update
+//
+//
+// once. This command updates the golden file according to your new command.
+// After you run the update, make sure your tests pass against the new golden
+// file:
+//
+// 	go test ./cmd/svcat/...
+//
 func TestGenerateManifest(t *testing.T) {
 	svcat := buildRootCommand()
 

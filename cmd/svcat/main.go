@@ -27,6 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/touch"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/spf13/cobra"
@@ -104,6 +105,7 @@ func buildRootCommand() *cobra.Command {
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
 	cmd.AddCommand(newInstallCmd(cxt))
+	cmd.AddCommand(touch.NewCmd(cxt))
 
 	return cmd
 }
