@@ -27,7 +27,7 @@ import (
 )
 
 type describeCmd struct {
-	*command.Context
+	*command.Base
 	traverse     bool
 	lookupByUUID bool
 	showSchemas  bool
@@ -37,7 +37,7 @@ type describeCmd struct {
 
 // NewDescribeCmd builds a "svcat describe plan" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Context: cxt}
+	describeCmd := &describeCmd{Base: command.NewBaseCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "plan NAME",
 		Aliases: []string{"plans", "pl"},

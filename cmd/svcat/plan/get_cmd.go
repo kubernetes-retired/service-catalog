@@ -28,7 +28,7 @@ import (
 )
 
 type getCmd struct {
-	*command.Context
+	*command.Base
 	lookupByUUID bool
 	uuid         string
 	name         string
@@ -40,7 +40,7 @@ type getCmd struct {
 
 // NewGetCmd builds a "svcat get plans" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{Base: command.NewBaseCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "plans [name]",
 		Aliases: []string{"plan", "pl"},

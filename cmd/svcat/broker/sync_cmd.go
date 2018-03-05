@@ -24,13 +24,13 @@ import (
 )
 
 type syncCmd struct {
-	*command.Context
+	*command.Base
 	name string
 }
 
 // NewSyncCmd builds a "svcat sync broker" command
 func NewSyncCmd(cxt *command.Context) *cobra.Command {
-	syncCmd := &syncCmd{Context: cxt}
+	syncCmd := &syncCmd{Base: command.NewBaseCommand(cxt)}
 	rootCmd := &cobra.Command{
 		Use:     "broker [name]",
 		Short:   "Syncs service catalog for a service broker",

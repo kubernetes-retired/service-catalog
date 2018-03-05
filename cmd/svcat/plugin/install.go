@@ -30,14 +30,14 @@ import (
 )
 
 type installCmd struct {
-	*command.Context
+	*command.Base
 	path     string
 	svcatCmd *cobra.Command
 }
 
 // NewInstallCmd builds a "svcat install plugin" command
 func NewInstallCmd(cxt *command.Context) *cobra.Command {
-	installCmd := &installCmd{Context: cxt}
+	installCmd := &installCmd{Base: command.NewBaseCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "plugin",
 		Short: "Install as a kubectl plugin",

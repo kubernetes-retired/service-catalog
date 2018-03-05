@@ -75,7 +75,8 @@ tree:
     command: ./svcat get bindings
     flags:
     - name: all-namespaces
-      desc: List all bindings across namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
   - name: brokers
     shortDesc: List brokers, optionally filtered by name
     command: ./svcat get brokers
@@ -91,7 +92,8 @@ tree:
     command: ./svcat get instances
     flags:
     - name: all-namespaces
-      desc: List all instances across namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
   - name: plans
     shortDesc: List plans, optionally filtered by name or class
     command: ./svcat get plans
