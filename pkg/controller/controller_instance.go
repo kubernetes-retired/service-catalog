@@ -447,6 +447,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			// over with a fresh view of the instance.
 			return err
 		}
+		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+		return nil
 	}
 
 	glog.V(4).Info(pcb.Messagef(
@@ -574,6 +576,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 				// over with a fresh view of the instance.
 				return err
 			}
+			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+			return nil
 		}
 	}
 
