@@ -2310,9 +2310,8 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	// TODO nilebox: fix test: with new retry behavior we will requeue the failed provisioning/update
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
+		t.Fatalf("Expected polling queue to have requeues of test instance after polling have completed with a 'failed' state")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2393,7 +2392,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		errorProvisionCallFailedReason,
-		errorProvisionCallFailedReason,
+		"",
 		instance,
 	)
 }
