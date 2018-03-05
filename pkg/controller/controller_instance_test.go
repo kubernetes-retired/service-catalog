@@ -5493,6 +5493,52 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceUpdateMissingOrphanMitigation tests reconciling a
+// ServiceInstance with OrphanMitigation condition missing
+// (while OrphanMitigationInProgress is set to true)
+// i.e. API version migration testing
+func TestReconcileServiceInstanceUpdateMissingOrphanMitigation(t *testing.T) {
+	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
+	instance.Status.ReconciledGeneration = 1
+	instance.Status.ObservedGeneration = 1
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
+	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+	// Set OrphanMitigationInProgress flag with OrphanMitigation condition missing
+	instance.Status.OrphanMitigationInProgress = true
+
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+	}
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	if !isServiceInstanceOrphanMitigation(updatedServiceInstance) {
+		t.Fatal("Expected instance status to have an OrphanMitigation condition set to True")
+	}
+
+}
+
 func generateChecksumOfParametersOrFail(t *testing.T, params map[string]interface{}) string {
 	expectedParametersChecksum, err := generateChecksumOfParameters(params)
 	if err != nil {
