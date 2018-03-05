@@ -107,6 +107,5 @@ func WriteDeletedBindingNames(w io.Writer, bindings []v1beta1.ServiceBinding) {
 
 // WriteDeletedBindingName prints the name of a binding
 func WriteDeletedBindingName(w io.Writer, bindingName string) {
-	message := fmt.Sprintf("deleted %s", bindingName)
-	fmt.Fprintln(w, message)
+	fmt.Fprintf(w, "deleted %s\n", bindingName)
 }

@@ -202,18 +202,21 @@ Bindings:
 ```
 
 ## Unbind all applications from an instance
-```
-svcat unbind -n test-ns ups-instance
+
+```console
+$ svcat unbind -n test-ns ups-instance
 deleted ups-binding
 ```
 
 ## Unbind a single application from an instance
-```
-svcat unbind -n test-ns --name ups-binding
+
+```console
+$ svcat unbind -n test-ns --name ups-binding
 deleted ups-binding
 ```
 
 ## Delete a service instance
+
 Deprovisioning is the process of preparing an instance to be removed, and then deleting it.
 
 ```
