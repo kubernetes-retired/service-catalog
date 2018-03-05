@@ -983,12 +983,18 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorErrorCallingProvisionReason).msg(
-		"The provision call failed and will be retried:",
-	).msgf(
-		"Error communicating with broker for provisioning:",
-	).msg("fake creation failure")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+	message := fmt.Sprintf(
+		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
+		"SCGUID", "test-serviceclass", "test-broker", 500, "InternalServerError; Description: Something went wrong!; ResponseError: <nil>",
+	)
+	expectedProvisionCallEvent := warningEventBuilder(errorProvisionCallFailedReason).msg(message)
+	expectedOrphanMitigationEvent := warningEventBuilder(startingInstanceOrphanMitigationReason).
+		msg("The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource")
+	expectedEvents := []string{
+		expectedProvisionCallEvent.String(),
+		expectedOrphanMitigationEvent.String(),
+	}
+	if err := checkEvents(events, expectedEvents); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -3618,6 +3624,7 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 		name                     string
 		statusCode               int
 		triggersOrphanMitigation bool
+		terminalFailure          bool
 	}{
 		{
 			name:                     "Status OK",
@@ -3635,9 +3642,15 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 			triggersOrphanMitigation: false,
 		},
 		{
+			name:                     "400",
+			statusCode:               400,
+			triggersOrphanMitigation: false,
+			terminalFailure:          true,
+		},
+		{
 			name:                     "408",
 			statusCode:               408,
-			triggersOrphanMitigation: true,
+			triggersOrphanMitigation: false,
 		},
 		{
 			name:                     "other 4XX",
@@ -3700,8 +3713,10 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 			}
 		} else {
 			if err != nil {
-				t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
-				continue
+				if tc.terminalFailure {
+					t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
+					continue
+				}
 			}
 		}
 	}
