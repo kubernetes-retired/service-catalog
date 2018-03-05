@@ -41,18 +41,17 @@ var (
 )
 
 func main() {
-	cmd := buildRootCommand()
+	// root command context
+	cxt := &command.Context{
+		Viper: viper.New(),
+	}
+	cmd := buildRootCommand(cxt)
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-func buildRootCommand() *cobra.Command {
-	// root command context
-	cxt := &command.Context{
-		Viper: viper.New(),
-	}
-
+func buildRootCommand(cxt *command.Context) *cobra.Command {
 	// root command flags
 	var opts struct {
 		Version     bool
@@ -66,15 +65,24 @@ func buildRootCommand() *cobra.Command {
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Enable tests to swap the output
-			cxt.Output = cmd.OutOrStdout()
+			if cxt.Output == nil {
+				cxt.Output = cmd.OutOrStdout()
+			}
 
 			// Initialize flags from environment variables
 			bindViperToCobra(cxt.Viper, cmd)
 
-			app, err := svcat.NewApp(opts.KubeConfig, opts.KubeContext)
-			cxt.App = app
+			// Initialize the context if not already configured (by tests)
+			if cxt.App == nil {
+				app, err := svcat.NewApp(opts.KubeConfig, opts.KubeContext)
+				if err != nil {
+					return err
+				}
 
-			return err
+				cxt.App = app
+			}
+
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.Version {

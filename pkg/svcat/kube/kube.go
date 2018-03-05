@@ -22,18 +22,16 @@ import (
 )
 
 // GetConfig returns a Kubernetes client config for a given context.
-func GetConfig(context string, kubeconfig string) clientcmd.ClientConfig {
+// * context - Overrides the name of the kubernetes context, otherwise current-context is used
+// * kubeconfig - Overrides the config file path, defaults to ~/.kube/config
+func GetConfig(context, kubeconfig string) clientcmd.ClientConfig {
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
+	rules.ExplicitPath = kubeconfig
 
-	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
-
-	if context != "" {
-		overrides.CurrentContext = context
-	}
-
-	if kubeconfig != "" {
-		rules.ExplicitPath = kubeconfig
+	overrides := &clientcmd.ConfigOverrides{
+		ClusterDefaults: clientcmd.ClusterDefaults,
+		CurrentContext:  context,
 	}
 
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides)
