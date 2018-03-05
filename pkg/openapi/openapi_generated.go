@@ -1495,14 +1495,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"reconciledGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec. Deprecated: use ObservedGeneration instead",
+								Description: "ReconciledGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec. Deprecated: use ObservedGeneration with conditions set to true to find whether generation was reconciled.",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
 						},
 						"observedGeneration": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ObservedGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The observed generation is updated whenever the status is updated regardless of operation result",
+								Description: "ObservedGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The observed generation is updated whenever the status is updated regardless of operation result.",
 								Type:        []string{"integer"},
 								Format:      "int64",
 							},
