@@ -3006,8 +3006,9 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
-		startingInstanceOrphanMitigationReason,
+		asyncProvisioningReason,
 		errorReconciliationRetryTimeoutReason,
+		startingInstanceOrphanMitigationReason,
 		instance,
 	)
 
@@ -3666,7 +3667,8 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", updatedObject)
 	}
 
-	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, errorErrorCallingProvisionReason)
+	assertServiceInstanceOrphanMitigationCondition(t, updatedServiceInstance, v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
@@ -3868,6 +3870,9 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 			instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 			instance.Status.OrphanMitigationInProgress = true
+			setServiceInstanceCondition(instance,
+				v1beta1.ServiceInstanceConditionOrphanMitigation,
+				v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
 			instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 			instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
 				ClusterServicePlanExternalName: testClusterServicePlanName,
@@ -5302,6 +5307,9 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 	}
+	setServiceInstanceCondition(instance,
+		v1beta1.ServiceInstanceConditionOrphanMitigation,
+		v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil

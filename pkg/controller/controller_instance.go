@@ -193,7 +193,7 @@ func getReconciliationActionForServiceInstance(instance *v1beta1.ServiceInstance
 	switch {
 	case instance.Status.AsyncOpInProgress:
 		return reconcilePoll
-	case instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress:
+	case instance.ObjectMeta.DeletionTimestamp != nil || isServiceInstanceOrphanMitigation(instance):
 		return reconcileDelete
 	case instance.Status.ProvisionStatus == v1beta1.ServiceInstanceProvisionStatusProvisioned:
 		return reconcileUpdate
@@ -227,14 +227,22 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 // error is returned to indicate that the instance has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance) error {
-	handled, err := c.initObservedGeneration(instance)
+	updated, err := c.initObservedGeneration(instance)
 	if err != nil {
 		return err
 	}
-	if handled {
-		// Update the status and finish the iteration
+	if updated {
 		// The updated instance will be automatically added back to the queue
-		// and be processed again
+		// and processed again
+		return nil
+	}
+	updated, err = c.initOrphanMitigationCondition(instance)
+	if err != nil {
+		return err
+	}
+	if updated {
+		// The updated instance will be automatically added back to the queue
+		// and processed again
 		return nil
 	}
 	reconciliationAction := getReconciliationActionForServiceInstance(instance)
@@ -268,6 +276,29 @@ func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (
 		} else {
 			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 		}
+
+		_, err := c.updateServiceInstanceStatus(instance)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+// initOrphanMitigationCondition implements OrphanMitigation condition initialization
+// based on OrphanMitigationInProgress field for status API migration.
+// Returns true if the status was updated (i.e. the iteration has finished and no
+// more processing needed).
+func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInstance) (bool, error) {
+	if !isServiceInstanceOrphanMitigation(instance) && instance.Status.OrphanMitigationInProgress {
+		reason := startingInstanceOrphanMitigationReason
+		message := startingInstanceOrphanMitigationMessage
+		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
+		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation,
+			v1beta1.ConditionTrue,
+			reason,
+			message)
 
 		_, err := c.updateServiceInstanceStatus(instance)
 		if err != nil {
@@ -492,7 +523,9 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 // deletion timestamp is set.
 func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceInstance) error {
 	// nothing to do...
-	if instance.DeletionTimestamp == nil && !instance.Status.OrphanMitigationInProgress {
+	if instance.DeletionTimestamp == nil && !isServiceInstanceOrphanMitigation(instance) {
+		// TODO nilebox: shouldn't we throw an error instead?
+		// We shouldn't have this method invoked if this condition is true.
 		return nil
 	}
 
@@ -514,7 +547,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	// Any status updates from this point should have an updated observed generation
 	// except for the orphan mitigation (it is considered to be a continuation
 	// of the previously failed provisioning operation).
-	if !instance.Status.OrphanMitigationInProgress && instance.Status.ObservedGeneration != instance.Generation {
+	if !isServiceInstanceOrphanMitigation(instance) && instance.Status.ObservedGeneration != instance.Generation {
 		c.prepareObservedGeneration(instance)
 	}
 
@@ -560,6 +593,12 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	} else {
 		if instance.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
+			if isServiceInstanceOrphanMitigation(instance) {
+				// There is no need in tracking orphan mitigation separately
+				// from the normal deletion
+				removeServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
+				instance.Status.OrphanMitigationInProgress = false
+			}
 			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationDeprovision, inProgressProperties)
 			if err != nil {
 				// There has been an update to the instance. Start reconciliation
@@ -614,7 +653,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 	// There are some conditions that are different depending on which
 	// operation we're polling for. This is more readable than checking the
 	// status in various places.
-	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
+	mitigatingOrphan := isServiceInstanceOrphanMitigation(instance)
 	provisioning := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationDeprovision || mitigatingOrphan
 
@@ -762,15 +801,16 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 // needed for the instance based on ObservedGeneration
 func isServiceInstanceProcessedAlready(instance *v1beta1.ServiceInstance) bool {
 	// The observed generation is considered to be reconciled if either of the
-	// conditions is set to true and there is no orphan mitigation in progress
+	// conditions is set to true and there is no orphan mitigation pending
 	return instance.Status.ObservedGeneration >= instance.Generation &&
-		(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance)) && !instance.Status.OrphanMitigationInProgress
+		(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance)) &&
+		!isServiceInstanceOrphanMitigation(instance)
 }
 
 // processServiceInstancePollingFailureRetryTimeout marks the instance as having
 // failed polling due to its reconciliation retry duration expiring
 func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
-	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
+	mitigatingOrphan := isServiceInstanceOrphanMitigation(instance)
 	provisioning := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationDeprovision || mitigatingOrphan
 
@@ -1245,7 +1285,6 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.CurrentOperation = ""
 	toUpdate.Status.OperationStartTime = nil
 	toUpdate.Status.AsyncOpInProgress = false
-	toUpdate.Status.OrphanMitigationInProgress = false
 	toUpdate.Status.LastOperation = nil
 	toUpdate.Status.InProgressProperties = nil
 }
@@ -1551,9 +1590,13 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 	// requeue this resource.
 	var err error
 	if shouldMitigateOrphan {
-		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
-		c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
-		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
+		reason := startingInstanceOrphanMitigationReason
+		message := startingInstanceOrphanMitigationMessage
+		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
+		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation,
+			v1beta1.ConditionTrue,
+			reason,
+			message)
 
 		instance.Status.OperationStartTime = nil
 		instance.Status.AsyncOpInProgress = false
@@ -1644,11 +1687,13 @@ func (c *controller) processUpdateServiceInstanceAsyncResponse(instance *v1beta1
 // processDeprovisionSuccess handles the logging and updating of
 // a ServiceInstance that has successfully been deprovisioned at the broker.
 func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance) error {
-	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
+	mitigatingOrphan := isServiceInstanceOrphanMitigation(instance)
 
 	reason := successDeprovisionReason
 	msg := successDeprovisionMessage
 	if mitigatingOrphan {
+		removeServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
+		instance.Status.OrphanMitigationInProgress = false
 		reason = successOrphanMitigationReason
 		msg = successOrphanMitigationMessage
 	}
@@ -1684,7 +1729,7 @@ func (c *controller) processDeprovisionFailure(instance *v1beta1.ServiceInstance
 		return fmt.Errorf("failedCond must not be nil")
 	}
 
-	if instance.Status.OrphanMitigationInProgress {
+	if isServiceInstanceOrphanMitigation(instance) {
 		// replace Ready condition with orphan mitigation-related one.
 		msg := "Orphan mitigation failed: " + failedCond.Message
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorOrphanMitigationFailedReason, msg)

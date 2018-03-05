@@ -627,6 +627,12 @@ func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionFailed)
 }
 
+// isServiceInstanceOrphanMitigation returns whether the given instance has an
+// orphan mitigation condition with status true.
+func isServiceInstanceOrphanMitigation(instance *v1beta1.ServiceInstance) bool {
+	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
+}
+
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
 // to the specified Broker
 func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
