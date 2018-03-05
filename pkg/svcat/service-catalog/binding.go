@@ -115,6 +115,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) error {
 		go func(binding v1beta1.ServiceBinding) {
 			defer g.Done()
 			errs <- sdk.DeleteBinding(binding.Namespace, binding.Name)
+			fmt.Printf("deleted %s", binding.Name)
 		}(binding)
 	}
 
@@ -140,6 +141,7 @@ func (sdk *SDK) DeleteBinding(ns, bindingName string) error {
 	if err != nil {
 		return fmt.Errorf("remove binding %s/%s failed (%s)", ns, bindingName, err)
 	}
+	fmt.Printf("deleted %s", bindingName)
 	return nil
 }
 
