@@ -2051,10 +2051,15 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumEvents(t, events, 0)
 }
 
-// TestReconcileServiceInstanceWithFailureCondition tests reconciling an instance that
-// has a status condition set to failure.
-func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+// TestReconcileServiceInstanceWithFailedCondition tests reconciling an instance that
+// has a status condition set to Failed.
+// Instances with Failed condition are retriable after updating the spec.
+func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{},
+		},
+	})
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
@@ -2067,7 +2072,17 @@ func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+		Context: map[string]interface{}{
+			"platform":  "kubernetes",
+			"namespace": "test-ns",
+		},
+	})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -2076,14 +2091,30 @@ func TestReconcileServiceInstanceWithFailureCondition(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	assertNumberOfActions(t, actions, 2)
 
-	// verify no actions on the kube client
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+
 	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+	assertNumberOfActions(t, kubeActions, 1)
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	events := getRecordedEvents(testController)
-	assertNumEvents(t, events, 0)
+	assertNumEvents(t, events, 1)
+	expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // TestPollServiceInstanceInProgressProvisioningWithOperation tests polling an
