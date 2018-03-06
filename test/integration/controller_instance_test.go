@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	_ "net/url"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -925,77 +925,83 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 		expectFailCondition      bool
 		triggersOrphanMitigation bool
 	}{
-		//{
-		//	name:                "Status OK",
-		//	statusCode:          http.StatusOK,
-		//	conditionReason:     "ProvisionCallFailed",
-		//	expectFailCondition: false,
-		//},
+		{
+			name:                "Status OK",
+			statusCode:          http.StatusOK,
+			conditionReason:     "ProvisionedSuccessfully",
+			expectFailCondition: false,
+		},
 		{
 			name:                     "Status Created",
 			statusCode:               http.StatusCreated,
-			conditionReason:          "ProvisionCallFailed",
+			conditionReason:          "ProvisionedSuccessfully",
 			expectFailCondition:      false,
 			triggersOrphanMitigation: true,
 		},
-		//{
-		//	name:                     "other 2xx",
-		//	statusCode:               http.StatusNoContent,
-		//	conditionReason:          "ProvisionCallFailed",
-		//	expectFailCondition:      false,
-		//	triggersOrphanMitigation: true,
-		//},
-		//{
-		//	name:                "3XX",
-		//	statusCode:          300,
-		//	conditionReason:     "ClusterServiceBrokerReturnedFailure",
-		//	expectFailCondition: false,
-		//},
-		//{
-		//	name:                     "Status Request Timeout",
-		//	statusCode:               http.StatusRequestTimeout,
-		//	conditionReason:          "ProvisionCallFailed",
-		//	expectFailCondition:      false,
-		//	triggersOrphanMitigation: true,
-		//},
-		//{
-		//	name:                "other 4XX",
-		//	statusCode:          400,
-		//	conditionReason:     "ClusterServiceBrokerReturnedFailure",
-		//	expectFailCondition: true,
-		//},
-		//{
-		//	name:                     "5XX",
-		//	statusCode:               500,
-		//	conditionReason:          "ProvisionCallFailed",
-		//	expectFailCondition:      false,
-		//	triggersOrphanMitigation: true,
-		//},
-		//{
-		//	name:                 "non-url transport error",
-		//	nonHTTPResponseError: fmt.Errorf("non-url error"),
-		//	conditionReason:      "ErrorCallingProvision",
-		//},
-		//{
-		//	name: "non-timeout url error",
-		//	nonHTTPResponseError: &url.Error{
-		//		Op:  "Put",
-		//		URL: "https://fakebroker.com/v2/service_instances/instance_id",
-		//		Err: fmt.Errorf("non-timeout error"),
-		//	},
-		//	conditionReason: "ErrorCallingProvision",
-		//},
-		//{
-		//	name: "network timeout",
-		//	nonHTTPResponseError: &url.Error{
-		//		Op:  "Put",
-		//		URL: "https://fakebroker.com/v2/service_instances/instance_id",
-		//		Err: TimeoutError("timeout error"),
-		//	},
-		//	conditionReason:          "ErrorCallingProvision",
-		//	expectFailCondition:      false,
-		//	triggersOrphanMitigation: true,
-		//},
+		{
+			name:                     "other 2xx",
+			statusCode:               http.StatusNoContent,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
+			triggersOrphanMitigation: true,
+		},
+		{
+			name:                "3XX",
+			statusCode:          300,
+			conditionReason:     "ProvisionedSuccessfully",
+			expectFailCondition: false,
+		},
+		{
+			name:                     "Status Request Timeout",
+			statusCode:               http.StatusRequestTimeout,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
+			triggersOrphanMitigation: false,
+		},
+		{
+			name:                "400",
+			statusCode:          400,
+			conditionReason:     "ClusterServiceBrokerReturnedFailure",
+			expectFailCondition: true,
+		},
+		{
+			name:                "other 4XX",
+			statusCode:          403,
+			conditionReason:     "ProvisionedSuccessfully",
+			expectFailCondition: false,
+		},
+		{
+			name:                     "5XX",
+			statusCode:               500,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
+			triggersOrphanMitigation: true,
+		},
+		{
+			name:                 "non-url transport error",
+			nonHTTPResponseError: fmt.Errorf("non-url error"),
+			conditionReason:      "ProvisionedSuccessfully",
+		},
+		{
+			name: "non-timeout url error",
+			nonHTTPResponseError: &url.Error{
+				Op:  "Put",
+				URL: "https://fakebroker.com/v2/service_instances/instance_id",
+				Err: fmt.Errorf("non-timeout error"),
+			},
+			conditionReason: "ProvisionedSuccessfully",
+		},
+		{
+			name: "network timeout",
+			nonHTTPResponseError: &url.Error{
+				Op:  "Put",
+				URL: "https://fakebroker.com/v2/service_instances/instance_id",
+				Err: TimeoutError("timeout error"),
+			},
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
+			triggersOrphanMitigation: true,
+		},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -1015,23 +1021,43 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							Description:  strPtr("response description"),
 						}
 					}
-					ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-						Error: reactionError,
-					}
+					ct.osbClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+						getProvisionResponseByPollCountReactions(2, []fakeosb.ProvisionReaction{
+							fakeosb.ProvisionReaction{
+								Error: reactionError,
+							},
+							fakeosb.ProvisionReaction{
+								Response: &osb.ProvisionResponse{},
+							},
+						}))
+					ct.osbClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
+						getDeprovisionResponseByPollCountReactions(2, []fakeosb.DeprovisionReaction{
+							fakeosb.DeprovisionReaction{
+								Error: osb.HTTPStatusCodeError{
+									StatusCode:   500,
+									ErrorMessage: strPtr("temporary deprovision error"),
+								},
+							},
+							fakeosb.DeprovisionReaction{
+								Response: &osb.DeprovisionResponse{},
+							},
+						}))
 				},
 			}
 			ct.run(func(ct *controllerTest) {
 				var condition v1beta1.ServiceInstanceCondition
 				if tc.expectFailCondition {
+					// Instance should get stuck in a Failed condition
 					condition = v1beta1.ServiceInstanceCondition{
 						Type:   v1beta1.ServiceInstanceConditionFailed,
 						Status: v1beta1.ConditionTrue,
 						Reason: tc.conditionReason,
 					}
 				} else {
+					// Instance provisioning should be retried and succeed
 					condition = v1beta1.ServiceInstanceCondition{
 						Type:   v1beta1.ServiceInstanceConditionReady,
-						Status: v1beta1.ConditionFalse,
+						Status: v1beta1.ConditionTrue,
 						Reason: tc.conditionReason,
 					}
 				}
@@ -1045,29 +1071,23 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 					}
 				}
 
-				expectedLastActionType := fakeosb.ProvisionInstance
-				if tc.triggersOrphanMitigation {
-					expectedLastActionType = fakeosb.DeprovisionInstance
-				}
-				// Ensure that the last request made to the broker was of the expected type
-				getLastBrokerAction(t, ct.osbClient, expectedLastActionType)
+				brokerActions := ct.osbClient.Actions()
+				fmt.Printf("%#v", brokerActions)
 
+				// Ensure that we meet expectations on deprovision requests for orphan mitigation
+				deprovisionActions := findBrokerActions(t, ct.osbClient, fakeosb.DeprovisionInstance)
 				if tc.triggersOrphanMitigation {
-					instance, err := ct.client.ServiceInstances(ct.instance.Namespace).Get(ct.instance.Name, metav1.GetOptions{})
-					if err != nil {
-						t.Fatalf("error getting instance %s/%s back", ct.instance.Namespace, ct.instance.Name)
+					if len(deprovisionActions) == 0 {
+						t.Fatal("expected orphan mitigation deprovision request to occur")
 					}
-					util.AssertServiceInstanceCondition(
-						t,
-						instance,
-						v1beta1.ServiceInstanceConditionReady,
-						v1beta1.ConditionFalse,
-						"OrphanMitigationSuccessful",
-					)
-					if e, a := v1beta1.ServiceInstanceDeprovisionStatusSucceeded, instance.Status.DeprovisionStatus; e != a {
-						t.Fatalf("unexpected deprovision status: expected %v, got %v", e, a)
+				} else {
+					if len(deprovisionActions) != 0 {
+						t.Fatal("unexpected deprovision requests")
 					}
 				}
+
+				// All instances should eventually succeed
+				getLastBrokerAction(t, ct.osbClient, fakeosb.ProvisionInstance)
 			})
 		})
 	}
