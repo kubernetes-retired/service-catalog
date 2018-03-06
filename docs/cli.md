@@ -14,7 +14,7 @@ This document assumes that you've installed Service Catalog and the Service Cata
 onto your cluster. If you haven't, please see [install.md](install.md).
 
 ## Plugin
-To use svcat as a plugin, run the following command after downloading:
+To use svcat as a kubectl plugin, run the following command after downloading:
 
 ```console
 $ svcat install plugin
@@ -194,14 +194,14 @@ $ svcat describe instance -n test-ns ups-instance
     ups-binding   Ready
 ```
 
-## Unbind all applications from an instance
+## Remove all bindings from an instance
 
 ```console
 $ svcat unbind -n test-ns ups-instance
 deleted ups-binding
 ```
 
-## Unbind a single application from an instance
+## Remove a single binding from an instance
 
 ```console
 $ svcat unbind -n test-ns --name ups-binding
@@ -211,6 +211,7 @@ deleted ups-binding
 ## Delete a service instance
 
 Deprovisioning is the process of preparing an instance to be removed, and then deleting it.
+You must unbind delete all bindings before deprovisioning an instance.
 
 ```
 svcat deprovision ups-instance
