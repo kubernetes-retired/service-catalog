@@ -1420,8 +1420,10 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 	// provisioning request instead that we previously stored in status
 	var servicePlanExternalID string
 	if instance.Status.CurrentOperation != "" || instance.Status.OrphanMitigationInProgress {
+		// TODO nilebox: check and return error instead of panicking on nil
 		servicePlanExternalID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
 	} else {
+		// TODO nilebox: check and return error instead of panicking on nil
 		servicePlanExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
 	}
 
