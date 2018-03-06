@@ -27,7 +27,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/touch"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/spf13/cobra"
@@ -105,7 +104,7 @@ func buildRootCommand() *cobra.Command {
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
 	cmd.AddCommand(newInstallCmd(cxt))
-	cmd.AddCommand(touch.NewCmd(cxt))
+	cmd.AddCommand(newTouchCmd(cxt))
 
 	return cmd
 }
@@ -159,6 +158,15 @@ func newInstallCmd(cxt *command.Context) *cobra.Command {
 	}
 	cmd.AddCommand(plugin.NewInstallCmd(cxt))
 
+	return cmd
+}
+
+func newTouchCmd(cxt *command.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "touch",
+		Short: "Force Service Catalog to reprocess a resource",
+	}
+	cmd.AddCommand(instance.NewTouchCommand(cxt))
 	return cmd
 }
 
