@@ -35,10 +35,11 @@ func (pr PlanReference) PlanSpecified() bool {
 		pr.ClusterServicePlanName != ""
 }
 
-// GetSpecifiedClass returns the user-specified class value from either:
+// GetSpecifiedClass returns the user-specified class value from one of:
 // * ClusterServiceClassExternalName
 // * ClusterServiceClassExternalID
 // * ClusterServiceClassName
+// This method is intended for presentation purposes only.
 func (pr PlanReference) GetSpecifiedClass() string {
 	if pr.ClusterServiceClassExternalName != "" {
 		return pr.ClusterServiceClassExternalName
@@ -55,10 +56,11 @@ func (pr PlanReference) GetSpecifiedClass() string {
 	return ""
 }
 
-// GetSpecifiedPlan returns the user-specified plan value from either:
+// GetSpecifiedPlan returns the user-specified plan value from one of:
 // * ClusterServicePlanExternalName
 // * ClusterServicePlanExternalID
 // * ClusterServicePlanName
+// This method is intended for presentation purposes only.
 func (pr PlanReference) GetSpecifiedPlan() string {
 	if pr.ClusterServicePlanExternalName != "" {
 		return pr.ClusterServicePlanExternalName
