@@ -48,6 +48,6 @@ func formatStatusFull(condition string, conditionStatus v1beta1.ConditionStatus,
 }
 
 // WriteDeletedResourceName prints the name of a deleted resource
-func WriteDeletedResourceName(w io.Writer, bindingName string) {
-	fmt.Fprintf(w, "deleted %s\n", bindingName)
+func WriteDeletedResourceName(w io.Writer, resourceName string) {
+	fmt.Fprintf(w, "deleted %s\n", resourceName)
 }
