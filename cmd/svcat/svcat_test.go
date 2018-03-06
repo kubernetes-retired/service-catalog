@@ -55,6 +55,9 @@ func TestCommandValidation(t *testing.T) {
 		{"unbind requires arg", "unbind", "instance or binding name is required"},
 		{"sync requires names", "sync broker", "name is required"},
 		{"deprovision requires name", "deprovision", "name is required"},
+		{"provision does not accept --param and --params-json",
+			`provision name --class class --plan plan --params-json '{}' --param k=v`,
+			"--params-json cannot be used with --param"},
 	}
 
 	for _, tc := range testcases {

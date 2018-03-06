@@ -143,7 +143,7 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 
 // Provision creates an instance of a service class and plan.
 func (sdk *SDK) Provision(namespace, instanceName, className, planName string,
-	params map[string]string, secrets map[string]string) (*v1beta1.ServiceInstance, error) {
+	params interface{}, secrets map[string]string) (*v1beta1.ServiceInstance, error) {
 
 	request := &v1beta1.ServiceInstance{
 		ObjectMeta: v1.ObjectMeta{
