@@ -69,8 +69,6 @@ const (
 	errorOrphanMitigationFailedReason          string = "OrphanMitigationFailed"
 	errorInvalidDeprovisionStatusReason        string = "InvalidDeprovisionStatus"
 	errorInvalidDeprovisionStatusMessage       string = "The deprovision status is invalid"
-	errorUnknownServicePlanReason              string = "UnknownServicePlan"
-	errorUnknownServicePlanMessage             string = "The ServicePlan is not known"
 
 	asyncProvisioningReason                 string = "Provisioning"
 	asyncProvisioningMessage                string = "The instance is being provisioned asynchronously"
@@ -307,7 +305,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 
 	glog.V(4).Info(pcb.Message("Processing adding event"))
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance, true)
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
@@ -414,7 +412,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 
 	glog.V(4).Info(pcb.Message("Processing updating event"))
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance, true)
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
@@ -542,17 +540,18 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, _, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance, false)
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	request, err := c.prepareDeprovisionRequest(instance, serviceClass, servicePlan)
+	request, err := c.prepareDeprovisionRequest(instance, serviceClass)
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
 	if instance.DeletionTimestamp == nil {
+		// Orphan mitigation
 		if instance.Status.OperationStartTime == nil {
 			// if mitigating an orphan, set the operation start time if unset
 			now := metav1.Now()
@@ -606,7 +605,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 	instance = instance.DeepCopy()
 
-	serviceClass, servicePlan, _, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	serviceClass, servicePlan, _, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance, true)
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
@@ -1289,7 +1288,7 @@ type requestHelper struct {
 
 // prepareRequestHelper is a helper function that generates a struct with
 // properties common to multiple request types.
-func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*requestHelper, error) {
+func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, servicePlan *v1beta1.ClusterServicePlan) (*requestHelper, error) {
 	rh := &requestHelper{}
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
@@ -1353,7 +1352,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 // prepareProvisionRequest creates a provision request object to be passed to
 // the broker client to provision the given instance.
 func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.ProvisionRequest, *v1beta1.ServiceInstancePropertiesState, error) {
-	rh, err := c.prepareRequestHelper(instance, serviceClass, servicePlan)
+	rh, err := c.prepareRequestHelper(instance, servicePlan)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1376,7 +1375,7 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance, 
 // prepareUpdateInstanceRequest creates an update instance request object to be
 // passed to the broker client to update the given instance.
 func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.UpdateInstanceRequest, *v1beta1.ServiceInstancePropertiesState, error) {
-	rh, err := c.prepareRequestHelper(instance, serviceClass, servicePlan)
+	rh, err := c.prepareRequestHelper(instance, servicePlan)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1410,22 +1409,20 @@ func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInsta
 
 // prepareDeprovisionRequest creates a deprovision request object to be passed
 // to the broker client to deprovision the given instance.
-func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.DeprovisionRequest, error) {
-	rh, err := c.prepareRequestHelper(instance, serviceClass, servicePlan)
+func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass) (*osb.DeprovisionRequest, error) {
+	rh, err := c.prepareRequestHelper(instance, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	// The plan reference in the spec might be updated since the latest
+	// provisioning/update request, thus we need to take values from the original
+	// provisioning request instead that we previously stored in status
 	var servicePlanExternalID string
-	if instance.Status.ExternalProperties != nil {
-		servicePlanExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
-	} else if servicePlan != nil {
-		servicePlanExternalID = servicePlan.Spec.ExternalID
+	if instance.Status.CurrentOperation != "" || instance.Status.OrphanMitigationInProgress {
+		servicePlanExternalID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
 	} else {
-		return nil, &operationError{
-			reason:  errorUnknownServicePlanReason,
-			message: errorUnknownServicePlanMessage,
-		}
+		servicePlanExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
 	}
 
 	request := &osb.DeprovisionRequest{
@@ -1442,7 +1439,7 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 // preparePollServiceInstanceRequest creates a request object to be passed to
 // the broker client to query the given instance's last operation endpoint.
 func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.LastOperationRequest, error) {
-	rh, err := c.prepareRequestHelper(instance, serviceClass, servicePlan)
+	rh, err := c.prepareRequestHelper(instance, servicePlan)
 	if err != nil {
 		return nil, err
 	}

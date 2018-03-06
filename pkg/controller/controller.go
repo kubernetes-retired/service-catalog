@@ -263,7 +263,7 @@ func (e *operationError) Error() string { return e.message }
 // The ClusterServicePlan returned will be nil if the ClusterServicePlanRef
 // is nil. This will happen when deleting a ServiceInstance that previously
 // had an update to a non-existent plan.
-func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance, fetchPlan bool) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
@@ -277,7 +277,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	}
 
 	var servicePlan *v1beta1.ClusterServicePlan
-	if instance.Spec.ClusterServicePlanRef != nil {
+	if fetchPlan && instance.Spec.ClusterServicePlanRef != nil {
 		var err error
 		servicePlan, err = c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 		if nil != err {
