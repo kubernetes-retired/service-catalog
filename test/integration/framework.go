@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/pkg/transport"
 	restfullog "github.com/emicklei/go-restful/log"
 	"github.com/golang/glog"
 
@@ -34,6 +36,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/apiserver/pkg/storage/storagebackend"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
@@ -66,7 +69,21 @@ func withConfigGetFreshApiserverAndClient(
 	t *testing.T,
 	serverConfig *TestServerConfig,
 ) (servicecatalogclient.Interface,
+	*server.ServiceCatalogServerOptions,
 	*restclient.Config,
+	func(),
+) {
+	clientset, options, config, _, shutdownServer := withConfigGetFreshApiserverAndClientAndEtcdClient(t, serverConfig)
+	return clientset, options, config, shutdownServer
+}
+
+func withConfigGetFreshApiserverAndClientAndEtcdClient(
+	t *testing.T,
+	serverConfig *TestServerConfig,
+) (servicecatalogclient.Interface,
+	*server.ServiceCatalogServerOptions,
+	*restclient.Config,
+	clientv3.KV,
 	func(),
 ) {
 	securePort := rand.Intn(31743) + 1024
@@ -81,33 +98,34 @@ func withConfigGetFreshApiserverAndClient(
 	t.Logf("Starting server on port: %d", securePort)
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
+
+	var etcdOptions *server.EtcdOptions
+	if serverstorage.StorageTypeEtcd == serverConfig.storageType {
+		etcdOptions = server.NewEtcdOptions()
+		etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
+		etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
+	} else {
+		t.Fatal("no storage type specified")
+	}
+
+	options := &server.ServiceCatalogServerOptions{
+		StorageTypeString:       serverConfig.storageType.String(),
+		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
+		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
+		SecureServingOptions:    secureServingOptions,
+		EtcdOptions:             etcdOptions,
+		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
+		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
+		AuditOptions:            genericserveroptions.NewAuditOptions(),
+		DisableAuth:             true,
+		StandaloneMode:          true, // this must be true because we have no kube server for integration.
+		ServeOpenAPISpec:        true,
+	}
+	options.SecureServingOptions.BindPort = securePort
+	options.SecureServingOptions.ServerCert.CertDirectory = certDir
+
 	// start the server in the background
 	go func() {
-		var etcdOptions *server.EtcdOptions
-		if serverstorage.StorageTypeEtcd == serverConfig.storageType {
-			etcdOptions = server.NewEtcdOptions()
-			etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
-			etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
-		} else {
-			t.Fatal("no storage type specified")
-		}
-
-		options := &server.ServiceCatalogServerOptions{
-			StorageTypeString:       serverConfig.storageType.String(),
-			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
-			AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
-			SecureServingOptions:    secureServingOptions,
-			EtcdOptions:             etcdOptions,
-			AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
-			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
-			AuditOptions:            genericserveroptions.NewAuditOptions(),
-			DisableAuth:             true,
-			StandaloneMode:          true, // this must be true because we have no kube server for integration.
-			ServeOpenAPISpec:        true,
-		}
-		options.SecureServingOptions.BindPort = securePort
-		options.SecureServingOptions.ServerCert.CertDirectory = certDir
-
 		if err := server.RunServer(options, stopCh); err != nil {
 			close(serverFailed)
 			t.Fatalf("Error in bringing up the server: %v", err)
@@ -127,14 +145,29 @@ func withConfigGetFreshApiserverAndClient(
 	if nil != err {
 		t.Fatal("can't make the client from the config", err)
 	}
-	return clientset, config, shutdownServer
+
+	kvClient, err := getEtcdKVClient(options.EtcdOptions.StorageConfig)
+	if err != nil {
+		t.Fatalf("can't make the kvClient from the config: %v", err)
+	}
+
+	return clientset, options, config, kvClient, shutdownServer
 }
 
 func getFreshApiserverAndClient(
 	t *testing.T,
 	storageTypeStr string,
 	newEmptyObj func() runtime.Object,
-) (servicecatalogclient.Interface, *restclient.Config, func()) {
+) (servicecatalogclient.Interface, *server.ServiceCatalogServerOptions, *restclient.Config, func()) {
+	client, options, clientConfig, _, shutdownFunc := getFreshApiserverAndClientAndEtcdClient(t, storageTypeStr, newEmptyObj)
+	return client, options, clientConfig, shutdownFunc
+}
+
+func getFreshApiserverAndClientAndEtcdClient(
+	t *testing.T,
+	storageTypeStr string,
+	newEmptyObj func() runtime.Object,
+) (servicecatalogclient.Interface, *server.ServiceCatalogServerOptions, *restclient.Config, clientv3.KV, func()) {
 	var serverStorageType serverstorage.StorageType
 	serverStorageType, err := serverstorage.StorageTypeFromString(storageTypeStr)
 	if nil != err {
@@ -146,8 +179,8 @@ func getFreshApiserverAndClient(
 		storageType:    serverStorageType,
 		emptyObjFunc:   newEmptyObj,
 	}
-	client, clientConfig, shutdownFunc := withConfigGetFreshApiserverAndClient(t, serverConfig)
-	return client, clientConfig, shutdownFunc
+	client, options, clientConfig, kvClient, shutdownFunc := withConfigGetFreshApiserverAndClientAndEtcdClient(t, serverConfig)
+	return client, options, clientConfig, kvClient, shutdownFunc
 }
 
 func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
@@ -178,4 +211,29 @@ func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
 			}
 		},
 	)
+}
+
+func getEtcdKVClient(config storagebackend.Config) (clientv3.KV, error) {
+	tlsInfo := transport.TLSInfo{
+		CertFile: config.CertFile,
+		KeyFile:  config.KeyFile,
+		CAFile:   config.CAFile,
+	}
+
+	tlsConfig, err := tlsInfo.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := clientv3.Config{
+		Endpoints: config.ServerList,
+		TLS:       tlsConfig,
+	}
+
+	c, err := clientv3.New(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientv3.NewKV(c), nil
 }

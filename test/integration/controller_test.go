@@ -696,7 +696,7 @@ func newTestController(t *testing.T) (
 	prependGetSecretNotFoundReaction(fakeKubeClient)
 
 	// create an sc client and running server
-	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
+	catalogClient, _, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
 	})
 
