@@ -83,7 +83,7 @@ func (c *unbindCmd) Run() error {
 func (c *unbindCmd) deleteBinding() error {
 	err := c.App.DeleteBinding(c.ns, c.bindingName)
 	if err == nil {
-		output.WriteDeletedBindingName(c.Output, c.bindingName)
+		output.WriteDeletedResourceName(c.Output, c.bindingName)
 	}
 	return err
 }

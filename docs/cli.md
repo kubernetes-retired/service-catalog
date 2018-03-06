@@ -213,6 +213,7 @@ deleted ups-binding
 Deprovisioning is the process of preparing an instance to be removed, and then deleting it.
 You must unbind delete all bindings before deprovisioning an instance.
 
-```
-svcat deprovision ups-instance
+```console
+$ svcat deprovision ups-instance
+deleted ups-instance
 ```

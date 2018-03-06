@@ -101,11 +101,6 @@ func WriteAssociatedBindings(w io.Writer, bindings []v1beta1.ServiceBinding) {
 // WriteDeletedBindingNames prints the names of a list of bindings
 func WriteDeletedBindingNames(w io.Writer, bindings []v1beta1.ServiceBinding) {
 	for _, binding := range bindings {
-		WriteDeletedBindingName(w, binding.Name)
+		WriteDeletedResourceName(w, binding.Name)
 	}
-}
-
-// WriteDeletedBindingName prints the name of a binding
-func WriteDeletedBindingName(w io.Writer, bindingName string) {
-	fmt.Fprintf(w, "deleted %s\n", bindingName)
 }
