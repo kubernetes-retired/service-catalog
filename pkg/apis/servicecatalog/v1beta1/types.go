@@ -98,12 +98,53 @@ type ClusterServiceBrokerSpec struct {
 	CatalogRestrictions *ServiceClassCatalogRestrictions `json:"catalogRestrictions,omitempty"`
 }
 
-type ClusterServicePlanRequirements string
+// *Requirements type strings have a special format similar to Label Selectors,
+// except the catalog supports only a very specific property set per type as
+// documented below.
+// The predicate format is expected to be `<property><conditional><requirement>`
+// Check the *Requirements type definition for which <property> strings will be allowed.
+// <conditional> is allowed to be one of the following: ==, !=, in, notin
+// <requirement> will be a string value if `==` or `!=` are used.
+// <requirement> will be a set of string values if `in` or `notin` are used.
+// Multiple predicates are allowed to be chained with a comma (,)
+
+// ClusterServiceClassRequirements represents a selector for classes used to filter.
+// Allowed property names:
+// name - the value set to ClusterServiceClass.Name
+// externalName - the value set to ClusterServiceClass.Spec.ExternalName
 type ClusterServiceClassRequirements string
 
+// ClusterServicePlanRequirements represents a selector for plans used to filter.
+// Allowed property names:
+// name - the value set to ClusterServiceClass.Name
+// externalName - the value set to ClusterServiceClass.Spec.ExternalName
+type ClusterServicePlanRequirements string
+
+// ServiceClassCatalogRestrictions contains the restrictions used to on catalog re-list.
+// Some examples of this object are as follows:
+//
+// Goal: Only list Services with the externalName of FooService and BarService,
+// Solution: restrictions := ServiceClassCatalogRestrictions{
+// 		ServiceClass: "externalName in (FooService, BarService)",
+// }
+// This is an example of a whitelist on service externalName.
+// Goal: Allow all services except the ones with the externalName of FooService and BarService,
+// Solution: restrictions := ServiceClassCatalogRestrictions{
+// 		ServiceClass: "externalName notin (FooService, BarService)",
+// }
+// This is an example of a blacklist on service externalName.
+// Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name,
+// Solution: restrictions := ServiceClassCatalogRestrictions{
+// 		ServiceClass: "name!=AABBB-CCDD-EEGG-HIJK",
+// 		ServicePlan: "externalName in (Demo),name!=AABBCC",
+// }
+// This whitelists plans called "Demo", and blacklists (but only a single element in
+// the list) a service and a plan.
 type ServiceClassCatalogRestrictions struct {
-	ServicePlan  ClusterServicePlanRequirements  `json:"servicePlan,omitempty"`
+	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServiceClass ClusterServiceClassRequirements `json:"serviceClass,omitempty"`
+	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
+	ServicePlan ClusterServicePlanRequirements `json:"servicePlan,omitempty"`
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
