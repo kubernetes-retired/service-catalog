@@ -524,7 +524,6 @@ type ServiceInstanceStatus struct {
 
 	// OrphanMitigationInProgress is set to true if there is an ongoing orphan
 	// mitigation operation against this ServiceInstance in progress.
-	// Deprecated: Use OrphanMitigation condition instead.
 	OrphanMitigationInProgress bool
 
 	// LastOperation is the string that the broker may have returned when

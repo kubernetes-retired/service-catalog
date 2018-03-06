@@ -193,7 +193,7 @@ func getReconciliationActionForServiceInstance(instance *v1beta1.ServiceInstance
 	switch {
 	case instance.Status.AsyncOpInProgress:
 		return reconcilePoll
-	case instance.ObjectMeta.DeletionTimestamp != nil || isServiceInstanceOrphanMitigation(instance):
+	case instance.ObjectMeta.DeletionTimestamp != nil || instance.Status.OrphanMitigationInProgress:
 		return reconcileDelete
 	case instance.Status.ProvisionStatus == v1beta1.ServiceInstanceProvisionStatusProvisioned:
 		return reconcileUpdate
@@ -523,7 +523,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 // deletion timestamp is set.
 func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceInstance) error {
 	// nothing to do...
-	if instance.DeletionTimestamp == nil && !isServiceInstanceOrphanMitigation(instance) {
+	if instance.DeletionTimestamp == nil && !instance.Status.OrphanMitigationInProgress {
 		// TODO nilebox: shouldn't we throw an error instead?
 		// We shouldn't have this method invoked if this condition is true.
 		return nil
@@ -547,7 +547,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	// Any status updates from this point should have an updated observed generation
 	// except for the orphan mitigation (it is considered to be a continuation
 	// of the previously failed provisioning operation).
-	if !isServiceInstanceOrphanMitigation(instance) && instance.Status.ObservedGeneration != instance.Generation {
+	if !instance.Status.OrphanMitigationInProgress && instance.Status.ObservedGeneration != instance.Generation {
 		c.prepareObservedGeneration(instance)
 	}
 
@@ -593,7 +593,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	} else {
 		if instance.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
-			if isServiceInstanceOrphanMitigation(instance) {
+			if instance.Status.OrphanMitigationInProgress {
 				// There is no need in tracking orphan mitigation separately
 				// from the normal deletion
 				removeServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
@@ -653,7 +653,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 	// There are some conditions that are different depending on which
 	// operation we're polling for. This is more readable than checking the
 	// status in various places.
-	mitigatingOrphan := isServiceInstanceOrphanMitigation(instance)
+	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
 	provisioning := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationDeprovision || mitigatingOrphan
 
@@ -804,13 +804,13 @@ func isServiceInstanceProcessedAlready(instance *v1beta1.ServiceInstance) bool {
 	// conditions is set to true and there is no orphan mitigation pending
 	return instance.Status.ObservedGeneration >= instance.Generation &&
 		(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance)) &&
-		!isServiceInstanceOrphanMitigation(instance)
+		!instance.Status.OrphanMitigationInProgress
 }
 
 // processServiceInstancePollingFailureRetryTimeout marks the instance as having
 // failed polling due to its reconciliation retry duration expiring
 func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
-	mitigatingOrphan := isServiceInstanceOrphanMitigation(instance)
+	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
 	provisioning := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationDeprovision || mitigatingOrphan
 
@@ -1016,12 +1016,12 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 	return instance, nil
 }
 
-// newServiceInstanceReadyCondition is a helper function that returns a Ready
-// condition with the given status, reason, and message, with its transition
+// newServiceInstanceCondition is a helper function that returns a
+// condition with the given type, status, reason and message, with its transition
 // time set to now.
-func newServiceInstanceReadyCondition(status v1beta1.ConditionStatus, reason, message string) *v1beta1.ServiceInstanceCondition {
+func newServiceInstanceCondition(status v1beta1.ConditionStatus, condType v1beta1.ServiceInstanceConditionType, reason, message string) *v1beta1.ServiceInstanceCondition {
 	return &v1beta1.ServiceInstanceCondition{
-		Type:               v1beta1.ServiceInstanceConditionReady,
+		Type:               condType,
 		Status:             status,
 		Reason:             reason,
 		Message:            message,
@@ -1029,17 +1029,25 @@ func newServiceInstanceReadyCondition(status v1beta1.ConditionStatus, reason, me
 	}
 }
 
-// newServiceInstanceFailedCondition is a helper function that returns a Failed
+// newServiceInstanceReadyCondition is a helper function that returns a Ready
 // condition with the given status, reason, and message, with its transition
 // time set to now.
+func newServiceInstanceReadyCondition(status v1beta1.ConditionStatus, reason, message string) *v1beta1.ServiceInstanceCondition {
+	return newServiceInstanceCondition(status, v1beta1.ServiceInstanceConditionReady, reason, message)
+}
+
+// newServiceInstanceFailedCondition is a helper function that returns a Failed
+// condition with the given status, reason and message, with its transition
+// time set to now.
 func newServiceInstanceFailedCondition(status v1beta1.ConditionStatus, reason, message string) *v1beta1.ServiceInstanceCondition {
-	return &v1beta1.ServiceInstanceCondition{
-		Type:               v1beta1.ServiceInstanceConditionFailed,
-		Status:             status,
-		Reason:             reason,
-		Message:            message,
-		LastTransitionTime: metav1.Now(),
-	}
+	return newServiceInstanceCondition(status, v1beta1.ServiceInstanceConditionFailed, reason, message)
+}
+
+// newServiceInstanceOrphanMitigationCondition is a helper function that returns
+// an OrphanMitigation condition with the given status, reason and message,
+// with its transition time set to now.
+func newServiceInstanceOrphanMitigationCondition(status v1beta1.ConditionStatus, reason, message string) *v1beta1.ServiceInstanceCondition {
+	return newServiceInstanceCondition(status, v1beta1.ServiceInstanceConditionOrphanMitigation, reason, message)
 }
 
 // removeServiceInstanceCondition removes a condition of a given type from an
@@ -1590,13 +1598,19 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 	// requeue this resource.
 	var err error
 	if shouldMitigateOrphan {
-		reason := startingInstanceOrphanMitigationReason
-		message := startingInstanceOrphanMitigationMessage
-		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
+		// Copy failure reason/message to a new OrphanMitigation condition
+		orphanMitigationCond := newServiceInstanceOrphanMitigationCondition(v1beta1.ConditionTrue, readyCond.Reason, readyCond.Message)
+		c.recorder.Event(instance, corev1.EventTypeWarning, orphanMitigationCond.Reason, orphanMitigationCond.Message)
 		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation,
-			v1beta1.ConditionTrue,
-			reason,
-			message)
+			orphanMitigationCond.Status,
+			orphanMitigationCond.Reason,
+			orphanMitigationCond.Message)
+		// Overwrite Ready condition reason/message with reporting on orphan mitigation
+		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
+		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady,
+			readyCond.Status,
+			readyCond.Reason,
+			readyCond.Message)
 
 		instance.Status.OperationStartTime = nil
 		instance.Status.AsyncOpInProgress = false
@@ -1687,7 +1701,7 @@ func (c *controller) processUpdateServiceInstanceAsyncResponse(instance *v1beta1
 // processDeprovisionSuccess handles the logging and updating of
 // a ServiceInstance that has successfully been deprovisioned at the broker.
 func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance) error {
-	mitigatingOrphan := isServiceInstanceOrphanMitigation(instance)
+	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
 
 	reason := successDeprovisionReason
 	msg := successDeprovisionMessage
@@ -1729,7 +1743,7 @@ func (c *controller) processDeprovisionFailure(instance *v1beta1.ServiceInstance
 		return fmt.Errorf("failedCond must not be nil")
 	}
 
-	if isServiceInstanceOrphanMitigation(instance) {
+	if instance.Status.OrphanMitigationInProgress {
 		// replace Ready condition with orphan mitigation-related one.
 		msg := "Orphan mitigation failed: " + failedCond.Message
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorOrphanMitigationFailedReason, msg)

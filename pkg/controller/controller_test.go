@@ -1876,8 +1876,8 @@ func assertServiceInstanceReadyCondition(t *testing.T, obj runtime.Object, statu
 	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionReady, status, reason...)
 }
 
-func assertServiceInstanceOrphanMitigationTrue(t *testing.T, obj runtime.Object) {
-	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation, v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason)
+func assertServiceInstanceOrphanMitigationTrue(t *testing.T, obj runtime.Object, reason string) {
+	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation, v1beta1.ConditionTrue, reason)
 }
 
 func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceInstanceConditionType, status v1beta1.ConditionStatus, reason ...string) {
@@ -2140,12 +2140,12 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 
 func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Object, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
-	assertServiceInstanceReadyFalse(t, obj, errorProvisionCallFailedReason)
+	assertServiceInstanceReadyFalse(t, obj, startingInstanceOrphanMitigationReason)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
-	assertServiceInstanceOrphanMitigationTrue(t, obj)
+	assertServiceInstanceOrphanMitigationTrue(t, obj, errorProvisionCallFailedReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
 }
@@ -2260,7 +2260,7 @@ func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T,
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
-	assertServiceInstanceOrphanMitigationTrue(t, obj)
+	assertServiceInstanceOrphanMitigationTrue(t, obj, orphanMitigationReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 

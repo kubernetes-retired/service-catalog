@@ -3006,9 +3006,9 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
-		asyncProvisioningReason,
-		errorReconciliationRetryTimeoutReason,
 		startingInstanceOrphanMitigationReason,
+		errorReconciliationRetryTimeoutReason,
+		asyncProvisioningReason,
 		instance,
 	)
 
@@ -3667,8 +3667,8 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", updatedObject)
 	}
 
-	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, errorErrorCallingProvisionReason)
-	assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance)
+	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason)
+	assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance, errorErrorCallingProvisionReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
@@ -3918,7 +3918,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			if tc.finishedOrphanMitigation {
 				assertServiceInstanceOrphanMitigationMissing(t, updatedServiceInstance)
 			} else {
-				assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance)
+				assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance, startingInstanceOrphanMitigationReason)
 			}
 
 			//TODO(mkibbe): change asserts to expects
