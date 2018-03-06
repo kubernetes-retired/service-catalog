@@ -218,7 +218,7 @@ func WaitForInstanceProcessedGeneration(client v1beta1servicecatalog.Servicecata
 
 			if instance.Status.ObservedGeneration >= processedGeneration &&
 				(isServiceInstanceReady(instance) || isServiceInstanceFailed(instance)) &&
-				!isServiceInstanceOrphanMitigation(instance) {
+				!instance.Status.OrphanMitigationInProgress {
 				return true, nil
 			}
 
@@ -249,12 +249,6 @@ func isServiceInstanceReady(instance *v1beta1.ServiceInstance) bool {
 // status true.
 func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionFailed)
-}
-
-// isServiceInstanceOrphanMitigation returns whether the given instance has an
-// orphan mitigation condition with status true.
-func isServiceInstanceOrphanMitigation(instance *v1beta1.ServiceInstance) bool {
-	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
 }
 
 // WaitForBindingCondition waits for the status of the named binding to contain

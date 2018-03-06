@@ -3796,7 +3796,6 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			// TODO nilebox: Should instance remain in orphan mitigation or not?
 			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
