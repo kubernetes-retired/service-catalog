@@ -42,9 +42,9 @@ Below are some common tasks made easy with svcat. The example output assumes tha
 * [List all service instances in a namespace](#list-all-service-instances-in-a-namespace)
 * [Bind an instance](#bind-an-instance)
 * [View the details of a service instance](#view-the-details-of-a-service-instance)
-* [Unbind all applications from an instance](#unbind-all-applications-from-an-instance)
-* [Unbind a single application from an instance](#unbind-a-single-application-from-an-instance)
-* [Delete a service instance](#delete-a-service-instance)
+* [Unbind all applications from an instance](#remove-all-bindings-from-an-instance)
+* [Unbind a single application from an instance](#remove-a-single-binding-from-an-instance)
+* [Delete a service instance](#remove-a-single-binding-from-an-instance)
 
 ## Find brokers installed on the cluster
 
