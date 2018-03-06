@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	stderrors "errors"
 	"fmt"
 	"net/url"
 
@@ -1420,10 +1421,14 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 	// provisioning request instead that we previously stored in status
 	var servicePlanExternalID string
 	if instance.Status.CurrentOperation != "" || instance.Status.OrphanMitigationInProgress {
-		// TODO nilebox: check and return error instead of panicking on nil
+		if instance.Status.InProgressProperties == nil {
+			return nil, stderrors.New("InProgressProperties must be set when there is an operation or orphan mitigation in progress")
+		}
 		servicePlanExternalID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
 	} else {
-		// TODO nilebox: check and return error instead of panicking on nil
+		if instance.Status.ExternalProperties == nil {
+			return nil, stderrors.New("ExternalProperties must be set before deprovisioning")
+		}
 		servicePlanExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
 	}
 
