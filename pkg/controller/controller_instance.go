@@ -301,7 +301,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
-	_, modified, err := c.resolveReferences(instance)
+	modified, err := c.resolveReferences(instance)
 	if err != nil {
 		return err
 	}
@@ -413,8 +413,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
-	//
-	_, modified, err := c.resolveReferences(instance)
+	modified, err := c.resolveReferences(instance)
 	if err != nil {
 		return err
 	}
@@ -805,13 +804,12 @@ func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *
 
 // resolveReferences checks to see if ClusterServiceClassRef and/or ClusterServicePlanRef are
 // nil and if so, will resolve the references and update the instance.
-// If references needed to be resolved, and the instance status was successfully updated, the method returns true as
-// its 2nd return value
+// If references needed to be resolved, and the instance status was successfully updated, the method returns true
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
-func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, bool, error) {
+func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool, error) {
 	if instance.Spec.ClusterServiceClassRef != nil && instance.Spec.ClusterServicePlanRef != nil {
-		return instance, false, nil
+		return false, nil
 	}
 
 	var sc *v1beta1.ClusterServiceClass
@@ -819,7 +817,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 	if instance.Spec.ClusterServiceClassRef == nil {
 		instance, sc, err = c.resolveClusterServiceClassRef(instance)
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 	}
 
@@ -827,17 +825,17 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 		if sc == nil {
 			sc, err = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if err != nil {
-				return nil, false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
+				return false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
 			}
 		}
 
 		instance, err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 	}
-	updatedInstance, err := c.updateServiceInstanceReferences(instance)
-	return updatedInstance, err == nil, err
+	_, err = c.updateServiceInstanceReferences(instance)
+	return err == nil, err
 }
 
 // resolveClusterServiceClassRef resolves a reference  to a ClusterServiceClass

@@ -3981,17 +3981,13 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 func TestResolveReferencesReferencesAlreadySet(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 	instance := getTestServiceInstanceWithRefs()
-	updatedInstance, modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("resolveReferences failed unexpectedly: %q", err)
 	}
 
 	if modified {
-		t.Fatalf("modified should be false, but is true")
-	}
-
-	if e, a := instance, updatedInstance; !reflect.DeepEqual(instance, updatedInstance) {
-		t.Fatalf("Instance was modified, expected\n%v\nGot\n%v", e, a)
+		t.Fatalf("Should have returned false")
 	}
 
 	// No kube actions
@@ -4010,7 +4006,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 
 	instance := getTestServiceInstance()
 
-	updatedInstance, _, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance)
 	if err == nil {
 		t.Fatalf("Should have failed with no service class")
 	}
@@ -4018,8 +4014,9 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 	if e, a := "a non-existent ClusterServiceClass", err.Error(); !strings.Contains(a, e) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
-	if updatedInstance != nil {
-		t.Fatalf("updatedInstance retuend was non-nil: %+v", updatedInstance)
+
+	if modified {
+		t.Fatalf("Should have returned false")
 	}
 
 	// We should get the following actions:
@@ -4290,7 +4287,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 
-	updatedInstance, _, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance)
 	if err == nil {
 		t.Fatalf("Should have failed with no service plan")
 	}
@@ -4299,8 +4296,8 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
 
-	if updatedInstance != nil {
-		t.Fatalf("updatedInstance retuend was non-nil: %+v", updatedInstance)
+	if modified {
+		t.Fatalf("Should have returned false")
 	}
 
 	// We should get the following actions:
@@ -4603,21 +4600,13 @@ func TestResolveReferencesWorks(t *testing.T) {
 		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
-	updatedInstance, modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
 	if !modified {
-		t.Fatalf("modified should be true, but is false")
-	}
-
-	if updatedInstance.Spec.ClusterServiceClassRef == nil || updatedInstance.Spec.ClusterServiceClassRef.Name != testClusterServiceClassGUID {
-		t.Fatalf("Did not find expected ClusterServiceClassRef, expected %q got %+v", testClusterServiceClassGUID, updatedInstance.Spec.ClusterServiceClassRef)
-	}
-
-	if updatedInstance.Spec.ClusterServicePlanRef == nil || updatedInstance.Spec.ClusterServicePlanRef.Name != testClusterServicePlanGUID {
-		t.Fatalf("Did not find expected ClusterServicePlanRef, expected %q got %+v", testClusterServicePlanGUID, updatedInstance.Spec.ClusterServicePlanRef.Name)
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:
@@ -4689,21 +4678,13 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	instance.Spec.ClusterServicePlanExternalName = newPlanName
 	instance.Spec.ClusterServicePlanRef = nil
 
-	updatedInstance, modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
 	if !modified {
-		t.Fatalf("modified should be true, but is false")
-	}
-
-	if updatedInstance.Spec.ClusterServiceClassRef == nil || updatedInstance.Spec.ClusterServiceClassRef.Name != testClusterServiceClassGUID {
-		t.Fatalf("Did not find expected ClusterServiceClassRef, expected %q got %+v", testClusterServiceClassGUID, updatedInstance.Spec.ClusterServiceClassRef)
-	}
-
-	if updatedInstance.Spec.ClusterServicePlanRef == nil || updatedInstance.Spec.ClusterServicePlanRef.Name != newPlanID {
-		t.Fatalf("Did not find expected ClusterServicePlanRef, expected %q got %+v", newPlanID, updatedInstance.Spec.ClusterServicePlanRef.Name)
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:
@@ -4750,21 +4731,13 @@ func TestResolveReferencesWorksK8SNames(t *testing.T) {
 
 	instance := getTestServiceInstanceK8SNames()
 
-	updatedInstance, modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
 	if !modified {
-		t.Fatalf("modified should be true, but is false")
-	}
-
-	if updatedInstance.Spec.ClusterServiceClassRef == nil || updatedInstance.Spec.ClusterServiceClassRef.Name != testClusterServiceClassGUID {
-		t.Fatalf("Did not find expected ClusterServiceClassRef, expected %q got %+v", testClusterServiceClassGUID, updatedInstance.Spec.ClusterServiceClassRef)
-	}
-
-	if updatedInstance.Spec.ClusterServicePlanRef == nil || updatedInstance.Spec.ClusterServicePlanRef.Name != testClusterServicePlanGUID {
-		t.Fatalf("Did not find expected ClusterServicePlanRef, expected %q got %+v", testClusterServicePlanGUID, updatedInstance.Spec.ClusterServicePlanRef.Name)
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:
