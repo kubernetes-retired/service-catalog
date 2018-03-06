@@ -137,7 +137,7 @@ tree:
     shortDesc: Syncs service catalog for a service broker
     command: ./svcat sync broker
 - name: touch
-  shortDesc: Make the service catalog attempt to re-provision an instance
+  shortDesc: Force Service Catalog to reprocess a resource
   command: ./svcat touch
   tree:
   - name: instance
