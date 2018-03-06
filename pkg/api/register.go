@@ -26,6 +26,8 @@ import (
 
 	servicecataloginstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	settingsinstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install"
+	admissioninstall "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/admission/install"
+	authenticationinstall "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/authentication/install"
 )
 
 var (
@@ -43,6 +45,8 @@ var (
 func init() {
 	servicecataloginstall.Install(groupFactoryRegistry, Registry, Scheme)
 	settingsinstall.Install(groupFactoryRegistry, Registry, Scheme)
+	admissioninstall.Install(groupFactoryRegistry, Registry, Scheme)
+	authenticationinstall.Install(groupFactoryRegistry, Registry, Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this

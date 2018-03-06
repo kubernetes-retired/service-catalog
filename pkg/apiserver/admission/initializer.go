@@ -17,7 +17,10 @@ limitations under the License.
 package admission
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/admission"
+	"k8s.io/apiserver/pkg/admission/initializer"
+	"k8s.io/apiserver/pkg/authorization/authorizer"
 
 	kubeinformers "k8s.io/client-go/informers"
 	kubeclientset "k8s.io/client-go/kubernetes"
@@ -38,17 +41,17 @@ type WantsInternalServiceCatalogInformerFactory interface {
 	admission.InitializationValidator
 }
 
-// WantsKubeClientSet defines a function which sets ClientSet for admission plugins that need it
-type WantsKubeClientSet interface {
-	SetKubeClientSet(kubeclientset.Interface)
-	admission.InitializationValidator
-}
+// // WantsExternalKubeClientSet defines a function which sets external ClientSet for admission plugins that need it
+// type WantsExternalKubeClientSet interface {
+// 	SetExternalKubeClientSet(kubernetes.Interface)
+// 	admission.InitializationValidator
+// }
 
-// WantsKubeInformerFactory defines a function which sets InformerFactory for admission plugins that need it
-type WantsKubeInformerFactory interface {
-	SetKubeInformerFactory(kubeinformers.SharedInformerFactory)
-	admission.InitializationValidator
-}
+// // WantsExternalKubeInformerFactory defines a function which sets InformerFactory for admission plugins that need it
+// type WantsExternalKubeInformerFactory interface {
+// 	SetExternalKubeInformerFactory(informers.SharedInformerFactory)
+// 	admission.InitializationValidator
+// }
 
 type pluginInitializer struct {
 	internalClient internalclientset.Interface
@@ -56,18 +59,28 @@ type pluginInitializer struct {
 
 	kubeClient    kubeclientset.Interface
 	kubeInformers kubeinformers.SharedInformerFactory
+
+	scheme     *runtime.Scheme
+	authorizer authorizer.Authorizer
 }
 
 var _ admission.PluginInitializer = pluginInitializer{}
 
 // NewPluginInitializer constructs new instance of PluginInitializer
-func NewPluginInitializer(internalClient internalclientset.Interface, sharedInformers informers.SharedInformerFactory,
-	kubeClient kubeclientset.Interface, kubeInformers kubeinformers.SharedInformerFactory) admission.PluginInitializer {
+func NewPluginInitializer(
+	internalClient internalclientset.Interface,
+	sharedInformers informers.SharedInformerFactory,
+	kubeClient kubeclientset.Interface,
+	kubeInformers kubeinformers.SharedInformerFactory,
+	authz authorizer.Authorizer,
+	scheme *runtime.Scheme,
+) admission.PluginInitializer {
 	return pluginInitializer{
 		internalClient: internalClient,
 		informers:      sharedInformers,
 		kubeClient:     kubeClient,
 		kubeInformers:  kubeInformers,
+		scheme:         scheme,
 	}
 }
 
@@ -82,11 +95,19 @@ func (i pluginInitializer) Initialize(plugin admission.Interface) {
 		wants.SetInternalServiceCatalogInformerFactory(i.informers)
 	}
 
-	if wants, ok := plugin.(WantsKubeClientSet); ok {
-		wants.SetKubeClientSet(i.kubeClient)
+	if wants, ok := plugin.(initializer.WantsExternalKubeClientSet); ok {
+		wants.SetExternalKubeClientSet(i.kubeClient)
 	}
 
-	if wants, ok := plugin.(WantsKubeInformerFactory); ok {
-		wants.SetKubeInformerFactory(i.kubeInformers)
+	if wants, ok := plugin.(initializer.WantsExternalKubeInformerFactory); ok {
+		wants.SetExternalKubeInformerFactory(i.kubeInformers)
+	}
+
+	if wants, ok := plugin.(initializer.WantsScheme); ok {
+		wants.SetScheme(i.scheme)
+	}
+
+	if wants, ok := plugin.(initializer.WantsAuthorizer); ok {
+		wants.SetAuthorizer(i.authorizer)
 	}
 }

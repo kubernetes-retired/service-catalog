@@ -27,11 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/admission"
+	"k8s.io/apiserver/pkg/admission/initializer"
 	kubeinformers "k8s.io/client-go/informers"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
-
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
 )
 
 const (
@@ -64,8 +63,8 @@ type forceLiveLookupEntry struct {
 	expiry time.Time
 }
 
-var _ = scadmission.WantsKubeInformerFactory(&lifecycle{})
-var _ = scadmission.WantsKubeClientSet(&lifecycle{})
+var _ = initializer.WantsExternalKubeInformerFactory(&lifecycle{})
+var _ = initializer.WantsExternalKubeClientSet(&lifecycle{})
 
 func (l *lifecycle) Admit(a admission.Attributes) error {
 	// we need to wait for our caches to warm
@@ -142,13 +141,13 @@ func NewLifecycle() (admission.Interface, error) {
 	}, nil
 }
 
-func (l *lifecycle) SetKubeInformerFactory(f kubeinformers.SharedInformerFactory) {
+func (l *lifecycle) SetExternalKubeInformerFactory(f kubeinformers.SharedInformerFactory) {
 	namespaceInformer := f.Core().V1().Namespaces()
 	l.namespaceLister = namespaceInformer.Lister()
 	l.SetReadyFunc(namespaceInformer.Informer().HasSynced)
 }
 
-func (l *lifecycle) SetKubeClientSet(client kubeclientset.Interface) {
+func (l *lifecycle) SetExternalKubeClientSet(client kubeclientset.Interface) {
 	l.client = client
 }
 

@@ -27,9 +27,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apiserver/pkg/admission"
+	"k8s.io/apiserver/pkg/admission/initializer"
 	kubeclientset "k8s.io/client-go/kubernetes"
-
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
 )
 
 const (
@@ -50,7 +49,7 @@ type sarcheck struct {
 	client kubeclientset.Interface
 }
 
-var _ = scadmission.WantsKubeClientSet(&sarcheck{})
+var _ = initializer.WantsExternalKubeClientSet(&sarcheck{})
 
 func convertToSARExtra(extra map[string][]string) map[string]authorizationapi.ExtraValue {
 	if extra == nil {
@@ -131,7 +130,7 @@ func NewSARCheck() (admission.Interface, error) {
 	}, nil
 }
 
-func (s *sarcheck) SetKubeClientSet(client kubeclientset.Interface) {
+func (s *sarcheck) SetExternalKubeClientSet(client kubeclientset.Interface) {
 	s.client = client
 }
 
