@@ -2087,6 +2087,13 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 	instance := getTestServiceInstanceWithFailedStatus()
 
 	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -2110,12 +2117,9 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	kubeActions := fakeKubeClient.Actions()
