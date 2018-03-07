@@ -263,21 +263,14 @@ func (e *operationError) Error() string { return e.message }
 // The ClusterServicePlan returned will be nil if the ClusterServicePlanRef
 // is nil. This will happen when deleting a ServiceInstance that previously
 // had an update to a non-existent plan.
-func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance, fetchPlan bool) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
+	serviceClass, brokerName, brokerClient, err := c.getClusterServiceClassAndClusterServiceBroker(instance)
 	if err != nil {
-		return nil, nil, "", nil, &operationError{
-			reason: errorNonexistentClusterServiceClassReason,
-			message: fmt.Sprintf(
-				"The instance references a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
-			),
-		}
+		return nil, nil, "", nil, err
 	}
 
 	var servicePlan *v1beta1.ClusterServicePlan
-	if fetchPlan && instance.Spec.ClusterServicePlanRef != nil {
+	if instance.Spec.ClusterServicePlanRef != nil {
 		var err error
 		servicePlan, err = c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 		if nil != err {
@@ -290,10 +283,28 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			}
 		}
 	}
+	return serviceClass, servicePlan, brokerName, brokerClient, nil
+}
+
+// getClusterServiceClassAndClusterServiceBroker is a sequence of operations that's done in couple of
+// places so this method fetches the Service Class and creates
+// a brokerClient to use for that method given an ServiceInstance.
+func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, string, osb.Client, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+	if err != nil {
+		return nil, "", nil, &operationError{
+			reason: errorNonexistentClusterServiceClassReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
+				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
+			),
+		}
+	}
 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		return nil, nil, "", nil, &operationError{
+		return nil, "", nil, &operationError{
 			reason: errorNonexistentClusterServiceBrokerReason,
 			message: fmt.Sprintf(
 				"The instance references a non-existent broker %q",
@@ -305,7 +316,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
-		return nil, nil, "", nil, &operationError{
+		return nil, "", nil, &operationError{
 			reason: errorAuthCredentialsReason,
 			message: fmt.Sprintf(
 				"Error getting broker auth credentials for broker %q: %s",
@@ -318,10 +329,10 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	glog.V(4).Info(pcb.Messagef("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
-		return nil, nil, "", nil, err
+		return nil, "", nil, err
 	}
 
-	return serviceClass, servicePlan, broker.Name, brokerClient, nil
+	return serviceClass, broker.Name, brokerClient, nil
 }
 
 // getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding is a sequence of operations that's
