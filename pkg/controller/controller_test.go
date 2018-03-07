@@ -703,28 +703,6 @@ func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 	return instance
 }
 
-func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
-	instance := getTestServiceInstanceWithRefs()
-	instance.Generation = 2
-	instance.Status = v1beta1.ServiceInstanceStatus{
-		Conditions: []v1beta1.ServiceInstanceCondition{{
-			Type:   v1beta1.ServiceInstanceConditionReady,
-			Status: v1beta1.ConditionTrue,
-		}},
-		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ClusterServicePlanExternalName: testClusterServicePlanName,
-			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
-		},
-		// It's been provisioned successfully.
-		ReconciledGeneration: 1,
-		ObservedGeneration:   1,
-		ProvisionStatus:      v1beta1.ServiceInstanceProvisionStatusProvisioned,
-		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusRequired,
-	}
-
-	return instance
-}
-
 func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
 	instance.Generation = 2
@@ -742,30 +720,6 @@ func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceIns
 		ObservedGeneration:   1,
 		ProvisionStatus:      v1beta1.ServiceInstanceProvisionStatusProvisioned,
 		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusRequired,
-	}
-
-	return instance
-}
-
-func getTestServiceInstanceWithProvisioningStarted() *v1beta1.ServiceInstance {
-	instance := getTestServiceInstanceWithRefs()
-
-	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
-	instance.Status = v1beta1.ServiceInstanceStatus{
-		Conditions: []v1beta1.ServiceInstanceCondition{{
-			Type:               v1beta1.ServiceInstanceConditionReady,
-			Status:             v1beta1.ConditionFalse,
-			Message:            "Provisioning",
-			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
-		}},
-		OperationStartTime: &operationStartTime,
-		CurrentOperation:   v1beta1.ServiceInstanceOperationProvision,
-		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
-			ClusterServicePlanExternalName: testClusterServicePlanName,
-			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
-		},
-		ObservedGeneration: instance.Generation,
-		DeprovisionStatus:  v1beta1.ServiceInstanceDeprovisionStatusRequired,
 	}
 
 	return instance
@@ -1181,41 +1135,6 @@ func checkPlan(plan *v1beta1.ClusterServicePlan, planID, planName, planDescripti
 		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Spec.Description)
 	}
 }
-
-const testCatalogWithMultipleServices = `{
-  "services": [
-    {
-      "name": "service1",
-      "description": "service 1 description",
-      "metadata": {
-        "field1": "value1"
-      },
-      "plans": [{
-        "name": "s1plan1",
-        "id": "s1_plan1_id",
-        "description": "s1 plan1 description"
-      },
-      {
-        "name": "s1plan2",
-        "id": "s1_plan2_id",
-        "description": "s1 plan2 description"
-      }]
-    },
-    {
-      "name": "service2",
-      "description": "service 2 description",
-      "plans": [{
-        "name": "s2plan1",
-        "id": "s2_plan1_id",
-        "description": "s2 plan1 description"
-      },
-      {
-        "name": "s2plan2",
-        "id": "s2_plan2_id",
-        "description": "s2 plan2 description"
-      }]
-    }
-]}`
 
 // FIX: there is an inconsistency between the current broker API types re: the
 // Service.Metadata field.  Our repo types it as `interface{}`, the go-open-

@@ -1184,7 +1184,6 @@ func TestCreateServiceInstanceAsynchronous(t *testing.T) {
 
 func TestDeleteServiceInstance(t *testing.T) {
 	key := osb.OperationKey(testOperation)
-	_ = key
 
 	cases := []struct {
 		name                         string
