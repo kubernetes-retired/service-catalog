@@ -40,6 +40,7 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 )
@@ -307,6 +308,13 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 		},
 	}
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err == nil {
 		t.Fatalf("a binding should fail to create a secret: %v", err)
@@ -326,12 +334,9 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 
 	assertServiceBindingReadyFalse(t, updatedServiceBinding, errorInjectingBindResultReason)
 	assertServiceBindingCurrentOperation(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind)
@@ -413,6 +418,23 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	}
 	binding.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expectedParameters := map[string]interface{}{
+		"args": []interface{}{
+			"first-arg",
+			"second-arg",
+		},
+		"name": "test-param",
+	}
+	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, expectedParameters)
+
+	binding = assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err = testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("a valid binding should not fail: %v", err)
@@ -438,26 +460,10 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 		},
 	})
 
-	expectedParameters := map[string]interface{}{
-		"args": []interface{}{
-			"first-arg",
-			"second-arg",
-		},
-		"name": "test-param",
-	}
-	expectedParametersChecksum, err := generateChecksumOfParameters(expectedParameters)
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
-
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingOperationInProgressWithParameters(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingOperationSuccessWithParameters(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -617,6 +623,13 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 		},
 	}
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("A bindable plan overrides the bindability of a service class: %v", err)
@@ -636,13 +649,9 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -894,6 +903,13 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 		return true, binding, nil
 	})
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -923,15 +939,10 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
-	// 0. Updating the current operation
-	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 2)
+	// 0. Updating the ready condition
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1164,6 +1175,13 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 		return true, binding, nil
 	})
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -1195,13 +1213,9 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 	// The four actions should be:
 	// 0. Updating the current operation
 	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1250,19 +1264,21 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 		},
 	}
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err == nil {
 		t.Fatal("reconcileServiceBinding should have returned an error")
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingRequestRetriableError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, errorBindCallReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1314,19 +1330,21 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 		},
 	}
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatal("reconcileServiceBinding should not have returned an error")
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingRequestFailingError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, errorBindCallReason, "ServiceBindingReturnedFailure", binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1387,6 +1405,13 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 
 	binding := getTestServiceBinding()
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	if err := testController.reconcileServiceBinding(binding); err == nil {
 		t.Fatal("ServiceBinding creation should fail")
 	}
@@ -1400,13 +1425,9 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingRequestRetriableError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, errorBindCallReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1455,6 +1476,13 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 	binding := getTestServiceBinding()
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("ServiceBinding creation should complete: %v", err)
 	}
 
@@ -1467,13 +1495,9 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingRequestFailingError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, errorBindCallReason, "ServiceBindingReturnedFailure", binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1686,18 +1710,21 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 	if err := scmeta.AddFinalizer(binding, v1beta1.FinalizerServiceCatalog); err != nil {
 		t.Fatalf("Finalizer error: %v", err)
 	}
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+
 	if err := testController.reconcileServiceBinding(binding); err == nil {
 		t.Fatal("reconcileServiceBinding should have returned an error")
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingRequestRetriableError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, errorUnbindCallReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1751,18 +1778,21 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 	if err := scmeta.AddFinalizer(binding, v1beta1.FinalizerServiceCatalog); err != nil {
 		t.Fatalf("Finalizer error: %v", err)
 	}
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+
 	if err := testController.reconcileServiceBinding(binding); err == nil {
 		t.Fatalf("reconcileServiceBinding should have returned an error")
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingRequestRetriableError(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, errorUnbindCallReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -1785,7 +1815,7 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
 			}
 
-			fakeKubeClient, _, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				BindReaction: &fakeosb.BindReaction{
 					Response: &osb.BindResponse{},
 				},
@@ -1803,6 +1833,13 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 			if tc.includeUserInfo {
 				binding.Spec.UserInfo = testUserInfo
 			}
+
+			if err := testController.reconcileServiceBinding(binding); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+			fakeCatalogClient.ClearActions()
+			fakeKubeClient.ClearActions()
 
 			err := testController.reconcileServiceBinding(binding)
 			if err != nil {
@@ -1836,7 +1873,7 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
 			}
 
-			fakeKubeClient, _, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				UnbindReaction: &fakeosb.UnbindReaction{
 					Response: &osb.UnbindResponse{},
 				},
@@ -1856,6 +1893,13 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 			if tc.includeUserInfo {
 				binding.Spec.UserInfo = testUserInfo
 			}
+
+			if err := testController.reconcileServiceBinding(binding); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+			fakeCatalogClient.ClearActions()
+			fakeKubeClient.ClearActions()
 
 			err := testController.reconcileServiceBinding(binding)
 			if err != nil {
@@ -2196,6 +2240,23 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 		},
 	}
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expectedParameters := map[string]interface{}{
+		"a": "1",
+		"b": "<redacted>",
+	}
+	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, map[string]interface{}{
+		"a": "1",
+		"b": "2",
+	})
+
+	binding = assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err = testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("a valid binding should not fail: %v", err)
@@ -2218,26 +2279,10 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 		},
 	})
 
-	expectedParameters := map[string]interface{}{
-		"a": "1",
-		"b": "<redacted>",
-	}
-	expectedParametersChecksum, err := generateChecksumOfParameters(map[string]interface{}{
-		"a": "1",
-		"b": "2",
-	})
-	if err != nil {
-		t.Fatalf("Failed to generate parameters checksum: %v", err)
-	}
-
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationInProgressWithParameters(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding)
 	assertServiceBindingOperationSuccessWithParameters(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -2382,6 +2427,14 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 			startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 			binding.Status.OperationStartTime = &startTime
 
+			if err := testController.reconcileServiceBinding(binding); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+			assertServiceBindingReadyFalse(t, binding)
+			fakeCatalogClient.ClearActions()
+			fakeKubeClient.ClearActions()
+
 			if err := testController.reconcileServiceBinding(binding); tc.shouldReturnError && err == nil || !tc.shouldReturnError && err != nil {
 				t.Fatalf("expected to return %v from reconciliation attempt, got %v", tc.shouldReturnError, err)
 			}
@@ -2410,12 +2463,9 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 			}
 
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 2)
+			assertNumberOfActions(t, actions, 1)
 
 			updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-			assertServiceBindingReadyFalse(t, updatedServiceBinding)
-
-			updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 
 			assertServiceBindingExternalPropertiesNil(t, updatedServiceBinding)
 
@@ -2634,6 +2684,23 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 
 	timeOfReconciliation := metav1.Now()
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+
+	// Verify that the operation start time was reset to Now
+	if binding.Status.OperationStartTime.Before(&timeOfReconciliation) {
+		t.Fatalf(
+			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
+			binding.Status.OperationStartTime,
+			timeOfReconciliation,
+		)
+	}
+
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -2665,22 +2732,9 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 	// The actions should be:
 	// 0. Updating the current operation
 	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	// Verify that the operation start time was reset to Now
-	if updatedServiceBinding.Status.OperationStartTime.Before(&timeOfReconciliation) {
-		t.Fatalf(
-			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
-			updatedServiceBinding.Status.OperationStartTime,
-			timeOfReconciliation,
-		)
-	}
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -2733,6 +2787,23 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 
 	timeOfReconciliation := metav1.Now()
 
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+
+	// Verify that the operation start time was reset to Now
+	if binding.Status.OperationStartTime.Before(&timeOfReconciliation) {
+		t.Fatalf(
+			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
+			binding.Status.OperationStartTime,
+			timeOfReconciliation,
+		)
+	}
+
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -2764,22 +2835,9 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	// The actions should be:
 	// 0. Updating the current operation
 	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
-
-	// Verify that the operation start time was reset to Now
-	if updatedServiceBinding.Status.OperationStartTime.Before(&timeOfReconciliation) {
-		t.Fatalf(
-			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
-			updatedServiceBinding.Status.OperationStartTime,
-			timeOfReconciliation,
-		)
-	}
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -2824,6 +2882,13 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 	}
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("a valid binding should not fail: %v", err)
 	}
 
@@ -2857,12 +2922,9 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 
 	// Service Catalog actions
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingAsyncInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, asyncBindingReason, testOperation, binding)
 
 	// Events
@@ -2909,6 +2971,13 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 	}
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("a valid binding should not fail: %v", err)
 	}
 
@@ -2941,12 +3010,9 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 
 	// Service Catalog actions
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
-	assertServiceBindingOperationInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-
-	updatedServiceBinding = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
 	assertServiceBindingAsyncInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, asyncUnbindingReason, testOperation, binding)
 
 	// Events
@@ -3652,4 +3718,25 @@ func TestPollServiceBinding(t *testing.T) {
 			}
 		})
 	}
+}
+
+func assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t *testing.T, fakeCatalogClient *fake.Clientset, binding *v1beta1.ServiceBinding) *v1beta1.ServiceBinding {
+	return assertServiceBindingOperationInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, v1beta1.ServiceBindingOperationBind)
+}
+
+func assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t *testing.T, fakeCatalogClient *fake.Clientset, binding *v1beta1.ServiceBinding) *v1beta1.ServiceBinding {
+	return assertServiceBindingOperationInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, v1beta1.ServiceBindingOperationUnbind)
+}
+
+func assertServiceBindingOperationInProgressIsTheOnlyCatalogAction(t *testing.T, fakeCatalogClient *fake.Clientset, binding *v1beta1.ServiceBinding, operation v1beta1.ServiceBindingOperation) *v1beta1.ServiceBinding {
+	return assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, operation, nil, "")
+}
+
+func assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction(t *testing.T, fakeCatalogClient *fake.Clientset, binding *v1beta1.ServiceBinding, operation v1beta1.ServiceBindingOperation, parameters map[string]interface{}, parametersChecksum string) *v1beta1.ServiceBinding {
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updateObject := assertUpdateStatus(t, actions[0], binding)
+	assertServiceBindingOperationInProgressWithParameters(t, updateObject, operation, parameters, parametersChecksum, binding)
+	assertServiceBindingOrphanMitigationSet(t, updateObject, false)
+	return updateObject.(*v1beta1.ServiceBinding)
 }
