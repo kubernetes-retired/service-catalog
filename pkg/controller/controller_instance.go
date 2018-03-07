@@ -526,13 +526,6 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return c.processServiceInstanceGracefulDeletionSuccess(instance)
 	}
 
-	// If the instance is not provisioned, and there is no operation in progress,
-	// and there is no orphan mitigation pending, then no need to
-	// make a request to the broker.
-	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned && instance.Status.CurrentOperation == "" && !instance.Status.OrphanMitigationInProgress {
-		return c.processServiceInstanceGracefulDeletionSuccess(instance)
-	}
-
 	// At this point, if the deprovision status is not Required, then it is
 	// either an invalid value or there is a logical error in the controller.
 	// Set the deprovision status to Failed and bail out.
@@ -1569,6 +1562,9 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		err = fmt.Errorf(failedCond.Message)
 	} else {
 		clearServiceInstanceCurrentOperation(instance)
+		// Deprovisioning is not required for provisioning that has failed with an
+		// error that doesn't require orphan mitigation
+		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
 		instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 	}
 
