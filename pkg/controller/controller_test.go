@@ -747,6 +747,30 @@ func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceIns
 	return instance
 }
 
+func getTestServiceInstanceWithProvisioningStarted() *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithRefs()
+
+	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
+			Status:             v1beta1.ConditionFalse,
+			Message:            "Provisioning",
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+		OperationStartTime: &operationStartTime,
+		CurrentOperation:   v1beta1.ServiceInstanceOperationProvision,
+		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
+			ClusterServicePlanExternalName: testClusterServicePlanName,
+			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		},
+		ObservedGeneration: instance.Generation,
+		DeprovisionStatus:  v1beta1.ServiceInstanceDeprovisionStatusRequired,
+	}
+
+	return instance
+}
+
 // getTestServiceInstanceAsync returns an instance in async mode
 func getTestServiceInstanceAsyncProvisioning(operation string) *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
@@ -2167,13 +2191,8 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
-		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1beta1.ServiceInstanceOperationDeprovision:
-		assertServiceInstanceInProgressPropertiesNil(t, obj)
-	}
+	assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
+	assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
 }
@@ -2334,13 +2353,8 @@ func assertServiceInstanceAsyncStartInProgress(t *testing.T, obj runtime.Object,
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
-	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
-		assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
-	case v1beta1.ServiceInstanceOperationDeprovision:
-		assertServiceInstanceInProgressPropertiesNil(t, obj)
-	}
+	assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
+	assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
 	assertAsyncOpInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
 }
