@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package touch
+package instance
 
 import (
 	"fmt"
@@ -29,7 +29,8 @@ type touchInstanceCmd struct {
 	name      string
 }
 
-func newTouchInstanceCmd(cxt *command.Context) *cobra.Command {
+// NewTouchCommand builds a "svcat touch instance" command.
+func NewTouchCommand(cxt *command.Context) *cobra.Command {
 	touchInstanceCmd := &touchInstanceCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:   "instance",
