@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	// PluginName is name of admission plug-in
 	PluginName = "KubernetesNamespaceLifecycle"
 )
 
