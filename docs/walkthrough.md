@@ -229,7 +229,7 @@ serviceinstance "ups-instance" created
 
 After the `ServiceInstance` is created, the service catalog controller will 
 communicate with the appropriate broker server to initiate provisioning. 
-Check the status of that process with this command:
+Check the status of that process:
 
 ```console
 $ svcat describe instance -n test-ns ups-instance
