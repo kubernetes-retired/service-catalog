@@ -41,18 +41,6 @@ type WantsInternalServiceCatalogInformerFactory interface {
 	admission.InitializationValidator
 }
 
-// // WantsExternalKubeClientSet defines a function which sets external ClientSet for admission plugins that need it
-// type WantsExternalKubeClientSet interface {
-// 	SetExternalKubeClientSet(kubernetes.Interface)
-// 	admission.InitializationValidator
-// }
-
-// // WantsExternalKubeInformerFactory defines a function which sets InformerFactory for admission plugins that need it
-// type WantsExternalKubeInformerFactory interface {
-// 	SetExternalKubeInformerFactory(informers.SharedInformerFactory)
-// 	admission.InitializationValidator
-// }
-
 type pluginInitializer struct {
 	internalClient internalclientset.Interface
 	informers      informers.SharedInformerFactory

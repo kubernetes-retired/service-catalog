@@ -46,7 +46,7 @@ func newHandlerForTest(internalClient internalclientset.Interface) (admission.In
 	if err != nil {
 		return nil, f, err
 	}
-	pluginInitializer := scadmission.NewPluginInitializer(internalClient, f, nil, nil)
+	pluginInitializer := scadmission.NewPluginInitializer(internalClient, f, nil, nil, nil, nil)
 	pluginInitializer.Initialize(handler)
 	err = admission.ValidateInitialization(handler)
 	return handler, f, err
