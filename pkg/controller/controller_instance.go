@@ -526,6 +526,13 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return c.processServiceInstanceGracefulDeletionSuccess(instance)
 	}
 
+	// If the instance is not provisioned, and there is no operation in progress,
+	// and there is no orphan mitigation pending, then no need to
+	// make a request to the broker.
+	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned && instance.Status.CurrentOperation == "" && !instance.Status.OrphanMitigationInProgress {
+		return c.processServiceInstanceGracefulDeletionSuccess(instance)
+	}
+
 	// At this point, if the deprovision status is not Required, then it is
 	// either an invalid value or there is a logical error in the controller.
 	// Set the deprovision status to Failed and bail out.
@@ -546,7 +553,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	request, err := c.prepareDeprovisionRequest(instance, serviceClass)
+	request, inProgressProperties, err := c.prepareDeprovisionRequest(instance, serviceClass)
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
@@ -560,7 +567,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	} else {
 		if instance.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
-			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationDeprovision, nil)
+			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationDeprovision, inProgressProperties)
 			if err != nil {
 				// There has been an update to the instance. Start reconciliation
 				// over with a fresh view of the instance.
@@ -1176,6 +1183,7 @@ func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.Ser
 	toUpdate.Status.CurrentOperation = operation
 	now := metav1.Now()
 	toUpdate.Status.OperationStartTime = &now
+	toUpdate.Status.InProgressProperties = inProgressProperties
 	reason := ""
 	message := ""
 	switch operation {
@@ -1183,11 +1191,9 @@ func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.Ser
 		reason = provisioningInFlightReason
 		message = provisioningInFlightMessage
 		toUpdate.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
-		toUpdate.Status.InProgressProperties = inProgressProperties
 	case v1beta1.ServiceInstanceOperationUpdate:
 		reason = instanceUpdatingInFlightReason
 		message = instanceUpdatingInFlightMessage
-		toUpdate.Status.InProgressProperties = inProgressProperties
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = deprovisioningInFlightReason
 		message = deprovisioningInFlightMessage
@@ -1289,7 +1295,7 @@ type requestHelper struct {
 
 // prepareRequestHelper is a helper function that generates a struct with
 // properties common to multiple request types.
-func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, servicePlan *v1beta1.ClusterServicePlan) (*requestHelper, error) {
+func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, servicePlan *v1beta1.ClusterServicePlan, setInProgressProperties bool) (*requestHelper, error) {
 	rh := &requestHelper{}
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
@@ -1318,26 +1324,28 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 	}
 	rh.ns = ns
 
-	parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
-		c.kubeClient,
-		instance.Namespace,
-		instance.Spec.Parameters,
-		instance.Spec.ParametersFrom,
-	)
-	if err != nil {
-		return nil, &operationError{
-			reason:  errorWithParameters,
-			message: err.Error(),
+	if setInProgressProperties {
+		parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
+			c.kubeClient,
+			instance.Namespace,
+			instance.Spec.Parameters,
+			instance.Spec.ParametersFrom,
+		)
+		if err != nil {
+			return nil, &operationError{
+				reason:  errorWithParameters,
+				message: err.Error(),
+			}
 		}
-	}
-	rh.parameters = parameters
+		rh.parameters = parameters
 
-	rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
-		ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
-		Parameters:                     rawParametersWithRedaction,
-		ParametersChecksum:             parametersChecksum,
-		UserInfo:                       instance.Spec.UserInfo,
+		rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+			ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
+			ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
+			Parameters:                     rawParametersWithRedaction,
+			ParametersChecksum:             parametersChecksum,
+			UserInfo:                       instance.Spec.UserInfo,
+		}
 	}
 
 	// osb client handles whether or not to really send this based
@@ -1353,7 +1361,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 // prepareProvisionRequest creates a provision request object to be passed to
 // the broker client to provision the given instance.
 func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.ProvisionRequest, *v1beta1.ServiceInstancePropertiesState, error) {
-	rh, err := c.prepareRequestHelper(instance, servicePlan)
+	rh, err := c.prepareRequestHelper(instance, servicePlan, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1376,7 +1384,7 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance, 
 // prepareUpdateInstanceRequest creates an update instance request object to be
 // passed to the broker client to update the given instance.
 func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.UpdateInstanceRequest, *v1beta1.ServiceInstancePropertiesState, error) {
-	rh, err := c.prepareRequestHelper(instance, servicePlan)
+	rh, err := c.prepareRequestHelper(instance, servicePlan, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1410,43 +1418,42 @@ func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInsta
 
 // prepareDeprovisionRequest creates a deprovision request object to be passed
 // to the broker client to deprovision the given instance.
-func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass) (*osb.DeprovisionRequest, error) {
-	rh, err := c.prepareRequestHelper(instance, nil)
+func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass) (*osb.DeprovisionRequest, *v1beta1.ServiceInstancePropertiesState, error) {
+	rh, err := c.prepareRequestHelper(instance, nil, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// The plan reference in the spec might be updated since the latest
 	// provisioning/update request, thus we need to take values from the original
 	// provisioning request instead that we previously stored in status
-	var servicePlanExternalID string
 	if instance.Status.CurrentOperation != "" || instance.Status.OrphanMitigationInProgress {
 		if instance.Status.InProgressProperties == nil {
-			return nil, stderrors.New("InProgressProperties must be set when there is an operation or orphan mitigation in progress")
+			return nil, nil, stderrors.New("InProgressProperties must be set when there is an operation or orphan mitigation in progress")
 		}
-		servicePlanExternalID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
+		rh.inProgressProperties = instance.Status.InProgressProperties
 	} else {
 		if instance.Status.ExternalProperties == nil {
-			return nil, stderrors.New("ExternalProperties must be set before deprovisioning")
+			return nil, nil, stderrors.New("ExternalProperties must be set before deprovisioning")
 		}
-		servicePlanExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
+		rh.inProgressProperties = instance.Status.ExternalProperties
 	}
 
 	request := &osb.DeprovisionRequest{
 		InstanceID:          instance.Spec.ExternalID,
 		ServiceID:           serviceClass.Spec.ExternalID,
-		PlanID:              servicePlanExternalID,
+		PlanID:              rh.inProgressProperties.ClusterServicePlanExternalID,
 		OriginatingIdentity: rh.originatingIdentity,
 		AcceptsIncomplete:   true,
 	}
 
-	return request, nil
+	return request, rh.inProgressProperties, nil
 }
 
 // preparePollServiceInstanceRequest creates a request object to be passed to
 // the broker client to query the given instance's last operation endpoint.
 func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.LastOperationRequest, error) {
-	rh, err := c.prepareRequestHelper(instance, servicePlan)
+	rh, err := c.prepareRequestHelper(instance, servicePlan, false)
 	if err != nil {
 		return nil, err
 	}
