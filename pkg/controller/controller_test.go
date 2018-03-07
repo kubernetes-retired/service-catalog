@@ -2266,7 +2266,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
 }
 
-func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, orphanMitigationRequired bool, originalInstance *v1beta1.ServiceInstance) {
 	var (
 		readyStatus       v1beta1.ConditionStatus
 		deprovisionStatus v1beta1.ServiceInstanceDeprovisionStatus
@@ -2274,7 +2274,11 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
 		readyStatus = v1beta1.ConditionFalse
-		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		if orphanMitigationRequired {
+			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		} else {
+			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
+		}
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		readyStatus = v1beta1.ConditionUnknown
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
@@ -2288,8 +2292,18 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
 }
 
-func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, originalInstance)
+func assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, false, originalInstance)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
+	assertServiceInstanceInProgressPropertiesNil(t, obj)
+}
+
+func assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, true, originalInstance)
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
@@ -2299,7 +2313,7 @@ func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, ob
 }
 
 func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, originalInstance)
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, true, originalInstance)
 	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
