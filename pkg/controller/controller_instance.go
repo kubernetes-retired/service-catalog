@@ -296,11 +296,13 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
-	//
-	// TODO(mkibbe): Make this trigger another reconciliation instead of continuing.
-	instance, err := c.resolveReferences(instance)
+	modified, err := c.resolveReferences(instance)
 	if err != nil {
 		return err
+	}
+	if modified {
+		// resolveReferences has updated the instance, so we need to continue in the next iteration
+		return nil
 	}
 
 	glog.V(4).Info(pcb.Message("Processing adding event"))
@@ -328,6 +330,8 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			// over with a fresh view of the instance.
 			return err
 		}
+		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+		return nil
 	}
 
 	glog.V(4).Info(pcb.Messagef(
@@ -399,11 +403,13 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
-	//
-	// TODO(mkibbe): Make this trigger another reconciliation instead of continuing.
-	instance, err := c.resolveReferences(instance)
+	modified, err := c.resolveReferences(instance)
 	if err != nil {
 		return err
+	}
+	if modified {
+		// resolveReferences has updated the instance, so we need to continue in the next iteration
+		return nil
 	}
 
 	glog.V(4).Info(pcb.Message("Processing updating event"))
@@ -431,6 +437,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			// over with a fresh view of the instance.
 			return err
 		}
+		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+		return nil
 	}
 
 	glog.V(4).Info(pcb.Messagef(
@@ -558,6 +566,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 				// over with a fresh view of the instance.
 				return err
 			}
+			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+			return nil
 		}
 	}
 
@@ -788,11 +798,12 @@ func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *
 
 // resolveReferences checks to see if ClusterServiceClassRef and/or ClusterServicePlanRef are
 // nil and if so, will resolve the references and update the instance.
+// If references needed to be resolved, and the instance status was successfully updated, the method returns true
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
-func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
+func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool, error) {
 	if instance.Spec.ClusterServiceClassRef != nil && instance.Spec.ClusterServicePlanRef != nil {
-		return instance, nil
+		return false, nil
 	}
 
 	var sc *v1beta1.ClusterServiceClass
@@ -800,25 +811,25 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1be
 	if instance.Spec.ClusterServiceClassRef == nil {
 		instance, sc, err = c.resolveClusterServiceClassRef(instance)
 		if err != nil {
-			return nil, err
+			return false, err
 		}
 	}
 
 	if instance.Spec.ClusterServicePlanRef == nil {
 		if sc == nil {
-			var scErr error
-			sc, scErr = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
-			if scErr != nil {
-				return nil, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, scErr.Error())
+			sc, err = c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+			if err != nil {
+				return false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
 			}
 		}
 
 		instance, err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
 		if err != nil {
-			return nil, err
+			return false, err
 		}
 	}
-	return c.updateServiceInstanceReferences(instance)
+	_, err = c.updateServiceInstanceReferences(instance)
+	return err == nil, err
 }
 
 // resolveClusterServiceClassRef resolves a reference  to a ClusterServiceClass
