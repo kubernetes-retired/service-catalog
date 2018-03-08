@@ -313,7 +313,11 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 	}
 	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err := testController.reconcileServiceBinding(binding)
 	if err == nil {
@@ -433,7 +437,11 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 
 	binding = assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum)
 	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err = testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -628,7 +636,11 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 	}
 	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -908,7 +920,11 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	}
 	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -938,8 +954,7 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	// The actions should be:
-	// 0. Updating the ready condition
+	// The action should be updating the ready condition
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
@@ -1180,7 +1195,11 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 	}
 	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -1410,7 +1429,11 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 	}
 	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	if err := testController.reconcileServiceBinding(binding); err == nil {
 		t.Fatal("ServiceBinding creation should fail")
@@ -1480,7 +1503,11 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 	}
 	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("ServiceBinding creation should complete: %v", err)
@@ -1839,7 +1866,11 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 			}
 			binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 			fakeCatalogClient.ClearActions()
+
+			assertGetNamespaceAction(t, fakeKubeClient.Actions())
 			fakeKubeClient.ClearActions()
+
+			assertNumberOfClusterServiceBrokerActions(t, fakeBrokerClient.Actions(), 0)
 
 			err := testController.reconcileServiceBinding(binding)
 			if err != nil {
@@ -1899,7 +1930,11 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 			}
 			binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 			fakeCatalogClient.ClearActions()
+
+			assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 			fakeKubeClient.ClearActions()
+
+			assertNumberOfClusterServiceBrokerActions(t, fakeBrokerClient.Actions(), 0)
 
 			err := testController.reconcileServiceBinding(binding)
 			if err != nil {
@@ -2255,7 +2290,14 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 
 	binding = assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction(t, fakeCatalogClient, binding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum)
 	fakeCatalogClient.ClearActions()
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 2)
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
+	assertActionEquals(t, kubeActions[1], "get", "secrets")
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err = testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -2286,7 +2328,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 	assertServiceBindingOperationSuccessWithParameters(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, expectedParameters, expectedParametersChecksum, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
-	kubeActions := fakeKubeClient.Actions()
+	kubeActions = fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 4)
 
 	// first action is a get on the namespace
@@ -2433,7 +2475,11 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 			binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 			assertServiceBindingReadyFalse(t, binding)
 			fakeCatalogClient.ClearActions()
+
+			assertGetNamespaceAction(t, fakeKubeClient.Actions())
 			fakeKubeClient.ClearActions()
+
+			assertNumberOfClusterServiceBrokerActions(t, fakeServiceBrokerClient.Actions(), 0)
 
 			if err := testController.reconcileServiceBinding(binding); tc.shouldReturnError && err == nil || !tc.shouldReturnError && err != nil {
 				t.Fatalf("expected to return %v from reconciliation attempt, got %v", tc.shouldReturnError, err)
@@ -2699,7 +2745,11 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 	}
 
 	fakeCatalogClient.ClearActions()
+
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -2802,7 +2852,11 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 	}
 
 	fakeCatalogClient.ClearActions()
+
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
 	err := testController.reconcileServiceBinding(binding)
 	if err != nil {
@@ -2886,7 +2940,11 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 	}
 	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeServiceBrokerClient.Actions(), 0)
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("a valid binding should not fail: %v", err)
@@ -2975,7 +3033,11 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 	}
 	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
 	fakeCatalogClient.ClearActions()
+
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeServiceBrokerClient.Actions(), 0)
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("a valid binding should not fail: %v", err)
@@ -3739,4 +3801,28 @@ func assertServiceBindingOperationInProgressWithParametersIsTheOnlyCatalogAction
 	assertServiceBindingOperationInProgressWithParameters(t, updateObject, operation, parameters, parametersChecksum, binding)
 	assertServiceBindingOrphanMitigationSet(t, updateObject, false)
 	return updateObject.(*v1beta1.ServiceBinding)
+}
+
+func assertGetNamespaceAction(t *testing.T, kubeActions []clientgotesting.Action) {
+	assertNumberOfActions(t, kubeActions, 1)
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
+}
+
+func assertDeleteSecretAction(t *testing.T, kubeActions []clientgotesting.Action, secretName string) {
+	assertNumberOfActions(t, kubeActions, 1)
+	assertActionEquals(t, kubeActions[0], "delete", "secrets")
+
+	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+	if e, a := secretName, deleteAction.Name; e != a {
+		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
+	}
+}
+
+func assertActionEquals(t *testing.T, action clientgotesting.Action, expectedVerb, expectedResource string) {
+	if e, a := expectedVerb, action.GetVerb(); e != a {
+		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
+	}
+	if e, a := expectedResource, action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
+	}
 }
