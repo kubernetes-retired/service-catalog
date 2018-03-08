@@ -26,7 +26,7 @@ import (
 )
 
 type describeCmd struct {
-	*command.Base
+	*command.Context
 	traverse     bool
 	lookupByUUID bool
 	uuid         string
@@ -35,7 +35,7 @@ type describeCmd struct {
 
 // NewDescribeCmd builds a "svcat describe class" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Base: command.NewBaseCommand(cxt)}
+	describeCmd := &describeCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:     "class NAME",
 		Aliases: []string{"classes", "cl"},

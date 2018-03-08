@@ -23,9 +23,6 @@ import (
 
 // Command represents an svcat command.
 type Command interface {
-	// GetContext retrieves the command's context.
-	GetContext() *Context
-
 	// Validate and load the arguments passed to the svcat command.
 	Validate(args []string) error
 
@@ -36,6 +33,9 @@ type Command interface {
 // NamespacedCommand represents a command that can be scoped to a namespace.
 type NamespacedCommand interface {
 	Command
+
+	// GetContext retrieves the command's context.
+	GetContext() *Context
 
 	// SetNamespace sets the effective namespace for the command.
 	SetNamespace(namespace string)

@@ -25,14 +25,14 @@ import (
 )
 
 type describeCmd struct {
-	*command.Base
+	*command.Context
 	name     string
 	traverse bool
 }
 
 // NewDescribeCmd builds a "svcat describe broker" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Base: command.NewBaseCommand(cxt)}
+	describeCmd := &describeCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:     "broker NAME",
 		Aliases: []string{"brokers", "brk"},

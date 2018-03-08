@@ -23,13 +23,13 @@ import (
 )
 
 type getCmd struct {
-	*command.Base
+	*command.Context
 	name string
 }
 
 // NewGetCmd builds a "svcat get brokers" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Base: command.NewBaseCommand(cxt)}
+	getCmd := &getCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:     "brokers [name]",
 		Aliases: []string{"broker", "brk"},

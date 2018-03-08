@@ -18,13 +18,18 @@ package command
 
 // Namespaced is the base command of all svcat commands that are namespace scoped.
 type Namespaced struct {
-	*Base
+	*Context
 	Namespace string
 }
 
 // NewNamespacedCommand from context.
 func NewNamespacedCommand(cxt *Context) *Namespaced {
-	return &Namespaced{Base: NewBaseCommand(cxt)}
+	return &Namespaced{Context: cxt}
+}
+
+// GetContext retrieves the command's context.
+func (c *Namespaced) GetContext() *Context {
+	return c.Context
 }
 
 // SetNamespace sets the effective namespace for the command.
