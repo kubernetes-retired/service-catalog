@@ -76,10 +76,6 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	// There should only be one action that says it failed because no such instance exists.
-	updateAction := actions[0].(clientgotesting.UpdateAction)
-	if e, a := "update", updateAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on actions[0]; %s", expectedGot(e, a))
-	}
 	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
 	assertServiceBindingErrorBeforeRequest(t, updatedServiceBinding, errorNonexistentServiceInstanceReason, binding)
 	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
@@ -353,16 +349,8 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)
-
-	// first action is a get on the namespace
-	// second action is a get on the secret
-	action := kubeActions[1].(clientgotesting.GetAction)
-	if e, a := "get", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-	}
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
+	assertActionEquals(t, kubeActions[1], "get", "secrets")
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -477,16 +465,11 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 3)
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
+	assertActionEquals(t, kubeActions[1], "get", "secrets")
+	assertActionEquals(t, kubeActions[2], "create", "secrets")
 
-	// first action is a get on the namespace
-	// second action is a get on the secret
 	action := kubeActions[2].(clientgotesting.CreateAction)
-	if e, a := "create", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-	}
 	actionSecret, ok := action.GetObject().(*corev1.Secret)
 	if !ok {
 		t.Fatal("couldn't convert secret into a corev1.Secret")
@@ -669,16 +652,11 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 3)
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
+	assertActionEquals(t, kubeActions[1], "get", "secrets")
+	assertActionEquals(t, kubeActions[2], "create", "secrets")
 
-	// first action is a get on the namespace
-	// second action is a get on the secret
 	action := kubeActions[2].(clientgotesting.CreateAction)
-	if e, a := "create", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-	}
 	actionSecret, ok := action.GetObject().(*corev1.Secret)
 	if !ok {
 		t.Fatal("couldn't convert secret into a corev1.Secret")
@@ -943,12 +921,9 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	kubeActions := fakeKubeClient.Actions()
 	// The action should be deleting the secret
 	assertNumberOfActions(t, kubeActions, 1)
+	assertActionEquals(t, kubeActions[0], "delete", "secrets")
 
 	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; %s", expectedGot(e, a))
-	}
-
 	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
 		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
 	}
@@ -2139,16 +2114,8 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 2)
-
-	// first action is a get on the namespace
-	// second action is a get on the secret
-	action := kubeActions[1].(clientgotesting.GetAction)
-	if e, a := "get", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-	}
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
+	assertActionEquals(t, kubeActions[1], "get", "secrets")
 
 	events := getRecordedEvents(testController)
 
@@ -2330,15 +2297,13 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 
 	kubeActions = fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 4)
+	assertActionEquals(t, kubeActions[0], "get", "namespaces")
 
-	// first action is a get on the namespace
 	// second action is a get on the secret, to build the parameters
+	assertActionEquals(t, kubeActions[1], "get", "secrets")
 	action, ok := kubeActions[1].(clientgotesting.GetAction)
 	if !ok {
 		t.Fatalf("unexpected type of action: expected a GetAction, got %T", kubeActions[0])
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action: %s", expectedGot(e, a))
 	}
 	if e, a := "param-secret-name", action.GetName(); e != a {
 		t.Fatalf("Unexpected name of secret fetched: %s", expectedGot(e, a))
@@ -2500,13 +2465,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 
 			kubeActions := fakeKubeClient.Actions()
 			assertNumberOfActions(t, kubeActions, 1)
-			action := kubeActions[0].(clientgotesting.GetAction)
-			if e, a := "get", action.GetVerb(); e != a {
-				t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-			}
-			if e, a := "namespaces", action.GetResource().Resource; e != a {
-				t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-			}
+			assertActionEquals(t, kubeActions[0], "get", "namespaces")
 
 			actions := fakeCatalogClient.Actions()
 			assertNumberOfActions(t, actions, 1)
@@ -2570,15 +2529,7 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("reconciliation should complete since the retry duration has elapsed: %v", err)
 	}
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-	action := kubeActions[0].(clientgotesting.GetAction)
-	if e, a := "delete", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-	}
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
@@ -2651,15 +2602,7 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 	if err := testController.reconcileServiceBinding(binding); err != nil {
 		t.Fatalf("reconciliation should complete since the retry duration has elapsed: %v", err)
 	}
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-	action := kubeActions[0].(clientgotesting.GetAction)
-	if e, a := "delete", action.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", action.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-	}
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 
 	brokerActions := fakeServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
@@ -2765,18 +2708,7 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 		PlanID:     testClusterServicePlanGUID,
 	})
 
-	kubeActions := fakeKubeClient.Actions()
-	// The action should be deleting the secret
-	assertNumberOfActions(t, kubeActions, 1)
-
-	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; %s", expectedGot(e, a))
-	}
-
-	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
-	}
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
@@ -2872,18 +2804,7 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 		PlanID:     testClusterServicePlanGUID,
 	})
 
-	kubeActions := fakeKubeClient.Actions()
-	// The action should be deleting the secret
-	assertNumberOfActions(t, kubeActions, 1)
-
-	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; %s", expectedGot(e, a))
-	}
-
-	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
-	}
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
@@ -3059,16 +2980,7 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 	})
 
 	// Kube actions
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := "delete", deleteAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on kubeActions[1]; expected %v, got %v", e, a)
-	}
-
-	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: expected %v, got %v", e, a)
-	}
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
 
 	// Service Catalog actions
 	actions := fakeCatalogClient.Actions()
@@ -3313,14 +3225,7 @@ func TestPollServiceBinding(t *testing.T) {
 			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
 			validateKubeActionsFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				assertNumberOfActions(t, actions, 1)
-
-				action := actions[0].(clientgotesting.GetAction)
-				if e, a := "get", action.GetVerb(); e != a {
-					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-				}
-				if e, a := "secrets", action.GetResource().Resource; e != a {
-					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-				}
+				assertActionEquals(t, actions[0], "get", "secrets")
 			},
 			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
 				assertServiceBindingAsyncBindErrorAfterStateSucceeded(t, updatedBinding, errorInjectingBindResultReason, originalBinding)
@@ -3361,24 +3266,8 @@ func TestPollServiceBinding(t *testing.T) {
 			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
 			validateKubeActionsFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				assertNumberOfActions(t, actions, 2)
-
-				// GET on Secret
-				getAction := actions[0].(clientgotesting.GetAction)
-				if e, a := "get", getAction.GetVerb(); e != a {
-					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-				}
-				if e, a := "secrets", getAction.GetResource().Resource; e != a {
-					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-				}
-
-				// CREATE on Secret
-				createAction := actions[1].(clientgotesting.CreateAction)
-				if e, a := "create", createAction.GetVerb(); e != a {
-					t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-				}
-				if e, a := "secrets", createAction.GetResource().Resource; e != a {
-					t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
-				}
+				assertActionEquals(t, actions[0], "get", "secrets")
+				assertActionEquals(t, actions[1], "create", "secrets")
 			},
 			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
 				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationBind, originalBinding)
