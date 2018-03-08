@@ -17,9 +17,11 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
+	_ "github.com/golang/glog" // Initialize glog flags
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
@@ -52,6 +54,12 @@ func main() {
 }
 
 func buildRootCommand(cxt *command.Context) *cobra.Command {
+	// Make cobra aware of select glog flags
+	// Enabling all flags causes unwanted deprecation warnings from glog to always print in plugin mode
+	pflag.CommandLine.AddGoFlag(flag.CommandLine.Lookup("v"))
+	pflag.CommandLine.AddGoFlag(flag.CommandLine.Lookup("logtostderr"))
+	pflag.CommandLine.Set("logtostderr", "true")
+
 	// root command flags
 	var opts struct {
 		KubeConfig  string

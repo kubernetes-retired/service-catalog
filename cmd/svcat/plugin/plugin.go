@@ -40,6 +40,12 @@ const (
 	// kubectl flags and environment variables.
 	EnvPluginNamespace = "KUBECTL_PLUGINS_CURRENT_NAMESPACE"
 
+	// EnvPluginGlobalFlagPrefix contains the prefix applied to any global kubectl flags
+	EnvPluginGlobalFlagPrefix = "KUBECTL_PLUGINS_GLOBAL_FLAG"
+
+	// EnvPluginVerbose is the -v=LEVEL flag
+	EnvPluginVerbose = EnvPluginGlobalFlagPrefix + "_V"
+
 	// EnvPluginPath overrides where plugins should be installed.
 	EnvPluginPath = "KUBECTL_PLUGINS_PATH"
 )
@@ -55,6 +61,9 @@ func BindEnvironmentVariables(vip *viper.Viper) {
 	// KUBECTL_PLUGINS_CURRENT_NAMESPACE provides the final namespace
 	// computed by kubectl.
 	vip.BindEnv("namespace", EnvPluginNamespace)
+
+	// Manually bind relevant glog variables
+	vip.BindEnv("v", EnvPluginVerbose)
 
 	// kubectl intercepts all flags passed to a plugin, and replaces them
 	// with prefixed environment variables
