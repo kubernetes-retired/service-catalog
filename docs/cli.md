@@ -1,70 +1,23 @@
 # Service Catalog CLI
 
-This is a command-line interface (CLI) for interacting with
-[Kubernetes Service Catalog](../../README.md)
+This is a command-line interface (CLI) for interacting with Service Catalog
 resources. svcat is a domain-specific tool to make interacting with the Service Catalog easier.
 While many of its commands have analogs to `kubectl`, our goal is to streamline and optimize
-the operator experience, contributing useful code back upstream to Kubernetes where applicable.
+the operator experience.
 
 svcat communicates with the Service Catalog API through the [aggregated API][agg-api] endpoint on a
 Kubernetes cluster.
 
 [agg-api]: https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/
 
-# Prerequisites
-In order to use svcat, you will need:
-
-* A Kubernetes cluster running v1.7+ or higher
-* A broker compatible with the Open Service Broker API installed on the cluster, such as:
-  * [User Provided Service Broker](../../charts/ups-broker)
-  * [Open Service Broke for Azure](https://github.com/Azure/helm-charts/tree/master/open-service-broker-azure)
-* The [Service Catalog](../../docs/install.md) installed on the cluster.
-
-# Install
-Follow the appropriate instructions for your shell to download svcat. The binary
-can be used by itself, or as kubectl plugin.
-
-## MacOS
-```
-curl -sLO https://download.svcat.sh/cli/latest/darwin/amd64/svcat
-chmod +x ./svcat
-mv ./svcat /usr/local/bin/
-svcat --version
-```
-
-## Linux
-```
-curl -sLO https://download.svcat.sh/cli/latest/linux/amd64/svcat
-chmod +x ./svcat
-mv ./svcat /usr/local/bin/
-svcat --version
-```
-
-## Windows
-
-```
-iwr 'https://download.svcat.sh/cli/latest/windows/amd64/svcat.exe' -UseBasicParsing -OutFile svcat.exe
-mkdir -f ~\bin
-$env:PATH += ";${pwd}\bin"
-svcat --version
-```
-
-The snippet above adds a directory to your PATH for the current session only.
-You will need to find a permanent location for it and add it to your PATH.
-
-## Manual
-1. Download the appropriate binary for your operating system:
-    * macOS: https://download.svcat.sh/cli/latest/darwin/amd64/svcat
-    * Windows: https://download.svcat.sh/cli/latest/windows/amd64/svcat.exe
-    * Linux: https://download.svcat.sh/cli/latest/linux/amd64/svcat
-1. Make the binary executable.
-1. Move the binary to a directory on your PATH.
+This document assumes that you've installed Service Catalog and the Service Catalog CLI
+onto your cluster. If you haven't, please see [install.md](install.md).
 
 ## Plugin
-To use svcat as a plugin, run the following command after downloading:
+To use svcat as a kubectl plugin, run the following command after downloading:
 
 ```console
-$ ./svcat install plugin
+$ svcat install plugin
 Plugin has been installed to ~/.kube/plugins/svcat. Run kubectl plugin svcat --help for help using the plugin.
 ```
 
@@ -75,9 +28,23 @@ when running in plugin mode, so instead of using `--flag` you must specify a val
 
 # Use
 
-Run `svcat -h` to see the available commands.
+Run `svcat --help` to see the available commands.
 
-Below are some common tasks made easy with svcat. The example output assumes that [User Provided Service Broker](../../charts/ups-broker) is installed on the cluster.
+Below are some common tasks made easy with svcat. The example output assumes that the 
+[User Provided Service Broker](../charts/ups-broker) is installed on the cluster.
+
+* [Find brokers installed on the cluster](#find-brokers-installed-on-the-cluster)
+* [Trigger a sync of a broker's catalog](#trigger-a-sync-of-a-brokers-catalog)
+* [List available service classes](#list-available-service-classes)
+* [View service plans associated with a class](#view-service-plans-associated-with-a-class)
+* [Provision a service](#provision-a-service)
+* [View all instances of a service plan on the cluster](#view-all-instances-of-a-service-plan-on-the-cluster)
+* [List all service instances in a namespace](#list-all-service-instances-in-a-namespace)
+* [Bind an instance](#bind-an-instance)
+* [View the details of a service instance](#view-the-details-of-a-service-instance)
+* [Unbind all applications from an instance](#remove-all-bindings-from-an-instance)
+* [Unbind a single application from an instance](#remove-a-single-binding-from-an-instance)
+* [Delete a service instance](#remove-a-single-binding-from-an-instance)
 
 ## Find brokers installed on the cluster
 
@@ -99,9 +66,10 @@ Successfully fetched catalog entries from the ups-broker broker
 
 ```console
 $ svcat get classes
-          NAME                  DESCRIPTION                         UUID
-+-----------------------+-------------------------+--------------------------------------+
-  user-provided-service   A user provided service   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+                NAME                        DESCRIPTION                         UUID
++-----------------------------------+-------------------------+--------------------------------------+
+  user-provided-service               A user provided service   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+  user-provided-service-single-plan   A user provided service   5f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
 ```
 
 ## View service plans associated with a class
@@ -163,20 +131,22 @@ svcat provision secure-instance --class mysqldb --plan secureDB --params-json '{
 Note: You may not combine the `--params-json` flag with individual `--param` flags.
 
 ## View all instances of a service plan on the cluster
+When there is more than one plan with the same name, the class can be provided either as a prefix to the plan name,
+`CLASS/PLAN`, or specified with the class flag, `--class CLASS`.
 
 ```console
-$ svcat describe plan premium
-  Name:          premium
-  Description:   Premium plan
-  UUID:          cc0d7529-18e8-416d-8946-6f7456acd589
-  Status:        Active
-  Free:          false
-  Class:         user-provided-service
+$ svcat describe plan user-provided-service/default
+    Name:          default
+    Description:   Sample plan description
+    UUID:          86064792-7ea2-467b-af93-ac9694d96d52
+    Status:        Active
+    Free:          true
+    Class:         user-provided-service
   
-Instances:
-      NAME       NAMESPACE   STATUS
-+--------------+-----------+--------+
-  ups-instance   test-ns     Ready
+  Instances:
+        NAME       NAMESPACE   STATUS
+  +--------------+-----------+--------+
+    ups-instance   test-ns     Ready
 ```
 
 ## List all service instances in a namespace
@@ -212,26 +182,26 @@ $ svcat bind ups
 
 ```console
 $ svcat describe instance -n test-ns ups-instance
-  Name:        ups-instance
-  Namespace:   test-ns
-  Status:      Ready - The instance was provisioned successfully @ 2018-01-11 14:59:47 -0600 CST
-  Class:       user-provided-service
-  Plan:        default
-
-Bindings:
-     NAME       STATUS
-+-------------+--------+
-  ups-binding   Ready
+    Name:        ups-instance
+    Namespace:   test-ns
+    Status:      Ready - The instance was provisioned successfully @ 2018-03-02 16:24:55 +0000 UTC
+    Class:       user-provided-service
+    Plan:        default
+  
+  Bindings:
+       NAME       STATUS
+  +-------------+--------+
+    ups-binding   Ready
 ```
 
-## Unbind all applications from an instance
+## Remove all bindings from an instance
 
 ```console
 $ svcat unbind -n test-ns ups-instance
 deleted ups-binding
 ```
 
-## Unbind a single application from an instance
+## Remove a single binding from an instance
 
 ```console
 $ svcat unbind -n test-ns --name ups-binding
@@ -241,6 +211,7 @@ deleted ups-binding
 ## Delete a service instance
 
 Deprovisioning is the process of preparing an instance to be removed, and then deleting it.
+You must unbind delete all bindings before deprovisioning an instance.
 
 ```
 svcat deprovision ups-instance
