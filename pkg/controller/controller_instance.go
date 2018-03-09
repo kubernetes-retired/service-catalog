@@ -1598,19 +1598,15 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 	// requeue this resource.
 	var err error
 	if shouldMitigateOrphan {
-		// Copy failure reason/message to a new OrphanMitigation condition
-		orphanMitigationCond := newServiceInstanceOrphanMitigationCondition(v1beta1.ConditionTrue, readyCond.Reason, readyCond.Message)
-		c.recorder.Event(instance, corev1.EventTypeWarning, orphanMitigationCond.Reason, orphanMitigationCond.Message)
+		// Copy original failure reason/message to a new OrphanMitigation condition
+		c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
 		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation,
-			orphanMitigationCond.Status,
-			orphanMitigationCond.Reason,
-			orphanMitigationCond.Message)
+			v1beta1.ConditionTrue, readyCond.Reason, readyCond.Message)
 		// Overwrite Ready condition reason/message with reporting on orphan mitigation
-		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
 		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady,
-			readyCond.Status,
-			readyCond.Reason,
-			readyCond.Message)
+			v1beta1.ConditionFalse,
+			startingInstanceOrphanMitigationReason,
+			startingInstanceOrphanMitigationMessage)
 
 		instance.Status.OperationStartTime = nil
 		instance.Status.AsyncOpInProgress = false
