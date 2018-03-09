@@ -123,23 +123,25 @@ type ClusterServicePlanRequirements string
 // ServiceClassCatalogRestrictions contains the restrictions used to on catalog re-list.
 // Some examples of this object are as follows:
 //
+// This is an example of a whitelist on service externalName.
 // Goal: Only list Services with the externalName of FooService and BarService,
 // Solution: restrictions := ServiceClassCatalogRestrictions{
 // 		ServiceClass: "externalName in (FooService, BarService)",
 // }
-// This is an example of a whitelist on service externalName.
+//
+// This is an example of a blacklist on service externalName.
 // Goal: Allow all services except the ones with the externalName of FooService and BarService,
 // Solution: restrictions := ServiceClassCatalogRestrictions{
 // 		ServiceClass: "externalName notin (FooService, BarService)",
 // }
-// This is an example of a blacklist on service externalName.
+//
+// This whitelists plans called "Demo", and blacklists (but only a single element in
+// the list) a service and a plan.
 // Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name,
 // Solution: restrictions := ServiceClassCatalogRestrictions{
 // 		ServiceClass: "name!=AABBB-CCDD-EEGG-HIJK",
 // 		ServicePlan: "externalName in (Demo),name!=AABBCC",
 // }
-// This whitelists plans called "Demo", and blacklists (but only a single element in
-// the list) a service and a plan.
 type ServiceClassCatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServiceClass ClusterServiceClassRequirements `json:"serviceClass,omitempty"`
