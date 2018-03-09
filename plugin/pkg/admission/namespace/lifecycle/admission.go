@@ -33,7 +33,7 @@ const (
 // Register registers a plugin
 func Register(plugins *admission.Plugins) {
 	// This essentially registers the existing NamespaceLifecycle for kubernetes
-	// another another name, for backwards-compatibility reasons
+	// under another name, for backwards-compatibility reasons
 	plugins.Register(PluginName, func(io.Reader) (admission.Interface, error) {
 		return NewLifecycle()
 	})

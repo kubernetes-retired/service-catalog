@@ -40,7 +40,7 @@ spec:
         - {{ .Values.apiserver.audit.logPath }}
         {{- end}}
         - --admission-control
-        - "KubernetesNamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
+        - "NamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
         - --secure-port
         - "8443"
         - --storage-type

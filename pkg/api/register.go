@@ -17,17 +17,17 @@ limitations under the License.
 package api
 
 import (
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/apimachinery/announced"
 	"k8s.io/apimachinery/pkg/apimachinery/registered"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	servicecataloginstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	settingsinstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install"
-	admissioninstall "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/admission/install"
-	authenticationinstall "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/authentication/install"
 )
 
 var (
@@ -42,11 +42,25 @@ var (
 	Codecs = serializer.NewCodecFactory(Scheme)
 )
 
+func AdmissionInstall(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *registered.APIRegistrationManager, scheme *runtime.Scheme) {
+	if err := announced.NewGroupMetaFactory(
+		&announced.GroupMetaFactoryArgs{
+			GroupName:              admissionv1beta1.GroupName,
+			VersionPreferenceOrder: []string{admissionv1beta1.SchemeGroupVersion.Version},
+			RootScopedKinds:        sets.NewString("AdmissionReview"),
+		},
+		announced.VersionToSchemeFunc{
+			admissionv1beta1.SchemeGroupVersion.Version: admissionv1beta1.AddToScheme,
+		},
+	).Announce(groupFactoryRegistry).RegisterAndEnable(registry, scheme); err != nil {
+		panic(err)
+	}
+}
+
 func init() {
 	servicecataloginstall.Install(groupFactoryRegistry, Registry, Scheme)
 	settingsinstall.Install(groupFactoryRegistry, Registry, Scheme)
-	admissioninstall.Install(groupFactoryRegistry, Registry, Scheme)
-	authenticationinstall.Install(groupFactoryRegistry, Registry, Scheme)
+	AdmissionInstall(groupFactoryRegistry, Registry, Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this
