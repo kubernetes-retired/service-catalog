@@ -351,6 +351,13 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			glog.V(5).Info(pcb.Messagef(`References a non-existent %s "%s/%s"`,
+				pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+			))
+			return c.processUnbindSuccess(binding)
+		}
+
 		msg := fmt.Sprintf(
 			`References a non-existent %s "%s/%s"`,
 			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
