@@ -108,17 +108,25 @@ type ClusterServiceBrokerSpec struct {
 // <requirement> will be a set of string values if `in` or `notin` are used.
 // Multiple predicates are allowed to be chained with a comma (,)
 
-// ClusterServiceClassRequirements represents a selector for classes used to filter.
-// Allowed property names:
-// name - the value set to ClusterServiceClass.Name
-// externalName - the value set to ClusterServiceClass.Spec.ExternalName
-type ClusterServiceClassRequirements string
+// ClusterServiceClassRequirements represents a list of selectors for classes used to filter.
+// Requirements are AND'ed together from the list.
+type ClusterServiceClassRequirements []ClusterServiceClassRequirement
 
-// ClusterServicePlanRequirements represents a selector for plans used to filter.
+// ClusterServiceClassRequirement represents a selector for classes used to filter.
 // Allowed property names:
-// name - the value set to ClusterServiceClass.Name
-// externalName - the value set to ClusterServiceClass.Spec.ExternalName
-type ClusterServicePlanRequirements string
+//   name - the value set to ClusterServiceClass.Name
+//   externalName - the value set to ClusterServiceClass.Spec.ExternalName
+type ClusterServiceClassRequirement string
+
+// ClusterServicePlanRequirements represents a list of selectors for plans used to filter.
+// Requirements are AND'ed together from the list.
+type ClusterServicePlanRequirements []ClusterServicePlanRequirement
+
+// ClusterServicePlanRequirement represents a selector for plans used to filter.
+// Allowed property names:
+//   name - the value set to ClusterServiceClass.Name
+//   externalName - the value set to ClusterServiceClass.Spec.ExternalName
+type ClusterServicePlanRequirement string
 
 // ServiceClassCatalogRestrictions contains the restrictions used to on catalog re-list.
 // Some examples of this object are as follows:

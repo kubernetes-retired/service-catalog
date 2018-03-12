@@ -1403,7 +1403,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "bad predicate",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "bad predicate",
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"bad predicate"},
 			},
 			catalog: largeTestCatalog,
 			error:   true,
@@ -1411,7 +1411,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "by externalName",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "externalName=Archonei",
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName=Archonei"},
 			},
 			classes: []string{"Archonei"},
 			plans:   []string{"Goldengrove"},
@@ -1420,16 +1420,16 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "by name",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "name=41727261-7841-4272-a178-417272617841",
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"name=41727261-7841-4272-a178-417272617841"},
 			},
 			classes: []string{"Arrax"},
 			plans:   []string{"Eastwatch-by-the-Sea", "OldOak"},
 			catalog: largeTestCatalog,
 		},
 		{
-			name: "whitelist by eternalName",
+			name: "whitelist by externalName",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "externalName in (Archonei, Arrax)",
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName in (Archonei, Arrax)"},
 			},
 			classes: []string{"Archonei", "Arrax"},
 			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak"},
@@ -1438,16 +1438,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "blacklist by externalName",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "externalName notin (Balerion)",
-			},
-			classes: []string{"Archonei", "Arrax"},
-			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak"},
-			catalog: largeTestCatalog,
-		},
-		{
-			name: "blacklist by externalName",
-			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "externalName notin (Balerion)",
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName notin (Balerion)"},
 			},
 			classes: []string{"Archonei", "Arrax"},
 			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "OldOak"},
@@ -1456,7 +1447,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "whitelist and trim services without plans",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServicePlan: "externalName in (Goldengrove)",
+				ServicePlan: []v1beta1.ClusterServicePlanRequirement{"spec.externalName in (Goldengrove)"},
 			},
 			classes: []string{"Archonei"},
 			plans:   []string{"Goldengrove"},
@@ -1465,7 +1456,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "whitelist plans by name",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServicePlan: "name in (476f6c64-656e-4772-af76-65476f6c6465, 45617374-7761-4463-a82d-62792d746865, 49726f6e-7261-4468-8972-6f6e72617468, )",
+				ServicePlan: []v1beta1.ClusterServicePlanRequirement{"name in (476f6c64-656e-4772-af76-65476f6c6465, 45617374-7761-4463-a82d-62792d746865, 49726f6e-7261-4468-8972-6f6e72617468)"},
 			},
 			classes: []string{"Archonei", "Arrax", "Balerion"},
 			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "Ironrath"},
@@ -1474,17 +1465,26 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		{
 			name: "two restrictions for plans",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServicePlan: "name!=45617374-7761-4463-a82d-62792d746865, externalName notin (OldOak)",
+				ServicePlan: []v1beta1.ClusterServicePlanRequirement{"name!=45617374-7761-4463-a82d-62792d746865", "spec.externalName notin (OldOak)"},
 			},
 			classes: []string{"Archonei", "Balerion"},
 			plans:   []string{"Goldengrove", "Ironrath", "Queensgate"},
 			catalog: largeTestCatalog,
 		},
 		{
+			name: "two valid but conflicting whitelists for classes",
+			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName in (Archonei)", "spec.externalName notin (Archonei)"},
+			},
+			classes: []string{},
+			plans:   []string{},
+			catalog: largeTestCatalog,
+		},
+		{
 			name: "restrictions for both class and plan",
 			restrictions: &v1beta1.ServiceClassCatalogRestrictions{
-				ServiceClass: "externalName in (Archonei, Balerion)",
-				ServicePlan:  "externalName notin (Ironrath)",
+				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName in (Archonei, Balerion)"},
+				ServicePlan:  []v1beta1.ClusterServicePlanRequirement{"spec.externalName notin (Ironrath)"},
 			},
 			classes: []string{"Archonei", "Balerion"},
 			plans:   []string{"Goldengrove", "Queensgate"},
@@ -1492,8 +1492,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		testName := fmt.Sprintf("%s:%s", tc.name)
-		t.Run(testName, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			catalog := &osb.CatalogResponse{}
 			err := json.Unmarshal([]byte(tc.catalog), &catalog)
 			if err != nil {
@@ -1504,7 +1503,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 				if tc.error {
 					return
 				}
-				t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
+				t.Fatalf("Failed to convertAndFilterCatalog: %v, %+v", err, tc.restrictions)
 			}
 
 			if len(classes) != len(tc.classes) {
@@ -1536,94 +1535,6 @@ func contains(list []string, c string) bool {
 	return false
 }
 
-func TestFilterServiceClasses(t *testing.T) {
-
-	cases := []struct {
-		name         string
-		requirements v1beta1.ClusterServiceClassRequirements
-		accepted     int
-		rejected     int
-		catalog      string
-	}{
-		{
-			name:     "no restriction",
-			accepted: 1,
-			rejected: 0,
-			catalog:  testCatalog,
-		},
-		{
-			name:         "by external name",
-			requirements: "externalName=fake-service",
-			accepted:     1,
-			rejected:     0,
-			catalog:      testCatalog,
-		},
-		{
-			name:         "by external name",
-			requirements: "externalName=real-service",
-			accepted:     0,
-			rejected:     1,
-			catalog:      testCatalog,
-		},
-		{
-			name:         "by externalID",
-			requirements: "externalID=acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
-			accepted:     1,
-			rejected:     0,
-			catalog:      testCatalog,
-		},
-		{
-			name:         "by externalID",
-			requirements: "externalID=acb56d7c-YYYY-YYYY-YYYY-feb140a59a66",
-			accepted:     0,
-			rejected:     1,
-			catalog:      testCatalog,
-		},
-		{
-			name:         "by external ID and external name",
-			requirements: "externalID=acb56d7c-XXXX-XXXX-XXXX-feb140a59a66,externalName=fake-service",
-			accepted:     1,
-			rejected:     0,
-			catalog:      testCatalog,
-		},
-		{
-			name:         "by external ID and external name",
-			requirements: "externalID=acb56d7c-XXXX-XXXX-XXXX-feb140a59a66,externalName=real-service",
-			accepted:     0,
-			rejected:     1,
-			catalog:      testCatalog,
-		},
-	}
-
-	for _, tc := range cases {
-		testName := fmt.Sprintf("%s:%s", tc.name, tc.requirements)
-		t.Run(testName, func(t *testing.T) {
-			catalog := &osb.CatalogResponse{}
-			err := json.Unmarshal([]byte(tc.catalog), &catalog)
-			if err != nil {
-				t.Fatalf("Failed to unmarshal test catalog: %v", err)
-			}
-			serviceClasses, _, err := convertCatalog(catalog)
-			if err != nil {
-				t.Fatalf("Failed to convertCatalog: %v", err)
-			}
-			total := tc.accepted + tc.rejected
-			if len(serviceClasses) != total {
-				t.Fatalf("Catalog did not contained expected number of classes, %s", expectedGot(total, len(serviceClasses)))
-			}
-
-			acceptedServiceClass, rejectedServiceClasses, err := filterServiceClasses(tc.requirements, serviceClasses)
-			if len(acceptedServiceClass) != tc.accepted {
-				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.accepted, len(acceptedServiceClass)))
-			}
-
-			if len(rejectedServiceClasses) != tc.rejected {
-				t.Fatalf("Unexpected number of accepted service classes after filtering, %s", expectedGot(tc.rejected, len(rejectedServiceClasses)))
-			}
-		})
-	}
-}
-
 func TestFilterServicePlans(t *testing.T) {
 
 	cases := []struct {
@@ -1641,14 +1552,14 @@ func TestFilterServicePlans(t *testing.T) {
 		},
 		{
 			name:         "by external name",
-			requirements: "externalName=fake-plan-1",
+			requirements: []v1beta1.ClusterServicePlanRequirement{"spec.externalName=fake-plan-1"},
 			accepted:     1,
 			rejected:     1,
 			catalog:      testCatalog,
 		},
 		{
 			name:         "by external name",
-			requirements: "externalName=real-plan-1",
+			requirements: []v1beta1.ClusterServicePlanRequirement{"spec.externalName=real-plan-1"},
 			accepted:     0,
 			rejected:     2,
 			catalog:      testCatalog,
@@ -1672,7 +1583,11 @@ func TestFilterServicePlans(t *testing.T) {
 				t.Fatalf("Catalog did not contained expected number of plans, %s", expectedGot(total, len(servicePlans)))
 			}
 
-			acceptedServiceClass, rejectedServiceClasses, err := filterServicePlans(tc.requirements, servicePlans)
+			restrictions := &v1beta1.ServiceClassCatalogRestrictions{
+				ServicePlan: tc.requirements,
+			}
+
+			acceptedServiceClass, rejectedServiceClasses, err := filterServicePlans(restrictions, servicePlans)
 			if len(acceptedServiceClass) != tc.accepted {
 				t.Fatalf("Unexpected number of accepted service plans after filtering, %s", expectedGot(tc.accepted, len(acceptedServiceClass)))
 			}

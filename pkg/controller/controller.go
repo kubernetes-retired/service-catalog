@@ -567,13 +567,7 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Serv
 				return nil, nil, err
 			}
 
-			var servicePlanRestrictions v1beta1.ClusterServicePlanRequirements
-			if restrictions != nil {
-				servicePlanRestrictions = restrictions.ServicePlan
-			} else {
-				servicePlanRestrictions = ""
-			}
-			acceptedPlans, _, err := filterServicePlans(servicePlanRestrictions, plans)
+			acceptedPlans, _, err := filterServicePlans(restrictions, plans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -588,35 +582,8 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Serv
 	return serviceClasses, servicePlans, nil
 }
 
-// TODO: filtering service classes out if all the plans have been filtered off.
-func filterServiceClasses(requirements v1beta1.ClusterServiceClassRequirements, serviceClasses []*v1beta1.ClusterServiceClass) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServiceClass, error) {
-	predicate, err := filter.CreatePredicateForServiceClasses(requirements)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// If the predicate is empty, all classes will pass. No need to run through the list.
-	if predicate.Empty() {
-		return serviceClasses, []*v1beta1.ClusterServiceClass(nil), nil
-	}
-
-	accepted := []*v1beta1.ClusterServiceClass(nil)
-	rejected := []*v1beta1.ClusterServiceClass(nil)
-	for _, sc := range serviceClasses {
-		fields := filter.ConvertServiceClassToProperties(sc)
-		if predicate.Accepts(fields) {
-			accepted = append(accepted, sc)
-		} else {
-			rejected = append(rejected, sc)
-		}
-	}
-
-	return accepted, rejected, nil
-}
-
-// TODO: filtering service plans might have to also take in the rejected classes to wipe the plans for those classes.
-func filterServicePlans(requirements v1beta1.ClusterServicePlanRequirements, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
-	predicate, err := filter.CreatePredicateForServicePlans(requirements)
+func filterServicePlans(restrictions *v1beta1.ServiceClassCatalogRestrictions, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
+	predicate, err := filter.CreatePredicateForServicePlansFromRestrictions(restrictions)
 	if err != nil {
 		return nil, nil, err
 	}

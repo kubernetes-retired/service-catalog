@@ -24,8 +24,8 @@ import (
 type Properties labels.Labels
 
 const (
-	Name                    = "name"
-	ExternalName            = "externalName"
-	ExternalID              = "externalID"
-	ClusterServiceClassName = "clusterServiceClassName"
+	Name                        = "name"
+	SpecExternalName            = "spec.externalName"
+	SpecExternalID              = "spec.externalID"
+	SpecClusterServiceClassName = "spec.clusterServiceClassName"
 )
