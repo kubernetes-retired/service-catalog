@@ -165,6 +165,7 @@ type controller struct {
 	instancePollingQueue        workqueue.RateLimitingInterface
 	bindingPollingQueue         workqueue.RateLimitingInterface
 	clusterID                   string
+	clusterIDLock               sync.RWMutex
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -188,7 +189,9 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		}
 	}
 
+	c.clusterIDLock.Lock()
 	c.clusterID = string(uuid.NewUUID())
+	c.clusterIDLock.Unlock()
 	func() {
 		waitGroup.Add(1)
 		go func() {
@@ -234,31 +237,38 @@ func (c *controller) monitorConfigMap() {
 	cm, err := c.kubeClient.CoreV1().ConfigMaps("default").Get("cluster-info", metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
+		c.clusterIDLock.RLock()
 		m["id"] = c.clusterID
+		c.clusterIDLock.RUnlock()
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-info",
 			},
 			Data: m,
 		}
-		_, err := c.kubeClient.CoreV1().ConfigMaps("default").Create(cm)
 		// if we fail to set the id,
 		// it could be due to permissions
 		// or due to being already set while we were trying
-		if nil != err {
-			glog.Warning("could not set clusterid configmap", cm)
+		if _, err := c.kubeClient.CoreV1().ConfigMaps("default").Create(cm); err != nil {
+			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
-	} else {
+	} else if err != nil {
 		// cluster id exists and is set
 		// get id out of cm
 		if id := cm.Data["id"]; "" != id {
+			c.clusterIDLock.Lock()
 			c.clusterID = id
+			c.clusterIDLock.Unlock()
 		} else {
 			m := make(map[string]string)
 			cm.Data = m
-			cm.Data["id"] = c.clusterID
+			c.clusterIDLock.RLock()
+			m["id"] = c.clusterID
+			c.clusterIDLock.RUnlock()
 			c.kubeClient.CoreV1().ConfigMaps("default").Update(cm)
 		}
+	} else { // some err we can't handle
+		glog.V(4).Info("error getting the cluster info configmap")
 	}
 	glog.V(9).Info("cluster ID monitor loop exit")
 
