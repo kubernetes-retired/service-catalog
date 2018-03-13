@@ -747,7 +747,7 @@ func newControllerTestTestController(ct *controllerTest) (
 	fakeKubeClient.Lock()
 	prependGetSecretNotFoundReaction(fakeKubeClient)
 	fakeKubeClient.Unlock()
-	
+
 	// create an sc client and running server
 	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
@@ -896,7 +896,7 @@ func newTestController(t *testing.T) (
 	fakeKubeClient.Lock()
 	prependGetSecretNotFoundReaction(fakeKubeClient)
 	fakeKubeClient.Unlock()
-	
+
 	// create an sc client and running server
 	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
@@ -1318,7 +1318,6 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	defer shutdownController()
 	defer shutdownServer()
 
-	t := ct.t
 	ct.kubeClient = kubeClient
 	ct.catalogClient = catalogClient
 	ct.catalogClientConfig = catalogClientConfig
