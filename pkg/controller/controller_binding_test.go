@@ -969,7 +969,7 @@ func TestReconcileServiceBindingDeleteUnresolvedInstanceReference(t *testing.T) 
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			CurrentOperation: v1beta1.ServiceBindingOperationUnbind,
-			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
+			UnbindStatus:     v1beta1.ServiceBindingUnbindStatusRequired,
 		},
 	}
 
@@ -995,7 +995,6 @@ func TestReconcileServiceBindingDeleteUnresolvedInstanceReference(t *testing.T) 
 		t.Fatalf("did not publish UnboundSuccessfully event: %q", err)
 	}
 }
-
 
 // TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference
 // tests reconcileBinding to ensure a binding delete succeeds when a ClusterServiceClassRef
