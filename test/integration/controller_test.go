@@ -1329,7 +1329,6 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	ct.client = catalogClient.ServicecatalogV1beta1()
 
 	if test != nil {
-		t.Log("running test")
 		test(ct)
 	}
 
