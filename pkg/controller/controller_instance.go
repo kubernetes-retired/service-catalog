@@ -1416,8 +1416,8 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 	// on the version of the client.
 	c.clusterIDLock.RLock()
 	rh.requestContext = map[string]interface{}{
-		"platform": ContextProfilePlatformKubernetes,
-		"namespace": instance.Namespace,
+		"platform":   ContextProfilePlatformKubernetes,
+		"namespace":  instance.Namespace,
 		"cluster-id": c.clusterID,
 	}
 	c.clusterIDLock.RUnlock()

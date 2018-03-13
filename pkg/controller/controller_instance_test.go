@@ -676,8 +676,8 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				ServiceID:         testClusterServiceClassGUID,
 				PlanID:            testClusterServicePlanGUID,
 				Context: map[string]interface{}{
-					"platform":  "kubernetes",
-					"namespace": "test-ns",
+					"platform":   "kubernetes",
+					"namespace":  "test-ns",
 					"cluster-id": "",
 				},
 				Parameters: tc.expectedParams,
@@ -2227,8 +2227,8 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
+			"platform":   "kubernetes",
+			"namespace":  "test-ns",
 			"cluster-id": "",
 		},
 	})
