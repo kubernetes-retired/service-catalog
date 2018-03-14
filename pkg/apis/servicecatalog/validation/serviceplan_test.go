@@ -30,10 +30,12 @@ func validClusterServicePlan() *servicecatalog.ClusterServicePlan {
 			Name: "test-plan",
 		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
+			SharedServicePlanSpec: servicecatalog.SharedServicePlanSpec{
+				ExternalName: "test-plan",
+				ExternalID:   "40d-0983-1b89",
+				Description:  "plan description",
+			},
 			ClusterServiceBrokerName: "test-broker",
-			ExternalName:             "test-plan",
-			ExternalID:               "40d-0983-1b89",
-			Description:              "plan description",
 			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: "test-service-class",
 			},

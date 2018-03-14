@@ -323,12 +323,8 @@ type ClusterServicePlan struct {
 	Status ClusterServicePlanStatus
 }
 
-// ClusterServicePlanSpec represents details about the ClusterServicePlan
-type ClusterServicePlanSpec struct {
-	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
-	// ClusterServicePlan.
-	ClusterServiceBrokerName string
-
+// SharedServicePlanSpec represents details about the ServicePlan
+type SharedServicePlanSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string
@@ -375,6 +371,15 @@ type ClusterServicePlanSpec struct {
 	// ServiceBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
 	ServiceBindingCreateParameterSchema *runtime.RawExtension
+}
+
+// ClusterServicePlanSpec represents details about the ClusterServicePlan
+type ClusterServicePlanSpec struct {
+	SharedServicePlanSpec
+
+	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
+	// ClusterServicePlan.
+	ClusterServiceBrokerName string
 
 	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.

@@ -126,8 +126,10 @@ func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecata
 	sp1 := &servicecatalog.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: "bar-id"},
 		Spec: servicecatalog.ClusterServicePlanSpec{
-			ExternalName: "bar",
-			ExternalID:   "12345",
+			SharedServicePlanSpec: servicecatalog.SharedServicePlanSpec{
+				ExternalName: "bar",
+				ExternalID:   "12345",
+			},
 			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: classname,
 			},
@@ -139,8 +141,10 @@ func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecata
 	sp2 := &servicecatalog.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: "baz-id"},
 		Spec: servicecatalog.ClusterServicePlanSpec{
-			ExternalName: "baz",
-			ExternalID:   "23456",
+			SharedServicePlanSpec: servicecatalog.SharedServicePlanSpec{
+				ExternalName: "baz",
+				ExternalID:   "23456",
+			},
 			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: classname,
 			},
