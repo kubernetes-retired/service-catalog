@@ -714,12 +714,6 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		switch {
 		case deleting:
 			// For deprovisioning only, we should reattempt even on failure
-			//
-			// TODO(mkibbe): This is actually broken today, as we
-			// will not actually be retrying the deprovision, but
-			// instead constantly re-hitting the "last_operation"
-			// endpoint with the same operation, which will forever
-			// be stuck on failure.
 			msg := "Deprovision call failed: " + description
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCalledReason, msg)
 
@@ -727,8 +721,10 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 				return c.processServiceInstancePollingFailureRetryTimeout(instance, readyCond)
 			}
 
-			c.processServiceInstanceOperationError(instance, readyCond)
-			return c.continuePollingServiceInstance(instance)
+			clearServiceInstanceAsyncOsbOperation(instance)
+			c.finishPollingServiceInstance(instance)
+
+			return c.processServiceInstanceOperationError(instance, readyCond)
 		case provisioning:
 			reason := errorProvisionCallFailedReason
 			message := "Provision call failed: " + description
@@ -756,6 +752,15 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		err := fmt.Errorf(`Got invalid state in LastOperationResponse: %q`, response.State)
 		return c.handleServiceInstancePollingError(instance, err)
 	}
+}
+
+// clearServiceInstanceAsyncOsbOperation will reset the given instance's
+// asynchronous OSB operation status fields. Note: This does not clear the
+// Service Catalog operation, only the concept of "operation" as part of the
+// OSB async flow.
+func clearServiceInstanceAsyncOsbOperation(instance *v1beta1.ServiceInstance) {
+	instance.Status.AsyncOpInProgress = false
+	instance.Status.LastOperation = nil
 }
 
 // isServiceInstanceProcessedAlready returns true if there is no further processing

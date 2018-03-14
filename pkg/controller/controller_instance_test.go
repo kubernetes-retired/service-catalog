@@ -2456,12 +2456,12 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 	}
 
 	err := testController.pollServiceInstance(instance)
-	if err != nil {
-		t.Fatalf("pollServiceInstance failed: %s", err)
+	if err == nil {
+		t.Fatalf("Expected pollServiceInstance to return an error but there was none")
 	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
-		t.Fatalf("Expected polling queue to have record of seeing test instance once")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()

@@ -1540,3 +1540,33 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 		})
 	}
 }
+
+// TestRetryAsyncDeprovision tests whether asynchronous deprovisioning retries
+// by attempting a new deprovision after failing.
+func TestRetryAsyncDeprovision(t *testing.T) {
+	hasPollFailed := false
+	ct := &controllerTest{
+		t:        t,
+		broker:   getTestBroker(),
+		instance: getTestInstance(),
+		setup: func(ct *controllerTest) {
+			ct.osbClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
+				func(_ *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+					response := &osb.DeprovisionResponse{Async: true}
+					if hasPollFailed {
+						response.Async = false
+					}
+					return response, nil
+				})
+
+			ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+				func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+					hasPollFailed = true
+					return &osb.LastOperationResponse{
+						State: osb.StateFailed,
+					}, nil
+				})
+		},
+	}
+	ct.run(func(_ *controllerTest) {})
+}
