@@ -83,13 +83,13 @@ type ClusterServiceBrokerSpec struct {
 	RelistRequests int64
 
 	// CatalogRestrictions allows adding restrictions onto Class/Plans on relist.
-	CatalogRestrictions *ServiceClassCatalogRestrictions
+	CatalogRestrictions *ServiceCatalogRestrictions
 }
 
 type ClusterServicePlanRequirements string
 type ClusterServiceClassRequirements string
 
-type ServiceClassCatalogRestrictions struct {
+type ServiceCatalogRestrictions struct {
 	ServicePlan  ClusterServicePlanRequirements
 	ServiceClass ClusterServiceClassRequirements
 }
