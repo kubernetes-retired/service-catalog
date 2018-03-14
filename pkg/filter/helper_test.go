@@ -26,7 +26,7 @@ import (
 func TestCreatePredicateForServiceClassesFromRestrictions(t *testing.T) {
 	cases := []struct {
 		name         string
-		restrictions *v1beta1.ServiceCatalogRestrictions
+		restrictions *v1beta1.ClusterServiceCatalogRestrictions
 		error        bool
 		predicate    string
 	}{
@@ -35,7 +35,7 @@ func TestCreatePredicateForServiceClassesFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "invalid class restrictions",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{
 					"this throws an error",
 				},
@@ -44,7 +44,7 @@ func TestCreatePredicateForServiceClassesFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid class restriction",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{
 					"name in (Foo, Bar)",
 				},
@@ -53,7 +53,7 @@ func TestCreatePredicateForServiceClassesFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid class restriction, ignores plan restriction",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{
 					"name in (Foo, Bar)",
 				},
@@ -65,7 +65,7 @@ func TestCreatePredicateForServiceClassesFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid class double restriction and wacky spacing",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{
 					"name   in      (Foo,   Bar)",
 					"name   notin   (Baz,   Barf)",
@@ -105,7 +105,7 @@ func TestCreatePredicateForServiceClassesFromRestrictions(t *testing.T) {
 func TestCreatePredicateForServicePlansFromRestrictions(t *testing.T) {
 	cases := []struct {
 		name         string
-		restrictions *v1beta1.ServiceCatalogRestrictions
+		restrictions *v1beta1.ClusterServiceCatalogRestrictions
 		error        bool
 		predicate    string
 	}{
@@ -114,7 +114,7 @@ func TestCreatePredicateForServicePlansFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "invalid plan restrictions",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{
 					"this throws an error",
 				},
@@ -123,7 +123,7 @@ func TestCreatePredicateForServicePlansFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid plan restriction",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{
 					"name in (Foo, Bar)",
 				},
@@ -132,7 +132,7 @@ func TestCreatePredicateForServicePlansFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid plan restriction, ignores class restriction",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{
 					"name in (Foo, Bar)",
 				},
@@ -144,7 +144,7 @@ func TestCreatePredicateForServicePlansFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid plan double restriction and wacky spacing",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{
 					"name   notin   (Baz,   Barf)",
 					"name   in      (Foo,   Bar)",
@@ -154,7 +154,7 @@ func TestCreatePredicateForServicePlansFromRestrictions(t *testing.T) {
 		},
 		{
 			name: "valid plan tripple restriction and wacky spacing and kinda using array",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{
 					"name   notin   (Baz,   Barf), name=Taz",
 					"name   in      (Foo,   Bar)",

@@ -33,7 +33,7 @@ func createPredicateForServiceClasses(requirements string) (Predicate, error) {
 	return predicate, nil
 }
 
-func CreatePredicateForServiceClassesFromRestrictions(restrictions *v1beta1.ServiceCatalogRestrictions) (Predicate, error) {
+func CreatePredicateForServiceClassesFromRestrictions(restrictions *v1beta1.ClusterServiceCatalogRestrictions) (Predicate, error) {
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
 		// Flatten the requirements into a selector string.
 		requirements := string(restrictions.ServiceClass[0])
@@ -57,7 +57,7 @@ func createPredicateForServicePlans(requirements string) (Predicate, error) {
 	return predicate, nil
 }
 
-func CreatePredicateForServicePlansFromRestrictions(restrictions *v1beta1.ServiceCatalogRestrictions) (Predicate, error) {
+func CreatePredicateForServicePlansFromRestrictions(restrictions *v1beta1.ClusterServiceCatalogRestrictions) (Predicate, error) {
 	if restrictions != nil && len(restrictions.ServicePlan) > 0 {
 		// Flatten the requirements into a selector string.
 		requirements := string(restrictions.ServicePlan[0])

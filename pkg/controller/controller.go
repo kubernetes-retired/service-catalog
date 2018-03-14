@@ -523,7 +523,7 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	return serviceClasses, servicePlans, nil
 }
 
-func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.ServiceCatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.ClusterServiceCatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
 	predicate, err := filter.CreatePredicateForServiceClassesFromRestrictions(restrictions)
 
 	if err != nil {
@@ -582,7 +582,7 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Serv
 	return serviceClasses, servicePlans, nil
 }
 
-func filterServicePlans(restrictions *v1beta1.ServiceCatalogRestrictions, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
+func filterServicePlans(restrictions *v1beta1.ClusterServiceCatalogRestrictions, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
 	predicate, err := filter.CreatePredicateForServicePlansFromRestrictions(restrictions)
 	if err != nil {
 		return nil, nil, err

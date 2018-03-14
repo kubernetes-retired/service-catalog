@@ -1388,7 +1388,7 @@ func TestCatalogConversionMultipleClusterServiceClasses(t *testing.T) {
 func TestConvertAndFilterCatalog(t *testing.T) {
 	cases := []struct {
 		name         string
-		restrictions *v1beta1.ServiceCatalogRestrictions
+		restrictions *v1beta1.ClusterServiceCatalogRestrictions
 		classes      []string
 		plans        []string
 		catalog      string
@@ -1402,7 +1402,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "bad predicate",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"bad predicate"},
 			},
 			catalog: largeTestCatalog,
@@ -1410,7 +1410,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "by externalName",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName=Archonei"},
 			},
 			classes: []string{"Archonei"},
@@ -1419,7 +1419,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "by name",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"name=41727261-7841-4272-a178-417272617841"},
 			},
 			classes: []string{"Arrax"},
@@ -1428,7 +1428,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "whitelist by externalName",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName in (Archonei, Arrax)"},
 			},
 			classes: []string{"Archonei", "Arrax"},
@@ -1437,7 +1437,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "blacklist by externalName",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName notin (Balerion)"},
 			},
 			classes: []string{"Archonei", "Arrax"},
@@ -1446,7 +1446,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "whitelist and trim services without plans",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{"spec.externalName in (Goldengrove)"},
 			},
 			classes: []string{"Archonei"},
@@ -1455,7 +1455,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "whitelist plans by name",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{"name in (476f6c64-656e-4772-af76-65476f6c6465, 45617374-7761-4463-a82d-62792d746865, 49726f6e-7261-4468-8972-6f6e72617468)"},
 			},
 			classes: []string{"Archonei", "Arrax", "Balerion"},
@@ -1464,7 +1464,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "two restrictions for plans",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: []v1beta1.ClusterServicePlanRequirement{"name!=45617374-7761-4463-a82d-62792d746865", "spec.externalName notin (OldOak)"},
 			},
 			classes: []string{"Archonei", "Balerion"},
@@ -1473,7 +1473,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "two valid but conflicting whitelists for classes",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName in (Archonei)", "spec.externalName notin (Archonei)"},
 			},
 			classes: []string{},
@@ -1482,7 +1482,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 		},
 		{
 			name: "restrictions for both class and plan",
-			restrictions: &v1beta1.ServiceCatalogRestrictions{
+			restrictions: &v1beta1.ClusterServiceCatalogRestrictions{
 				ServiceClass: []v1beta1.ClusterServiceClassRequirement{"spec.externalName in (Archonei, Balerion)"},
 				ServicePlan:  []v1beta1.ClusterServicePlanRequirement{"spec.externalName notin (Ironrath)"},
 			},
@@ -1583,7 +1583,7 @@ func TestFilterServicePlans(t *testing.T) {
 				t.Fatalf("Catalog did not contained expected number of plans, %s", expectedGot(total, len(servicePlans)))
 			}
 
-			restrictions := &v1beta1.ServiceCatalogRestrictions{
+			restrictions := &v1beta1.ClusterServiceCatalogRestrictions{
 				ServicePlan: tc.requirements,
 			}
 
