@@ -24,8 +24,12 @@ import (
 type Properties labels.Labels
 
 const (
-	Name                        = "name"
-	SpecExternalName            = "spec.externalName"
-	SpecExternalID              = "spec.externalID"
+	// Name field.
+	Name = "name"
+	// Spec External Name field.
+	SpecExternalName = "spec.externalName"
+	// Spec External ID field.
+	SpecExternalID = "spec.externalID"
+	// Spec External Service Class field.
 	SpecClusterServiceClassName = "spec.clusterServiceClassName"
 )
