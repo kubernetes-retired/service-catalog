@@ -554,7 +554,7 @@ type ServiceInstance struct {
 //  - ClusterServiceClassName and ClusterServicePlanName
 //
 // For any of these ways, if a ClusterServiceClass only has one plan
-// then leaving the *ServicePlanName is optional.
+// then the corresponding service plan field is optional.
 type PlanReference struct {
 	// ClusterServiceClassExternalName is the human-readable name of the
 	// service as reported by the broker. Note that if the broker changes

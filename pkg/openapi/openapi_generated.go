@@ -1014,7 +1014,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.PlanReference": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "PlanReference defines the user specification for the desired ServicePlan and ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent.\n\nCurrently supported ways:\n - ClusterServiceClassExternalName and ClusterServicePlanExternalName\n - ClusterServiceClassExternalID and ClusterServicePlanExternalID\n - ClusterServiceClassName and ClusterServicePlanName\n\nFor any of these ways, if a ClusterServiceClass only has one plan then leaving the *ServicePlanName is optional.",
+					Description: "PlanReference defines the user specification for the desired ServicePlan and ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent.\n\nCurrently supported ways:\n - ClusterServiceClassExternalName and ClusterServicePlanExternalName\n - ClusterServiceClassExternalID and ClusterServicePlanExternalID\n - ClusterServiceClassName and ClusterServicePlanName\n\nFor any of these ways, if a ClusterServiceClass only has one plan then the corresponding service plan field is optional.",
 					Properties: map[string]spec.Schema{
 						"clusterServiceClassExternalName": {
 							SchemaProps: spec.SchemaProps{
