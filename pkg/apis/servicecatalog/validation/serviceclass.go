@@ -26,7 +26,7 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-const serviceClassNameFmt string = `[-a-zA-Z0-9]+`
+const serviceClassNameFmt string = `[-.a-zA-Z0-9]+`
 const serviceClassNameMaxLength int = 63
 
 var serviceClassNameRegexp = regexp.MustCompile("^" + serviceClassNameFmt + "$")
