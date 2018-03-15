@@ -201,8 +201,8 @@ func TestCreateServiceInstanceWithAuthError(t *testing.T) {
 		t: t,
 		broker: func() *v1beta1.ClusterServiceBroker {
 			b := getTestBroker()
-			b.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-				Basic: &v1beta1.BasicAuthConfig{
+			b.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+				Basic: &v1beta1.ClusterBasicAuthConfig{
 					SecretRef: &v1beta1.ObjectReference{
 						Namespace: testNamespace,
 						Name:      "secret-name",

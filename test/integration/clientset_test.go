@@ -287,8 +287,8 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Name:      "test-name",
 	}
 
-	brokerServer.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-		Basic: &v1beta1.BasicAuthConfig{
+	brokerServer.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
 			SecretRef: authSecret,
 		},
 	}
