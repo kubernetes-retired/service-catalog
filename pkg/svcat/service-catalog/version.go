@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 )
 
+// ServerVersion asks the Service Catalog API Server for the version.Info object and returns it.
 func (sdk *SDK) ServerVersion() (*version.Info, error) {
 	serverVersion, err := sdk.ServiceCatalogClient.Discovery().ServerVersion()
 	if err != nil {
