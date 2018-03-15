@@ -40,13 +40,13 @@ func SetDefaults_ClusterServiceBrokerSpec(spec *ClusterServiceBrokerSpec) {
 
 func SetDefaults_ServiceInstanceSpec(spec *ServiceInstanceSpec) {
 	if spec.ExternalID == "" {
-		spec.ExternalID = uuid.NewV4().String()
+		spec.ExternalID = string(uuid.NewUUID())
 	}
 }
 
 func SetDefaults_ServiceBindingSpec(spec *ServiceBindingSpec) {
 	if spec.ExternalID == "" {
-		spec.ExternalID = uuid.NewV4().String()
+		spec.ExternalID = string(uuid.NewUUID())
 	}
 }
 

@@ -62,12 +62,12 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 		// experience some reordering during unstructured roundtripping.
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
-			is.ExternalID = uuid.NewV4().String()
+			is.ExternalID = string(uuid.NewUUID())
 			is.Parameters = nil
 		},
 		func(bs *servicecatalog.ServiceBindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
-			bs.ExternalID = uuid.NewV4().String()
+			bs.ExternalID = string(uuid.NewUUID())
 			// Don't allow the SecretName to be an empty string because
 			// the defaulter for this object (on the server) will set it to
 			// a non-empty string, which means the round-trip checking will
