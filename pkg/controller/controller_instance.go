@@ -1414,13 +1414,12 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 
 	// osb client handles whether or not to really send this based
 	// on the version of the client.
-	c.clusterIDLock.RLock()
+	id := c.getClusterID()
 	rh.requestContext = map[string]interface{}{
 		"platform":   ContextProfilePlatformKubernetes,
 		"namespace":  instance.Namespace,
-		"cluster-id": c.clusterID,
+		"cluster-id": id,
 	}
-	c.clusterIDLock.RUnlock()
 	return rh, nil
 }
 

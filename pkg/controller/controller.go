@@ -165,7 +165,10 @@ type controller struct {
 	instancePollingQueue        workqueue.RateLimitingInterface
 	bindingPollingQueue         workqueue.RateLimitingInterface
 	clusterID                   string
-	clusterIDLock               sync.RWMutex
+	// clusterIDLock protects access to clusterID between the
+	// monitor writing the value from the configmap, and any
+	// readers passing the clusterID to a broker
+	clusterIDLock sync.RWMutex
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -189,9 +192,8 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		}
 	}
 
-	c.clusterIDLock.Lock()
-	c.clusterID = string(uuid.NewUUID())
-	c.clusterIDLock.Unlock()
+	c.setClusterID(string(uuid.NewUUID()))
+
 	func() {
 		waitGroup.Add(1)
 		go func() {
@@ -237,9 +239,7 @@ func (c *controller) monitorConfigMap() {
 	cm, err := c.kubeClient.CoreV1().ConfigMaps("default").Get("cluster-info", metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
-		c.clusterIDLock.RLock()
-		m["id"] = c.clusterID
-		c.clusterIDLock.RUnlock()
+		m["id"] = c.getClusterID()
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster-info",
@@ -256,15 +256,11 @@ func (c *controller) monitorConfigMap() {
 		// cluster id exists and is set
 		// get id out of cm
 		if id := cm.Data["id"]; "" != id {
-			c.clusterIDLock.Lock()
-			c.clusterID = id
-			c.clusterIDLock.Unlock()
+			c.setClusterID(id)
 		} else {
 			m := make(map[string]string)
 			cm.Data = m
-			c.clusterIDLock.RLock()
-			m["id"] = c.clusterID
-			c.clusterIDLock.RUnlock()
+			m["id"] = c.getClusterID()
 			c.kubeClient.CoreV1().ConfigMaps("default").Update(cm)
 		}
 	} else { // some err we can't handle
@@ -757,3 +753,18 @@ const (
 	reconcileDelete ReconciliationAction = "Delete"
 	reconcilePoll   ReconciliationAction = "Poll"
 )
+
+func (c *controller) getClusterID() (id string) {
+	// Use the read lock for reading, so that multiple instances
+	// provisioning at the same time do not collide.
+	c.clusterIDLock.RLock()
+	id = c.clusterID
+	c.clusterIDLock.RUnlock()
+	return
+}
+
+func (c *controller) setClusterID(id string) {
+	c.clusterIDLock.Lock()
+	c.clusterID = id
+	c.clusterIDLock.Unlock()
+}
