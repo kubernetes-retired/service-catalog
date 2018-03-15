@@ -89,8 +89,10 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Manual",
+					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
 				},
 			},
 			userInfo: &user.DefaultInfo{
@@ -106,8 +108,6 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Basic: &servicecatalog.BasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -115,6 +115,10 @@ func TestAdmissionBroker(t *testing.T) {
 								Name:      "test-secret",
 							},
 						},
+					},
+					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
 					},
 				},
 			},
@@ -131,8 +135,6 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -140,6 +142,10 @@ func TestAdmissionBroker(t *testing.T) {
 								Name:      "test-secret",
 							},
 						},
+					},
+					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
 					},
 				},
 			},
@@ -156,8 +162,6 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -165,6 +169,10 @@ func TestAdmissionBroker(t *testing.T) {
 								Name:      "test-secret",
 							},
 						},
+					},
+					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
 					},
 				},
 			},
@@ -181,9 +189,11 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Manual",
-					AuthInfo:       &servicecatalog.ServiceBrokerAuthInfo{},
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{},
+					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
 				},
 			},
 			userInfo: &user.DefaultInfo{
@@ -199,8 +209,6 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Manual",
 					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
 						Bearer: &servicecatalog.BearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
@@ -208,6 +216,10 @@ func TestAdmissionBroker(t *testing.T) {
 								Name:      "",
 							},
 						},
+					},
+					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
 					},
 				},
 			},
