@@ -22,7 +22,8 @@ import (
 	"net/http"
 
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
-	uuid "github.com/satori/go.uuid"
+
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 // Client implements a fake (./pkg/brokerapi).BrokerClient. The implementation is 100% in-memory

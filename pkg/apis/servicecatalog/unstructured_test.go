@@ -28,12 +28,12 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
 	sctesting "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testing"
 
-	"github.com/satori/go.uuid"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/testing/fuzzer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 // doUnstructuredRoundTrip performs the following round-tripping on a fuzzed

@@ -17,10 +17,11 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/satori/go.uuid"
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"time"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
