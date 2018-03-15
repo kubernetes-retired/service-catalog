@@ -695,28 +695,6 @@ func getTestServiceInstanceUpdatingPlan() *v1beta1.ServiceInstance {
 	return instance
 }
 
-func getTestServiceInstanceUpdatingParameters() *v1beta1.ServiceInstance {
-	instance := getTestServiceInstanceWithRefs()
-	instance.Generation = 2
-	instance.Status = v1beta1.ServiceInstanceStatus{
-		Conditions: []v1beta1.ServiceInstanceCondition{{
-			Type:   v1beta1.ServiceInstanceConditionReady,
-			Status: v1beta1.ConditionTrue,
-		}},
-		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
-			ClusterServicePlanExternalName: testClusterServicePlanName,
-			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
-		},
-		// It's been provisioned successfully.
-		ReconciledGeneration: 1,
-		ObservedGeneration:   1,
-		ProvisionStatus:      v1beta1.ServiceInstanceProvisionStatusProvisioned,
-		DeprovisionStatus:    v1beta1.ServiceInstanceDeprovisionStatusRequired,
-	}
-
-	return instance
-}
-
 func getTestServiceInstanceUpdatingParametersOfDeletedPlan() *v1beta1.ServiceInstance {
 	instance := getTestServiceInstanceWithRefs()
 	instance.Generation = 2
@@ -1149,41 +1127,6 @@ func checkPlan(plan *v1beta1.ClusterServicePlan, planID, planName, planDescripti
 		t.Errorf("Expected plan description to be %q, but was: %q", planDescription, plan.Spec.Description)
 	}
 }
-
-const testCatalogWithMultipleServices = `{
-  "services": [
-    {
-      "name": "service1",
-      "description": "service 1 description",
-      "metadata": {
-        "field1": "value1"
-      },
-      "plans": [{
-        "name": "s1plan1",
-        "id": "s1_plan1_id",
-        "description": "s1 plan1 description"
-      },
-      {
-        "name": "s1plan2",
-        "id": "s1_plan2_id",
-        "description": "s1 plan2 description"
-      }]
-    },
-    {
-      "name": "service2",
-      "description": "service 2 description",
-      "plans": [{
-        "name": "s2plan1",
-        "id": "s2_plan1_id",
-        "description": "s2 plan1 description"
-      },
-      {
-        "name": "s2plan2",
-        "id": "s2_plan2_id",
-        "description": "s2 plan2 description"
-      }]
-    }
-]}`
 
 // FIX: there is an inconsistency between the current broker API types re: the
 // Service.Metadata field.  Our repo types it as `interface{}`, the go-open-
@@ -2149,13 +2092,8 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
-		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1beta1.ServiceInstanceOperationDeprovision:
-		assertServiceInstanceInProgressPropertiesNil(t, obj)
-	}
+	assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
+	assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
 }
@@ -2229,7 +2167,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
 }
 
-func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, orphanMitigationRequired bool, originalInstance *v1beta1.ServiceInstance) {
 	var (
 		readyStatus       v1beta1.ConditionStatus
 		deprovisionStatus v1beta1.ServiceInstanceDeprovisionStatus
@@ -2237,7 +2175,11 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
 		readyStatus = v1beta1.ConditionFalse
-		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		if orphanMitigationRequired {
+			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		} else {
+			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
+		}
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		readyStatus = v1beta1.ConditionUnknown
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
@@ -2251,8 +2193,18 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
 }
 
-func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, originalInstance)
+func assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, false, originalInstance)
+	assertServiceInstanceCurrentOperationClear(t, obj)
+	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
+	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
+	assertServiceInstanceInProgressPropertiesNil(t, obj)
+}
+
+func assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, true, originalInstance)
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
@@ -2262,7 +2214,7 @@ func assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t *testing.T, ob
 }
 
 func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, originalInstance)
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, true, originalInstance)
 	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
@@ -2316,13 +2268,8 @@ func assertServiceInstanceAsyncStartInProgress(t *testing.T, obj runtime.Object,
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
-	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
-		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
-		assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
-	case v1beta1.ServiceInstanceOperationDeprovision:
-		assertServiceInstanceInProgressPropertiesNil(t, obj)
-	}
+	assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
+	assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
 	assertAsyncOpInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
 }

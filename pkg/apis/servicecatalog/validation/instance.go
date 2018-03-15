@@ -140,13 +140,13 @@ func validateServiceInstanceStatus(status *sc.ServiceInstanceStatus, fldPath *fi
 	}
 
 	switch status.CurrentOperation {
-	case sc.ServiceInstanceOperationProvision, sc.ServiceInstanceOperationUpdate:
+	case sc.ServiceInstanceOperationProvision, sc.ServiceInstanceOperationUpdate, sc.ServiceInstanceOperationDeprovision:
 		if status.InProgressProperties == nil {
-			allErrs = append(allErrs, field.Required(fldPath.Child("inProgressProperties"), `inProgressProperties is required when currentOperation is "Provision" or "Update"`))
+			allErrs = append(allErrs, field.Required(fldPath.Child("inProgressProperties"), `inProgressProperties is required when currentOperation is "Provision", "Update" or "Deprovision"`))
 		}
 	default:
 		if status.InProgressProperties != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties must not be present when currentOperation is neither "Provision" nor "Update"`))
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties must not be present when currentOperation is not "Provision", "Update" or "Deprovision"`))
 		}
 	}
 
