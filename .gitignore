@@ -24,3 +24,4 @@ vendor/github.com/petar/GoLLRB/doc/*
 contrib/examples/consumer/Gopkg.lock
 contrib/examples/consumer
 contrib/examples/vendor/*
+integration.test*
