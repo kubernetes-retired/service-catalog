@@ -375,7 +375,7 @@ type SharedServicePlanSpec struct {
 
 	// Bindable indicates whether a user can create bindings to an
 	// ServiceInstance using this ServicePlan.  If set, overrides
-	// the value of the ClusterServiceClass.Bindable field.
+	// the value of the corresponding ServiceClassSpec Bindable field.
 	Bindable *bool `json:"bindable,omitempty"`
 
 	// Free indicates whether this plan is available at no cost.
@@ -398,7 +398,7 @@ type SharedServicePlanSpec struct {
 	//
 	// ServiceInstanceUpdateParameterSchema is the schema for the parameters
 	// that may be updated once an ServiceInstance has been provisioned on
-	// this plan. This field only has meaning if the ClusterServiceClass is
+	// this plan. This field only has meaning if the corresponding ServiceClassSpec is
 	// PlanUpdatable.
 	ServiceInstanceUpdateParameterSchema *runtime.RawExtension `json:"instanceUpdateParameterSchema,omitempty"`
 
