@@ -230,7 +230,9 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	broker := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
-			URL: "https://example.com",
+			SharedServiceBrokerSpec: v1beta1.SharedServiceBrokerSpec{
+				URL: "https://example.com",
+			},
 		},
 	}
 
