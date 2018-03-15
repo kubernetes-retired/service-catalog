@@ -334,15 +334,15 @@ type SharedServicePlanSpec struct {
 	// Immutable.
 	ExternalID string
 
-	// Description is a short description of this ClusterServicePlan.
+	// Description is a short description of this ServicePlan.
 	Description string
 
 	// Bindable indicates whether a user can create bindings to an ServiceInstance
-	// using this ClusterServicePlan.  If set, overrides the value of the
+	// using this ServicePlan.  If set, overrides the value of the
 	// ClusterServiceClass.Bindable field.
 	Bindable *bool
 
-	// Free indicates whether this ClusterServicePlan is available at no cost.
+	// Free indicates whether this ServicePlan is available at no cost.
 	Free bool
 
 	// ExternalMetadata is a blob of information about the plan, meant to be

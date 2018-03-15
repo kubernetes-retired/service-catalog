@@ -370,11 +370,11 @@ type SharedServicePlanSpec struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// Description is a short description of this ClusterServicePlan.
+	// Description is a short description of this ServicePlan.
 	Description string `json:"description"`
 
 	// Bindable indicates whether a user can create bindings to an
-	// ServiceInstance using this ClusterServicePlan.  If set, overrides
+	// ServiceInstance using this ServicePlan.  If set, overrides
 	// the value of the ClusterServiceClass.Bindable field.
 	Bindable *bool `json:"bindable,omitempty"`
 
