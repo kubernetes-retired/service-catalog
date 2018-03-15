@@ -26,10 +26,10 @@ type Properties labels.Labels
 const (
 	// Name field.
 	Name = "name"
-	// SpecExternalName, the external name of the object.
+	// SpecExternalName is the external name of the object.
 	SpecExternalName = "spec.externalName"
-	// SpecExternalID, the external id of the object.
+	// SpecExternalID is the external id of the object.
 	SpecExternalID = "spec.externalID"
-	// SpecClusterServiceClassName, only used for plans, the parent service class name.
+	// SpecClusterServiceClassName is only used for plans, the parent service class name.
 	SpecClusterServiceClassName = "spec.clusterServiceClass.name"
 )
