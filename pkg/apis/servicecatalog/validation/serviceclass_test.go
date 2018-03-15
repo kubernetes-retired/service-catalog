@@ -69,6 +69,15 @@ func TestValidateClusterServiceClass(t *testing.T) {
 			valid: true,
 		},
 		{
+			name: "valid serviceClass - period in externalName",
+			serviceClass: func() *servicecatalog.ClusterServiceClass {
+				s := validClusterServiceClass()
+				s.Spec.ExternalName = "abc.com"
+				return s
+			}(),
+			valid: true,
+		},
+		{
 			name: "invalid serviceClass - has namespace",
 			serviceClass: func() *servicecatalog.ClusterServiceClass {
 				s := validClusterServiceClass()
@@ -114,10 +123,10 @@ func TestValidateClusterServiceClass(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "invalid serviceClass - period in externalName",
+			name: "invalid serviceClass - underscore in externalName",
 			serviceClass: func() *servicecatalog.ClusterServiceClass {
 				s := validClusterServiceClass()
-				s.Spec.ExternalName = "abc.com"
+				s.Spec.ExternalName = "test_serviceclass"
 				return s
 			}(),
 			valid: false,

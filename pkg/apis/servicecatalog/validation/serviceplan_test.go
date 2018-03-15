@@ -55,6 +55,15 @@ func TestValidateClusterServicePlan(t *testing.T) {
 			valid:       true,
 		},
 		{
+			name: "valid servicePlan - period in externalName",
+			servicePlan: func() *servicecatalog.ClusterServicePlan {
+				s := validClusterServicePlan()
+				s.Spec.ExternalName = "test.plan"
+				return s
+			}(),
+			valid: true,
+		},
+		{
 			name: "missing name",
 			servicePlan: func() *servicecatalog.ClusterServicePlan {
 				s := validClusterServicePlan()

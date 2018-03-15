@@ -115,6 +115,15 @@ func TestValidateServiceInstance(t *testing.T) {
 			valid:    true,
 		},
 		{
+			name: "valid planName",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstance()
+				i.Spec.ClusterServicePlanExternalName = "9651.JVHbebe"
+				return i
+			}(),
+			valid: true,
+		},
+		{
 			name: "missing namespace",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
@@ -154,7 +163,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			name: "invalid planName",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
-				i.Spec.ClusterServicePlanExternalName = "9651.JVHbebe"
+				i.Spec.ClusterServicePlanExternalName = "9651_JVHbebe"
 				return i
 			}(),
 			valid: false,
