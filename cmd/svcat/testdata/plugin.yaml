@@ -157,3 +157,10 @@ tree:
   flags:
   - name: name
     desc: The name of the binding to remove
+- name: version
+  shortDesc: Provides the version for the Service Catalog client and server
+  command: ./svcat version
+  flags:
+  - name: client
+    shorthand: c
+    desc: Show only the client version
