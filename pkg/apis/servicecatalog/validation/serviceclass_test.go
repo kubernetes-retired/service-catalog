@@ -30,11 +30,13 @@ func validClusterServiceClass() *servicecatalog.ClusterServiceClass {
 			Name: "test-serviceclass",
 		},
 		Spec: servicecatalog.ClusterServiceClassSpec{
-			Bindable:                 true,
+			SharedServiceClassSpec: servicecatalog.SharedServiceClassSpec{
+				Bindable:     true,
+				ExternalName: "test-serviceclass",
+				ExternalID:   "1234-4354a-49b",
+				Description:  "service description",
+			},
 			ClusterServiceBrokerName: "test-broker",
-			ExternalName:             "test-serviceclass",
-			ExternalID:               "1234-4354a-49b",
-			Description:              "service description",
 		},
 	}
 }

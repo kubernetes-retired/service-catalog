@@ -253,14 +253,8 @@ type ClusterServiceClass struct {
 	Status ClusterServiceClassStatus `json:"status,omitempty"`
 }
 
-// ClusterServiceClassSpec represents details about the ClusterServicePlan
-type ClusterServiceClassSpec struct {
-	// ClusterServiceBrokerName is the reference to the Broker that provides this
-	// ClusterServiceClass.
-	//
-	// Immutable.
-	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
-
+// SharedServiceClassSpec represents details about a ServiceClass
+type SharedServiceClassSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Class as. Mutable.
 	ExternalName string `json:"externalName"`
@@ -270,11 +264,11 @@ type ClusterServiceClassSpec struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// Description is a short description of this ClusterServiceClass.
+	// Description is a short description of this ServiceClass.
 	Description string `json:"description"`
 
 	// Bindable indicates whether a user can create bindings to an
-	// ServiceInstance provisioned from this service. ClusterServicePlan
+	// ServiceInstance provisioned from this service. ServicePlan
 	// has an optional field called Bindable which overrides the value of
 	// this field.
 	Bindable bool `json:"bindable"`
@@ -287,12 +281,12 @@ type ClusterServiceClassSpec struct {
 	BindingRetrievable bool `json:"bindingRetrievable"`
 
 	// PlanUpdatable indicates whether instances provisioned from this
-	// ClusterServiceClass may change ClusterServicePlans after being
+	// ServiceClass may change ServicePlans after being
 	// provisioned.
 	PlanUpdatable bool `json:"planUpdatable"`
 
 	// ExternalMetadata is a blob of information about the
-	// ClusterServiceClass, meant to be user-facing content and display
+	// ServiceClass, meant to be user-facing content and display
 	// instructions. This field may contain platform-specific conventional
 	// values.
 	ExternalMetadata *runtime.RawExtension `json:"externalMetadata,omitempty"`
@@ -301,7 +295,7 @@ type ClusterServiceClassSpec struct {
 	// and its data will not be migrated.
 	//
 	// Tags is a list of strings that represent different classification
-	// attributes of the ClusterServiceClass.  These are used in Cloud
+	// attributes of the ServiceClass.  These are used in Cloud
 	// Foundry in a way similar to Kubernetes labels, but they currently
 	// have no special meaning in Kubernetes.
 	Tags []string `json:"tags,omitempty"`
@@ -312,9 +306,20 @@ type ClusterServiceClassSpec struct {
 	// Requires exposes a list of Cloud Foundry-specific 'permissions'
 	// that must be granted to an instance of this service within Cloud
 	// Foundry.  These 'permissions' have no meaning within Kubernetes and an
-	// ServiceInstance provisioned from this ClusterServiceClass will not
+	// ServiceInstance provisioned from this ServiceClass will not
 	// work correctly.
 	Requires []string `json:"requires,omitempty"`
+}
+
+// ClusterServiceClassSpec represents the details about a ClusterServiceClass
+type ClusterServiceClassSpec struct {
+	SharedServiceClassSpec `json:",inline"`
+
+	// ClusterServiceBrokerName is the reference to the Broker that provides this
+	// ClusterServiceClass.
+	//
+	// Immutable.
+	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 }
 
 // ClusterServiceClassStatus represents status information about a
