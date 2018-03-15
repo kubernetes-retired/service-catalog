@@ -93,9 +93,13 @@ tree:
     - name: all-namespaces
       desc: List all instances across namespaces
   - name: plans
-    shortDesc: List plans, optionally filtered by name
+    shortDesc: List plans, optionally filtered by name or class
     command: ./svcat get plans
     flags:
+    - name: class
+      shorthand: c
+      desc: Filter plans based on class. When --uuid is specified, the class name
+        is interpreted as a uuid.
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
