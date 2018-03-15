@@ -56,8 +56,8 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
@@ -80,8 +80,8 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
@@ -121,8 +121,8 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Name: "test-secret",
 							},
@@ -144,8 +144,8 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 							},
@@ -167,8 +167,8 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Name: "test-secret",
 							},
@@ -190,8 +190,8 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 							},
