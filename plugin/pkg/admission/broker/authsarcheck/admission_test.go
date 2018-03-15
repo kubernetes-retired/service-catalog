@@ -108,8 +108,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
@@ -135,8 +135,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
@@ -162,8 +162,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
@@ -189,7 +189,7 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{},
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{},
 					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
@@ -209,8 +209,8 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "",
 								Name:      "",
