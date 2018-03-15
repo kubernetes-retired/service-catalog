@@ -108,7 +108,9 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Name: brokerName,
 			},
 			Spec: v1beta1.ClusterServiceBrokerSpec{
-				URL: url,
+				SharedServiceBrokerSpec: v1beta1.SharedServiceBrokerSpec{
+					URL: url,
+				},
 			},
 		}
 		broker, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Create(broker)
