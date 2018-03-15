@@ -83,10 +83,9 @@ func (c *versionCmd) version() error {
 	if c.server {
 		version, err := c.App.ServerVersion()
 		if err != nil {
-			return nil
-		} else {
-			server = version.GitVersion
+			return err
 		}
+		server = version.GitVersion
 	}
 
 	output.WriteVersion(c.Output, client, server)

@@ -23,10 +23,10 @@ import (
 )
 
 func (sdk *SDK) ServerVersion() (*version.Info, error) {
-	version, err := sdk.ServiceCatalogClient.Discovery().ServerVersion()
+	serverVersion, err := sdk.ServiceCatalogClient.Discovery().ServerVersion()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get version, %v", err)
 	}
 
-	return version, nil
+	return serverVersion, nil
 }
