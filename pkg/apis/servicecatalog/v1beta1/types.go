@@ -424,12 +424,18 @@ type ClusterServicePlanSpec struct {
 	ClusterServiceClassRef ClusterObjectReference `json:"clusterServiceClassRef"`
 }
 
-// ClusterServicePlanStatus represents status information about a
-// ClusterServicePlan.
-type ClusterServicePlanStatus struct {
+// SharedServicePlanStatus represents status information that is common
+// to both ClusterServicePlanStatus and a ServicePlanStatus
+type SharedServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
+}
+
+// ClusterServicePlanStatus represents status information about a
+// ClusterServicePlan.
+type ClusterServicePlanStatus struct {
+	SharedServicePlanStatus `json:",inline"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -589,14 +589,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of this ClusterServicePlan.",
+								Description: "Description is a short description of this ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ClusterServicePlan.  If set, overrides the value of the ClusterServiceClass.Bindable field.",
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ServicePlan.  If set, overrides the value of the corresponding ServiceClassSpec Bindable field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
@@ -622,7 +622,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"instanceUpdateParameterSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the ClusterServiceClass is PlanUpdatable.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -1567,14 +1567,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of this ClusterServicePlan.",
+								Description: "Description is a short description of this ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ClusterServicePlan.  If set, overrides the value of the ClusterServiceClass.Bindable field.",
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ServicePlan.  If set, overrides the value of the corresponding ServiceClassSpec Bindable field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
@@ -1600,7 +1600,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"instanceUpdateParameterSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the ClusterServiceClass is PlanUpdatable.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -1616,6 +1616,24 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServicePlanStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "SharedServicePlanStatus represents status information that is common to both ClusterServicePlanStatus and a ServicePlanStatus",
+					Properties: map[string]spec.Schema{
+						"removedFromBrokerCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the plan from its catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"removedFromBrokerCatalog"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo": {
 			Schema: spec.Schema{
