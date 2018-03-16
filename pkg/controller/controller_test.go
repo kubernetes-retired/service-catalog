@@ -85,6 +85,7 @@ const (
 	testNamespace                           = "test-ns"
 	testServiceInstanceCredentialSecretName = "test-secret"
 	testOperation                           = "test-operation"
+	testClusterID                           = "test-cluster-id"
 )
 
 var testDashboardURL = "http://dashboard"
@@ -1575,6 +1576,11 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		7*24*time.Hour,
 		7*24*time.Hour,
 	)
+
+	if c, ok := testController.(*controller); ok {
+		c.setClusterID(testClusterID)
+	}
+
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -678,7 +678,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				Context: map[string]interface{}{
 					"platform":  "kubernetes",
 					"namespace": "test-ns",
-					"clusterID": "",
+					"clusterID": testClusterID,
 				},
 				Parameters: tc.expectedParams,
 			})
@@ -889,7 +889,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	// verify no kube resources created
@@ -1078,7 +1078,7 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	// verify one kube action occurred
@@ -1162,7 +1162,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1361,7 +1361,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -1449,7 +1449,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": testNamespace,
-			"clusterID": "",
+			"clusterID": testClusterID,
 		},
 	})
 
@@ -1523,7 +1523,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	actions := fakeCatalogClient.Actions()
@@ -2229,7 +2229,7 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		},
 	})
 
@@ -2923,7 +2923,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	actions := fakeCatalogClient.Actions()
@@ -2982,7 +2982,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	// verify no kube resources created
@@ -4147,7 +4147,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}, Parameters: map[string]interface{}{
 			"a": "1",
 			"b": "2",
@@ -4353,7 +4353,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}, Parameters: map[string]interface{}{
 			"args": map[string]interface{}{
 				"first":  "first-arg",
@@ -4459,7 +4459,7 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}, Parameters: make(map[string]interface{}),
 	})
 
@@ -4647,7 +4647,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}, Parameters: nil, // no change to parameters
 	})
 
@@ -4722,7 +4722,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	// verify no kube resources created
@@ -4790,7 +4790,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	// verify one kube action occurred
@@ -5062,7 +5062,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		Context: map[string]interface{}{
 			"platform":  "kubernetes",
 			"namespace": "test-ns",
-			"clusterID": "",
+			"clusterID": testClusterID,
 		}})
 
 	actions := fakeCatalogClient.Actions()
