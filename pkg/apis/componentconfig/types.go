@@ -31,8 +31,12 @@ import (
 type ControllerManagerConfiguration struct {
 	// Address is the IP address to serve on (set to 0.0.0.0 for all interfaces).
 	Address string
-	// Port is the port that the controller's http service runs on.
+
+	// DEPRECATED/Ignored, use SecurePort instead.
 	Port int32
+
+	// SecurePort is the port that the controller's https service runs on.
+	SecurePort int32
 
 	// ContentType is the content type for requests sent to API servers.
 	ContentType string

@@ -43,7 +43,7 @@ const (
 	defaultServiceBrokerRelistInterval            = 24 * time.Hour
 	defaultContentType                            = "application/json"
 	defaultBindAddress                            = "0.0.0.0"
-	defaultPort                                   = 10000
+	defaultPort                                   = 8444
 	defaultK8sKubeconfigPath                      = "./kubeconfig"
 	defaultServiceCatalogKubeconfigPath           = "./service-catalog-kubeconfig"
 	defaultOSBAPIContextProfile                   = true
@@ -62,6 +62,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 		ControllerManagerConfiguration: componentconfig.ControllerManagerConfiguration{
 			Address:                                defaultBindAddress,
 			Port:                                   defaultPort,
+			SecurePort:                             defaultPort,
 			ContentType:                            defaultContentType,
 			K8sKubeconfigPath:                      defaultK8sKubeconfigPath,
 			ServiceCatalogKubeconfigPath:           defaultServiceCatalogKubeconfigPath,
@@ -85,7 +86,8 @@ func NewControllerManagerServer() *ControllerManagerServer {
 // AddFlags adds flags for a ControllerManagerServer to the specified FlagSet.
 func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(k8scomponentconfig.IPVar{Val: &s.Address}, "address", "The IP address to serve on (set to 0.0.0.0 for all interfaces)")
-	fs.Int32Var(&s.Port, "port", s.Port, "The port that the controller-manager's http service runs on")
+	fs.Int32Var(&s.Port, "port", 0, "DEPRECATED - use secure-port instead")
+	fs.Int32Var(&s.SecurePort, "secure-port", defaultPort, "The port that the controller-manager's https service runs on")
 	fs.StringVar(&s.ContentType, "api-content-type", s.ContentType, "Content type of requests sent to API servers")
 	fs.StringVar(&s.K8sAPIServerURL, "k8s-api-server-url", "", "The URL for the k8s API server")
 	fs.StringVar(&s.K8sKubeconfigPath, "k8s-kubeconfig", "", "Path to k8s core kubeconfig")

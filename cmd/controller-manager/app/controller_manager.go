@@ -33,6 +33,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -60,6 +61,13 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+)
+
+const (
+	// Use the same SSL configuration as we use in Catalog API Server.
+	// Store generated SSL certificates in a place that won't collide with the
+	// k8s core API server.
+	certDirectory = "/var/run/kubernetes-service-catalog"
 )
 
 // NewControllerManagerCommand creates a *cobra.Command object with default
@@ -92,6 +100,10 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// } else {
 	// 	glog.Errorf("unable to register configz: %s", err)
 	// }
+
+	if controllerManagerOptions.Port > 0 {
+		glog.Warning("program option --port is obsolete and ignored, specify --secure-port instead")
+	}
 
 	// Build the K8s kubeconfig / client / clientBuilder
 	glog.V(4).Info("Building k8s kubeconfig")
@@ -142,6 +154,18 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	}
 	serviceCatalogKubeconfig.Insecure = controllerManagerOptions.ServiceCatalogInsecureSkipVerify
 
+	// Initialize SSL/TLS configuration.  Ensures we have a certificate and key to use.
+	// This is the same code as what is done in the API Server.  By default, Helm created
+	// cert and key for us, this just ensures the files are found and are readable and
+	// creates self signed versions if not.
+	secureServingOptions := genericserveroptions.NewSecureServingOptions()
+	secureServingOptions.ServerCert.CertDirectory = certDirectory
+	secureServingOptions.BindPort = int(controllerManagerOptions.SecurePort)
+	secureServingOptions.BindAddress = net.ParseIP(controllerManagerOptions.Address)
+	if err := secureServingOptions.MaybeDefaultWithSelfSignedCerts("" /*AdvertiseAddress*/, nil /*alternateDNS*/, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+		return fmt.Errorf("failed to establish SecureServingOptions %v", err)
+	}
+
 	glog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers
 	go func() {
@@ -165,10 +189,10 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 			}
 		}
 		server := &http.Server{
-			Addr:    net.JoinHostPort(controllerManagerOptions.Address, strconv.Itoa(int(controllerManagerOptions.Port))),
+			Addr:    net.JoinHostPort(controllerManagerOptions.Address, strconv.Itoa(int(controllerManagerOptions.SecurePort))),
 			Handler: mux,
 		}
-		glog.Fatal(server.ListenAndServe())
+		glog.Fatal(server.ListenAndServeTLS(secureServingOptions.ServerCert.CertKey.CertFile, secureServingOptions.ServerCert.CertKey.KeyFile))
 	}()
 
 	// Create event broadcaster
