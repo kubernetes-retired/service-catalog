@@ -192,8 +192,6 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		}
 	}
 
-	c.setClusterID(string(uuid.NewUUID()))
-
 	func() {
 		waitGroup.Add(1)
 		go func() {
@@ -759,6 +757,14 @@ func (c *controller) getClusterID() (id string) {
 	c.clusterIDLock.RLock()
 	id = c.clusterID
 	c.clusterIDLock.RUnlock()
+
+	// fast exit if it exists
+	if id != "" {
+		return
+	}
+	// lazily create on first access if does not exist
+	id = string(uuid.NewUUID())
+	c.setClusterID(id)
 	return
 }
 
