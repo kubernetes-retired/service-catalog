@@ -539,10 +539,12 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 	for i, plan := range plans {
 		servicePlans[i] = &v1beta1.ClusterServicePlan{
 			Spec: v1beta1.ClusterServicePlanSpec{
-				ExternalName:           plan.Name,
-				ExternalID:             plan.ID,
-				Free:                   plan.Free != nil && *plan.Free,
-				Description:            plan.Description,
+				SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					ExternalName: plan.Name,
+					ExternalID:   plan.ID,
+					Free:         plan.Free != nil && *plan.Free,
+					Description:  plan.Description,
+				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: serviceClassID},
 			},
 		}

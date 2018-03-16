@@ -4760,9 +4760,11 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	sp := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: newPlanID},
 		Spec: v1beta1.ClusterServicePlanSpec{
-			ExternalID:   newPlanID,
-			ExternalName: newPlanName,
-			Bindable:     truePtr(),
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalID:   newPlanID,
+				ExternalName: newPlanName,
+				Bindable:     truePtr(),
+			},
 		},
 	}
 	var spItems []v1beta1.ClusterServicePlan

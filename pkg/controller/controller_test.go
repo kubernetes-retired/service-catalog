@@ -460,9 +460,11 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalID:               testClusterServicePlanGUID,
-			ExternalName:             testClusterServicePlanName,
-			Bindable:                 truePtr(),
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalID:   testClusterServicePlanGUID,
+				ExternalName: testClusterServicePlanName,
+				Bindable:     truePtr(),
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
@@ -476,9 +478,11 @@ func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalID:               testRemovedClusterServicePlanGUID,
-			ExternalName:             testRemovedClusterServicePlanName,
-			Bindable:                 truePtr(),
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalID:   testRemovedClusterServicePlanGUID,
+				ExternalName: testRemovedClusterServicePlanName,
+				Bindable:     truePtr(),
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
@@ -492,9 +496,11 @@ func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalID:               testRemovedClusterServicePlanGUID,
-			ExternalName:             testRemovedClusterServicePlanName,
-			Bindable:                 truePtr(),
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalID:   testRemovedClusterServicePlanGUID,
+				ExternalName: testRemovedClusterServicePlanName,
+				Bindable:     truePtr(),
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
@@ -506,9 +512,11 @@ func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 	return &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
-			ExternalName: testNonbindableClusterServicePlanName,
-			ExternalID:   testNonbindableClusterServicePlanGUID,
-			Bindable:     falsePtr(),
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalName: testNonbindableClusterServicePlanName,
+				ExternalID:   testNonbindableClusterServicePlanGUID,
+				Bindable:     falsePtr(),
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
@@ -1321,9 +1329,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				Name: "s1_plan1_id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
-				ExternalID:   "s1_plan1_id",
-				ExternalName: "bindable-bindable",
-				Bindable:     nil,
+				SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					ExternalID:   "s1_plan1_id",
+					ExternalName: "bindable-bindable",
+					Bindable:     nil,
+				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "bindable-id",
 				},
@@ -1334,9 +1344,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				Name: "s1_plan2_id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
-				ExternalName: "bindable-unbindable",
-				ExternalID:   "s1_plan2_id",
-				Bindable:     falsePtr(),
+				SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					ExternalName: "bindable-unbindable",
+					ExternalID:   "s1_plan2_id",
+					Bindable:     falsePtr(),
+				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "bindable-id",
 				},
@@ -1347,9 +1359,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				Name: "s2_plan1_id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
-				ExternalName: "unbindable-unbindable",
-				ExternalID:   "s2_plan1_id",
-				Bindable:     nil,
+				SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					ExternalName: "unbindable-unbindable",
+					ExternalID:   "s2_plan1_id",
+					Bindable:     nil,
+				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "unbindable-id",
 				},
@@ -1360,9 +1374,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				Name: "s2_plan2_id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
-				ExternalName: "unbindable-bindable",
-				ExternalID:   "s2_plan2_id",
-				Bindable:     truePtr(),
+				SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					ExternalName: "unbindable-bindable",
+					ExternalID:   "s2_plan2_id",
+					Bindable:     truePtr(),
+				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 					Name: "unbindable-id",
 				},
@@ -1419,7 +1435,9 @@ func TestIsPlanBindable(t *testing.T) {
 	servicePlan := func(bindable *bool) *v1beta1.ClusterServicePlan {
 		return &v1beta1.ClusterServicePlan{
 			Spec: v1beta1.ClusterServicePlanSpec{
-				Bindable: bindable,
+				SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					Bindable: bindable,
+				},
 			},
 		}
 	}

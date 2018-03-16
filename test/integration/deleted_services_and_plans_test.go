@@ -72,10 +72,12 @@ func getTestClusterServicePlanRemoved() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalID:               testRemovedClusterServicePlanGUID,
-			ExternalName:             testRemovedClusterServicePlanExternalName,
-			Description:              "a plan that will be removed",
-			Bindable:                 truePtr(),
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalID:   testRemovedClusterServicePlanGUID,
+				ExternalName: testRemovedClusterServicePlanExternalName,
+				Description:  "a plan that will be removed",
+				Bindable:     truePtr(),
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: testClusterServiceClassGUID,
 			},
