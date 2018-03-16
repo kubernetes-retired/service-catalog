@@ -1416,9 +1416,9 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 	// on the version of the client.
 	id := c.getClusterID()
 	rh.requestContext = map[string]interface{}{
-		"platform":   ContextProfilePlatformKubernetes,
-		"namespace":  instance.Namespace,
-		"cluster-id": id,
+		"platform":  ContextProfilePlatformKubernetes,
+		"namespace": instance.Namespace,
+		"clusterID": id,
 	}
 	return rh, nil
 }
