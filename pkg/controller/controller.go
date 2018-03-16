@@ -252,7 +252,7 @@ func (c *controller) monitorConfigMap() {
 		if _, err := c.kubeClient.CoreV1().ConfigMaps("default").Create(cm); err != nil {
 			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
-	} else if err != nil {
+	} else if nil == err {
 		// cluster id exists and is set
 		// get id out of cm
 		if id := cm.Data["id"]; "" != id {
@@ -267,7 +267,6 @@ func (c *controller) monitorConfigMap() {
 		glog.V(4).Info("error getting the cluster info configmap")
 	}
 	glog.V(9).Info("cluster ID monitor loop exit")
-
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
