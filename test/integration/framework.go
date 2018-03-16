@@ -69,7 +69,9 @@ func withConfigGetFreshApiserverAndClient(
 	*restclient.Config,
 	func(),
 ) {
-	securePort := rand.Intn(31743) + 1024
+	// pick a random port between 10000 - 65000 trying to stay away from
+	// ports in use such as 2380 (embedded etcd)
+	securePort := rand.Intn(55000) + 10000
 	secureAddr := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
