@@ -68,7 +68,9 @@ func TestClusterServicePlanName(t *testing.T) {
 	servicePlan := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: "service-plan"},
 		Spec: v1beta1.ClusterServicePlanSpec{
-			ExternalName: "external-plan-name",
+			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+				ExternalName: "external-plan-name",
+			},
 		},
 	}
 

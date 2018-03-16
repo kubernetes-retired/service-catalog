@@ -323,12 +323,8 @@ type ClusterServicePlan struct {
 	Status ClusterServicePlanStatus
 }
 
-// ClusterServicePlanSpec represents details about the ClusterServicePlan
-type ClusterServicePlanSpec struct {
-	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
-	// ClusterServicePlan.
-	ClusterServiceBrokerName string
-
+// SharedServicePlanSpec represents details about the ServicePlan
+type SharedServicePlanSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string
@@ -338,15 +334,15 @@ type ClusterServicePlanSpec struct {
 	// Immutable.
 	ExternalID string
 
-	// Description is a short description of this ClusterServicePlan.
+	// Description is a short description of this ServicePlan.
 	Description string
 
 	// Bindable indicates whether a user can create bindings to an ServiceInstance
-	// using this ClusterServicePlan.  If set, overrides the value of the
-	// ClusterServiceClass.Bindable field.
+	// using this ServicePlan.  If set, overrides the value of the
+	// corresponding ServiceClassSpec Bindable field.
 	Bindable *bool
 
-	// Free indicates whether this ClusterServicePlan is available at no cost.
+	// Free indicates whether this ServicePlan is available at no cost.
 	Free bool
 
 	// ExternalMetadata is a blob of information about the plan, meant to be
@@ -366,7 +362,7 @@ type ClusterServicePlanSpec struct {
 	//
 	// ServiceInstanceUpdateParameterSchema is the schema for the parameters
 	// that may be updated once an ServiceInstance has been provisioned on this plan.
-	// This field only has meaning if the ClusterServiceClass is PlanUpdatable.
+	// This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.
 	ServiceInstanceUpdateParameterSchema *runtime.RawExtension
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -375,6 +371,15 @@ type ClusterServicePlanSpec struct {
 	// ServiceBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
 	ServiceBindingCreateParameterSchema *runtime.RawExtension
+}
+
+// ClusterServicePlanSpec represents details about the ClusterServicePlan
+type ClusterServicePlanSpec struct {
+	SharedServicePlanSpec
+
+	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
+	// ClusterServicePlan.
+	ClusterServiceBrokerName string
 
 	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.

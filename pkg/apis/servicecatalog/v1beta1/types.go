@@ -358,12 +358,9 @@ type ClusterServicePlan struct {
 	Status ClusterServicePlanStatus `json:"status,omitempty"`
 }
 
-// ClusterServicePlanSpec represents details about a ClusterServicePlan.
-type ClusterServicePlanSpec struct {
-	// ClusterServiceBrokerName is the name of the ClusterServiceBroker
-	// that offers this ClusterServicePlan.
-	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
-
+// SharedServicePlanSpec represents details that are shared by both
+// a ClusterServicePlan and a namespaced ServicePlan
+type SharedServicePlanSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string `json:"externalName"`
@@ -373,12 +370,12 @@ type ClusterServicePlanSpec struct {
 	// Immutable.
 	ExternalID string `json:"externalID"`
 
-	// Description is a short description of this ClusterServicePlan.
+	// Description is a short description of this ServicePlan.
 	Description string `json:"description"`
 
 	// Bindable indicates whether a user can create bindings to an
-	// ServiceInstance using this ClusterServicePlan.  If set, overrides
-	// the value of the ClusterServiceClass.Bindable field.
+	// ServiceInstance using this ServicePlan.  If set, overrides
+	// the value of the corresponding ServiceClassSpec Bindable field.
 	Bindable *bool `json:"bindable,omitempty"`
 
 	// Free indicates whether this plan is available at no cost.
@@ -401,7 +398,7 @@ type ClusterServicePlanSpec struct {
 	//
 	// ServiceInstanceUpdateParameterSchema is the schema for the parameters
 	// that may be updated once an ServiceInstance has been provisioned on
-	// this plan. This field only has meaning if the ClusterServiceClass is
+	// this plan. This field only has meaning if the corresponding ServiceClassSpec is
 	// PlanUpdatable.
 	ServiceInstanceUpdateParameterSchema *runtime.RawExtension `json:"instanceUpdateParameterSchema,omitempty"`
 
@@ -411,6 +408,16 @@ type ClusterServicePlanSpec struct {
 	// ServiceBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
 	ServiceBindingCreateParameterSchema *runtime.RawExtension `json:"serviceBindingCreateParameterSchema,omitempty"`
+}
+
+// ClusterServicePlanSpec represents details about a ClusterServicePlan.
+type ClusterServicePlanSpec struct {
+	// SharedServicePlanSpec contains the common details of this ClusterServicePlan
+	SharedServicePlanSpec `json:",inline"`
+
+	// ClusterServiceBrokerName is the name of the ClusterServiceBroker
+	// that offers this ClusterServicePlan.
+	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 
 	// ClusterServiceClassRef is a reference to the service class that
 	// owns this plan.
