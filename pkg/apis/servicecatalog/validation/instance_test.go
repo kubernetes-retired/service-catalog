@@ -89,7 +89,6 @@ func validServiceInstanceWithInProgressDeprovision() *servicecatalog.ServiceInst
 	instance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationDeprovision
 	now := metav1.Now()
 	instance.Status.OperationStartTime = &now
-	instance.Status.InProgressProperties = validServiceInstancePropertiesState()
 	instance.Status.ExternalProperties = validServiceInstancePropertiesState()
 	return instance
 }
@@ -222,6 +221,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
 				i.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationDeprovision
+				i.Status.InProgressProperties = nil
 				return i
 			}(),
 			valid: true,
@@ -315,6 +315,15 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstance()
 				i.Status.InProgressProperties = validServiceInstancePropertiesState()
+				return i
+			}(),
+			valid: false,
+		},
+		{
+			name: "in-progress deprovision with present InProgressProperties",
+			instance: func() *servicecatalog.ServiceInstance {
+				i := validServiceInstanceWithInProgressProvision()
+				i.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationDeprovision
 				return i
 			}(),
 			valid: false,
