@@ -38,7 +38,6 @@ func NewVersionCmd(cxt *command.Context) *cobra.Command {
 		Example: `
   svcat version
   svcat version --client
-  svcat version --server
 `,
 		PreRunE: command.PreRunE(versionCmd),
 		RunE:    command.RunE(versionCmd),
@@ -49,13 +48,6 @@ func NewVersionCmd(cxt *command.Context) *cobra.Command {
 		"c",
 		false,
 		"Show only the client version",
-	)
-	cmd.Flags().BoolVarP(
-		&versionCmd.server,
-		"server",
-		"s",
-		false,
-		"Show only the server version",
 	)
 
 	return cmd
