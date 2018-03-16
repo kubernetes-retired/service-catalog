@@ -367,15 +367,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ClusterServiceClassSpec represents details about the ClusterServicePlan",
+					Description: "ClusterServiceClassSpec represents the details about a ClusterServiceClass",
 					Properties: map[string]spec.Schema{
-						"clusterServiceBrokerName": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceBrokerName is the reference to the Broker that provides this ClusterServiceClass.\n\nImmutable.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
 						"externalName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
@@ -392,14 +385,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of this ClusterServiceClass.",
+								Description: "Description is a short description of this ServiceClass.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ClusterServicePlan has an optional field called Bindable which overrides the value of this field.",
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
@@ -413,20 +406,20 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"planUpdatable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "PlanUpdatable indicates whether instances provisioned from this ClusterServiceClass may change ClusterServicePlans after being provisioned.",
+								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
 						"externalMetadata": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ExternalMetadata is a blob of information about the ClusterServiceClass, meant to be user-facing content and display instructions. This field may contain platform-specific conventional values.",
+								Description: "ExternalMetadata is a blob of information about the ServiceClass, meant to be user-facing content and display instructions. This field may contain platform-specific conventional values.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
 						"tags": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ClusterServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
 								Type:        []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
@@ -440,7 +433,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"requires": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an ServiceInstance provisioned from this ClusterServiceClass will not work correctly.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an ServiceInstance provisioned from this ServiceClass will not work correctly.",
 								Type:        []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
@@ -452,8 +445,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								},
 							},
 						},
+						"clusterServiceBrokerName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ClusterServiceBrokerName is the reference to the Broker that provides this ClusterServiceClass.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 					},
-					Required: []string{"clusterServiceBrokerName", "externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable"},
+					Required: []string{"externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable", "clusterServiceBrokerName"},
 				},
 			},
 			Dependencies: []string{
@@ -589,14 +589,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of this ClusterServicePlan.",
+								Description: "Description is a short description of this ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ClusterServicePlan.  If set, overrides the value of the ClusterServiceClass.Bindable field.",
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ServicePlan.  If set, overrides the value of the corresponding ServiceClassSpec Bindable field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
@@ -622,7 +622,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"instanceUpdateParameterSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the ClusterServiceClass is PlanUpdatable.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -1546,6 +1546,94 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServiceClassSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "SharedServiceClassSpec represents details about a ServiceClass",
+					Properties: map[string]spec.Schema{
+						"externalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"externalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"description": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Description is a short description of this ServiceClass.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"bindable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"bindingRetrievable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"planUpdatable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"externalMetadata": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalMetadata is a blob of information about the ServiceClass, meant to be user-facing content and display instructions. This field may contain platform-specific conventional values.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"tags": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+						"requires": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an ServiceInstance provisioned from this ServiceClass will not work correctly.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+					},
+					Required: []string{"externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServicePlanSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -1567,14 +1655,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of this ClusterServicePlan.",
+								Description: "Description is a short description of this ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ClusterServicePlan.  If set, overrides the value of the ClusterServiceClass.Bindable field.",
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ServicePlan.  If set, overrides the value of the corresponding ServiceClassSpec Bindable field.",
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
@@ -1600,7 +1688,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"instanceUpdateParameterSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the ClusterServiceClass is PlanUpdatable.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
