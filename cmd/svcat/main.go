@@ -24,6 +24,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/completion"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
@@ -105,6 +106,7 @@ func buildRootCommand() *cobra.Command {
 	cmd.AddCommand(newSyncCmd(cxt))
 	cmd.AddCommand(newInstallCmd(cxt))
 	cmd.AddCommand(newTouchCmd(cxt))
+	cmd.AddCommand(newCompletionCmd(cxt))
 
 	return cmd
 }
@@ -168,6 +170,10 @@ func newTouchCmd(cxt *command.Context) *cobra.Command {
 	}
 	cmd.AddCommand(instance.NewTouchCommand(cxt))
 	return cmd
+}
+
+func newCompletionCmd(ctx *command.Context) *cobra.Command {
+	return completion.NewCompletionCmd(ctx, "")
 }
 
 // Bind the viper configuration back to the cobra command flags.
