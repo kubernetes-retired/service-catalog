@@ -124,6 +124,6 @@ func RunCompletion(cxt *command.Context, boilerPlate string, cmd *cobra.Command,
 	return run(cxt, cmd.Parent())
 }
 
-func runCompletionBash(cxt *command.Context, kubeadm *cobra.Command) error {
-	return kubeadm.GenBashCompletion(cxt.Output)
+func runCompletionBash(cxt *command.Context, cmd *cobra.Command) error {
+	return cmd.GenBashCompletion(cxt.Output)
 }
