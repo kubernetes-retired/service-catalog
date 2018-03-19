@@ -31,11 +31,6 @@ import (
 	v1beta1servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 )
 
-// The value for timeout should effectively be "forever." Obviously we don't want our tests to truly lock up forever, but 30s
-// is long enough that it is effectively forever for the things that can slow down a run on a heavily contended machine
-// (GC, seeks, etc), but not so long as to make a developer ctrl-c a test run if they do happen to break that test.
-var ForeverTestTimeout = time.Second * 60
-
 // WaitForBrokerCondition waits for the status of the named broker to contain
 // a condition whose type and status matches the supplied one.
 func WaitForBrokerCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string, condition v1beta1.ServiceBrokerCondition) error {
@@ -70,7 +65,7 @@ func WaitForBrokerCondition(client v1beta1servicecatalog.ServicecatalogV1beta1In
 // WaitForBrokerToNotExist waits for the Broker with the given name to no
 // longer exist.
 func WaitForBrokerToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for broker %v to not exist", name)
 			_, err := client.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
@@ -90,7 +85,7 @@ func WaitForBrokerToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1I
 // WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given name
 // to exist.
 func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for serviceClass %v to exist", name)
 			_, err := client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
@@ -106,7 +101,7 @@ func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.Servicecatal
 // WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given name
 // to exist.
 func WaitForClusterServicePlanToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for ClusterServicePlan %v to exist", name)
 			_, err := client.ClusterServicePlans().Get(name, metav1.GetOptions{})
@@ -122,7 +117,7 @@ func WaitForClusterServicePlanToExist(client v1beta1servicecatalog.Servicecatalo
 // WaitForClusterServicePlanToNotExist waits for the ClusterServicePlan with the given name
 // to not exist.
 func WaitForClusterServicePlanToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for ClusterServicePlan %q to not exist", name)
 			_, err := client.ClusterServicePlans().Get(name, metav1.GetOptions{})
@@ -142,7 +137,7 @@ func WaitForClusterServicePlanToNotExist(client v1beta1servicecatalog.Servicecat
 // WaitForClusterServiceClassToNotExist waits for the ClusterServiceClass with the given
 // name to no longer exist.
 func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for serviceClass %v to not exist", name)
 			_, err := client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
@@ -162,7 +157,7 @@ func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.Serviceca
 // WaitForInstanceCondition waits for the status of the named instance to
 // contain a condition whose type and status matches the supplied one.
 func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceInstanceCondition) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v condition %#v", namespace, name, condition)
 			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
@@ -192,7 +187,7 @@ func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1
 // WaitForInstanceToNotExist waits for the Instance with the given name to no
 // longer exist.
 func WaitForInstanceToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v to not exist", namespace, name)
 
@@ -213,7 +208,7 @@ func WaitForInstanceToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta
 // WaitForInstanceProcessedGeneration waits for the status of the named instance to
 // have the specified reconciled generation.
 func WaitForInstanceProcessedGeneration(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, processedGeneration int64) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v to have processed generation of %v", namespace, name, processedGeneration)
 			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
@@ -261,7 +256,7 @@ func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 // back the last binding condition of the same type requested during polling if found.
 func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceBindingCondition) (*v1beta1.ServiceBindingCondition, error) {
 	var lastSeenCondition *v1beta1.ServiceBindingCondition
-	return lastSeenCondition, wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return lastSeenCondition, wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v condition %#v", namespace, name, condition)
 
@@ -295,7 +290,7 @@ func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1I
 // WaitForBindingToNotExist waits for the Binding with the given name to no
 // longer exist.
 func WaitForBindingToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v to not exist", namespace, name)
 
@@ -316,7 +311,7 @@ func WaitForBindingToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1
 // WaitForBindingReconciledGeneration waits for the status of the named binding to
 // have the specified reconciled generation.
 func WaitForBindingReconciledGeneration(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, reconciledGeneration int64) error {
-	return wait.PollImmediate(500*time.Millisecond, ForeverTestTimeout,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for binding %v/%v to have reconciled generation of %v", namespace, name, reconciledGeneration)
 			binding, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
