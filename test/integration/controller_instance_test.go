@@ -145,10 +145,12 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 				Spec: v1beta1.ClusterServiceClassSpec{
 					ClusterServiceBrokerName: testClusterServiceBrokerName,
-					ExternalID:               testClusterServiceClassGUID,
-					ExternalName:             testClusterServiceClassName,
-					Description:              "a test service",
-					Bindable:                 true,
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalID:   testClusterServiceClassGUID,
+						ExternalName: testClusterServiceClassName,
+						Description:  "a test service",
+						Bindable:     true,
+					},
 				},
 			}
 			if _, err := ct.client.ClusterServiceClasses().Create(serviceClass); err != nil {

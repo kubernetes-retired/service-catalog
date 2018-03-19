@@ -406,10 +406,12 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			Description:              "a test service",
-			ExternalName:             testClusterServiceClassName,
-			ExternalID:               testClusterServiceClassGUID,
-			Bindable:                 true,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Description:  "a test service",
+				ExternalName: testClusterServiceClassName,
+				ExternalID:   testClusterServiceClassGUID,
+				Bindable:     true,
+			},
 		},
 	}
 }
@@ -419,10 +421,12 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			Description:              "a test service that has been marked as removed",
-			ExternalName:             testRemovedClusterServiceClassName,
-			ExternalID:               testRemovedClusterServiceClassGUID,
-			Bindable:                 true,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Description:  "a test service that has been marked as removed",
+				ExternalName: testRemovedClusterServiceClassName,
+				ExternalID:   testRemovedClusterServiceClassGUID,
+				Bindable:     true,
+			},
 		},
 		Status: v1beta1.ClusterServiceClassStatus{RemovedFromBrokerCatalog: true},
 	}
@@ -433,10 +437,12 @@ func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			Description:              "a test service that should be removed",
-			ExternalName:             testRemovedClusterServiceClassName,
-			ExternalID:               testRemovedClusterServiceClassGUID,
-			Bindable:                 true,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Description:  "a test service that should be removed",
+				ExternalName: testRemovedClusterServiceClassName,
+				ExternalID:   testRemovedClusterServiceClassGUID,
+				Bindable:     true,
+			},
 		},
 	}
 }
@@ -446,11 +452,13 @@ func getTestBindingRetrievableClusterServiceClass() *v1beta1.ClusterServiceClass
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			Description:              "a test service",
-			ExternalName:             testClusterServiceClassName,
-			ExternalID:               testClusterServiceClassGUID,
-			BindingRetrievable:       true,
-			Bindable:                 true,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Description:        "a test service",
+				ExternalName:       testClusterServiceClassName,
+				ExternalID:         testClusterServiceClassGUID,
+				BindingRetrievable: true,
+				Bindable:           true,
+			},
 		},
 	}
 }
@@ -530,9 +538,11 @@ func getTestNonbindableClusterServiceClass() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			ExternalName:             testNonbindableClusterServiceClassName,
-			ExternalID:               testNonbindableClusterServiceClassGUID,
-			Bindable:                 false,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				ExternalName: testNonbindableClusterServiceClassName,
+				ExternalID:   testNonbindableClusterServiceClassGUID,
+				Bindable:     false,
+			},
 		},
 	}
 }
@@ -1306,9 +1316,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				Name: "bindable-id",
 			},
 			Spec: v1beta1.ClusterServiceClassSpec{
-				ExternalName: "bindable",
-				ExternalID:   "bindable-id",
-				Bindable:     true,
+				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+					ExternalName: "bindable",
+					ExternalID:   "bindable-id",
+					Bindable:     true,
+				},
 			},
 		},
 		{
@@ -1316,9 +1328,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				Name: "unbindable-id",
 			},
 			Spec: v1beta1.ClusterServiceClassSpec{
-				ExternalName: "unbindable",
-				ExternalID:   "unbindable-id",
-				Bindable:     false,
+				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+					ExternalName: "unbindable",
+					ExternalID:   "unbindable-id",
+					Bindable:     false,
+				},
 			},
 		},
 	}

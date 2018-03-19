@@ -408,10 +408,12 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
-			Bindable:                 true,
-			ExternalName:             name,
-			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-			Description:              "test description",
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Bindable:     true,
+				ExternalName: name,
+				ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+				Description:  "test description",
+			},
 		},
 	}
 
@@ -502,10 +504,12 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 		ObjectMeta: metav1.ObjectMeta{Name: sc2Name},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
-			Bindable:                 true,
-			ExternalName:             sc2Name,
-			ExternalID:               sc2ID,
-			Description:              "test description 2",
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Bindable:     true,
+				ExternalName: sc2Name,
+				ExternalID:   sc2ID,
+				Description:  "test description 2",
+			},
 		},
 	}
 	_, err = serviceClassClient.Create(serviceClass2)

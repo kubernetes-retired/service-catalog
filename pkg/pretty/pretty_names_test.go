@@ -54,7 +54,9 @@ func TestClusterServiceClassName(t *testing.T) {
 	serviceClass := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: "service-class"},
 		Spec: v1beta1.ClusterServiceClassSpec{
-			ExternalName: "external-class-name",
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				ExternalName: "external-class-name",
+			},
 		},
 	}
 	e := `ClusterServiceClass (K8S: "service-class" ExternalName: "external-class-name")`
