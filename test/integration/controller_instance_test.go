@@ -145,7 +145,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 				Spec: v1beta1.ClusterServiceClassSpec{
 					ClusterServiceBrokerName: testClusterServiceBrokerName,
-					SharedServiceClassSpec: v1beta1.SharedServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
 						ExternalID:   testClusterServiceClassGUID,
 						ExternalName: testClusterServiceClassName,
 						Description:  "a test service",

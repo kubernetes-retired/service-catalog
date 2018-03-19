@@ -253,8 +253,8 @@ type ClusterServiceClass struct {
 	Status ClusterServiceClassStatus `json:"status,omitempty"`
 }
 
-// SharedServiceClassSpec represents details about a ServiceClass
-type SharedServiceClassSpec struct {
+// CommonServiceClassSpec represents details about a ServiceClass
+type CommonServiceClassSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Class as. Mutable.
 	ExternalName string `json:"externalName"`
@@ -313,7 +313,7 @@ type SharedServiceClassSpec struct {
 
 // ClusterServiceClassSpec represents the details about a ClusterServiceClass
 type ClusterServiceClassSpec struct {
-	SharedServiceClassSpec `json:",inline"`
+	CommonServiceClassSpec `json:",inline"`
 
 	// ClusterServiceBrokerName is the reference to the Broker that provides this
 	// ClusterServiceClass.

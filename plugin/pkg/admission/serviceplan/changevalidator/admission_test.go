@@ -86,7 +86,7 @@ func newClusterServiceClass(name string, plan string, updateablePlan bool) *serv
 	sc := &servicecatalog.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: servicecatalog.ClusterServiceClassSpec{
-			SharedServiceClassSpec: servicecatalog.SharedServiceClassSpec{
+			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
 				PlanUpdatable: updateablePlan,
 			},
 		},

@@ -495,7 +495,7 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	for i, svc := range in.Services {
 		serviceClasses[i] = &v1beta1.ClusterServiceClass{
 			Spec: v1beta1.ClusterServiceClassSpec{
-				SharedServiceClassSpec: v1beta1.SharedServiceClassSpec{
+				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
 					Bindable:      svc.Bindable,
 					PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
 					ExternalID:    svc.ID,

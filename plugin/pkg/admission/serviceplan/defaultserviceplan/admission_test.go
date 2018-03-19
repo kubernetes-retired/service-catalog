@@ -113,7 +113,7 @@ func newClusterServiceClass(id string, name string) *servicecatalog.ClusterServi
 			Name: id,
 		},
 		Spec: servicecatalog.ClusterServiceClassSpec{
-			SharedServiceClassSpec: servicecatalog.SharedServiceClassSpec{
+			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
 				ExternalID:   id,
 				ExternalName: name,
 			},

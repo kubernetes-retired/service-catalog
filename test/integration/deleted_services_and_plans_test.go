@@ -123,7 +123,7 @@ func getTestClusterServiceClassRemoved() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			SharedServiceClassSpec: v1beta1.SharedServiceClassSpec{
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
 				ExternalID:   testRemovedClusterServiceClassGUID,
 				ExternalName: testRemovedClusterServiceClassExternalName,
 				Description:  "a serviceclass that will be removed",

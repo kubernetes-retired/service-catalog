@@ -670,6 +670,94 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "CommonServiceClassSpec represents details about a ServiceClass",
+					Properties: map[string]spec.Schema{
+						"externalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"externalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"description": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Description is a short description of this ServiceClass.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"bindable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"bindingRetrievable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"planUpdatable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"externalMetadata": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalMetadata is a blob of information about the ServiceClass, meant to be user-facing content and display instructions. This field may contain platform-specific conventional values.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"tags": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+						"requires": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an ServiceInstance provisioned from this ServiceClass will not work correctly.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+					},
+					Required: []string{"externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -1545,94 +1633,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServiceClassSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "SharedServiceClassSpec represents details about a ServiceClass",
-					Properties: map[string]spec.Schema{
-						"externalName": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"externalID": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"description": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Description is a short description of this ServiceClass.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"bindable": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-						"bindingRetrievable": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-						"planUpdatable": {
-							SchemaProps: spec.SchemaProps{
-								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-						"externalMetadata": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ExternalMetadata is a blob of information about the ServiceClass, meant to be user-facing content and display instructions. This field may contain platform-specific conventional values.",
-								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
-							},
-						},
-						"tags": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
-								Type:        []string{"array"},
-								Items: &spec.SchemaOrArray{
-									Schema: &spec.Schema{
-										SchemaProps: spec.SchemaProps{
-											Type:   []string{"string"},
-											Format: "",
-										},
-									},
-								},
-							},
-						},
-						"requires": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an ServiceInstance provisioned from this ServiceClass will not work correctly.",
-								Type:        []string{"array"},
-								Items: &spec.SchemaOrArray{
-									Schema: &spec.Schema{
-										SchemaProps: spec.SchemaProps{
-											Type:   []string{"string"},
-											Format: "",
-										},
-									},
-								},
-							},
-						},
-					},
-					Required: []string{"externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable"},
-				},
-			},
-			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServicePlanSpec": {
 			Schema: spec.Schema{
