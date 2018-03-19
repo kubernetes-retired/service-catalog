@@ -78,7 +78,7 @@ var (
 	}
 )
 
-// NewCmdCompletion return command for executing "svcat completion" command
+// NewCompletionCmd return command for executing "svcat completion" command
 func NewCompletionCmd(cxt *command.Context, boilerPlate string) *cobra.Command {
 	shells := []string{}
 	for s := range completionShells {
