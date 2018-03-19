@@ -43,7 +43,7 @@ func setup() (*util.FakeServiceBrokerServer, *servicecatalog.ClusterServiceBroke
 	url := fbs.Start()
 	fakeClusterServiceBroker := &servicecatalog.ClusterServiceBroker{
 		Spec: servicecatalog.ClusterServiceBrokerSpec{
-			SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+			CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 				URL: url,
 			},
 		},
