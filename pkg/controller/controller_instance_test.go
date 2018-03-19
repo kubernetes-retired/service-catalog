@@ -3324,6 +3324,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 		reason                string
 		message               string
 		transitionTimeChanged bool
+		expectResourceUpdate  bool
 	}{
 
 		{
@@ -3332,12 +3333,15 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			status:                v1beta1.ConditionFalse,
 			message:               "message",
 			transitionTimeChanged: true,
+			expectResourceUpdate:  true,
 		},
 		{
 			name:                  "not ready -> not ready",
 			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
 			status:                v1beta1.ConditionFalse,
+			message:               "message",
 			transitionTimeChanged: false,
+			expectResourceUpdate:  false,
 		},
 		{
 			name:                  "not ready -> not ready, reason and message change",
@@ -3346,6 +3350,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			reason:                "foo",
 			message:               "bar",
 			transitionTimeChanged: false,
+			expectResourceUpdate:  true,
 		},
 		{
 			name:                  "not ready -> ready",
@@ -3353,6 +3358,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			status:                v1beta1.ConditionTrue,
 			message:               "message",
 			transitionTimeChanged: true,
+			expectResourceUpdate:  true,
 		},
 		{
 			name:                  "ready -> ready",
@@ -3360,6 +3366,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			status:                v1beta1.ConditionTrue,
 			message:               "message",
 			transitionTimeChanged: false,
+			expectResourceUpdate:  false,
 		},
 		{
 			name:                  "ready -> not ready",
@@ -3367,6 +3374,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			status:                v1beta1.ConditionFalse,
 			message:               "message",
 			transitionTimeChanged: true,
+			expectResourceUpdate:  true,
 		},
 		{
 			name:                  "message -> message2",
@@ -3374,15 +3382,17 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			status:                v1beta1.ConditionFalse,
 			message:               "message2",
 			transitionTimeChanged: true,
+			expectResourceUpdate:  true,
 		},
 	}
 
 	for _, tc := range cases {
 		_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
+		original := tc.input.DeepCopy()
 		inputClone := tc.input.DeepCopy()
 
-		err := testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
+		err := testController.updateServiceInstanceCondition(original, tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
 			continue
@@ -3391,12 +3401,17 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 		brokerActions := fakeClusterServiceBrokerClient.Actions()
 		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
 
-		if !reflect.DeepEqual(tc.input, inputClone) {
-			t.Errorf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
+		if !reflect.DeepEqual(original, inputClone) {
+			t.Errorf("%v: updating broker condition mutated original: %s", tc.name, expectedGot(inputClone, original))
 			continue
 		}
 
 		actions := fakeCatalogClient.Actions()
+		if !tc.expectResourceUpdate {
+			expectNumberOfActions(t, tc.name, actions, 0)
+			continue
+		}
+
 		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
 			continue
 		}
@@ -4149,7 +4164,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 func TestResolveReferencesReferencesAlreadySet(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 	instance := getTestServiceInstanceWithRefs()
-	modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance, instance)
 	if err != nil {
 		t.Fatalf("resolveReferences failed unexpectedly: %q", err)
 	}
@@ -4173,8 +4188,9 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
 	instance := getTestServiceInstance()
+	original := instance.DeepCopy()
 
-	modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(original, instance)
 	if err == nil {
 		t.Fatalf("Should have failed with no service class")
 	}
@@ -4452,6 +4468,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
 	instance := getTestServiceInstance()
+	original := instance.DeepCopy()
 
 	sc := getTestClusterServiceClass()
 	var scItems []v1beta1.ClusterServiceClass
@@ -4460,7 +4477,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 
-	modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(original, instance)
 	if err == nil {
 		t.Fatalf("Should have failed with no service plan")
 	}
@@ -4775,7 +4792,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
-	modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance, instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
@@ -4855,7 +4872,7 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	instance.Spec.ClusterServicePlanExternalName = newPlanName
 	instance.Spec.ClusterServicePlanRef = nil
 
-	modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance, instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
@@ -4908,7 +4925,7 @@ func TestResolveReferencesWorksK8SNames(t *testing.T) {
 
 	instance := getTestServiceInstanceK8SNames()
 
-	modified, err := testController.resolveReferences(instance)
+	modified, err := testController.resolveReferences(instance, instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}

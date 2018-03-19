@@ -1735,16 +1735,17 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 	for _, tc := range cases {
 		_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
+		original := tc.input.DeepCopy()
 		inputClone := tc.input.DeepCopy()
 
-		err := testController.updateServiceBindingCondition(tc.input, v1beta1.ServiceBindingConditionReady, tc.status, tc.reason, tc.message)
+		err := testController.updateServiceBindingCondition(original, tc.input, v1beta1.ServiceBindingConditionReady, tc.status, tc.reason, tc.message)
 		if err != nil {
 			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
 			continue
 		}
 
-		if !reflect.DeepEqual(tc.input, inputClone) {
-			t.Errorf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
+		if !reflect.DeepEqual(original, inputClone) {
+			t.Errorf("%v: updating broker condition mutated original: %s", tc.name, expectedGot(inputClone, original))
 			continue
 		}
 
