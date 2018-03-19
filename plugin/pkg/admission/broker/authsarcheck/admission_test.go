@@ -89,7 +89,7 @@ func TestAdmissionBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
 					},
@@ -116,7 +116,7 @@ func TestAdmissionBroker(t *testing.T) {
 							},
 						},
 					},
-					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
 					},
@@ -143,7 +143,7 @@ func TestAdmissionBroker(t *testing.T) {
 							},
 						},
 					},
-					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
 					},
@@ -170,7 +170,7 @@ func TestAdmissionBroker(t *testing.T) {
 							},
 						},
 					},
-					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
 					},
@@ -190,7 +190,7 @@ func TestAdmissionBroker(t *testing.T) {
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{},
-					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
 					},
@@ -217,7 +217,7 @@ func TestAdmissionBroker(t *testing.T) {
 							},
 						},
 					},
-					SharedServiceBrokerSpec: servicecatalog.SharedServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
 						URL:            "http://example.com",
 						RelistBehavior: "Manual",
 					},

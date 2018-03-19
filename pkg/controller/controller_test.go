@@ -360,7 +360,7 @@ func getTestClusterServiceBroker() *v1beta1.ClusterServiceBroker {
 	return &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
-			SharedServiceBrokerSpec: v1beta1.SharedServiceBrokerSpec{
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
 				URL:            "https://example.com",
 				RelistBehavior: v1beta1.ServiceBrokerRelistBehaviorDuration,
 				RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},

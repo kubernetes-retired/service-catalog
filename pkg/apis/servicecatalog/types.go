@@ -46,8 +46,8 @@ type ClusterServiceBrokerList struct {
 	Items []ClusterServiceBroker
 }
 
-// SharedServiceBrokerSpec represents a description of a Broker.
-type SharedServiceBrokerSpec struct {
+// CommonServiceBrokerSpec represents a description of a Broker.
+type CommonServiceBrokerSpec struct {
 	// URL is the address used to communicate with the ServiceBroker.
 	URL string
 
@@ -81,7 +81,7 @@ type SharedServiceBrokerSpec struct {
 
 // ClusterServiceBrokerSpec represents a description of a Broker.
 type ClusterServiceBrokerSpec struct {
-	SharedServiceBrokerSpec
+	CommonServiceBrokerSpec
 
 	// AuthInfo contains the data that the service catalog should use to authenticate
 	// with the Service Broker.

@@ -108,7 +108,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Name: brokerName,
 			},
 			Spec: v1beta1.ClusterServiceBrokerSpec{
-				SharedServiceBrokerSpec: v1beta1.SharedServiceBrokerSpec{
+				CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
 					URL: url,
 				},
 			},

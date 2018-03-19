@@ -693,6 +693,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
+<<<<<<< HEAD
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -701,10 +702,21 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"externalName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
+=======
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "CommonServiceBrokerSpec represents a description of a Broker.",
+					Properties: map[string]spec.Schema{
+						"url": {
+							SchemaProps: spec.SchemaProps{
+								Description: "URL is the address used to communicate with the ServiceBroker.",
+>>>>>>> Use Common instead of Shared
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
+<<<<<<< HEAD
 						"externalID": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
@@ -722,10 +734,16 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+=======
+						"insecureSkipTLSVerify": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker. This is strongly discouraged.  You should use the CABundle instead.",
+>>>>>>> Use Common instead of Shared
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
+<<<<<<< HEAD
 						"bindingRetrievable": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
@@ -780,6 +798,41 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+=======
+						"caBundle": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.",
+								Type:        []string{"string"},
+								Format:      "byte",
+							},
+						},
+						"relistBehavior": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RelistBehavior specifies the type of relist behavior the catalog should exhibit when relisting ServiceClasses available from a broker.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"relistDuration": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration. Users are cautioned against configuring low values for the RelistDuration, as this can easily overload the controller manager in an environment with many brokers. The actual interval is intrinsically governed by the configured resync interval of the controller, which acts as a minimum bound. For example, with a resync interval of 5m and a RelistDuration of 2m, relists will occur at the resync interval of 5m.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+							},
+						},
+						"relistRequests": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RelistRequests is a strictly increasing, non-negative integer counter that can be manually incremented by a user to manually trigger a relist.",
+								Type:        []string{"integer"},
+								Format:      "int64",
+							},
+						},
+					},
+					Required: []string{"url"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+>>>>>>> Use Common instead of Shared
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference": {
 			Schema: spec.Schema{
@@ -1633,59 +1686,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServiceBrokerSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "SharedServiceBrokerSpec represents a description of a Broker.",
-					Properties: map[string]spec.Schema{
-						"url": {
-							SchemaProps: spec.SchemaProps{
-								Description: "URL is the address used to communicate with the ServiceBroker.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"insecureSkipTLSVerify": {
-							SchemaProps: spec.SchemaProps{
-								Description: "InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker. This is strongly discouraged.  You should use the CABundle instead.",
-								Type:        []string{"boolean"},
-								Format:      "",
-							},
-						},
-						"caBundle": {
-							SchemaProps: spec.SchemaProps{
-								Description: "CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.",
-								Type:        []string{"string"},
-								Format:      "byte",
-							},
-						},
-						"relistBehavior": {
-							SchemaProps: spec.SchemaProps{
-								Description: "RelistBehavior specifies the type of relist behavior the catalog should exhibit when relisting ServiceClasses available from a broker.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"relistDuration": {
-							SchemaProps: spec.SchemaProps{
-								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration. Users are cautioned against configuring low values for the RelistDuration, as this can easily overload the controller manager in an environment with many brokers. The actual interval is intrinsically governed by the configured resync interval of the controller, which acts as a minimum bound. For example, with a resync interval of 5m and a RelistDuration of 2m, relists will occur at the resync interval of 5m.",
-								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
-							},
-						},
-						"relistRequests": {
-							SchemaProps: spec.SchemaProps{
-								Description: "RelistRequests is a strictly increasing, non-negative integer counter that can be manually incremented by a user to manually trigger a relist.",
-								Type:        []string{"integer"},
-								Format:      "int64",
-							},
-						},
-					},
-					Required: []string{"url"},
-				},
-			},
-			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServicePlanSpec": {
 			Schema: spec.Schema{
