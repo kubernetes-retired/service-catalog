@@ -371,9 +371,9 @@ type ClusterServicePlan struct {
 	Status ClusterServicePlanStatus `json:"status,omitempty"`
 }
 
-// SharedServicePlanSpec represents details that are shared by both
+// CommonServicePlanSpec represents details that are shared by both
 // a ClusterServicePlan and a namespaced ServicePlan
-type SharedServicePlanSpec struct {
+type CommonServicePlanSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string `json:"externalName"`
@@ -425,8 +425,8 @@ type SharedServicePlanSpec struct {
 
 // ClusterServicePlanSpec represents details about a ClusterServicePlan.
 type ClusterServicePlanSpec struct {
-	// SharedServicePlanSpec contains the common details of this ClusterServicePlan
-	SharedServicePlanSpec `json:",inline"`
+	// CommonServicePlanSpec contains the common details of this ClusterServicePlan
+	CommonServicePlanSpec `json:",inline"`
 
 	// ClusterServiceBrokerName is the name of the ClusterServiceBroker
 	// that offers this ClusterServicePlan.

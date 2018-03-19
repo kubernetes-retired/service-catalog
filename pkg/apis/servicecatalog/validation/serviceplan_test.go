@@ -30,7 +30,7 @@ func validClusterServicePlan() *servicecatalog.ClusterServicePlan {
 			Name: "test-plan",
 		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
-			SharedServicePlanSpec: servicecatalog.SharedServicePlanSpec{
+			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
 				ExternalName: "test-plan",
 				ExternalID:   "40d-0983-1b89",
 				Description:  "plan description",

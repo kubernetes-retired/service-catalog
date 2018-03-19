@@ -693,6 +693,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
+<<<<<<< HEAD
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -754,6 +755,16 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"externalName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
+=======
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServicePlanSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "CommonServicePlanSpec represents details that are shared by both a ClusterServicePlan and a namespaced ServicePlan",
+					Properties: map[string]spec.Schema{
+						"externalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Plan as. Mutable.",
+>>>>>>> Rename SharedServicePlan* to CommonServicePlan*
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -767,25 +778,40 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"description": {
 							SchemaProps: spec.SchemaProps{
+<<<<<<< HEAD
 								Description: "Description is a short description of this ServiceClass.",
+=======
+								Description: "Description is a short description of this ServicePlan.",
+>>>>>>> Rename SharedServicePlan* to CommonServicePlan*
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"bindable": {
 							SchemaProps: spec.SchemaProps{
+<<<<<<< HEAD
 								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+=======
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance using this ServicePlan.  If set, overrides the value of the corresponding ServiceClassSpec Bindable field.",
+>>>>>>> Rename SharedServicePlan* to CommonServicePlan*
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
+<<<<<<< HEAD
 						"bindingRetrievable": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
+=======
+						"free": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Free indicates whether this plan is available at no cost.",
+>>>>>>> Rename SharedServicePlan* to CommonServicePlan*
 								Type:        []string{"boolean"},
 								Format:      "",
 							},
 						},
+<<<<<<< HEAD
 						"planUpdatable": {
 							SchemaProps: spec.SchemaProps{
 								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
@@ -829,6 +855,34 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 					},
 					Required: []string{"externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable"},
+=======
+						"externalMetadata": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalMetadata is a blob of information about the plan, meant to be user-facing content and display instructions.  This field may contain platform-specific conventional values.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"instanceCreateParameterSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceCreateParameterSchema is the schema for the parameters that may be supplied when provisioning a new ServiceInstance on this plan.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"instanceUpdateParameterSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceInstanceUpdateParameterSchema is the schema for the parameters that may be updated once an ServiceInstance has been provisioned on this plan. This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"serviceBindingCreateParameterSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to an ServiceInstance on this plan.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+					},
+					Required: []string{"externalName", "externalID", "description", "free"},
+>>>>>>> Rename SharedServicePlan* to CommonServicePlan*
 				},
 			},
 			Dependencies: []string{
@@ -1687,6 +1741,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
+<<<<<<< HEAD
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SharedServicePlanSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -1758,6 +1813,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
+=======
+>>>>>>> Rename SharedServicePlan* to CommonServicePlan*
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{

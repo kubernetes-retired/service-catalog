@@ -165,7 +165,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: testPlanExternalID},
 				Spec: v1beta1.ClusterServicePlanSpec{
 					ClusterServiceBrokerName: testClusterServiceBrokerName,
-					SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 						ExternalID:   testPlanExternalID,
 						ExternalName: testClusterServicePlanName,
 						Description:  "a test plan",
