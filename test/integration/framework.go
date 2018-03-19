@@ -23,6 +23,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -83,6 +85,13 @@ func withConfigGetFreshApiserverAndClient(
 	t.Logf("Starting server on port: %d", securePort)
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
+
+	// Integration tests run in parallel and randomly pick a port to listen on.  If
+	// we attempt to bind to a port already in use, we pick a new one and retry.  Meanwhile
+	// our client thread is attempting to connect.  Save off the port so it can dynamically
+	// pick up the "current" port we are attempting to listen on.
+	var controllerPort uint32 = uint32(securePort)
+
 	// start the server in the background
 	go func() {
 		var etcdOptions *server.EtcdOptions
@@ -111,17 +120,37 @@ func withConfigGetFreshApiserverAndClient(
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
 
 		if err := server.RunServer(options, stopCh); err != nil {
-			close(serverFailed)
-			t.Logf("Error in bringing up the server: %v", err)
+			for err != nil {
+				if strings.Contains(err.Error(), "bind: address already in use") {
+					t.Logf("Failed to start Controller on port %v, %v.", securePort, err)
+					securePort = rand.Intn(55000) + 10000
+					atomic.StoreUint32(&controllerPort, uint32(securePort))
+					secureAddr = fmt.Sprintf("https://localhost:%d", securePort)
+					options.SecureServingOptions.BindPort = securePort
+					t.Logf("Retrying on %v", securePort)
+					err = server.RunServer(options, stopCh)
+				} else {
+					close(serverFailed)
+					t.Logf("Error in bringing up the server: %v", err)
+				}
+			}
 		}
 	}()
 
-	if err := waitForApiserverUp(secureAddr, serverFailed); err != nil {
+	// controllerUrl is dynamically built in the anonymous function below.  It may change if the launch code
+	// above hits a port already in use.
+	var controllerUrl string
+
+	if err := waitForApiserverUp(serverFailed, func() string {
+		thePort := atomic.LoadUint32(&controllerPort)
+		controllerUrl = fmt.Sprintf("https://localhost:%d", thePort)
+		return controllerUrl
+	}); err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	config := &restclient.Config{}
-	config.Host = secureAddr
+	config.Host = controllerUrl
 	config.Insecure = true
 	config.CertFile = secureServingOptions.ServerCert.CertKey.CertFile
 	config.KeyFile = secureServingOptions.ServerCert.CertKey.KeyFile
@@ -129,6 +158,7 @@ func withConfigGetFreshApiserverAndClient(
 	if nil != err {
 		t.Fatal("can't make the client from the config", err)
 	}
+	t.Logf("Test client will use controller URL of %v", controllerUrl)
 	return clientset, config, shutdownServer
 }
 
@@ -152,7 +182,9 @@ func getFreshApiserverAndClient(
 	return client, clientConfig, shutdownFunc
 }
 
-func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
+type getControllerUrl func() string
+
+func waitForApiserverUp(stopCh <-chan struct{}, getUrl getControllerUrl) error {
 	interval := 1 * time.Second
 	timeout := 30 * time.Second
 	startWaiting := time.Now()
@@ -164,17 +196,20 @@ func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
 			case <-stopCh:
 				return true, fmt.Errorf("apiserver failed")
 			default:
-				glog.Infof("Waiting for : %#v", serverURL)
+				serverURL := getUrl()
+				glog.Infof("Waiting for controller on: %#v", serverURL)
 				tr := &http.Transport{
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}
 				c := &http.Client{Transport: tr}
 				_, err := c.Get(serverURL)
 				if err == nil {
-					glog.Infof("Found server after %v tries and duration %v",
+					glog.Infof("Found controller after %v tries and duration %v",
 						tries, time.Since(startWaiting))
 					return true, nil
 				}
+				glog.Infof("Error waiting for controller on attempt #%v: %v", tries, err)
+				time.Sleep(1 * time.Second)
 				tries++
 				return false, nil
 			}
