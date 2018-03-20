@@ -184,8 +184,8 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	broker := getTestClusterServiceBroker()
-	broker.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-		Basic: &v1beta1.BasicAuthConfig{
+	broker.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
 			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "does_not_exist",
 				Name:      "auth-name",

@@ -360,9 +360,11 @@ func getTestClusterServiceBroker() *v1beta1.ClusterServiceBroker {
 	return &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceBrokerName},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
-			URL:            "https://example.com",
-			RelistBehavior: v1beta1.ServiceBrokerRelistBehaviorDuration,
-			RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+				URL:            "https://example.com",
+				RelistBehavior: v1beta1.ServiceBrokerRelistBehaviorDuration,
+				RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+			},
 		},
 	}
 }
@@ -394,7 +396,7 @@ func getTestClusterServiceBrokerWithStatusAndTime(status v1beta1.ConditionStatus
 	return broker
 }
 
-func getTestClusterServiceBrokerWithAuth(authInfo *v1beta1.ServiceBrokerAuthInfo) *v1beta1.ClusterServiceBroker {
+func getTestClusterServiceBrokerWithAuth(authInfo *v1beta1.ClusterServiceBrokerAuthInfo) *v1beta1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
 	broker.Spec.AuthInfo = authInfo
 	return broker

@@ -230,7 +230,9 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	broker := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
-			URL: "https://example.com",
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+				URL: "https://example.com",
+			},
 		},
 	}
 
@@ -285,8 +287,8 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Name:      "test-name",
 	}
 
-	brokerServer.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-		Basic: &v1beta1.BasicAuthConfig{
+	brokerServer.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
 			SecretRef: authSecret,
 		},
 	}

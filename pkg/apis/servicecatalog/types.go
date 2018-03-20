@@ -46,14 +46,10 @@ type ClusterServiceBrokerList struct {
 	Items []ClusterServiceBroker
 }
 
-// ClusterServiceBrokerSpec represents a description of a Broker.
-type ClusterServiceBrokerSpec struct {
-	// URL is the address used to communicate with the ClusterServiceBroker.
+// CommonServiceBrokerSpec represents a description of a Broker.
+type CommonServiceBrokerSpec struct {
+	// URL is the address used to communicate with the ServiceBroker.
 	URL string
-
-	// AuthInfo contains the data that the service catalog should use to authenticate
-	// with the Service Broker.
-	AuthInfo *ServiceBrokerAuthInfo
 
 	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker.
 	// This is strongly discouraged.  You should use the CABundle instead.
@@ -65,7 +61,7 @@ type ClusterServiceBrokerSpec struct {
 	CABundle []byte
 
 	// RelistBehavior specifies the type of relist behavior the catalog should
-	// exhibit when relisting ClusterServiceClasses available from a broker.
+	// exhibit when relisting ServiceClasses available from a broker.
 	RelistBehavior ServiceBrokerRelistBehavior
 
 	// RelistDuration is the frequency by which a controller will relist the
@@ -83,6 +79,15 @@ type ClusterServiceBrokerSpec struct {
 	RelistRequests int64
 }
 
+// ClusterServiceBrokerSpec represents a description of a Broker.
+type ClusterServiceBrokerSpec struct {
+	CommonServiceBrokerSpec
+
+	// AuthInfo contains the data that the service catalog should use to authenticate
+	// with the Service Broker.
+	AuthInfo *ClusterServiceBrokerAuthInfo
+}
+
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
 type ServiceBrokerRelistBehavior string
 
@@ -96,22 +101,24 @@ const (
 	ServiceBrokerRelistBehaviorManual ServiceBrokerRelistBehavior = "Manual"
 )
 
-// ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods
-// the the service catalog and brokers may support, according to the OpenServiceBroker API
-// specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
-type ServiceBrokerAuthInfo struct {
-	// Basic provides configuration for basic authentication.
-	Basic *BasicAuthConfig
-	// BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
+// ClusterServiceBrokerAuthInfo is a union type that contains information on
+// one of the authentication methods the the service catalog and brokers may
+// support, according to the OpenServiceBroker API specification
+// (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
+type ClusterServiceBrokerAuthInfo struct {
+	// ClusterBasicAuthConfig provides configuration for basic authentication.
+	Basic *ClusterBasicAuthConfig
+	// ClusterBearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
 	// The value is referenced from the 'token' field of the given secret.  This value should only
 	// contain the token value and not the `Bearer` scheme.
-	Bearer *BearerTokenAuthConfig
+	Bearer *ClusterBearerTokenAuthConfig
 }
 
-// BasicAuthConfig provides config for the basic authentication.
-type BasicAuthConfig struct {
+// ClusterBasicAuthConfig provides config for the basic authentication of
+// cluster scoped brokers.
+type ClusterBasicAuthConfig struct {
 	// SecretRef is a reference to a Secret containing information the
-	// catalog should use to authenticate to this ServiceBroker.
+	// catalog should use to authenticate to this ClusterServiceBroker.
 	//
 	// Required at least one of the fields:
 	// - Secret.Data["username"] - username used for authentication
@@ -119,10 +126,11 @@ type BasicAuthConfig struct {
 	SecretRef *ObjectReference
 }
 
-// BearerTokenAuthConfig provides config for the bearer token authentication.
-type BearerTokenAuthConfig struct {
+// ClusterBearerTokenAuthConfig provides config for the bearer token
+// authentication of cluster scoped brokers.
+type ClusterBearerTokenAuthConfig struct {
 	// SecretRef is a reference to a Secret containing information the
-	// catalog should use to authenticate to this ServiceBroker.
+	// catalog should use to authenticate to this ClusterServiceBroker.
 	//
 	// Required field:
 	// - Secret.Data["token"] - bearer token for authentication

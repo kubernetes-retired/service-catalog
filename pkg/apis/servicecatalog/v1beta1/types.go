@@ -55,14 +55,10 @@ type ClusterServiceBrokerList struct {
 	Items []ClusterServiceBroker `json:"items"`
 }
 
-// ClusterServiceBrokerSpec represents a description of a Broker.
-type ClusterServiceBrokerSpec struct {
-	// URL is the address used to communicate with the ClusterServiceBroker.
+// CommonServiceBrokerSpec represents a description of a Broker.
+type CommonServiceBrokerSpec struct {
+	// URL is the address used to communicate with the ServiceBroker.
 	URL string `json:"url"`
-
-	// AuthInfo contains the data that the service catalog should use to authenticate
-	// with the ClusterServiceBroker.
-	AuthInfo *ServiceBrokerAuthInfo `json:"authInfo,omitempty"`
 
 	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker.
 	// This is strongly discouraged.  You should use the CABundle instead.
@@ -74,7 +70,7 @@ type ClusterServiceBrokerSpec struct {
 	CABundle []byte `json:"caBundle,omitempty"`
 
 	// RelistBehavior specifies the type of relist behavior the catalog should
-	// exhibit when relisting ClusterServiceClasses available from a broker.
+	// exhibit when relisting ServiceClasses available from a broker.
 	// +optional
 	RelistBehavior ServiceBrokerRelistBehavior `json:"relistBehavior"`
 
@@ -94,6 +90,15 @@ type ClusterServiceBrokerSpec struct {
 	RelistRequests int64 `json:"relistRequests"`
 }
 
+// ClusterServiceBrokerSpec represents a description of a Broker.
+type ClusterServiceBrokerSpec struct {
+	CommonServiceBrokerSpec `json:",inline"`
+
+	// AuthInfo contains the data that the service catalog should use to authenticate
+	// with the ClusterServiceBroker.
+	AuthInfo *ClusterServiceBrokerAuthInfo `json:"authInfo,omitempty"`
+}
+
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
 type ServiceBrokerRelistBehavior string
 
@@ -107,20 +112,22 @@ const (
 	ServiceBrokerRelistBehaviorManual ServiceBrokerRelistBehavior = "Manual"
 )
 
-// ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods
-// the the service catalog and brokers may support, according to the OpenServiceBroker API
-// specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
-type ServiceBrokerAuthInfo struct {
-	// Basic provides configuration for basic authentication.
-	Basic *BasicAuthConfig `json:"basic,omitempty"`
-	// BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
+// ClusterServiceBrokerAuthInfo is a union type that contains information on
+// one of the authentication methods the the service catalog and brokers may
+// support, according to the OpenServiceBroker API specification
+// (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
+type ClusterServiceBrokerAuthInfo struct {
+	// ClusterBasicAuthConfigprovides configuration for basic authentication.
+	Basic *ClusterBasicAuthConfig `json:"basic,omitempty"`
+	// ClusterBearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
 	// The value is referenced from the 'token' field of the given secret.  This value should only
 	// contain the token value and not the `Bearer` scheme.
-	Bearer *BearerTokenAuthConfig `json:"bearer,omitempty"`
+	Bearer *ClusterBearerTokenAuthConfig `json:"bearer,omitempty"`
 }
 
-// BasicAuthConfig provides config for the basic authentication.
-type BasicAuthConfig struct {
+// ClusterBasicAuthConfig provides config for the basic authentication of
+// cluster scoped brokers.
+type ClusterBasicAuthConfig struct {
 	// SecretRef is a reference to a Secret containing information the
 	// catalog should use to authenticate to this ServiceBroker.
 	//
@@ -130,8 +137,9 @@ type BasicAuthConfig struct {
 	SecretRef *ObjectReference `json:"secretRef,omitempty"`
 }
 
-// BearerTokenAuthConfig provides config for the bearer token authentication.
-type BearerTokenAuthConfig struct {
+// ClusterBearerTokenAuthConfig provides config for the bearer token
+// authentication of cluster scoped brokers.
+type ClusterBearerTokenAuthConfig struct {
 	// SecretRef is a reference to a Secret containing information the
 	// catalog should use to authenticate to this ServiceBroker.
 	//

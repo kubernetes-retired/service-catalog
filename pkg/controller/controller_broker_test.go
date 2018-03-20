@@ -724,16 +724,16 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 }
 
 func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
-	basicAuthInfo := &v1beta1.ServiceBrokerAuthInfo{
-		Basic: &v1beta1.BasicAuthConfig{
+	basicAuthInfo := &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
 			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "test-ns",
 				Name:      "auth-secret",
 			},
 		},
 	}
-	bearerAuthInfo := &v1beta1.ServiceBrokerAuthInfo{
-		Bearer: &v1beta1.BearerTokenAuthConfig{
+	bearerAuthInfo := &v1beta1.ClusterServiceBrokerAuthInfo{
+		Bearer: &v1beta1.ClusterBearerTokenAuthConfig{
 			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "test-ns",
 				Name:      "auth-secret",
@@ -761,7 +761,7 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	// shouldSucceed: whether authentication should succeed
 	cases := []struct {
 		name          string
-		authInfo      *v1beta1.ServiceBrokerAuthInfo
+		authInfo      *v1beta1.ClusterServiceBrokerAuthInfo
 		secret        *corev1.Secret
 		shouldSucceed bool
 	}{
@@ -811,7 +811,7 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	}
 }
 
-func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.ServiceBrokerAuthInfo, secret *corev1.Secret, shouldSucceed bool) {
+func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.ClusterServiceBrokerAuthInfo, secret *corev1.Secret, shouldSucceed bool) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
 
 	broker := getTestClusterServiceBrokerWithAuth(authInfo)

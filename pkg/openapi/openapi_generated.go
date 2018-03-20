@@ -29,10 +29,10 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig": {
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BasicAuthConfig provides config for the basic authentication.",
+					Description: "ClusterBasicAuthConfig provides config for the basic authentication of cluster scoped brokers.",
 					Properties: map[string]spec.Schema{
 						"secretRef": {
 							SchemaProps: spec.SchemaProps{
@@ -46,10 +46,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig": {
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "BearerTokenAuthConfig provides config for the bearer token authentication.",
+					Description: "ClusterBearerTokenAuthConfig provides config for the bearer token authentication of cluster scoped brokers.",
 					Properties: map[string]spec.Schema{
 						"secretRef": {
 							SchemaProps: spec.SchemaProps{
@@ -128,6 +128,29 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ClusterServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
+					Properties: map[string]spec.Schema{
+						"basic": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ClusterBasicAuthConfigprovides configuration for basic authentication.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig"),
+							},
+						},
+						"bearer": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ClusterBearerTokenAuthConfig provides configuration to send an opaque value as a bearer token. The value is referenced from the 'token' field of the given secret.  This value should only contain the token value and not the `Bearer` scheme.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig"},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerList": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -178,15 +201,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 					Properties: map[string]spec.Schema{
 						"url": {
 							SchemaProps: spec.SchemaProps{
-								Description: "URL is the address used to communicate with the ClusterServiceBroker.",
+								Description: "URL is the address used to communicate with the ServiceBroker.",
 								Type:        []string{"string"},
 								Format:      "",
-							},
-						},
-						"authInfo": {
-							SchemaProps: spec.SchemaProps{
-								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the ClusterServiceBroker.",
-								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo"),
 							},
 						},
 						"insecureSkipTLSVerify": {
@@ -205,7 +222,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"relistBehavior": {
 							SchemaProps: spec.SchemaProps{
-								Description: "RelistBehavior specifies the type of relist behavior the catalog should exhibit when relisting ClusterServiceClasses available from a broker.",
+								Description: "RelistBehavior specifies the type of relist behavior the catalog should exhibit when relisting ServiceClasses available from a broker.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -223,12 +240,18 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"authInfo": {
+							SchemaProps: spec.SchemaProps{
+								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the ClusterServiceBroker.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo"),
+							},
+						},
 					},
 					Required: []string{"url"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus": {
 			Schema: spec.Schema{
@@ -669,6 +692,59 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "CommonServiceBrokerSpec represents a description of a Broker.",
+					Properties: map[string]spec.Schema{
+						"url": {
+							SchemaProps: spec.SchemaProps{
+								Description: "URL is the address used to communicate with the ServiceBroker.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"insecureSkipTLSVerify": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InsecureSkipTLSVerify disables TLS certificate verification when communicating with this Broker. This is strongly discouraged.  You should use the CABundle instead.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"caBundle": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CABundle is a PEM encoded CA bundle which will be used to validate a Broker's serving certificate.",
+								Type:        []string{"string"},
+								Format:      "byte",
+							},
+						},
+						"relistBehavior": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RelistBehavior specifies the type of relist behavior the catalog should exhibit when relisting ServiceClasses available from a broker.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"relistDuration": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RelistDuration is the frequency by which a controller will relist the broker when the RelistBehavior is set to ServiceBrokerRelistBehaviorDuration. Users are cautioned against configuring low values for the RelistDuration, as this can easily overload the controller manager in an environment with many brokers. The actual interval is intrinsically governed by the configured resync interval of the controller, which acts as a minimum bound. For example, with a resync interval of 5m and a RelistDuration of 2m, relists will occur at the resync interval of 5m.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+							},
+						},
+						"relistRequests": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RelistRequests is a strictly increasing, non-negative integer counter that can be manually incremented by a user to manually trigger a relist.",
+								Type:        []string{"integer"},
+								Format:      "int64",
+							},
+						},
+					},
+					Required: []string{"url"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassSpec": {
 			Schema: spec.Schema{
@@ -1186,29 +1262,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-		},
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
-					Properties: map[string]spec.Schema{
-						"basic": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Basic provides configuration for basic authentication.",
-								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig"),
-							},
-						},
-						"bearer": {
-							SchemaProps: spec.SchemaProps{
-								Description: "BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token. The value is referenced from the 'token' field of the given secret.  This value should only contain the token value and not the `Bearer` scheme.",
-								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"),
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition": {
 			Schema: spec.Schema{
