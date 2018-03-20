@@ -22,9 +22,8 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
-	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -71,86 +70,68 @@ func withConfigGetFreshApiserverAndClient(
 	*restclient.Config,
 	func(),
 ) {
-	// pick a random port between 10000 - 65000 trying to stay away from
-	// ports in use such as 2380 (embedded etcd)
-	securePort := rand.Intn(55000) + 10000
-	secureAddr := fmt.Sprintf("https://localhost:%d", securePort)
 	stopCh := make(chan struct{})
 	serverFailed := make(chan struct{})
-	shutdownServer := func() {
-		t.Logf("Shutting down server on port: %d", securePort)
-		close(stopCh)
-	}
 
-	t.Logf("Starting server on port: %d", securePort)
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
 
-	// Integration tests run in parallel and randomly pick a port to listen on.  If
-	// we attempt to bind to a port already in use, we pick a new one and retry.  Meanwhile
-	// our client thread is attempting to connect.  Save off the port so it can dynamically
-	// pick up the "current" port we are attempting to listen on.
-	var controllerPort uint32 = uint32(securePort)
+	var etcdOptions *server.EtcdOptions
+	if serverstorage.StorageTypeEtcd == serverConfig.storageType {
+		etcdOptions = server.NewEtcdOptions()
+		etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
+		etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
+	} else {
+		t.Log("no storage type specified")
+	}
+	options := &server.ServiceCatalogServerOptions{
+		StorageTypeString:       serverConfig.storageType.String(),
+		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
+		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
+		SecureServingOptions:    secureServingOptions,
+		EtcdOptions:             etcdOptions,
+		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
+		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
+		AuditOptions:            genericserveroptions.NewAuditOptions(),
+		DisableAuth:             true,
+		StandaloneMode:          true, // this must be true because we have no kube server for integration.
+		ServeOpenAPISpec:        true,
+	}
+
+	// get a random free port
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Errorf("failed to listen on 127.0.0.1:0")
+	}
+
+	// Set the listener here, usually the Listener is created later in the framework for us
+	options.SecureServingOptions.Listener = ln
+	options.SecureServingOptions.BindPort = ln.Addr().(*net.TCPAddr).Port
+
+	t.Logf("Server started on port %v", options.SecureServingOptions.BindPort)
+
+	secureAddr := fmt.Sprintf("https://localhost:%d", options.SecureServingOptions.BindPort)
+
+	shutdownServer := func() {
+		t.Logf("Shutting down server on port: %d", options.SecureServingOptions.BindPort)
+		close(stopCh)
+	}
 
 	// start the server in the background
 	go func() {
-		var etcdOptions *server.EtcdOptions
-		if serverstorage.StorageTypeEtcd == serverConfig.storageType {
-			etcdOptions = server.NewEtcdOptions()
-			etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
-			etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
-		} else {
-			t.Log("no storage type specified")
-		}
-
-		options := &server.ServiceCatalogServerOptions{
-			StorageTypeString:       serverConfig.storageType.String(),
-			GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
-			AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
-			SecureServingOptions:    secureServingOptions,
-			EtcdOptions:             etcdOptions,
-			AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
-			AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
-			AuditOptions:            genericserveroptions.NewAuditOptions(),
-			DisableAuth:             true,
-			StandaloneMode:          true, // this must be true because we have no kube server for integration.
-			ServeOpenAPISpec:        true,
-		}
-		options.SecureServingOptions.BindPort = securePort
 		options.SecureServingOptions.ServerCert.CertDirectory = certDir
-
 		if err := server.RunServer(options, stopCh); err != nil {
-			for err != nil {
-				if strings.Contains(err.Error(), "bind: address already in use") {
-					t.Logf("Failed to start Controller on port %v, %v.", securePort, err)
-					securePort = rand.Intn(55000) + 10000
-					atomic.StoreUint32(&controllerPort, uint32(securePort))
-					secureAddr = fmt.Sprintf("https://localhost:%d", securePort)
-					options.SecureServingOptions.BindPort = securePort
-					t.Logf("Retrying on %v", securePort)
-					err = server.RunServer(options, stopCh)
-				} else {
-					close(serverFailed)
-					t.Logf("Error in bringing up the server: %v", err)
-				}
-			}
+			close(serverFailed)
+			t.Logf("Error in bringing up the server: %v", err)
 		}
 	}()
 
-	// controllerUrl is dynamically built in the anonymous function below.  It may change if the launch code
-	// above hits a port already in use.
-	var controllerUrl string
-
-	if err := waitForApiserverUp(serverFailed, func() string {
-		thePort := atomic.LoadUint32(&controllerPort)
-		controllerUrl = fmt.Sprintf("https://localhost:%d", thePort)
-		return controllerUrl
-	}); err != nil {
+	if err := waitForApiserverUp(secureAddr, serverFailed); err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	config := &restclient.Config{}
-	config.Host = controllerUrl
+	config.Host = secureAddr
 	config.Insecure = true
 	config.CertFile = secureServingOptions.ServerCert.CertKey.CertFile
 	config.KeyFile = secureServingOptions.ServerCert.CertKey.KeyFile
@@ -158,7 +139,7 @@ func withConfigGetFreshApiserverAndClient(
 	if nil != err {
 		t.Fatal("can't make the client from the config", err)
 	}
-	t.Logf("Test client will use controller URL of %v", controllerUrl)
+	t.Logf("Test client will use API Server URL of %v", secureAddr)
 	return clientset, config, shutdownServer
 }
 
@@ -182,9 +163,7 @@ func getFreshApiserverAndClient(
 	return client, clientConfig, shutdownFunc
 }
 
-type getControllerUrl func() string
-
-func waitForApiserverUp(stopCh <-chan struct{}, getUrl getControllerUrl) error {
+func waitForApiserverUp(serverURL string, stopCh <-chan struct{}) error {
 	interval := 1 * time.Second
 	timeout := 30 * time.Second
 	startWaiting := time.Now()
@@ -196,20 +175,17 @@ func waitForApiserverUp(stopCh <-chan struct{}, getUrl getControllerUrl) error {
 			case <-stopCh:
 				return true, fmt.Errorf("apiserver failed")
 			default:
-				serverURL := getUrl()
-				glog.Infof("Waiting for controller on: %#v", serverURL)
+				glog.Infof("Waiting for : %#v", serverURL)
 				tr := &http.Transport{
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}
 				c := &http.Client{Transport: tr}
 				_, err := c.Get(serverURL)
 				if err == nil {
-					glog.Infof("Found controller after %v tries and duration %v",
+					glog.Infof("Found server after %v tries and duration %v",
 						tries, time.Since(startWaiting))
 					return true, nil
 				}
-				glog.Infof("Error waiting for controller on attempt #%v: %v", tries, err)
-				time.Sleep(1 * time.Second)
 				tries++
 				return false, nil
 			}
