@@ -61,7 +61,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 	s := ControllerManagerServer{
 		ControllerManagerConfiguration: componentconfig.ControllerManagerConfiguration{
 			Address:                                defaultBindAddress,
-			Port:                                   defaultPort,
+			Port:                                   0,
 			SecurePort:                             defaultPort,
 			ContentType:                            defaultContentType,
 			K8sKubeconfigPath:                      defaultK8sKubeconfigPath,
