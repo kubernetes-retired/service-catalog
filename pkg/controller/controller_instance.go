@@ -522,13 +522,6 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 // reconcileServiceInstanceDelete is responsible for handling any instance whose
 // deletion timestamp is set.
 func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceInstance) error {
-	// nothing to do...
-	if instance.DeletionTimestamp == nil && !instance.Status.OrphanMitigationInProgress {
-		// TODO nilebox: shouldn't we throw an error instead?
-		// We shouldn't have this method invoked if this condition is true.
-		return nil
-	}
-
 	if finalizers := sets.NewString(instance.Finalizers...); !finalizers.Has(v1beta1.FinalizerServiceCatalog) {
 		return nil
 	}
