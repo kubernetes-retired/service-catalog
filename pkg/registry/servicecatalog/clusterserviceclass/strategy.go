@@ -31,26 +31,29 @@ import (
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
-// NewScopeStrategy returns a new NamespaceScopedStrategy for service classes
+// NewScopeStrategy returns a new NamespaceScopedStrategy for cluster service
+// classes.
 func NewScopeStrategy() rest.NamespaceScopedStrategy {
-	return serviceClassRESTStrategies
+	return clusterServiceClassRESTStrategies
 }
 
-// implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
-// NamespaceScopedStrategy
-type serviceClassRESTStrategy struct {
+// clusterServiceClassRESTStrategy implements interfaces RESTCreateStrategy,
+// RESTUpdateStrategy, RESTDeleteStrategy, NamespaceScopedStrategy.
+type clusterServiceClassRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
-// implements interface RESTUpdateStrategy. This implementation validates updates to
-// serviceClass.Status updates only and disallows any modifications to the serviceClass.Spec.
-type serviceClassStatusRESTStrategy struct {
-	serviceClassRESTStrategy
+// clusterServiceClassStatusRESTStrategy implements interface
+// RESTUpdateStrategy. This implementation validates updates to
+// clusterServiceClass.Status updates only and disallows any modifications to
+// the clusterServiceClass.Spec.
+type clusterServiceClassStatusRESTStrategy struct {
+	clusterServiceClassRESTStrategy
 }
 
 var (
-	serviceClassRESTStrategies = serviceClassRESTStrategy{
+	clusterServiceClassRESTStrategies = clusterServiceClassRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
 		ObjectTyper: api.Scheme,
@@ -58,58 +61,59 @@ var (
 		// `GenerateName(base string) string`
 		NameGenerator: names.SimpleNameGenerator,
 	}
-	_ rest.RESTCreateStrategy = serviceClassRESTStrategies
-	_ rest.RESTUpdateStrategy = serviceClassRESTStrategies
-	_ rest.RESTDeleteStrategy = serviceClassRESTStrategies
+	_ rest.RESTCreateStrategy = clusterServiceClassRESTStrategies
+	_ rest.RESTUpdateStrategy = clusterServiceClassRESTStrategies
+	_ rest.RESTDeleteStrategy = clusterServiceClassRESTStrategies
 
-	serviceClassStatusUpdateStrategy = serviceClassStatusRESTStrategy{
-		serviceClassRESTStrategies,
+	clusterServiceClassStatusUpdateStrategy = clusterServiceClassStatusRESTStrategy{
+		clusterServiceClassRESTStrategies,
 	}
-	_ rest.RESTUpdateStrategy = serviceClassStatusUpdateStrategy
+	_ rest.RESTUpdateStrategy = clusterServiceClassStatusUpdateStrategy
 )
 
-// Canonicalize does not transform a serviceclass.
-func (serviceClassRESTStrategy) Canonicalize(obj runtime.Object) {
+// Canonicalize does not transform a ClusterServiceClass.
+func (clusterServiceClassRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to create")
+		glog.Fatal("received a non-clusterserviceclass object to create")
 	}
 }
 
-// NamespaceScoped returns false as serviceclasss are not scoped to a namespace.
-func (serviceClassRESTStrategy) NamespaceScoped() bool {
+// NamespaceScoped returns false as ClusterServiceClass are not scoped to a
+// namespace.
+func (clusterServiceClassRESTStrategy) NamespaceScoped() bool {
 	return false
 }
 
-// PrepareForCreate receives the incoming Serviceclass.
-func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	serviceClass, ok := obj.(*sc.ClusterServiceClass)
+// PrepareForCreate receives the incoming ClusterServiceClass.
+func (clusterServiceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+	clusterServiceClass, ok := obj.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to create")
+		glog.Fatal("received a non-clusterserviceclass object to create")
 	}
-	serviceClass.Status = sc.ClusterServiceClassStatus{}
+	clusterServiceClass.Status = sc.ClusterServiceClassStatus{}
 }
 
-func (serviceClassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (clusterServiceClassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateClusterServiceClass(obj.(*sc.ClusterServiceClass))
 }
 
-func (serviceClassRESTStrategy) AllowCreateOnUpdate() bool {
+func (clusterServiceClassRESTStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (serviceClassRESTStrategy) AllowUnconditionalUpdate() bool {
+func (clusterServiceClassRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServiceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to update to")
+		glog.Fatal("received a non-clusterserviceclass object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to update from")
+		glog.Fatal("received a non-clusterserviceclass object to update from")
 	}
 
 	// Update should not change the status
@@ -118,43 +122,32 @@ func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 	newServiceClass.Spec.ClusterServiceBrokerName = oldServiceClass.Spec.ClusterServiceBrokerName
 }
 
-func (serviceClassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServiceClassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to validate to")
+		glog.Fatal("received a non-clusterserviceclass object to validate to")
 	}
 	oldServiceclass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to validate from")
+		glog.Fatal("received a non-clusterserviceclass object to validate from")
 	}
 
 	return scv.ValidateClusterServiceClassUpdate(newServiceclass, oldServiceclass)
 }
 
-func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServiceClassStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceClass object to update to")
+		glog.Fatal("received a non-clusterserviceClass object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceClass object to update from")
+		glog.Fatal("received a non-clusterserviceClass object to update from")
 	}
 	// Status changes are not allowed to update spec
 	newServiceClass.Spec = oldServiceClass.Spec
 }
 
-func (serviceClassStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	// newServiceClass, ok := new.(*sc.ServiceClass)
-	// if !ok {
-	// 	glog.Fatal("received a non-serviceClass object to validate to")
-	// }
-	// oldServiceClass, ok := old.(*sc.ServiceClass)
-	// if !ok {
-	// 	glog.Fatal("received a non-serviceClass object to validate from")
-	// }
-
-	// return scv.ValidateServiceClassStatusUpdate(newServiceClass, oldServiceClass)
-
+func (clusterServiceClassStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	return field.ErrorList{}
 }

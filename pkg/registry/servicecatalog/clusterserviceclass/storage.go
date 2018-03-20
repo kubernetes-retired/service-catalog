@@ -89,18 +89,18 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 
 // toSelectableFields returns a field set that represents the object for
 // matching purposes.
-func toSelectableFields(serviceClass *servicecatalog.ClusterServiceClass) fields.Set {
+func toSelectableFields(clusterServiceClass *servicecatalog.ClusterServiceClass) fields.Set {
 	// The purpose of allocation with a given number of elements is to reduce
 	// amount of allocations needed to create the fields.Set. If you add any
 	// field here or the number of object-meta related fields changes, this should
 	// be adjusted.
 	// You also need to modify
 	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
-	scSpecificFieldsSet := make(fields.Set, 3)
-	scSpecificFieldsSet["spec.clusterServiceBrokerName"] = serviceClass.Spec.ClusterServiceBrokerName
-	scSpecificFieldsSet["spec.externalName"] = serviceClass.Spec.ExternalName
-	scSpecificFieldsSet["spec.externalID"] = serviceClass.Spec.ExternalID
-	return generic.AddObjectMetaFieldsSet(scSpecificFieldsSet, &serviceClass.ObjectMeta, true)
+	cscSpecificFieldsSet := make(fields.Set, 3)
+	cscSpecificFieldsSet["spec.clusterServiceBrokerName"] = clusterServiceClass.Spec.ClusterServiceBrokerName
+	cscSpecificFieldsSet["spec.externalName"] = clusterServiceClass.Spec.ExternalName
+	cscSpecificFieldsSet["spec.externalID"] = clusterServiceClass.Spec.ExternalID
+	return generic.AddObjectMetaFieldsSet(cscSpecificFieldsSet, &clusterServiceClass.ObjectMeta, true)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
@@ -120,7 +120,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	storageInterface, dFunc := opts.GetStorage(
 		&servicecatalog.ClusterServiceClass{},
 		prefix,
-		serviceClassRESTStrategies,
+		clusterServiceClassRESTStrategies,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,
@@ -141,9 +141,9 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// DefaultQualifiedResource should always be plural
 		DefaultQualifiedResource: servicecatalog.Resource("clusterserviceclasses"),
 
-		CreateStrategy: serviceClassRESTStrategies,
-		UpdateStrategy: serviceClassRESTStrategies,
-		DeleteStrategy: serviceClassRESTStrategies,
+		CreateStrategy: clusterServiceClassRESTStrategies,
+		UpdateStrategy: clusterServiceClassRESTStrategies,
+		DeleteStrategy: clusterServiceClassRESTStrategies,
 		Storage:        storageInterface,
 		DestroyFunc:    dFunc,
 	}
@@ -154,7 +154,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	}
 
 	statusStore := store
-	statusStore.UpdateStrategy = serviceClassStatusUpdateStrategy
+	statusStore.UpdateStrategy = clusterServiceClassStatusUpdateStrategy
 
 	return &store, &StatusREST{&statusStore}
 }
