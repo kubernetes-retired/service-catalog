@@ -2,9 +2,6 @@
 # This is a template package spec that will support Go builds following the OpenShift conventions.
 # It expects a set of standard env vars that define the Git version being built and can also handle
 # multi-architecture Linux builds. It has stubs for cross building.
-#
-# Search for TODO and fill those sections out as appropriate.
-#
 
 #debuginfo not supported with Go
 %global debug_package %{nil}
@@ -49,14 +46,14 @@
 %global golang_version 1.8.1
 %{!?version: %global version 0.0.1}
 %{!?release: %global release 1}
-%global package_name service-catalog # PACKAGE_NAME
-%global product_name TODO # PRODUCT_NAME
-%global import_path TODO # GO_PACKAGE
+%global package_name origin-service-catalog
+%global product_name Service Catalog
+%global import_path github.com/openshift/service-catalog
 
 Name:           %{package_name}
 Version:        %{version}
 Release:        %{release}%{?dist}
-Summary:        TODO
+Summary:        Consume services in Kubernetes using the Open Service Broker API
 License:        ASL 2.0
 URL:            https://%{import_path}
 
@@ -73,7 +70,7 @@ ExclusiveArch:  x86_64 aarch64 ppc64le s390x
 ### AUTO-BUNDLED-GEN-ENTRY-POINT
 
 %description
-TODO
+%{summary}
 
 %prep
 %if 0%{do_prep}
@@ -112,7 +109,7 @@ PLATFORM="$(go env GOHOSTOS)/$(go env GOHOSTARCH)"
 install -d %{buildroot}%{_bindir}
 
 # Install linux components
-for bin in TODO
+for bin in service-catalog
 do
   echo "+++ INSTALLING ${bin}"
   install -p -m 755 _output/local/bin/${PLATFORM}/${bin} %{buildroot}%{_bindir}/${bin}
@@ -128,7 +125,7 @@ done
 %files
 %doc README.md
 %license LICENSE
-%{_bindir}/TODO
+%{_bindir}/service-catalog
 # EXAMPLE: Managing configuration
 # %defattr(-,root,root,0700)
 # %dir %config(noreplace) %{_sysconfdir}/origin
