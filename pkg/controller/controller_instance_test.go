@@ -2347,8 +2347,8 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
-		t.Fatalf("Expected polling queue to have requeues of test instance after polling have completed with a 'failed' state")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have requeues of test instance after polling have completed with a 'success' state")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2401,8 +2401,8 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
+		t.Fatalf("Expected polling queue to have a record of test instance as provisioning should have retried")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
