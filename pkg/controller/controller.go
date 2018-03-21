@@ -567,8 +567,8 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 			servicePlans[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
-		if schemas := plan.ParameterSchemas; schemas != nil {
-			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
+		if schemas := plan.Schemas; schemas != nil {
+			if instanceSchemas := schemas.ServiceInstance; instanceSchemas != nil {
 				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil && instanceCreateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceCreateSchema.Parameters)
 					if err != nil {
@@ -588,7 +588,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 					servicePlans[i].Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
-			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
+			if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
 				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil && bindingCreateSchema.Parameters != nil {
 					schema, err := json.Marshal(bindingCreateSchema.Parameters)
 					if err != nil {
