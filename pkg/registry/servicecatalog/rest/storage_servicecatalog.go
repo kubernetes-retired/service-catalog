@@ -25,6 +25,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -103,6 +104,23 @@ func (p StorageProvider) v1beta1Storage(
 		p.StorageType,
 	)
 
+	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
+	if err != nil {
+		return nil, err
+	}
+	serviceClassOpts := server.NewOptions(
+		etcd.Options{
+			RESTOptions:   serviceClassRESTOptions,
+			Capacity:      1000,
+			ObjectType:    serviceclass.EmptyObject(),
+			ScopeStrategy: serviceclass.NewScopeStrategy(),
+			NewListFunc:   serviceclass.NewList,
+			GetAttrsFunc:  serviceclass.GetAttrs,
+			Trigger:       storage.NoTriggerPublisher,
+		},
+		p.StorageType,
+	)
+
 	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
 	if err != nil {
 		return nil, err
@@ -156,6 +174,7 @@ func (p StorageProvider) v1beta1Storage(
 
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	clusterServiceClassStorage, clusterServiceClassStatusStorage := clusterserviceclass.NewStorage(*clusterServiceClassOpts)
+	serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
 	servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage, instanceReferencesStorage := instance.NewStorage(*instanceOpts)
 	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
@@ -168,6 +187,8 @@ func (p StorageProvider) v1beta1Storage(
 		"clusterservicebrokers/status": brokerStatusStorage,
 		"clusterserviceclasses":        clusterServiceClassStorage,
 		"clusterserviceclasses/status": clusterServiceClassStatusStorage,
+		"serviceclasses":               serviceClassStorage,
+		"serviceclasses/status":        serviceClassStatusStorage,
 		"clusterserviceplans":          servicePlanStorage,
 		"clusterserviceplans/status":   servicePlanStatusStorage,
 		"serviceinstances":             instanceStorage,

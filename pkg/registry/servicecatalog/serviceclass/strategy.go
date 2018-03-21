@@ -79,10 +79,9 @@ func (serviceClassRESTStrategy) Canonicalize(obj runtime.Object) {
 	}
 }
 
-// NamespaceScoped returns false as ServiceClass are not scoped to a
-// namespace.
+// NamespaceScoped returns true as ServiceClasses are scoped to a namespace.
 func (serviceClassRESTStrategy) NamespaceScoped() bool {
-	return false
+	return true
 }
 
 // PrepareForCreate receives the incoming ServiceClass.
