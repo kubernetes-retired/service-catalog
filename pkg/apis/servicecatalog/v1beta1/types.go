@@ -252,13 +252,63 @@ type ClusterServiceClass struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec defines the behavior of the service class.
+	// Spec defines the behavior of the cluster service class.
 	// +optional
 	Spec ClusterServiceClassSpec `json:"spec,omitempty"`
 
-	// Status represents the current status of the service class.
+	// Status represents the current status of the cluster service class.
 	// +optional
 	Status ClusterServiceClassStatus `json:"status,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceClassList is a list of ServiceClasses.
+type ServiceClassList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ServiceClass `json:"items"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceClass represents a namespaced offering in the service catalog.
+type ServiceClass struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Spec defines the behavior of the service class.
+	// +optional
+	Spec ServiceClassSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of a service class.
+	// +optional
+	Status ServiceClassStatus `json:"status,omitempty"`
+}
+
+// ServiceClassStatus represents status information about a ServiceClass.
+type ServiceClassStatus struct {
+	CommonServiceClassStatus `json:",inline"`
+}
+
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
+	CommonServiceClassStatus `json:",inline"`
+}
+
+// CommonServiceClassStatus represents common status information between
+// cluster scoped and namespace scoped ServiceClasses.
+type CommonServiceClassStatus struct {
+	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
+	// catalog.
+	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
 }
 
 // CommonServiceClassSpec represents details about a ServiceClass
@@ -330,12 +380,15 @@ type ClusterServiceClassSpec struct {
 	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 }
 
-// ClusterServiceClassStatus represents status information about a
-// ClusterServiceClass.
-type ClusterServiceClassStatus struct {
-	// RemovedFromBrokerCatalog indicates that the broker removed the service
-	// from its catalog.
-	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
+// ServiceClassSpec represents the details about a ServiceClass
+type ServiceClassSpec struct {
+	CommonServiceClassSpec `json:",inline"`
+
+	// ServiceBrokerName is the reference to the Broker that provides this
+	// ServiceClass.
+	//
+	// Immutable.
+	ServiceBrokerName string `json:"serviceBrokerName"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

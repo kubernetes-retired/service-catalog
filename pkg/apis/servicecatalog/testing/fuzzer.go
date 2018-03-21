@@ -147,6 +147,14 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			}
 			sc.Spec.ExternalMetadata = metadata
 		},
+		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
+			c.FuzzNoCustom(sc)
+			metadata, err := createServiceMetadata(c)
+			if err != nil {
+				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
+			}
+			sc.Spec.ExternalMetadata = metadata
+		},
 		func(sp *servicecatalog.ClusterServicePlan, c fuzz.Continue) {
 			c.FuzzNoCustom(sp)
 			metadata, err := createPlanMetadata(c)
