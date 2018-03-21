@@ -33,7 +33,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -61,13 +60,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-)
-
-const (
-	// Use the same SSL configuration as we use in Catalog API Server.
-	// Store generated SSL certificates in a place that won't collide with the
-	// k8s core API server.
-	certDirectory = "/var/run/kubernetes-service-catalog"
 )
 
 // NewControllerManagerCommand creates a *cobra.Command object with default
@@ -158,11 +150,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// This is the same code as what is done in the API Server.  By default, Helm created
 	// cert and key for us, this just ensures the files are found and are readable and
 	// creates self signed versions if not.
-	secureServingOptions := genericserveroptions.NewSecureServingOptions()
-	secureServingOptions.ServerCert.CertDirectory = certDirectory
-	secureServingOptions.BindPort = int(controllerManagerOptions.SecurePort)
-	secureServingOptions.BindAddress = net.ParseIP(controllerManagerOptions.Address)
-	if err := secureServingOptions.MaybeDefaultWithSelfSignedCerts("" /*AdvertiseAddress*/, nil /*alternateDNS*/, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
+	if err := controllerManagerOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts("" /*AdvertiseAddress*/, nil /*alternateDNS*/, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
 		return fmt.Errorf("failed to establish SecureServingOptions %v", err)
 	}
 
@@ -189,10 +177,12 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 			}
 		}
 		server := &http.Server{
-			Addr:    net.JoinHostPort(controllerManagerOptions.Address, strconv.Itoa(int(controllerManagerOptions.SecurePort))),
+			Addr: net.JoinHostPort(controllerManagerOptions.Address,
+				strconv.Itoa(int(controllerManagerOptions.SecureServingOptions.BindPort))),
 			Handler: mux,
 		}
-		glog.Fatal(server.ListenAndServeTLS(secureServingOptions.ServerCert.CertKey.CertFile, secureServingOptions.ServerCert.CertKey.KeyFile))
+		glog.Fatal(server.ListenAndServeTLS(controllerManagerOptions.SecureServingOptions.ServerCert.CertKey.CertFile,
+			controllerManagerOptions.SecureServingOptions.ServerCert.CertKey.KeyFile))
 	}()
 
 	// Create event broadcaster
