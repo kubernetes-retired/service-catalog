@@ -142,11 +142,12 @@ function os::util::list_go_deps() {
 
 # OS_ALL_IMAGES is the list of images built by os::build::images.
 readonly OS_ALL_IMAGES=(
-  openshift/origin-pod
+  tag_prefix="${OS_IMAGE_PREFIX:-"openshift/origin"}"
+  "{tag_prefix}-service-catalog"
 )
 
 # os::build::images builds all images in this repo.
 function os::build::images() {
   tag_prefix="${OS_IMAGE_PREFIX:-"openshift/origin"}"
-  os::build::image "${tag_prefix}-pod" images/pod
+  os::build::image "${tag_prefix}"-service-catalog images/service-catalog
 }
