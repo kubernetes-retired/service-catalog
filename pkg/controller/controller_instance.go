@@ -1614,7 +1614,7 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 
 	if shouldMitigateOrphan {
 		// Copy original failure reason/message to a new OrphanMitigation condition
-		c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
+		c.recorder.Event(instance, corev1.EventTypeWarning, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
 		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation,
 			v1beta1.ConditionTrue, readyCond.Reason, readyCond.Message)
 		// Overwrite Ready condition reason/message with reporting on orphan mitigation
@@ -1631,11 +1631,6 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		// Deprovisioning is not required for provisioning that has failed with an
 		// error that doesn't require orphan mitigation
 		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
-		instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
-		// TODO nilebox: If we update ReconciledGeneration on failure, API server rejects
-		// the status update request with error:
-		// "Forbidden: currentOperation must not be present when reconciledGeneration and generation are equal"
-		//instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1694,10 +1689,6 @@ func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.Servi
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionFailed, failedCond.Status, failedCond.Reason, failedCond.Message)
 	clearServiceInstanceCurrentOperation(instance)
-	// TODO nilebox: If we update ReconciledGeneration on failure, API server rejects
-	// the status update request with error:
-	// "Forbidden: currentOperation must not be present when reconciledGeneration and generation are equal"
-	// instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -1741,13 +1732,6 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 	instance.Status.ExternalProperties = nil
 	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
-	// TODO nilebox: If we update ReconciledGeneration on orphan mitigation,
-	// and then retry provisioning, API server rejects
-	// the status update request with error:
-	// "Forbidden: currentOperation must not be present when reconciledGeneration and generation are equal"
-	if !mitigatingOrphan {
-		instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
-	}
 
 	if mitigatingOrphan {
 		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1791,7 +1775,6 @@ func (c *controller) processDeprovisionFailure(instance *v1beta1.ServiceInstance
 	}
 
 	clearServiceInstanceCurrentOperation(instance)
-	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {

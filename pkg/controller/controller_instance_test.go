@@ -939,11 +939,50 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
+	//////////////////////////////////////
+	// Check 1st reconcilliation iteration (prepare/validate request & set status to in progress)
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("Reconcile not expected to fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	expectedKubeActions := []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, expectedKubeActions); err != nil {
+		t.Fatal(err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+
+	events := getRecordedEvents(testController)
+	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceOperationInProgress(t,
+		updatedServiceInstance,
+		v1beta1.ServiceInstanceOperationProvision,
+		testClusterServicePlanName,
+		testClusterServicePlanGUID,
+		instance,
+	)
+
+	//////////////////////////////////////
+	// Check 2nd reconcilliation iteration (actual broker request)
+
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+	instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
+
 	if err := testController.reconcileServiceInstance(instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance")
 	}
 
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	brokerActions = fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
@@ -958,30 +997,28 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
-	kubeActions := fakeKubeClient.Actions()
+	kubeActions = fakeKubeClient.Actions()
 	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
 		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	actions = fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		startingInstanceOrphanMitigationReason,
 		"",
+		errorProvisionCallFailedReason,
 		instance,
 	)
 
-	events := getRecordedEvents(testController)
+	events = getRecordedEvents(testController)
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
