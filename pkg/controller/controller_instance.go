@@ -1791,10 +1791,7 @@ func (c *controller) processDeprovisionFailure(instance *v1beta1.ServiceInstance
 	}
 
 	clearServiceInstanceCurrentOperation(instance)
-	// TODO nilebox: If we update ReconciledGeneration on failure, API server rejects
-	// the status update request with error:
-	// "Forbidden: currentOperation must not be present when reconciledGeneration and generation are equal"
-	// instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
