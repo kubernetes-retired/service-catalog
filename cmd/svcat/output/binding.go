@@ -65,15 +65,20 @@ func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
 // WriteBindingDetails prints details for a single binding.
 func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 	t := NewDetailsTable(w)
-
 	t.AppendBulk([][]string{
 		{"Name:", binding.Name},
 		{"Namespace:", binding.Namespace},
 		{"Status:", getBindingStatusFull(binding.Status)},
 		{"Instance:", binding.Spec.ServiceInstanceRef.Name},
 	})
-
 	t.Render()
+
+	// If available, show the parameters as they were sent to the broker, otherwise show what was requested
+	if binding.Status.ExternalProperties != nil && binding.Status.ExternalProperties.Parameters != nil {
+		writeParameters(w, binding.Status.ExternalProperties.Parameters)
+	} else if binding.Spec.Parameters != nil {
+		writeParameters(w, binding.Spec.Parameters)
+	}
 }
 
 // WriteAssociatedBindings prints a list of bindings associated with an instance.
