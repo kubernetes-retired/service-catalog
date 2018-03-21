@@ -336,8 +336,8 @@ type ClusterServicePlan struct {
 	Status ClusterServicePlanStatus
 }
 
-// SharedServicePlanSpec represents details about the ServicePlan
-type SharedServicePlanSpec struct {
+// CommonServicePlanSpec represents details about the ServicePlan
+type CommonServicePlanSpec struct {
 	// ExternalName is the name of this object that the Service Broker
 	// exposed this Service Plan as. Mutable.
 	ExternalName string
@@ -388,7 +388,7 @@ type SharedServicePlanSpec struct {
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan
 type ClusterServicePlanSpec struct {
-	SharedServicePlanSpec
+	CommonServicePlanSpec
 
 	// ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this
 	// ClusterServicePlan.

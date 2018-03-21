@@ -72,7 +72,7 @@ func getTestClusterServicePlanRemoved() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
-			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 				ExternalID:   testRemovedClusterServicePlanGUID,
 				ExternalName: testRemovedClusterServicePlanExternalName,
 				Description:  "a plan that will be removed",

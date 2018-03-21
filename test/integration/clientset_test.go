@@ -620,7 +620,7 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
-			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 				Bindable:     &bindable,
 				ExternalName: name,
 				ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
@@ -720,7 +720,7 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
-			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 				Bindable:     &bindable,
 				ExternalName: sp2Name,
 				ExternalID:   sp2ID,
