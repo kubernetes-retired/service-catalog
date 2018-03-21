@@ -38,6 +38,14 @@ type ServiceBindingListerExpansion interface{}
 // ServiceBindingNamespaceLister.
 type ServiceBindingNamespaceListerExpansion interface{}
 
+// ServiceClassListerExpansion allows custom methods to be added to
+// ServiceClassLister.
+type ServiceClassListerExpansion interface{}
+
+// ServiceClassNamespaceListerExpansion allows custom methods to be added to
+// ServiceClassNamespaceLister.
+type ServiceClassNamespaceListerExpansion interface{}
+
 // ServiceInstanceListerExpansion allows custom methods to be added to
 // ServiceInstanceLister.
 type ServiceInstanceListerExpansion interface{}
