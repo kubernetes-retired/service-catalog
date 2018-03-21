@@ -616,6 +616,10 @@ const (
 	// ServiceInstanceConditionFailed represents information about a final failure
 	// that should not be retried.
 	ServiceInstanceConditionFailed ServiceInstanceConditionType = "Failed"
+
+	// ServiceInstanceConditionOrphanMitigation represents information about an
+	// orphan mitigation that is required after failed provisioning.
+	ServiceInstanceConditionOrphanMitigation ServiceInstanceConditionType = "OrphanMitigation"
 )
 
 // ServiceInstanceOperation represents a type of operation the controller can

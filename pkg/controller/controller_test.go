@@ -1892,6 +1892,10 @@ func assertServiceInstanceReadyCondition(t *testing.T, obj runtime.Object, statu
 	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionReady, status, reason...)
 }
 
+func assertServiceInstanceOrphanMitigationTrue(t *testing.T, obj runtime.Object, reason string) {
+	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation, v1beta1.ConditionTrue, reason)
+}
+
 func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceInstanceConditionType, status v1beta1.ConditionStatus, reason ...string) {
 	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
@@ -1913,6 +1917,24 @@ func assertServiceInstanceCondition(t *testing.T, obj runtime.Object, conditionT
 
 	if !foundCondition {
 		fatalf(t, "%v condition not found", conditionType)
+	}
+}
+
+func assertServiceInstanceOrphanMitigationMissing(t *testing.T, obj runtime.Object, reason ...string) {
+	assertServiceInstanceConditionMissing(t, obj, v1beta1.ServiceInstanceConditionOrphanMitigation)
+}
+
+func assertServiceInstanceConditionMissing(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceInstanceConditionType) {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
+	}
+
+	for _, condition := range instance.Status.Conditions {
+		if condition.Type == conditionType {
+			fatalf(t, "%v condition expected to be missing", conditionType)
+			return
+		}
 	}
 }
 
@@ -2037,7 +2059,7 @@ func testServiceInstanceOrphanMitigationInProgress(t *testing.T, name string, f 
 		f(t, "%vCouldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
-	actual := instance.Status.OrphanMitigationInProgress
+	actual := isServiceInstanceOrphanMitigation(instance)
 	if actual != expected {
 		f(t, "%vexpected OrphanMitigationInProgress to be %v but was %v", logContext, expected, actual)
 		return false
@@ -2112,7 +2134,7 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 		expectedObservedGeneration = originalInstance.Generation
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		reason = deprovisioningInFlightReason
-		if originalInstance.Status.OrphanMitigationInProgress {
+		if isServiceInstanceOrphanMitigation(originalInstance) {
 			expectedObservedGeneration = originalInstance.Status.ObservedGeneration
 		} else {
 			expectedObservedGeneration = originalInstance.Generation
@@ -2139,6 +2161,7 @@ func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Obj
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
+	assertServiceInstanceOrphanMitigationTrue(t, obj, errorProvisionCallFailedReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
 }
@@ -2173,7 +2196,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 		reason = successDeprovisionReason
 		readyStatus = v1beta1.ConditionFalse
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
-		if originalInstance.Status.OrphanMitigationInProgress {
+		if isServiceInstanceOrphanMitigation(originalInstance) {
 			observedGeneration = originalInstance.Status.ObservedGeneration
 		} else {
 			observedGeneration = originalInstance.Generation
@@ -2247,12 +2270,13 @@ func assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t *testing
 	assertServiceInstanceInProgressPropertiesNil(t, obj)
 }
 
-func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
+func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, orphanMitigationReason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, true, originalInstance)
 	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
+	assertServiceInstanceOrphanMitigationTrue(t, obj, orphanMitigationReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 }
 
