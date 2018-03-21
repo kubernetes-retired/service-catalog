@@ -79,7 +79,7 @@ var (
 )
 
 // NewCompletionCmd return command for executing "svcat completion" command
-func NewCompletionCmd(cxt *command.Context, boilerPlate string) *cobra.Command {
+func NewCompletionCmd(cxt *command.Context) *cobra.Command {
 	shells := []string{}
 	for s := range completionShells {
 		shells = append(shells, s)
@@ -91,7 +91,7 @@ func NewCompletionCmd(cxt *command.Context, boilerPlate string) *cobra.Command {
 		Long:    completionLong,
 		Example: completionExample,
 		Run: func(cmd *cobra.Command, args []string) {
-			err := RunCompletion(cxt, boilerPlate, cmd, args)
+			err := RunCompletion(cxt, cmd, args)
 			if err != nil {
 				cxt.Output.Write([]byte(err.Error()))
 			}
@@ -103,7 +103,7 @@ func NewCompletionCmd(cxt *command.Context, boilerPlate string) *cobra.Command {
 }
 
 // RunCompletion checks given arguments and executes command
-func RunCompletion(cxt *command.Context, boilerPlate string, cmd *cobra.Command, args []string) error {
+func RunCompletion(cxt *command.Context, cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Shell not specified")
 	}
@@ -113,13 +113,6 @@ func RunCompletion(cxt *command.Context, boilerPlate string, cmd *cobra.Command,
 	run, found := completionShells[args[0]]
 	if !found {
 		return fmt.Errorf("Unsupported shell type %q", args[0])
-	}
-
-	if len(boilerPlate) == 0 {
-		boilerPlate = defaultBoilerPlate
-	}
-	if _, err := cxt.Output.Write([]byte(boilerPlate)); err != nil {
-		return err
 	}
 	return run(cxt, cmd.Parent())
 }

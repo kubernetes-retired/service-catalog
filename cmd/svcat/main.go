@@ -173,7 +173,7 @@ func newTouchCmd(cxt *command.Context) *cobra.Command {
 }
 
 func newCompletionCmd(ctx *command.Context) *cobra.Command {
-	return completion.NewCompletionCmd(ctx, "")
+	return completion.NewCompletionCmd(ctx)
 }
 
 // Bind the viper configuration back to the cobra command flags.
