@@ -1354,7 +1354,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 	}
 }
 
-func TestPollServiceInstanceLastOperation(t *testing.T) {
+func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 	cases := []struct {
 		name                         string
 		setup                        func(t *controllerTest)
@@ -1401,28 +1401,6 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 				Type:   v1beta1.ServiceInstanceConditionReady,
 				Status: v1beta1.ConditionTrue,
 				Reason: "ProvisionedSuccessfully",
-			},
-		},
-		{
-			name: "async provisioning with last operation response state failed",
-			setup: func(ct *controllerTest) {
-				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-						Async: true,
-					},
-				}
-				ct.osbClient.PollLastOperationReaction = &fakeosb.PollLastOperationReaction{
-					Response: &osb.LastOperationResponse{
-						State:       osb.StateFailed,
-						Description: strPtr("testDescription"),
-					},
-				}
-			},
-			skipVerifyingInstanceSuccess: true,
-			verifyCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionFalse,
-				Reason: "ProvisionCallFailed",
 			},
 		},
 		// response errors
@@ -1486,23 +1464,6 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "async provisioning with last operation response state failed eventually",
-			setup: func(ct *controllerTest) {
-				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-						Async: true,
-					},
-				}
-				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(getLastOperationResponseByPollCountStates(2, []osb.LastOperationState{osb.StateInProgress, osb.StateFailed}))
-			},
-			skipVerifyingInstanceSuccess: true,
-			verifyCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionFalse,
-				Reason: "ProvisionCallFailed",
-			},
-		},
-		{
 			name: "async last operation response successful with originating identity",
 			setup: func(ct *controllerTest) {
 				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity)); err != nil {
@@ -1559,6 +1520,94 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 					if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, *tc.verifyCondition); err != nil {
 						t.Fatalf("error waiting for instance condition: %v", err)
 					}
+				}
+			})
+		})
+	}
+}
+
+// TestPollServiceInstanceLastOperationFailure checks that async operation is correctly
+// retried after the initial operation fails
+func TestPollServiceInstanceLastOperationFailure(t *testing.T) {
+	cases := []struct {
+		name                         string
+		setup                        func(t *controllerTest)
+		skipVerifyingInstanceSuccess bool
+		failureCondition             *v1beta1.ServiceInstanceCondition
+		successCondition             *v1beta1.ServiceInstanceCondition
+	}{
+		{
+			name: "async provisioning with last operation response state failed",
+			setup: func(ct *controllerTest) {
+				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+					Response: &osb.ProvisionResponse{
+						Async: true,
+					},
+				}
+				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+					getLastOperationResponseByPollCountStates(2,
+						[]osb.LastOperationState{
+							osb.StateFailed,
+							osb.StateSucceeded,
+						}))
+			},
+			skipVerifyingInstanceSuccess: false,
+			failureCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "ProvisionCallFailed",
+			},
+			successCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionTrue,
+				Reason: "ProvisionedSuccessfully",
+			},
+		},
+		// response errors
+		{
+			name: "async provisioning with last operation response state failed eventually",
+			setup: func(ct *controllerTest) {
+				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+					Response: &osb.ProvisionResponse{
+						Async: true,
+					},
+				}
+				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+					getLastOperationResponseByPollCountStates(1,
+						[]osb.LastOperationState{
+							osb.StateInProgress,
+							osb.StateFailed,
+							osb.StateInProgress,
+							osb.StateSucceeded,
+						}))
+			},
+			skipVerifyingInstanceSuccess: false,
+			failureCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "ProvisionCallFailed",
+			},
+			successCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionTrue,
+				Reason: "ProvisionedSuccessfully",
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			//t.Parallel()
+			ct := &controllerTest{
+				t:                            t,
+				broker:                       getTestBroker(),
+				instance:                     getTestInstance(),
+				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
+				setup: tc.setup,
+			}
+			ct.run(func(ct *controllerTest) {
+				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, *tc.successCondition); err != nil {
+					t.Fatalf("error waiting for instance condition: %v", err)
 				}
 			})
 		})
