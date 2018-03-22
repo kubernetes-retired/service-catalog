@@ -1598,10 +1598,8 @@ func (c *controller) processTemporaryProvisionFailure(instance *v1beta1.ServiceI
 // ServiceInstance that hit a temporary or a terminal failure during provision
 // reconciliation.
 func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition, shouldMitigateOrphan bool) error {
-	if readyCond != nil {
-		c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
-		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
-	}
+	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
+	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 
 	var errorMessage error
 	if failedCond != nil {
@@ -1637,8 +1635,10 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		return err
 	}
 
-	// Need to vary return error depending on whether the worker should
-	// requeue this resource.
+	// The instance will be requeued in any case, since we updated the status
+	// a few lines above.
+	// But we still need to return a non-nil error for retriable errors and
+	// orphan mitigation to avoid resetting the rate limiter.
 	if failedCond == nil || shouldMitigateOrphan {
 		return errorMessage
 	}
@@ -1678,22 +1678,43 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 	return nil
 }
 
+// processTerminalUpdateServiceInstanceFailure handles the logging and updating of a
+// ServiceInstance that hit a terminal failure during update reconciliation.
+func (c *controller) processTerminalUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition) error {
+	if failedCond == nil {
+		return fmt.Errorf("failedCond must not be nil")
+	}
+	return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
+}
+
+// processTemporaryUpdateServiceInstanceFailure handles the logging and updating of a
+// ServiceInstance that hit a temporary error during update reconciliation.
+func (c *controller) processTemporaryUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
+	return c.processUpdateServiceInstanceFailure(instance, readyCond, nil)
+}
+
 // processUpdateServiceInstanceFailure handles the logging and updating of a
 // ServiceInstance that hit a terminal failure during update reconciliation.
 func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition) error {
-	// TODO nilebox: We need to distinguish terminal and temporary errors there
-	// but we need to merge https://github.com/kubernetes-incubator/service-catalog/pull/1748
-	// first that makes this method consistent with processProvisioningFailure()
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
-
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
-	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionFailed, failedCond.Status, failedCond.Reason, failedCond.Message)
-	clearServiceInstanceCurrentOperation(instance)
+
+	if failedCond != nil {
+		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionFailed, failedCond.Status, failedCond.Reason, failedCond.Message)
+		clearServiceInstanceCurrentOperation(instance)
+	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
 	}
 
+	// The instance will be requeued in any case, since we updated the status
+	// a few lines above.
+	// But we still need to return a non-nil error for retriable errors
+	// to avoid resetting the rate limiter.
+	if failedCond == nil {
+		return fmt.Errorf(readyCond.Message)
+	}
 	return nil
 }
 
