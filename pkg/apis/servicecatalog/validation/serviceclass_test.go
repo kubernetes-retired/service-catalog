@@ -27,12 +27,12 @@ import (
 func validClusterServiceClass() *servicecatalog.ClusterServiceClass {
 	return &servicecatalog.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-serviceclass",
+			Name: "test-clusterserviceclass",
 		},
 		Spec: servicecatalog.ClusterServiceClassSpec{
 			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
 				Bindable:     true,
-				ExternalName: "test-serviceclass",
+				ExternalName: "test-clusterserviceclass",
 				ExternalID:   "1234-4354a-49b",
 				Description:  "service description",
 			},
@@ -164,6 +164,160 @@ func TestValidateClusterServiceClass(t *testing.T) {
 
 	for _, tc := range cases {
 		errs := ValidateClusterServiceClass(tc.serviceClass)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// TODO: This is just a straight copy of the ClusterServiceClass tests that
+// exercise the ServiceClass validations. What to add that's unique to a
+// namespaced broker?
+////////////////////////////////////////////////////////////////////////////////
+func validServiceClass() *servicecatalog.ServiceClass {
+	return &servicecatalog.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-clusterserviceclass",
+		},
+		Spec: servicecatalog.ServiceClassSpec{
+			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
+				Bindable:     true,
+				ExternalName: "test-clusterserviceclass",
+				ExternalID:   "1234-4354a-49b",
+				Description:  "service description",
+			},
+			ServiceBrokerName: "test-broker",
+		},
+	}
+}
+
+func TestValidateServiceClass(t *testing.T) {
+	cases := []struct {
+		name         string
+		serviceClass *servicecatalog.ServiceClass
+		valid        bool
+	}{
+		{
+			name:         "valid serviceClass",
+			serviceClass: validServiceClass(),
+			valid:        true,
+		},
+		{
+			name: "valid serviceClass - uppercase in GUID",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalID = "40D-0983-1b89"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "valid serviceClass - period in GUID",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a.plan-name"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "valid serviceClass - period in externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "abc.com"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "invalid serviceClass - has namespace",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Namespace = "test-ns"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing guid",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalID = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - invalid guid",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalID = "1234-4354a\\%-49b"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing description",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.Description = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - invalid externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "****"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - underscore in externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "test_serviceclass"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - missing externalName",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "invalid serviceClass - valid but weird externalName1",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "-"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "invalid serviceClass - valid but weird externalName2",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalName = "0"
+				return s
+			}(),
+			valid: true,
+		},
+	}
+
+	for _, tc := range cases {
+		errs := ValidateServiceClass(tc.serviceClass)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
