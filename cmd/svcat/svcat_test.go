@@ -104,9 +104,9 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
 
-		{name: "completion no shell specified", cmd: "completion", golden: "output/completion-no-shell.txt"},
-		{name: "completion too many args", cmd: "completion arg0 arg1", golden: "output/completion-too-many-args.txt"},
-		{name: "completion unsupported shell", cmd: "completion unsupportedShell", golden: "output/completion-unsupported-shell.txt"},
+		{name: "completion no shell specified", cmd: "completion", golden: "output/completion-no-shell.txt", continueOnError: true},
+		{name: "completion too many args", cmd: "completion arg0 arg1", golden: "output/completion-too-many-args.txt", continueOnError: true},
+		{name: "completion unsupported shell", cmd: "completion unsupportedShell", golden: "output/completion-unsupported-shell.txt", continueOnError: true},
 	}
 
 	for _, tc := range testcases {

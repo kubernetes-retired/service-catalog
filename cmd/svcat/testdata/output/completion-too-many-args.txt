@@ -1,1 +1,1 @@
-Too many arguments. Expected only the shell type
+Error: Too many arguments. Expected only the shell type
