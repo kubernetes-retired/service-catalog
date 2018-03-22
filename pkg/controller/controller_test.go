@@ -2157,7 +2157,7 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Object, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
 	assertServiceInstanceReadyFalse(t, obj, startingInstanceOrphanMitigationReason)
-	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
@@ -2234,25 +2234,35 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 		deprovisionStatus v1beta1.ServiceInstanceDeprovisionStatus
 	)
 	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationProvision:
 		readyStatus = v1beta1.ConditionFalse
 		if orphanMitigationRequired {
 			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 		} else {
 			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
 		}
+	case v1beta1.ServiceInstanceOperationUpdate:
+		readyStatus = v1beta1.ConditionFalse
+		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		readyStatus = v1beta1.ConditionUnknown
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 	}
 
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
+
 	if failureReason == "" {
 		assertServiceInstanceConditionMissing(t, obj, v1beta1.ServiceInstanceConditionFailed)
 	} else {
 		assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
 	}
-	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+
+	if failureReason == "" || orphanMitigationRequired {
+		assertServiceInstanceOperationStartTimeSet(t, obj, true)
+	} else {
+		assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	}
+
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
@@ -2260,22 +2270,37 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 
 func assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, false, originalInstance)
-	assertServiceInstanceCurrentOperationClear(t, obj)
+
+	if failureReason == "" {
+		assertServiceInstanceCurrentOperation(t, obj, operation)
+		assertServiceInstanceInProgressPropertiesUnchanged(t, obj, originalInstance)
+	} else {
+		assertServiceInstanceCurrentOperationClear(t, obj)
+		assertServiceInstanceInProgressPropertiesNil(t, obj)
+	}
+
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	assertServiceInstanceInProgressPropertiesNil(t, obj)
+
 }
 
 func assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, false, originalInstance)
-	assertServiceInstanceCurrentOperationClear(t, obj)
+
+	if failureReason == "" {
+		assertServiceInstanceCurrentOperation(t, obj, operation)
+		assertServiceInstanceInProgressPropertiesUnchanged(t, obj, originalInstance)
+	} else {
+		assertServiceInstanceCurrentOperationClear(t, obj)
+		assertServiceInstanceInProgressPropertiesNil(t, obj)
+	}
+
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	assertServiceInstanceInProgressPropertiesNil(t, obj)
 }
 
 func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, orphanMitigationReason string, originalInstance *v1beta1.ServiceInstance) {

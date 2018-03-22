@@ -1625,14 +1625,21 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 			startingInstanceOrphanMitigationReason,
 			startingInstanceOrphanMitigationMessage)
 
-		instance.Status.OperationStartTime = nil
-		instance.Status.AsyncOpInProgress = false
 		instance.Status.OrphanMitigationInProgress = true
 	} else {
-		clearServiceInstanceCurrentOperation(instance)
 		// Deprovisioning is not required for provisioning that has failed with an
 		// error that doesn't require orphan mitigation
 		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
+	}
+
+	if failedCond == nil || shouldMitigateOrphan {
+		// Don't reset the current operation if the error is retriable
+		// or requires an orphan mitigation.
+		// Only reset the OSB operation status
+		clearServiceInstanceAsyncOsbOperation(instance)
+	} else {
+		// Reset the current operation if there was a terminal error
+		clearServiceInstanceCurrentOperation(instance)
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -1705,7 +1712,13 @@ func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.Servi
 
 	if failedCond != nil {
 		setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionFailed, failedCond.Status, failedCond.Reason, failedCond.Message)
+		// Reset the current operation if there was a terminal error
 		clearServiceInstanceCurrentOperation(instance)
+	} else {
+		// Don't reset the current operation if the error is retriable
+		// or requires an orphan mitigation.
+		// Only reset the OSB operation status
+		clearServiceInstanceAsyncOsbOperation(instance)
 	}
 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {

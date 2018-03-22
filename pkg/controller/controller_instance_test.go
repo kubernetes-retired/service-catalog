@@ -4773,8 +4773,8 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatal("expected error to be returned")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -4803,7 +4803,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "", instance)
 
 	events := getRecordedEvents(testController)
 
