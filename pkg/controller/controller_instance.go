@@ -484,17 +484,22 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		if httpErr, ok := osb.IsHTTPError(err); ok {
 			msg := fmt.Sprintf("ClusterServiceBroker returned a failure for update call; update will not be retried: %v", httpErr)
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
+
+			if isRetriableHTTPStatus(httpErr.StatusCode) {
+				return c.processTemporaryUpdateServiceInstanceFailure(instance, readyCond)
+			}
+			// A failure with a given HTTP response code is treated as a terminal
+			// failure.
 			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorUpdateInstanceCallFailedReason, msg)
-			return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
+			return c.processTerminalUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 		}
 
 		reason := errorErrorCallingUpdateInstanceReason
 
 		if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
-			msg := fmt.Sprintf("Communication with the ClusterServiceBroker timed out; update will not be retried: %v", urlErr)
+			msg := fmt.Sprintf("Communication with the ClusterServiceBroker timed out; update will be retried: %v", urlErr)
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, msg)
-			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, msg)
-			return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
+			return c.processTemporaryUpdateServiceInstanceFailure(instance, readyCond)
 		}
 
 		msg := fmt.Sprintf("The update call failed and will be retried: Error communicating with broker for updating: %s", err)
@@ -508,7 +513,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			msg = "Stopping reconciliation retries because too much time has elapsed"
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorReconciliationRetryTimeoutReason, msg)
 			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
-			return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
+			return c.processTerminalUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 		}
 
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, msg)
@@ -769,8 +774,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			reason := errorUpdateInstanceCallFailedReason
 			message := "Update call failed: " + description
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
-			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, message)
-			err = c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
+			err = c.processTemporaryUpdateServiceInstanceFailure(instance, readyCond)
 		}
 		if err != nil {
 			return c.handleServiceInstancePollingError(instance, err)
@@ -827,7 +831,7 @@ func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *
 		return c.processTerminalProvisionFailure(instance, readyCond, failedCond, true)
 	default:
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorReconciliationRetryTimeoutReason, msg)
-		err = c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
+		err = c.processTerminalUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 	}
 	if err != nil {
 		return c.handleServiceInstancePollingError(instance, err)
