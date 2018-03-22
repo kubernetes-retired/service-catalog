@@ -30,10 +30,10 @@ import (
 // ControllerManagerConfiguration encapsulates configuration for the
 // controller manager.
 type ControllerManagerConfiguration struct {
-	// Address is the IP address to serve on (set to 0.0.0.0 for all interfaces).
+	// DEPRECATED/Ignored, use SecureServingOptions.BindAddress instead.
 	Address string
 
-	// DEPRECATED/Ignored, use SecurePort instead.
+	// DEPRECATED/Ignored, use SecureServingOptions.SecurePort instead.
 	Port int32
 
 	// ContentType is the content type for requests sent to API servers.

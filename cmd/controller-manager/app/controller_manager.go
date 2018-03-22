@@ -177,7 +177,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 			}
 		}
 		server := &http.Server{
-			Addr: net.JoinHostPort(controllerManagerOptions.Address,
+			Addr: net.JoinHostPort(controllerManagerOptions.SecureServingOptions.BindAddress.String(),
 				strconv.Itoa(int(controllerManagerOptions.SecureServingOptions.BindPort))),
 			Handler: mux,
 		}
