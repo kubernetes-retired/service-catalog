@@ -17,8 +17,10 @@ limitations under the License.
 package servicecatalog
 
 import (
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // GroupName is the group name use in this package
@@ -47,13 +49,11 @@ var (
 )
 
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion,
+	knownTypes := []runtime.Object{
 		&ClusterServiceBroker{},
 		&ClusterServiceBrokerList{},
 		&ClusterServiceClass{},
 		&ClusterServiceClassList{},
-		&ServiceClass{},
-		&ServiceClassList{},
 		&ClusterServicePlan{},
 		&ClusterServicePlanList{},
 		&ServicePlan{},
@@ -62,6 +62,18 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ServiceInstanceList{},
 		&ServiceBinding{},
 		&ServiceBindingList{},
-	)
+	}
+
+	// Only register NamespacedServiceBroker resources if the feature gate has
+	// been enabled.
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
+		knownTypes = append(knownTypes, []runtime.Object{
+			&ServiceClass{},
+			&ServiceClassList{},
+		}...)
+	}
+
+	scheme.AddKnownTypes(SchemeGroupVersion, knownTypes...)
+
 	return nil
 }
