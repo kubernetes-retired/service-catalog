@@ -187,6 +187,20 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 	return nil
 }
 
+// resetPollingRateLimiterForServiceInstance causes the polling queue's rate
+// limiter to forget the given instance.
+func (c *controller) resetPollingRateLimiterForServiceInstance(instance *v1beta1.ServiceInstance) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
+		glog.Errorf(pcb.Message(s))
+		return
+	}
+
+	c.instancePollingQueue.Forget(key)
+}
+
 // getReconciliationActionForServiceInstance gets the action the reconciler
 // should be taking on the given instance.
 func getReconciliationActionForServiceInstance(instance *v1beta1.ServiceInstance) ReconciliationAction {
@@ -1244,6 +1258,12 @@ func (c *controller) recordStartOfServiceInstanceOperation(toUpdate *v1beta1.Ser
 		reason,
 		message,
 	)
+	// reset the polling rate limiter's memory of this instance, in case the
+	// controller hadn't reset it before switching operations (can happen
+	// when forcibly removing a finalizer during an in-progress async
+	// deprovision)
+	c.resetPollingRateLimiterForServiceInstance(toUpdate)
+
 	return c.updateServiceInstanceStatus(toUpdate)
 }
 
