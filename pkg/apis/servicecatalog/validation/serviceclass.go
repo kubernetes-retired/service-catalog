@@ -134,7 +134,7 @@ func internalValidateServiceClass(clusterserviceclass *sc.ServiceClass) field.Er
 	allErrs = append(allErrs,
 		apivalidation.ValidateObjectMeta(
 			&clusterserviceclass.ObjectMeta,
-			false, /* namespace required */
+			true, /* namespace required */
 			validateCommonServiceClassName,
 			field.NewPath("metadata"))...)
 
