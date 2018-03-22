@@ -173,15 +173,11 @@ func TestValidateClusterServiceClass(t *testing.T) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// TODO: This is just a straight copy of the ClusterServiceClass tests that
-// exercise the ServiceClass validations. What to add that's unique to a
-// namespaced broker?
-////////////////////////////////////////////////////////////////////////////////
 func validServiceClass() *servicecatalog.ServiceClass {
 	return &servicecatalog.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-clusterserviceclass",
+			Name:      "test-clusterserviceclass",
+			Namespace: "test-ns",
 		},
 		Spec: servicecatalog.ServiceClassSpec{
 			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
@@ -234,10 +230,10 @@ func TestValidateServiceClass(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "invalid serviceClass - has namespace",
+			name: "invalid serviceClass - has no namespace",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.Namespace = "test-ns"
+				s.Namespace = ""
 				return s
 			}(),
 			valid: false,
