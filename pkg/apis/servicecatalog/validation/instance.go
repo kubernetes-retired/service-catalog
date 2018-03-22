@@ -353,7 +353,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 	}
 
 	if externalClassSet {
-		for _, msg := range validateServiceClassName(p.ClusterServiceClassExternalName, false /* prefix */) {
+		for _, msg := range validateCommonServiceClassName(p.ClusterServiceClassExternalName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassExternalName"), p.ClusterServiceClassExternalName, msg))
 		}
 
@@ -367,7 +367,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		}
 	}
 	if k8sClassSet {
-		for _, msg := range validateServiceClassName(p.ClusterServiceClassName, false /* prefix */) {
+		for _, msg := range validateCommonServiceClassName(p.ClusterServiceClassName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassName"), p.ClusterServiceClassName, msg))
 		}
 
