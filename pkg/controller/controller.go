@@ -660,20 +660,19 @@ func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *met
 // shouldStartOrphanMitigation returns whether an error with the given status
 // code indicates that orphan migitation should start.
 func shouldStartOrphanMitigation(statusCode int) bool {
-	is2XX := (statusCode >= 200 && statusCode < 300)
-	is5XX := (statusCode >= 500 && statusCode < 600)
+	is2XX := statusCode >= 200 && statusCode < 300
+	is5XX := statusCode >= 500 && statusCode < 600
 
-	return (is2XX && statusCode != http.StatusOK) ||
-		is5XX
+	return (is2XX && statusCode != http.StatusOK) || is5XX
 }
 
 // isRetriableHTTPStatus returns whether an error with the given HTTP status
 // code is retriable.
 func isRetriableHTTPStatus(statusCode int) bool {
-	return statusCode != 400
+	return statusCode != http.StatusBadRequest
 }
 
-// ReconciliationAction reprents a type of action the reconciler should take
+// ReconciliationAction represents a type of action the reconciler should take
 // for a resource.
 type ReconciliationAction string
 
