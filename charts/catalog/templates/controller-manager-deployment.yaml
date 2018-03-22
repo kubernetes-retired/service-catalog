@@ -78,6 +78,10 @@ spec:
         - --feature-gates
         - AsyncBindingOperations=true
         {{- end }}
+        {{- if .Values.namespacedServiceBrokerEnabled }}
+        - --feature-gates
+        - NamespacedServiceBroker=true
+        {{- end }}
         ports:
         - containerPort: 8080
         volumeMounts:
