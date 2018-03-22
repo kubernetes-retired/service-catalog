@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 var (
@@ -57,50 +58,62 @@ source $HOME/.bash_profile
 )
 
 var (
-	completionShells = map[string]func(cxt *command.Context, cmd *cobra.Command) error{
+	completionShells = map[string]func(w io.Writer, cmd *cobra.Command) error{
 		"bash": runCompletionBash,
 	}
 )
 
+type completionCmd struct {
+	*command.Context
+	command  *cobra.Command
+	shellgen func(w io.Writer, cmd *cobra.Command) error
+}
+
 // NewCompletionCmd return command for executing "svcat completion" command
 func NewCompletionCmd(cxt *command.Context) *cobra.Command {
+	completionCmd := &completionCmd{Context: cxt}
+
 	shells := []string{}
 	for s := range completionShells {
 		shells = append(shells, s)
 	}
 
 	cmd := &cobra.Command{
-		Use:     "completion SHELL",
-		Short:   "Output shell completion code for the specified shell (bash).",
-		Long:    completionLong,
-		Example: completionExample,
-		Run: func(cmd *cobra.Command, args []string) {
-			err := RunCompletion(cxt, cmd, args)
-			if err != nil {
-				cxt.Output.Write([]byte(err.Error()))
-			}
-		},
+		Use:       "completion SHELL",
+		Short:     "Output shell completion code for the specified shell (bash).",
+		Long:      completionLong,
+		Example:   completionExample,
+		PreRunE:   command.PreRunE(completionCmd),
+		RunE:      command.RunE(completionCmd),
 		ValidArgs: shells,
 	}
+
+	completionCmd.command = cmd
 
 	return cmd
 }
 
-// RunCompletion checks given arguments and executes command
-func RunCompletion(cxt *command.Context, cmd *cobra.Command, args []string) error {
+func (c *completionCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Shell not specified")
 	}
 	if len(args) > 1 {
 		return fmt.Errorf("Too many arguments. Expected only the shell type")
 	}
-	run, found := completionShells[args[0]]
+	gen, found := completionShells[args[0]]
 	if !found {
 		return fmt.Errorf("Unsupported shell type %q", args[0])
 	}
-	return run(cxt, cmd.Parent())
+
+	c.shellgen = gen
+
+	return nil
 }
 
-func runCompletionBash(cxt *command.Context, cmd *cobra.Command) error {
-	return cmd.GenBashCompletion(cxt.Output)
+func (c *completionCmd) Run() error {
+	return c.shellgen(c.Output, c.command)
+}
+
+func runCompletionBash(w io.Writer, cmd *cobra.Command) error {
+	return cmd.GenBashCompletion(w)
 }
