@@ -27,7 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
-	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -55,7 +55,6 @@ func buildRootCommand() *cobra.Command {
 
 	// root command flags
 	var opts struct {
-		Version     bool
 		KubeConfig  string
 		KubeContext string
 	}
@@ -77,17 +76,10 @@ func buildRootCommand() *cobra.Command {
 			return err
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if opts.Version {
-				printVersion(cxt)
-				return nil
-			}
-
 			fmt.Fprint(cxt.Output, cmd.UsageString())
 			return nil
 		},
 	}
-
-	cmd.Flags().BoolVarP(&opts.Version, "version", "v", false, "Show the application version")
 
 	if plugin.IsPlugin() {
 		plugin.BindEnvironmentVariables(cxt.Viper)
@@ -105,12 +97,9 @@ func buildRootCommand() *cobra.Command {
 	cmd.AddCommand(newSyncCmd(cxt))
 	cmd.AddCommand(newInstallCmd(cxt))
 	cmd.AddCommand(newTouchCmd(cxt))
+	cmd.AddCommand(versions.NewVersionCmd(cxt))
 
 	return cmd
-}
-
-func printVersion(cxt *command.Context) {
-	fmt.Fprintf(cxt.Output, "svcat %s\n", pkg.VERSION)
 }
 
 func newSyncCmd(cxt *command.Context) *cobra.Command {

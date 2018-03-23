@@ -178,7 +178,7 @@ can be used by itself, or as a kubectl plugin.
 curl -sLO https://download.svcat.sh/cli/latest/darwin/amd64/svcat
 chmod +x ./svcat
 mv ./svcat /usr/local/bin/
-svcat --version
+svcat version --client
 ```
 
 ## Linux
@@ -187,7 +187,7 @@ svcat --version
 curl -sLO https://download.svcat.sh/cli/latest/linux/amd64/svcat
 chmod +x ./svcat
 mv ./svcat /usr/local/bin/
-svcat --version
+svcat version --client
 ```
 
 ## Windows
@@ -199,7 +199,7 @@ You will need to find a permanent location for it and add it to your PATH.
 iwr 'https://download.svcat.sh/cli/latest/windows/amd64/svcat.exe' -UseBasicParsing -OutFile svcat.exe
 mkdir -f ~\bin
 $env:PATH += ";${pwd}\bin"
-svcat --version
+svcat version --client
 ```
 
 ## Manual
