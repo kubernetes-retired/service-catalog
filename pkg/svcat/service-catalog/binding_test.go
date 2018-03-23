@@ -115,7 +115,7 @@ var _ = Describe("Binding", func() {
 			Expect(actions[0].(testing.ListActionImpl).Namespace).To(Equal(si.Namespace))
 		})
 
-		It("Bubbles up errrors", func() {
+		It("Bubbles up errors", func() {
 			badClient := &fake.Clientset{}
 			errorMessage := "error retrieving list"
 			badClient.AddReactor("list", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
@@ -150,7 +150,7 @@ var _ = Describe("Binding", func() {
 			Expect(svcCatClient.Actions()[0].Matches("create", "servicebindings")).To(BeTrue())
 		})
 
-		It("Bubbles up errrors", func() {
+		It("Bubbles up errors", func() {
 			badClient := &fake.Clientset{}
 			errorMessage := "error retrieving list"
 			badClient.AddReactor("create", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
@@ -181,19 +181,21 @@ var _ = Describe("Binding", func() {
 				ServiceCatalogClient: linkedClient,
 			}
 
-			err := sdk.Unbind(instanceNamespace, instanceName)
+			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
 
 			Expect(err).NotTo(HaveOccurred())
+			Expect(len(deleted)).To(Equal(1))
 			Expect(linkedClient.Actions()[0].Matches("get", "serviceinstances")).To(BeTrue())
 			Expect(linkedClient.Actions()[1].Matches("list", "servicebindings")).To(BeTrue())
 			Expect(linkedClient.Actions()[2].Matches("delete", "servicebindings")).To(BeTrue())
 		})
-		It("Bubbles up errrors", func() {
+		It("Bubbles up errors", func() {
 			instanceNamespace := sb.Namespace
 			instanceName := "apple_instance"
 			errorMessage := "error deleting binding"
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: instanceName, Namespace: instanceNamespace}}
 			sb.Spec.ServiceInstanceRef.Name = si.Name
+
 			badClient := &fake.Clientset{}
 			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, si, nil
@@ -208,9 +210,10 @@ var _ = Describe("Binding", func() {
 				ServiceCatalogClient: badClient,
 			}
 
-			err := sdk.Unbind(instanceNamespace, instanceName)
+			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
 
 			Expect(err).To(HaveOccurred())
+			Expect(len(deleted)).To(Equal(0))
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
 			Expect(badClient.Actions()[0].Matches("get", "serviceinstances")).To(BeTrue())
 			Expect(badClient.Actions()[1].Matches("list", "servicebindings")).To(BeTrue())
@@ -226,10 +229,51 @@ var _ = Describe("Binding", func() {
 				ServiceCatalogClient: noInstanceClient,
 			}
 
-			err := sdk.Unbind(instanceNamespace, instanceName)
+			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
+
 			Expect(err).To(HaveOccurred())
+			Expect(len(deleted)).To(Equal(0))
 			Expect(err.Error()).To(ContainSubstring("unable to get instance"))
 			Expect(noInstanceClient.Actions()[0].Matches("get", "serviceinstances")).To(BeTrue())
+		})
+		It("Returns only successfully deleted bindings", func() {
+			instanceNamespace := sb.Namespace
+			instanceName := "apple_instance"
+			errorMessage := "error deleting binding"
+			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: instanceName, Namespace: instanceNamespace}}
+			sb.Spec.ServiceInstanceRef.Name = si.Name
+			sb2.Spec.ServiceInstanceRef.Name = si.Name
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, si, nil
+			})
+			badClient.AddReactor("list", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, &v1beta1.ServiceBindingList{Items: []v1beta1.ServiceBinding{*sb, *sb2}}, nil
+			})
+			badClient.AddReactor("delete", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				da, ok := action.(testing.DeleteAction)
+				if !ok {
+					return true, nil, fmt.Errorf("internal error occurred")
+				}
+				switch da.GetName() {
+				case sb2.Name:
+					return true, nil, fmt.Errorf(errorMessage)
+				default:
+					return true, sb, nil
+				}
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: badClient,
+			}
+
+			deleted, err := sdk.Unbind(instanceNamespace, instanceName)
+
+			Expect(err).To(HaveOccurred())
+			Expect(len(deleted)).To(Equal(1))
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+			Expect(badClient.Actions()[0].Matches("get", "serviceinstances")).To(BeTrue())
+			Expect(badClient.Actions()[1].Matches("list", "servicebindings")).To(BeTrue())
+			Expect(badClient.Actions()[2].Matches("delete", "servicebindings")).To(BeTrue())
 		})
 	})
 })
