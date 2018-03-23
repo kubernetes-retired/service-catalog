@@ -47,8 +47,8 @@ func validateCommonServicePlanName(value string, prefix bool) []string {
 }
 
 // ValidateClusterServicePlan validates a ClusterServicePlan and returns a list of errors.
-func ValidateClusterServicePlan(serviceplan *sc.ClusterServicePlan) field.ErrorList {
-	return validateClusterServicePlan(serviceplan)
+func ValidateClusterServicePlan(clusterServicePlan *sc.ClusterServicePlan) field.ErrorList {
+	return validateClusterServicePlan(clusterServicePlan)
 }
 
 func validateClusterServicePlan(clusterServicePlan *sc.ClusterServicePlan) field.ErrorList {
