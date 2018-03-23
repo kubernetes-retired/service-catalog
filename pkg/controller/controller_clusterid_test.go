@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"sync"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +37,29 @@ func TestGetClusterIDDefaulting(t *testing.T) {
 		t.Fatalf("cluster id should have been generated and filled in upon request")
 	}
 	t.Log(tc.getClusterID())
+}
+
+// TestGetClusterIDConcurrently make sure that there is a consistent
+// state if two calls are made concurrently. This test should be run
+// many times on a processor capable of running multiple goroutines.
+func TestGetClusterIDConcurrently(t *testing.T) {
+	_, _, _, tc, _ := newTestController(t, noFakeActions())
+	tc.setClusterID("")
+
+	var a, b string
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() { a = tc.getClusterID(); wg.Done() }()
+	go func() { b = tc.getClusterID(); wg.Done() }()
+	wg.Wait()
+	if a != b {
+		t.Fatal("a and b should match", a, b)
+	}
+	if tc.getClusterID() == "" {
+		t.Fatalf("cluster id should have been generated and filled in upon request")
+	}
+	t.Log(tc.getClusterID())
+
 }
 
 // TestGetClusterIDRoundTrip soley tests the controllers ID accessor

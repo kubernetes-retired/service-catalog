@@ -763,8 +763,16 @@ func (c *controller) getClusterID() (id string) {
 		return
 	}
 	// lazily create on first access if does not exist
+	c.clusterIDLock.Lock()
+	// make sure nobody set ID while we were locking
+	id = c.clusterID
+	if id != "" {
+		c.clusterIDLock.Unlock()
+		return
+	}
 	id = string(uuid.NewUUID())
-	c.setClusterID(id)
+	c.clusterID = id
+	c.clusterIDLock.Unlock()
 	return
 }
 
