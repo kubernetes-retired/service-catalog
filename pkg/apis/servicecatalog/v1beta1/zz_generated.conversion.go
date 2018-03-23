@@ -36,6 +36,8 @@ func init() {
 // Public to allow building arbitrary schemes.
 func RegisterConversions(scheme *runtime.Scheme) error {
 	return scheme.AddGeneratedConversionFuncs(
+		Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions,
+		Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions,
 		Convert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthConfig,
 		Convert_servicecatalog_ClusterBasicAuthConfig_To_v1beta1_ClusterBasicAuthConfig,
 		Convert_v1beta1_ClusterBearerTokenAuthConfig_To_servicecatalog_ClusterBearerTokenAuthConfig,
@@ -113,6 +115,18 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_v1beta1_UserInfo_To_servicecatalog_UserInfo,
 		Convert_servicecatalog_UserInfo_To_v1beta1_UserInfo,
 	)
+}
+
+func autoConvert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(in *CatalogRestrictions, out *servicecatalog.CatalogRestrictions, s conversion.Scope) error {
+	// WARNING: in.ServiceClass requires manual conversion: inconvertible types ([]string vs k8s.io/apimachinery/pkg/labels.Selector)
+	// WARNING: in.ServicePlan requires manual conversion: inconvertible types ([]string vs k8s.io/apimachinery/pkg/labels.Selector)
+	return nil
+}
+
+func autoConvert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(in *servicecatalog.CatalogRestrictions, out *CatalogRestrictions, s conversion.Scope) error {
+	// WARNING: in.ServicePlan requires manual conversion: inconvertible types (k8s.io/apimachinery/pkg/labels.Selector vs []string)
+	// WARNING: in.ServiceClass requires manual conversion: inconvertible types (k8s.io/apimachinery/pkg/labels.Selector vs []string)
+	return nil
 }
 
 func autoConvert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthConfig(in *ClusterBasicAuthConfig, out *servicecatalog.ClusterBasicAuthConfig, s conversion.Scope) error {
@@ -231,7 +245,17 @@ func Convert_servicecatalog_ClusterServiceBrokerAuthInfo_To_v1beta1_ClusterServi
 
 func autoConvert_v1beta1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceBrokerList(in *ClusterServiceBrokerList, out *servicecatalog.ClusterServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]servicecatalog.ClusterServiceBroker)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]servicecatalog.ClusterServiceBroker, len(*in))
+		for i := range *in {
+			if err := Convert_v1beta1_ClusterServiceBroker_To_servicecatalog_ClusterServiceBroker(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -242,7 +266,17 @@ func Convert_v1beta1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceBr
 
 func autoConvert_servicecatalog_ClusterServiceBrokerList_To_v1beta1_ClusterServiceBrokerList(in *servicecatalog.ClusterServiceBrokerList, out *ClusterServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ClusterServiceBroker)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]ClusterServiceBroker, len(*in))
+		for i := range *in {
+			if err := Convert_servicecatalog_ClusterServiceBroker_To_v1beta1_ClusterServiceBroker(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -516,6 +550,15 @@ func autoConvert_v1beta1_CommonServiceBrokerSpec_To_servicecatalog_CommonService
 	out.RelistBehavior = servicecatalog.ServiceBrokerRelistBehavior(in.RelistBehavior)
 	out.RelistDuration = (*v1.Duration)(unsafe.Pointer(in.RelistDuration))
 	out.RelistRequests = in.RelistRequests
+	if in.CatalogRestrictions != nil {
+		in, out := &in.CatalogRestrictions, &out.CatalogRestrictions
+		*out = new(servicecatalog.CatalogRestrictions)
+		if err := Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.CatalogRestrictions = nil
+	}
 	return nil
 }
 
@@ -531,6 +574,15 @@ func autoConvert_servicecatalog_CommonServiceBrokerSpec_To_v1beta1_CommonService
 	out.RelistBehavior = ServiceBrokerRelistBehavior(in.RelistBehavior)
 	out.RelistDuration = (*v1.Duration)(unsafe.Pointer(in.RelistDuration))
 	out.RelistRequests = in.RelistRequests
+	if in.CatalogRestrictions != nil {
+		in, out := &in.CatalogRestrictions, &out.CatalogRestrictions
+		*out = new(CatalogRestrictions)
+		if err := Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.CatalogRestrictions = nil
+	}
 	return nil
 }
 

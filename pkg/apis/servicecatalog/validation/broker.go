@@ -20,8 +20,10 @@ import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
 
 // validateCommonServiceBrokerName is the validation function for common
@@ -153,6 +155,12 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 				commonErrs,
 				field.Required(fldPath.Child("relistDuration"), "relistDuration must be greater than zero"),
 			)
+		}
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.CatalogRestrictions) {
+		if spec.CatalogRestrictions != nil {
+			// TODO: nothing to check?
 		}
 	}
 

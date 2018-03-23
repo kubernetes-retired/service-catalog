@@ -18,6 +18,7 @@ package servicecatalog
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -79,15 +80,14 @@ type CommonServiceBrokerSpec struct {
 	RelistRequests int64
 
 	// CatalogRestrictions allows adding restrictions onto Class/Plans on relist.
-	CatalogRestrictions *ClusterServiceCatalogRestrictions
+	CatalogRestrictions *CatalogRestrictions
 }
 
-type ClusterServicePlanRequirements string
-type ClusterServiceClassRequirements string
-
-type ClusterServiceCatalogRestrictions struct {
-	ServicePlan  ClusterServicePlanRequirements
-	ServiceClass ClusterServiceClassRequirements
+// CatalogRestrictions holds the label selector object for each service class and plan
+// requirement in aggregate for storage.
+type CatalogRestrictions struct {
+	ServicePlan  labels.Selector
+	ServiceClass labels.Selector
 }
 
 // ClusterServiceBrokerSpec represents a description of a Broker.

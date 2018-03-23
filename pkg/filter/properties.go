@@ -22,14 +22,3 @@ import (
 
 // Properties allows you to present properties independently from their storage.
 type Properties labels.Labels
-
-const (
-	// Name field.
-	Name = "name"
-	// SpecExternalName is the external name of the object.
-	SpecExternalName = "spec.externalName"
-	// SpecExternalID is the external id of the object.
-	SpecExternalID = "spec.externalID"
-	// SpecClusterServiceClassName is only used for plans, the parent service class name.
-	SpecClusterServiceClassName = "spec.clusterServiceClass.name"
-)

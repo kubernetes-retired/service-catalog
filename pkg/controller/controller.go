@@ -536,29 +536,37 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	return serviceClasses, servicePlans, nil
 }
 
-func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.ClusterServiceCatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
-	predicate, err := filter.CreatePredicateForServiceClassesFromRestrictions(restrictions)
-
-	if err != nil {
-		return nil, nil, err
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+	var predicate filter.Predicate
+	var err error
+	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
+		predicate, err = filter.CreatePredicate(restrictions.ServiceClass)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		predicate = filter.NewPredicate()
 	}
+
 	serviceClasses := []*v1beta1.ClusterServiceClass(nil)
 	servicePlans := []*v1beta1.ClusterServicePlan(nil)
 	for _, svc := range in.Services {
 		serviceClass := &v1beta1.ClusterServiceClass{
 			Spec: v1beta1.ClusterServiceClassSpec{
-				Bindable:      svc.Bindable,
-				PlanUpdatable: svc.PlanUpdatable != nil && *svc.PlanUpdatable,
-				ExternalID:    svc.ID,
-				ExternalName:  svc.Name,
-				Tags:          svc.Tags,
-				Description:   svc.Description,
-				Requires:      svc.Requires,
+				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+					Bindable:      svc.Bindable,
+					PlanUpdatable: svc.PlanUpdatable != nil && *svc.PlanUpdatable,
+					ExternalID:    svc.ID,
+					ExternalName:  svc.Name,
+					Tags:          svc.Tags,
+					Description:   svc.Description,
+					Requires:      svc.Requires,
+				},
 			},
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
-			serviceClass.Spec.BindingRetrievable = svc.BindingRetrievable
+			serviceClass.Spec.BindingRetrievable = svc.BindingsRetrievable
 		}
 
 		if svc.Metadata != nil {
@@ -573,7 +581,7 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Clus
 		serviceClass.SetName(svc.ID)
 
 		// If this service class passes the predicate, process the plans for the class.
-		if fields := filter.ConvertServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
+		if fields := v1beta1.ConvertClusterServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ClusterServiceClass Name
 			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name)
 			if err != nil {
@@ -595,10 +603,16 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Clus
 	return serviceClasses, servicePlans, nil
 }
 
-func filterServicePlans(restrictions *v1beta1.ClusterServiceCatalogRestrictions, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
-	predicate, err := filter.CreatePredicateForServicePlansFromRestrictions(restrictions)
-	if err != nil {
-		return nil, nil, err
+func filterServicePlans(restrictions *v1beta1.CatalogRestrictions, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
+	var predicate filter.Predicate
+	var err error
+	if restrictions != nil && len(restrictions.ServicePlan) > 0 {
+		predicate, err = filter.CreatePredicate(restrictions.ServicePlan)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		predicate = filter.NewPredicate()
 	}
 
 	// If the predicate is empty, all plans will pass. No need to run through the list.
@@ -609,7 +623,7 @@ func filterServicePlans(restrictions *v1beta1.ClusterServiceCatalogRestrictions,
 	accepted := []*v1beta1.ClusterServicePlan(nil)
 	rejected := []*v1beta1.ClusterServicePlan(nil)
 	for _, sp := range servicePlans {
-		fields := filter.ConvertServicePlanToProperties(sp)
+		fields := v1beta1.ConvertClusterServicePlanToProperties(sp)
 		if predicate.Accepts(fields) {
 			accepted = append(accepted, sp)
 		} else {

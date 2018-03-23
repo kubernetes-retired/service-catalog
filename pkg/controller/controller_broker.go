@@ -261,19 +261,18 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		var payloadServiceClasses []*v1beta1.ClusterServiceClass
 		var payloadServicePlans []*v1beta1.ClusterServicePlan
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.CatalogRestrictions) {
-			if payloadServiceClasses, payloadServicePlans, err = convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions); err != nil {
-
-			}
+			payloadServiceClasses, payloadServicePlans, err = convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions)
 		} else {
-			if payloadServiceClasses, payloadServicePlans, err = convertCatalog(brokerCatalog); err != nil {
-				s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
-				glog.Warning(pcb.Message(s))
-				c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
-				if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
-					return err
-				}
+			payloadServiceClasses, payloadServicePlans, err = convertCatalog(brokerCatalog)
+		}
+		if err != nil {
+			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
+			glog.Warning(pcb.Message(s))
+			c.recorder.Eventf(broker, corev1.EventTypeWarning, errorSyncingCatalogReason, s)
+			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorSyncingCatalogReason, errorSyncingCatalogMessage+s); err != nil {
 				return err
 			}
+			return err
 		}
 
 		glog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))

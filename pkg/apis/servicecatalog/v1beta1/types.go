@@ -91,66 +91,54 @@ type CommonServiceBrokerSpec struct {
 
 	// CatalogRestrictions allows adding restrictions onto Class/Plans on relist.
 	// +optional
-	CatalogRestrictions *ClusterServiceCatalogRestrictions `json:"catalogRestrictions,omitempty"`
+	CatalogRestrictions *CatalogRestrictions `json:"catalogRestrictions,omitempty"`
 }
 
-// *Requirements type strings have a special format similar to Label Selectors,
-// except the catalog supports only a very specific property set per type as
-// documented below.
+// ServiceCatalogRestrictions contains the restrictions used to on catalog re-list.
+// Some examples of this object are as follows:
+//
+// This is an example of a whitelist on service externalName.
+// Goal: Only list Services with the externalName of FooService and BarService,
+// Solution: restrictions := ServiceCatalogRestrictions{
+// 		ServiceClass: ["externalName in (FooService, BarService)"]
+// }
+//
+// This is an example of a blacklist on service externalName.
+// Goal: Allow all services except the ones with the externalName of FooService and BarService,
+// Solution: restrictions := ServiceCatalogRestrictions{
+// 		ServiceClass: ["externalName notin (FooService, BarService)"]
+// }
+//
+// This whitelists plans called "Demo", and blacklists (but only a single element in
+// the list) a service and a plan.
+// Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name,
+// Solution: restrictions := ServiceCatalogRestrictions{
+// 		ServiceClass: ["name!=AABBB-CCDD-EEGG-HIJK"]
+// 		ServicePlan: ["externalName in (Demo)", "name!=AABBCC"]
+// }
+//
+// CatalogRestrictions strings have a special format similar to Label Selectors,
+// except the catalog supports only a very specific property set.
+//
 // The predicate format is expected to be `<property><conditional><requirement>`
 // Check the *Requirements type definition for which <property> strings will be allowed.
 // <conditional> is allowed to be one of the following: ==, !=, in, notin
 // <requirement> will be a string value if `==` or `!=` are used.
 // <requirement> will be a set of string values if `in` or `notin` are used.
 // Multiple predicates are allowed to be chained with a comma (,)
-
-// ClusterServiceClassRequirements represents a list of selectors for classes used to filter.
-// Requirements are AND'ed together from the list.
-type ClusterServiceClassRequirements []ClusterServiceClassRequirement
-
-// ClusterServiceClassRequirement represents a selector for classes used to filter.
-// Allowed property names:
-//   name - the value set to ClusterServiceClass.Name
-//   externalName - the value set to ClusterServiceClass.Spec.ExternalName
-type ClusterServiceClassRequirement string
-
-// ClusterServicePlanRequirements represents a list of selectors for plans used to filter.
-// Requirements are AND'ed together from the list.
-type ClusterServicePlanRequirements []ClusterServicePlanRequirement
-
-// ClusterServicePlanRequirement represents a selector for plans used to filter.
-// Allowed property names:
-//   name - the value set to ClusterServiceClass.Name
-//   externalName - the value set to ClusterServiceClass.Spec.ExternalName
-type ClusterServicePlanRequirement string
-
-// ClusterServiceCatalogRestrictions contains the restrictions used to on catalog re-list.
-// Some examples of this object are as follows:
 //
-// This is an example of a whitelist on service externalName.
-// Goal: Only list Services with the externalName of FooService and BarService,
-// Solution: restrictions := ClusterServiceCatalogRestrictions{
-// 		ServiceClass: "externalName in (FooService, BarService)",
-// }
+// ServiceClass allowed property names:
+//   name - the value set to [Cluster]ServiceClass.Name
+//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
 //
-// This is an example of a blacklist on service externalName.
-// Goal: Allow all services except the ones with the externalName of FooService and BarService,
-// Solution: restrictions := ClusterServiceCatalogRestrictions{
-// 		ServiceClass: "externalName notin (FooService, BarService)",
-// }
-//
-// This whitelists plans called "Demo", and blacklists (but only a single element in
-// the list) a service and a plan.
-// Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name,
-// Solution: restrictions := ClusterServiceCatalogRestrictions{
-// 		ServiceClass: "name!=AABBB-CCDD-EEGG-HIJK",
-// 		ServicePlan: "externalName in (Demo),name!=AABBCC",
-// }
-type ClusterServiceCatalogRestrictions struct {
+// ServicePlan allowed property names:
+//   name - the value set to [Cluster]ServiceClass.Name
+//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
-	ServiceClass ClusterServiceClassRequirements `json:"serviceClass,omitempty"`
+	ServiceClass []string `json:"serviceClass,omitempty"`
 	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
-	ServicePlan ClusterServicePlanRequirements `json:"servicePlan,omitempty"`
+	ServicePlan []string `json:"servicePlan,omitempty"`
 }
 
 // ClusterServiceBrokerSpec represents a description of a Broker.
@@ -1086,3 +1074,15 @@ type ClusterObjectReference struct {
 	// Name of the referent.
 	Name string `json:"name,omitempty"`
 }
+
+// Filter path for Properties
+const (
+	// Name field.
+	FilterName = "name"
+	// SpecExternalName is the external name of the object.
+	FilterSpecExternalName = "spec.externalName"
+	// SpecExternalID is the external id of the object.
+	FilterSpecExternalID = "spec.externalID"
+	// SpecClusterServiceClassName is only used for plans, the parent service class name.
+	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+)

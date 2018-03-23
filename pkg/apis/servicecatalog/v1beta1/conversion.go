@@ -16,7 +16,14 @@ limitations under the License.
 
 package v1beta1
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
+	"k8s.io/apimachinery/pkg/conversion"
+	"k8s.io/apimachinery/pkg/labels"
+)
 
 // These functions are used for field selectors. They are only needed if
 // field selection is made available for types, hence we only have them for
@@ -60,4 +67,75 @@ func ServiceInstanceFieldLabelConversionFunc(label, value string) (string, strin
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
 	}
+}
+
+// ConvertClusterServiceClassToProperties takes a Service Class and pulls out the
+// properties we support for filtering, converting them into a map in the
+// expected format.
+func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) filter.Properties {
+	if serviceClass == nil {
+		return labels.Set{}
+	}
+	return labels.Set{
+		FilterName:             serviceClass.Name,
+		FilterSpecExternalName: serviceClass.Spec.ExternalName,
+		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
+	}
+}
+
+// ConvertServicePlanToProperties takes a Service Plan and pulls out the
+// properties we support for filtering, converting them into a map in the
+// expected format.
+func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filter.Properties {
+	if servicePlan == nil {
+		return labels.Set{}
+	}
+	return labels.Set{
+		FilterName:                        servicePlan.Name,
+		FilterSpecExternalName:            servicePlan.Spec.ExternalName,
+		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
+		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
+	}
+}
+
+// Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions converts v1beta1.CatalogRestrictions to servicecatalog.CatalogRestrictions
+func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(in *CatalogRestrictions, out *servicecatalog.CatalogRestrictions, s conversion.Scope) error {
+	// store the labels.Selector object that is the result of converting restrictions into a Predicate.
+	if len(in.ServiceClass) > 0 {
+		serviceClassPredicate, err := filter.CreatePredicate(in.ServiceClass)
+		if err != nil {
+			return err
+		}
+		if out.ServiceClass, err = filter.ConvertToSelector(serviceClassPredicate); err != nil {
+			return err
+		}
+	}
+	if len(in.ServicePlan) > 0 {
+		servicePlanPredicate, err := filter.CreatePredicate(in.ServicePlan)
+		if err != nil {
+			return err
+		}
+		if out.ServicePlan, err = filter.ConvertToSelector(servicePlanPredicate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions converts servicecatalog.CatalogRestrictions to v1beta1.CatalogRestrictions
+func Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(in *servicecatalog.CatalogRestrictions, out *CatalogRestrictions, s conversion.Scope) error {
+	if in.ServiceClass != nil {
+		requirements, _ := in.ServiceClass.Requirements()
+		for _, r := range requirements {
+			out.ServiceClass = append(out.ServiceClass, r.String())
+		}
+	}
+	if in.ServicePlan != nil {
+		requirements, _ := in.ServicePlan.Requirements()
+		for _, r := range requirements {
+			out.ServicePlan = append(out.ServicePlan, r.String())
+		}
+	}
+	return nil
 }
