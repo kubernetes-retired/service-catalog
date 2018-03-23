@@ -101,7 +101,7 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 // Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions converts v1beta1.CatalogRestrictions to servicecatalog.CatalogRestrictions
 func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(in *CatalogRestrictions, out *servicecatalog.CatalogRestrictions, s conversion.Scope) error {
 	// store the labels.Selector object that is the result of converting restrictions into a Predicate.
-	if len(in.ServiceClass) > 0 {
+	if in != nil && in.ServiceClass != nil && len(in.ServiceClass) > 0 {
 		serviceClassPredicate, err := filter.CreatePredicate(in.ServiceClass)
 		if err != nil {
 			return err
@@ -110,7 +110,7 @@ func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(i
 			return err
 		}
 	}
-	if len(in.ServicePlan) > 0 {
+	if in != nil && in.ServicePlan != nil && len(in.ServicePlan) > 0 {
 		servicePlanPredicate, err := filter.CreatePredicate(in.ServicePlan)
 		if err != nil {
 			return err
@@ -125,13 +125,13 @@ func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(i
 
 // Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions converts servicecatalog.CatalogRestrictions to v1beta1.CatalogRestrictions
 func Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(in *servicecatalog.CatalogRestrictions, out *CatalogRestrictions, s conversion.Scope) error {
-	if in.ServiceClass != nil {
+	if in != nil && in.ServiceClass.Empty() {
 		requirements, _ := in.ServiceClass.Requirements()
 		for _, r := range requirements {
 			out.ServiceClass = append(out.ServiceClass, r.String())
 		}
 	}
-	if in.ServicePlan != nil {
+	if in != nil && in.ServicePlan.Empty() {
 		requirements, _ := in.ServicePlan.Requirements()
 		for _, r := range requirements {
 			out.ServicePlan = append(out.ServicePlan, r.String())
