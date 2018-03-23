@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: List
+items:
+
+- apiVersion: {{template "rbacApiVersion" . }}
+  kind: ClusterRole
+  metadata:
+    name: "servicecatalog.k8s.io:healthcheck"
+  rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs:     ["create", "delete", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs:     ["get"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs:     ["get","create","update","delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs:     ["get","list","update", "patch", "watch", "delete", "initialize"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["clusterserviceclasses"]
+    verbs:     ["get","list","watch","create","patch","update","delete"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["clusterserviceplans"]
+    verbs:     ["get","list","watch","create","patch","update","delete"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["clusterservicebrokers"]
+    verbs:     ["get","list","watch"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["serviceinstances","servicebindings"]
+    verbs:     ["create","delete","get","list","watch"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","serviceinstances/reference","servicebindings/status"]
+    verbs:     ["update"]
+- apiVersion: {{template "rbacApiVersion" . }}
+  kind: ClusterRoleBinding
+  metadata:
+    name: "servicecatalog.k8s.io:healthcheck"
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: "servicecatalog.k8s.io:healthcheck"
+  subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: "service-catalog-healthcheck"
+    namespace: "{{ .Release.Namespace }}"

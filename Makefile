@@ -88,7 +88,8 @@ SERVICE_CATALOG_IMAGE             = $(REGISTRY)service-catalog-$(ARCH):$(VERSION
 SERVICE_CATALOG_MUTABLE_IMAGE     = $(REGISTRY)service-catalog-$(ARCH):$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker-$(ARCH):$(MUTABLE_TAG)
-
+HEALTHCHECK_IMAGE                 = $(REGISTRY)healthcheck-$(ARCH):$(VERSION)
+HEALTHCHECK_MUTABLE_IMAGE         = $(REGISTRY)healthcheck-$(ARCH):$(MUTABLE_TAG)
 ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
@@ -119,7 +120,8 @@ endif
 #########################################################################
 build: .init .generate_files \
 	$(BINDIR)/service-catalog \
-	$(BINDIR)/user-broker
+	$(BINDIR)/user-broker \
+	$(BINDIR)/healthcheck
 
 .PHONY: $(BINDIR)/user-broker
 user-broker: $(BINDIR)/user-broker
@@ -127,6 +129,12 @@ $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f) \
 	  $(shell find contrib/pkg/broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
+
+.PHONY: $(BINDIR)/healthcheck
+healthcheck: $(BINDIR)/healthcheck
+$(BINDIR)/healthcheck: .init test/healthcheck \
+	  $(shell find test/healthcheck -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/test/healthcheck
 
 .PHONY: $(BINDIR)/service-catalog
 service-catalog: $(BINDIR)/service-catalog
@@ -318,7 +326,7 @@ clean-coverage:
 
 # Building Docker Images for our executables
 ############################################
-images: user-broker-image service-catalog-image
+images: user-broker-image service-catalog-image healthcheck-image
 
 images-all: $(addprefix arch-image-,$(ALL_ARCH))
 arch-image-%:
@@ -354,6 +362,12 @@ ifeq ($(ARCH),amd64)
 	docker tag $(SERVICE_CATALOG_MUTABLE_IMAGE) $(REGISTRY)service-catalog:$(MUTABLE_TAG)
 endif
 
+healthcheck-image: contrib/build/healthcheck/Dockerfile $(BINDIR)/healthcheck
+	$(call build-and-tag,"healthcheck",$(HEALTHCHECK_IMAGE),$(HEALTHCHECK_MUTABLE_IMAGE),"contrib/")
+ifeq ($(ARCH),amd64)
+	docker tag $(HEALTHCHECK_IMAGE) $(REGISTRY)healthcheck:$(VERSION)
+	docker tag $(HEALTHCHECK_MUTABLE_IMAGE) $(REGISTRY)healthcheck:$(MUTABLE_TAG)
+endif
 
 # Push our Docker Images to a registry
 ######################################
