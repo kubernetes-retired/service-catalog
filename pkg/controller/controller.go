@@ -262,7 +262,7 @@ func (c *controller) monitorConfigMap() {
 			c.kubeClient.CoreV1().ConfigMaps("default").Update(cm)
 		}
 	} else { // some err we can't handle
-		glog.V(4).Info("error getting the cluster info configmap")
+		glog.V(4).Infof("error getting the cluster info configmap: %q", err)
 	}
 	glog.V(9).Info("cluster ID monitor loop exit")
 }
