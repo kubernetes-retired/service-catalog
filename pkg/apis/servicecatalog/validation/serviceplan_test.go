@@ -30,7 +30,7 @@ func validClusterServicePlan() *servicecatalog.ClusterServicePlan {
 			Name: "test-plan",
 		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
-			SharedServicePlanSpec: servicecatalog.SharedServicePlanSpec{
+			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
 				ExternalName: "test-plan",
 				ExternalID:   "40d-0983-1b89",
 				Description:  "plan description",
@@ -53,6 +53,15 @@ func TestValidateClusterServicePlan(t *testing.T) {
 			name:        "valid servicePlan",
 			servicePlan: validClusterServicePlan(),
 			valid:       true,
+		},
+		{
+			name: "valid servicePlan - period in externalName",
+			servicePlan: func() *servicecatalog.ClusterServicePlan {
+				s := validClusterServicePlan()
+				s.Spec.ExternalName = "test.plan"
+				return s
+			}(),
+			valid: true,
 		},
 		{
 			name: "missing name",

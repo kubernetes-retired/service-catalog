@@ -184,8 +184,8 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
 	broker := getTestClusterServiceBroker()
-	broker.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-		Basic: &v1beta1.BasicAuthConfig{
+	broker.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
 			SecretRef: &v1beta1.ObjectReference{
 				Namespace: "does_not_exist",
 				Name:      "auth-name",
@@ -976,7 +976,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
@@ -1759,7 +1759,11 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 	instance := getTestServiceInstanceWithFailedStatus()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
-	instance.Status.ExternalProperties = nil
+	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+	}
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
 	instance.Generation = 2
@@ -2303,7 +2307,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
@@ -2456,12 +2460,12 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 	}
 
 	err := testController.pollServiceInstance(instance)
-	if err != nil {
-		t.Fatalf("pollServiceInstance failed: %s", err)
+	if err == nil {
+		t.Fatalf("Expected pollServiceInstance to return an error but there was none")
 	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
-		t.Fatalf("Expected polling queue to have record of seeing test instance once")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2555,7 +2559,7 @@ func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *te
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
@@ -2875,7 +2879,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(
+	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
@@ -3004,6 +3008,7 @@ func TestPollServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		v1beta1.ServiceInstanceOperationProvision,
 		startingInstanceOrphanMitigationReason,
 		errorReconciliationRetryTimeoutReason,
+		asyncProvisioningReason,
 		instance,
 	)
 
@@ -3447,6 +3452,10 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 			instance.Status.ObservedGeneration = 1
 			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 			instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+			instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+				ClusterServicePlanExternalName: testClusterServicePlanName,
+				ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+			}
 			if tc.includeUserInfo {
 				instance.Spec.UserInfo = testUserInfo
 			}
@@ -3659,6 +3668,7 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 	}
 
 	assertServiceInstanceReadyCondition(t, updatedServiceInstance, v1beta1.ConditionFalse, startingInstanceOrphanMitigationReason)
+	assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance, errorErrorCallingProvisionReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, updatedServiceInstance)
 }
 
@@ -3715,7 +3725,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fakeosb.AsyncRequiredError(),
 			},
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3735,7 +3745,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			deprovReaction: &fakeosb.DeprovisionReaction{
 				Error: fmt.Errorf("other error"),
 			},
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3786,7 +3796,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3799,7 +3809,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3812,7 +3822,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				Error: fmt.Errorf("other error"),
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3825,7 +3835,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3838,7 +3848,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				},
 			},
 			async: true,
-			finishedOrphanMitigation:     true,
+			finishedOrphanMitigation:     false,
 			retryDurationExceeded:        true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
 			expectedReadyConditionReason: errorOrphanMitigationFailedReason,
@@ -3860,7 +3870,14 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 			instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 			instance.Status.OrphanMitigationInProgress = true
+			setServiceInstanceCondition(instance,
+				v1beta1.ServiceInstanceConditionOrphanMitigation,
+				v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
 			instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+			instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+				ClusterServicePlanExternalName: testClusterServicePlanName,
+				ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+			}
 
 			if tc.async {
 				instance.Status.AsyncOpInProgress = true
@@ -3895,6 +3912,12 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 
 			if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
 				t.Fatalf("continue")
+			}
+
+			if tc.finishedOrphanMitigation {
+				assertServiceInstanceOrphanMitigationMissing(t, updatedServiceInstance)
+			} else {
+				assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance, startingInstanceOrphanMitigationReason)
 			}
 
 			//TODO(mkibbe): change asserts to expects
@@ -4654,7 +4677,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -4748,7 +4771,7 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	sp := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: newPlanID},
 		Spec: v1beta1.ClusterServicePlanSpec{
-			SharedServicePlanSpec: v1beta1.SharedServicePlanSpec{
+			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 				ExternalID:   newPlanID,
 				ExternalName: newPlanName,
 				Bindable:     truePtr(),
@@ -5095,7 +5118,7 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
 }
 
 func TestCheckClassAndPlanForDeletion(t *testing.T) {
@@ -5205,7 +5228,10 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
-	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{}
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+	}
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -5283,6 +5309,13 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 	instance.Status.OrphanMitigationInProgress = true
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+	}
+	setServiceInstanceCondition(instance,
+		v1beta1.ServiceInstanceConditionOrphanMitigation,
+		v1beta1.ConditionTrue, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
 
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
@@ -5457,6 +5490,52 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
 		t.Fatalf("The instance was expected to be marked as Provisioned")
 	}
+}
+
+// TestReconcileServiceInstanceUpdateMissingOrphanMitigation tests reconciling a
+// ServiceInstance with OrphanMitigation condition missing
+// (while OrphanMitigationInProgress is set to true)
+// i.e. API version migration testing
+func TestReconcileServiceInstanceUpdateMissingOrphanMitigation(t *testing.T) {
+	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+			Response: &osb.UpdateInstanceResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.Generation = 2
+	instance.Status.ReconciledGeneration = 1
+	instance.Status.ObservedGeneration = 1
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
+	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+	// Set OrphanMitigationInProgress flag with OrphanMitigation condition missing
+	instance.Status.OrphanMitigationInProgress = true
+
+	instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+	}
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	if !isServiceInstanceOrphanMitigation(updatedServiceInstance) {
+		t.Fatal("Expected instance status to have an OrphanMitigation condition set to True")
+	}
+
 }
 
 func generateChecksumOfParametersOrFail(t *testing.T, params map[string]interface{}) string {
