@@ -607,6 +607,56 @@ func TestServiceBindingDeleteWithAsyncBindInProgress(t *testing.T) {
 	}
 }
 
+func getProvisionResponseByPollCountReactions(numOfResponses int, stateProgressions []fakeosb.ProvisionReaction) fakeosb.DynamicProvisionReaction {
+	numberOfPolls := 0
+	numberOfStates := len(stateProgressions)
+
+	return func(_ *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+		var reaction fakeosb.ProvisionReaction
+		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
+			reaction = stateProgressions[numberOfStates-1]
+			glog.V(5).Infof("Provision instance state progressions done, ended on %v", reaction)
+		} else {
+			idx := numberOfPolls / numOfResponses
+			reaction = stateProgressions[idx]
+			glog.V(5).Infof("Provision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+		}
+		numberOfPolls++
+		if reaction.Response != nil {
+			return &osb.ProvisionResponse{
+				Async:        reaction.Response.Async,
+				OperationKey: reaction.Response.OperationKey,
+			}, nil
+		}
+		return nil, reaction.Error
+	}
+}
+
+func getDeprovisionResponseByPollCountReactions(numOfResponses int, stateProgressions []fakeosb.DeprovisionReaction) fakeosb.DynamicDeprovisionReaction {
+	numberOfPolls := 0
+	numberOfStates := len(stateProgressions)
+
+	return func(_ *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+		var reaction fakeosb.DeprovisionReaction
+		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
+			reaction = stateProgressions[numberOfStates-1]
+			glog.V(5).Infof("Deprovision instance state progressions done, ended on %v", reaction)
+		} else {
+			idx := numberOfPolls / numOfResponses
+			reaction = stateProgressions[idx]
+			glog.V(5).Infof("Deprovision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+		}
+		numberOfPolls++
+		if reaction.Response != nil {
+			return &osb.DeprovisionResponse{
+				Async:        reaction.Response.Async,
+				OperationKey: reaction.Response.OperationKey,
+			}, nil
+		}
+		return nil, reaction.Error
+	}
+}
+
 func getUpdateInstanceResponseByPollCountReactions(numOfResponses int, stateProgressions []fakeosb.UpdateInstanceReaction) fakeosb.DynamicUpdateInstanceReaction {
 	numberOfPolls := 0
 	numberOfStates := len(stateProgressions)
@@ -1223,6 +1273,18 @@ func getLastBrokerAction(t *testing.T, osbClient *fakeosb.FakeClient, actionType
 		t.Fatalf("unexpected action type: expected %s, got %s", e, a)
 	}
 	return brokerAction
+}
+
+// findBrokerAction finds actions of the given type made to the fake broker client.
+func findBrokerActions(t *testing.T, osbClient *fakeosb.FakeClient, actionType fakeosb.ActionType) []fakeosb.Action {
+	brokerActions := osbClient.Actions()
+	foundActions := make([]fakeosb.Action, 0, len(brokerActions))
+	for _, action := range brokerActions {
+		if action.Type == actionType {
+			foundActions = append(foundActions, action)
+		}
+	}
+	return foundActions
 }
 
 // convertParametersIntoRawExtension converts the specified map of parameters
