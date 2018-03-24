@@ -23,6 +23,7 @@ import (
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 )
 
 // validateServiceInstanceName is the validation function for Instance names.
@@ -254,11 +255,26 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 }
 
 // internalValidateServiceInstanceUpdateAllowed ensures there is not a
-// pending update on-going with the spec of the instance before allowing an update
-// to the spec to go through.
-func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
+// pending update on-going with the spec of the instance before allowing an
+// update to the spec to go through unless its the same user who made the
+// original update.
+func internalValidateServiceInstanceUpdateAllowed(ctx genericapirequest.Context, new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	errors := field.ErrorList{}
-	if old.Generation != new.Generation && old.Status.CurrentOperation != "" {
+
+	oldUID := ""
+	newUID := ""
+
+	if old.Spec.UserInfo != nil {
+		oldUID = old.Spec.UserInfo.UID
+	}
+
+	if ctx != nil {
+		if user, _ := genericapirequest.UserFrom(ctx); user != nil {
+			newUID = user.GetUID()
+		}
+	}
+
+	if old.Generation != new.Generation && old.Status.CurrentOperation != "" && oldUID != newUID {
 		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
 	}
 	if old.Spec.ClusterServicePlanExternalName != new.Spec.ClusterServicePlanExternalName && new.Spec.ClusterServicePlanRef != nil {
@@ -268,13 +284,13 @@ func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *
 }
 
 // ValidateServiceInstanceUpdate validates a change to the Instance's spec.
-func ValidateServiceInstanceUpdate(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
+func ValidateServiceInstanceUpdate(ctx genericapirequest.Context, new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	specFieldPath := field.NewPath("spec")
 
 	allErrs = append(allErrs, validatePlanReferenceUpdate(&new.Spec.PlanReference, &old.Spec.PlanReference, specFieldPath)...)
-	allErrs = append(allErrs, internalValidateServiceInstanceUpdateAllowed(new, old)...)
+	allErrs = append(allErrs, internalValidateServiceInstanceUpdateAllowed(ctx, new, old)...)
 	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
 
 	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ClusterServiceClassExternalName, old.Spec.ClusterServiceClassExternalName, specFieldPath.Child("clusterServiceClassExternalName"))...)

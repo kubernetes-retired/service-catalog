@@ -25,6 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"k8s.io/apiserver/pkg/authentication/user"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 )
 
 const (
@@ -744,30 +746,42 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 		name             string
 		specChange       bool
 		onGoingOperation bool
+		setUser          bool
 		valid            bool
 	}{
 		{
 			name:             "spec change when no on-going operation",
 			specChange:       true,
 			onGoingOperation: false,
+			setUser:          false,
 			valid:            true,
 		},
 		{
-			name:             "spec change when on-going operation",
+			name:             "spec change when on-going operation, same user",
 			specChange:       true,
 			onGoingOperation: true,
+			setUser:          false,
+			valid:            true,
+		},
+		{
+			name:             "spec change when on-going operation, diff user",
+			specChange:       true,
+			onGoingOperation: true,
+			setUser:          true,
 			valid:            false,
 		},
 		{
 			name:             "meta change when no on-going operation",
 			specChange:       false,
 			onGoingOperation: false,
+			setUser:          false,
 			valid:            true,
 		},
 		{
 			name:             "meta change when on-going operation",
 			specChange:       false,
 			onGoingOperation: true,
+			setUser:          false,
 			valid:            true,
 		},
 	}
@@ -808,7 +822,14 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 			newInstance.Generation = oldInstance.Generation
 		}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+		user := user.DefaultInfo{}
+		if tc.setUser {
+			user.Name = "JohnDoe"
+			user.UID = "123"
+		}
+		ctx := genericapirequest.WithUser(genericapirequest.NewContext(), &user)
+
+		errs := internalValidateServiceInstanceUpdateAllowed(ctx, newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
@@ -880,7 +901,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 			},
 		}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+		errs := internalValidateServiceInstanceUpdateAllowed(nil, newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
