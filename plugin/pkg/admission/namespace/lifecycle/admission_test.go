@@ -48,7 +48,7 @@ func newHandlerForTest(internalClient internalclientset.Interface, kubeClient ku
 	if err != nil {
 		return nil, f, kf, err
 	}
-	pluginInitializer := scadmission.NewPluginInitializer(internalClient, f, kubeClient, kf)
+	pluginInitializer := scadmission.NewPluginInitializer(internalClient, f, kubeClient, kf, nil, nil)
 	pluginInitializer.Initialize(handler)
 	err = admission.ValidateInitialization(handler)
 	return handler, f, kf, err

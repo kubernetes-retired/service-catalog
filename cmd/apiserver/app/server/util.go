@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/admission"
 	admissionmetrics "k8s.io/apiserver/pkg/admission/metrics"
+	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	kubeinformers "k8s.io/client-go/informers"
@@ -148,7 +149,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 
 		// TODO: we need upstream to package AlwaysAdmit, or stop defaulting to it!
 		// NOTE: right now, we only run admission controllers when on kube cluster.
-		genericConfig.AdmissionControl, err = buildAdmission(s, client, sharedInformers, kubeClient, kubeSharedInformers)
+		genericConfig.AdmissionControl, err = buildAdmission(s, client, sharedInformers, kubeClient, kubeSharedInformers, genericConfig.Authorizer)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to initialize admission: %v", err)
 		}
@@ -161,15 +162,20 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 }
 
 // buildAdmission constructs the admission chain
-func buildAdmission(s *ServiceCatalogServerOptions,
-	client internalclientset.Interface, sharedInformers informers.SharedInformerFactory,
-	kubeClient kubeclientset.Interface, kubeSharedInformers kubeinformers.SharedInformerFactory) (admission.Interface, error) {
+func buildAdmission(
+	s *ServiceCatalogServerOptions,
+	client internalclientset.Interface,
+	sharedInformers informers.SharedInformerFactory,
+	kubeClient kubeclientset.Interface,
+	kubeSharedInformers kubeinformers.SharedInformerFactory,
+	authorizer authorizer.Authorizer,
+) (admission.Interface, error) {
 
 	admissionControlPluginNames := s.AdmissionOptions.PluginNames
 	glog.Infof("Admission control plugin names: %v", admissionControlPluginNames)
 	var err error
 
-	pluginInitializer := scadmission.NewPluginInitializer(client, sharedInformers, kubeClient, kubeSharedInformers)
+	pluginInitializer := scadmission.NewPluginInitializer(client, sharedInformers, kubeClient, kubeSharedInformers, authorizer, api.Scheme)
 	admissionConfigProvider, err := admission.ReadAdmissionConfiguration(admissionControlPluginNames, s.AdmissionOptions.ConfigFile, api.Scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read plugin config: %v", err)
