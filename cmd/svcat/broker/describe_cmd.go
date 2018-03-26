@@ -26,7 +26,6 @@ import (
 
 type describeCmd struct {
 	*command.Context
-	ns       string
 	name     string
 	traverse bool
 }

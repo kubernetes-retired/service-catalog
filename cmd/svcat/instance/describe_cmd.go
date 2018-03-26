@@ -25,15 +25,14 @@ import (
 )
 
 type describeCmd struct {
-	*command.Context
-	ns       string
+	*command.Namespaced
 	name     string
 	traverse bool
 }
 
 // NewDescribeCmd builds a "svcat describe instance" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Context: cxt}
+	describeCmd := &describeCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "instance NAME",
 		Aliases: []string{"instances", "inst"},
@@ -44,13 +43,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
-	cmd.Flags().StringVarP(
-		&describeCmd.ns,
-		"namespace",
-		"n",
-		"default",
-		"The namespace in which to get the instance",
-	)
+	command.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().BoolVarP(
 		&describeCmd.traverse,
 		"traverse",
@@ -75,7 +68,7 @@ func (c *describeCmd) Run() error {
 }
 
 func (c *describeCmd) describe() error {
-	instance, err := c.App.RetrieveInstance(c.ns, c.name)
+	instance, err := c.App.RetrieveInstance(c.Namespace, c.name)
 	if err != nil {
 		return err
 	}

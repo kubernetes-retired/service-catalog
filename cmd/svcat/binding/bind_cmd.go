@@ -26,8 +26,7 @@ import (
 )
 
 type bindCmd struct {
-	*command.Context
-	ns           string
+	*command.Namespaced
 	instanceName string
 	bindingName  string
 	secretName   string
@@ -39,7 +38,7 @@ type bindCmd struct {
 
 // NewBindCmd builds a "svcat bind" command
 func NewBindCmd(cxt *command.Context) *cobra.Command {
-	bindCmd := &bindCmd{Context: cxt}
+	bindCmd := &bindCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "bind INSTANCE_NAME",
 		Short: "Binds an instance's metadata to a secret, which can then be used by an application to connect to the instance",
@@ -50,13 +49,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(bindCmd),
 		RunE:    command.RunE(bindCmd),
 	}
-	cmd.Flags().StringVarP(
-		&bindCmd.ns,
-		"namespace",
-		"n",
-		"default",
-		"The instance namespace",
-	)
+	command.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVarP(
 		&bindCmd.bindingName,
 		"name",
@@ -104,7 +97,7 @@ func (c *bindCmd) Run() error {
 }
 
 func (c *bindCmd) bind() error {
-	binding, err := c.App.Bind(c.ns, c.bindingName, c.instanceName, c.secretName, c.params, c.secrets)
+	binding, err := c.App.Bind(c.Namespace, c.bindingName, c.instanceName, c.secretName, c.params, c.secrets)
 	if err != nil {
 		return err
 	}

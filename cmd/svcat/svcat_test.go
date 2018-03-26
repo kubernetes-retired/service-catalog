@@ -30,10 +30,15 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/internal/test"
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
@@ -98,13 +103,13 @@ func TestCommandOutput(t *testing.T) {
 		{name: "describe plan with schemas", cmd: "describe plan premium", golden: "output/describe-plan-with-schemas.txt"},
 		{name: "describe plan without schemas", cmd: "describe plan premium --show-schemas=false", golden: "output/describe-plan-without-schemas.txt"},
 
-		{name: "list all test-ns instances", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
+		{name: "list all instances in a namespace", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
 		{name: "list all instances", cmd: "get instances --all-namespaces", golden: "output/get-instances-all-namespaces.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
 		{name: "describe instance", cmd: "describe instance ups-instance -n test-ns", golden: "output/describe-instance.txt"},
 
-		{name: "list all bindings", cmd: "get bindings -n test-ns", golden: "output/get-bindings.txt"},
-		{name: "list all instances", cmd: "get bindings --all-namespaces", golden: "output/get-bindings-all-namespaces.txt"},
+		{name: "list all bindings in a namespace", cmd: "get bindings -n test-ns", golden: "output/get-bindings.txt"},
+		{name: "list all bindings", cmd: "get bindings --all-namespaces", golden: "output/get-bindings-all-namespaces.txt"},
 		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
 	}
@@ -130,7 +135,7 @@ func TestCommandOutput(t *testing.T) {
 // 	go test ./cmd/svcat/...
 //
 func TestGenerateManifest(t *testing.T) {
-	svcat := buildRootCommand()
+	svcat := buildRootCommand(newContext())
 
 	m := &plugin.Manifest{}
 	m.Load(svcat)
@@ -141,6 +146,66 @@ func TestGenerateManifest(t *testing.T) {
 	}
 
 	test.AssertEqualsGoldenFile(t, "plugin.yaml", string(got))
+}
+
+// TestNamespacedCommands verifies that all commands that are namespace scoped
+// handle setting the namespace using the current context, --namespace and --all-namespaces flags.
+func TestNamespacedCommands(t *testing.T) {
+	const contextNS = "from-context"
+	const flagNS = "from-flag"
+	const allNS = ""
+
+	testcases := []struct {
+		name   string
+		cmd    string
+		wantNS string
+	}{
+		{name: "get instances with flag namespace", cmd: "get instances --namespace " + flagNS, wantNS: flagNS},
+		{name: "get instances with context namespace", cmd: "get instances", wantNS: contextNS},
+		{name: "get all instances", cmd: "get instances --all-namespaces", wantNS: allNS},
+
+		{name: "describe instance with flag namespace", cmd: "describe instance NAME --namespace " + flagNS, wantNS: flagNS},
+		{name: "describe instance with context namespace", cmd: "describe instances NAME", wantNS: contextNS},
+
+		{name: "provision with flag namespace", cmd: "provision --class CLASS --plan PLAN NAME --namespace " + flagNS, wantNS: flagNS},
+		{name: "provision with context namespace", cmd: "provision --class CLASS --plan PLAN NAME", wantNS: contextNS},
+
+		{name: "deprovision with flag namespace", cmd: "deprovision NAME --namespace " + flagNS, wantNS: flagNS},
+		{name: "deprovision with context namespace", cmd: "deprovision NAME", wantNS: contextNS},
+
+		{name: "bind with flag namespace", cmd: "bind NAME --namespace " + flagNS, wantNS: flagNS},
+		{name: "bind with context namespace", cmd: "bind NAME", wantNS: contextNS},
+
+		{name: "unbind with flag namespace", cmd: "unbind NAME --namespace " + flagNS, wantNS: flagNS},
+		{name: "unbind with context namespace", cmd: "unbind NAME", wantNS: contextNS},
+
+		{name: "get bindings with flag namespace", cmd: "get bindings --namespace " + flagNS, wantNS: flagNS},
+		{name: "get bindings with context namespace", cmd: "get bindings", wantNS: contextNS},
+		{name: "get all bindings", cmd: "get bindings --all-namespaces", wantNS: allNS},
+
+		{name: "describe binding with flag namespace", cmd: "describe binding NAME --namespace " + flagNS, wantNS: flagNS},
+		{name: "describe binding with context namespace", cmd: "describe binding NAME", wantNS: contextNS},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeClient := fake.NewSimpleClientset()
+
+			cxt := newContext()
+			cxt.App = &svcat.App{
+				CurrentNamespace: contextNS,
+				SDK:              &servicecatalog.SDK{ServiceCatalogClient: fakeClient},
+			}
+			cxt.Output = ioutil.Discard
+
+			executeFakeCommand(t, tc.cmd, cxt, true)
+
+			gotNamespace := fakeClient.Actions()[0].GetNamespace()
+			if tc.wantNS != gotNamespace {
+				t.Fatalf("the wrong namespace was used. WANT: %q, GOT: %q", tc.wantNS, gotNamespace)
+			}
+		})
+	}
 }
 
 // executeCommand runs a svcat command against a fake k8s api,
@@ -158,7 +223,28 @@ func executeCommand(t *testing.T, cmd string, continueOnErr bool) string {
 	defer os.Remove(kubeconfig)
 
 	// Setup the svcat command
-	svcat, _, err := buildCommand(cmd, kubeconfig)
+	svcat, _, err := buildCommand(cmd, newContext(), kubeconfig)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	// Capture all output: stderr and stdout
+	output := &bytes.Buffer{}
+	svcat.SetOutput(output)
+
+	err = svcat.Execute()
+	if err != nil && !continueOnErr {
+		t.Fatalf("%+v", err)
+	}
+
+	return output.String()
+}
+
+// executeCommand runs a svcat command against a fake k8s api,
+// returning the cli output.
+func executeFakeCommand(t *testing.T, cmd string, fakeContext *command.Context, continueOnErr bool) string {
+	// Setup the svcat command
+	svcat, _, err := buildCommand(cmd, fakeContext, "")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -189,7 +275,7 @@ func validateCommand(t *testing.T, cmd string, wantError string) {
 	defer os.Remove(kubeconfig)
 
 	// Setup the svcat command
-	svcat, targetCmd, err := buildCommand(cmd, kubeconfig)
+	svcat, targetCmd, err := buildCommand(cmd, newContext(), kubeconfig)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -220,8 +306,8 @@ func validateCommand(t *testing.T, cmd string, wantError string) {
 }
 
 // buildCommand parses a command string.
-func buildCommand(cmd, kubeconfig string) (rootCmd *cobra.Command, targetCmd *cobra.Command, err error) {
-	rootCmd = buildRootCommand()
+func buildCommand(cmd string, cxt *command.Context, kubeconfig string) (rootCmd *cobra.Command, targetCmd *cobra.Command, err error) {
+	rootCmd = buildRootCommand(cxt)
 	args := strings.Split(cmd, " ")
 	args = append(args, "--kubeconfig", kubeconfig)
 	rootCmd.SetArgs(args)
@@ -229,6 +315,12 @@ func buildCommand(cmd, kubeconfig string) (rootCmd *cobra.Command, targetCmd *co
 	targetCmd, _, err = rootCmd.Find(args)
 
 	return rootCmd, targetCmd, err
+}
+
+func newContext() *command.Context {
+	return &command.Context{
+		Viper: viper.New(),
+	}
 }
 
 func newAPIServer() *httptest.Server {
