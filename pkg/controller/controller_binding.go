@@ -351,10 +351,16 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 
 	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			glog.V(5).Info(pcb.Messagef(`References a non-existent %s "%s/%s"`,
+				pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+			))
+			return c.processUnbindSuccess(binding)
+		}
+
 		msg := fmt.Sprintf(
-			`References a non-existent %s "%s/%s"`,
-			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
-		)
+			`Error retrieving %s: %s`,
+			pretty.ServiceInstance, err)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonexistentServiceInstanceReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
@@ -369,9 +375,6 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 	}
 
 	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
-		// TODO(#1562): ultimately here we need to use logic similar to what is done to determine the plan ID for
-		// deprovisioning. We need to allow a ServiceBinding to be deleted, with an unbind request sent to the broker,
-		// even if the ServiceInstance has been changed to a non-existent plan.
 		return fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
 	}
 

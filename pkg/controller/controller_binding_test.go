@@ -944,6 +944,58 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceBindingDeleteUnresolvedInstanceReference tests
+// reconcileBindingDelete to ensure a binding delete succeeds when a
+// InstanceRef has not been resolved and no action has accrued for the
+// binding.
+func TestReconcileServiceBindingDeleteUnresolvedInstanceReference(t *testing.T) {
+	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              testServiceBindingName,
+			Namespace:         testNamespace,
+			DeletionTimestamp: &metav1.Time{},
+			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+			Generation:        1,
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         testServiceBindingGUID,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			CurrentOperation: v1beta1.ServiceBindingOperationUnbind,
+			UnbindStatus:     v1beta1.ServiceBindingUnbindStatusRequired,
+		},
+	}
+
+	err := testController.reconcileServiceBinding(binding)
+	if err != nil {
+		t.Fatalf("should have deleted the binding %q", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The actions should be:
+	// 0. Update binding by clearing the finalizer
+	assertNumberOfActions(t, actions, 1)
+	if !actions[0].Matches("update", "servicebindings") {
+		t.Fatalf("did not perform delete binding action: %q", actions)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+	if !strings.Contains(events[0], "Normal UnboundSuccessfully") {
+		t.Fatalf("did not publish UnboundSuccessfully event: %q", err)
+	}
+}
+
 // TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference
 // tests reconcileBinding to ensure a binding delete succeeds when a ClusterServiceClassRef
 // has not been resolved and no action has accrued for the binding.
