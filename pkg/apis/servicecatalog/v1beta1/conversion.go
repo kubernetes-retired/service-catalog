@@ -19,9 +19,7 @@ package v1beta1
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
-	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -96,46 +94,4 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
 		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
 	}
-}
-
-// Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions converts v1beta1.CatalogRestrictions to servicecatalog.CatalogRestrictions
-func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(in *CatalogRestrictions, out *servicecatalog.CatalogRestrictions, s conversion.Scope) error {
-	// store the labels.Selector object that is the result of converting restrictions into a Predicate.
-	if in != nil && in.ServiceClass != nil && len(in.ServiceClass) > 0 {
-		serviceClassPredicate, err := filter.CreatePredicate(in.ServiceClass)
-		if err != nil {
-			return err
-		}
-		if out.ServiceClass, err = filter.ConvertToSelector(serviceClassPredicate); err != nil {
-			return err
-		}
-	}
-	if in != nil && in.ServicePlan != nil && len(in.ServicePlan) > 0 {
-		servicePlanPredicate, err := filter.CreatePredicate(in.ServicePlan)
-		if err != nil {
-			return err
-		}
-		if out.ServicePlan, err = filter.ConvertToSelector(servicePlanPredicate); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions converts servicecatalog.CatalogRestrictions to v1beta1.CatalogRestrictions
-func Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(in *servicecatalog.CatalogRestrictions, out *CatalogRestrictions, s conversion.Scope) error {
-	if in != nil && in.ServiceClass.Empty() {
-		requirements, _ := in.ServiceClass.Requirements()
-		for _, r := range requirements {
-			out.ServiceClass = append(out.ServiceClass, r.String())
-		}
-	}
-	if in != nil && in.ServicePlan.Empty() {
-		requirements, _ := in.ServicePlan.Requirements()
-		for _, r := range requirements {
-			out.ServicePlan = append(out.ServicePlan, r.String())
-		}
-	}
-	return nil
 }
