@@ -103,7 +103,6 @@ func WriteAssociatedInstances(w io.Writer, instances []v1beta1.ServiceInstance) 
 // WriteInstanceDetails prints an instance.
 func WriteInstanceDetails(w io.Writer, instance *v1beta1.ServiceInstance) {
 	t := NewDetailsTable(w)
-
 	t.AppendBulk([][]string{
 		{"Name:", instance.Name},
 		{"Namespace:", instance.Namespace},
@@ -111,6 +110,7 @@ func WriteInstanceDetails(w io.Writer, instance *v1beta1.ServiceInstance) {
 		{"Class:", instance.Spec.ClusterServiceClassExternalName},
 		{"Plan:", instance.Spec.ClusterServicePlanExternalName},
 	})
-
 	t.Render()
+
+	writeParameters(w, instance.Spec.Parameters)
 }

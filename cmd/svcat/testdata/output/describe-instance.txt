@@ -4,6 +4,12 @@
   Class:       user-provided-service                                                              
   Plan:        default                                                                            
 
+Parameters:
+  param1: value1
+  paramset:
+    ps1: 1
+    ps2: two
+
 Bindings:
      NAME       STATUS  
 +-------------+--------+
