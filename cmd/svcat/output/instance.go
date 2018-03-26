@@ -112,10 +112,5 @@ func WriteInstanceDetails(w io.Writer, instance *v1beta1.ServiceInstance) {
 	})
 	t.Render()
 
-	// If available, show the parameters as they were sent to the broker, otherwise show what was requested
-	if instance.Status.ExternalProperties != nil && instance.Status.ExternalProperties.Parameters != nil {
-		writeParameters(w, instance.Status.ExternalProperties.Parameters)
-	} else if instance.Spec.Parameters != nil {
-		writeParameters(w, instance.Spec.Parameters)
-	}
+	writeParameters(w, instance.Spec.Parameters)
 }

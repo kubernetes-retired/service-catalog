@@ -22,7 +22,7 @@
     "clusterServicePlanRef": {
       "name": "86064792-7ea2-467b-af93-ac9694d96d52"
     },
-    "parameters": {},
+    "parameters": {"param1": "value1", "paramset": {"ps1":1, "ps2": "two"}},
     "externalID": "7e2c42f3-6d94-4409-bb15-7610d60af544",
     "updateRequests": 0
   },

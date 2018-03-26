@@ -17,7 +17,7 @@
     "instanceRef": {
       "name": "ups-instance"
     },
-    "parameters": {},
+    "parameters": {"param1": "value1", "paramset": {"ps1":1, "ps2": "two"}},
     "secretName": "ups-binding",
     "externalID": "061e1d78-d27e-4958-97b8-e9f5aa2f99d7"
   },

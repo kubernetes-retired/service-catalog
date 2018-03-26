@@ -73,12 +73,7 @@ func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 	})
 	t.Render()
 
-	// If available, show the parameters as they were sent to the broker, otherwise show what was requested
-	if binding.Status.ExternalProperties != nil && binding.Status.ExternalProperties.Parameters != nil {
-		writeParameters(w, binding.Status.ExternalProperties.Parameters)
-	} else if binding.Spec.Parameters != nil {
-		writeParameters(w, binding.Spec.Parameters)
-	}
+	writeParameters(w, binding.Spec.Parameters)
 }
 
 // WriteAssociatedBindings prints a list of bindings associated with an instance.
