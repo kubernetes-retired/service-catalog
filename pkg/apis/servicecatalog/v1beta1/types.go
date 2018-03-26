@@ -423,7 +423,10 @@ type CommonServicePlanSpec struct {
 	ServiceBindingCreateParameterSchema *runtime.RawExtension `json:"serviceBindingCreateParameterSchema,omitempty"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
-	// and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan.
+	// and its data will not be migrated.when a bind operation stored in the
+	// Secret when binding to a ServiceInstance on this plan.
+	// The ResponseSchema feature gate needs to be enabled for this field to
+	// be populated.
 	//
 	// ServiceBindingCreateResponseSchema is the schema for the response that
 	// will be returned by the broker when binding to a ServiceInstance on this plan.
