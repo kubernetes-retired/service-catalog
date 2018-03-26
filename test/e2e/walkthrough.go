@@ -132,7 +132,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 		By("Waiting for ClusterServicePlan to be ready")
 		err = util.WaitForClusterServicePlanToExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), serviceplanID)
-		Expect(err).ShouldNot(HaveOccurred(), "serviceplan never became ready")
+		Ω(err).ShouldNot(HaveOccurred(), "serviceplan never became ready")
 
 		// Provisioning a ServiceInstance and binding to it
 		By("Creating a namespace")
