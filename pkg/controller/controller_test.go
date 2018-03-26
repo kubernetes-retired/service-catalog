@@ -38,7 +38,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -245,6 +247,9 @@ const alphaParameterSchemaCatalogBytes = `{
       	  "create": {
 	  	  	"parameters": {
       	  	  "zoo": "blu"
+      	    },
+	  	  	"response": {
+      	  	  "qux": "qax"
       	    }
       	  }
       	}
@@ -1079,6 +1084,9 @@ func TestCatalogConversion(t *testing.T) {
 }
 
 func TestCatalogConversionWithParameterSchemas(t *testing.T) {
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.ResponseSchema))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.ResponseSchema))
+
 	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)
 	if err != nil {
@@ -1128,7 +1136,17 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	m = make(map[string]string)
 	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateParameterSchema.Raw, &m); err == nil {
 		if e, a := "blu", m["zoo"]; e != a {
-			t.Fatalf("Unexpected value of alphaServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
+			t.Fatalf("Unexpected value of ServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
+		}
+	}
+
+	if plan.Spec.ServiceBindingCreateResponseSchema == nil {
+		t.Fatalf("Expected plan.ServiceBindingCreateResponseSchema to be set, but was nil")
+	}
+	m = make(map[string]string)
+	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateResponseSchema.Raw, &m); err == nil {
+		if e, a := "qax", m["qux"]; e != a {
+			t.Fatalf("Unexpected value of ServiceBindingCreateResponseSchema; expected %v, got %v", e, a)
 		}
 	}
 }

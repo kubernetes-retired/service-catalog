@@ -589,14 +589,25 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 				}
 			}
 			if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
-				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil && bindingCreateSchema.Parameters != nil {
-					schema, err := json.Marshal(bindingCreateSchema.Parameters)
-					if err != nil {
-						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-						glog.Error(err)
-						return nil, err
+				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil {
+					if bindingCreateSchema.Parameters != nil {
+						schema, err := json.Marshal(bindingCreateSchema.Parameters)
+						if err != nil {
+							err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
+							glog.Error(err)
+							return nil, err
+						}
+						servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 					}
-					servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ResponseSchema) && bindingCreateSchema.Response != nil {
+						schema, err := json.Marshal(bindingCreateSchema.Response)
+						if err != nil {
+							err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
+							glog.Error(err)
+							return nil, err
+						}
+						servicePlans[i].Spec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
+					}
 				}
 			}
 		}

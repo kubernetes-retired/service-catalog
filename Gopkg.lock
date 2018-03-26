@@ -539,8 +539,8 @@
     "v2",
     "v2/fake"
   ]
-  revision = "39dbb4e91dfc6aad1f293e73fba18cc5f75eceb3"
-  version = "0.0.6"
+  revision = "c231fb93adc6181e4ba491bdb4b651f1d6fa08fc"
+  version = "0.0.7"
 
 [[projects]]
   name = "github.com/prometheus/client_golang"
@@ -1172,6 +1172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3e86272af4e2198fdca9acc394f165222f9318a0792955e99fea713fd1bce1fb"
+  inputs-digest = "36d2da55a036bc45278e6ad00e633e60e94b9091df1106f53e672336f8d974cb"
   solver-name = "gps-cdcl"
   solver-version = 1
