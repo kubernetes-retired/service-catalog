@@ -132,7 +132,7 @@ func (pr PlanReference) String() string {
 //     {ClassExternalID:"foo123", PlanExternalID:"bar456"}
 //     {ClassName:"k8s-foo123", PlanName:"k8s-bar456"}
 func (pr PlanReference) Format(s fmt.State, verb rune) {
-	classFields := make([]string, 0, 3)
+	var classFields []string
 	if pr.ClusterServiceClassExternalName != "" {
 		classFields = append(classFields, fmt.Sprintf("ClassExternalName:%q", pr.ClusterServiceClassExternalName))
 	}
@@ -143,7 +143,7 @@ func (pr PlanReference) Format(s fmt.State, verb rune) {
 		classFields = append(classFields, fmt.Sprintf("ClassName:%q", pr.ClusterServiceClassName))
 	}
 
-	planFields := make([]string, 0, 3)
+	var planFields []string
 	if pr.ClusterServicePlanExternalName != "" {
 		planFields = append(planFields, fmt.Sprintf("PlanExternalName:%q", pr.ClusterServicePlanExternalName))
 	}

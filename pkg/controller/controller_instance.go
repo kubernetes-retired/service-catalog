@@ -899,7 +899,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool,
 func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, *v1beta1.ClusterServiceClass, error) {
 	if !instance.Spec.ClassSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ClusterServiceClassExternalName, ClusterServiceClassExternalID, nor ClusterServiceClassName is set: %+v", instance.Spec)
+		return nil, nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServiceClassExternalName, ClusterServiceClassExternalID, nor ClusterServiceClassName is set", instance.Namespace, instance.Name)
 	}
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
@@ -980,7 +980,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) (*v1beta1.ServiceInstance, error) {
 	if !instance.Spec.PlanSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, fmt.Errorf("ServiceInstance is in inconsistent state, neither ClusterServicePlanExternalName, ClusterServicePlanExternalID, nor ClusterServicePlanName is set: %+v", instance.Spec)
+		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServicePlanExternalName, ClusterServicePlanExternalID, nor ClusterServicePlanName is set", instance.Namespace, instance.Name)
 	}
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
