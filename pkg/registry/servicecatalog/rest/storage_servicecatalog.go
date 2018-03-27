@@ -34,6 +34,9 @@ import (
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage"
 	restclient "k8s.io/client-go/rest"
+
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // StorageProvider provides a factory method to create a new APIGroupInfo for
@@ -104,23 +107,6 @@ func (p StorageProvider) v1beta1Storage(
 		p.StorageType,
 	)
 
-	serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
-	if err != nil {
-		return nil, err
-	}
-	serviceClassOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   serviceClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    serviceclass.EmptyObject(),
-			ScopeStrategy: serviceclass.NewScopeStrategy(),
-			NewListFunc:   serviceclass.NewList,
-			GetAttrsFunc:  serviceclass.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		p.StorageType,
-	)
-
 	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
 	if err != nil {
 		return nil, err
@@ -174,7 +160,6 @@ func (p StorageProvider) v1beta1Storage(
 
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	clusterServiceClassStorage, clusterServiceClassStatusStorage := clusterserviceclass.NewStorage(*clusterServiceClassOpts)
-	serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
 	servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage, instanceReferencesStorage := instance.NewStorage(*instanceOpts)
 	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
@@ -182,13 +167,11 @@ func (p StorageProvider) v1beta1Storage(
 		return nil, err
 	}
 
-	return map[string]rest.Storage{
+	storageMap := map[string]rest.Storage{
 		"clusterservicebrokers":        brokerStorage,
 		"clusterservicebrokers/status": brokerStatusStorage,
 		"clusterserviceclasses":        clusterServiceClassStorage,
 		"clusterserviceclasses/status": clusterServiceClassStatusStorage,
-		"serviceclasses":               serviceClassStorage,
-		"serviceclasses/status":        serviceClassStatusStorage,
 		"clusterserviceplans":          servicePlanStorage,
 		"clusterserviceplans/status":   servicePlanStatusStorage,
 		"serviceinstances":             instanceStorage,
@@ -196,7 +179,34 @@ func (p StorageProvider) v1beta1Storage(
 		"serviceinstances/reference":   instanceReferencesStorage,
 		"servicebindings":              bindingStorage,
 		"servicebindings/status":       bindingStatusStorage,
-	}, nil
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
+		serviceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceclasses"))
+		if err != nil {
+			return nil, err
+		}
+
+		serviceClassOpts := server.NewOptions(
+			etcd.Options{
+				RESTOptions:   serviceClassRESTOptions,
+				Capacity:      1000,
+				ObjectType:    serviceclass.EmptyObject(),
+				ScopeStrategy: serviceclass.NewScopeStrategy(),
+				NewListFunc:   serviceclass.NewList,
+				GetAttrsFunc:  serviceclass.GetAttrs,
+				Trigger:       storage.NoTriggerPublisher,
+			},
+			p.StorageType,
+		)
+
+		serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
+
+		storageMap["serviceclasses"] = serviceClassStorage
+		storageMap["serviceclasses/status"] = serviceClassStatusStorage
+	}
+
+	return storageMap, nil
 }
 
 // GroupName returns the API group name.
