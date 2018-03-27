@@ -679,6 +679,15 @@
   revision = "26559e0f760e39c24d730d3224364aef164ee23f"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "imports"
+  ]
+  revision = "77106db15f689a60e7d4e085d967ac557b918fb2"
+
+[[projects]]
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -1134,6 +1143,7 @@
   version = "kubernetes-1.10.0"
 
 [[projects]]
+  branch = "master"
   name = "k8s.io/gengo"
   packages = [
     "args",
@@ -1145,9 +1155,10 @@
     "parser",
     "types"
   ]
-  revision = "b58fc7edb82e0c6ffc9b8aef61813c7261b785d4"
+  revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
 
 [[projects]]
+  branch = "master"
   name = "k8s.io/kube-openapi"
   packages = [
     "pkg/builder",
@@ -1157,7 +1168,7 @@
     "pkg/util",
     "pkg/util/proto"
   ]
-  revision = "39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1"
+  revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
 
 [solve-meta]
   analyzer-name = "dep"
