@@ -19,19 +19,20 @@ package instance
 import (
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/spf13/cobra"
 )
 
 type deprovisonCmd struct {
-	*command.Context
-	ns           string
+	*command.Namespaced
 	instanceName string
 }
 
 // NewDeprovisionCmd builds a "svcat deprovision" command
 func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
-	deprovisonCmd := &deprovisonCmd{Context: cxt}
+	deprovisonCmd := &deprovisonCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "deprovision NAME",
 		Short: "Deletes an instance of a service",
@@ -41,8 +42,8 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(deprovisonCmd),
 		RunE:    command.RunE(deprovisonCmd),
 	}
-	cmd.Flags().StringVarP(&deprovisonCmd.ns, "namespace", "n", "default",
-		"The namespace of the instance")
+	command.AddNamespaceFlags(cmd.Flags(), false)
+
 	return cmd
 }
 
@@ -60,5 +61,9 @@ func (c *deprovisonCmd) Run() error {
 }
 
 func (c *deprovisonCmd) deprovision() error {
-	return c.App.Deprovision(c.ns, c.instanceName)
+	err := c.App.Deprovision(c.Namespace, c.instanceName)
+	if err == nil {
+		output.WriteDeletedResourceName(c.Output, c.instanceName)
+	}
+	return err
 }

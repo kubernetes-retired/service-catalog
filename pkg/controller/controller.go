@@ -264,16 +264,9 @@ func (e *operationError) Error() string { return e.message }
 // is nil. This will happen when deleting a ServiceInstance that previously
 // had an update to a non-existent plan.
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+	serviceClass, brokerName, brokerClient, err := c.getClusterServiceClassAndClusterServiceBroker(instance)
 	if err != nil {
-		return nil, nil, "", nil, &operationError{
-			reason: errorNonexistentClusterServiceClassReason,
-			message: fmt.Sprintf(
-				"The instance references a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
-			),
-		}
+		return nil, nil, "", nil, err
 	}
 
 	var servicePlan *v1beta1.ClusterServicePlan
@@ -290,10 +283,28 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			}
 		}
 	}
+	return serviceClass, servicePlan, brokerName, brokerClient, nil
+}
+
+// getClusterServiceClassAndClusterServiceBroker is a sequence of operations that's done in couple of
+// places so this method fetches the Service Class and creates
+// a brokerClient to use for that method given an ServiceInstance.
+func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, string, osb.Client, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+	if err != nil {
+		return nil, "", nil, &operationError{
+			reason: errorNonexistentClusterServiceClassReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
+				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
+			),
+		}
+	}
 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		return nil, nil, "", nil, &operationError{
+		return nil, "", nil, &operationError{
 			reason: errorNonexistentClusterServiceBrokerReason,
 			message: fmt.Sprintf(
 				"The instance references a non-existent broker %q",
@@ -305,7 +316,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
-		return nil, nil, "", nil, &operationError{
+		return nil, "", nil, &operationError{
 			reason: errorAuthCredentialsReason,
 			message: fmt.Sprintf(
 				"Error getting broker auth credentials for broker %q: %s",
@@ -318,10 +329,10 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	glog.V(4).Info(pcb.Messagef("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
-		return nil, nil, "", nil, err
+		return nil, "", nil, err
 	}
 
-	return serviceClass, servicePlan, broker.Name, brokerClient, nil
+	return serviceClass, broker.Name, brokerClient, nil
 }
 
 // getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding is a sequence of operations that's
@@ -484,13 +495,15 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 	for i, svc := range in.Services {
 		serviceClasses[i] = &v1beta1.ClusterServiceClass{
 			Spec: v1beta1.ClusterServiceClassSpec{
-				Bindable:      svc.Bindable,
-				PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
-				ExternalID:    svc.ID,
-				ExternalName:  svc.Name,
-				Tags:          svc.Tags,
-				Description:   svc.Description,
-				Requires:      svc.Requires,
+				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+					Bindable:      svc.Bindable,
+					PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
+					ExternalID:    svc.ID,
+					ExternalName:  svc.Name,
+					Tags:          svc.Tags,
+					Description:   svc.Description,
+					Requires:      svc.Requires,
+				},
 			},
 		}
 
@@ -528,10 +541,12 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 	for i, plan := range plans {
 		servicePlans[i] = &v1beta1.ClusterServicePlan{
 			Spec: v1beta1.ClusterServicePlanSpec{
-				ExternalName:           plan.Name,
-				ExternalID:             plan.ID,
-				Free:                   plan.Free != nil && *plan.Free,
-				Description:            plan.Description,
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: plan.Name,
+					ExternalID:   plan.ID,
+					Free:         plan.Free != nil && *plan.Free,
+					Description:  plan.Description,
+				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: serviceClassID},
 			},
 		}
@@ -552,8 +567,8 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 			servicePlans[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
 
-		if schemas := plan.ParameterSchemas; schemas != nil {
-			if instanceSchemas := schemas.ServiceInstances; instanceSchemas != nil {
+		if schemas := plan.Schemas; schemas != nil {
+			if instanceSchemas := schemas.ServiceInstance; instanceSchemas != nil {
 				if instanceCreateSchema := instanceSchemas.Create; instanceCreateSchema != nil && instanceCreateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceCreateSchema.Parameters)
 					if err != nil {
@@ -573,15 +588,26 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 					servicePlans[i].Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
-			if bindingSchemas := schemas.ServiceBindings; bindingSchemas != nil {
-				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil && bindingCreateSchema.Parameters != nil {
-					schema, err := json.Marshal(bindingCreateSchema.Parameters)
-					if err != nil {
-						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-						glog.Error(err)
-						return nil, err
+			if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
+				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil {
+					if bindingCreateSchema.Parameters != nil {
+						schema, err := json.Marshal(bindingCreateSchema.Parameters)
+						if err != nil {
+							err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
+							glog.Error(err)
+							return nil, err
+						}
+						servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 					}
-					servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ResponseSchema) && bindingCreateSchema.Response != nil {
+						schema, err := json.Marshal(bindingCreateSchema.Response)
+						if err != nil {
+							err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
+							glog.Error(err)
+							return nil, err
+						}
+						servicePlans[i].Spec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
+					}
 				}
 			}
 		}
@@ -614,6 +640,12 @@ func isServiceInstanceFailed(instance *v1beta1.ServiceInstance) bool {
 	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionFailed)
 }
 
+// isServiceInstanceOrphanMitigation returns whether the given instance has an
+// orphan mitigation condition with status true.
+func isServiceInstanceOrphanMitigation(instance *v1beta1.ServiceInstance) bool {
+	return isServiceInstanceConditionTrue(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
+}
+
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
 // to the specified Broker
 func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
@@ -639,15 +671,19 @@ func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *met
 // shouldStartOrphanMitigation returns whether an error with the given status
 // code indicates that orphan migitation should start.
 func shouldStartOrphanMitigation(statusCode int) bool {
-	is2XX := (statusCode >= 200 && statusCode < 300)
-	is5XX := (statusCode >= 500 && statusCode < 600)
+	is2XX := statusCode >= 200 && statusCode < 300
+	is5XX := statusCode >= 500 && statusCode < 600
 
-	return (is2XX && statusCode != http.StatusOK) ||
-		statusCode == http.StatusRequestTimeout ||
-		is5XX
+	return (is2XX && statusCode != http.StatusOK) || is5XX
 }
 
-// ReconciliationAction reprents a type of action the reconciler should take
+// isRetriableHTTPStatus returns whether an error with the given HTTP status
+// code is retriable.
+func isRetriableHTTPStatus(statusCode int) bool {
+	return statusCode != http.StatusBadRequest
+}
+
+// ReconciliationAction represents a type of action the reconciler should take
 // for a resource.
 type ReconciliationAction string
 

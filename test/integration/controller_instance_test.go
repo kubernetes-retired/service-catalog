@@ -145,10 +145,12 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 				Spec: v1beta1.ClusterServiceClassSpec{
 					ClusterServiceBrokerName: testClusterServiceBrokerName,
-					ExternalID:               testClusterServiceClassGUID,
-					ExternalName:             testClusterServiceClassName,
-					Description:              "a test service",
-					Bindable:                 true,
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalID:   testClusterServiceClassGUID,
+						ExternalName: testClusterServiceClassName,
+						Description:  "a test service",
+						Bindable:     true,
+					},
 				},
 			}
 			if _, err := ct.client.ClusterServiceClasses().Create(serviceClass); err != nil {
@@ -163,9 +165,11 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: testPlanExternalID},
 				Spec: v1beta1.ClusterServicePlanSpec{
 					ClusterServiceBrokerName: testClusterServiceBrokerName,
-					ExternalID:               testPlanExternalID,
-					ExternalName:             testClusterServicePlanName,
-					Description:              "a test plan",
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalID:   testPlanExternalID,
+						ExternalName: testClusterServicePlanName,
+						Description:  "a test plan",
+					},
 					ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 						Name: testClusterServiceClassGUID,
 					},
@@ -197,8 +201,8 @@ func TestCreateServiceInstanceWithAuthError(t *testing.T) {
 		t: t,
 		broker: func() *v1beta1.ClusterServiceBroker {
 			b := getTestBroker()
-			b.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-				Basic: &v1beta1.BasicAuthConfig{
+			b.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+				Basic: &v1beta1.ClusterBasicAuthConfig{
 					SecretRef: &v1beta1.ObjectReference{
 						Namespace: testNamespace,
 						Name:      "secret-name",
@@ -424,7 +428,7 @@ func TestCreateServiceInstanceWithParameters(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			ct := &controllerTest{
 				t:      t,
 				broker: getTestBroker(),
@@ -525,7 +529,7 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			ct := &controllerTest{
 				t:      t,
 				broker: getTestBroker(),
@@ -772,7 +776,7 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			ct := &controllerTest{
 				t:      t,
 				broker: getTestBroker(),
@@ -924,53 +928,59 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 		{
 			name:                "Status OK",
 			statusCode:          http.StatusOK,
-			conditionReason:     "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition: true,
+			conditionReason:     "ProvisionedSuccessfully",
+			expectFailCondition: false,
 		},
 		{
 			name:                     "Status Created",
 			statusCode:               http.StatusCreated,
-			conditionReason:          "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition:      true,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
 			triggersOrphanMitigation: true,
 		},
 		{
 			name:                     "other 2xx",
 			statusCode:               http.StatusNoContent,
-			conditionReason:          "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition:      true,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
 			triggersOrphanMitigation: true,
 		},
 		{
 			name:                "3XX",
 			statusCode:          300,
-			conditionReason:     "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition: true,
+			conditionReason:     "ProvisionedSuccessfully",
+			expectFailCondition: false,
 		},
 		{
 			name:                     "Status Request Timeout",
 			statusCode:               http.StatusRequestTimeout,
-			conditionReason:          "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition:      true,
-			triggersOrphanMitigation: true,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
+			triggersOrphanMitigation: false,
 		},
 		{
-			name:                "other 4XX",
+			name:                "400",
 			statusCode:          400,
 			conditionReason:     "ClusterServiceBrokerReturnedFailure",
 			expectFailCondition: true,
 		},
 		{
+			name:                "other 4XX",
+			statusCode:          403,
+			conditionReason:     "ProvisionedSuccessfully",
+			expectFailCondition: false,
+		},
+		{
 			name:                     "5XX",
 			statusCode:               500,
-			conditionReason:          "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition:      true,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
 			triggersOrphanMitigation: true,
 		},
 		{
 			name:                 "non-url transport error",
 			nonHTTPResponseError: fmt.Errorf("non-url error"),
-			conditionReason:      "ErrorCallingProvision",
+			conditionReason:      "ProvisionedSuccessfully",
 		},
 		{
 			name: "non-timeout url error",
@@ -979,7 +989,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				URL: "https://fakebroker.com/v2/service_instances/instance_id",
 				Err: fmt.Errorf("non-timeout error"),
 			},
-			conditionReason: "ErrorCallingProvision",
+			conditionReason: "ProvisionedSuccessfully",
 		},
 		{
 			name: "network timeout",
@@ -988,15 +998,15 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				URL: "https://fakebroker.com/v2/service_instances/instance_id",
 				Err: TimeoutError("timeout error"),
 			},
-			conditionReason:          "ErrorCallingProvision",
-			expectFailCondition:      true,
+			conditionReason:          "ProvisionedSuccessfully",
+			expectFailCondition:      false,
 			triggersOrphanMitigation: true,
 		},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			ct := &controllerTest{
 				t:                            t,
 				broker:                       getTestBroker(),
@@ -1011,23 +1021,43 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							Description:  strPtr("response description"),
 						}
 					}
-					ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-						Error: reactionError,
-					}
+					ct.osbClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+						getProvisionResponseByPollCountReactions(2, []fakeosb.ProvisionReaction{
+							fakeosb.ProvisionReaction{
+								Error: reactionError,
+							},
+							fakeosb.ProvisionReaction{
+								Response: &osb.ProvisionResponse{},
+							},
+						}))
+					ct.osbClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
+						getDeprovisionResponseByPollCountReactions(2, []fakeosb.DeprovisionReaction{
+							fakeosb.DeprovisionReaction{
+								Error: osb.HTTPStatusCodeError{
+									StatusCode:   500,
+									ErrorMessage: strPtr("temporary deprovision error"),
+								},
+							},
+							fakeosb.DeprovisionReaction{
+								Response: &osb.DeprovisionResponse{},
+							},
+						}))
 				},
 			}
 			ct.run(func(ct *controllerTest) {
 				var condition v1beta1.ServiceInstanceCondition
 				if tc.expectFailCondition {
+					// Instance should get stuck in a Failed condition
 					condition = v1beta1.ServiceInstanceCondition{
 						Type:   v1beta1.ServiceInstanceConditionFailed,
 						Status: v1beta1.ConditionTrue,
 						Reason: tc.conditionReason,
 					}
 				} else {
+					// Instance provisioning should be retried and succeed
 					condition = v1beta1.ServiceInstanceCondition{
 						Type:   v1beta1.ServiceInstanceConditionReady,
-						Status: v1beta1.ConditionFalse,
+						Status: v1beta1.ConditionTrue,
 						Reason: tc.conditionReason,
 					}
 				}
@@ -1041,29 +1071,23 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 					}
 				}
 
-				expectedLastActionType := fakeosb.ProvisionInstance
-				if tc.triggersOrphanMitigation {
-					expectedLastActionType = fakeosb.DeprovisionInstance
-				}
-				// Ensure that the last request made to the broker was of the expected type
-				getLastBrokerAction(t, ct.osbClient, expectedLastActionType)
+				brokerActions := ct.osbClient.Actions()
+				fmt.Printf("%#v", brokerActions)
 
+				// Ensure that we meet expectations on deprovision requests for orphan mitigation
+				deprovisionActions := findBrokerActions(t, ct.osbClient, fakeosb.DeprovisionInstance)
 				if tc.triggersOrphanMitigation {
-					instance, err := ct.client.ServiceInstances(ct.instance.Namespace).Get(ct.instance.Name, metav1.GetOptions{})
-					if err != nil {
-						t.Fatalf("error getting instance %s/%s back", ct.instance.Namespace, ct.instance.Name)
+					if len(deprovisionActions) == 0 {
+						t.Fatal("expected orphan mitigation deprovision request to occur")
 					}
-					util.AssertServiceInstanceCondition(
-						t,
-						instance,
-						v1beta1.ServiceInstanceConditionReady,
-						v1beta1.ConditionFalse,
-						"OrphanMitigationSuccessful",
-					)
-					if e, a := v1beta1.ServiceInstanceDeprovisionStatusSucceeded, instance.Status.DeprovisionStatus; e != a {
-						t.Fatalf("unexpected deprovision status: expected %v, got %v", e, a)
+				} else {
+					if len(deprovisionActions) != 0 {
+						t.Fatal("unexpected deprovision requests")
 					}
 				}
+
+				// All instances should eventually succeed
+				getLastBrokerAction(t, ct.osbClient, fakeosb.ProvisionInstance)
 			})
 		})
 	}
@@ -1316,7 +1340,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			ct := &controllerTest{
 				t:                            t,
 				broker:                       getTestBroker(),
@@ -1330,7 +1354,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 	}
 }
 
-func TestPollServiceInstanceLastOperation(t *testing.T) {
+func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 	cases := []struct {
 		name                         string
 		setup                        func(t *controllerTest)
@@ -1377,28 +1401,6 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 				Type:   v1beta1.ServiceInstanceConditionReady,
 				Status: v1beta1.ConditionTrue,
 				Reason: "ProvisionedSuccessfully",
-			},
-		},
-		{
-			name: "async provisioning with last operation response state failed",
-			setup: func(ct *controllerTest) {
-				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-						Async: true,
-					},
-				}
-				ct.osbClient.PollLastOperationReaction = &fakeosb.PollLastOperationReaction{
-					Response: &osb.LastOperationResponse{
-						State:       osb.StateFailed,
-						Description: strPtr("testDescription"),
-					},
-				}
-			},
-			skipVerifyingInstanceSuccess: true,
-			verifyCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionFalse,
-				Reason: "ProvisionCallFailed",
 			},
 		},
 		// response errors
@@ -1462,23 +1464,6 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "async provisioning with last operation response state failed eventually",
-			setup: func(ct *controllerTest) {
-				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-						Async: true,
-					},
-				}
-				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(getLastOperationResponseByPollCountStates(2, []osb.LastOperationState{osb.StateInProgress, osb.StateFailed}))
-			},
-			skipVerifyingInstanceSuccess: true,
-			verifyCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionFalse,
-				Reason: "ProvisionCallFailed",
-			},
-		},
-		{
 			name: "async last operation response successful with originating identity",
 			setup: func(ct *controllerTest) {
 				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity)); err != nil {
@@ -1519,7 +1504,7 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			ct := &controllerTest{
 				t:                            t,
 				broker:                       getTestBroker(),
@@ -1539,4 +1524,122 @@ func TestPollServiceInstanceLastOperation(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestPollServiceInstanceLastOperationFailure checks that async operation is correctly
+// retried after the initial operation fails
+func TestPollServiceInstanceLastOperationFailure(t *testing.T) {
+	cases := []struct {
+		name                         string
+		setup                        func(t *controllerTest)
+		skipVerifyingInstanceSuccess bool
+		failureCondition             *v1beta1.ServiceInstanceCondition
+		successCondition             *v1beta1.ServiceInstanceCondition
+	}{
+		{
+			name: "async provisioning with last operation response state failed",
+			setup: func(ct *controllerTest) {
+				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+					Response: &osb.ProvisionResponse{
+						Async: true,
+					},
+				}
+				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+					getLastOperationResponseByPollCountStates(2,
+						[]osb.LastOperationState{
+							osb.StateFailed,
+							osb.StateSucceeded,
+						}))
+			},
+			skipVerifyingInstanceSuccess: false,
+			failureCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "ProvisionCallFailed",
+			},
+			successCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionTrue,
+				Reason: "ProvisionedSuccessfully",
+			},
+		},
+		// response errors
+		{
+			name: "async provisioning with last operation response state failed eventually",
+			setup: func(ct *controllerTest) {
+				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+					Response: &osb.ProvisionResponse{
+						Async: true,
+					},
+				}
+				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+					getLastOperationResponseByPollCountStates(1,
+						[]osb.LastOperationState{
+							osb.StateInProgress,
+							osb.StateFailed,
+							osb.StateInProgress,
+							osb.StateSucceeded,
+						}))
+			},
+			skipVerifyingInstanceSuccess: false,
+			failureCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "ProvisionCallFailed",
+			},
+			successCondition: &v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionTrue,
+				Reason: "ProvisionedSuccessfully",
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			//t.Parallel()
+			ct := &controllerTest{
+				t:                            t,
+				broker:                       getTestBroker(),
+				instance:                     getTestInstance(),
+				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
+				setup: tc.setup,
+			}
+			ct.run(func(ct *controllerTest) {
+				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, *tc.successCondition); err != nil {
+					t.Fatalf("error waiting for instance condition: %v", err)
+				}
+			})
+		})
+	}
+}
+
+// TestRetryAsyncDeprovision tests whether asynchronous deprovisioning retries
+// by attempting a new deprovision after failing.
+func TestRetryAsyncDeprovision(t *testing.T) {
+	hasPollFailed := false
+	ct := &controllerTest{
+		t:        t,
+		broker:   getTestBroker(),
+		instance: getTestInstance(),
+		setup: func(ct *controllerTest) {
+			ct.osbClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
+				func(_ *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+					response := &osb.DeprovisionResponse{Async: true}
+					if hasPollFailed {
+						response.Async = false
+					}
+					return response, nil
+				})
+
+			ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
+				func(_ *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+					hasPollFailed = true
+					return &osb.LastOperationResponse{
+						State: osb.StateFailed,
+					}, nil
+				})
+		},
+	}
+	ct.run(func(_ *controllerTest) {})
 }

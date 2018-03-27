@@ -25,15 +25,14 @@ import (
 )
 
 type describeCmd struct {
-	*command.Context
-	ns       string
+	*command.Namespaced
 	name     string
 	traverse bool
 }
 
 // NewDescribeCmd builds a "svcat describe binding" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Context: cxt}
+	describeCmd := &describeCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "binding NAME",
 		Aliases: []string{"bindings", "bnd"},
@@ -44,13 +43,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
-	cmd.Flags().StringVarP(
-		&describeCmd.ns,
-		"namespace",
-		"n",
-		"default",
-		"The namespace in which to get the binding",
-	)
+	command.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().BoolVarP(
 		&describeCmd.traverse,
 		"traverse",
@@ -75,7 +68,7 @@ func (c *describeCmd) Run() error {
 }
 
 func (c *describeCmd) describe() error {
-	binding, err := c.App.RetrieveBinding(c.ns, c.name)
+	binding, err := c.App.RetrieveBinding(c.Namespace, c.name)
 	if err != nil {
 		return err
 	}

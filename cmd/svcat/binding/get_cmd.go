@@ -23,15 +23,13 @@ import (
 )
 
 type getCmd struct {
-	*command.Context
-	ns            string
-	name          string
-	allNamespaces bool
+	*command.Namespaced
+	name string
 }
 
 // NewGetCmd builds a "svcat get bindings" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "bindings [name]",
 		Aliases: []string{"binding", "bnd"},
@@ -46,20 +44,8 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 
-	cmd.Flags().StringVarP(
-		&getCmd.ns,
-		"namespace",
-		"n",
-		"default",
-		"The namespace from which to get the bindings",
-	)
-	cmd.Flags().BoolVarP(
-		&getCmd.allNamespaces,
-		"all-namespaces",
-		"",
-		false,
-		"List all bindings across namespaces",
-	)
+	command.AddNamespaceFlags(cmd.Flags(), true)
+
 	return cmd
 }
 
@@ -80,11 +66,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	if c.allNamespaces {
-		c.ns = ""
-	}
-
-	bindings, err := c.App.RetrieveBindings(c.ns)
+	bindings, err := c.App.RetrieveBindings(c.Namespace)
 	if err != nil {
 		return err
 	}
@@ -94,7 +76,7 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	binding, err := c.App.RetrieveBinding(c.ns, c.name)
+	binding, err := c.App.RetrieveBinding(c.Namespace, c.name)
 	if err != nil {
 		return err
 	}

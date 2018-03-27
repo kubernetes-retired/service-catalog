@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,19 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package serviceclass
+package output
 
 import (
-	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"fmt"
+	"io"
 )
 
-func TestNewList(t *testing.T) {
-	newList := NewList()
-	realObj := newList.(*servicecatalog.ClusterServiceClassList)
-
-	if realObj.Items == nil {
-		t.Fatalf("nil incorrectly set on Items field")
+// WriteVersion prints a list of bindings.
+func WriteVersion(w io.Writer, client, server string) {
+	if client != "" {
+		fmt.Fprintf(w, "client: %s\n", client)
+	}
+	if server != "" {
+		fmt.Fprintf(w, "server: %s\n", server)
 	}
 }
