@@ -25,8 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"k8s.io/apiserver/pkg/authentication/user"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 )
 
 const (
@@ -822,14 +820,14 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 			newInstance.Generation = oldInstance.Generation
 		}
 
-		user := user.DefaultInfo{}
 		if tc.setUser {
-			user.Name = "JohnDoe"
-			user.UID = "123"
+			newInstance.Spec.UserInfo = &servicecatalog.UserInfo{
+				Username: "JohnDoe",
+				UID:      "123",
+			}
 		}
-		ctx := genericapirequest.WithUser(genericapirequest.NewContext(), &user)
 
-		errs := internalValidateServiceInstanceUpdateAllowed(ctx, newInstance, oldInstance)
+		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue
@@ -901,7 +899,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 			},
 		}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(nil, newInstance, oldInstance)
+		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue

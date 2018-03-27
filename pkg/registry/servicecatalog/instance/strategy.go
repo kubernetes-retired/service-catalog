@@ -186,7 +186,7 @@ func (instanceRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, o
 		glog.Fatal("received a non-instance object to validate from")
 	}
 
-	return scv.ValidateServiceInstanceUpdate(ctx, newServiceInstance, oldServiceInstance)
+	return scv.ValidateServiceInstanceUpdate(newServiceInstance, oldServiceInstance)
 }
 
 // CheckGracefulDelete sets the UserInfo on the resource to that of the user that
