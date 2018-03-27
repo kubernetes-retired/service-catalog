@@ -61,7 +61,7 @@ required = [
   name = "k8s.io/apiserver"
   version = "kubernetes-1.9.1"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/client-go"
   version = "kubernetes-1.9.1"
 
