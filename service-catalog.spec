@@ -72,6 +72,12 @@ ExclusiveArch:  x86_64 aarch64 ppc64le s390x
 %description
 %{summary}
 
+%package svcat
+Summary: A domain-specific CLI tool to make interacting with Service Catalog easier
+
+%description svcat
+${summary}
+
 %prep
 %if 0%{do_prep}
 %setup -q
@@ -109,7 +115,7 @@ PLATFORM="$(go env GOHOSTOS)/$(go env GOHOSTARCH)"
 install -d %{buildroot}%{_bindir}
 
 # Install linux components
-for bin in service-catalog
+for bin in service-catalog svcat
 do
   echo "+++ INSTALLING ${bin}"
   install -p -m 755 _output/local/bin/${PLATFORM}/${bin} %{buildroot}%{_bindir}/${bin}
@@ -131,6 +137,11 @@ done
 # %dir %config(noreplace) %{_sysconfdir}/origin
 # %ghost %dir %config(noreplace) %{_sysconfdir}/origin
 # %ghost %config(noreplace) %{_sysconfdir}/origin/.config_managed
+
+%files svcat
+%doc README.md
+%license LICENSE
+%{_bindir}/svcat
 
 %pre
 
