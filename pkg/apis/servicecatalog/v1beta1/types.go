@@ -833,8 +833,8 @@ type ServiceBindingSpec struct {
 	// namespace that will hold the credentials associated with the ServiceBinding.
 	SecretName string `json:"secretName,omitempty"`
 
-	// List of transformations that should be applied to the credentials returned
-	// by the broker before they are inserted into the Secret
+	// List of transformations that should be applied to the credentials
+	// associated with the ServiceBinding before they are inserted into the Secret.
 	SecretTransform []SecretTransform `json:"secretTransform,omitempty"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
@@ -1028,15 +1028,32 @@ type ClusterObjectReference struct {
 	Name string `json:"name,omitempty"`
 }
 
-// SecretTransform is a single transformation of the credentials returned
-// from the broker
+// SecretTransform is a single transformation that is applied to the
+// credentials returned from the broker before they are inserted into
+// the Secret associated with the ServiceBinding.
+// Because different brokers providing the same type of service may
+// each return a different credentials structure, users can specify
+// the transformations that should be applied to the Secret to adapt
+// its entries to whatever the service consumer expects.
+// For example, the credentials returned by the broker may include the
+// key "USERNAME", but the consumer requires the username to be
+// exposed under the key "DB_USER" instead. To have the Service
+// Catalog transform the Secret, the following SecretTransform must
+// be specified in ServiceBinding.spec.secretTransform:
+// - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}}
 type SecretTransform struct {
 	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
 // from the broker should be renamed and stored under a different key
-// in the Secret
+// in the Secret.
+// For example, given the following credentials entry:
+//     "USERNAME": "johndoe"
+// and the following RenameKeyTransform:
+//     {"from": "USERNAME", "to": "DB_USER"}
+// the following entry will appear in the Secret:
+//     "DB_USER": "johndoe"
 type RenameKeyTransform struct {
 	From string `json:"from"`
 	To   string `json:"to"`
