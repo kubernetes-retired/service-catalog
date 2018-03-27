@@ -116,6 +116,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all bindings", cmd: "get bindings --all-namespaces", golden: "output/get-bindings-all-namespaces.txt"},
 		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
+
+		{name: "completion bash", cmd: "completion bash", golden: "output/completion-bash.txt"},
 	}
 
 	for _, tc := range testcases {
