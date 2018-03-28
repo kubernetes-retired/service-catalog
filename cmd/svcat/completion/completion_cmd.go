@@ -115,5 +115,5 @@ func (c *completionCmd) Run() error {
 }
 
 func runCompletionBash(w io.Writer, cmd *cobra.Command) error {
-	return cmd.GenBashCompletion(w)
+	return cmd.Root().GenBashCompletion(w)
 }

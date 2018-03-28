@@ -1,4 +1,4 @@
-# bash completion for completion                           -*- shell-script -*-
+# bash completion for svcat                                -*- shell-script -*-
 
 __debug()
 {
@@ -223,6 +223,38 @@ __handle_word()
     __handle_word
 }
 
+_svcat_bind()
+{
+    last_command="svcat_bind"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--name=")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--param=")
+    two_word_flags+=("-p")
+    local_nonpersistent_flags+=("--param=")
+    flags+=("--secret=")
+    two_word_flags+=("-s")
+    local_nonpersistent_flags+=("--secret=")
+    flags+=("--secret-name=")
+    local_nonpersistent_flags+=("--secret-name=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _svcat_completion()
 {
     last_command="svcat_completion"
@@ -243,7 +275,547 @@ _svcat_completion()
     noun_aliases=()
 }
 
-__start_completion()
+_svcat_deprovision()
+{
+    last_command="svcat_deprovision"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_describe_binding()
+{
+    last_command="svcat_describe_binding"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--traverse")
+    flags+=("-t")
+    local_nonpersistent_flags+=("--traverse")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_describe_broker()
+{
+    last_command="svcat_describe_broker"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_describe_class()
+{
+    last_command="svcat_describe_class"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--traverse")
+    flags+=("-t")
+    local_nonpersistent_flags+=("--traverse")
+    flags+=("--uuid")
+    flags+=("-u")
+    local_nonpersistent_flags+=("--uuid")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_describe_instance()
+{
+    last_command="svcat_describe_instance"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--traverse")
+    flags+=("-t")
+    local_nonpersistent_flags+=("--traverse")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_describe_plan()
+{
+    last_command="svcat_describe_plan"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--show-schemas")
+    local_nonpersistent_flags+=("--show-schemas")
+    flags+=("--traverse")
+    flags+=("-t")
+    local_nonpersistent_flags+=("--traverse")
+    flags+=("--uuid")
+    flags+=("-u")
+    local_nonpersistent_flags+=("--uuid")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_describe()
+{
+    last_command="svcat_describe"
+    commands=()
+    commands+=("binding")
+    commands+=("broker")
+    commands+=("class")
+    commands+=("instance")
+    commands+=("plan")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_get_bindings()
+{
+    last_command="svcat_get_bindings"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--all-namespaces")
+    local_nonpersistent_flags+=("--all-namespaces")
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_get_brokers()
+{
+    last_command="svcat_get_brokers"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_get_classes()
+{
+    last_command="svcat_get_classes"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--uuid")
+    flags+=("-u")
+    local_nonpersistent_flags+=("--uuid")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_get_instances()
+{
+    last_command="svcat_get_instances"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--all-namespaces")
+    local_nonpersistent_flags+=("--all-namespaces")
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_get_plans()
+{
+    last_command="svcat_get_plans"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--class=")
+    two_word_flags+=("-c")
+    local_nonpersistent_flags+=("--class=")
+    flags+=("--uuid")
+    flags+=("-u")
+    local_nonpersistent_flags+=("--uuid")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_get()
+{
+    last_command="svcat_get"
+    commands=()
+    commands+=("bindings")
+    commands+=("brokers")
+    commands+=("classes")
+    commands+=("instances")
+    commands+=("plans")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_install_plugin()
+{
+    last_command="svcat_install_plugin"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--plugins-path=")
+    two_word_flags+=("-p")
+    local_nonpersistent_flags+=("--plugins-path=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_install()
+{
+    last_command="svcat_install"
+    commands=()
+    commands+=("plugin")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_provision()
+{
+    last_command="svcat_provision"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--class=")
+    local_nonpersistent_flags+=("--class=")
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--param=")
+    two_word_flags+=("-p")
+    local_nonpersistent_flags+=("--param=")
+    flags+=("--params-json=")
+    local_nonpersistent_flags+=("--params-json=")
+    flags+=("--plan=")
+    local_nonpersistent_flags+=("--plan=")
+    flags+=("--secret=")
+    two_word_flags+=("-s")
+    local_nonpersistent_flags+=("--secret=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_flag+=("--class=")
+    must_have_one_flag+=("--plan=")
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_sync_broker()
+{
+    last_command="svcat_sync_broker"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_sync()
+{
+    last_command="svcat_sync"
+    commands=()
+    commands+=("broker")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_touch_instance()
+{
+    last_command="svcat_touch_instance"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_touch()
+{
+    last_command="svcat_touch"
+    commands=()
+    commands+=("instance")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_unbind()
+{
+    last_command="svcat_unbind"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--name=")
+    local_nonpersistent_flags+=("--name=")
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_version()
+{
+    last_command="svcat_version"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--client")
+    flags+=("-c")
+    local_nonpersistent_flags+=("--client")
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat()
+{
+    last_command="svcat"
+    commands=()
+    commands+=("bind")
+    commands+=("completion")
+    commands+=("deprovision")
+    commands+=("describe")
+    commands+=("get")
+    commands+=("install")
+    commands+=("provision")
+    commands+=("sync")
+    commands+=("touch")
+    commands+=("unbind")
+    commands+=("version")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--kube-context=")
+    flags+=("--kubeconfig=")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+__start_svcat()
 {
     local cur prev words cword
     declare -A flaghash 2>/dev/null || :
@@ -259,7 +831,7 @@ __start_completion()
     local local_nonpersistent_flags=()
     local flags_with_completion=()
     local flags_completion=()
-    local commands=("completion")
+    local commands=("svcat")
     local must_have_one_flag=()
     local must_have_one_noun=()
     local last_command
@@ -269,9 +841,9 @@ __start_completion()
 }
 
 if [[ $(type -t compopt) = "builtin" ]]; then
-    complete -o default -F __start_completion completion
+    complete -o default -F __start_svcat svcat
 else
-    complete -o default -o nospace -F __start_completion completion
+    complete -o default -o nospace -F __start_svcat svcat
 fi
 
 # ex: ts=4 sw=4 et filetype=sh
