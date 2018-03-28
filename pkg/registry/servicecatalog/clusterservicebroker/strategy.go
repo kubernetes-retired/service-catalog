@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package broker
+package clusterservicebroker
 
 // this was copied from where else and edited to fit our objects
 
