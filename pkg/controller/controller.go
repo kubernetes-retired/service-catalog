@@ -226,7 +226,7 @@ func createWorker(queue workqueue.RateLimitingInterface, resourceType string, ma
 func (c *controller) createConfigMapMonitorWorker(stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
 	waitGroup.Add(1)
 	go func() {
-		wait.Until(c.monitorConfigMap, time.Second, stopCh)
+		wait.Until(c.monitorConfigMap, 15*time.Second, stopCh)
 		waitGroup.Done()
 	}()
 }
