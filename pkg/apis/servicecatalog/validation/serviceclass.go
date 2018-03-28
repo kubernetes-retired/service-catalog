@@ -108,7 +108,7 @@ func validateClusterServiceClassSpec(spec *sc.ClusterServiceClassSpec, fldPath *
 	commonErrs := validateCommonServiceClassSpec(&spec.CommonServiceClassSpec, fldPath, create)
 
 	if len(commonErrs) != 0 {
-		allErrs = append(commonErrs)
+		allErrs = append(allErrs, commonErrs...)
 	}
 
 	return allErrs

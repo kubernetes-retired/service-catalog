@@ -90,7 +90,7 @@ func validateClusterServiceBrokerSpec(spec *sc.ClusterServiceBrokerSpec, fldPath
 	commonErrs := validateCommonServiceBrokerSpec(&spec.CommonServiceBrokerSpec, fldPath)
 
 	if len(commonErrs) != 0 {
-		allErrs = append(commonErrs)
+		allErrs = append(allErrs, commonErrs...)
 	}
 
 	return allErrs
