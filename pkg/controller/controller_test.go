@@ -88,7 +88,14 @@ const (
 	testClusterID                           = "test-cluster-id"
 )
 
-var testDashboardURL = "http://dashboard"
+var (
+	testDashboardURL = "http://dashboard"
+	testContext      = map[string]interface{}{
+		"platform":  "kubernetes",
+		"namespace": testNamespace,
+		"clusterID": testClusterID,
+	}
+)
 
 const testCatalog = `{
   "services": [{
