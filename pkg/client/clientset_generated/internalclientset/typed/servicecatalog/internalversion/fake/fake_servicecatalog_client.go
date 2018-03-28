@@ -42,6 +42,10 @@ func (c *FakeServicecatalog) ServiceBindings(namespace string) internalversion.S
 	return &FakeServiceBindings{c, namespace}
 }
 
+func (c *FakeServicecatalog) ServiceBrokers(namespace string) internalversion.ServiceBrokerInterface {
+	return &FakeServiceBrokers{c, namespace}
+}
+
 func (c *FakeServicecatalog) ServiceClasses(namespace string) internalversion.ServiceClassInterface {
 	return &FakeServiceClasses{c, namespace}
 }
