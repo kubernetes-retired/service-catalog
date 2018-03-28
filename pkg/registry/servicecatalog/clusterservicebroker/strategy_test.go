@@ -34,10 +34,12 @@ func clusterServiceBrokerWithOldSpec() *sc.ClusterServiceBroker {
 			},
 		},
 		Status: sc.ClusterServiceBrokerStatus{
-			Conditions: []sc.ServiceBrokerCondition{
-				{
-					Type:   sc.ServiceBrokerConditionReady,
-					Status: sc.ConditionFalse,
+			CommonServiceBrokerStatus: sc.CommonServiceBrokerStatus{
+				Conditions: []sc.ServiceBrokerCondition{
+					{
+						Type:   sc.ServiceBrokerConditionReady,
+						Status: sc.ConditionFalse,
+					},
 				},
 			},
 		},
@@ -74,7 +76,9 @@ func TestClusterServiceBroker(t *testing.T) {
 			},
 		},
 		Status: sc.ClusterServiceBrokerStatus{
-			Conditions: nil,
+			CommonServiceBrokerStatus: sc.CommonServiceBrokerStatus{
+				Conditions: nil,
+			},
 		},
 	}
 
