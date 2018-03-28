@@ -1169,6 +1169,12 @@
   ]
   revision = "39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1"
 
+[[projects]]
+  branch = "master"
+  name = "k8s.io/kubectl"
+  packages = ["pkg/pluginutils"]
+  revision = "d8431e5dcac9658ca20110259083d42bbac0cc3c"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
