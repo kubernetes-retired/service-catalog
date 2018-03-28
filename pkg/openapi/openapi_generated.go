@@ -1004,7 +1004,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "RenameKeyTransform specifies that one of the credentials keys returned from the broker should be renamed and stored under a different key in the Secret",
+					Description: "RenameKeyTransform specifies that one of the credentials keys returned from the broker should be renamed and stored under a different key in the Secret. For example, given the following credentials entry:\n    \"USERNAME\": \"johndoe\"\nand the following RenameKeyTransform:\n    {\"from\": \"USERNAME\", \"to\": \"DB_USER\"}\nthe following entry will appear in the Secret:\n    \"DB_USER\": \"johndoe\"",
 					Properties: map[string]spec.Schema{
 						"from": {
 							SchemaProps: spec.SchemaProps{
@@ -1052,7 +1052,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "SecretTransform is a single transformation of the credentials returned from the broker",
+					Description: "SecretTransform is a single transformation that is applied to the credentials returned from the broker before they are inserted into the Secret associated with the ServiceBinding. Because different brokers providing the same type of service may each return a different credentials structure, users can specify the transformations that should be applied to the Secret to adapt its entries to whatever the service consumer expects. For example, the credentials returned by the broker may include the key \"USERNAME\", but the consumer requires the username to be exposed under the key \"DB_USER\" instead. To have the Service Catalog transform the Secret, the following SecretTransform must be specified in ServiceBinding.spec.secretTransform: - {\"renameKey\": {\"from\": \"USERNAME\", \"to\": \"DB_USER\"}}",
 					Properties: map[string]spec.Schema{
 						"renameKey": {
 							SchemaProps: spec.SchemaProps{
@@ -1271,7 +1271,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"secretTransform": {
 							SchemaProps: spec.SchemaProps{
-								Description: "List of transformations that should be applied to the credentials returned by the broker before they are inserted into the Secret",
+								Description: "List of transformations that should be applied to the credentials associated with the ServiceBinding before they are inserted into the Secret.",
 								Type:        []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
