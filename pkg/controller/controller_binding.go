@@ -433,12 +433,13 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	secretData := make(map[string][]byte)
 	for k, v := range credentials {
 		var err error
-		secretKey := renameCredentialsKey(binding, k)
-		secretData[secretKey], err = serialize(v)
+		secretData[k], err = serialize(v)
 		if err != nil {
 			return fmt.Errorf("Unable to serialize value for credential key %q (value is intentionally not logged): %s", k, err)
 		}
 	}
+
+	transformSecretData(binding.Spec.SecretTransform, secretData)
 
 	// Creating/updating the Secret
 	secretClient := c.kubeClient.CoreV1().Secrets(binding.Namespace)
@@ -491,15 +492,19 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	return err
 }
 
-func renameCredentialsKey(binding *v1beta1.ServiceBinding, key string) string {
-	for _, t := range binding.Spec.SecretTransform {
-		if t.RenameKey != nil {
-			if key == t.RenameKey.From {
-				return t.RenameKey.To
+func transformSecretData(transforms []v1beta1.SecretTransform, secretData map[string][]byte) {
+	for _, t := range transforms {
+		if t.AddKey != nil {
+			if t.AddKey.StringValue != nil {
+				secretData[t.AddKey.Key] = []byte(*t.AddKey.StringValue)
+			} else {
+				secretData[t.AddKey.Key] = t.AddKey.Value
 			}
+		} else if t.RenameKey != nil {
+			secretData[t.RenameKey.To] = secretData[t.RenameKey.From]
+			delete(secretData, t.RenameKey.From)
 		}
 	}
-	return key
 }
 
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {

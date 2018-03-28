@@ -553,6 +553,12 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 				To:   "renamedA",
 			},
 		},
+		{
+			AddKey: &v1beta1.AddKeyTransform{
+				Key:   "e",
+				Value: []byte("e"),
+			},
+		},
 	}
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
@@ -614,6 +620,13 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 	}
 	if e, a := "b", string(value); e != a {
 		t.Fatalf("Unexpected value of key 'renamedA' in created secret; %s", expectedGot(e, a))
+	}
+	value, ok = actionSecret.Data["e"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'e' in created secret")
+	}
+	if e, a := "e", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'e' in created secret; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
@@ -3786,6 +3799,78 @@ func TestPollServiceBinding(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTransformSecretData(t *testing.T) {
+	cases := []struct {
+		name                  string
+		transforms            []v1beta1.SecretTransform
+		secretData            map[string][]byte
+		transformedSecretData map[string][]byte
+	}{
+		{
+			name: "RenameKeyTransform",
+			transforms: []v1beta1.SecretTransform{
+				{RenameKey: &v1beta1.RenameKeyTransform{From: "foo", To: "bar"}},
+			},
+			secretData: map[string][]byte{
+				"foo": []byte("123"),
+			},
+			transformedSecretData: map[string][]byte{
+				"bar": []byte("123"),
+			},
+		},
+		{
+			name: "AddKeyTransform with value",
+			transforms: []v1beta1.SecretTransform{
+				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", Value: []byte("456")}},
+			},
+			secretData: map[string][]byte{
+				"foo": []byte("123"),
+			},
+			transformedSecretData: map[string][]byte{
+				"foo": []byte("123"),
+				"bar": []byte("456"),
+			},
+		},
+		{
+			name: "AddKeyTransform with stringValue",
+			transforms: []v1beta1.SecretTransform{
+				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", StringValue: pointer("456")}},
+			},
+			secretData: map[string][]byte{
+				"foo": []byte("123"),
+			},
+			transformedSecretData: map[string][]byte{
+				"foo": []byte("123"),
+				"bar": []byte("456"),
+			},
+		},
+		{
+			name: "AddKeyTransform stringValue precedence over value",
+			transforms: []v1beta1.SecretTransform{
+				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", Value: []byte("456"), StringValue: pointer("789")}},
+			},
+			secretData: map[string][]byte{
+				"foo": []byte("123"),
+			},
+			transformedSecretData: map[string][]byte{
+				"foo": []byte("123"),
+				"bar": []byte("789"),
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		transformSecretData(tc.transforms, tc.secretData)
+		if !reflect.DeepEqual(tc.secretData, tc.transformedSecretData) {
+			t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.transformedSecretData, tc.secretData)
+		}
+	}
+}
+
+func pointer(s string) *string {
+	return &s
 }
 
 func assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t *testing.T, fakeCatalogClient *fake.Clientset, binding *v1beta1.ServiceBinding) *v1beta1.ServiceBinding {

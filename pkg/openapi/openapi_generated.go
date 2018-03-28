@@ -29,6 +29,35 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "AddKeyTransform specifies that Service Catalog should add an additional entry to the Secret associated with the ServiceBinding. For example, given the following AddKeyTransform:\n    {\"key\": \"CONNECTION_POOL_SIZE\", \"stringValue\": \"10\"}\nthe following entry will appear in the Secret:\n    \"CONNECTION_POOL_SIZE\": \"10\"",
+					Properties: map[string]spec.Schema{
+						"key": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"value": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "byte",
+							},
+						},
+						"stringValue": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+					Required: []string{"key", "value", "stringValue"},
+				},
+			},
+			Dependencies: []string{},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -1198,11 +1227,16 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"),
 							},
 						},
+						"addKey": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform"),
+							},
+						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding": {
 			Schema: spec.Schema{

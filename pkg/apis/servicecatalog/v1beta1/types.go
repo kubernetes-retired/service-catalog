@@ -1215,7 +1215,7 @@ type ServiceBindingPropertiesState struct {
 type ParametersFromSource struct {
 	// The Secret key to select from.
 	// The value must be a JSON object.
-	//+optional
+	// +optional
 	SecretKeyRef *SecretKeyReference `json:"secretKeyRef,omitempty"`
 }
 
@@ -1265,6 +1265,7 @@ type ClusterObjectReference struct {
 // - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}}
 type SecretTransform struct {
 	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
+	AddKey    *AddKeyTransform    `json:"addKey,omitempty"`
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1279,4 +1280,16 @@ type SecretTransform struct {
 type RenameKeyTransform struct {
 	From string `json:"from"`
 	To   string `json:"to"`
+}
+
+// AddKeyTransform specifies that Service Catalog should add an
+// additional entry to the Secret associated with the ServiceBinding.
+// For example, given the following AddKeyTransform:
+//     {"key": "CONNECTION_POOL_SIZE", "stringValue": "10"}
+// the following entry will appear in the Secret:
+//     "CONNECTION_POOL_SIZE": "10"
+type AddKeyTransform struct {
+	Key         string  `json:"key"`
+	Value       []byte  `json:"value"`
+	StringValue *string `json:"stringValue"`
 }
