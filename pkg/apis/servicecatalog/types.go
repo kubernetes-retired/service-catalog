@@ -954,12 +954,12 @@ type ClusterObjectReference struct {
 // SecretTransform is a single transformation of the credentials returned
 // from the broker
 type SecretTransform struct {
-	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
+	RenameKey *RenameKeyTransform
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
 // from the broker should be renamed
 type RenameKeyTransform struct {
-	From string `json:"from"`
-	To   string `json:"to"`
+	From string
+	To   string
 }
