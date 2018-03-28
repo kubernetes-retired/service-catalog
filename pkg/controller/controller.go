@@ -192,13 +192,11 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		}
 	}
 
-	func() {
-		waitGroup.Add(1)
-		go func() {
-			wait.Until(c.monitorConfigMap, time.Second, stopCh)
-			waitGroup.Done()
-		}()
-	}()
+	// this creates a worker specifically for monitoring
+	// configmaps, as we don't have the watching polling queue
+	// infrastructure set up for one configmap. Instead this is a
+	// simple polling based worker
+	c.createConfigMapMonitorWorker(stopCh, &waitGroup)
 
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
@@ -221,6 +219,14 @@ func createWorker(queue workqueue.RateLimitingInterface, resourceType string, ma
 	waitGroup.Add(1)
 	go func() {
 		wait.Until(worker(queue, resourceType, maxRetries, forgetAfterSuccess, reconciler), time.Second, stopCh)
+		waitGroup.Done()
+	}()
+}
+
+func (c *controller) createConfigMapMonitorWorker(stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
+	waitGroup.Add(1)
+	go func() {
+		wait.Until(c.monitorConfigMap, time.Second, stopCh)
 		waitGroup.Done()
 	}()
 }
@@ -250,7 +256,7 @@ func (c *controller) monitorConfigMap() {
 		if _, err := c.kubeClient.CoreV1().ConfigMaps("default").Create(cm); err != nil {
 			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
-	} else if nil == err {
+	} else if err == nil {
 		// cluster id exists and is set
 		// get id out of cm
 		if id := cm.Data["id"]; "" != id {
