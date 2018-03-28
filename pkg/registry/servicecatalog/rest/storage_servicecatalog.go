@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
@@ -201,10 +202,23 @@ func (p StorageProvider) v1beta1Storage(
 			p.StorageType,
 		)
 
-		serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
+		serviceBrokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebrokers"))
+		if err != nil {
+			return nil, err
+		}
 
-		storageMap["serviceclasses"] = serviceClassStorage
-		storageMap["serviceclasses/status"] = serviceClassStatusStorage
+		serviceBrokerOpts := server.NewOptions(
+			etcd.Options{
+				RESTOptions:   serviceBrokerRESTOptions,
+				Capacity:      1000,
+				ObjectType:    servicebroker.EmptyObject(),
+				ScopeStrategy: servicebroker.NewScopeStrategy(),
+				NewListFunc:   servicebroker.NewList,
+				GetAttrsFunc:  servicebroker.GetAttrs,
+				Trigger:       storage.NoTriggerPublisher,
+			},
+			p.StorageType,
+		)
 
 		servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
 		if err != nil {
@@ -224,10 +238,16 @@ func (p StorageProvider) v1beta1Storage(
 			p.StorageType,
 		)
 
+		serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
 		servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
+		serviceBrokerStorage, serviceBrokerStatusStorage := servicebroker.NewStorage(*serviceBrokerOpts)
 
+		storageMap["serviceclasses"] = serviceClassStorage
+		storageMap["serviceclasses/status"] = serviceClassStatusStorage
 		storageMap["serviceplans"] = servicePlanStorage
 		storageMap["serviceplans/status"] = servicePlanStatusStorage
+		storageMap["servicebrokers"] = serviceBrokerStorage
+		storageMap["servicebrokers/status"] = serviceBrokerStatusStorage
 	}
 
 	return storageMap, nil
