@@ -32,7 +32,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "AddKeyTransform specifies that Service Catalog should add an additional entry to the Secret associated with the ServiceBinding. For example, given the following AddKeyTransform:\n    {\"key\": \"CONNECTION_POOL_SIZE\", \"stringValue\": \"10\"}\nthe following entry will appear in the Secret:\n    \"CONNECTION_POOL_SIZE\": \"10\"",
+					Description: "AddKeyTransform specifies that Service Catalog should add an additional entry to the Secret associated with the ServiceBinding. For example, given the following AddKeyTransform:\n    {\"key\": \"CONNECTION_POOL_SIZE\", \"stringValue\": \"10\"}\nthe following entry will appear in the Secret:\n    \"CONNECTION_POOL_SIZE\": \"10\"\nNote that this transform should only be used to add non-sensitive (non-secret) values. To add sensitive information, the AddKeysFromTransform should be used instead.",
 					Properties: map[string]spec.Schema{
 						"key": {
 							SchemaProps: spec.SchemaProps{
@@ -57,6 +57,22 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "AddKeysFromTransform specifies that Service Catalog should merge an existing secret into the the Secret associated with the ServiceBinding. For example, given the following AddKeysFromTransform:\n    {\"secretRef\": {\"namespace\": \"foo\", \"name\": \"bar\"}}\nthe entries of the Secret \"bar\" from Namespace \"foo\" will be merged into the credentials Secret.",
+					Properties: map[string]spec.Schema{
+						"secretRef": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig": {
 			Schema: spec.Schema{
@@ -1232,11 +1248,16 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform"),
 							},
 						},
+						"addKeysFrom": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform"),
+							},
+						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding": {
 			Schema: spec.Schema{

@@ -3807,6 +3807,7 @@ func TestTransformSecretData(t *testing.T) {
 		transforms            []v1beta1.SecretTransform
 		secretData            map[string][]byte
 		transformedSecretData map[string][]byte
+		otherSecret           *corev1.Secret
 	}{
 		{
 			name: "RenameKeyTransform",
@@ -3859,10 +3860,48 @@ func TestTransformSecretData(t *testing.T) {
 				"bar": []byte("789"),
 			},
 		},
+		{
+			name: "MergeSecretTransform",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKeysFrom: &v1beta1.AddKeysFromTransform{
+						SecretRef: &v1beta1.ObjectReference{
+							Namespace: "ns",
+							Name:      "other-secret",
+						},
+					},
+				},
+			},
+			secretData: map[string][]byte{
+				"foo": []byte("123"),
+			},
+			otherSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "other-secret",
+				},
+				Data: map[string][]byte{
+					"bar": []byte("456"),
+				},
+			},
+			transformedSecretData: map[string][]byte{
+				"foo": []byte("123"),
+				"bar": []byte("456"),
+			},
+		},
 	}
 
 	for _, tc := range cases {
-		transformSecretData(tc.transforms, tc.secretData)
+		fakeKubeClient, _, _, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
+
+		if tc.otherSecret != nil {
+			addGetSecretReaction(fakeKubeClient, tc.otherSecret)
+		}
+
+		err := testController.transformSecretData(tc.transforms, tc.secretData)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		if !reflect.DeepEqual(tc.secretData, tc.transformedSecretData) {
 			t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.transformedSecretData, tc.secretData)
 		}

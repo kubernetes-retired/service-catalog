@@ -1264,8 +1264,9 @@ type ClusterObjectReference struct {
 // be specified in ServiceBinding.spec.secretTransform:
 // - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}}
 type SecretTransform struct {
-	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
-	AddKey    *AddKeyTransform    `json:"addKey,omitempty"`
+	RenameKey   *RenameKeyTransform   `json:"renameKey,omitempty"`
+	AddKey      *AddKeyTransform      `json:"addKey,omitempty"`
+	AddKeysFrom *AddKeysFromTransform `json:"addKeysFrom,omitempty"`
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1288,8 +1289,21 @@ type RenameKeyTransform struct {
 //     {"key": "CONNECTION_POOL_SIZE", "stringValue": "10"}
 // the following entry will appear in the Secret:
 //     "CONNECTION_POOL_SIZE": "10"
+// Note that this transform should only be used to add non-sensitive
+// (non-secret) values. To add sensitive information, the
+// AddKeysFromTransform should be used instead.
 type AddKeyTransform struct {
 	Key         string  `json:"key"`
 	Value       []byte  `json:"value"`
 	StringValue *string `json:"stringValue"`
+}
+
+// AddKeysFromTransform specifies that Service Catalog should merge
+// an existing secret into the the Secret associated with the ServiceBinding.
+// For example, given the following AddKeysFromTransform:
+//     {"secretRef": {"namespace": "foo", "name": "bar"}}
+// the entries of the Secret "bar" from Namespace "foo" will be merged into
+// the credentials Secret.
+type AddKeysFromTransform struct {
+	SecretRef *ObjectReference `json:"secretRef,omitempty"`
 }

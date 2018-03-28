@@ -1152,8 +1152,9 @@ type ClusterObjectReference struct {
 // SecretTransform is a single transformation of the credentials returned
 // from the broker
 type SecretTransform struct {
-	RenameKey *RenameKeyTransform
-	AddKey    *AddKeyTransform
+	RenameKey   *RenameKeyTransform
+	AddKey      *AddKeyTransform
+	AddKeysFrom *AddKeysFromTransform
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1169,4 +1170,10 @@ type AddKeyTransform struct {
 	Key         string
 	Value       []byte
 	StringValue *string
+}
+
+// AddKeysFromTransform specifies that Service Catalog should merge
+// an existing secret into the the Secret associated with the ServiceBinding.
+type AddKeysFromTransform struct {
+	SecretRef *ObjectReference
 }

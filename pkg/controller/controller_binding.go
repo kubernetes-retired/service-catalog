@@ -439,7 +439,10 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 		}
 	}
 
-	transformSecretData(binding.Spec.SecretTransform, secretData)
+	err := c.transformSecretData(binding.Spec.SecretTransform, secretData)
+	if err != nil {
+		return fmt.Errorf(`Unexpected error while transforming Secret for ServiceBinding "%s/%s": %v`, binding.Namespace, binding.Name, err)
+	}
 
 	// Creating/updating the Secret
 	secretClient := c.kubeClient.CoreV1().Secrets(binding.Namespace)
@@ -492,7 +495,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	return err
 }
 
-func transformSecretData(transforms []v1beta1.SecretTransform, secretData map[string][]byte) {
+func (c *controller) transformSecretData(transforms []v1beta1.SecretTransform, secretData map[string][]byte) error {
 	for _, t := range transforms {
 		if t.AddKey != nil {
 			if t.AddKey.StringValue != nil {
@@ -503,8 +506,19 @@ func transformSecretData(transforms []v1beta1.SecretTransform, secretData map[st
 		} else if t.RenameKey != nil {
 			secretData[t.RenameKey.To] = secretData[t.RenameKey.From]
 			delete(secretData, t.RenameKey.From)
+		} else if t.AddKeysFrom != nil {
+			secret, err := c.kubeClient.CoreV1().
+				Secrets(t.AddKeysFrom.SecretRef.Namespace).
+				Get(t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			for k, v := range secret.Data {
+				secretData[k] = v
+			}
 		}
 	}
+	return nil
 }
 
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {
@@ -1338,10 +1352,10 @@ func (c *controller) processUnbindAsyncResponse(binding *v1beta1.ServiceBinding,
 // an error returned during reconciliation while polling a service binding.
 func (c *controller) handleServiceBindingPollingError(binding *v1beta1.ServiceBinding, err error) error {
 	// During polling, an error means we should:
-	//	1) log the error
-	//	2) attempt to requeue in the polling queue
-	//		- if successful, we can return nil to avoid regular queue
-	//		- if failure, return err to fall back to regular queue
+	// 	1) log the error
+	// 	2) attempt to requeue in the polling queue
+	// 		- if successful, we can return nil to avoid regular queue
+	// 		- if failure, return err to fall back to regular queue
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
 	glog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceBinding(binding)
