@@ -46,6 +46,30 @@ type ClusterServiceBrokerList struct {
 	Items []ClusterServiceBroker
 }
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceBroker represents an entity that provides ServiceClasses for use in the
+// service catalog. ServiceBroker is backed by an OSBAPI v2 broker supporting the
+// latest minor version of the v2 major version.
+type ServiceBroker struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec   ServiceBrokerSpec
+	Status ServiceBrokerStatus
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceBrokerList is a list of Brokers.
+type ServiceBrokerList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServiceBroker
+}
+
 // CommonServiceBrokerSpec represents a description of a Broker.
 type CommonServiceBrokerSpec struct {
 	// URL is the address used to communicate with the ServiceBroker.
@@ -86,6 +110,15 @@ type ClusterServiceBrokerSpec struct {
 	// AuthInfo contains the data that the service catalog should use to authenticate
 	// with the Service Broker.
 	AuthInfo *ClusterServiceBrokerAuthInfo
+}
+
+// ServiceBrokerSpec represents a description of a Broker.
+type ServiceBrokerSpec struct {
+	CommonServiceBrokerSpec
+
+	// AuthInfo contains the data that the service catalog should use to authenticate
+	// with the Service Broker.
+	AuthInfo *ServiceBrokerAuthInfo
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
@@ -137,6 +170,42 @@ type ClusterBearerTokenAuthConfig struct {
 	SecretRef *ObjectReference
 }
 
+// ServiceBrokerAuthInfo is a union type that contains information on
+// one of the authentication methods the the service catalog and brokers may
+// support, according to the OpenServiceBroker API specification
+// (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
+type ServiceBrokerAuthInfo struct {
+	// BasicAuthConfig provides configuration for basic authentication.
+	Basic *BasicAuthConfig
+	// BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
+	// The value is referenced from the 'token' field of the given secret.  This value should only
+	// contain the token value and not the `Bearer` scheme.
+	Bearer *BearerTokenAuthConfig
+}
+
+// BasicAuthConfig provides config for the basic authentication of
+// cluster scoped brokers.
+type BasicAuthConfig struct {
+	// SecretRef is a reference to a Secret containing information the
+	// catalog should use to authenticate to this ServiceBroker.
+	//
+	// Required at least one of the fields:
+	// - Secret.Data["username"] - username used for authentication
+	// - Secret.Data["password"] - password or token needed for authentication
+	SecretRef *LocalObjectReference
+}
+
+// BearerTokenAuthConfig provides config for the bearer token
+// authentication of cluster scoped brokers.
+type BearerTokenAuthConfig struct {
+	// SecretRef is a reference to a Secret containing information the
+	// catalog should use to authenticate to this ServiceBroker.
+	//
+	// Required field:
+	// - Secret.Data["token"] - bearer token for authentication
+	SecretRef *LocalObjectReference
+}
+
 const (
 	// BasicAuthUsernameKey is the key of the username for SecretTypeBasicAuth secrets
 	BasicAuthUsernameKey = "username"
@@ -147,8 +216,8 @@ const (
 	BearerTokenKey = "token"
 )
 
-// ClusterServiceBrokerStatus represents the current status of a ClusterServiceBroker
-type ClusterServiceBrokerStatus struct {
+// CommonServiceBrokerStatus represents the current status of a ServiceBroker.
+type CommonServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
 	// ReconciledGeneration is the 'Generation' of the ServiceBrokerSpec that
@@ -162,6 +231,17 @@ type ClusterServiceBrokerStatus struct {
 	// LastCatalogRetrievalTime is the time the Catalog was last fetched from
 	// the Service Broker
 	LastCatalogRetrievalTime *metav1.Time
+}
+
+// ClusterServiceBrokerStatus represents the current status of a
+// ClusterServiceBroker.
+type ClusterServiceBrokerStatus struct {
+	CommonServiceBrokerStatus
+}
+
+// ServiceBrokerStatus represents the current status of a ServiceBroker.
+type ServiceBrokerStatus struct {
+	CommonServiceBrokerStatus
 }
 
 // ServiceBrokerCondition contains condition information for a Service Broker.
