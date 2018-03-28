@@ -23,6 +23,8 @@ import (
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // validateServiceInstanceName is the validation function for Instance names.
@@ -260,20 +262,25 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	errors := field.ErrorList{}
 
-	oldUID := ""
-	newUID := ""
+	// If the OriginatingIdentityLocking feature is not set then only allow the
+	// same user to edit the Instance.
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentityLocking) {
+		oldUID, newUID := "", ""
 
-	if old.Spec.UserInfo != nil {
-		oldUID = old.Spec.UserInfo.UID
+		if old.Spec.UserInfo != nil {
+			oldUID = old.Spec.UserInfo.UID
+		}
+
+		if new.Spec.UserInfo != nil {
+			newUID = new.Spec.UserInfo.UID
+		}
+
+		if old.Generation != new.Generation && old.Status.CurrentOperation != "" && oldUID != newUID {
+			errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
+		}
+
 	}
 
-	if new.Spec.UserInfo != nil {
-		newUID = new.Spec.UserInfo.UID
-	}
-
-	if old.Generation != new.Generation && old.Status.CurrentOperation != "" && oldUID != newUID {
-		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
-	}
 	if old.Spec.ClusterServicePlanExternalName != new.Spec.ClusterServicePlanExternalName && new.Spec.ClusterServicePlanRef != nil {
 		errors = append(errors, field.Forbidden(field.NewPath("spec").Child("clusterServicePlanRef"), "clusterServicePlanRef must not be present when clusterServicePlanExternalName is being changed"))
 	}

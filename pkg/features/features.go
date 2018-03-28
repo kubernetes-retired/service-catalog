@@ -58,6 +58,17 @@ const (
 	// owner: @luksa
 	// alpha: v0.1.12
 	ResponseSchema utilfeature.Feature = "ResponseSchema"
+
+	// OriginatingIdentityLocking controls whether we lock OSB API resources
+	// that are being updated while we are still processing the update request.
+	// Meaning, we're still talking to the Broker to see if the requested
+	// change will be accepted or not. If locked, then no *other* user is
+	// allowed to update the resource.
+	// This lock was added in an attempt to fulfill the requirements
+	// of the OSBAPI OriginatingIdentity header.
+	// owner: @duglin
+	// alpha: v0.1.12
+	OriginatingIdentityLocking utilfeature.Feature = "OriginatingIdentityLocking"
 )
 
 func init() {
@@ -68,9 +79,10 @@ func init() {
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout service catalog binaries.
 var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.FeatureSpec{
-	PodPreset:               {Default: false, PreRelease: utilfeature.Alpha},
-	OriginatingIdentity:     {Default: false, PreRelease: utilfeature.Alpha},
-	AsyncBindingOperations:  {Default: false, PreRelease: utilfeature.Alpha},
-	NamespacedServiceBroker: {Default: false, PreRelease: utilfeature.Alpha},
-	ResponseSchema:          {Default: false, PreRelease: utilfeature.Alpha},
+	PodPreset:                  {Default: false, PreRelease: utilfeature.Alpha},
+	OriginatingIdentity:        {Default: false, PreRelease: utilfeature.Alpha},
+	AsyncBindingOperations:     {Default: false, PreRelease: utilfeature.Alpha},
+	NamespacedServiceBroker:    {Default: false, PreRelease: utilfeature.Alpha},
+	ResponseSchema:             {Default: false, PreRelease: utilfeature.Alpha},
+	OriginatingIdentityLocking: {Default: true, PreRelease: utilfeature.Alpha},
 }
