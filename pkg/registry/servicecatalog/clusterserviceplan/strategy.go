@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package serviceplan
+package clusterserviceplan
 
 // this was copied from where else and edited to fit our objects
 
@@ -33,24 +33,24 @@ import (
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for service planes
 func NewScopeStrategy() rest.NamespaceScopedStrategy {
-	return servicePlanRESTStrategies
+	return clusterServicePlanRESTStrategies
 }
 
 // implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
 // NamespaceScopedStrategy
-type servicePlanRESTStrategy struct {
+type clusterServicePlanRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
 // implements interface RESTUpdateStrategy. This implementation validates updates to
-// servicePlan.Status updates only and disallows any modifications to the servicePlan.Spec.
-type servicePlanStatusRESTStrategy struct {
-	servicePlanRESTStrategy
+// servicePlan.Status updates only and disallows any modifications to the ClusterServicePlan.Spec.
+type clusterServicePlanStatusRESTStrategy struct {
+	clusterServicePlanRESTStrategy
 }
 
 var (
-	servicePlanRESTStrategies = servicePlanRESTStrategy{
+	clusterServicePlanRESTStrategies = clusterServicePlanRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
 		ObjectTyper: api.Scheme,
@@ -58,98 +58,98 @@ var (
 		// `GenerateName(base string) string`
 		NameGenerator: names.SimpleNameGenerator,
 	}
-	_ rest.RESTCreateStrategy = servicePlanRESTStrategies
-	_ rest.RESTUpdateStrategy = servicePlanRESTStrategies
-	_ rest.RESTDeleteStrategy = servicePlanRESTStrategies
+	_ rest.RESTCreateStrategy = clusterServicePlanRESTStrategies
+	_ rest.RESTUpdateStrategy = clusterServicePlanRESTStrategies
+	_ rest.RESTDeleteStrategy = clusterServicePlanRESTStrategies
 
-	servicePlanStatusUpdateStrategy = servicePlanStatusRESTStrategy{
-		servicePlanRESTStrategies,
+	clusterServicePlanStatusUpdateStrategy = clusterServicePlanStatusRESTStrategy{
+		clusterServicePlanRESTStrategies,
 	}
-	_ rest.RESTUpdateStrategy = servicePlanStatusUpdateStrategy
+	_ rest.RESTUpdateStrategy = clusterServicePlanStatusUpdateStrategy
 )
 
-// Canonicalize does not transform a servicePlan.
-func (servicePlanRESTStrategy) Canonicalize(obj runtime.Object) {
+// Canonicalize does not transform a ClusterServicePlan.
+func (clusterServicePlanRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to create")
+		glog.Fatal("received a non-ClusterServicePlan object to create")
 	}
 }
 
-// NamespaceScoped returns false as servicePlans are not scoped to a namespace.
-func (servicePlanRESTStrategy) NamespaceScoped() bool {
+// NamespaceScoped returns false as ClusterServicePlan are not scoped to a namespace.
+func (clusterServicePlanRESTStrategy) NamespaceScoped() bool {
 	return false
 }
 
-// PrepareForCreate receives the incoming ServicePlan.
-func (servicePlanRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+// PrepareForCreate receives the incoming ClusterServicePlan.
+func (clusterServicePlanRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to create")
+		glog.Fatal("received a non-ClusterServicePlan object to create")
 	}
 	// service plan is a data record and has no status to track
 }
 
-func (servicePlanRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (clusterServicePlanRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateClusterServicePlan(obj.(*sc.ClusterServicePlan))
 }
 
-func (servicePlanRESTStrategy) AllowCreateOnUpdate() bool {
+func (clusterServicePlanRESTStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (servicePlanRESTStrategy) AllowUnconditionalUpdate() bool {
+func (clusterServicePlanRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (servicePlanRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServicePlanRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to update to")
+		glog.Fatal("received a non-ClusterServicePlan object to update to")
 	}
 	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to update from")
+		glog.Fatal("received a non-ClusterServicePlan object to update from")
 	}
 
 	newServicePlan.Spec.ClusterServiceClassRef = oldServicePlan.Spec.ClusterServiceClassRef
 	newServicePlan.Spec.ClusterServiceBrokerName = oldServicePlan.Spec.ClusterServiceBrokerName
 }
 
-func (servicePlanRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServicePlanRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to validate to")
+		glog.Fatal("received a non-ClusterServicePlan object to validate to")
 	}
 	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to validate from")
+		glog.Fatal("received a non-ClusterServicePlan object to validate from")
 	}
 
 	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)
 }
 
-func (servicePlanStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServicePlanStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to update to")
+		glog.Fatal("received a non-ClusterServicePlan object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to update from")
+		glog.Fatal("received a non-ClusterServicePlan object to update from")
 	}
 	// Status changes are not allowed to update spec
 	newServiceClass.Spec = oldServiceClass.Spec
 }
 
-func (servicePlanStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServicePlanStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to validate to")
+		glog.Fatal("received a non-ClusterServicePlan object to validate to")
 	}
 	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-servicePlan object to validate from")
+		glog.Fatal("received a non-ClusterServicePlan object to validate from")
 	}
 
 	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)

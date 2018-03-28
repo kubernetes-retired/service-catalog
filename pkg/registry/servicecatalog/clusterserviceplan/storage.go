@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package serviceplan
+package clusterserviceplan
 
 import (
 	"errors"
@@ -38,7 +38,7 @@ var (
 	errNotAClusterServicePlan = errors.New("not a ClusterServicePlan")
 )
 
-// NewSingular returns a new shell of a service servicePlan, according to the given namespace and
+// NewSingular returns a new shell of a ClusterServicePlan, according to the given namespace and
 // name
 func NewSingular(ns, name string) runtime.Object {
 	return &servicecatalog.ClusterServicePlan{
@@ -52,12 +52,12 @@ func NewSingular(ns, name string) runtime.Object {
 	}
 }
 
-// EmptyObject returns an empty servicePlan
+// EmptyObject returns an empty ClusterServicePlan
 func EmptyObject() runtime.Object {
 	return &servicecatalog.ClusterServicePlan{}
 }
 
-// NewList returns a new shell of a servicePlan list
+// NewList returns a new shell of a ClusterServicePlan list
 func NewList() runtime.Object {
 	return &servicecatalog.ClusterServicePlanList{
 		TypeMeta: metav1.TypeMeta{
@@ -67,7 +67,7 @@ func NewList() runtime.Object {
 	}
 }
 
-// CheckObject returns a non-nil error if obj is not a servicePlan object
+// CheckObject returns a non-nil error if obj is not a ClusterServicePlan object
 func CheckObject(obj runtime.Object) error {
 	_, ok := obj.(*servicecatalog.ClusterServicePlan)
 	if !ok {
@@ -119,7 +119,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	storageInterface, dFunc := opts.GetStorage(
 		&servicecatalog.ClusterServicePlan{},
 		prefix,
-		servicePlanRESTStrategies,
+		clusterServicePlanRESTStrategies,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,
@@ -139,15 +139,15 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// DefaultQualifiedResource should always be plural
 		DefaultQualifiedResource: servicecatalog.Resource("clusterserviceplans"),
 
-		CreateStrategy: servicePlanRESTStrategies,
-		UpdateStrategy: servicePlanRESTStrategies,
-		DeleteStrategy: servicePlanRESTStrategies,
+		CreateStrategy: clusterServicePlanRESTStrategies,
+		UpdateStrategy: clusterServicePlanRESTStrategies,
+		DeleteStrategy: clusterServicePlanRESTStrategies,
 		Storage:        storageInterface,
 		DestroyFunc:    dFunc,
 	}
 
 	statusStore := store
-	statusStore.UpdateStrategy = servicePlanStatusUpdateStrategy
+	statusStore.UpdateStrategy = clusterServicePlanStatusUpdateStrategy
 
 	return &store, &StatusREST{&statusStore}
 }
