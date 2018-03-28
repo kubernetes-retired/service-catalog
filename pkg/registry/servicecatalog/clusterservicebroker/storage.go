@@ -36,7 +36,7 @@ import (
 )
 
 var (
-	errNotAClusterServiceBroker = errors.New("not a broker")
+	errNotAClusterServiceBroker = errors.New("not a clusterservicebroker")
 )
 
 // NewSingular returns a new shell of a service broker, according to the given namespace and
@@ -104,13 +104,13 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 
 // NewStorage creates a new rest.Storage responsible for accessing
 // ClusterServiceBroker resources
-func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
+func NewStorage(opts server.Options) (clusterServiceBrokers, clusterServiceBrokerStatus rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
 		&servicecatalog.ClusterServiceBroker{},
 		prefix,
-		brokerRESTStrategies,
+		clusterServiceBrokerRESTStrategies,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,
@@ -130,9 +130,9 @@ func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 		// DefaultQualifiedResource should always be plural
 		DefaultQualifiedResource: servicecatalog.Resource("clusterservicebrokers"),
 
-		CreateStrategy:          brokerRESTStrategies,
-		UpdateStrategy:          brokerRESTStrategies,
-		DeleteStrategy:          brokerRESTStrategies,
+		CreateStrategy:          clusterServiceBrokerRESTStrategies,
+		UpdateStrategy:          clusterServiceBrokerRESTStrategies,
+		DeleteStrategy:          clusterServiceBrokerRESTStrategies,
 		EnableGarbageCollection: true,
 
 		Storage:     storageInterface,
@@ -145,7 +145,7 @@ func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 	}
 
 	statusStore := store
-	statusStore.UpdateStrategy = brokerStatusUpdateStrategy
+	statusStore.UpdateStrategy = clusterServiceBrokerStatusUpdateStrategy
 
 	return &store, &StatusREST{&statusStore}
 }

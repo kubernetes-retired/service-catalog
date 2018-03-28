@@ -21,7 +21,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/broker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
@@ -73,18 +73,18 @@ func (p StorageProvider) v1beta1Storage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter,
 ) (map[string]rest.Storage, error) {
-	brokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterservicebrokers"))
+	clusterServiceBrokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterservicebrokers"))
 	if err != nil {
 		return nil, err
 	}
-	brokerOpts := server.NewOptions(
+	clusterServiceBrokerOpts := server.NewOptions(
 		etcd.Options{
-			RESTOptions:   brokerRESTOptions,
+			RESTOptions:   clusterServiceBrokerRESTOptions,
 			Capacity:      1000,
-			ObjectType:    broker.EmptyObject(),
-			ScopeStrategy: broker.NewScopeStrategy(),
-			NewListFunc:   broker.NewList,
-			GetAttrsFunc:  broker.GetAttrs,
+			ObjectType:    clusterservicebroker.EmptyObject(),
+			ScopeStrategy: clusterservicebroker.NewScopeStrategy(),
+			NewListFunc:   clusterservicebroker.NewList,
+			GetAttrsFunc:  clusterservicebroker.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
 		p.StorageType,
@@ -158,7 +158,7 @@ func (p StorageProvider) v1beta1Storage(
 		p.StorageType,
 	)
 
-	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
+	clusterServiceBrokerStorage, clusterServiceBrokerStatusStorage := clusterservicebroker.NewStorage(*clusterServiceBrokerOpts)
 	clusterServiceClassStorage, clusterServiceClassStatusStorage := clusterserviceclass.NewStorage(*clusterServiceClassOpts)
 	servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage, instanceReferencesStorage := instance.NewStorage(*instanceOpts)
@@ -168,8 +168,8 @@ func (p StorageProvider) v1beta1Storage(
 	}
 
 	storageMap := map[string]rest.Storage{
-		"clusterservicebrokers":        brokerStorage,
-		"clusterservicebrokers/status": brokerStatusStorage,
+		"clusterservicebrokers":        clusterServiceBrokerStorage,
+		"clusterservicebrokers/status": clusterServiceBrokerStatusStorage,
 		"clusterserviceclasses":        clusterServiceClassStorage,
 		"clusterserviceclasses/status": clusterServiceClassStatusStorage,
 		"clusterserviceplans":          servicePlanStorage,
