@@ -308,6 +308,7 @@ func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (
 // more processing needed).
 func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInstance) (bool, error) {
 	if !isServiceInstanceOrphanMitigation(instance) && instance.Status.OrphanMitigationInProgress {
+		instance := instance.DeepCopy()
 		reason := startingInstanceOrphanMitigationReason
 		message := startingInstanceOrphanMitigationMessage
 		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
