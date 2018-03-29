@@ -56,8 +56,8 @@ func (c *ServicecatalogV1beta1Client) ServiceBindings(namespace string) ServiceB
 	return newServiceBindings(c, namespace)
 }
 
-func (c *ServicecatalogV1beta1Client) ServiceBrokers() ServiceBrokerInterface {
-	return newServiceBrokers(c)
+func (c *ServicecatalogV1beta1Client) ServiceBrokers(namespace string) ServiceBrokerInterface {
+	return newServiceBrokers(c, namespace)
 }
 
 func (c *ServicecatalogV1beta1Client) ServiceClasses(namespace string) ServiceClassInterface {

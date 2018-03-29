@@ -40,32 +40,33 @@ type ServiceBrokerInformer interface {
 type serviceBrokerInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	namespace        string
 }
 
 // NewServiceBrokerInformer constructs a new informer for ServiceBroker type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewServiceBrokerInformer(client clientset.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredServiceBrokerInformer(client, resyncPeriod, indexers, nil)
+func NewServiceBrokerInformer(client clientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredServiceBrokerInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredServiceBrokerInformer constructs a new informer for ServiceBroker type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredServiceBrokerInformer(client clientset.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredServiceBrokerInformer(client clientset.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ServicecatalogV1beta1().ServiceBrokers().List(options)
+				return client.ServicecatalogV1beta1().ServiceBrokers(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ServicecatalogV1beta1().ServiceBrokers().Watch(options)
+				return client.ServicecatalogV1beta1().ServiceBrokers(namespace).Watch(options)
 			},
 		},
 		&servicecatalog_v1beta1.ServiceBroker{},
@@ -75,7 +76,7 @@ func NewFilteredServiceBrokerInformer(client clientset.Interface, resyncPeriod t
 }
 
 func (f *serviceBrokerInformer) defaultInformer(client clientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredServiceBrokerInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewFilteredServiceBrokerInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *serviceBrokerInformer) Informer() cache.SharedIndexInformer {

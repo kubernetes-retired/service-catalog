@@ -29,8 +29,8 @@ import (
 type ServiceBrokerLister interface {
 	// List lists all ServiceBrokers in the indexer.
 	List(selector labels.Selector) (ret []*v1beta1.ServiceBroker, err error)
-	// Get retrieves the ServiceBroker from the index for a given name.
-	Get(name string) (*v1beta1.ServiceBroker, error)
+	// ServiceBrokers returns an object that can list and get ServiceBrokers.
+	ServiceBrokers(namespace string) ServiceBrokerNamespaceLister
 	ServiceBrokerListerExpansion
 }
 
@@ -52,9 +52,38 @@ func (s *serviceBrokerLister) List(selector labels.Selector) (ret []*v1beta1.Ser
 	return ret, err
 }
 
-// Get retrieves the ServiceBroker from the index for a given name.
-func (s *serviceBrokerLister) Get(name string) (*v1beta1.ServiceBroker, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
+// ServiceBrokers returns an object that can list and get ServiceBrokers.
+func (s *serviceBrokerLister) ServiceBrokers(namespace string) ServiceBrokerNamespaceLister {
+	return serviceBrokerNamespaceLister{indexer: s.indexer, namespace: namespace}
+}
+
+// ServiceBrokerNamespaceLister helps list and get ServiceBrokers.
+type ServiceBrokerNamespaceLister interface {
+	// List lists all ServiceBrokers in the indexer for a given namespace.
+	List(selector labels.Selector) (ret []*v1beta1.ServiceBroker, err error)
+	// Get retrieves the ServiceBroker from the indexer for a given namespace and name.
+	Get(name string) (*v1beta1.ServiceBroker, error)
+	ServiceBrokerNamespaceListerExpansion
+}
+
+// serviceBrokerNamespaceLister implements the ServiceBrokerNamespaceLister
+// interface.
+type serviceBrokerNamespaceLister struct {
+	indexer   cache.Indexer
+	namespace string
+}
+
+// List lists all ServiceBrokers in the indexer for a given namespace.
+func (s serviceBrokerNamespaceLister) List(selector labels.Selector) (ret []*v1beta1.ServiceBroker, err error) {
+	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
+		ret = append(ret, m.(*v1beta1.ServiceBroker))
+	})
+	return ret, err
+}
+
+// Get retrieves the ServiceBroker from the indexer for a given namespace and name.
+func (s serviceBrokerNamespaceLister) Get(name string) (*v1beta1.ServiceBroker, error) {
+	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
 	}

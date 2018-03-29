@@ -75,7 +75,7 @@ func (v *version) ServiceBindings() ServiceBindingInformer {
 
 // ServiceBrokers returns a ServiceBrokerInformer.
 func (v *version) ServiceBrokers() ServiceBrokerInformer {
-	return &serviceBrokerInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &serviceBrokerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ServiceClasses returns a ServiceClassInformer.

@@ -29,6 +29,7 @@ import (
 // FakeServiceBrokers implements ServiceBrokerInterface
 type FakeServiceBrokers struct {
 	Fake *FakeServicecatalogV1beta1
+	ns   string
 }
 
 var servicebrokersResource = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1beta1", Resource: "servicebrokers"}
@@ -38,7 +39,8 @@ var servicebrokersKind = schema.GroupVersionKind{Group: "servicecatalog.k8s.io",
 // Get takes name of the serviceBroker, and returns the corresponding serviceBroker object, and an error if there is any.
 func (c *FakeServiceBrokers) Get(name string, options v1.GetOptions) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(servicebrokersResource, name), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewGetAction(servicebrokersResource, c.ns, name), &v1beta1.ServiceBroker{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -48,7 +50,8 @@ func (c *FakeServiceBrokers) Get(name string, options v1.GetOptions) (result *v1
 // List takes label and field selectors, and returns the list of ServiceBrokers that match those selectors.
 func (c *FakeServiceBrokers) List(opts v1.ListOptions) (result *v1beta1.ServiceBrokerList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(servicebrokersResource, servicebrokersKind, opts), &v1beta1.ServiceBrokerList{})
+		Invokes(testing.NewListAction(servicebrokersResource, servicebrokersKind, c.ns, opts), &v1beta1.ServiceBrokerList{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -69,13 +72,15 @@ func (c *FakeServiceBrokers) List(opts v1.ListOptions) (result *v1beta1.ServiceB
 // Watch returns a watch.Interface that watches the requested serviceBrokers.
 func (c *FakeServiceBrokers) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(servicebrokersResource, opts))
+		InvokesWatch(testing.NewWatchAction(servicebrokersResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a serviceBroker and creates it.  Returns the server's representation of the serviceBroker, and an error, if there is any.
 func (c *FakeServiceBrokers) Create(serviceBroker *v1beta1.ServiceBroker) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(servicebrokersResource, serviceBroker), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewCreateAction(servicebrokersResource, c.ns, serviceBroker), &v1beta1.ServiceBroker{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -85,7 +90,8 @@ func (c *FakeServiceBrokers) Create(serviceBroker *v1beta1.ServiceBroker) (resul
 // Update takes the representation of a serviceBroker and updates it. Returns the server's representation of the serviceBroker, and an error, if there is any.
 func (c *FakeServiceBrokers) Update(serviceBroker *v1beta1.ServiceBroker) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(servicebrokersResource, serviceBroker), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewUpdateAction(servicebrokersResource, c.ns, serviceBroker), &v1beta1.ServiceBroker{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -96,7 +102,8 @@ func (c *FakeServiceBrokers) Update(serviceBroker *v1beta1.ServiceBroker) (resul
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeServiceBrokers) UpdateStatus(serviceBroker *v1beta1.ServiceBroker) (*v1beta1.ServiceBroker, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(servicebrokersResource, "status", serviceBroker), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewUpdateSubresourceAction(servicebrokersResource, "status", c.ns, serviceBroker), &v1beta1.ServiceBroker{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -106,13 +113,14 @@ func (c *FakeServiceBrokers) UpdateStatus(serviceBroker *v1beta1.ServiceBroker) 
 // Delete takes name of the serviceBroker and deletes it. Returns an error if one occurs.
 func (c *FakeServiceBrokers) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(servicebrokersResource, name), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewDeleteAction(servicebrokersResource, c.ns, name), &v1beta1.ServiceBroker{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeServiceBrokers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(servicebrokersResource, listOptions)
+	action := testing.NewDeleteCollectionAction(servicebrokersResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.ServiceBrokerList{})
 	return err
@@ -121,7 +129,8 @@ func (c *FakeServiceBrokers) DeleteCollection(options *v1.DeleteOptions, listOpt
 // Patch applies the patch and returns the patched serviceBroker.
 func (c *FakeServiceBrokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(servicebrokersResource, name, data, subresources...), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewPatchSubresourceAction(servicebrokersResource, c.ns, name, data, subresources...), &v1beta1.ServiceBroker{})
+
 	if obj == nil {
 		return nil, err
 	}
