@@ -17,9 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -51,11 +49,15 @@ var (
 )
 
 func addKnownTypes(scheme *runtime.Scheme) error {
-	knownTypes := []runtime.Object{
+	scheme.AddKnownTypes(SchemeGroupVersion,
 		&ClusterServiceBroker{},
 		&ClusterServiceBrokerList{},
+		&ServiceBroker{},
+		&ServiceBrokerList{},
 		&ClusterServiceClass{},
 		&ClusterServiceClassList{},
+		&ServiceClass{},
+		&ServiceClassList{},
 		&ClusterServicePlan{},
 		&ClusterServicePlanList{},
 		&ServicePlan{},
@@ -64,26 +66,14 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ServiceInstanceList{},
 		&ServiceBinding{},
 		&ServiceBindingList{},
-	}
-
+	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	scheme.AddKnownTypes(schema.GroupVersion{Version: "v1"}, &metav1.Status{})
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ClusterServiceClass", ClusterServiceClassFieldLabelConversionFunc)
+	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServiceClass", ServiceClassFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ClusterServicePlan", ClusterServicePlanFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServicePlan", ServicePlanFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServiceInstance", ServiceInstanceFieldLabelConversionFunc)
-
-	// Only register NamespacedServiceBroker resources if the feature gate has
-	// been enabled.
-	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
-		knownTypes = append(knownTypes, []runtime.Object{
-			&ServiceClass{},
-			&ServiceClassList{},
-		}...)
-		scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServiceClass", ServiceClassFieldLabelConversionFunc)
-	}
-
-	scheme.AddKnownTypes(SchemeGroupVersion, knownTypes...)
 
 	return nil
 }
