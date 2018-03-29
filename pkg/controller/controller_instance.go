@@ -785,7 +785,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			reason := errorProvisionCallFailedReason
 			message := "Provision call failed: " + description
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
-			err = c.processTemporaryProvisionFailure(instance, readyCond, false)
+			err = c.processTemporaryProvisionFailure(instance, readyCond, true)
 		default:
 			reason := errorUpdateInstanceCallFailedReason
 			message := "Update call failed: " + description

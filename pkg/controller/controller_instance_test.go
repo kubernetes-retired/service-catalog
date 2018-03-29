@@ -2391,12 +2391,13 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
+	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
-		errorProvisionCallFailedReason,
+		startingInstanceOrphanMitigationReason,
 		"",
+		errorProvisionCallFailedReason,
 		instance,
 	)
 }
