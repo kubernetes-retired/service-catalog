@@ -493,10 +493,127 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	}
 	value, ok = actionSecret.Data["c"]
 	if !ok {
-		t.Fatal("Didn't find secret key 'a' in created secret")
+		t.Fatal("Didn't find secret key 'c' in created secret")
 	}
 	if e, a := "d", string(value); e != a {
 		t.Fatalf("Unexpected value of key 'c' in created secret; %s", expectedGot(e, a))
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := normalEventBuilder(successInjectedBindResultReason).msg(successInjectedBindResultMessage)
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReconcileServiceBindingWithSecretTransform tests reconcileBinding to ensure a
+// binding with secretTransform performs the specified transformations.
+func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+	addGetSecretNotFoundReaction(fakeKubeClient)
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceBindingName,
+			Namespace:  testNamespace,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         testServiceBindingGUID,
+			SecretName:         testServiceBindingSecretName,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+		},
+	}
+	binding.Spec.SecretTransform = []v1beta1.SecretTransform{
+		{
+			RenameKey: &v1beta1.RenameKeyTransform{
+				From: "a",
+				To:   "renamedA",
+			},
+		},
+	}
+
+	if err := testController.reconcileServiceBinding(binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	binding = assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+
+	assertGetNamespaceAction(t, fakeKubeClient.Actions())
+	fakeKubeClient.ClearActions()
+
+	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
+
+	err := testController.reconcileServiceBinding(binding)
+	if err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertBind(t, brokerActions[0], &osb.BindRequest{
+		BindingID:  testServiceBindingGUID,
+		InstanceID: testServiceInstanceGUID,
+		ServiceID:  testClusterServiceClassGUID,
+		PlanID:     testClusterServicePlanGUID,
+		AppGUID:    strPtr(testNamespaceGUID),
+		BindResource: &osb.BindResource{
+			AppGUID: strPtr(testNamespaceGUID),
+		},
+	})
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationBind, binding)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 3)
+
+	// first action is a get on the namespace
+	// second action is a get on the secret
+	action := kubeActions[2].(clientgotesting.CreateAction)
+	if e, a := "secrets", action.GetResource().Resource; e != a {
+		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
+	}
+	actionSecret, ok := action.GetObject().(*corev1.Secret)
+	if !ok {
+		t.Fatal("couldn't convert secret into a corev1.Secret")
+	}
+	if e, a := testServiceBindingSecretName, actionSecret.Name; e != a {
+		t.Fatalf("Unexpected name of secret; %s", expectedGot(e, a))
+	}
+	value, ok := actionSecret.Data["renamedA"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'renamedA' in created secret")
+	}
+	if e, a := "b", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'renamedA' in created secret; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)

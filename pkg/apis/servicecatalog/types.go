@@ -812,6 +812,10 @@ type ServiceBindingSpec struct {
 	// namespace that will hold the credentials associated with the ServiceBinding.
 	SecretName string
 
+	// List of transformations that should be applied to the credentials returned
+	// by the broker before they are inserted into the Secret
+	SecretTransform []SecretTransform `json:"secretTransform,omitempty"`
+
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
@@ -1000,4 +1004,17 @@ type LocalObjectReference struct {
 type ClusterObjectReference struct {
 	// Name of the referent.
 	Name string
+}
+
+// SecretTransform is a single transformation of the credentials returned
+// from the broker
+type SecretTransform struct {
+	RenameKey *RenameKeyTransform
+}
+
+// RenameKeyTransform specifies that one of the credentials keys returned
+// from the broker should be renamed
+type RenameKeyTransform struct {
+	From string
+	To   string
 }
