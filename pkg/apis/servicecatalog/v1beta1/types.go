@@ -197,7 +197,7 @@ type ClusterBearerTokenAuthConfig struct {
 // (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
 type ServiceBrokerAuthInfo struct {
 	// BasicAuthConfig provides configuration for basic authentication.
-	Basic *BasicAuthConfig `json:"secretRef,omitempty"`
+	Basic *BasicAuthConfig `json:"basic,omitempty"`
 	// BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
 	// The value is referenced from the 'token' field of the given secret.  This value should only
 	// contain the token value and not the `Bearer` scheme.
