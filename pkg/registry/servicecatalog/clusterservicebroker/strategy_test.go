@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package broker
+package clusterservicebroker
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func brokerWithOldSpec() *sc.ClusterServiceBroker {
+func clusterServiceBrokerWithOldSpec() *sc.ClusterServiceBroker {
 	return &sc.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
 			Generation: 1,
@@ -44,8 +44,8 @@ func brokerWithOldSpec() *sc.ClusterServiceBroker {
 	}
 }
 
-func brokerWithNewSpec() *sc.ClusterServiceBroker {
-	b := brokerWithOldSpec()
+func clusterServiceBrokerWithNewSpec() *sc.ClusterServiceBroker {
+	b := clusterServiceBrokerWithOldSpec()
 	b.Spec.URL = "new"
 	return b
 }
@@ -53,23 +53,20 @@ func brokerWithNewSpec() *sc.ClusterServiceBroker {
 // TestClusterServiceBrokerStrategyTrivial is the testing of the trivial hardcoded
 // boolean flags.
 func TestClusterServiceBrokerStrategyTrivial(t *testing.T) {
-	if brokerRESTStrategies.NamespaceScoped() {
-		t.Errorf("broker create must not be namespace scoped")
+	if clusterServiceBrokerRESTStrategies.NamespaceScoped() {
+		t.Errorf("clusterservicebroker must not be namespace scoped")
 	}
-	if brokerRESTStrategies.NamespaceScoped() {
-		t.Errorf("broker update must not be namespace scoped")
+	if clusterServiceBrokerRESTStrategies.AllowCreateOnUpdate() {
+		t.Errorf("clusterservicebroker should not allow create on update")
 	}
-	if brokerRESTStrategies.AllowCreateOnUpdate() {
-		t.Errorf("broker should not allow create on update")
-	}
-	if brokerRESTStrategies.AllowUnconditionalUpdate() {
-		t.Errorf("broker should not allow unconditional update")
+	if clusterServiceBrokerRESTStrategies.AllowUnconditionalUpdate() {
+		t.Errorf("clusterservicebroker should not allow unconditional update")
 	}
 }
 
-// TestBrokerCreate
-func TestBroker(t *testing.T) {
-	// Create a broker or brokers
+// TestClusterServiceBrokerCreate
+func TestClusterServiceBroker(t *testing.T) {
+	// Create a clusterservicebroker or clusterservicebrokers
 	broker := &sc.ClusterServiceBroker{
 		Spec: sc.ClusterServiceBrokerSpec{
 			CommonServiceBrokerSpec: sc.CommonServiceBrokerSpec{
@@ -82,19 +79,19 @@ func TestBroker(t *testing.T) {
 	}
 
 	// Canonicalize the broker
-	brokerRESTStrategies.PrepareForCreate(nil, broker)
+	clusterServiceBrokerRESTStrategies.PrepareForCreate(nil, broker)
 
 	if broker.Status.Conditions == nil {
-		t.Fatalf("Fresh broker should have empty status")
+		t.Fatalf("Fresh clusterservicebroker should have empty status")
 	}
 	if len(broker.Status.Conditions) != 0 {
-		t.Fatalf("Fresh broker should have empty status")
+		t.Fatalf("Fresh clusterservicebroker should have empty status")
 	}
 }
 
-// TestBrokerUpdate tests that generation is incremented correctly when the
-// spec of a Broker is updated.
-func TestBrokerUpdate(t *testing.T) {
+// TestClusterServiceBrokerUpdate tests that generation is incremented
+// correctly when the spec of a ClusterServiceBroker is updated.
+func TestClusterServiceBrokerUpdate(t *testing.T) {
 	cases := []struct {
 		name                      string
 		older                     *sc.ClusterServiceBroker
@@ -103,20 +100,20 @@ func TestBrokerUpdate(t *testing.T) {
 	}{
 		{
 			name:  "no spec change",
-			older: brokerWithOldSpec(),
-			newer: brokerWithOldSpec(),
+			older: clusterServiceBrokerWithOldSpec(),
+			newer: clusterServiceBrokerWithOldSpec(),
 			shouldGenerationIncrement: false,
 		},
 		{
 			name:  "spec change",
-			older: brokerWithOldSpec(),
-			newer: brokerWithNewSpec(),
+			older: clusterServiceBrokerWithOldSpec(),
+			newer: clusterServiceBrokerWithNewSpec(),
 			shouldGenerationIncrement: true,
 		},
 	}
 
 	for i := range cases {
-		brokerRESTStrategies.PrepareForUpdate(nil, cases[i].newer, cases[i].older)
+		clusterServiceBrokerRESTStrategies.PrepareForUpdate(nil, cases[i].newer, cases[i].older)
 
 		if cases[i].shouldGenerationIncrement {
 			if e, a := cases[i].older.Generation+1, cases[i].newer.Generation; e != a {
@@ -130,9 +127,9 @@ func TestBrokerUpdate(t *testing.T) {
 	}
 }
 
-// TestBrokerUpdateForRelistRequests tests that the RelistRequests field is
+// TestClusterServiceBrokerUpdateForRelistRequests tests that the RelistRequests field is
 // ignored during updates when it is the default value.
-func TestBrokerUpdateForRelistRequests(t *testing.T) {
+func TestClusterServiceBrokerUpdateForRelistRequests(t *testing.T) {
 	cases := []struct {
 		name          string
 		oldValue      int64
@@ -165,15 +162,15 @@ func TestBrokerUpdateForRelistRequests(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		oldBroker := brokerWithOldSpec()
+		oldBroker := clusterServiceBrokerWithOldSpec()
 		oldBroker.Spec.RelistRequests = tc.oldValue
 
-		newBroker := brokerWithOldSpec()
-		newBroker.Spec.RelistRequests = tc.newValue
+		newClusterServiceBroker := clusterServiceBrokerWithOldSpec()
+		newClusterServiceBroker.Spec.RelistRequests = tc.newValue
 
-		brokerRESTStrategies.PrepareForUpdate(nil, newBroker, oldBroker)
+		clusterServiceBrokerRESTStrategies.PrepareForUpdate(nil, newClusterServiceBroker, oldBroker)
 
-		if e, a := tc.expectedValue, newBroker.Spec.RelistRequests; e != a {
+		if e, a := tc.expectedValue, newClusterServiceBroker.Spec.RelistRequests; e != a {
 			t.Errorf("%s: got unexpected RelistRequests: expected %v, got %v", tc.name, e, a)
 		}
 	}
