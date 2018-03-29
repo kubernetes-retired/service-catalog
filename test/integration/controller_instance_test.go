@@ -833,9 +833,11 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 				}
 
 				if tc.updateSecret {
+					ct.kubeClient.Lock()
 					prependGetSecretReaction(ct.kubeClient, "secret-name", map[string][]byte{
 						"secret-key": []byte(`{"new-secret-param-key":"new-secret-param-value"}`),
 					})
+					ct.kubeClient.Unlock()
 					ct.instance.Spec.UpdateRequests++
 				}
 

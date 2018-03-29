@@ -85,6 +85,8 @@ const (
 	deprovisioningInFlightMessage           string = "Deprovision request for ServiceInstance in-flight to Broker"
 	startingInstanceOrphanMitigationReason  string = "StartingInstanceOrphanMitigation"
 	startingInstanceOrphanMitigationMessage string = "The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource"
+
+	clusterIdentifierKey string = "clusterid"
 )
 
 // ServiceInstance handlers and control-loop
@@ -1414,11 +1416,12 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 
 	// osb client handles whether or not to really send this based
 	// on the version of the client.
+	id := c.getClusterID()
 	rh.requestContext = map[string]interface{}{
-		"platform":  ContextProfilePlatformKubernetes,
-		"namespace": instance.Namespace,
+		"platform":           ContextProfilePlatformKubernetes,
+		"namespace":          instance.Namespace,
+		clusterIdentifierKey: id,
 	}
-
 	return rh, nil
 }
 

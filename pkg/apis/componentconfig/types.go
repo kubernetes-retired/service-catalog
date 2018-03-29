@@ -104,4 +104,9 @@ type ControllerManagerConfiguration struct {
 	OperationPollingMaximumBackoffDuration time.Duration
 
 	SecureServingOptions *genericoptions.SecureServingOptions
+
+	// ClusterIDConfigMapName is the k8s name that the clusterid configmap will have
+	ClusterIDConfigMapName string
+	// ClusterIDConfigMapNamespace is the k8s namespace that the clusterid configmap will be stored in.
+	ClusterIDConfigMapNamespace string
 }

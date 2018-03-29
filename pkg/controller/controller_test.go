@@ -85,9 +85,17 @@ const (
 	testNamespace                           = "test-ns"
 	testServiceInstanceCredentialSecretName = "test-secret"
 	testOperation                           = "test-operation"
+	testClusterID                           = "test-cluster-id"
 )
 
-var testDashboardURL = "http://dashboard"
+var (
+	testDashboardURL = "http://dashboard"
+	testContext      = map[string]interface{}{
+		"platform":           ContextProfilePlatformKubernetes,
+		"namespace":          testNamespace,
+		clusterIdentifierKey: testClusterID,
+	}
+)
 
 const testCatalog = `{
   "services": [{
@@ -1578,7 +1586,14 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeRecorder,
 		7*24*time.Hour,
 		7*24*time.Hour,
+		DefaultClusterIDConfigMapName,
+		DefaultClusterIDConfigMapNamespace,
 	)
+
+	if c, ok := testController.(*controller); ok {
+		c.setClusterID(testClusterID)
+	}
+
 	if err != nil {
 		t.Fatal(err)
 	}
