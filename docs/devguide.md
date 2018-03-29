@@ -238,6 +238,25 @@ These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
 `coverage.html` at the root of the repo.
 
+## Making a Contribution
+
+Once you have compiled and tested your code locally, make a Pull
+Request. Create a branch on your local repo with a short descriptive
+name of the work you are doing. Make a commit with the work in it, and
+push it up to your remote fork on github. Come back to the code tab of
+the repository, and there should be a box suggesting to make a Pull
+Request.
+
+Once the Pull Request has been created, it will automatically be built
+and the tests run. The unit and integration tests will run in travis,
+and Jenkins will run the e2e tests.
+
+On travis, a build is made up of two jobs, one builds our chosen
+golang version, and the other builds with future release candidates
+(rc). It is okay for the rc build to fail. The rc build will not fail
+the overall build, and exists to give us a warning as to what changes
+we will have to make to support future versions of golang.
+
 ## Advanced Build Steps
 
 You can build the service catalog executables into Docker images yourself. By
