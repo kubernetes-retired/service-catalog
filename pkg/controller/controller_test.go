@@ -91,7 +91,7 @@ const (
 var (
 	testDashboardURL = "http://dashboard"
 	testContext      = map[string]interface{}{
-		"platform":           "kubernetes",
+		"platform":           ContextProfilePlatformKubernetes,
 		"namespace":          testNamespace,
 		clusterIdentifierKey: testClusterID,
 	}
@@ -1582,6 +1582,8 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeRecorder,
 		7*24*time.Hour,
 		7*24*time.Hour,
+		DefaultClusterIDConfigMapName,
+		DefaultClusterIDConfigMapNamespace,
 	)
 
 	if c, ok := testController.(*controller); ok {

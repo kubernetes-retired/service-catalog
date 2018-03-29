@@ -27,6 +27,7 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/componentconfig"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	k8scomponentconfig "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/componentconfig"
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/client/leaderelectionconfig"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -119,4 +120,6 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.DurationVar(&s.OperationPollingMaximumBackoffDuration, "operation-polling-maximum-backoff-duration", s.OperationPollingMaximumBackoffDuration, "The maximum amount of time to back-off while polling an OSB API operation")
 	s.SecureServingOptions.AddFlags(fs)
 	utilfeature.DefaultFeatureGate.AddFlag(fs)
+	fs.StringVar(&s.ClusterIDConfigMapName, "cluster-id-configmap-name", controller.DefaultClusterIDConfigMapName, "k8s name for clusterid configmap")
+	fs.StringVar(&s.ClusterIDConfigMapNamespace, "cluster-id-configmap-namespace", controller.DefaultClusterIDConfigMapNamespace, "k8s namespace for clusterid configmap")
 }

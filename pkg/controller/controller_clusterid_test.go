@@ -82,7 +82,7 @@ func TestMonitorConfigMapNoConfigmap(t *testing.T) {
 	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		m := make(map[string]string)
 		m["id"] = testClusterID
-		return true, nil, errors.NewNotFound(schema.GroupResource{"core", "configmap"}, "cluster-info")
+		return true, nil, errors.NewNotFound(schema.GroupResource{"core", "configmap"}, DefaultClusterIDConfigMapName)
 	})
 	tc.setClusterID(testClusterID)
 	tc.monitorConfigMap()
@@ -107,7 +107,7 @@ func TestMonitorConfigMapNoConfigmapNoExistingClusterID(t *testing.T) {
 	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		m := make(map[string]string)
 		m["id"] = testClusterID
-		return true, nil, errors.NewNotFound(schema.GroupResource{"core", "configmap"}, "cluster-info")
+		return true, nil, errors.NewNotFound(schema.GroupResource{"core", "configmap"}, DefaultClusterIDConfigMapName)
 	})
 	tc.setClusterID("")
 	tc.monitorConfigMap()
@@ -135,7 +135,7 @@ func TestMonitorConfigMapConfigmapOverride(t *testing.T) {
 		m["id"] = testClusterID // override existing ID with standard test ID
 		return true, &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "cluster-info",
+				Name: DefaultClusterIDConfigMapName,
 			},
 			Data: m,
 		}, nil
@@ -155,7 +155,7 @@ func TestMonitorConfigMapConfigmapWithNoData(t *testing.T) {
 	kc, _, _, tc, _ := newTestController(t, noFakeActions())
 	blankcm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-info",
+			Name: DefaultClusterIDConfigMapName,
 		},
 	}
 	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
@@ -171,6 +171,43 @@ func TestMonitorConfigMapConfigmapWithNoData(t *testing.T) {
 	}
 	if expectedCMupdate := kc.Actions()[1]; expectedCMupdate.GetVerb() == "update" {
 		updatedCM := expectedCMupdate.(clientgotesting.UpdateAction).GetObject().(*corev1.ConfigMap)
+		if id := updatedCM.Data["id"]; id != testClusterID {
+			t.Fatalf("configmap should have been updated with the existing clusterid, was %q, expected %q", id, testClusterID)
+		}
+	} else {
+		t.Fatalf("configmap should have been updated with the existing clusterid")
+	}
+}
+
+// TestMonitorConfigMapConfigmapWithNoData checks that if a configmap
+// with no data to have an ID is returned, that we update the
+// configmap to have an ID field with the currently existing ID from
+// the controller
+func TestMonitorConfigMapConfigmapWithOtherData(t *testing.T) {
+	kc, _, _, tc, _ := newTestController(t, noFakeActions())
+	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		m := make(map[string]string)
+		m["notid"] = "other-non-id-stuff-that-needs-to-be-perserved"
+		return true, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: DefaultClusterIDConfigMapName,
+			},
+			Data: m,
+		}, nil
+	})
+	tc.setClusterID(testClusterID)
+	tc.monitorConfigMap()
+	if tc.getClusterID() != testClusterID {
+		t.Fatalf("should have got the set cluster id")
+	}
+	if expectedCMget := kc.Actions()[0]; expectedCMget.GetVerb() != "get" {
+		t.Fatalf("get configmap is first")
+	}
+	if expectedCMupdate := kc.Actions()[1]; expectedCMupdate.GetVerb() == "update" {
+		updatedCM := expectedCMupdate.(clientgotesting.UpdateAction).GetObject().(*corev1.ConfigMap)
+		if notid := updatedCM.Data["notid"]; notid == "" {
+			t.Fatalf("configmap should have another key")
+		}
 		if id := updatedCM.Data["id"]; id != testClusterID {
 			t.Fatalf("configmap should have been updated with the existing clusterid")
 		}

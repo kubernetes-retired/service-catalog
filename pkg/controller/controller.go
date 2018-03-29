@@ -61,6 +61,10 @@ const (
 	// ContextProfilePlatformKubernetes is the platform name sent in the OSB
 	// ContextProfile for requests coming from Kubernetes.
 	ContextProfilePlatformKubernetes string = "kubernetes"
+	// DefaultClusterIDConfigMapName is the k8s name that the clusterid configmap will have
+	DefaultClusterIDConfigMapName string = "cluster-info"
+	// DefaultClusterIDConfigMapNamespace is the k8s namespace that the clusterid configmap will be stored in.
+	DefaultClusterIDConfigMapNamespace string = "default"
 )
 
 // NewController returns a new Open Service Broker catalog controller.
@@ -78,6 +82,8 @@ func NewController(
 	recorder record.EventRecorder,
 	reconciliationRetryDuration time.Duration,
 	operationPollingMaximumBackoffDuration time.Duration,
+	clusterIDConfigMapName string,
+	clusterIDConfigMapNamespace string,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
@@ -94,6 +100,8 @@ func NewController(
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
 		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "instance-poller"),
 		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
+		clusterIDConfigMapName:      clusterIDConfigMapName,
+		clusterIDConfigMapNamespace: clusterIDConfigMapNamespace,
 	}
 
 	controller.brokerLister = brokerInformer.Lister()
@@ -164,10 +172,20 @@ type controller struct {
 	bindingQueue                workqueue.RateLimitingInterface
 	instancePollingQueue        workqueue.RateLimitingInterface
 	bindingPollingQueue         workqueue.RateLimitingInterface
-	clusterID                   string
+	// clusterIDConfigMapName is the k8s name that the clusterid
+	// configmap will have.
+	clusterIDConfigMapName string
+	// clusterIDConfigMapNamespace is the k8s namespace that the
+	// clusterid configmap will be stored in.
+	clusterIDConfigMapNamespace string
+	// clusterID holds the current value. If a configmap to hold
+	// this value does not exist, it will be created with this
+	// value. If there is a configmap with a different value, it
+	// will be reconciled to become the value in the configmap.
+	clusterID string
 	// clusterIDLock protects access to clusterID between the
 	// monitor writing the value from the configmap, and any
-	// readers passing the clusterID to a broker
+	// readers passing the clusterID to a broker.
 	clusterIDLock sync.RWMutex
 }
 
@@ -240,20 +258,20 @@ func (c *controller) monitorConfigMap() {
 	// only ever want to monitor and be notified about one configmap
 	// in a hardcoded place.
 	glog.V(9).Info("cluster ID monitor loop enter")
-	cm, err := c.kubeClient.CoreV1().ConfigMaps("default").Get("cluster-info", metav1.GetOptions{})
+	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(c.clusterIDConfigMapName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
 		m["id"] = c.getClusterID()
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "cluster-info",
+				Name: c.clusterIDConfigMapName,
 			},
 			Data: m,
 		}
 		// if we fail to set the id,
 		// it could be due to permissions
 		// or due to being already set while we were trying
-		if _, err := c.kubeClient.CoreV1().ConfigMaps("default").Create(cm); err != nil {
+		if _, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Create(cm); err != nil {
 			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
 	} else if err == nil {
@@ -262,10 +280,13 @@ func (c *controller) monitorConfigMap() {
 		if id := cm.Data["id"]; "" != id {
 			c.setClusterID(id)
 		} else {
-			m := make(map[string]string)
-			cm.Data = m
+			m := cm.Data
+			if m == nil {
+				m = make(map[string]string)
+				cm.Data = m
+			}
 			m["id"] = c.getClusterID()
-			c.kubeClient.CoreV1().ConfigMaps("default").Update(cm)
+			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(cm)
 		}
 	} else { // some err we can't handle
 		glog.V(4).Infof("error getting the cluster info configmap: %q", err)
