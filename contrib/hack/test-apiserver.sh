@@ -42,7 +42,7 @@ NO_TTY=1 kubectl config set-cluster service-catalog-cluster --server=https://${D
 
 # create a few resources
 set -x
-NO_TTY=1 kubectl create -f contrib/examples/apiserver/broker.yaml
+NO_TTY=1 kubectl create -f contrib/examples/apiserver/clusterservicebroker.yaml
 NO_TTY=1 kubectl create -f contrib/examples/apiserver/clusterserviceclass.yaml
 NO_TTY=1 kubectl create -f contrib/examples/apiserver/serviceclass.yaml
 NO_TTY=1 kubectl create -f contrib/examples/apiserver/clusterserviceplan.yaml
@@ -61,7 +61,7 @@ NO_TTY=1 kubectl get servicebinding test-binding --namespace test-ns -o yaml
 NO_TTY=1 kubectl get podpresets -o yaml
 NO_TTY=1 kubectl get podpresets db-config -o yaml
 
-NO_TTY=1 kubectl delete -f contrib/examples/apiserver/broker.yaml
+NO_TTY=1 kubectl delete -f contrib/examples/apiserver/clusterservicebroker.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/clusterserviceclass.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/serviceclass.yaml
 NO_TTY=1 kubectl delete -f contrib/examples/apiserver/clusterserviceplan.yaml
