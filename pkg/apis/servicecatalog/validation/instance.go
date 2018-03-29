@@ -362,7 +362,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), "must specify clusterServicePlanExternalName with clusterServiceClassExternalName"))
 		}
 
-		for _, msg := range validateServicePlanName(p.ClusterServicePlanExternalName, false /* prefix */) {
+		for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanExternalName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), p.ClusterServicePlanName, msg))
 		}
 	}
@@ -375,7 +375,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		if !k8sPlanSet {
 			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "must specify clusterServicePlanName with clusterServiceClassName"))
 		}
-		for _, msg := range validateServicePlanName(p.ClusterServicePlanName, false /* prefix */) {
+		for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanName"), p.ClusterServicePlanName, msg))
 		}
 	}

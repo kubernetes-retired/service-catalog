@@ -26,8 +26,7 @@ import (
 )
 
 type provisonCmd struct {
-	*command.Context
-	ns           string
+	*command.Namespaced
 	instanceName string
 	className    string
 	planName     string
@@ -40,7 +39,7 @@ type provisonCmd struct {
 
 // NewProvisionCmd builds a "svcat provision" command
 func NewProvisionCmd(cxt *command.Context) *cobra.Command {
-	provisionCmd := &provisonCmd{Context: cxt}
+	provisionCmd := &provisonCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "provision NAME --plan PLAN --class CLASS",
 		Short: "Create a new instance of a service",
@@ -67,8 +66,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(provisionCmd),
 		RunE:    command.RunE(provisionCmd),
 	}
-	cmd.Flags().StringVarP(&provisionCmd.ns, "namespace", "n", "default",
-		"The namespace in which to create the instance")
+	command.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVar(&provisionCmd.className, "class", "",
 		"The class name (Required)")
 	cmd.MarkFlagRequired("class")
@@ -121,7 +119,7 @@ func (c *provisonCmd) Run() error {
 }
 
 func (c *provisonCmd) Provision() error {
-	instance, err := c.App.Provision(c.ns, c.instanceName, c.className, c.planName, c.params, c.secrets)
+	instance, err := c.App.Provision(c.Namespace, c.instanceName, c.className, c.planName, c.params, c.secrets)
 	if err != nil {
 		return err
 	}

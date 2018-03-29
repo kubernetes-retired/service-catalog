@@ -240,6 +240,48 @@ type ClusterServiceClass struct {
 	Status ClusterServiceClassStatus
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceClassList is a list of ServiceClasses.
+type ServiceClassList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServiceClass
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceClass represents a namespaced offering in the service catalog.
+type ServiceClass struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec   ServiceClassSpec
+	Status ServiceClassStatus
+}
+
+// ServiceClassStatus represents status information about a
+// ServiceClass.
+type ServiceClassStatus struct {
+	CommonServiceClassStatus
+}
+
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
+	CommonServiceClassStatus
+}
+
+// CommonServiceClassStatus represents common status information between
+// cluster scoped and namespace scoped ServiceClasses.
+type CommonServiceClassStatus struct {
+	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
+	// catalog.
+	RemovedFromBrokerCatalog bool
+}
+
 // CommonServiceClassSpec represents details about a ServiceClass
 type CommonServiceClassSpec struct {
 	// ExternalName is the name of this object that the Service Broker
@@ -294,23 +336,26 @@ type CommonServiceClassSpec struct {
 	Requires []string
 }
 
-// ClusterServiceClassSpec represents the details about a ClusterServiceClass
+// ClusterServiceClassSpec represents the details about a ClusterServiceClass.
 type ClusterServiceClassSpec struct {
 	CommonServiceClassSpec
 
-	// ClusterServiceBrokerName is the reference to the Broker that provides this
-	// ClusterServiceClass.
+	// ClusterServiceBrokerName is the reference to the ClusterServiceBroker that
+	// provides this ClusterServiceClass.
 	//
 	// Immutable.
 	ClusterServiceBrokerName string
 }
 
-// ClusterServiceClassStatus represents status information about a
-// ClusterServiceClass.
-type ClusterServiceClassStatus struct {
-	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
-	// catalog.
-	RemovedFromBrokerCatalog bool
+// ServiceClassSpec represents the details about a ServiceClass.
+type ServiceClassSpec struct {
+	CommonServiceClassSpec
+
+	// ServiceBrokerName is the reference to the ServiceBroker that provides this
+	// ServiceClass.
+	//
+	// Immutable.
+	ServiceBrokerName string
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -384,6 +429,16 @@ type CommonServicePlanSpec struct {
 	// ServiceBindingCreateParameterSchema is the schema for the parameters that
 	// may be supplied binding to an ServiceInstance on this plan.
 	ServiceBindingCreateParameterSchema *runtime.RawExtension
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan.
+	//
+	// ServiceBindingCreateResponseSchema is the schema for the response that
+	// will be returned by the broker when binding to a ServiceInstance on this plan.
+	// The schema also contains the sub-schema for the credentials part of the
+	// broker's response, which allows clients to see what the credentials
+	// will look like even before the binding operation is performed.
+	ServiceBindingCreateResponseSchema *runtime.RawExtension
 }
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan

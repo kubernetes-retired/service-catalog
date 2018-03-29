@@ -17,11 +17,13 @@ limitations under the License.
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // writeYAML writes the given obj to the given Writer in YAML format, indented
@@ -40,4 +42,20 @@ func writeYAML(w io.Writer, obj interface{}, n int) {
 	}
 
 	fmt.Fprint(w, y)
+}
+
+func writeParameters(w io.Writer, parameters *runtime.RawExtension) {
+	if parameters == nil {
+		return
+	}
+
+	fmt.Fprintln(w, "\nParameters:")
+	var params map[string]interface{}
+	err := json.Unmarshal(parameters.Raw, &params)
+	if err != nil {
+		// If it isn't formatted in json, just show the string representation of what is present
+		fmt.Fprintln(w, string(parameters.Raw))
+	} else {
+		writeYAML(w, params, 2)
+	}
 }

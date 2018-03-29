@@ -22,18 +22,20 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
-	"k8s.io/client-go/rest"
 )
 
 // App is the underlying application behind the svcat cli.
 type App struct {
 	*servicecatalog.SDK
+
+	// CurrentNamespace is the namespace set in the current context.
+	CurrentNamespace string
 }
 
 // NewApp creates an svcat application.
 func NewApp(kubeConfig, kubeContext string) (*App, error) {
 	// Initialize a service catalog client
-	_, cl, err := getKubeClient(kubeConfig, kubeContext)
+	cl, ns, err := getServiceCatalogClient(kubeConfig, kubeContext)
 	if err != nil {
 		return nil, err
 	}
@@ -42,27 +44,26 @@ func NewApp(kubeConfig, kubeContext string) (*App, error) {
 		SDK: &servicecatalog.SDK{
 			ServiceCatalogClient: cl,
 		},
+		CurrentNamespace: ns,
 	}
 
 	return app, nil
 }
 
-// configForContext creates a Kubernetes REST client configuration for a given kubeconfig context.
-func configForContext(kubeConfig, kubeContext string) (*rest.Config, error) {
-	config, err := kube.GetConfig(kubeContext, kubeConfig).ClientConfig()
-	if err != nil {
-		return nil, fmt.Errorf("could not get Kubernetes config for context %q: %s", kubeContext, err)
-	}
-	return config, nil
-}
+// getServiceCatalogClient creates a Service Catalog config and client for a given kubeconfig context.
+func getServiceCatalogClient(kubeConfig, kubeContext string) (client *clientset.Clientset, namespaces string, err error) {
+	config := kube.GetConfig(kubeContext, kubeConfig)
 
-// getKubeClient creates a Kubernetes config and client for a given kubeconfig context.
-func getKubeClient(kubeConfig, kubeContext string) (*rest.Config, *clientset.Clientset, error) {
-	config, err := configForContext(kubeConfig, kubeContext)
+	currentNamespace, _, err := config.Namespace()
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not load Kubernetes configuration (%s)", err)
+		return nil, "", fmt.Errorf("could not determine the namespace for the current context %q: %s", kubeContext, err)
 	}
 
-	client, err := clientset.NewForConfig(config)
-	return nil, client, err
+	restConfig, err := config.ClientConfig()
+	if err != nil {
+		return nil, "", fmt.Errorf("could not get Kubernetes config for context %q: %s", kubeContext, err)
+	}
+
+	client, err = clientset.NewForConfig(restConfig)
+	return client, currentNamespace, err
 }
