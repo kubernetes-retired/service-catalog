@@ -158,50 +158,6 @@ func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, cr
 	return allErrs
 }
 
-// ValidateServiceClass validates a ServiceClass and returns a list of errors.
-func ValidateServiceClass(serviceclass *sc.ServiceClass) field.ErrorList {
-	return internalValidateServiceClass(serviceclass)
-}
-
-// ValidateServiceClassUpdate checks that when changing from an older
-// ServiceClass to a newer ServiceClass is okay.
-func ValidateServiceClassUpdate(new *sc.ServiceClass, old *sc.ServiceClass) field.ErrorList {
-	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, internalValidateServiceClass(new)...)
-
-	return allErrs
-}
-
-func internalValidateServiceClass(clusterserviceclass *sc.ServiceClass) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	allErrs = append(allErrs,
-		apivalidation.ValidateObjectMeta(
-			&clusterserviceclass.ObjectMeta,
-			true, /* namespace required */
-			validateCommonServiceClassName,
-			field.NewPath("metadata"))...)
-
-	allErrs = append(allErrs, validateServiceClassSpec(&clusterserviceclass.Spec, field.NewPath("spec"), true)...)
-	return allErrs
-}
-
-func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, create bool) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	if "" == spec.ServiceBrokerName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("serviceBrokerName"), "serviceBrokerName is required"))
-	}
-
-	commonErrs := validateCommonServiceClassSpec(&spec.CommonServiceClassSpec, fldPath, create)
-
-	if len(commonErrs) != 0 {
-		allErrs = append(commonErrs)
-	}
-
-	return allErrs
-}
-
 func validateCommonServiceClassSpec(spec *sc.CommonServiceClassSpec, fldPath *field.Path, create bool) field.ErrorList {
 	commonErrs := field.ErrorList{}
 
