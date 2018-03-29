@@ -241,7 +241,7 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 		}, nil
 	})
 
-	if err := testController.reconcileClusterServiceBroker(getTestClusterServiceBroker()); err != nil {
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err != nil {
 		t.Fatalf("This should not fail: %v", err)
 	}
 
@@ -290,7 +290,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 		}, nil
 	})
 
-	if err := testController.reconcileClusterServiceBroker(getTestClusterServiceBroker()); err != nil {
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err != nil {
 		t.Fatalf("This should not fail: %v", err)
 	}
 
@@ -358,7 +358,7 @@ func TestReconcileClusterServiceBrokerRemovedAndRestoredClusterServiceClass(t *t
 		return true, testClusterServicePlan, nil
 	})
 
-	if err := testController.reconcileClusterServiceBroker(getTestClusterServiceBroker()); err != nil {
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err != nil {
 		t.Fatalf("This should not fail: %v", err)
 	}
 
@@ -415,7 +415,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServicePlan(t *testing.T) {
 		}, nil
 	})
 
-	if err := testController.reconcileClusterServiceBroker(getTestClusterServiceBroker()); err != nil {
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err != nil {
 		t.Fatalf("This should not fail: %v", err)
 	}
 
@@ -456,7 +456,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(testClusterServiceClass)
 
-	if err := testController.reconcileClusterServiceBroker(getTestClusterServiceBroker()); err == nil {
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err == nil {
 		t.Fatal("The same service class should not belong to two different brokers.")
 	}
 
@@ -508,7 +508,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(testClusterServicePlan)
 
-	if err := testController.reconcileClusterServiceBroker(getTestClusterServiceBroker()); err == nil {
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err == nil {
 		t.Fatal("The same service class should not belong to two different brokers.")
 	}
 
@@ -576,7 +576,7 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 		}, nil
 	})
 
-	err := testController.reconcileClusterServiceBroker(broker)
+	err := reconcileClusterServiceBroker(t, testController, broker)
 	if err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
@@ -637,7 +637,7 @@ func TestReconcileClusterServiceBrokerErrorFetchingCatalog(t *testing.T) {
 
 	broker := getTestClusterServiceBroker()
 
-	if err := testController.reconcileClusterServiceBroker(broker); err == nil {
+	if err := reconcileClusterServiceBroker(t, testController, broker); err == nil {
 		t.Fatal("Should have failed to get the catalog.")
 	}
 
@@ -689,7 +689,7 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 		}, nil
 	})
 
-	err := testController.reconcileClusterServiceBroker(broker)
+	err := reconcileClusterServiceBroker(t, testController, broker)
 	if err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
@@ -834,7 +834,7 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 		},
 	}
 
-	err := testController.reconcileClusterServiceBroker(broker)
+	err := reconcileClusterServiceBroker(t, testController, broker)
 	if shouldSucceed && err != nil {
 		t.Fatal("Should have succeeded to get the catalog for the broker. got error: ", err)
 	}
@@ -898,7 +898,7 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 		return true, nil, errors.New("error creating serviceclass")
 	})
 
-	if err := testController.reconcileClusterServiceBroker(broker); err == nil {
+	if err := reconcileClusterServiceBroker(t, testController, broker); err == nil {
 		t.Fatal("There should have been an error.")
 	}
 
@@ -955,7 +955,7 @@ func TestReconcileClusterServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	broker.Status.OperationStartTime = &startTime
 
-	if err := testController.reconcileClusterServiceBroker(broker); err != nil {
+	if err := reconcileClusterServiceBroker(t, testController, broker); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1002,7 +1002,7 @@ func TestReconcileClusterServiceBrokerFailureOnFinalRetry(t *testing.T) {
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	broker.Status.OperationStartTime = &startTime
 
-	if err := testController.reconcileClusterServiceBroker(broker); err != nil {
+	if err := reconcileClusterServiceBroker(t, testController, broker); err != nil {
 		t.Fatalf("Should have return no error because the retry duration has elapsed: %v", err)
 	}
 
@@ -1049,7 +1049,7 @@ func TestReconcileClusterServiceBrokerWithStatusUpdateError(t *testing.T) {
 		return true, nil, errors.New("update error")
 	})
 
-	err := testController.reconcileClusterServiceBroker(broker)
+	err := reconcileClusterServiceBroker(t, testController, broker)
 	if err == nil {
 		t.Fatalf("expected error from but got none")
 	}
@@ -1310,4 +1310,13 @@ func TestReconcileClusterServicePlanFromClusterServiceBrokerCatalog(t *testing.T
 			tc.catalogActionsCheckFunc(t, tc.name, actions)
 		}
 	}
+}
+
+func reconcileClusterServiceBroker(t *testing.T, testController *controller, broker *v1beta1.ClusterServiceBroker) error {
+	clone := broker.DeepCopy()
+	err := testController.reconcileClusterServiceBroker(broker)
+	if !reflect.DeepEqual(broker, clone) {
+		t.Errorf("reconcileClusterServiceBroker shouldn't mutate input, but it does: %s", expectedGot(clone, broker))
+	}
+	return err
 }

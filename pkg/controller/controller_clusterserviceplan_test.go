@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	clientgotesting "k8s.io/client-go/testing"
+	"reflect"
 )
 
 func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
@@ -116,7 +117,7 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			tc.catalogClientPrepFunc(fakeCatalogClient)
 		}
 
-		err := testController.reconcileClusterServicePlan(tc.plan)
+		err := reconcileClusterServicePlan(t, testController, tc.plan)
 		if err != nil {
 			if !tc.shouldError {
 				t.Errorf("%v: unexpected error from method under test: %v", tc.name, err)
@@ -135,4 +136,13 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			expectNumberOfActions(t, tc.name, actions, 0)
 		}
 	}
+}
+
+func reconcileClusterServicePlan(t *testing.T, testController *controller, clusterServicePlan *v1beta1.ClusterServicePlan) error {
+	clone := clusterServicePlan.DeepCopy()
+	err := testController.reconcileClusterServicePlan(clusterServicePlan)
+	if !reflect.DeepEqual(clusterServicePlan, clone) {
+		t.Errorf("reconcileClusterServicePlan shouldn't mutate input, but it does: %s", expectedGot(clone, clusterServicePlan))
+	}
+	return err
 }
