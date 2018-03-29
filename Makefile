@@ -191,7 +191,7 @@ $(BINDIR)/e2e.test: .init
 # Util targets
 ##############
 .PHONY: verify verify-generated verify-client-gen verify-docs
-verify: .init .generate_files verify-generated verify-client-gen verify-docs verify-vendor
+verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -227,10 +227,10 @@ verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
 	@$(DOCKER_CMD) verify-links.sh -s .pkg -t $(SKIP_HTTP) .
 
-verify-generated: .init .generate_files
+verify-generated: .init .generate_exes
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only
 
-verify-client-gen: .init .generate_files
+verify-client-gen: .init .generate_exes
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
 
 format: .init
