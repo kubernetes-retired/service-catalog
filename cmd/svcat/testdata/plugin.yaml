@@ -11,7 +11,11 @@ tree:
     desc: The name of the binding. Defaults to the name of the instance.
   - name: param
     shorthand: p
-    desc: 'Additional parameter to use when binding the instance, format: NAME=VALUE'
+    desc: 'Additional parameter to use when binding the instance, format: NAME=VALUE.
+      Cannot be combined with --params-json'
+  - name: params-json
+    desc: Additional parameters to use when binding the instance, provided as a JSON
+      object. Cannot be combined with --param
   - name: secret
     desc: 'Additional parameter, whose value is stored in a secret, to use when binding
       the instance, format: SECRET[KEY]'
