@@ -54,10 +54,7 @@ func clusterServiceBrokerWithNewSpec() *sc.ClusterServiceBroker {
 // boolean flags.
 func TestClusterServiceBrokerStrategyTrivial(t *testing.T) {
 	if clusterServiceBrokerRESTStrategies.NamespaceScoped() {
-		t.Errorf("clusterservicebroker create must not be namespace scoped")
-	}
-	if clusterServiceBrokerRESTStrategies.NamespaceScoped() {
-		t.Errorf("clusterservicebroker update must not be namespace scoped")
+		t.Errorf("clusterservicebroker must not be namespace scoped")
 	}
 	if clusterServiceBrokerRESTStrategies.AllowCreateOnUpdate() {
 		t.Errorf("clusterservicebroker should not allow create on update")
