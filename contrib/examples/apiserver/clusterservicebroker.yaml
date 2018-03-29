@@ -1,7 +1,7 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServiceBroker
 metadata:
-  name: test-broker
+  name: test-clusterservicebroker
 spec:
   url: http://beefco.de
   # Put the basic auth for the broker in a secret, and reference the secret here.
