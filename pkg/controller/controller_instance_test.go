@@ -5700,7 +5700,7 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	if updatedServiceInstance.Status.ObservedGeneration == 0 || updatedServiceInstance.Status.ObservedGeneration != instance.Status.ReconciledGeneration {
 		t.Fatalf("Unexpected ObservedGeneration value: %d", updatedServiceInstance.Status.ObservedGeneration)
 	}
-	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
+	if updatedServiceInstance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
 		t.Fatalf("The instance was expected to be marked as Provisioned")
 	}
 }
