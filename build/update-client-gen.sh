@@ -16,6 +16,10 @@
 
 # The only argument this script should ever be called with is '--verify-only'
 
+# The contents of this file are in a specific order
+# Listers depend on the base client
+# Informers depend on listers
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -40,7 +44,7 @@ ${BINDIR}/client-gen "$@" \
 	      --clientset-path "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/" \
 	      --clientset-name "clientset" \
 	      --go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt"
-# generate lister
+# generate listers after having the base client generated, and before informers
 ${BINDIR}/lister-gen "$@" \
 	      --input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog" \
 	      --input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1" \
@@ -48,7 +52,7 @@ ${BINDIR}/lister-gen "$@" \
 	      --input-dirs="github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1" \
 	      --output-package "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated" \
 	      --go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt"
-# generate informer
+# generate informers after the listers have been generated
 ${BINDIR}/informer-gen "$@" \
 	      --go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 	      --input-dirs "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog" \
