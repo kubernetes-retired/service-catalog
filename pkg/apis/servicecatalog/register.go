@@ -50,6 +50,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&ClusterServiceBroker{},
 		&ClusterServiceBrokerList{},
+		&ServiceBroker{},
+		&ServiceBrokerList{},
 		&ClusterServiceClass{},
 		&ClusterServiceClassList{},
 		&ServiceClass{},
