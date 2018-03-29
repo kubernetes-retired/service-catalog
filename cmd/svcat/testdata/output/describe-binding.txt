@@ -2,3 +2,9 @@
   Namespace:   test-ns                                                       
   Status:      Ready - Injected bind result @ 2018-01-11 21:00:47 +0000 UTC  
   Instance:    ups-instance                                                  
+
+Parameters:
+  param1: value1
+  paramset:
+    ps1: 1
+    ps2: two

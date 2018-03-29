@@ -2375,7 +2375,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 			bindReactionError: osb.HTTPStatusCodeError{
 				StatusCode: 408,
 			},
-			setOrphanMitigation: true,
+			setOrphanMitigation: false,
 			shouldReturnError:   false,
 		},
 		{

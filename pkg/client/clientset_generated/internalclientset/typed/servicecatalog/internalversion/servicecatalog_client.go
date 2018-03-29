@@ -27,6 +27,7 @@ type ServicecatalogInterface interface {
 	ClusterServiceClassesGetter
 	ClusterServicePlansGetter
 	ServiceBindingsGetter
+	ServiceClassesGetter
 	ServiceInstancesGetter
 }
 
@@ -49,6 +50,10 @@ func (c *ServicecatalogClient) ClusterServicePlans() ClusterServicePlanInterface
 
 func (c *ServicecatalogClient) ServiceBindings(namespace string) ServiceBindingInterface {
 	return newServiceBindings(c, namespace)
+}
+
+func (c *ServicecatalogClient) ServiceClasses(namespace string) ServiceClassInterface {
+	return newServiceClasses(c, namespace)
 }
 
 func (c *ServicecatalogClient) ServiceInstances(namespace string) ServiceInstanceInterface {

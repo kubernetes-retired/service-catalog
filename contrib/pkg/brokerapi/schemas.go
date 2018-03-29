@@ -19,25 +19,32 @@ package brokerapi
 // Schemas represents a plan's schemas for service instance and binding create
 // and update.
 type Schemas struct {
-	ServiceInstances *ServiceInstanceSchema `json:"service_instance,omitempty"`
-	ServiceBindings  *ServiceBindingSchema  `json:"service_binding,omitempty"`
+	ServiceInstance *ServiceInstanceSchema `json:"service_instance,omitempty"`
+	ServiceBinding  *ServiceBindingSchema  `json:"service_binding,omitempty"`
 }
 
 // ServiceInstanceSchema represents a plan's schemas for a create and update
 // of a service instance.
 type ServiceInstanceSchema struct {
-	Create *InputParameters `json:"create,omitempty"`
-	Update *InputParameters `json:"update,omitempty"`
+	Create *InputParametersSchema `json:"create,omitempty"`
+	Update *InputParametersSchema `json:"update,omitempty"`
 }
 
 // ServiceBindingSchema represents a plan's schemas for the parameters
 // accepted for binding creation.
 type ServiceBindingSchema struct {
-	Create *InputParameters `json:"create,omitempty"`
+	Create *RequestResponseSchema `json:"create,omitempty"`
 }
 
-// InputParameters represents a schema for input parameters for creation or
-// update of an API resource.
-type InputParameters struct {
+// InputParametersSchema represents a schema for input parameters for
+// creation or update of an API resource.
+type InputParametersSchema struct {
 	Parameters interface{} `json:"parameters,omitempty"`
+}
+
+// RequestResponseSchema represents a schema for both input parameters and
+// the broker's response to the binding request
+type RequestResponseSchema struct {
+	InputParametersSchema
+	Response interface{} `json:"response,omitempty"`
 }

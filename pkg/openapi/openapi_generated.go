@@ -323,13 +323,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"spec": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Spec defines the behavior of the service class.",
+								Description: "Spec defines the behavior of the cluster service class.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec"),
 							},
 						},
 						"status": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Status represents the current status of the service class.",
+								Description: "Status represents the current status of the cluster service class.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus"),
 							},
 						},
@@ -651,7 +651,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"serviceBindingCreateParameterSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to an ServiceInstance on this plan.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to a ServiceInstance on this plan.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"serviceBindingCreateResponseSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -834,6 +840,24 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "CommonServiceClassStatus represents common status information between cluster scoped and namespace scoped ServiceClasses.",
+					Properties: map[string]spec.Schema{
+						"removedFromBrokerCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the service from its catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"removedFromBrokerCatalog"},
+				},
+			},
+			Dependencies: []string{},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServicePlanSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -894,7 +918,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"serviceBindingCreateParameterSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to an ServiceInstance on this plan.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to a ServiceInstance on this plan.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"serviceBindingCreateResponseSchema": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -1379,6 +1409,205 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ServiceClass represents a namespaced offering in the service catalog.",
+					Properties: map[string]spec.Schema{
+						"kind": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"apiVersion": {
+							SchemaProps: spec.SchemaProps{
+								Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"metadata": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The name of this resource in etcd is in ObjectMeta.Name. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							},
+						},
+						"spec": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Spec defines the behavior of the service class.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec"),
+							},
+						},
+						"status": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Status represents the current status of a service class.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassList": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ServiceClassList is a list of ServiceClasses.",
+					Properties: map[string]spec.Schema{
+						"kind": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"apiVersion": {
+							SchemaProps: spec.SchemaProps{
+								Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"metadata": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							},
+						},
+						"items": {
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass"),
+										},
+									},
+								},
+							},
+						},
+					},
+					Required: []string{"items"},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ServiceClassSpec represents the details about a ServiceClass",
+					Properties: map[string]spec.Schema{
+						"externalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalName is the name of this object that the Service Broker exposed this Service Class as. Mutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"externalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalID is the identity of this object for use with the OSB API.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"description": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Description is a short description of this ServiceClass.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"bindable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Bindable indicates whether a user can create bindings to an ServiceInstance provisioned from this service. ServicePlan has an optional field called Bindable which overrides the value of this field.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"bindingRetrievable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nBindingRetrievable indicates whether fetching a binding via a GET on its endpoint is supported for all plans.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"planUpdatable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PlanUpdatable indicates whether instances provisioned from this ServiceClass may change ServicePlans after being provisioned.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+						"externalMetadata": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ExternalMetadata is a blob of information about the ServiceClass, meant to be user-facing content and display instructions. This field may contain platform-specific conventional values.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"tags": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nTags is a list of strings that represent different classification attributes of the ServiceClass.  These are used in Cloud Foundry in a way similar to Kubernetes labels, but they currently have no special meaning in Kubernetes.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+						"requires": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nRequires exposes a list of Cloud Foundry-specific 'permissions' that must be granted to an instance of this service within Cloud Foundry.  These 'permissions' have no meaning within Kubernetes and an ServiceInstance provisioned from this ServiceClass will not work correctly.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+						"serviceBrokerName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceBrokerName is the reference to the Broker that provides this ServiceClass.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"externalName", "externalID", "description", "bindable", "bindingRetrievable", "planUpdatable", "serviceBrokerName"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ServiceClassStatus represents status information about a ServiceClass.",
+					Properties: map[string]spec.Schema{
+						"removedFromBrokerCatalog": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RemovedFromBrokerCatalog indicates that the broker removed the service from its catalog.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
+					},
+					Required: []string{"removedFromBrokerCatalog"},
+				},
+			},
+			Dependencies: []string{},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance": {
 			Schema: spec.Schema{

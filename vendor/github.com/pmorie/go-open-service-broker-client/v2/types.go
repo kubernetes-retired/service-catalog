@@ -117,7 +117,7 @@ type ServiceInstanceSchema struct {
 // ServiceBindingSchema represents a plan's schemas for the parameters
 // accepted for binding creation.
 type ServiceBindingSchema struct {
-	Create *InputParametersSchema `json:"create,omitempty"`
+	Create *RequestResponseSchema `json:"create,omitempty"`
 }
 
 // InputParametersSchema requires a client API version >=2.13.
@@ -125,7 +125,20 @@ type ServiceBindingSchema struct {
 // InputParametersSchema represents a schema for input parameters for creation or
 // update of an API resource.
 type InputParametersSchema struct {
+	// The schema definition for the input parameters. Each input parameter
+	// is expressed as a property within a JSON object.
 	Parameters interface{} `json:"parameters,omitempty"`
+}
+
+// RequestResponseSchema requires a client API version >=2.14.
+//
+// RequestResponseSchema contains a schema for input parameters for creation or
+// update of an API resource, and a schema for the credentials returned by the
+// broker
+type RequestResponseSchema struct {
+	InputParametersSchema
+	// The schema definition for the broker's response to the bind request.
+	Response interface{} `json:"response,omitempty"`
 }
 
 // OriginatingIdentity requires a client API version >=2.13.

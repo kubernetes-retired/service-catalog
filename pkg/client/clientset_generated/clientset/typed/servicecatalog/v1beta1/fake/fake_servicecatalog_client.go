@@ -42,6 +42,10 @@ func (c *FakeServicecatalogV1beta1) ServiceBindings(namespace string) v1beta1.Se
 	return &FakeServiceBindings{c, namespace}
 }
 
+func (c *FakeServicecatalogV1beta1) ServiceClasses(namespace string) v1beta1.ServiceClassInterface {
+	return &FakeServiceClasses{c, namespace}
+}
+
 func (c *FakeServicecatalogV1beta1) ServiceInstances(namespace string) v1beta1.ServiceInstanceInterface {
 	return &FakeServiceInstances{c, namespace}
 }

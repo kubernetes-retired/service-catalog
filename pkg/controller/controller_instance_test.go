@@ -612,7 +612,6 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 			brokerActions := fakeClusterServiceBrokerClient.Actions()
 			assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
-
 			expectedKubeActions := []kubeClientAction{
 				{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
 			}
@@ -676,11 +675,8 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				InstanceID:        testServiceInstanceGUID,
 				ServiceID:         testClusterServiceClassGUID,
 				PlanID:            testClusterServicePlanGUID,
-				Context: map[string]interface{}{
-					"platform":  "kubernetes",
-					"namespace": "test-ns",
-				},
-				Parameters: tc.expectedParams,
+				Context:           testContext,
+				Parameters:        tc.expectedParams,
 			})
 
 			actions = fakeCatalogClient.Actions()
@@ -886,11 +882,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -919,16 +911,130 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	}
 }
 
-// TestReconcileServiceInstanceWithProvisionFailure tests that when the
-// provision call to the broker fails with an HTTP error, the ready condition
-// becomes false, and the failure condition is set.
-func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
+// TestReconcileServiceInstanceWithTemporaryProvisionFailure tests that when the
+// provision call to the broker fails with a retriable HTTP error, the ready condition
+// becomes false, and the failure condition is not set.
+func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Error: osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusConflict,
-				ErrorMessage: strPtr("OutOfQuota"),
-				Description:  strPtr("You're out of quota!"),
+				StatusCode:   http.StatusInternalServerError,
+				ErrorMessage: strPtr("InternalServerError"),
+				Description:  strPtr("Something went wrong!"),
+			},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+
+	//////////////////////////////////////
+	// Check 1st reconcilliation iteration (prepare/validate request & set status to in progress)
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("Reconcile not expected to fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	expectedKubeActions := []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, expectedKubeActions); err != nil {
+		t.Fatal(err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+
+	events := getRecordedEvents(testController)
+	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceOperationInProgress(t,
+		updatedServiceInstance,
+		v1beta1.ServiceInstanceOperationProvision,
+		testClusterServicePlanName,
+		testClusterServicePlanGUID,
+		instance,
+	)
+
+	//////////////////////////////////////
+	// Check 2nd reconcilliation iteration (actual broker request)
+
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+	instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
+
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatalf("Should not be able to make the ServiceInstance")
+	}
+
+	brokerActions = fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testClusterServiceClassGUID,
+		PlanID:            testClusterServicePlanGUID,
+		Context:           testContext,
+	})
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions = fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	actions = fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
+		t,
+		updatedServiceInstance,
+		v1beta1.ServiceInstanceOperationProvision,
+		startingInstanceOrphanMitigationReason,
+		"",
+		errorProvisionCallFailedReason,
+		instance,
+	)
+
+	events = getRecordedEvents(testController)
+
+	message := fmt.Sprintf(
+		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
+		"SCGUID", "test-serviceclass", "test-broker", 500, "InternalServerError; Description: Something went wrong!; ResponseError: <nil>",
+	)
+	expectedProvisionCallEvent := warningEventBuilder(errorProvisionCallFailedReason).msg(message)
+	expectedOrphanMitigationEvent := warningEventBuilder(startingInstanceOrphanMitigationReason).
+		msg("The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource")
+	expectedEvents := []string{
+		expectedProvisionCallEvent.String(),
+		expectedOrphanMitigationEvent.String(),
+	}
+	if err := checkEvents(events, expectedEvents); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReconcileServiceInstanceWithTerminalProvisionFailure tests that when the
+// provision call to the broker fails with an 400 HTTP error, the ready condition
+// becomes false, and the failure condition is set.
+func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusBadRequest,
+				ErrorMessage: strPtr("BadRequest"),
+				Description:  strPtr("Your parameters are incorrect!"),
 			},
 		},
 	})
@@ -958,11 +1064,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -989,7 +1091,7 @@ func TestReconcileServiceInstanceWithProvisionFailure(t *testing.T) {
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
-		"SCGUID", "test-serviceclass", "test-broker", 409, "OutOfQuota; Description: You're out of quota!; ResponseError: <nil>",
+		"SCGUID", "test-serviceclass", "test-broker", 400, "BadRequest; Description: Your parameters are incorrect!; ResponseError: <nil>",
 	)
 	expectedEvents := []string{
 		warningEventBuilder(errorProvisionCallFailedReason).msg(message).String(),
@@ -1042,11 +1144,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -1241,11 +1339,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -1329,10 +1423,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": testNamespace,
-		},
+		Context:           testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -1402,11 +1493,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -2108,10 +2195,7 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 	})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -2231,7 +2315,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 	}
 
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
+		t.Fatalf("Expected polling queue to not have requeues of test instance after polling have completed with a 'success' state")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2284,8 +2368,8 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
+		t.Fatalf("Expected polling queue to have a record of test instance as provisioning should have retried")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2312,7 +2396,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		errorProvisionCallFailedReason,
-		errorProvisionCallFailedReason,
+		"",
 		instance,
 	)
 }
@@ -2801,11 +2885,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -2860,11 +2940,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -3544,6 +3620,7 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 		name                     string
 		statusCode               int
 		triggersOrphanMitigation bool
+		terminalFailure          bool
 	}{
 		{
 			name:                     "Status OK",
@@ -3561,9 +3638,15 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 			triggersOrphanMitigation: false,
 		},
 		{
+			name:                     "400",
+			statusCode:               400,
+			triggersOrphanMitigation: false,
+			terminalFailure:          true,
+		},
+		{
 			name:                     "408",
 			statusCode:               408,
-			triggersOrphanMitigation: true,
+			triggersOrphanMitigation: false,
 		},
 		{
 			name:                     "other 4XX",
@@ -3626,8 +3709,10 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 			}
 		} else {
 			if err != nil {
-				t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
-				continue
+				if tc.terminalFailure {
+					t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
+					continue
+				}
 			}
 		}
 	}
@@ -4016,10 +4101,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 		Parameters: map[string]interface{}{
 			"a": "1",
 			"b": "2",
@@ -4222,10 +4304,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            nil, // no change to plan
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 		Parameters: map[string]interface{}{
 			"args": map[string]interface{}{
 				"first":  "first-arg",
@@ -4328,11 +4407,8 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            nil, // no change to plan
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-		Parameters: make(map[string]interface{}),
+		Context:           testContext,
+		Parameters:        make(map[string]interface{}),
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4516,11 +4592,8 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-		Parameters: nil, // no change to parameters
+		Context:           testContext,
+		Parameters:        nil, // no change to parameters
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4591,11 +4664,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -4647,8 +4716,8 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if err := testController.reconcileServiceInstance(instance); err == nil {
+		t.Fatal("expected error to be returned")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -4659,11 +4728,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -4677,7 +4742,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "", instance)
 
 	events := getRecordedEvents(testController)
 
@@ -4931,11 +4996,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -5095,8 +5156,8 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 		t.Fatalf("pollServiceInstance failed: %s", err)
 	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
+	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
+		t.Fatalf("Expected polling queue to have a record of test instance as update should have retried")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -5118,7 +5179,7 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, errorUpdateInstanceCallFailedReason, instance)
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "", instance)
 }
 
 func TestCheckClassAndPlanForDeletion(t *testing.T) {
