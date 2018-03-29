@@ -55,6 +55,10 @@ type ClusterServiceBrokerList struct {
 	Items []ClusterServiceBroker `json:"items"`
 }
 
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // ServiceBroker represents an entity that provides
 // ServiceClasses for use in the service catalog.
 // +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,URL:.spec.url
