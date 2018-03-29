@@ -91,9 +91,9 @@ const (
 var (
 	testDashboardURL = "http://dashboard"
 	testContext      = map[string]interface{}{
-		"platform":  "kubernetes",
-		"namespace": testNamespace,
-		"clusterID": testClusterID,
+		"platform":           "kubernetes",
+		"namespace":          testNamespace,
+		clusterIdentifierKey: testClusterID,
 	}
 )
 
