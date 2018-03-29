@@ -32,6 +32,8 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 	scheme.AddTypeDefaultingFunc(&ClusterServiceBrokerList{}, func(obj interface{}) { SetObjectDefaults_ClusterServiceBrokerList(obj.(*ClusterServiceBrokerList)) })
 	scheme.AddTypeDefaultingFunc(&ServiceBinding{}, func(obj interface{}) { SetObjectDefaults_ServiceBinding(obj.(*ServiceBinding)) })
 	scheme.AddTypeDefaultingFunc(&ServiceBindingList{}, func(obj interface{}) { SetObjectDefaults_ServiceBindingList(obj.(*ServiceBindingList)) })
+	scheme.AddTypeDefaultingFunc(&ServiceBroker{}, func(obj interface{}) { SetObjectDefaults_ServiceBroker(obj.(*ServiceBroker)) })
+	scheme.AddTypeDefaultingFunc(&ServiceBrokerList{}, func(obj interface{}) { SetObjectDefaults_ServiceBrokerList(obj.(*ServiceBrokerList)) })
 	scheme.AddTypeDefaultingFunc(&ServiceInstance{}, func(obj interface{}) { SetObjectDefaults_ServiceInstance(obj.(*ServiceInstance)) })
 	scheme.AddTypeDefaultingFunc(&ServiceInstanceList{}, func(obj interface{}) { SetObjectDefaults_ServiceInstanceList(obj.(*ServiceInstanceList)) })
 	return nil
@@ -57,6 +59,17 @@ func SetObjectDefaults_ServiceBindingList(in *ServiceBindingList) {
 	for i := range in.Items {
 		a := &in.Items[i]
 		SetObjectDefaults_ServiceBinding(a)
+	}
+}
+
+func SetObjectDefaults_ServiceBroker(in *ServiceBroker) {
+	SetDefaults_ServiceBrokerSpec(&in.Spec)
+}
+
+func SetObjectDefaults_ServiceBrokerList(in *ServiceBrokerList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_ServiceBroker(a)
 	}
 }
 

@@ -1564,7 +1564,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				SchemaProps: spec.SchemaProps{
 					Description: "ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
 					Properties: map[string]spec.Schema{
-						"secretRef": {
+						"basic": {
 							SchemaProps: spec.SchemaProps{
 								Description: "BasicAuthConfig provides configuration for basic authentication.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig"),
