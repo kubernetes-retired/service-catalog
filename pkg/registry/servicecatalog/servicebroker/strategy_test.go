@@ -55,11 +55,8 @@ func serviceBrokerWithNewSpec() *sc.ServiceBroker {
 // TestServiceBrokerStrategyTrivial is the testing of the trivial hardcoded
 // boolean flags.
 func TestServiceBrokerStrategyTrivial(t *testing.T) {
-	if serviceBrokerRESTStrategies.NamespaceScoped() {
-		t.Errorf("servicebroker create must not be namespace scoped")
-	}
-	if serviceBrokerRESTStrategies.NamespaceScoped() {
-		t.Errorf("servicebroker update must not be namespace scoped")
+	if !serviceBrokerRESTStrategies.NamespaceScoped() {
+		t.Errorf("servicebroker must be namespace scoped")
 	}
 	if serviceBrokerRESTStrategies.AllowCreateOnUpdate() {
 		t.Errorf("servicebroker should not allow create on update")
