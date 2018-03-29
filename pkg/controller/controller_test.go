@@ -435,7 +435,11 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 				Bindable:     true,
 			},
 		},
-		Status: v1beta1.ClusterServiceClassStatus{RemovedFromBrokerCatalog: true},
+		Status: v1beta1.ClusterServiceClassStatus{
+			v1beta1.CommonServiceClassStatus{
+				RemovedFromBrokerCatalog: true,
+			},
+		},
 	}
 }
 
