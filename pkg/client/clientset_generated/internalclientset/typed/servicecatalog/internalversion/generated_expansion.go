@@ -27,3 +27,5 @@ type ServiceBindingExpansion interface{}
 type ServiceClassExpansion interface{}
 
 type ServiceInstanceExpansion interface{}
+
+type ServicePlanExpansion interface{}

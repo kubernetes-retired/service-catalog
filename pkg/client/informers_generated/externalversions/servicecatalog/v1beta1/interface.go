@@ -36,6 +36,8 @@ type Interface interface {
 	ServiceClasses() ServiceClassInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
 	ServiceInstances() ServiceInstanceInformer
+	// ServicePlans returns a ServicePlanInformer.
+	ServicePlans() ServicePlanInformer
 }
 
 type version struct {
@@ -77,4 +79,9 @@ func (v *version) ServiceClasses() ServiceClassInformer {
 // ServiceInstances returns a ServiceInstanceInformer.
 func (v *version) ServiceInstances() ServiceInstanceInformer {
 	return &serviceInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ServicePlans returns a ServicePlanInformer.
+func (v *version) ServicePlans() ServicePlanInformer {
+	return &servicePlanInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
