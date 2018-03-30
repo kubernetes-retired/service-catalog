@@ -65,6 +65,25 @@ func validateClusterServicePlan(clusterServicePlan *sc.ClusterServicePlan) field
 	return allErrs
 }
 
+// ValidateServicePlan validates a ServicePlan and returns a list of errors.
+func ValidateServicePlan(servicePlan *sc.ServicePlan) field.ErrorList {
+	return validateServicePlan(servicePlan)
+}
+
+func validateServicePlan(servicePlan *sc.ServicePlan) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs,
+		apivalidation.ValidateObjectMeta(
+			&servicePlan.ObjectMeta,
+			true, /* namespace required */
+			validateCommonServicePlanName,
+			field.NewPath("metadata"))...)
+
+	allErrs = append(allErrs, validateServicePlanSpec(&servicePlan.Spec, field.NewPath("spec"))...)
+	return allErrs
+}
+
 func validateCommonServicePlanSpec(spec sc.CommonServicePlanSpec, fldPath *field.Path) field.ErrorList {
 
 	allErrs := field.ErrorList{}
@@ -107,6 +126,24 @@ func validateClusterServicePlanSpec(spec *sc.ClusterServicePlanSpec, fldPath *fi
 	return allErrs
 }
 
+func validateServicePlanSpec(spec *sc.ServicePlanSpec, fldPath *field.Path) field.ErrorList {
+	allErrs := validateCommonServicePlanSpec(spec.CommonServicePlanSpec, fldPath)
+
+	if "" == spec.ServiceBrokerName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("serviceBrokerName"), "serviceBrokerName is required"))
+	}
+
+	if "" == spec.ServiceClassRef.Name {
+		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassRef"), "an owning serviceclass is required"))
+	}
+
+	for _, msg := range validateCommonServiceClassName(spec.ServiceClassRef.Name, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassRef", "name"), spec.ServiceClassRef.Name, msg))
+	}
+
+	return allErrs
+}
+
 // ValidateClusterServicePlanUpdate checks that when changing from an older
 // ClusterServicePlan to a newer ClusterServicePlan is okay.
 func ValidateClusterServicePlanUpdate(new *sc.ClusterServicePlan, old *sc.ClusterServicePlan) field.ErrorList {
@@ -121,5 +158,14 @@ func validateCommonServicePlanUpdate(new sc.CommonServicePlanSpec, old sc.Common
 	if new.ExternalID != old.ExternalID {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("externalID"), new.ExternalID, fmt.Sprintf("externalID cannot change when updating a %s", resourceType)))
 	}
+	return allErrs
+}
+
+// ValidateServicePlanUpdate checks that when changing from an older
+// ServicePlan to a newer ServicePlan is okay.
+func ValidateServicePlanUpdate(new *sc.ServicePlan, old *sc.ServicePlan) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, validateServicePlan(new)...)
+	allErrs = append(allErrs, validateCommonServicePlanUpdate(new.Spec.CommonServicePlanSpec, old.Spec.CommonServicePlanSpec, "ServicePlan")...)
 	return allErrs
 }

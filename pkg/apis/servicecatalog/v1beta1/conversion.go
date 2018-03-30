@@ -37,6 +37,20 @@ func ClusterServicePlanFieldLabelConversionFunc(label, value string) (string, st
 	}
 }
 
+// ServicePlanFieldLabelConversionFunc does not convert anything, just returns
+// what it's given for the supported fields, and errors for unsupported.
+func ServicePlanFieldLabelConversionFunc(label, value string) (string, string, error) {
+	switch label {
+	case "spec.externalID",
+		"spec.externalName",
+		"spec.serviceBrokerName",
+		"spec.serviceClassRef.name":
+		return label, value, nil
+	default:
+		return "", "", fmt.Errorf("field label not supported: %s", label)
+	}
+}
+
 // ServiceClassFieldLabelConversionFunc does not convert anything, just returns
 // what it's given for the supported fields, and errors for unsupported.
 func ServiceClassFieldLabelConversionFunc(label, value string) (string, string, error) {

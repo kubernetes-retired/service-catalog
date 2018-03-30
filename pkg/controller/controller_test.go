@@ -514,7 +514,11 @@ func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 				Name: testClusterServiceClassGUID,
 			},
 		},
-		Status: v1beta1.ClusterServicePlanStatus{RemovedFromBrokerCatalog: true},
+		Status: v1beta1.ClusterServicePlanStatus{
+			CommonServicePlanStatus: v1beta1.CommonServicePlanStatus{
+				RemovedFromBrokerCatalog: true,
+			},
+		},
 	}
 }
 

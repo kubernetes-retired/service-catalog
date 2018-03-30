@@ -81,6 +81,54 @@ func TestClusterServicePlanFieldLabelConversionFunc(t *testing.T) {
 	runTestCases(t, cases, "ClusterServicePlanFieldLabelConversionFunc", ClusterServicePlanFieldLabelConversionFunc)
 }
 
+func TestServicePlanFieldLabelConversionFunc(t *testing.T) {
+	cases := []testcase{
+		{
+			name:     "spec.externalName works",
+			inLabel:  "spec.externalName",
+			inValue:  "somenamehere",
+			outLabel: "spec.externalName",
+			outValue: "somenamehere",
+			success:  true,
+		},
+		{
+			name:     "spec.serviceClassRef.name works",
+			inLabel:  "spec.serviceClassRef.name",
+			inValue:  "someref",
+			outLabel: "spec.serviceClassRef.name",
+			outValue: "someref",
+			success:  true,
+		},
+		{
+			name:     "spec.serviceBrokerName works",
+			inLabel:  "spec.serviceBrokerName",
+			inValue:  "somebroker",
+			outLabel: "spec.serviceBrokerName",
+			outValue: "somebroker",
+			success:  true,
+		},
+		{
+			name:     "spec.externalID works",
+			inLabel:  "spec.externalID",
+			inValue:  "externalid",
+			outLabel: "spec.externalID",
+			outValue: "externalid",
+			success:  true,
+		},
+		{
+			name:          "random fails",
+			inLabel:       "spec.random",
+			inValue:       "randomvalue",
+			outLabel:      "",
+			outValue:      "",
+			success:       false,
+			expectedError: "field label not supported: spec.random",
+		},
+	}
+
+	runTestCases(t, cases, "ServicePlanFieldLabelConversionFunc", ServicePlanFieldLabelConversionFunc)
+}
+
 func TestClusterServiceClassFieldLabelConversionFunc(t *testing.T) {
 	cases := []testcase{
 		{

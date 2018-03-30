@@ -1,0 +1,12 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServicePlan
+metadata:
+  name: b20ac1c6-f6d5-4dd0-b30c-c33242ad2083
+spec:
+  serviceBrokerName: test-ns-broker
+  externalName: test-serviceplan
+  externalID: b20ac1c6-f6d5-4dd0-b30c-c33242ad2083
+  description: "plan description"
+  free: true
+  serviceClassRef:
+    name: d0fe444d-5656-4c7a-ba1b-6c5884eefbb7
