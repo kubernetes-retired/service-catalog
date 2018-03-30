@@ -25,14 +25,20 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
 	"text/template"
 
+	clientgotesting "k8s.io/client-go/testing"
+
+	"encoding/json"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/internal/test"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
@@ -62,6 +68,9 @@ func TestCommandValidation(t *testing.T) {
 		{"deprovision requires name", "deprovision", "name is required"},
 		{"provision does not accept --param and --params-json",
 			`provision name --class class --plan plan --params-json '{}' --param k=v`,
+			"--params-json cannot be used with --param"},
+		{"bind does not accept --param and --params-json",
+			`bind name --params-json '{}' --param k=v`,
 			"--params-json cannot be used with --param"},
 	}
 
@@ -203,6 +212,86 @@ func TestNamespacedCommands(t *testing.T) {
 			gotNamespace := fakeClient.Actions()[0].GetNamespace()
 			if tc.wantNS != gotNamespace {
 				t.Fatalf("the wrong namespace was used. WANT: %q, GOT: %q", tc.wantNS, gotNamespace)
+			}
+		})
+	}
+}
+
+// TestParametersForBinding confirms that parameters given as --param or --param-json work the same way
+func TestParametersForBinding(t *testing.T) {
+	testcases := []struct {
+		name   string
+		cmd    string
+		params map[string]interface{}
+	}{
+		{
+			name: "bind with --param",
+			cmd:  "bind NAME --param foo=bar --param baz=boo",
+			params: map[string]interface{}{
+				"foo": "bar",
+				"baz": "boo",
+			},
+		},
+		{
+			name: "bind with --params-json",
+			cmd:  "bind NAME --params-json {\"foo\":\"bar\",\"baz\":\"boo\"}",
+			params: map[string]interface{}{
+				"foo": "bar",
+				"baz": "boo",
+			},
+		},
+		{
+			name: "bind with --params-json with a sub object",
+			cmd:  "bind NAME --params-json {\"foo\":{\"faa\":\"bar\",\"baz\":\"boo\"}}",
+			params: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"faa": "bar",
+					"baz": "boo",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeClient := fake.NewSimpleClientset()
+
+			cxt := newContext()
+			cxt.App = &svcat.App{
+				SDK: &servicecatalog.SDK{ServiceCatalogClient: fakeClient},
+			}
+			cxt.Output = ioutil.Discard
+
+			executeFakeCommand(t, tc.cmd, cxt, true)
+
+			if c := fakeClient.Actions(); len(c) != 1 {
+				t.Fatal("Expected only 1 action, got ", c)
+			}
+			action := fakeClient.Actions()[0]
+
+			if action.GetVerb() != "create" {
+				t.Fatal("Expected a create action, but got ", action.GetVerb())
+			}
+			createAction, ok := action.(clientgotesting.CreateAction)
+			if !ok {
+				t.Fatal(t, "Unexpected type; failed to convert action %+v to CreateAction", action)
+
+			}
+
+			fakeObject := createAction.GetObject()
+
+			binding, ok := fakeObject.(*v1beta1.ServiceBinding)
+			if !ok {
+				t.Fatal(t, "Failed to cast object to binding: ", fakeObject)
+			}
+
+			var params map[string]interface{}
+			if err := json.Unmarshal(binding.Spec.Parameters.Raw, &params); err != nil {
+				t.Error("failed to unmarshal binding.Spec.Parameters")
+			}
+
+			if eq := reflect.DeepEqual(params, tc.params); !eq {
+				t.Error(fmt.Sprintf("parameters mismatch, \nwant: %+v, \ngot: %+v", tc.params, params))
 			}
 		})
 	}

@@ -97,7 +97,7 @@ func (c *provisonCmd) Validate(args []string) error {
 	if c.jsonParams != "" {
 		c.params, err = parameters.ParseVariableJSON(c.jsonParams)
 		if err != nil {
-			return fmt.Errorf("invalid --params value (%s)", err)
+			return fmt.Errorf("invalid --params-json value (%s)", err)
 		}
 	} else {
 		c.params, err = parameters.ParseVariableAssignments(c.rawParams)

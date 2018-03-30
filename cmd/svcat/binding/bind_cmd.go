@@ -31,7 +31,8 @@ type bindCmd struct {
 	bindingName  string
 	secretName   string
 	rawParams    []string
-	params       map[string]string
+	jsonParams   string
+	params       interface{}
 	rawSecrets   []string
 	secrets      map[string]string
 }
@@ -45,6 +46,16 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		Example: `
   svcat bind wordpress
   svcat bind wordpress-mysql-instance --name wordpress-mysql-binding --secret-name wordpress-mysql-secret
+  svcat bind wordpress-instance --params type=admin
+  svcat bind wordpress-instance --params-json '{
+	"type": "admin",
+	"teams": [
+		"news",
+		"weather",
+		"sports"
+	]
+}
+'
 `,
 		PreRunE: command.PreRunE(bindCmd),
 		RunE:    command.RunE(bindCmd),
@@ -65,10 +76,11 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"The name of the secret. Defaults to the name of the instance.",
 	)
 	cmd.Flags().StringSliceVarP(&bindCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when binding the instance, format: NAME=VALUE")
+		"Additional parameter to use when binding the instance, format: NAME=VALUE. Cannot be combined with --params-json")
 	cmd.Flags().StringSliceVarP(&bindCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when binding the instance, format: SECRET[KEY]")
-
+	cmd.Flags().StringVar(&bindCmd.jsonParams, "params-json", "",
+		"Additional parameters to use when binding the instance, provided as a JSON object. Cannot be combined with --param")
 	return cmd
 }
 
@@ -79,9 +91,21 @@ func (c *bindCmd) Validate(args []string) error {
 	c.instanceName = args[0]
 
 	var err error
-	c.params, err = parameters.ParseVariableAssignments(c.rawParams)
-	if err != nil {
-		return fmt.Errorf("invalid --param value (%s)", err)
+
+	if c.jsonParams != "" && len(c.rawParams) > 0 {
+		return fmt.Errorf("--params-json cannot be used with --param")
+	}
+
+	if c.jsonParams != "" {
+		c.params, err = parameters.ParseVariableJSON(c.jsonParams)
+		if err != nil {
+			return fmt.Errorf("invalid --params-json value (%s)", err)
+		}
+	} else {
+		c.params, err = parameters.ParseVariableAssignments(c.rawParams)
+		if err != nil {
+			return fmt.Errorf("invalid --param value (%s)", err)
+		}
 	}
 
 	c.secrets, err = parameters.ParseKeyMaps(c.rawSecrets)
