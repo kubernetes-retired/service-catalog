@@ -27,6 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -204,6 +205,29 @@ func (p StorageProvider) v1beta1Storage(
 
 		storageMap["serviceclasses"] = serviceClassStorage
 		storageMap["serviceclasses/status"] = serviceClassStatusStorage
+
+		servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
+		if err != nil {
+			return nil, err
+		}
+
+		servicePlanOpts := server.NewOptions(
+			etcd.Options{
+				RESTOptions:   servicePlanRESTOptions,
+				Capacity:      1000,
+				ObjectType:    serviceplan.EmptyObject(),
+				ScopeStrategy: serviceplan.NewScopeStrategy(),
+				NewListFunc:   serviceplan.NewList,
+				GetAttrsFunc:  serviceplan.GetAttrs,
+				Trigger:       storage.NoTriggerPublisher,
+			},
+			p.StorageType,
+		)
+
+		servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
+
+		storageMap["serviceplans"] = servicePlanStorage
+		storageMap["serviceplans/status"] = servicePlanStatusStorage
 	}
 
 	return storageMap, nil
