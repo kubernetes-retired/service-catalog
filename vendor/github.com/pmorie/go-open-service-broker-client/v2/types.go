@@ -203,6 +203,43 @@ type ProvisionResponse struct {
 	// OperationKey is an extra identifier supplied by the broker to identify
 	// asynchronous operations.
 	OperationKey *OperationKey `json:"operation,omitempty"`
+	// ExtensionAPIs is a list of extension APIs for this instance.
+	//
+	// ExtensionsAPI is an ALPHA API attribute and may change. Alpha
+	// features must be enabled and the client must be using the
+	// latest API Version in order to use this.
+	ExtensionAPIs []ExtensionAPI `json:"extension_apis,omitempty"`
+}
+
+// ExtensionAPI contains information about an API endpoint that describes
+// extension operations on a ServiceInstance.
+//
+// ExtensionAPI is an ALPHA API attribute and may change. Alpha
+// features must be enabled and the client must be using the
+// latest API Version in order to use this.
+type ExtensionAPI struct {
+	// DiscoveryURL is a URI pointing to a valid OpenAPI 3.0+ document
+	// describing the API extension(s) to the Open Service Broker API including,
+	// endpoints, parameters, authentication mechanism and any other detail the
+	// platform needs for invocation. The location of the API extension
+	// endpoint(s) can be local to the Service Broker or on a remote server. If
+	// local to the Service Broker the same authentication method for normal
+	// Service Broker calls must be used.
+	DiscoveryURL string `json:"discovery_url,omitempty"`
+	// ServerURL is a URI pointing to a remote server where API extensions will
+	// run. This URI will be used as the basepath for the paths objects
+	// described by the `discovery_url` OpenAPI document. If ServerURL is
+	// missing, it means that the paths are invoked relative to the service
+	// broker URL.
+	ServerURL string `json:"server_url,omitempty"`
+	// Credentials is a set of authentication details for running any of the
+	// extension API calls, especially for those running on remote servers.
+	//
+	// The information in Credentials should be treated as SECRET.
+	Credentials map[string]interface{} `json:"credentials,omitempty"`
+	// AdheresTo is a URI refering to a specification detailing the interface
+	// the OpenAPI document hosted at the `discovery_url` adheres to.
+	AdheresTo string `json:"adheres_to,omitempty"`
 }
 
 // OperationKey is an extra identifier from the broker in order to provide extra
@@ -264,6 +301,13 @@ type UpdateInstanceResponse struct {
 	// Async indicates whether the broker is handling the update request
 	// asynchronously.
 	Async bool `json:"async"`
+	// DashboardURL is an ALPHA API attribute and may change. Alpha
+	// features must be enabled and the client must be using the latest
+	// API Version in order to use this.
+	//
+	// DashboardURL is the URL of a web-based management user interface for
+	// the service instance.
+	DashboardURL *string `json:"dashboard_url,omitempty"`
 	// OperationKey is an extra identifier supplied by the broker to identify
 	// asynchronous operations.
 	OperationKey *OperationKey `json:"operation,omitempty"`
