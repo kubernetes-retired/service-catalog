@@ -528,10 +528,6 @@ type ServicePlanList struct {
 }
 
 // +genclient
-<<<<<<< HEAD
-=======
-
->>>>>>> 4196047b53aba9c12e00d1048cb571053b12f288
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ServicePlan represents a tier of a ServiceClass.
