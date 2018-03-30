@@ -25,3 +25,5 @@ type ClusterServicePlanExpansion interface{}
 type ServiceBindingExpansion interface{}
 
 type ServiceClassExpansion interface{}
+
+type ServicePlanExpansion interface{}

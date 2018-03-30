@@ -50,6 +50,10 @@ func (c *FakeServicecatalog) ServiceInstances(namespace string) internalversion.
 	return &FakeServiceInstances{c, namespace}
 }
 
+func (c *FakeServicecatalog) ServicePlans(namespace string) internalversion.ServicePlanInterface {
+	return &FakeServicePlans{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeServicecatalog) RESTClient() rest.Interface {

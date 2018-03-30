@@ -31,6 +31,7 @@ type ServicecatalogV1beta1Interface interface {
 	ServiceBindingsGetter
 	ServiceClassesGetter
 	ServiceInstancesGetter
+	ServicePlansGetter
 }
 
 // ServicecatalogV1beta1Client is used to interact with features provided by the servicecatalog.k8s.io group.
@@ -60,6 +61,10 @@ func (c *ServicecatalogV1beta1Client) ServiceClasses(namespace string) ServiceCl
 
 func (c *ServicecatalogV1beta1Client) ServiceInstances(namespace string) ServiceInstanceInterface {
 	return newServiceInstances(c, namespace)
+}
+
+func (c *ServicecatalogV1beta1Client) ServicePlans(namespace string) ServicePlanInterface {
+	return newServicePlans(c, namespace)
 }
 
 // NewForConfig creates a new ServicecatalogV1beta1Client for the given config.

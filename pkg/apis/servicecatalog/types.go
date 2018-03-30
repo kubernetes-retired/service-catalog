@@ -360,7 +360,7 @@ type ServiceClassSpec struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterServicePlanList is a list of ServicePlans.
+// ClusterServicePlanList is a list of ClusterServicePlans.
 type ClusterServicePlanList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
@@ -457,9 +457,56 @@ type ClusterServicePlanSpec struct {
 // ClusterServicePlanStatus represents status information about a
 // ClusterServicePlan.
 type ClusterServicePlanStatus struct {
+	CommonServicePlanStatus
+}
+
+// CommonServicePlanStatus represents status information about a
+// ClusterServicePlan or a ServicePlan.
+type CommonServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServicePlanList is a list of ServicePlans.
+type ServicePlanList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServicePlan
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServicePlan represents a tier of a ServiceClass.
+type ServicePlan struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec   ServicePlanSpec
+	Status ServicePlanStatus
+}
+
+// ServicePlanSpec represents details about the ServicePlan
+type ServicePlanSpec struct {
+	CommonServicePlanSpec
+
+	// ServiceBrokerName is the name of the ServiceBroker that offers this
+	// ServicePlan.
+	ServiceBrokerName string
+
+	// ServiceClassRef is a reference to the service class that
+	// owns this plan.
+	ServiceClassRef LocalObjectReference
+}
+
+// ServicePlanStatus represents status information about a
+// ServicePlan.
+type ServicePlanStatus struct {
+	CommonServicePlanStatus
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
