@@ -38,6 +38,22 @@ type ServiceBindingListerExpansion interface{}
 // ServiceBindingNamespaceLister.
 type ServiceBindingNamespaceListerExpansion interface{}
 
+// ServiceBrokerListerExpansion allows custom methods to be added to
+// ServiceBrokerLister.
+type ServiceBrokerListerExpansion interface{}
+
+// ServiceBrokerNamespaceListerExpansion allows custom methods to be added to
+// ServiceBrokerNamespaceLister.
+type ServiceBrokerNamespaceListerExpansion interface{}
+
+// ServiceClassListerExpansion allows custom methods to be added to
+// ServiceClassLister.
+type ServiceClassListerExpansion interface{}
+
+// ServiceClassNamespaceListerExpansion allows custom methods to be added to
+// ServiceClassNamespaceLister.
+type ServiceClassNamespaceListerExpansion interface{}
+
 // ServiceInstanceListerExpansion allows custom methods to be added to
 // ServiceInstanceLister.
 type ServiceInstanceListerExpansion interface{}
@@ -45,3 +61,11 @@ type ServiceInstanceListerExpansion interface{}
 // ServiceInstanceNamespaceListerExpansion allows custom methods to be added to
 // ServiceInstanceNamespaceLister.
 type ServiceInstanceNamespaceListerExpansion interface{}
+
+// ServicePlanListerExpansion allows custom methods to be added to
+// ServicePlanLister.
+type ServicePlanListerExpansion interface{}
+
+// ServicePlanNamespaceListerExpansion allows custom methods to be added to
+// ServicePlanNamespaceLister.
+type ServicePlanNamespaceListerExpansion interface{}

@@ -60,6 +60,12 @@ const (
 	// owner: @eriknelson & @jeremyrickard
 	// alpha: v0.1.10
 	NamespacedServiceBroker utilfeature.Feature = "NamespacedServiceBroker"
+
+	// ResponseSchema enables the storage of the binding response schema
+	// in ServicePlans
+	// owner: @luksa
+	// alpha: v0.1.12
+	ResponseSchema utilfeature.Feature = "ResponseSchema"
 )
 
 func init() {
@@ -74,4 +80,5 @@ var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.Feat
 	OriginatingIdentity:     {Default: false, PreRelease: utilfeature.Alpha},
 	AsyncBindingOperations:  {Default: false, PreRelease: utilfeature.Alpha},
 	NamespacedServiceBroker: {Default: false, PreRelease: utilfeature.Alpha},
+	ResponseSchema:          {Default: false, PreRelease: utilfeature.Alpha},
 }

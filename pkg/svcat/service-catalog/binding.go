@@ -66,7 +66,7 @@ func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 
 // Bind an instance to a secret.
 func (sdk *SDK) Bind(namespace, bindingName, instanceName, secretName string,
-	params map[string]string, secrets map[string]string) (*v1beta1.ServiceBinding, error) {
+	params interface{}, secrets map[string]string) (*v1beta1.ServiceBinding, error) {
 
 	// Manually defaulting the name of the binding
 	// I'm not doing the same for the secret since the API handles defaulting that value.
@@ -137,7 +137,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) ([]v1beta1.ServiceBinding, error
 	}
 
 	//Range over the deleted bindings to build a slice to return
-	deleted := []v1beta1.ServiceBinding{}
+	deleted := []v1beta1.ServiceBinding(nil)
 	for b := range deletedBindings {
 		deleted = append(deleted, b)
 	}

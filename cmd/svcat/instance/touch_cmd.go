@@ -24,14 +24,13 @@ import (
 )
 
 type touchInstanceCmd struct {
-	*command.Context
-	namespace string
-	name      string
+	*command.Namespaced
+	name string
 }
 
 // NewTouchCommand builds a "svcat touch instance" command.
 func NewTouchCommand(cxt *command.Context) *cobra.Command {
-	touchInstanceCmd := &touchInstanceCmd{Context: cxt}
+	touchInstanceCmd := &touchInstanceCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "instance",
 		Short: "Touch an instance to make service-catalog try to process the spec again",
@@ -42,8 +41,8 @@ nothing.`,
 		PreRunE: command.PreRunE(touchInstanceCmd),
 		RunE:    command.RunE(touchInstanceCmd),
 	}
-	cmd.Flags().StringVarP(&touchInstanceCmd.namespace, "namespace", "n", "default",
-		"The namespace for the instance to touch")
+	command.AddNamespaceFlags(cmd.Flags(), false)
+
 	return cmd
 }
 
@@ -58,5 +57,5 @@ func (c *touchInstanceCmd) Validate(args []string) error {
 
 func (c *touchInstanceCmd) Run() error {
 	const retries = 3
-	return c.App.TouchInstance(c.namespace, c.name, retries)
+	return c.App.TouchInstance(c.Namespace, c.name, retries)
 }

@@ -91,6 +91,96 @@ func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
 				Bindable:       true,
 				PlanUpdateable: true,
 			},
+			{
+				Name:        "user-provided-service-with-schemas",
+				ID:          "8a6229d4-239e-4790-ba1f-8367004d0473",
+				Description: "A user provided service",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "4dbcd97c-c9d2-4c6b-9503-4401a789b558",
+						Description: "Plan with parameter and response schemas",
+						Free:        true,
+						Schemas: &brokerapi.Schemas{
+							ServiceInstance: &brokerapi.ServiceInstanceSchema{
+								Create: &brokerapi.InputParametersSchema{
+									Parameters: map[string]interface{}{ // TODO: use a JSON Schema library instead?
+										"$schema": "http://json-schema.org/draft-04/schema#",
+										"type":    "object",
+										"properties": map[string]interface{}{
+											"param-1": map[string]interface{}{
+												"description": "First input parameter",
+												"type":        "string",
+											},
+											"param-2": map[string]interface{}{
+												"description": "Second input parameter",
+												"type":        "string",
+											},
+										},
+									},
+								},
+								Update: &brokerapi.InputParametersSchema{
+									Parameters: map[string]interface{}{
+										"$schema": "http://json-schema.org/draft-04/schema#",
+										"type":    "object",
+										"properties": map[string]interface{}{
+											"param-1": map[string]interface{}{
+												"description": "First input parameter",
+												"type":        "string",
+											},
+											"param-2": map[string]interface{}{
+												"description": "Second input parameter",
+												"type":        "string",
+											},
+										},
+									},
+								},
+							},
+							ServiceBinding: &brokerapi.ServiceBindingSchema{
+								Create: &brokerapi.RequestResponseSchema{
+									InputParametersSchema: brokerapi.InputParametersSchema{
+										Parameters: map[string]interface{}{
+											"$schema": "http://json-schema.org/draft-04/schema#",
+											"type":    "object",
+											"properties": map[string]interface{}{
+												"param-1": map[string]interface{}{
+													"description": "First input parameter",
+													"type":        "string",
+												},
+												"param-2": map[string]interface{}{
+													"description": "Second input parameter",
+													"type":        "string",
+												},
+											},
+										},
+									},
+									Response: map[string]interface{}{
+										"$schema": "http://json-schema.org/draft-04/schema#",
+										"type":    "object",
+										"properties": map[string]interface{}{
+											"credentials": map[string]interface{}{
+												"type": "object",
+												"properties": map[string]interface{}{
+													"special-key-1": map[string]interface{}{
+														"description": "Special key 1",
+														"type":        "string",
+													},
+													"special-key-2": map[string]interface{}{
+														"description": "Special key 2",
+														"type":        "string",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
 		},
 	}, nil
 }

@@ -29,6 +29,14 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 }
 
 func SetDefaults_ClusterServiceBrokerSpec(spec *ClusterServiceBrokerSpec) {
+	setCommonServiceBrokerDefaults(&spec.CommonServiceBrokerSpec)
+}
+
+func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
+	setCommonServiceBrokerDefaults(&spec.CommonServiceBrokerSpec)
+}
+
+func setCommonServiceBrokerDefaults(spec *CommonServiceBrokerSpec) {
 	if spec.RelistBehavior == "" {
 		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
 	}

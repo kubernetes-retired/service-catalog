@@ -38,7 +38,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -83,9 +85,17 @@ const (
 	testNamespace                           = "test-ns"
 	testServiceInstanceCredentialSecretName = "test-secret"
 	testOperation                           = "test-operation"
+	testClusterID                           = "test-cluster-id"
 )
 
-var testDashboardURL = "http://dashboard"
+var (
+	testDashboardURL = "http://dashboard"
+	testContext      = map[string]interface{}{
+		"platform":           ContextProfilePlatformKubernetes,
+		"namespace":          testNamespace,
+		clusterIdentifierKey: testClusterID,
+	}
+)
 
 const testCatalog = `{
   "services": [{
@@ -245,6 +255,9 @@ const alphaParameterSchemaCatalogBytes = `{
       	  "create": {
 	  	  	"parameters": {
       	  	  "zoo": "blu"
+      	    },
+	  	  	"response": {
+      	  	  "qux": "qax"
       	    }
       	  }
       	}
@@ -478,12 +491,14 @@ func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1be
 	lastTransitionTime := metav1.NewTime(time.Now().Add(-5 * time.Minute))
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{{
-			Type:               v1beta1.ServiceBrokerConditionReady,
-			Status:             status,
-			LastTransitionTime: lastTransitionTime,
-		}},
-		LastCatalogRetrievalTime: &lastTransitionTime,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{{
+				Type:               v1beta1.ServiceBrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: lastTransitionTime,
+			}},
+			LastCatalogRetrievalTime: &lastTransitionTime,
+		},
 	}
 	return broker
 }
@@ -491,12 +506,14 @@ func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1be
 func getTestClusterServiceBrokerWithStatusAndTime(status v1beta1.ConditionStatus, lastTransitionTime, lastRelistTime metav1.Time) *v1beta1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{{
-			Type:               v1beta1.ServiceBrokerConditionReady,
-			Status:             status,
-			LastTransitionTime: lastTransitionTime,
-		}},
-		LastCatalogRetrievalTime: &lastRelistTime,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{{
+				Type:               v1beta1.ServiceBrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: lastTransitionTime,
+			}},
+			LastCatalogRetrievalTime: &lastRelistTime,
+		},
 	}
 	return broker
 }
@@ -535,7 +552,11 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 				Bindable:     true,
 			},
 		},
-		Status: v1beta1.ClusterServiceClassStatus{RemovedFromBrokerCatalog: true},
+		Status: v1beta1.ClusterServiceClassStatus{
+			v1beta1.CommonServiceClassStatus{
+				RemovedFromBrokerCatalog: true,
+			},
+		},
 	}
 }
 
@@ -602,7 +623,11 @@ func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 				Name: testClusterServiceClassGUID,
 			},
 		},
-		Status: v1beta1.ClusterServicePlanStatus{RemovedFromBrokerCatalog: true},
+		Status: v1beta1.ClusterServicePlanStatus{
+			CommonServicePlanStatus: v1beta1.CommonServicePlanStatus{
+				RemovedFromBrokerCatalog: true,
+			},
+		},
 	}
 }
 
@@ -1184,6 +1209,9 @@ func TestCatalogConversion(t *testing.T) {
 }
 
 func TestCatalogConversionWithParameterSchemas(t *testing.T) {
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.ResponseSchema))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.ResponseSchema))
+
 	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)
 	if err != nil {
@@ -1233,7 +1261,17 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	m = make(map[string]string)
 	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateParameterSchema.Raw, &m); err == nil {
 		if e, a := "blu", m["zoo"]; e != a {
-			t.Fatalf("Unexpected value of alphaServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
+			t.Fatalf("Unexpected value of ServiceBindingCreateParameterSchema; expected %v, got %v", e, a)
+		}
+	}
+
+	if plan.Spec.ServiceBindingCreateResponseSchema == nil {
+		t.Fatalf("Expected plan.ServiceBindingCreateResponseSchema to be set, but was nil")
+	}
+	m = make(map[string]string)
+	if err := json.Unmarshal(plan.Spec.ServiceBindingCreateResponseSchema.Raw, &m); err == nil {
+		if e, a := "qax", m["qux"]; e != a {
+			t.Fatalf("Unexpected value of ServiceBindingCreateResponseSchema; expected %v, got %v", e, a)
 		}
 	}
 }
@@ -1875,7 +1913,14 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeRecorder,
 		7*24*time.Hour,
 		7*24*time.Hour,
+		DefaultClusterIDConfigMapName,
+		DefaultClusterIDConfigMapNamespace,
 	)
+
+	if c, ok := testController.(*controller); ok {
+		c.setClusterID(testClusterID)
+	}
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2476,7 +2521,7 @@ func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj ru
 func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Object, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceCurrentOperation(t, obj, v1beta1.ServiceInstanceOperationProvision)
 	assertServiceInstanceReadyFalse(t, obj, startingInstanceOrphanMitigationReason)
-	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	assertServiceInstanceOperationStartTimeSet(t, obj, true)
 	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
@@ -2497,6 +2542,7 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 	)
 	var provisionStatus v1beta1.ServiceInstanceProvisionStatus
 	var observedGeneration int64
+	var reconciledGeneration int64
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision:
 		provisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
@@ -2504,12 +2550,14 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 		readyStatus = v1beta1.ConditionTrue
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 		observedGeneration = originalInstance.Generation
+		reconciledGeneration = observedGeneration
 	case v1beta1.ServiceInstanceOperationUpdate:
 		provisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
 		reason = successUpdateInstanceReason
 		readyStatus = v1beta1.ConditionTrue
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 		observedGeneration = originalInstance.Generation
+		reconciledGeneration = observedGeneration
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		provisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 		reason = successDeprovisionReason
@@ -2520,11 +2568,12 @@ func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runti
 		} else {
 			observedGeneration = originalInstance.Generation
 		}
+		reconciledGeneration = originalInstance.Status.ReconciledGeneration
 	}
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, reason)
 	assertServiceInstanceCurrentOperationClear(t, obj)
 	assertServiceInstanceOperationStartTimeSet(t, obj, false)
-	assertServiceInstanceReconciledGeneration(t, obj, observedGeneration)
+	assertServiceInstanceReconciledGeneration(t, obj, reconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, observedGeneration)
 	assertServiceInstanceProvisioned(t, obj, provisionStatus)
 	assertAsyncOpInProgressFalse(t, obj)
@@ -2549,21 +2598,35 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 		deprovisionStatus v1beta1.ServiceInstanceDeprovisionStatus
 	)
 	switch operation {
-	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationProvision:
 		readyStatus = v1beta1.ConditionFalse
 		if orphanMitigationRequired {
 			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 		} else {
 			deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
 		}
+	case v1beta1.ServiceInstanceOperationUpdate:
+		readyStatus = v1beta1.ConditionFalse
+		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 	case v1beta1.ServiceInstanceOperationDeprovision:
 		readyStatus = v1beta1.ConditionUnknown
 		deprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusFailed
 	}
 
 	assertServiceInstanceReadyCondition(t, obj, readyStatus, readyReason)
-	assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
-	assertServiceInstanceOperationStartTimeSet(t, obj, false)
+
+	if failureReason == "" {
+		assertServiceInstanceConditionMissing(t, obj, v1beta1.ServiceInstanceConditionFailed)
+	} else {
+		assertServiceInstanceCondition(t, obj, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, failureReason)
+	}
+
+	if failureReason == "" || orphanMitigationRequired {
+		assertServiceInstanceOperationStartTimeSet(t, obj, true)
+	} else {
+		assertServiceInstanceOperationStartTimeSet(t, obj, false)
+	}
+
 	assertAsyncOpInProgressFalse(t, obj)
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 	assertServiceInstanceDeprovisionStatus(t, obj, deprovisionStatus)
@@ -2571,22 +2634,37 @@ func assertServiceInstanceRequestFailingError(t *testing.T, obj runtime.Object, 
 
 func assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
 	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, false, originalInstance)
-	assertServiceInstanceCurrentOperationClear(t, obj)
-	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
+
+	if failureReason == "" {
+		assertServiceInstanceCurrentOperation(t, obj, operation)
+		assertServiceInstanceInProgressPropertiesUnchanged(t, obj, originalInstance)
+	} else {
+		assertServiceInstanceCurrentOperationClear(t, obj)
+		assertServiceInstanceInProgressPropertiesNil(t, obj)
+	}
+
+	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	assertServiceInstanceInProgressPropertiesNil(t, obj)
+
 }
 
 func assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, true, originalInstance)
-	assertServiceInstanceCurrentOperationClear(t, obj)
-	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Generation)
+	assertServiceInstanceRequestFailingError(t, obj, operation, readyReason, failureReason, false, originalInstance)
+
+	if failureReason == "" {
+		assertServiceInstanceCurrentOperation(t, obj, operation)
+		assertServiceInstanceInProgressPropertiesUnchanged(t, obj, originalInstance)
+	} else {
+		assertServiceInstanceCurrentOperationClear(t, obj)
+		assertServiceInstanceInProgressPropertiesNil(t, obj)
+	}
+
+	assertServiceInstanceReconciledGeneration(t, obj, originalInstance.Status.ReconciledGeneration)
 	assertServiceInstanceObservedGeneration(t, obj, originalInstance.Generation)
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	assertServiceInstanceOrphanMitigationInProgressFalse(t, obj)
-	assertServiceInstanceInProgressPropertiesNil(t, obj)
 }
 
 func assertServiceInstanceRequestFailingErrorStartOrphanMitigation(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, readyReason string, failureReason string, orphanMitigationReason string, originalInstance *v1beta1.ServiceInstance) {

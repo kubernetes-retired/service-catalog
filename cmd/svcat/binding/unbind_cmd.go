@@ -25,15 +25,14 @@ import (
 )
 
 type unbindCmd struct {
-	*command.Context
-	ns           string
+	*command.Namespaced
 	instanceName string
 	bindingName  string
 }
 
 // NewUnbindCmd builds a "svcat unbind" command
 func NewUnbindCmd(cxt *command.Context) *cobra.Command {
-	unbindCmd := &unbindCmd{Context: cxt}
+	unbindCmd := &unbindCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "unbind INSTANCE_NAME",
 		Short: "Unbinds an instance. When an instance name is specified, all of its bindings are removed, otherwise use --name to remove a specific binding",
@@ -44,14 +43,7 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(unbindCmd),
 		RunE:    command.RunE(unbindCmd),
 	}
-
-	cmd.Flags().StringVarP(
-		&unbindCmd.ns,
-		"namespace",
-		"n",
-		"default",
-		"The namespace of the instance or binding",
-	)
+	command.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVar(
 		&unbindCmd.bindingName,
 		"name",
@@ -81,7 +73,7 @@ func (c *unbindCmd) Run() error {
 }
 
 func (c *unbindCmd) deleteBinding() error {
-	err := c.App.DeleteBinding(c.ns, c.bindingName)
+	err := c.App.DeleteBinding(c.Namespace, c.bindingName)
 	if err == nil {
 		output.WriteDeletedResourceName(c.Output, c.bindingName)
 	}
@@ -89,7 +81,7 @@ func (c *unbindCmd) deleteBinding() error {
 }
 
 func (c *unbindCmd) unbindInstance() error {
-	bindings, err := c.App.Unbind(c.ns, c.instanceName)
+	bindings, err := c.App.Unbind(c.Namespace, c.instanceName)
 	output.WriteDeletedBindingNames(c.Output, bindings)
 	return err
 }

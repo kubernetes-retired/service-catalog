@@ -26,9 +26,11 @@ import (
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -60,6 +62,10 @@ const (
 	// ContextProfilePlatformKubernetes is the platform name sent in the OSB
 	// ContextProfile for requests coming from Kubernetes.
 	ContextProfilePlatformKubernetes string = "kubernetes"
+	// DefaultClusterIDConfigMapName is the k8s name that the clusterid configmap will have
+	DefaultClusterIDConfigMapName string = "cluster-info"
+	// DefaultClusterIDConfigMapNamespace is the k8s namespace that the clusterid configmap will be stored in.
+	DefaultClusterIDConfigMapNamespace string = "default"
 )
 
 // NewController returns a new Open Service Broker catalog controller.
@@ -77,6 +83,8 @@ func NewController(
 	recorder record.EventRecorder,
 	reconciliationRetryDuration time.Duration,
 	operationPollingMaximumBackoffDuration time.Duration,
+	clusterIDConfigMapName string,
+	clusterIDConfigMapNamespace string,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
@@ -93,6 +101,8 @@ func NewController(
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
 		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "instance-poller"),
 		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
+		clusterIDConfigMapName:      clusterIDConfigMapName,
+		clusterIDConfigMapNamespace: clusterIDConfigMapNamespace,
 	}
 
 	controller.brokerLister = brokerInformer.Lister()
@@ -163,6 +173,21 @@ type controller struct {
 	bindingQueue                workqueue.RateLimitingInterface
 	instancePollingQueue        workqueue.RateLimitingInterface
 	bindingPollingQueue         workqueue.RateLimitingInterface
+	// clusterIDConfigMapName is the k8s name that the clusterid
+	// configmap will have.
+	clusterIDConfigMapName string
+	// clusterIDConfigMapNamespace is the k8s namespace that the
+	// clusterid configmap will be stored in.
+	clusterIDConfigMapNamespace string
+	// clusterID holds the current value. If a configmap to hold
+	// this value does not exist, it will be created with this
+	// value. If there is a configmap with a different value, it
+	// will be reconciled to become the value in the configmap.
+	clusterID string
+	// clusterIDLock protects access to clusterID between the
+	// monitor writing the value from the configmap, and any
+	// readers passing the clusterID to a broker.
+	clusterIDLock sync.RWMutex
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -185,6 +210,12 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
 		}
 	}
+
+	// this creates a worker specifically for monitoring
+	// configmaps, as we don't have the watching polling queue
+	// infrastructure set up for one configmap. Instead this is a
+	// simple polling based worker
+	c.createConfigMapMonitorWorker(stopCh, &waitGroup)
 
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
@@ -209,6 +240,59 @@ func createWorker(queue workqueue.RateLimitingInterface, resourceType string, ma
 		wait.Until(worker(queue, resourceType, maxRetries, forgetAfterSuccess, reconciler), time.Second, stopCh)
 		waitGroup.Done()
 	}()
+}
+
+func (c *controller) createConfigMapMonitorWorker(stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
+	waitGroup.Add(1)
+	go func() {
+		wait.Until(c.monitorConfigMap, 15*time.Second, stopCh)
+		waitGroup.Done()
+	}()
+}
+
+func (c *controller) monitorConfigMap() {
+	// Cannot wait for the informer to push something into a queue.
+	// What we're waiting on may never exist without us configuring
+	// it, so we have to poll/ ask for it the first time to get it set.
+
+	// Can we ask 'through' an informer? Is it a writeback cache? I
+	// only ever want to monitor and be notified about one configmap
+	// in a hardcoded place.
+	glog.V(9).Info("cluster ID monitor loop enter")
+	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(c.clusterIDConfigMapName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		m := make(map[string]string)
+		m["id"] = c.getClusterID()
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: c.clusterIDConfigMapName,
+			},
+			Data: m,
+		}
+		// if we fail to set the id,
+		// it could be due to permissions
+		// or due to being already set while we were trying
+		if _, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Create(cm); err != nil {
+			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
+		}
+	} else if err == nil {
+		// cluster id exists and is set
+		// get id out of cm
+		if id := cm.Data["id"]; "" != id {
+			c.setClusterID(id)
+		} else {
+			m := cm.Data
+			if m == nil {
+				m = make(map[string]string)
+				cm.Data = m
+			}
+			m["id"] = c.getClusterID()
+			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(cm)
+		}
+	} else { // some err we can't handle
+		glog.V(4).Infof("error getting the cluster info configmap: %q", err)
+	}
+	glog.V(9).Info("cluster ID monitor loop exit")
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
@@ -690,14 +774,25 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 				}
 			}
 			if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
-				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil && bindingCreateSchema.Parameters != nil {
-					schema, err := json.Marshal(bindingCreateSchema.Parameters)
-					if err != nil {
-						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-						glog.Error(err)
-						return nil, err
+				if bindingCreateSchema := bindingSchemas.Create; bindingCreateSchema != nil {
+					if bindingCreateSchema.Parameters != nil {
+						schema, err := json.Marshal(bindingCreateSchema.Parameters)
+						if err != nil {
+							err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
+							glog.Error(err)
+							return nil, err
+						}
+						servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 					}
-					servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ResponseSchema) && bindingCreateSchema.Response != nil {
+						schema, err := json.Marshal(bindingCreateSchema.Response)
+						if err != nil {
+							err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
+							glog.Error(err)
+							return nil, err
+						}
+						servicePlans[i].Spec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
+					}
 				}
 			}
 		}
@@ -760,15 +855,19 @@ func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *met
 // shouldStartOrphanMitigation returns whether an error with the given status
 // code indicates that orphan migitation should start.
 func shouldStartOrphanMitigation(statusCode int) bool {
-	is2XX := (statusCode >= 200 && statusCode < 300)
-	is5XX := (statusCode >= 500 && statusCode < 600)
+	is2XX := statusCode >= 200 && statusCode < 300
+	is5XX := statusCode >= 500 && statusCode < 600
 
-	return (is2XX && statusCode != http.StatusOK) ||
-		statusCode == http.StatusRequestTimeout ||
-		is5XX
+	return (is2XX && statusCode != http.StatusOK) || is5XX
 }
 
-// ReconciliationAction reprents a type of action the reconciler should take
+// isRetriableHTTPStatus returns whether an error with the given HTTP status
+// code is retriable.
+func isRetriableHTTPStatus(statusCode int) bool {
+	return statusCode != http.StatusBadRequest
+}
+
+// ReconciliationAction represents a type of action the reconciler should take
 // for a resource.
 type ReconciliationAction string
 
@@ -778,3 +877,32 @@ const (
 	reconcileDelete ReconciliationAction = "Delete"
 	reconcilePoll   ReconciliationAction = "Poll"
 )
+
+func (c *controller) getClusterID() (id string) {
+	// Use the read lock for reading, so that multiple instances
+	// provisioning at the same time do not collide.
+	c.clusterIDLock.RLock()
+	id = c.clusterID
+	c.clusterIDLock.RUnlock()
+
+	// fast exit if it exists
+	if id != "" {
+		return
+	}
+	// lazily create on first access if does not exist
+	c.clusterIDLock.Lock()
+	// check the id again to make sure nobody set ID while we were
+	// locking
+	if id = c.clusterID; id == "" {
+		id = string(uuid.NewUUID())
+		c.clusterID = id
+	}
+	c.clusterIDLock.Unlock()
+	return
+}
+
+func (c *controller) setClusterID(id string) {
+	c.clusterIDLock.Lock()
+	c.clusterID = id
+	c.clusterIDLock.Unlock()
+}

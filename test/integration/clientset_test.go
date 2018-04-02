@@ -307,8 +307,10 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Message: "ConditionMessage",
 	}
 	brokerUpdated.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{
-			readyConditionTrue,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{
+				readyConditionTrue,
+			},
 		},
 	}
 	brokerUpdated.Spec.URL = "http://shouldnotupdate.com"

@@ -433,7 +433,8 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	secretData := make(map[string][]byte)
 	for k, v := range credentials {
 		var err error
-		secretData[k], err = serialize(v)
+		secretKey := renameCredentialsKey(binding, k)
+		secretData[secretKey], err = serialize(v)
 		if err != nil {
 			return fmt.Errorf("Unable to serialize value for credential key %q (value is intentionally not logged): %s", k, err)
 		}
@@ -488,6 +489,17 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	}
 
 	return err
+}
+
+func renameCredentialsKey(binding *v1beta1.ServiceBinding, key string) string {
+	for _, t := range binding.Spec.SecretTransform {
+		if t.RenameKey != nil {
+			if key == t.RenameKey.From {
+				return t.RenameKey.To
+			}
+		}
+	}
+	return key
 }
 
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {
