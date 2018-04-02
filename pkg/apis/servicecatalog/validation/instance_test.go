@@ -756,7 +756,7 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 			name:             "spec change when on-going operation",
 			specChange:       true,
 			onGoingOperation: true,
-			valid:            false,
+			valid:            true,
 		},
 		{
 			name:             "meta change when no on-going operation",
