@@ -21,8 +21,12 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
+
+	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
 
 func TestValidateClusterServiceBroker(t *testing.T) {
@@ -369,7 +373,32 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			name: "valid clusterservicebroker - catalogRequirements.serviceClass",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServiceClass: []string{
+								"name==foobar",
+							},
+						},
+					},
+				},
+			},
+			valid: true,
+		},
 	}
+
+	// TODO(nicholss): figure out how to add this as a feature of the test.
+	// Enable the OriginatingIdentity feature
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.CatalogRestrictions))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.CatalogRestrictions))
 
 	for _, tc := range cases {
 		errs := ValidateClusterServiceBroker(tc.broker)

@@ -48,11 +48,11 @@ const (
 	// alpha: v0.1.6
 	PodPreset utilfeature.Feature = "PodPreset"
 
-	// CatalogRestrictions controls weather the ClusterServiceBroker will use
+	// CatalogRestrictions controls whether the ClusterServiceBroker will use
 	// the catalog restrictions when doing a re-list operation for catalog
 	// ingestion from a broker.
 	// owner: @n3wscott
-	// alpha: v0.1.9
+	// alpha: v0.1.10
 	CatalogRestrictions utilfeature.Feature = "CatalogRestrictions"
 
 	// NamespacedServiceBroker enables namespaced variants of ServiceBrokers,
@@ -79,6 +79,7 @@ var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.Feat
 	PodPreset:               {Default: false, PreRelease: utilfeature.Alpha},
 	OriginatingIdentity:     {Default: false, PreRelease: utilfeature.Alpha},
 	AsyncBindingOperations:  {Default: false, PreRelease: utilfeature.Alpha},
+	CatalogRestrictions:     {Default: false, PreRelease: utilfeature.Alpha},
 	NamespacedServiceBroker: {Default: false, PreRelease: utilfeature.Alpha},
 	ResponseSchema:          {Default: false, PreRelease: utilfeature.Alpha},
 }

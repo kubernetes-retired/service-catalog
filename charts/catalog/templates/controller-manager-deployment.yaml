@@ -78,6 +78,10 @@ spec:
         - --feature-gates
         - AsyncBindingOperations=true
         {{- end }}
+        {{- if .Values.catalogRestrictionsEnabled }}
+        - --feature-gates
+        - CatalogRestrictions=true
+        {{- end }}
         {{- if .Values.namespacedServiceBrokerEnabled }}
         - --feature-gates
         - NamespacedServiceBroker=true
