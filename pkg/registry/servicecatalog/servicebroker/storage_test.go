@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package internalversion
+package servicebroker
 
-type ClusterServiceBrokerExpansion interface{}
+import (
+	"testing"
 
-type ClusterServiceClassExpansion interface{}
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+)
 
-type ClusterServicePlanExpansion interface{}
+func TestNewListNilItems(t *testing.T) {
+	newList := NewList()
+	realObj := newList.(*servicecatalog.ServiceBrokerList)
 
-type ServiceBindingExpansion interface{}
-
-type ServiceBrokerExpansion interface{}
-
-type ServiceClassExpansion interface{}
-
-type ServiceInstanceExpansion interface{}
-
-type ServicePlanExpansion interface{}
+	if realObj.Items == nil {
+		t.Fatalf("nil incorrectly set on Items field")
+	}
+}

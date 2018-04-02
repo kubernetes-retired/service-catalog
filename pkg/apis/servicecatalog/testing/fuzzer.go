@@ -98,6 +98,11 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
 			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
 		},
+		func(bs *servicecatalog.ServiceBrokerSpec, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
+			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
+		},
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.ExternalID = string(uuid.NewUUID())

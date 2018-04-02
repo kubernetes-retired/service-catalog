@@ -77,7 +77,8 @@ func (clusterServiceBrokerRESTStrategy) Canonicalize(obj runtime.Object) {
 	}
 }
 
-// NamespaceScoped returns false as brokers are not scoped to a namespace.
+// NamespaceScoped returns false as clusterservicebrokers are not scoped to a
+// namespace.
 func (clusterServiceBrokerRESTStrategy) NamespaceScoped() bool {
 	return false
 }

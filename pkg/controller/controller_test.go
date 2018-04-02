@@ -386,12 +386,14 @@ func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1be
 	lastTransitionTime := metav1.NewTime(time.Now().Add(-5 * time.Minute))
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{{
-			Type:               v1beta1.ServiceBrokerConditionReady,
-			Status:             status,
-			LastTransitionTime: lastTransitionTime,
-		}},
-		LastCatalogRetrievalTime: &lastTransitionTime,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{{
+				Type:               v1beta1.ServiceBrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: lastTransitionTime,
+			}},
+			LastCatalogRetrievalTime: &lastTransitionTime,
+		},
 	}
 	return broker
 }
@@ -399,12 +401,14 @@ func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1be
 func getTestClusterServiceBrokerWithStatusAndTime(status v1beta1.ConditionStatus, lastTransitionTime, lastRelistTime metav1.Time) *v1beta1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{{
-			Type:               v1beta1.ServiceBrokerConditionReady,
-			Status:             status,
-			LastTransitionTime: lastTransitionTime,
-		}},
-		LastCatalogRetrievalTime: &lastRelistTime,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{{
+				Type:               v1beta1.ServiceBrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: lastTransitionTime,
+			}},
+			LastCatalogRetrievalTime: &lastRelistTime,
+		},
 	}
 	return broker
 }
