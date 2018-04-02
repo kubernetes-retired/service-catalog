@@ -58,6 +58,12 @@ const (
 	// owner: @luksa
 	// alpha: v0.1.12
 	ResponseSchema utilfeature.Feature = "ResponseSchema"
+
+	// UpdateDashboardURL enables the update of DashboardURL in response
+	// to update service instance requests to brokers.
+	// owner: @jberkhahn
+	// alpha: v0.1.13
+	UpdateDashboardURL utilfeature.Feature = "UpdateDashboardURL"
 )
 
 func init() {
@@ -73,4 +79,5 @@ var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.Feat
 	AsyncBindingOperations:  {Default: false, PreRelease: utilfeature.Alpha},
 	NamespacedServiceBroker: {Default: false, PreRelease: utilfeature.Alpha},
 	ResponseSchema:          {Default: false, PreRelease: utilfeature.Alpha},
+	UpdateDashboardURL:      {Default: false, PreRelease: utilfeature.Alpha},
 }

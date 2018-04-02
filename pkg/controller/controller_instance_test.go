@@ -4519,6 +4519,155 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceUpdateDashboardURLResponse tests updating a
+// ServiceInstance and a new DashboardURL is returned from the broker
+func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
+	cases := []struct {
+		name                     string
+		enableUpdateDashboardURL bool
+		newDashboardURL          string
+	}{
+		{
+			name: "new dashboard url returned and alpha feature enabled",
+			enableUpdateDashboardURL: true,
+			newDashboardURL:          "http://foobar.com",
+		},
+		{
+			name: "dashboard url blank not returned and alpha feature enabled",
+			enableUpdateDashboardURL: true,
+			newDashboardURL:          "",
+		},
+		{
+			name: "new dashboard url returned and alpha feature disabled",
+			enableUpdateDashboardURL: false,
+			newDashboardURL:          "http://banana.com",
+		},
+	}
+
+	for _, tc := range cases {
+		fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+			UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+				Response: &osb.UpdateInstanceResponse{
+					DashboardURL: &tc.newDashboardURL,
+				},
+			},
+		})
+		if tc.enableUpdateDashboardURL {
+			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL))
+			if err != nil {
+				t.Fatalf("Failed to enable updatable dashboard URL feature: %v", err)
+			}
+		} else {
+			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
+			if err != nil {
+				t.Fatalf("Failed to enable updatable dashboard URL feature: %v", err)
+			}
+		}
+		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
+
+		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+		sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+		instance := getTestServiceInstanceWithRefs()
+		instance.Generation = 2
+		instance.Status.ReconciledGeneration = 1
+		instance.Status.ObservedGeneration = 1
+		instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
+		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		instance.Status.DashboardURL = &testDashboardURL
+
+		oldParameters := map[string]interface{}{
+			"args": map[string]interface{}{
+				"first":  "first-arg",
+				"second": "second-arg",
+			},
+			"name": "test-param",
+		}
+		oldParametersMarshaled, err := MarshalRawParameters(oldParameters)
+		if err != nil {
+			t.Fatalf("Failed to marshal parameters: %v", err)
+		}
+		oldParametersRaw := &runtime.RawExtension{
+			Raw: oldParametersMarshaled,
+		}
+
+		oldParametersChecksum := generateChecksumOfParametersOrFail(t, oldParameters)
+
+		instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+			ClusterServicePlanExternalName: "old-plan-name",
+			ClusterServicePlanExternalID:   "old-plan-id",
+			Parameters:                     oldParametersRaw,
+			ParametersChecksum:             oldParametersChecksum,
+		}
+
+		parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
+		parameters.Args["first"] = "first-arg"
+		parameters.Args["second"] = "second-arg"
+
+		b, err := json.Marshal(parameters)
+		if err != nil {
+			t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		}
+		instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+		if err := testController.reconcileServiceInstance(instance); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		instance = assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, oldParameters, oldParametersChecksum)
+		fakeCatalogClient.ClearActions()
+		fakeKubeClient.ClearActions()
+
+		if err = testController.reconcileServiceInstance(instance); err != nil {
+			t.Fatalf("This should not fail : %v", err)
+		}
+
+		brokerActions := fakeClusterServiceBrokerClient.Actions()
+		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+		expectedPlanID := testClusterServicePlanGUID
+		assertUpdateInstance(t, brokerActions[0], &osb.UpdateInstanceRequest{
+			AcceptsIncomplete: true,
+			InstanceID:        testServiceInstanceGUID,
+			ServiceID:         testClusterServiceClassGUID,
+			PlanID:            &expectedPlanID,
+			Context:           testContext,
+			Parameters:        nil, // no change to parameters
+		})
+
+		actions := fakeCatalogClient.Actions()
+		assertNumberOfActions(t, actions, 1)
+
+		updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+
+		if tc.enableUpdateDashboardURL {
+			if tc.newDashboardURL != "" {
+				assertServiceInstanceDashboardURL(t, updatedServiceInstance, tc.newDashboardURL)
+			} else {
+				assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+			}
+		} else {
+			assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+		}
+
+		// verify no kube resources created
+		// One single action comes from getting namespace uid
+		kubeActions := fakeKubeClient.Actions()
+		if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+			{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		events := getRecordedEvents(testController)
+
+		expectedEvent := normalEventBuilder(successUpdateInstanceReason).msg("The instance was updated successfully")
+		if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 // TestReconcileServiceInstanceUpdatePlan tests updating a
 // ServiceInstance with a new plan
 func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {

@@ -467,6 +467,65 @@ func TestCreateServiceInstanceWithParameters(t *testing.T) {
 	}
 }
 
+// TestUpdateServiceInstanceNewDashboardResponse tests setting Dashboard URL when
+// and update Instance request returns a new DashboardURL.
+func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
+	dashURL := testDashboardURL
+	cases := []struct {
+		name        string
+		setup       func(t *controllerTest)
+		osbResponse *osb.UpdateInstanceResponse
+	}{
+		{
+			name: "alpha features enabled",
+			setup: func(ct *controllerTest) {
+				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL)); err != nil {
+					t.Fatalf("Failed to enable updatable dashboard url feature: %v", err)
+				}
+			},
+			osbResponse: &osb.UpdateInstanceResponse{
+				DashboardURL: &dashURL,
+			},
+		},
+		{
+			name: "alpha feature disabled",
+			setup: func(ct *controllerTest) {
+				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL)); err != nil {
+					t.Fatalf("Failed to enable updatable dashboard url feature: %v", err)
+				}
+			},
+			osbResponse: &osb.UpdateInstanceResponse{
+				DashboardURL: &dashURL,
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				setup: func(ct *controllerTest) {
+					ct.osbClient.UpdateInstanceReaction = &fakeosb.UpdateInstanceReaction{
+						Response: tc.osbResponse,
+					}
+				},
+			}
+			ct.run(func(ct *controllerTest) {
+				if utilfeature.DefaultFeatureGate.Enabled(scfeatures.UpdateDashboardURL) {
+					if ct.instance.Status.DashboardURL != &dashURL {
+						t.Fatalf("unexpected DashboardURL: expected %v got %v", dashURL, *tc.osbResponse.DashboardURL)
+					}
+				} else {
+					if ct.instance.Status.DashboardURL != nil {
+						t.Fatal("Dashboard URL should be nil")
+					}
+				}
+			})
+		})
+	}
+}
+
 // TestUpdateServiceInstanceChangePlans tests changing plans for an existing
 // ServiceInstance.
 func TestUpdateServiceInstanceChangePlans(t *testing.T) {
