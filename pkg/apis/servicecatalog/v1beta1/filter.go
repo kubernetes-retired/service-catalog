@@ -38,7 +38,7 @@ func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) f
 	}
 }
 
-// ConvertServicePlanToProperties takes a Service Plan and pulls out the
+// ConvertClusterServicePlanToProperties takes a Service Plan and pulls out the
 // properties we support for filtering, converting them into a map in the
 // expected format.
 func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filter.Properties {
