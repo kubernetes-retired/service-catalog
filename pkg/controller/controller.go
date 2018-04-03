@@ -361,8 +361,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 			return nil, nil, "", nil, &operationError{
 				reason: errorNonexistentClusterServicePlanReason,
 				message: fmt.Sprintf(
-					"The instance references a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass %v",
-					instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, pretty.ClusterServiceClassName(serviceClass),
+					"The instance references a non-existent ClusterServicePlan %q - %v",
+					instance.Spec.ClusterServicePlanRef.Name, instance.Spec.PlanReference,
 				),
 			}
 		}
@@ -428,8 +428,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
-			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
+			"References a non-existent ClusterServiceClass %q - %c",
+			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
@@ -446,8 +446,8 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	servicePlan, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf(
-			"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, serviceClass.Name, serviceClass.Spec.ExternalName,
+			"References a non-existent ClusterServicePlan %q - %v",
+			instance.Spec.ClusterServicePlanRef.Name, instance.Spec.PlanReference,
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
