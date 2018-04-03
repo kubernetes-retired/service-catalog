@@ -448,7 +448,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				i := validServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesState()
 				i.Status.ExternalProperties.Parameters = nil
-				i.Status.InProgressProperties.InlineParameters = nil
+				i.Status.ExternalProperties.InlineParameters = nil
 				i.Status.ExternalProperties.ParametersChecksum = ""
 				return i
 			}(),
@@ -470,7 +470,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				i := validServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesState()
 				i.Status.ExternalProperties.Parameters = nil
-				i.Status.InProgressProperties.InlineParameters = nil
+				i.Status.ExternalProperties.InlineParameters = nil
 				return i
 			}(),
 			valid: false,
