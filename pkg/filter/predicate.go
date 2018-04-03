@@ -44,7 +44,7 @@ type Predicate interface {
 	String() string
 }
 
-// NewSelector returns a nil selector
+// NewPredicate returns a empty predicate
 func NewPredicate() Predicate {
 	return internalPredicate{}
 }
