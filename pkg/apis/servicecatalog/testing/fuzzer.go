@@ -130,6 +130,7 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 				panic(fmt.Sprintf("Failed to create parameter object: %v", err))
 			}
 			bs.Parameters = parameters
+			bs.InlineParameters = parameters
 		},
 		func(bs *servicecatalog.ServiceBindingPropertiesState, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
@@ -138,6 +139,7 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 				panic(fmt.Sprintf("Failed to create parameter object: %v", err))
 			}
 			bs.Parameters = parameters
+			bs.InlineParameters = parameters
 		},
 		func(sc *servicecatalog.ClusterServiceClass, c fuzz.Continue) {
 			c.FuzzNoCustom(sc)

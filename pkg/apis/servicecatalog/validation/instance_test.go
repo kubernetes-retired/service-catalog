@@ -99,6 +99,7 @@ func validServiceInstancePropertiesState() *servicecatalog.ServiceInstanceProper
 		ClusterServicePlanExternalName: "plan-name",
 		ClusterServicePlanExternalID:   "plan-id",
 		Parameters:                     &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
+		InlineParameters:               &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
 		ParametersChecksum:             "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}
 }
@@ -351,6 +352,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
 				i.Status.InProgressProperties.Parameters = nil
+				i.Status.InProgressProperties.InlineParameters = nil
 				i.Status.InProgressProperties.ParametersChecksum = ""
 				return i
 			}(),
@@ -370,6 +372,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
 				i.Status.InProgressProperties.Parameters = nil
+				i.Status.InProgressProperties.InlineParameters = nil
 				return i
 			}(),
 			valid: false,
@@ -445,6 +448,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				i := validServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesState()
 				i.Status.ExternalProperties.Parameters = nil
+				i.Status.InProgressProperties.InlineParameters = nil
 				i.Status.ExternalProperties.ParametersChecksum = ""
 				return i
 			}(),
@@ -466,6 +470,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				i := validServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesState()
 				i.Status.ExternalProperties.Parameters = nil
+				i.Status.InProgressProperties.InlineParameters = nil
 				return i
 			}(),
 			valid: false,
