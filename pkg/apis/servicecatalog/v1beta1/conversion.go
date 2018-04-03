@@ -18,9 +18,6 @@ package v1beta1
 
 import (
 	"fmt"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // These functions are used for field selectors. They are only needed if
@@ -91,34 +88,5 @@ func ServiceInstanceFieldLabelConversionFunc(label, value string) (string, strin
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
-	}
-}
-
-// ConvertClusterServiceClassToProperties takes a Service Class and pulls out the
-// properties we support for filtering, converting them into a map in the
-// expected format.
-func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) filter.Properties {
-	if serviceClass == nil {
-		return labels.Set{}
-	}
-	return labels.Set{
-		FilterName:             serviceClass.Name,
-		FilterSpecExternalName: serviceClass.Spec.ExternalName,
-		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
-	}
-}
-
-// ConvertServicePlanToProperties takes a Service Plan and pulls out the
-// properties we support for filtering, converting them into a map in the
-// expected format.
-func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filter.Properties {
-	if servicePlan == nil {
-		return labels.Set{}
-	}
-	return labels.Set{
-		FilterName:                        servicePlan.Name,
-		FilterSpecExternalName:            servicePlan.Spec.ExternalName,
-		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
-		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
 	}
 }
