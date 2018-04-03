@@ -787,6 +787,11 @@ type ServiceInstancePropertiesState struct {
 	// a secret, its value will be "<redacted>" in this blob.
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
+	// InlineParameters is a blob of the inline parameters and their values that the broker
+	// knows about for this ServiceInstance. It does not include parameters from
+	// external sources, e.g. Secrets.
+	InlineParameters *runtime.RawExtension `json:"parameters,omitempty"`
+
 	// ParametersChecksum is the checksum of the parameters that were sent.
 	ParametersChecksum string `json:"parameterChecksum,omitempty"`
 
@@ -1043,6 +1048,11 @@ type ServiceBindingPropertiesState struct {
 	// knows about for this ServiceBinding.  If a parameter was
 	// sourced from a secret, its value will be "<redacted>" in this blob.
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
+
+	// InlineParameters is a blob of the inline parameters and their values that the broker
+	// knows about for this ServiceBinding. It does not include parameters from
+	// external sources, e.g. Secrets.
+	InlineParameters *runtime.RawExtension `json:"parameters,omitempty"`
 
 	// ParametersChecksum is the checksum of the parameters that were sent.
 	ParametersChecksum string `json:"parameterChecksum,omitempty"`

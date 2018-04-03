@@ -147,7 +147,7 @@ func TestBuildParameters(t *testing.T) {
 	}
 }
 
-func testBuildParameters(t *testing.T, parametersFrom []v1beta1.ParametersFromSource, parameters *runtime.RawExtension, secret *corev1.Secret, expected map[string]interface{}, expectedWithSecretsRdacted map[string]interface{}, shouldSucceed bool) {
+func testBuildParameters(t *testing.T, parametersFrom []v1beta1.ParametersFromSource, parameters *runtime.RawExtension, secret *corev1.Secret, expected map[string]interface{}, expectedWithSecretsRedacted map[string]interface{}, shouldSucceed bool) {
 	// create a fake kube client
 	fakeKubeClient := &clientgofake.Clientset{}
 	if secret != nil {
@@ -156,7 +156,8 @@ func testBuildParameters(t *testing.T, parametersFrom []v1beta1.ParametersFromSo
 		addGetSecretNotFoundReaction(fakeKubeClient)
 	}
 
-	actual, actualWithSecretsRedacted, err := buildParameters(fakeKubeClient, "test-ns", parametersFrom, parameters)
+	// TODO nilebox: assert inline parameters as well
+	actual, actualWithSecretsRedacted, _, err := buildParameters(fakeKubeClient, "test-ns", parametersFrom, parameters)
 	if shouldSucceed {
 		if err != nil {
 			t.Fatalf("Failed to build parameters: %v", err)
@@ -164,8 +165,8 @@ func testBuildParameters(t *testing.T, parametersFrom []v1beta1.ParametersFromSo
 		if !reflect.DeepEqual(actual, expected) {
 			t.Fatalf("incorrect result: diff \n%v", diff.ObjectGoPrintSideBySide(expected, actual))
 		}
-		if !reflect.DeepEqual(actualWithSecretsRedacted, expectedWithSecretsRdacted) {
-			t.Fatalf("incorrect result with redacted secrets: diff \n%v", diff.ObjectGoPrintSideBySide(expectedWithSecretsRdacted, actualWithSecretsRedacted))
+		if !reflect.DeepEqual(actualWithSecretsRedacted, expectedWithSecretsRedacted) {
+			t.Fatalf("incorrect result with redacted secrets: diff \n%v", diff.ObjectGoPrintSideBySide(expectedWithSecretsRedacted, actualWithSecretsRedacted))
 		}
 	} else {
 		if err == nil {

@@ -1002,7 +1002,9 @@ func (c *controller) prepareBindRequest(
 		}
 	}
 
-	parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
+	// TODO nilebox: If the current operation is already set, we need to ignore the spec and read parameters from the status
+	// See prepareRequestHelper() in controller_instance.go
+	parameters, parametersChecksum, rawParametersWithRedaction, _, err := prepareInProgressPropertyParameters(
 		c.kubeClient,
 		binding.Namespace,
 		binding.Spec.Parameters,

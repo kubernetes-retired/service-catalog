@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 )
@@ -1389,10 +1390,31 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 	rh.ns = ns
 
 	if setInProgressProperties {
-		parameters, parametersChecksum, rawParametersWithRedaction, err := prepareInProgressPropertyParameters(
+		// If the current operation is already set, we need to ignore the spec and read parameters from the status
+		var specParameters *runtime.RawExtension
+		var planExternalName string
+		var planExternalID string
+		var userInfo *v1beta1.UserInfo
+
+		if instance.Status.CurrentOperation == "" {
+			specParameters = instance.Spec.Parameters
+			planExternalName = servicePlan.Spec.ExternalName
+			planExternalID = servicePlan.Spec.ExternalID
+			userInfo = instance.Spec.UserInfo
+		} else {
+			if instance.Status.InProgressProperties == nil {
+				return nil, fmt.Errorf("InProgressProperties must not be nil if the CurrentOperation is set")
+			}
+			specParameters = instance.Status.InProgressProperties.InlineParameters
+			planExternalName = instance.Status.InProgressProperties.ClusterServicePlanExternalName
+			planExternalID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
+			userInfo = instance.Status.InProgressProperties.UserInfo
+		}
+
+		parameters, parametersChecksum, rawParametersWithRedaction, rawInlineParameters, err := prepareInProgressPropertyParameters(
 			c.kubeClient,
 			instance.Namespace,
-			instance.Spec.Parameters,
+			specParameters,
 			instance.Spec.ParametersFrom,
 		)
 		if err != nil {
@@ -1404,11 +1426,12 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, ser
 		rh.parameters = parameters
 
 		rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
-			ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
-			ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
+			ClusterServicePlanExternalName: planExternalName,
+			ClusterServicePlanExternalID:   planExternalID,
 			Parameters:                     rawParametersWithRedaction,
+			InlineParameters:               rawInlineParameters,
 			ParametersChecksum:             parametersChecksum,
-			UserInfo:                       instance.Spec.UserInfo,
+			UserInfo:                       userInfo,
 		}
 	}
 
