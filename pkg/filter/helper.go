@@ -43,7 +43,7 @@ func CreatePredicate(restrictions []string) (Predicate, error) {
 	return predicate, nil
 }
 
-// AsSelector converts Predicate to a labels.Selector
+// ConvertToSelector converts Predicate to a labels.Selector
 func ConvertToSelector(p Predicate) (labels.Selector, error) {
 	return labels.Parse(p.String())
 }
