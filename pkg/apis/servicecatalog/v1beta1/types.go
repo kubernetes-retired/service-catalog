@@ -127,7 +127,7 @@ type CommonServiceBrokerSpec struct {
 	CatalogRestrictions *CatalogRestrictions `json:"catalogRestrictions,omitempty"`
 }
 
-// ServiceCatalogRestrictions contains the restrictions used to on catalog re-list.
+// CatalogRestrictions contains the restrictions used to on catalog re-list.
 // Some examples of this object are as follows:
 //
 // This is an example of a whitelist on service externalName.
