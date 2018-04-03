@@ -657,7 +657,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"serviceBindingCreateResponseSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -924,7 +924,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"serviceBindingCreateResponseSchema": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
+								Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -1201,6 +1201,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Parameters is a blob of the parameters and their values that the broker knows about for this ServiceBinding.  If a parameter was sourced from a secret, its value will be \"<redacted>\" in this blob.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"inlineParameters": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InlineParameters is a blob of the inline parameters and their values that the broker knows about for this ServiceBinding. It does not include parameters from external sources, e.g. Secrets.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -1768,6 +1774,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Parameters is a blob of the parameters and their values that the broker knows about for this ServiceInstance.  If a parameter was sourced from a secret, its value will be \"<redacted>\" in this blob.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"inlineParameters": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InlineParameters is a blob of the inline parameters and their values that the broker knows about for this ServiceInstance. It does not include parameters from external sources, e.g. Secrets.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
