@@ -63,13 +63,13 @@ var (
 	eventHandlingTime = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: healthcheckNamespace,
-			Name:      "successful_duration_microseconds",
+			Name:      "successful_duration_milliseconds",
 			Help:      "Bucketed histogram of processing time (s) of successfully executed operation, by operation.",
 			Buckets:   []float64{100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 10000, 15000, 20000, 25000, 30000},
 		}, []string{"operation"})
 )
 
-// ReportOperationCompleted records the elapses time in milleseconds for a specified operation
+// ReportOperationCompleted records the elapses time in milliseconds for a specified operation
 func ReportOperationCompleted(operation string, startTime time.Time) {
 	eventHandlingTime.WithLabelValues(operation).Observe(float64(time.Since(startTime).Nanoseconds() / 1000000))
 }
