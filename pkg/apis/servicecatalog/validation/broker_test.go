@@ -29,11 +29,16 @@ import (
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
 
+func featurePtr(feature utilfeature.Feature) *utilfeature.Feature {
+	return &feature
+}
+
 func TestValidateClusterServiceBroker(t *testing.T) {
 	cases := []struct {
-		name   string
-		broker *servicecatalog.ClusterServiceBroker
-		valid  bool
+		name        string
+		broker      *servicecatalog.ClusterServiceBroker
+		featureFlag *utilfeature.Feature
+		valid       bool
 	}{
 		{
 			// covers the case where there is no AuthInfo field specified. the validator should
@@ -391,23 +396,159 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			valid: true,
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       true,
+		},
+		{
+			name: "valid clusterservicebroker - complex catalogRequirements.serviceClass",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServiceClass: []string{
+								"name==foobar",
+								"externalName in (foobar, bazboof, wizzbang)",
+							},
+						},
+					},
+				},
+			},
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       true,
+		},
+		{
+			name: "invalid clusterservicebroker - catalogRequirements.serviceClass",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServiceClass: []string{
+								"invalid restriction",
+							},
+						},
+					},
+				},
+			},
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       false,
+		},
+		{
+			name: "valid clusterservicebroker - catalogRequirements.servicePlan",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServicePlan: []string{
+								"name==foobar",
+							},
+						},
+					},
+				},
+			},
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       true,
+		},
+		{
+			name: "valid clusterservicebroker - complex catalogRequirements.servicePlan",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServicePlan: []string{
+								"name==foobar",
+								"externalName in (foobar, bazboof, wizzbang)",
+							},
+						},
+					},
+				},
+			},
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       true,
+		},
+		{
+			name: "invalid clusterservicebroker - catalogRequirements.servicePlan",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServicePlan: []string{
+								"invalid restriction",
+							},
+						},
+					},
+				},
+			},
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       false,
+		},
+		{
+			name: "valid clusterservicebroker - catalogRequirements with serviceClass and servicePlan",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServiceClass: []string{
+								"name==barfoobar",
+								"externalName in (barfoobar, batbazboof, batwizzbang)",
+							},
+							ServicePlan: []string{
+								"name==foobar",
+								"externalName in (foobar, bazboof, wizzbang)",
+							},
+						},
+					},
+				},
+			},
+			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
+			valid:       true,
 		},
 	}
 
-	// TODO(nicholss): figure out how to add this as a feature of the test.
-	// Enable the OriginatingIdentity feature
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.CatalogRestrictions))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.CatalogRestrictions))
-
 	for _, tc := range cases {
-		errs := ValidateClusterServiceBroker(tc.broker)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		// wrapped in a func to allow defer to turn off the featureFlag
+		func() {
+			if tc.featureFlag != nil {
+				utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", *tc.featureFlag))
+				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", *tc.featureFlag))
+			}
+			errs := ValidateClusterServiceBroker(tc.broker)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				return
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		}()
 	}
 
 	updateCases := []struct {
