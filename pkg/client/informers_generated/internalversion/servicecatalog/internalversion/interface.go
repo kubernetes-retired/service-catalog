@@ -32,8 +32,14 @@ type Interface interface {
 	ClusterServicePlans() ClusterServicePlanInformer
 	// ServiceBindings returns a ServiceBindingInformer.
 	ServiceBindings() ServiceBindingInformer
+	// ServiceBrokers returns a ServiceBrokerInformer.
+	ServiceBrokers() ServiceBrokerInformer
+	// ServiceClasses returns a ServiceClassInformer.
+	ServiceClasses() ServiceClassInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
 	ServiceInstances() ServiceInstanceInformer
+	// ServicePlans returns a ServicePlanInformer.
+	ServicePlans() ServicePlanInformer
 }
 
 type version struct {
@@ -67,7 +73,22 @@ func (v *version) ServiceBindings() ServiceBindingInformer {
 	return &serviceBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
+// ServiceBrokers returns a ServiceBrokerInformer.
+func (v *version) ServiceBrokers() ServiceBrokerInformer {
+	return &serviceBrokerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ServiceClasses returns a ServiceClassInformer.
+func (v *version) ServiceClasses() ServiceClassInformer {
+	return &serviceClassInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // ServiceInstances returns a ServiceInstanceInformer.
 func (v *version) ServiceInstances() ServiceInstanceInformer {
 	return &serviceInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ServicePlans returns a ServicePlanInformer.
+func (v *version) ServicePlans() ServicePlanInformer {
+	return &servicePlanInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

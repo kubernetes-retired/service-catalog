@@ -44,7 +44,9 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 	cases := []struct {
 		name                string
 		classExternalName   string
+		classExternalID     string
 		planExternalName    string
+		planExternalID      string
 		classK8sName        string
 		planK8sName         string
 		expectedErrorReason string
@@ -71,6 +73,30 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 			name:                "non-existent external class and plan name",
 			classExternalName:   "nothereclass",
 			planExternalName:    "nothereplan",
+			expectedErrorReason: "ReferencesNonexistentServiceClass",
+		},
+		{
+			name:                "existent external class and plan id",
+			classExternalID:     testClassExternalID,
+			planExternalID:      testPlanExternalID,
+			expectedErrorReason: "",
+		},
+		{
+			name:                "non-existent external class id",
+			classExternalID:     "nothereclass",
+			planExternalID:      testPlanExternalID,
+			expectedErrorReason: "ReferencesNonexistentServiceClass",
+		},
+		{
+			name:                "non-existent external plan id",
+			classExternalID:     testClassExternalID,
+			planExternalID:      "nothereplan",
+			expectedErrorReason: "ReferencesNonexistentServicePlan",
+		},
+		{
+			name:                "non-existent external class and plan id",
+			classExternalID:     "nothereclass",
+			planExternalID:      "nothereplan",
 			expectedErrorReason: "ReferencesNonexistentServiceClass",
 		},
 		{
@@ -108,6 +134,8 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 					i := getTestInstance()
 					i.Spec.PlanReference.ClusterServiceClassExternalName = tc.classExternalName
 					i.Spec.PlanReference.ClusterServicePlanExternalName = tc.planExternalName
+					i.Spec.PlanReference.ClusterServiceClassExternalID = tc.classExternalID
+					i.Spec.PlanReference.ClusterServicePlanExternalID = tc.planExternalID
 					i.Spec.PlanReference.ClusterServiceClassName = tc.classK8sName
 					i.Spec.PlanReference.ClusterServicePlanName = tc.planK8sName
 					return i
@@ -833,9 +861,11 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 				}
 
 				if tc.updateSecret {
+					ct.kubeClient.Lock()
 					prependGetSecretReaction(ct.kubeClient, "secret-name", map[string][]byte{
 						"secret-key": []byte(`{"new-secret-param-key":"new-secret-param-value"}`),
 					})
+					ct.kubeClient.Unlock()
 					ct.instance.Spec.UpdateRequests++
 				}
 

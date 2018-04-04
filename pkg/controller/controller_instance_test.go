@@ -92,8 +92,8 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msgf(
-		"References a non-existent ClusterServiceClass (ExternalName: %q) or there is more than one (found: %d)",
-		"nothere", 0,
+		"References a non-existent ClusterServiceClass %c or there is more than one (found: 0)",
+		instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -135,8 +135,8 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msgf(
-		"References a non-existent ClusterServiceClass (K8S: %q)",
-		"nothereclass",
+		"References a non-existent ClusterServiceClass %c",
+		instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -290,8 +290,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		`References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
-		"", "nothere", "SCGUID", "test-serviceclass", 0,
+		`References a non-existent ClusterServicePlan %b on ClusterServiceClass %s %c or there is more than one (found: 0)`,
+		instance.Spec.PlanReference, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -345,8 +345,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		"References a non-existent ClusterServicePlan with K8S name %q on ClusterServiceClass with K8S name %q",
-		"nothereplan", testClusterServiceClassGUID,
+		"References a non-existent ClusterServicePlan %v",
+		instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -612,7 +612,6 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 			brokerActions := fakeClusterServiceBrokerClient.Actions()
 			assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
-
 			expectedKubeActions := []kubeClientAction{
 				{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
 			}
@@ -676,11 +675,8 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				InstanceID:        testServiceInstanceGUID,
 				ServiceID:         testClusterServiceClassGUID,
 				PlanID:            testClusterServicePlanGUID,
-				Context: map[string]interface{}{
-					"platform":  "kubernetes",
-					"namespace": "test-ns",
-				},
-				Parameters: tc.expectedParams,
+				Context:           testContext,
+				Parameters:        tc.expectedParams,
 			})
 
 			actions = fakeCatalogClient.Actions()
@@ -886,11 +882,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -989,10 +981,7 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 	})
 
 	// verify no kube resources created
@@ -1075,11 +1064,7 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -1159,11 +1144,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -1358,11 +1339,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -1446,10 +1423,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": testNamespace,
-		},
+		Context:           testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -1519,11 +1493,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testNamespaceGUID,
 		SpaceGUID:         testNamespaceGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -2225,10 +2195,7 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 	})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -2424,12 +2391,13 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 	assertNumberOfActions(t, actions, 1)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
+	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
-		errorProvisionCallFailedReason,
+		startingInstanceOrphanMitigationReason,
 		"",
+		errorProvisionCallFailedReason,
 		instance,
 	)
 }
@@ -2918,11 +2886,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -2977,11 +2941,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -4142,10 +4102,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 		Parameters: map[string]interface{}{
 			"a": "1",
 			"b": "2",
@@ -4262,7 +4219,9 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msg("References a non-existent ClusterServiceClass (ExternalName: \"test-serviceclass\") or there is more than one (found: 0)")
+	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msg(
+		fmt.Sprintf(`References a non-existent ClusterServiceClass %c or there is more than one (found: 0)`,
+			instance.Spec.PlanReference))
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -4348,10 +4307,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            nil, // no change to plan
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
+		Context:           testContext,
 		Parameters: map[string]interface{}{
 			"args": map[string]interface{}{
 				"first":  "first-arg",
@@ -4454,11 +4410,8 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            nil, // no change to plan
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-		Parameters: make(map[string]interface{}),
+		Context:           testContext,
+		Parameters:        make(map[string]interface{}),
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4560,8 +4513,8 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		`References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
-		"", "test-plan", "SCGUID", "test-serviceclass", 0,
+		`References a non-existent ClusterServicePlan %b on ClusterServiceClass %s %c or there is more than one (found: 0)`,
+		instance.Spec.PlanReference, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -4642,11 +4595,8 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-		Parameters: nil, // no change to parameters
+		Context:           testContext,
+		Parameters:        nil, // no change to parameters
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4717,11 +4667,7 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -4785,11 +4731,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -5057,11 +4999,7 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
-		},
-	})
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)

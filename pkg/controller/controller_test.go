@@ -85,9 +85,17 @@ const (
 	testNamespace                           = "test-ns"
 	testServiceInstanceCredentialSecretName = "test-secret"
 	testOperation                           = "test-operation"
+	testClusterID                           = "test-cluster-id"
 )
 
-var testDashboardURL = "http://dashboard"
+var (
+	testDashboardURL = "http://dashboard"
+	testContext      = map[string]interface{}{
+		"platform":           ContextProfilePlatformKubernetes,
+		"namespace":          testNamespace,
+		clusterIdentifierKey: testClusterID,
+	}
+)
 
 const testCatalog = `{
   "services": [{
@@ -378,12 +386,14 @@ func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1be
 	lastTransitionTime := metav1.NewTime(time.Now().Add(-5 * time.Minute))
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{{
-			Type:               v1beta1.ServiceBrokerConditionReady,
-			Status:             status,
-			LastTransitionTime: lastTransitionTime,
-		}},
-		LastCatalogRetrievalTime: &lastTransitionTime,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{{
+				Type:               v1beta1.ServiceBrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: lastTransitionTime,
+			}},
+			LastCatalogRetrievalTime: &lastTransitionTime,
+		},
 	}
 	return broker
 }
@@ -391,12 +401,14 @@ func getTestClusterServiceBrokerWithStatus(status v1beta1.ConditionStatus) *v1be
 func getTestClusterServiceBrokerWithStatusAndTime(status v1beta1.ConditionStatus, lastTransitionTime, lastRelistTime metav1.Time) *v1beta1.ClusterServiceBroker {
 	broker := getTestClusterServiceBroker()
 	broker.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{{
-			Type:               v1beta1.ServiceBrokerConditionReady,
-			Status:             status,
-			LastTransitionTime: lastTransitionTime,
-		}},
-		LastCatalogRetrievalTime: &lastRelistTime,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{{
+				Type:               v1beta1.ServiceBrokerConditionReady,
+				Status:             status,
+				LastTransitionTime: lastTransitionTime,
+			}},
+			LastCatalogRetrievalTime: &lastRelistTime,
+		},
 	}
 	return broker
 }
@@ -435,7 +447,11 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 				Bindable:     true,
 			},
 		},
-		Status: v1beta1.ClusterServiceClassStatus{RemovedFromBrokerCatalog: true},
+		Status: v1beta1.ClusterServiceClassStatus{
+			v1beta1.CommonServiceClassStatus{
+				RemovedFromBrokerCatalog: true,
+			},
+		},
 	}
 }
 
@@ -502,7 +518,11 @@ func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 				Name: testClusterServiceClassGUID,
 			},
 		},
-		Status: v1beta1.ClusterServicePlanStatus{RemovedFromBrokerCatalog: true},
+		Status: v1beta1.ClusterServicePlanStatus{
+			CommonServicePlanStatus: v1beta1.CommonServicePlanStatus{
+				RemovedFromBrokerCatalog: true,
+			},
+		},
 	}
 }
 
@@ -1574,7 +1594,14 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeRecorder,
 		7*24*time.Hour,
 		7*24*time.Hour,
+		DefaultClusterIDConfigMapName,
+		DefaultClusterIDConfigMapNamespace,
 	)
+
+	if c, ok := testController.(*controller); ok {
+		c.setClusterID(testClusterID)
+	}
+
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -98,6 +98,11 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
 			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
 		},
+		func(bs *servicecatalog.ServiceBrokerSpec, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
+			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
+		},
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
 			is.ExternalID = string(uuid.NewUUID())
@@ -147,7 +152,27 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			}
 			sc.Spec.ExternalMetadata = metadata
 		},
-		func(sp *servicecatalog.ClusterServicePlan, c fuzz.Continue) {
+		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
+			c.FuzzNoCustom(sc)
+			metadata, err := createServiceMetadata(c)
+			if err != nil {
+				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
+			}
+			sc.Spec.ExternalMetadata = metadata
+		},
+		func(csp *servicecatalog.ClusterServicePlan, c fuzz.Continue) {
+			c.FuzzNoCustom(csp)
+			metadata, err := createPlanMetadata(c)
+			if err != nil {
+				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
+			}
+			csp.Spec.ExternalMetadata = metadata
+			csp.Spec.ServiceBindingCreateResponseSchema = metadata
+			csp.Spec.ServiceBindingCreateParameterSchema = metadata
+			csp.Spec.ServiceInstanceCreateParameterSchema = metadata
+			csp.Spec.ServiceInstanceUpdateParameterSchema = metadata
+		},
+		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
 			c.FuzzNoCustom(sp)
 			metadata, err := createPlanMetadata(c)
 			if err != nil {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package broker
+package servicebroker
 
 import (
 	"testing"
@@ -24,7 +24,7 @@ import (
 
 func TestNewListNilItems(t *testing.T) {
 	newList := NewList()
-	realObj := newList.(*servicecatalog.ClusterServiceBrokerList)
+	realObj := newList.(*servicecatalog.ServiceBrokerList)
 
 	if realObj.Items == nil {
 		t.Fatalf("nil incorrectly set on Items field")

@@ -61,6 +61,7 @@ const (
 	testClusterServicePlanName            = "test-plan"
 	testNonbindableClusterServicePlanName = "test-nb-plan"
 	testInstanceLastOperation             = "InstanceLastOperation"
+	testClassExternalID                   = "12345"
 	testPlanExternalID                    = "34567"
 	testNonbindablePlanExternalID         = "nb34567"
 	testInstanceName                      = "test-instance"
@@ -718,7 +719,7 @@ func getLastOperationResponseByPollCountStates(numOfResponses int, stateProgress
 	return getLastOperationResponseByPollCountReactions(numOfResponses, reactionProgressions)
 }
 
-// newTestController creates a new test controller injected with fake clients
+// newControllerTestTestController creates a new test controller injected with fake clients
 // and returns:
 //
 // - a fake kubernetes core api client
@@ -731,7 +732,7 @@ func getLastOperationResponseByPollCountStates(numOfResponses int, stateProgress
 //
 // If there is an error, newTestController calls 'Fatal' on the injected
 // testing.T.
-func newTestController(t *testing.T) (
+func newControllerTestTestController(ct *controllerTest) (
 	*fake.Clientset,
 	clientset.Interface,
 	*restclient.Config,
@@ -740,10 +741,13 @@ func newTestController(t *testing.T) (
 	informers.Interface,
 	func(),
 	func()) {
+	t := ct.t
 
 	// create a fake kube client
 	fakeKubeClient := &fake.Clientset{}
+	fakeKubeClient.Lock()
 	prependGetSecretNotFoundReaction(fakeKubeClient)
+	fakeKubeClient.Unlock()
 
 	// create an sc client and running server
 	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
@@ -776,6 +780,159 @@ func newTestController(t *testing.T) (
 		fakeRecorder,
 		7*24*time.Hour,
 		7*24*time.Hour,
+		controller.DefaultClusterIDConfigMapName,
+		controller.DefaultClusterIDConfigMapNamespace,
+	)
+	t.Log("controller start")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ct.client = catalogClient.ServicecatalogV1beta1()
+
+	ct.kubeClient = fakeKubeClient
+	ct.catalogClient = catalogClient
+	ct.catalogClientConfig = catalogClientConfig
+	ct.osbClient = fakeOSBClient
+	ct.controller = testController
+	ct.informers = serviceCatalogSharedInformers
+
+	if ct.setup != nil {
+		ct.setup(ct)
+	}
+
+	stopCh := make(chan struct{})
+	controllerStopped := make(chan struct{})
+	go func() {
+		testController.Run(1, stopCh)
+		controllerStopped <- struct{}{}
+	}()
+	informerFactory.Start(stopCh)
+	t.Log("informers start")
+
+	shutdownController := func() {
+		close(stopCh)
+		<-controllerStopped
+	}
+
+	if ct.broker != nil {
+		if ct.preCreateBroker != nil {
+			ct.kubeClient.Lock()
+			ct.preCreateBroker(ct)
+			ct.kubeClient.Unlock()
+		}
+		_, err := ct.client.ClusterServiceBrokers().Create(ct.broker)
+		if nil != err {
+			ct.t.Fatalf("error creating the broker %q (%q)", ct.broker.Name, err)
+		}
+		if !ct.skipVerifyingBrokerSuccess {
+			ct.broker = verifyBrokerCreated(ct.t, ct.client, ct.broker)
+		}
+		if ct.postCreateBroker != nil {
+			ct.postCreateBroker(ct)
+		}
+	}
+
+	if ct.instance != nil {
+		if ct.preCreateInstance != nil {
+			ct.kubeClient.Lock()
+			ct.preCreateInstance(ct)
+			ct.kubeClient.Unlock()
+		}
+		if _, err := ct.client.ServiceInstances(ct.instance.Namespace).Create(ct.instance); err != nil {
+			ct.t.Fatalf("error creating Instance: %v", err)
+		}
+		if !ct.skipVerifyingInstanceSuccess {
+			ct.instance = verifyInstanceCreated(ct.t, ct.client, ct.instance)
+		}
+		if ct.postCreateInstance != nil {
+			ct.postCreateInstance(ct)
+		}
+	}
+
+	if ct.binding != nil {
+		if ct.preCreateBinding != nil {
+			ct.kubeClient.Lock()
+			ct.preCreateBinding(ct)
+			ct.kubeClient.Unlock()
+		}
+		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
+		if err != nil {
+			ct.t.Fatalf("error creating Binding: %v", err)
+		}
+		if !ct.skipVerifyingBindingSuccess {
+			ct.binding = verifyBindingCreated(ct.t, ct.client, ct.binding)
+		}
+		if ct.postCreateBinding != nil {
+			ct.postCreateBinding(ct)
+		}
+	}
+
+	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer, shutdownController
+}
+
+// newTestController creates a new test controller injected with fake clients
+// and returns:
+//
+// - a fake kubernetes core api client
+// - a fake service catalog api client
+// - a fake osb client, with configuration for happy path testing
+// - a test controller
+// - the shared informers for the service catalog v1beta1 api
+// - a function for shutting down the API server
+// - a function for shutting down the controller.
+//
+// If there is an error, newTestController calls 'Fatal' on the injected
+// testing.T.
+func newTestController(t *testing.T) (
+	*fake.Clientset,
+	clientset.Interface,
+	*restclient.Config,
+	*fakeosb.FakeClient,
+	controller.Controller,
+	informers.Interface,
+	func(),
+	func()) {
+
+	// create a fake kube client
+	fakeKubeClient := &fake.Clientset{}
+	fakeKubeClient.Lock()
+	prependGetSecretNotFoundReaction(fakeKubeClient)
+	fakeKubeClient.Unlock()
+
+	// create an sc client and running server
+	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
+		return &servicecatalog.ClusterServiceBroker{}
+	})
+
+	fakeOSBClient := fakeosb.NewFakeClient(getTestHappyPathBrokerClientConfig())
+	brokerClFunc := fakeosb.ReturnFakeClientFunc(fakeOSBClient)
+
+	// create informers
+	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
+	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
+
+	// WARNING: Should you try to record more events than the buffer size
+	// passed here, the recording function will hang indefinitely.
+	fakeRecorder := record.NewFakeRecorder(50)
+
+	// create a test controller
+	testController, err := controller.NewController(
+		fakeKubeClient,
+		catalogClient.ServicecatalogV1beta1(),
+		serviceCatalogSharedInformers.ClusterServiceBrokers(),
+		serviceCatalogSharedInformers.ClusterServiceClasses(),
+		serviceCatalogSharedInformers.ServiceInstances(),
+		serviceCatalogSharedInformers.ServiceBindings(),
+		serviceCatalogSharedInformers.ClusterServicePlans(),
+		brokerClFunc,
+		24*time.Hour,
+		osb.LatestAPIVersion().HeaderValue(),
+		fakeRecorder,
+		7*24*time.Hour,
+		7*24*time.Hour,
+		controller.DefaultClusterIDConfigMapName,
+		controller.DefaultClusterIDConfigMapNamespace,
 	)
 	t.Log("controller start")
 	if err != nil {
@@ -847,7 +1004,7 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 		Services: []osb.Service{
 			{
 				Name:        testClusterServiceClassName,
-				ID:          "12345",
+				ID:          testClassExternalID,
 				Description: "a test service",
 				Bindable:    true,
 				Plans: []osb.Plan{
@@ -1162,7 +1319,7 @@ type controllerTest struct {
 // - delete broker
 // - clean up controller and API server
 func (ct *controllerTest) run(test func(*controllerTest)) {
-	kubeClient, catalogClient, catalogClientConfig, osbClient, controller, informers, shutdownServer, shutdownController := newTestController(ct.t)
+	kubeClient, catalogClient, catalogClientConfig, osbClient, controller, informers, shutdownServer, shutdownController := newControllerTestTestController(ct)
 	defer shutdownController()
 	defer shutdownServer()
 
@@ -1174,57 +1331,6 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 	ct.informers = informers
 
 	ct.client = catalogClient.ServicecatalogV1beta1()
-
-	if ct.setup != nil {
-		ct.setup(ct)
-	}
-
-	if ct.broker != nil {
-		if ct.preCreateBroker != nil {
-			ct.preCreateBroker(ct)
-		}
-		_, err := ct.client.ClusterServiceBrokers().Create(ct.broker)
-		if nil != err {
-			ct.t.Fatalf("error creating the broker %q (%q)", ct.broker.Name, err)
-		}
-		if !ct.skipVerifyingBrokerSuccess {
-			ct.broker = verifyBrokerCreated(ct.t, ct.client, ct.broker)
-		}
-		if ct.postCreateBroker != nil {
-			ct.postCreateBroker(ct)
-		}
-	}
-
-	if ct.instance != nil {
-		if ct.preCreateInstance != nil {
-			ct.preCreateInstance(ct)
-		}
-		if _, err := ct.client.ServiceInstances(ct.instance.Namespace).Create(ct.instance); err != nil {
-			ct.t.Fatalf("error creating Instance: %v", err)
-		}
-		if !ct.skipVerifyingInstanceSuccess {
-			ct.instance = verifyInstanceCreated(ct.t, ct.client, ct.instance)
-		}
-		if ct.postCreateInstance != nil {
-			ct.postCreateInstance(ct)
-		}
-	}
-
-	if ct.binding != nil {
-		if ct.preCreateBinding != nil {
-			ct.preCreateBinding(ct)
-		}
-		_, err := ct.client.ServiceBindings(ct.binding.Namespace).Create(ct.binding)
-		if err != nil {
-			ct.t.Fatalf("error creating Binding: %v", err)
-		}
-		if !ct.skipVerifyingBindingSuccess {
-			ct.binding = verifyBindingCreated(ct.t, ct.client, ct.binding)
-		}
-		if ct.postCreateBinding != nil {
-			ct.postCreateBinding(ct)
-		}
-	}
 
 	if test != nil {
 		test(ct)

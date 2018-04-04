@@ -46,6 +46,30 @@ type ClusterServiceBrokerList struct {
 	Items []ClusterServiceBroker
 }
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceBroker represents an entity that provides ServiceClasses for use in the
+// service catalog. ServiceBroker is backed by an OSBAPI v2 broker supporting the
+// latest minor version of the v2 major version.
+type ServiceBroker struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec   ServiceBrokerSpec
+	Status ServiceBrokerStatus
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceBrokerList is a list of Brokers.
+type ServiceBrokerList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServiceBroker
+}
+
 // CommonServiceBrokerSpec represents a description of a Broker.
 type CommonServiceBrokerSpec struct {
 	// URL is the address used to communicate with the ServiceBroker.
@@ -86,6 +110,15 @@ type ClusterServiceBrokerSpec struct {
 	// AuthInfo contains the data that the service catalog should use to authenticate
 	// with the Service Broker.
 	AuthInfo *ClusterServiceBrokerAuthInfo
+}
+
+// ServiceBrokerSpec represents a description of a Broker.
+type ServiceBrokerSpec struct {
+	CommonServiceBrokerSpec
+
+	// AuthInfo contains the data that the service catalog should use to authenticate
+	// with the Service Broker.
+	AuthInfo *ServiceBrokerAuthInfo
 }
 
 // ServiceBrokerRelistBehavior represents a type of broker relist behavior.
@@ -137,6 +170,42 @@ type ClusterBearerTokenAuthConfig struct {
 	SecretRef *ObjectReference
 }
 
+// ServiceBrokerAuthInfo is a union type that contains information on
+// one of the authentication methods the the service catalog and brokers may
+// support, according to the OpenServiceBroker API specification
+// (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
+type ServiceBrokerAuthInfo struct {
+	// BasicAuthConfig provides configuration for basic authentication.
+	Basic *BasicAuthConfig
+	// BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token.
+	// The value is referenced from the 'token' field of the given secret.  This value should only
+	// contain the token value and not the `Bearer` scheme.
+	Bearer *BearerTokenAuthConfig
+}
+
+// BasicAuthConfig provides config for the basic authentication of
+// cluster scoped brokers.
+type BasicAuthConfig struct {
+	// SecretRef is a reference to a Secret containing information the
+	// catalog should use to authenticate to this ServiceBroker.
+	//
+	// Required at least one of the fields:
+	// - Secret.Data["username"] - username used for authentication
+	// - Secret.Data["password"] - password or token needed for authentication
+	SecretRef *LocalObjectReference
+}
+
+// BearerTokenAuthConfig provides config for the bearer token
+// authentication of cluster scoped brokers.
+type BearerTokenAuthConfig struct {
+	// SecretRef is a reference to a Secret containing information the
+	// catalog should use to authenticate to this ServiceBroker.
+	//
+	// Required field:
+	// - Secret.Data["token"] - bearer token for authentication
+	SecretRef *LocalObjectReference
+}
+
 const (
 	// BasicAuthUsernameKey is the key of the username for SecretTypeBasicAuth secrets
 	BasicAuthUsernameKey = "username"
@@ -147,8 +216,8 @@ const (
 	BearerTokenKey = "token"
 )
 
-// ClusterServiceBrokerStatus represents the current status of a ClusterServiceBroker
-type ClusterServiceBrokerStatus struct {
+// CommonServiceBrokerStatus represents the current status of a ServiceBroker.
+type CommonServiceBrokerStatus struct {
 	Conditions []ServiceBrokerCondition
 
 	// ReconciledGeneration is the 'Generation' of the ServiceBrokerSpec that
@@ -162,6 +231,17 @@ type ClusterServiceBrokerStatus struct {
 	// LastCatalogRetrievalTime is the time the Catalog was last fetched from
 	// the Service Broker
 	LastCatalogRetrievalTime *metav1.Time
+}
+
+// ClusterServiceBrokerStatus represents the current status of a
+// ClusterServiceBroker.
+type ClusterServiceBrokerStatus struct {
+	CommonServiceBrokerStatus
+}
+
+// ServiceBrokerStatus represents the current status of a ServiceBroker.
+type ServiceBrokerStatus struct {
+	CommonServiceBrokerStatus
 }
 
 // ServiceBrokerCondition contains condition information for a Service Broker.
@@ -240,6 +320,48 @@ type ClusterServiceClass struct {
 	Status ClusterServiceClassStatus
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceClassList is a list of ServiceClasses.
+type ServiceClassList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServiceClass
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServiceClass represents a namespaced offering in the service catalog.
+type ServiceClass struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec   ServiceClassSpec
+	Status ServiceClassStatus
+}
+
+// ServiceClassStatus represents status information about a
+// ServiceClass.
+type ServiceClassStatus struct {
+	CommonServiceClassStatus
+}
+
+// ClusterServiceClassStatus represents status information about a
+// ClusterServiceClass.
+type ClusterServiceClassStatus struct {
+	CommonServiceClassStatus
+}
+
+// CommonServiceClassStatus represents common status information between
+// cluster scoped and namespace scoped ServiceClasses.
+type CommonServiceClassStatus struct {
+	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
+	// catalog.
+	RemovedFromBrokerCatalog bool
+}
+
 // CommonServiceClassSpec represents details about a ServiceClass
 type CommonServiceClassSpec struct {
 	// ExternalName is the name of this object that the Service Broker
@@ -294,28 +416,31 @@ type CommonServiceClassSpec struct {
 	Requires []string
 }
 
-// ClusterServiceClassSpec represents the details about a ClusterServiceClass
+// ClusterServiceClassSpec represents the details about a ClusterServiceClass.
 type ClusterServiceClassSpec struct {
 	CommonServiceClassSpec
 
-	// ClusterServiceBrokerName is the reference to the Broker that provides this
-	// ClusterServiceClass.
+	// ClusterServiceBrokerName is the reference to the ClusterServiceBroker that
+	// provides this ClusterServiceClass.
 	//
 	// Immutable.
 	ClusterServiceBrokerName string
 }
 
-// ClusterServiceClassStatus represents status information about a
-// ClusterServiceClass.
-type ClusterServiceClassStatus struct {
-	// RemovedFromBrokerCatalog indicates that the broker removed the service from its
-	// catalog.
-	RemovedFromBrokerCatalog bool
+// ServiceClassSpec represents the details about a ServiceClass.
+type ServiceClassSpec struct {
+	CommonServiceClassSpec
+
+	// ServiceBrokerName is the reference to the ServiceBroker that provides this
+	// ServiceClass.
+	//
+	// Immutable.
+	ServiceBrokerName string
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterServicePlanList is a list of ServicePlans.
+// ClusterServicePlanList is a list of ClusterServicePlans.
 type ClusterServicePlanList struct {
 	metav1.TypeMeta
 	metav1.ListMeta
@@ -412,9 +537,56 @@ type ClusterServicePlanSpec struct {
 // ClusterServicePlanStatus represents status information about a
 // ClusterServicePlan.
 type ClusterServicePlanStatus struct {
+	CommonServicePlanStatus
+}
+
+// CommonServicePlanStatus represents status information about a
+// ClusterServicePlan or a ServicePlan.
+type CommonServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServicePlanList is a list of ServicePlans.
+type ServicePlanList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []ServicePlan
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServicePlan represents a tier of a ServiceClass.
+type ServicePlan struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec   ServicePlanSpec
+	Status ServicePlanStatus
+}
+
+// ServicePlanSpec represents details about the ServicePlan
+type ServicePlanSpec struct {
+	CommonServicePlanSpec
+
+	// ServiceBrokerName is the name of the ServiceBroker that offers this
+	// ServicePlan.
+	ServiceBrokerName string
+
+	// ServiceClassRef is a reference to the service class that
+	// owns this plan.
+	ServiceClassRef LocalObjectReference
+}
+
+// ServicePlanStatus represents status information about a
+// ServicePlan.
+type ServicePlanStatus struct {
+	CommonServicePlanStatus
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -455,6 +627,14 @@ type ServiceInstance struct {
 // ServicePlan and ServiceClass. Because there are multiple ways to
 // specify the desired Class/Plan, this structure specifies the
 // allowed ways to specify the intent.
+//
+// Currently supported ways:
+//  - ClusterServiceClassExternalName and ClusterServicePlanExternalName
+//  - ClusterServiceClassExternalID and ClusterServicePlanExternalID
+//  - ClusterServiceClassName and ClusterServicePlanName
+//
+// For any of these ways, if a ClusterServiceClass only has one plan
+// then the corresponding service plan field is optional.
 type PlanReference struct {
 	// ClusterServiceClassExternalName is the human-readable name of the
 	// service as reported by the broker. Note that if the broker changes
@@ -470,6 +650,14 @@ type PlanReference struct {
 	// the current name of the ClusterServicePlan, you should follow the
 	// ClusterServicePlanRef below.
 	ClusterServicePlanExternalName string
+
+	// ClusterServiceClassExternalID is the broker's external id for the class.
+	//
+	// Immutable.
+	ClusterServiceClassExternalID string
+
+	// ClusterServicePlanExternalID is the broker's external id for the plan.
+	ClusterServicePlanExternalID string
 
 	// ClusterServiceClassName is the kubernetes name of the
 	// ClusterServiceClass.
@@ -767,6 +955,10 @@ type ServiceBindingSpec struct {
 	// namespace that will hold the credentials associated with the ServiceBinding.
 	SecretName string
 
+	// List of transformations that should be applied to the credentials returned
+	// by the broker before they are inserted into the Secret
+	SecretTransform []SecretTransform `json:"secretTransform,omitempty"`
+
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
@@ -955,4 +1147,17 @@ type LocalObjectReference struct {
 type ClusterObjectReference struct {
 	// Name of the referent.
 	Name string
+}
+
+// SecretTransform is a single transformation of the credentials returned
+// from the broker
+type SecretTransform struct {
+	RenameKey *RenameKeyTransform
+}
+
+// RenameKeyTransform specifies that one of the credentials keys returned
+// from the broker should be renamed
+type RenameKeyTransform struct {
+	From string
+	To   string
 }
