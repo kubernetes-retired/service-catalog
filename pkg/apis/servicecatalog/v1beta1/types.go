@@ -1312,8 +1312,12 @@ const (
 	FilterSpecExternalName = "spec.externalName"
 	// SpecExternalID is the external id of the object.
 	FilterSpecExternalID = "spec.externalID"
+	// SpecServiceBrokerName is used for ServiceClasses, the parent service broker name.
+	FilterSpecServiceBrokerName = "spec.serviceBrokerName"
 	// SpecClusterServiceClassName is only used for plans, the parent service class name.
 	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	// SpecServiceClassName is only used for plans, the parent service class name.
+	FilterSpecServiceClassName = "spec.serviceClass.name"
 )
 
 // SecretTransform is a single transformation that is applied to the

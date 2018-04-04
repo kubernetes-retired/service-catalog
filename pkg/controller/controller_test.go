@@ -1903,10 +1903,13 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeKubeClient,
 		fakeCatalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
+		serviceCatalogSharedInformers.ServiceBrokers(),
 		serviceCatalogSharedInformers.ClusterServiceClasses(),
+		serviceCatalogSharedInformers.ServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceBindings(),
 		serviceCatalogSharedInformers.ClusterServicePlans(),
+		serviceCatalogSharedInformers.ServicePlans(),
 		brokerClFunc,
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
@@ -2059,6 +2062,12 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 		resource = "clusterserviceclasses"
 	case *v1beta1.ClusterServicePlan:
 		resource = "clusterserviceplans"
+	case *v1beta1.ServiceBroker:
+		resource = "servicebrokers"
+	case *v1beta1.ServiceClass:
+		resource = "serviceclasses"
+	case *v1beta1.ServicePlan:
+		resource = "serviceplans"
 	case *v1beta1.ServiceInstance:
 		resource = "serviceinstances"
 	case *v1beta1.ServiceBinding:
