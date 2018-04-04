@@ -74,10 +74,12 @@ FILE_EXT=
 endif
 
 # TODO: Consider using busybox instead of debian
-BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.2
+BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.3
 
-GO_BUILD       = env GOOS=$(PLATFORM) GOARCH=$(ARCH) go build -i $(GOFLAGS) \
-                   -ldflags "-X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)"
+GO_BUILD       = env CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) \
+                  go build -i $(GOFLAGS) -a -tags netgo -installsuffix netgo \
+                  -ldflags '-s -w -X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)'
+
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
@@ -189,7 +191,7 @@ $(BINDIR)/e2e.test: .init
 # Util targets
 ##############
 .PHONY: verify verify-generated verify-client-gen verify-docs
-verify: .init .generate_files verify-generated verify-client-gen verify-docs verify-vendor
+verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -225,10 +227,10 @@ verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
 	@$(DOCKER_CMD) verify-links.sh -s .pkg -t $(SKIP_HTTP) .
 
-verify-generated: .init .generate_files
+verify-generated: .init .generate_exes
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only
 
-verify-client-gen: .init .generate_files
+verify-client-gen: .init .generate_exes
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
 
 format: .init

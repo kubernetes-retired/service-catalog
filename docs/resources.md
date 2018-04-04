@@ -42,7 +42,7 @@ of available Services (the catalog). Each Service will then have a corresponding
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServiceClass
 metadata:
-  name: smallDB
+  name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
 spec:
   bindable: true
   clusterServiceBrokerName: ups-broker

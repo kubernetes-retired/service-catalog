@@ -1,12 +1,12 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
-kind: ClusterServicePlan
+kind: ServicePlan
 metadata:
-  name: 10e03cb7-b2cf-40dd-a954-16a382b92446
+  name: b20ac1c6-f6d5-4dd0-b30c-c33242ad2083
 spec:
-  clusterServiceBrokerName: test-broker
+  serviceBrokerName: test-ns-broker
   externalName: test-serviceplan
-  externalID: 10e03cb7-b2cf-40dd-a954-16a382b92446
+  externalID: b20ac1c6-f6d5-4dd0-b30c-c33242ad2083
   description: "plan description"
   free: true
-  clusterServiceClassRef:
-    name: d35b55b2-b1fd-4123-8045-5b9c619cb629
+  serviceClassRef:
+    name: d0fe444d-5656-4c7a-ba1b-6c5884eefbb7

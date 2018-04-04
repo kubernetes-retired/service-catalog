@@ -23,15 +23,13 @@ import (
 )
 
 type getCmd struct {
-	*command.Context
-	ns            string
-	name          string
-	allNamespaces bool
+	*command.Namespaced
+	name string
 }
 
 // NewGetCmd builds a "svcat get instances" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "instances [name]",
 		Aliases: []string{"instance", "inst"},
@@ -45,20 +43,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
-	cmd.Flags().StringVarP(
-		&getCmd.ns,
-		"namespace",
-		"n",
-		"default",
-		"The namespace in which to get the ServiceInstance",
-	)
-	cmd.Flags().BoolVarP(
-		&getCmd.allNamespaces,
-		"all-namespaces",
-		"",
-		false,
-		"List all instances across namespaces",
-	)
+	command.AddNamespaceFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -79,11 +64,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	if c.allNamespaces {
-		c.ns = ""
-	}
-
-	instances, err := c.App.RetrieveInstances(c.ns)
+	instances, err := c.App.RetrieveInstances(c.Namespace)
 	if err != nil {
 		return err
 	}
@@ -93,7 +74,7 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	instance, err := c.App.RetrieveInstance(c.ns, c.name)
+	instance, err := c.App.RetrieveInstance(c.Namespace, c.name)
 	if err != nil {
 		return err
 	}

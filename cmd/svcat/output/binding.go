@@ -65,15 +65,15 @@ func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
 // WriteBindingDetails prints details for a single binding.
 func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 	t := NewDetailsTable(w)
-
 	t.AppendBulk([][]string{
 		{"Name:", binding.Name},
 		{"Namespace:", binding.Namespace},
 		{"Status:", getBindingStatusFull(binding.Status)},
 		{"Instance:", binding.Spec.ServiceInstanceRef.Name},
 	})
-
 	t.Render()
+
+	writeParameters(w, binding.Spec.Parameters)
 }
 
 // WriteAssociatedBindings prints a list of bindings associated with an instance.
@@ -101,11 +101,6 @@ func WriteAssociatedBindings(w io.Writer, bindings []v1beta1.ServiceBinding) {
 // WriteDeletedBindingNames prints the names of a list of bindings
 func WriteDeletedBindingNames(w io.Writer, bindings []v1beta1.ServiceBinding) {
 	for _, binding := range bindings {
-		WriteDeletedBindingName(w, binding.Name)
+		WriteDeletedResourceName(w, binding.Name)
 	}
-}
-
-// WriteDeletedBindingName prints the name of a binding
-func WriteDeletedBindingName(w io.Writer, bindingName string) {
-	fmt.Fprintf(w, "deleted %s\n", bindingName)
 }

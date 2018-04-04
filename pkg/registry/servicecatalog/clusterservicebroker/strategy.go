@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package broker
+package clusterservicebroker
 
 // this was copied from where else and edited to fit our objects
 
@@ -34,23 +34,23 @@ import (
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for brokers
 func NewScopeStrategy() rest.NamespaceScopedStrategy {
-	return brokerRESTStrategies
+	return clusterServiceBrokerRESTStrategies
 }
 
 // implements interfaces RESTCreateStrategy, RESTUpdateStrategy, RESTDeleteStrategy,
 // NamespaceScopedStrategy
-type brokerRESTStrategy struct {
+type clusterServiceBrokerRESTStrategy struct {
 	runtime.ObjectTyper // inherit ObjectKinds method
 	names.NameGenerator // GenerateName method for CreateStrategy
 }
 
 // implements interface RESTUpdateStrategy
-type brokerStatusRESTStrategy struct {
-	brokerRESTStrategy
+type clusterServiceBrokerStatusRESTStrategy struct {
+	clusterServiceBrokerRESTStrategy
 }
 
 var (
-	brokerRESTStrategies = brokerRESTStrategy{
+	clusterServiceBrokerRESTStrategies = clusterServiceBrokerRESTStrategy{
 		// embeds to pull in existing code behavior from upstream
 
 		// this has an interesting NOTE on it. Not sure if it applies to us.
@@ -59,35 +59,36 @@ var (
 		// `GenerateName(base string) string`
 		NameGenerator: names.SimpleNameGenerator,
 	}
-	_ rest.RESTCreateStrategy = brokerRESTStrategies
-	_ rest.RESTUpdateStrategy = brokerRESTStrategies
-	_ rest.RESTDeleteStrategy = brokerRESTStrategies
+	_ rest.RESTCreateStrategy = clusterServiceBrokerRESTStrategies
+	_ rest.RESTUpdateStrategy = clusterServiceBrokerRESTStrategies
+	_ rest.RESTDeleteStrategy = clusterServiceBrokerRESTStrategies
 
-	brokerStatusUpdateStrategy = brokerStatusRESTStrategy{
-		brokerRESTStrategies,
+	clusterServiceBrokerStatusUpdateStrategy = clusterServiceBrokerStatusRESTStrategy{
+		clusterServiceBrokerRESTStrategies,
 	}
-	_ rest.RESTUpdateStrategy = brokerStatusUpdateStrategy
+	_ rest.RESTUpdateStrategy = clusterServiceBrokerStatusUpdateStrategy
 )
 
 // Canonicalize does not transform a broker.
-func (brokerRESTStrategy) Canonicalize(obj runtime.Object) {
+func (clusterServiceBrokerRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to create")
+		glog.Fatal("received a non-clusterservicebroker object to create")
 	}
 }
 
-// NamespaceScoped returns false as brokers are not scoped to a namespace.
-func (brokerRESTStrategy) NamespaceScoped() bool {
+// NamespaceScoped returns false as clusterservicebrokers are not scoped to a
+// namespace.
+func (clusterServiceBrokerRESTStrategy) NamespaceScoped() bool {
 	return false
 }
 
 // PrepareForCreate receives a the incoming ClusterServiceBroker and clears it's
 // Status. Status is not a user settable field.
-func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (clusterServiceBrokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to create")
+		glog.Fatal("received a non-clusterservicebroker object to create")
 	}
 	// Is there anything to pull out of the context `ctx`?
 
@@ -101,26 +102,26 @@ func (brokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj ru
 	broker.Generation = 1
 }
 
-func (brokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (clusterServiceBrokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateClusterServiceBroker(obj.(*sc.ClusterServiceBroker))
 }
 
-func (brokerRESTStrategy) AllowCreateOnUpdate() bool {
+func (clusterServiceBrokerRESTStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (brokerRESTStrategy) AllowUnconditionalUpdate() bool {
+func (clusterServiceBrokerRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (brokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServiceBrokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to update to")
+		glog.Fatal("received a non-clusterservicebroker object to update to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to update from")
+		glog.Fatal("received a non-clusterservicebroker object to update from")
 	}
 
 	newClusterServiceBroker.Status = oldClusterServiceBroker.Status
@@ -137,40 +138,40 @@ func (brokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, o
 	}
 }
 
-func (brokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServiceBrokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to validate to")
+		glog.Fatal("received a non-clusterservicebroker object to validate to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to validate from")
+		glog.Fatal("received a non-clusterservicebroker object to validate from")
 	}
 
 	return scv.ValidateClusterServiceBrokerUpdate(newClusterServiceBroker, oldClusterServiceBroker)
 }
 
-func (brokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServiceBrokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to update to")
+		glog.Fatal("received a non-clusterservicebroker object to update to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to update from")
+		glog.Fatal("received a non-clusterservicebroker object to update from")
 	}
 	// status changes are not allowed to update spec
 	newClusterServiceBroker.Spec = oldClusterServiceBroker.Spec
 }
 
-func (brokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServiceBrokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to validate to")
+		glog.Fatal("received a non-clusterservicebroker object to validate to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-broker object to validate from")
+		glog.Fatal("received a non-clusterservicebroker object to validate from")
 	}
 
 	return scv.ValidateClusterServiceBrokerStatusUpdate(newClusterServiceBroker, oldClusterServiceBroker)

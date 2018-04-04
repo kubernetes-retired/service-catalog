@@ -17,10 +17,11 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/satori/go.uuid"
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"time"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 func addDefaultingFuncs(scheme *runtime.Scheme) error {
@@ -28,6 +29,14 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 }
 
 func SetDefaults_ClusterServiceBrokerSpec(spec *ClusterServiceBrokerSpec) {
+	setCommonServiceBrokerDefaults(&spec.CommonServiceBrokerSpec)
+}
+
+func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
+	setCommonServiceBrokerDefaults(&spec.CommonServiceBrokerSpec)
+}
+
+func setCommonServiceBrokerDefaults(spec *CommonServiceBrokerSpec) {
 	if spec.RelistBehavior == "" {
 		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
 	}
@@ -39,13 +48,13 @@ func SetDefaults_ClusterServiceBrokerSpec(spec *ClusterServiceBrokerSpec) {
 
 func SetDefaults_ServiceInstanceSpec(spec *ServiceInstanceSpec) {
 	if spec.ExternalID == "" {
-		spec.ExternalID = uuid.NewV4().String()
+		spec.ExternalID = string(uuid.NewUUID())
 	}
 }
 
 func SetDefaults_ServiceBindingSpec(spec *ServiceBindingSpec) {
 	if spec.ExternalID == "" {
-		spec.ExternalID = uuid.NewV4().String()
+		spec.ExternalID = string(uuid.NewUUID())
 	}
 }
 

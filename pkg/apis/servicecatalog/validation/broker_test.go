@@ -34,301 +34,337 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 		{
 			// covers the case where there is no AuthInfo field specified. the validator should
 			// ignore the field and still succeed the validation
-			name: "valid broker - no auth secret",
+			name: "valid clusterservicebroker - no auth secret",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "valid broker - basic auth - secret",
+			name: "valid clusterservicebroker - basic auth - secret",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
 							},
 						},
 					},
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						URL:            "http://example.com",
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "valid broker - bearer auth - secret",
+			name: "valid clusterservicebroker - bearer auth - secret",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 								Name:      "test-secret",
 							},
 						},
 					},
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "invalid broker - broker with namespace",
+			name: "invalid clusterservicebroker - clusterservicebroker with namespace",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-broker",
 					Namespace: "oops",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - basic auth - secret missing namespace",
+			name: "invalid clusterservicebroker - basic auth - secret missing namespace",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Name: "test-secret",
 							},
 						},
 					},
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - basic auth - secret missing name",
+			name: "invalid clusterservicebroker - basic auth - secret missing name",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Basic: &servicecatalog.BasicAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Basic: &servicecatalog.ClusterBasicAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 							},
 						},
 					},
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - bearer auth - secret missing namespace",
+			name: "invalid clusterservicebroker - bearer auth - secret missing namespace",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Name: "test-secret",
 							},
 						},
 					},
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - bearer auth - secret missing name",
+			name: "invalid clusterservicebroker - bearer auth - secret missing name",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
-						Bearer: &servicecatalog.BearerTokenAuthConfig{
+					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.ClusterBearerTokenAuthConfig{
 							SecretRef: &servicecatalog.ObjectReference{
 								Namespace: "test-ns",
 							},
 						},
 					},
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - CABundle present with InsecureSkipTLSVerify",
+			name: "invalid clusterservicebroker - CABundle present with InsecureSkipTLSVerify",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					InsecureSkipTLSVerify: true,
-					CABundle:              []byte("fake CABundle"),
-					RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL: "http://example.com",
+						InsecureSkipTLSVerify: true,
+						CABundle:              []byte("fake CABundle"),
+						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "valid broker - InsecureSkipTLSVerify without CABundle",
+			name: "valid clusterservicebroker - InsecureSkipTLSVerify without CABundle",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL: "http://example.com",
-					InsecureSkipTLSVerify: true,
-					RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL: "http://example.com",
+						InsecureSkipTLSVerify: true,
+						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "valid broker - CABundle without InsecureSkipTLSVerify",
+			name: "valid clusterservicebroker - CABundle without InsecureSkipTLSVerify",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					CABundle:       []byte("fake CABundle"),
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						CABundle:       []byte("fake CABundle"),
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "invalid broker - manual behavior with RelistDuration",
+			name: "invalid clusterservicebroker - manual behavior with RelistDuration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "valid broker - manual behavior without RelistDuration",
+			name: "valid clusterservicebroker - manual behavior without RelistDuration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
-					RelistDuration: nil,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						RelistDuration: nil,
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "invalid broker - duration behavior without duration",
+			name: "invalid clusterservicebroker - duration behavior without duration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: nil,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: nil,
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - relistBehavior is invalid",
+			name: "invalid clusterservicebroker - relistBehavior is invalid",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "Junk",
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Junk",
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - relistBehavior is empty",
+			name: "invalid clusterservicebroker - relistBehavior is empty",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: "",
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "",
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - negative relistRequests value",
+			name: "invalid clusterservicebroker - negative relistRequests value",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: -1,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: -1,
+					},
 				},
 			},
 			valid: false,
 		},
 		{
-			name: "invalid broker - negative relistDuration value",
+			name: "invalid clusterservicebroker - negative relistDuration value",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: -15 * time.Minute},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: -15 * time.Minute},
+					},
 				},
 			},
 			valid: false,
@@ -352,16 +388,18 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 		valid     bool
 	}{
 		{
-			name: "valid broker update - equal relistRequests value",
+			name: "valid clusterservicebroker update - equal relistRequests value",
 			newBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: 1,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
 				},
 			},
 			oldBroker: &servicecatalog.ClusterServiceBroker{
@@ -369,25 +407,29 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: 1,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "valid broker update - increasing relistRequests value",
+			name: "valid clusterservicebroker update - increasing relistRequests value",
 			newBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: 2,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 2,
+					},
 				},
 			},
 			oldBroker: &servicecatalog.ClusterServiceBroker{
@@ -395,25 +437,29 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: 1,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
 				},
 			},
 			valid: true,
 		},
 		{
-			name: "invalid broker update - nonincreasing relistRequests value",
+			name: "invalid clusterservicebroker update - nonincreasing relistRequests value",
 			newBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: 1,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
 				},
 			},
 			oldBroker: &servicecatalog.ClusterServiceBroker{
@@ -421,10 +467,12 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					Name: "test-broker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					URL:            "http://example.com",
-					RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
-					RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
-					RelistRequests: 2,
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 2,
+					},
 				},
 			},
 			valid: false,
@@ -432,6 +480,438 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 	}
 	for _, tc := range updateCases {
 		errs := ValidateClusterServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
+	}
+}
+
+func TestValidateServiceBroker(t *testing.T) {
+	cases := []struct {
+		name   string
+		broker *servicecatalog.ServiceBroker
+		valid  bool
+	}{
+		{
+			// covers the case where there is no AuthInfo field specified. the validator should
+			// ignore the field and still succeed the validation
+			name: "valid servicebroker - no auth secret",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid servicebroker - basic auth - secret",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Basic: &servicecatalog.BasicAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{
+								Name: "test-secret",
+							},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						URL:            "http://example.com",
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid servicebroker - bearer auth - secret",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{
+								Name: "test-secret",
+							},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "invalid servicebroker - servicebroker without namespace",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - basic auth - secret missing name",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Basic: &servicecatalog.BasicAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - bearer auth - secret missing name",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - CABundle present with InsecureSkipTLSVerify",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL: "http://example.com",
+						InsecureSkipTLSVerify: true,
+						CABundle:              []byte("fake CABundle"),
+						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "valid servicebroker - InsecureSkipTLSVerify without CABundle",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL: "http://example.com",
+						InsecureSkipTLSVerify: true,
+						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid servicebroker - CABundle without InsecureSkipTLSVerify",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						CABundle:       []byte("fake CABundle"),
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "invalid servicebroker - manual behavior with RelistDuration",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "valid servicebroker - manual behavior without RelistDuration",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						RelistDuration: nil,
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "invalid servicebroker - duration behavior without duration",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: nil,
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - relistBehavior is invalid",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Junk",
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - relistBehavior is empty",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "",
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - negative relistRequests value",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: -1,
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid servicebroker - negative relistDuration value",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: -15 * time.Minute},
+					},
+				},
+			},
+			valid: false,
+		},
+	}
+
+	for _, tc := range cases {
+		errs := ValidateServiceBroker(tc.broker)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			continue
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
+	}
+
+	updateCases := []struct {
+		name      string
+		newBroker *servicecatalog.ServiceBroker
+		oldBroker *servicecatalog.ServiceBroker
+		valid     bool
+	}{
+		{
+			name: "valid servicebroker update - equal relistRequests value",
+			newBroker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
+				},
+			},
+			oldBroker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "valid servicebroker update - increasing relistRequests value",
+			newBroker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 2,
+					},
+				},
+			},
+			oldBroker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
+				},
+			},
+			valid: true,
+		},
+		{
+			name: "invalid servicebroker update - nonincreasing relistRequests value",
+			newBroker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 1,
+					},
+				},
+			},
+			oldBroker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-broker",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorDuration,
+						RelistDuration: &metav1.Duration{Duration: 15 * time.Minute},
+						RelistRequests: 2,
+					},
+				},
+			},
+			valid: false,
+		},
+	}
+	for _, tc := range updateCases {
+		errs := ValidateServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
 		if len(errs) != 0 && tc.valid {
 			t.Errorf("%v: unexpected error: %v", tc.name, errs)
 			continue

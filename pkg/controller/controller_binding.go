@@ -232,6 +232,8 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			// over with a fresh view of the binding.
 			return err
 		}
+		// recordStartOfServiceBindingOperation has updated the binding, so we need to continue in the next iteration
+		return nil
 	}
 
 	response, err := brokerClient.Bind(request)
@@ -342,6 +344,8 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 				// over with a fresh view of the binding.
 				return err
 			}
+			// recordStartOfServiceBindingOperation has updated the binding, so we need to continue in the next iteration
+			return nil
 		}
 	}
 
@@ -429,7 +433,8 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	secretData := make(map[string][]byte)
 	for k, v := range credentials {
 		var err error
-		secretData[k], err = serialize(v)
+		secretKey := renameCredentialsKey(binding, k)
+		secretData[secretKey], err = serialize(v)
 		if err != nil {
 			return fmt.Errorf("Unable to serialize value for credential key %q (value is intentionally not logged): %s", k, err)
 		}
@@ -484,6 +489,17 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	}
 
 	return err
+}
+
+func renameCredentialsKey(binding *v1beta1.ServiceBinding, key string) string {
+	for _, t := range binding.Spec.SecretTransform {
+		if t.RenameKey != nil {
+			if key == t.RenameKey.From {
+				return t.RenameKey.To
+			}
+		}
+	}
+	return key
 }
 
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {

@@ -94,7 +94,7 @@ func (instanceRESTStrategy) Canonicalize(obj runtime.Object) {
 	}
 }
 
-// NamespaceScoped returns false as instances are not scoped to a namespace.
+// NamespaceScoped returns true as instances are scoped to a namespace.
 func (instanceRESTStrategy) NamespaceScoped() bool {
 	return true
 }
@@ -156,8 +156,10 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new,
 	newServiceInstance.Spec.ClusterServicePlanRef = oldServiceInstance.Spec.ClusterServicePlanRef
 
 	// Clear out the ClusterServicePlanRef so that it is resolved during reconciliation
-	if newServiceInstance.Spec.ClusterServicePlanExternalName != oldServiceInstance.Spec.ClusterServicePlanExternalName ||
-		newServiceInstance.Spec.ClusterServicePlanName != oldServiceInstance.Spec.ClusterServicePlanName {
+	planUpdated := newServiceInstance.Spec.ClusterServicePlanExternalName != oldServiceInstance.Spec.ClusterServicePlanExternalName ||
+		newServiceInstance.Spec.ClusterServicePlanExternalID != oldServiceInstance.Spec.ClusterServicePlanExternalID ||
+		newServiceInstance.Spec.ClusterServicePlanName != oldServiceInstance.Spec.ClusterServicePlanName
+	if planUpdated {
 		newServiceInstance.Spec.ClusterServicePlanRef = nil
 	}
 

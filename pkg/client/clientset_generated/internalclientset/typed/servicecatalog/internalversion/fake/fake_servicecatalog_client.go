@@ -42,8 +42,20 @@ func (c *FakeServicecatalog) ServiceBindings(namespace string) internalversion.S
 	return &FakeServiceBindings{c, namespace}
 }
 
+func (c *FakeServicecatalog) ServiceBrokers(namespace string) internalversion.ServiceBrokerInterface {
+	return &FakeServiceBrokers{c, namespace}
+}
+
+func (c *FakeServicecatalog) ServiceClasses(namespace string) internalversion.ServiceClassInterface {
+	return &FakeServiceClasses{c, namespace}
+}
+
 func (c *FakeServicecatalog) ServiceInstances(namespace string) internalversion.ServiceInstanceInterface {
 	return &FakeServiceInstances{c, namespace}
+}
+
+func (c *FakeServicecatalog) ServicePlans(namespace string) internalversion.ServicePlanInterface {
+	return &FakeServicePlans{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

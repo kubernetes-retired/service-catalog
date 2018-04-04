@@ -140,13 +140,13 @@ func validateServiceInstanceStatus(status *sc.ServiceInstanceStatus, fldPath *fi
 	}
 
 	switch status.CurrentOperation {
-	case sc.ServiceInstanceOperationProvision, sc.ServiceInstanceOperationUpdate:
+	case sc.ServiceInstanceOperationProvision, sc.ServiceInstanceOperationUpdate, sc.ServiceInstanceOperationDeprovision:
 		if status.InProgressProperties == nil {
-			allErrs = append(allErrs, field.Required(fldPath.Child("inProgressProperties"), `inProgressProperties is required when currentOperation is "Provision" or "Update"`))
+			allErrs = append(allErrs, field.Required(fldPath.Child("inProgressProperties"), `inProgressProperties is required when currentOperation is "Provision", "Update" or "Deprovision"`))
 		}
 	default:
 		if status.InProgressProperties != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties must not be present when currentOperation is neither "Provision" nor "Update"`))
+			allErrs = append(allErrs, field.Forbidden(fldPath.Child("inProgressProperties"), `inProgressProperties must not be present when currentOperation is not "Provision", "Update" or "Deprovision"`))
 		}
 	}
 
@@ -261,8 +261,11 @@ func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *
 	if old.Generation != new.Generation && old.Status.CurrentOperation != "" {
 		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
 	}
-	if old.Spec.ClusterServicePlanExternalName != new.Spec.ClusterServicePlanExternalName && new.Spec.ClusterServicePlanRef != nil {
-		errors = append(errors, field.Forbidden(field.NewPath("spec").Child("clusterServicePlanRef"), "clusterServicePlanRef must not be present when clusterServicePlanExternalName is being changed"))
+	planUpdated := old.Spec.ClusterServicePlanExternalName != new.Spec.ClusterServicePlanExternalName
+	planUpdated = planUpdated || old.Spec.ClusterServicePlanExternalID != new.Spec.ClusterServicePlanExternalID
+	planUpdated = planUpdated || old.Spec.ClusterServicePlanName != new.Spec.ClusterServicePlanName
+	if planUpdated && new.Spec.ClusterServicePlanRef != nil {
+		errors = append(errors, field.Forbidden(field.NewPath("spec").Child("clusterServicePlanRef"), "clusterServicePlanRef must not be present when the plan is being changed"))
 	}
 	return errors
 }
@@ -277,7 +280,6 @@ func ValidateServiceInstanceUpdate(new *sc.ServiceInstance, old *sc.ServiceInsta
 	allErrs = append(allErrs, internalValidateServiceInstanceUpdateAllowed(new, old)...)
 	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
 
-	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ClusterServiceClassExternalName, old.Spec.ClusterServiceClassExternalName, specFieldPath.Child("clusterServiceClassExternalName"))...)
 	allErrs = append(allErrs, apivalidation.ValidateImmutableField(new.Spec.ExternalID, old.Spec.ExternalID, specFieldPath.Child("externalID"))...)
 
 	if new.Spec.UpdateRequests < old.Spec.UpdateRequests {
@@ -335,39 +337,65 @@ func ValidateServiceInstanceReferencesUpdate(new *sc.ServiceInstance, old *sc.Se
 func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
+	// helper function to test that exactly one set of plan references are set
+	b2i := func(b bool) int8 {
+		if b {
+			return 1
+		}
+		return 0
+	}
+
 	// Just to make reading of the conditionals in the code easier.
-	externalClassSet := p.ClusterServiceClassExternalName != ""
-	externalPlanSet := p.ClusterServicePlanExternalName != ""
+	externalClassNameSet := p.ClusterServiceClassExternalName != ""
+	externalPlanNameSet := p.ClusterServicePlanExternalName != ""
+	externalClassIDSet := p.ClusterServiceClassExternalID != ""
+	externalPlanIDSet := p.ClusterServicePlanExternalID != ""
 	k8sClassSet := p.ClusterServiceClassName != ""
 	k8sPlanSet := p.ClusterServicePlanName != ""
 
-	// Can't specify both External and k8s name but must specify one.
-	if externalClassSet == k8sClassSet {
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalName"), "exactly one of clusterServiceClassExternalName or clusterServiceClassName required"))
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassName"), "exactly one of clusterServiceClassExternalName or clusterServiceClassName required"))
+	// Must specify exactly one source of the class: external id, external name, k8s name.
+	if (b2i(externalClassNameSet) + b2i(externalClassIDSet) + b2i(k8sClassSet)) != 1 {
+		classSetErrMsg := "exactly one of clusterServiceClassExternalName, clusterServiceClassExternalID, or clusterServiceClassName required"
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalName"), classSetErrMsg))
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalID"), classSetErrMsg))
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassName"), classSetErrMsg))
 	}
-	// Can't specify both External and k8s name but must specify one.
-	if externalPlanSet == k8sPlanSet {
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), "exactly one of clusterServicePlanExternalName or clusterServicePlanName required"))
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "exactly one of clusterServicePlanExternalName or clusterServicePlanName required"))
+	// Must specify exactly one source of the plan: external id, external name, k8s name.
+	if (b2i(externalPlanNameSet) + b2i(externalPlanIDSet) + b2i(k8sPlanSet)) != 1 {
+		planSetErrMsg := "exactly one of clusterServicePlanExternalName, clusterServicePlanExternalID, or clusterServicePlanName required"
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), planSetErrMsg))
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), planSetErrMsg))
+		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), planSetErrMsg))
 	}
 
-	if externalClassSet {
-		for _, msg := range validateServiceClassName(p.ClusterServiceClassExternalName, false /* prefix */) {
+	if externalClassNameSet {
+		for _, msg := range validateCommonServiceClassName(p.ClusterServiceClassExternalName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassExternalName"), p.ClusterServiceClassExternalName, msg))
 		}
 
 		// If ClusterServiceClassExternalName given, must use ClusterServicePlanExternalName
-		if !externalPlanSet {
+		if !externalPlanNameSet {
 			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), "must specify clusterServicePlanExternalName with clusterServiceClassExternalName"))
 		}
 
-		for _, msg := range validateServicePlanName(p.ClusterServicePlanExternalName, false /* prefix */) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), p.ClusterServicePlanName, msg))
+		for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanExternalName, false /* prefix */) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), p.ClusterServicePlanExternalName, msg))
 		}
-	}
-	if k8sClassSet {
-		for _, msg := range validateServiceClassName(p.ClusterServiceClassName, false /* prefix */) {
+	} else if externalClassIDSet {
+		for _, msg := range validateExternalID(p.ClusterServiceClassExternalID) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassExternalID"), p.ClusterServiceClassExternalID, msg))
+		}
+
+		// If ClusterServiceClassExternalID given, must use ClusterServicePlanExternalID
+		if !externalPlanIDSet {
+			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), "must specify clusterServicePlanExternalID with clusterServiceClassExternalID"))
+		}
+
+		for _, msg := range validateExternalID(p.ClusterServicePlanExternalID) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalID"), p.ClusterServicePlanExternalID, msg))
+		}
+	} else if k8sClassSet {
+		for _, msg := range validateCommonServiceClassName(p.ClusterServiceClassName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassName"), p.ClusterServiceClassName, msg))
 		}
 
@@ -375,7 +403,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		if !k8sPlanSet {
 			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "must specify clusterServicePlanName with clusterServiceClassName"))
 		}
-		for _, msg := range validateServicePlanName(p.ClusterServicePlanName, false /* prefix */) {
+		for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanName"), p.ClusterServicePlanName, msg))
 		}
 	}
@@ -387,6 +415,7 @@ func validatePlanReferenceUpdate(pOld *sc.PlanReference, pNew *sc.PlanReference,
 	allErrs = append(allErrs, validatePlanReference(pOld, fldPath)...)
 	allErrs = append(allErrs, validatePlanReference(pNew, fldPath)...)
 	allErrs = append(allErrs, apivalidation.ValidateImmutableField(pNew.ClusterServiceClassExternalName, pOld.ClusterServiceClassExternalName, field.NewPath("spec").Child("clusterServiceClassExternalName"))...)
+	allErrs = append(allErrs, apivalidation.ValidateImmutableField(pNew.ClusterServiceClassExternalID, pOld.ClusterServiceClassExternalID, field.NewPath("spec").Child("clusterServiceClassExternalID"))...)
 	allErrs = append(allErrs, apivalidation.ValidateImmutableField(pNew.ClusterServiceClassName, pOld.ClusterServiceClassName, field.NewPath("spec").Child("clusterServiceClassName"))...)
 	return allErrs
 }

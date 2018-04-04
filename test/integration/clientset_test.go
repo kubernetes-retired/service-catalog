@@ -230,7 +230,9 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 	broker := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
-			URL: "https://example.com",
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+				URL: "https://example.com",
+			},
 		},
 	}
 
@@ -285,8 +287,8 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Name:      "test-name",
 	}
 
-	brokerServer.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
-		Basic: &v1beta1.BasicAuthConfig{
+	brokerServer.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
 			SecretRef: authSecret,
 		},
 	}
@@ -305,8 +307,10 @@ func testBrokerClient(sType server.StorageType, client servicecatalogclient.Inte
 		Message: "ConditionMessage",
 	}
 	brokerUpdated.Status = v1beta1.ClusterServiceBrokerStatus{
-		Conditions: []v1beta1.ServiceBrokerCondition{
-			readyConditionTrue,
+		CommonServiceBrokerStatus: v1beta1.CommonServiceBrokerStatus{
+			Conditions: []v1beta1.ServiceBrokerCondition{
+				readyConditionTrue,
+			},
 		},
 	}
 	brokerUpdated.Spec.URL = "http://shouldnotupdate.com"
@@ -408,10 +412,12 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
-			Bindable:                 true,
-			ExternalName:             name,
-			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-			Description:              "test description",
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Bindable:     true,
+				ExternalName: name,
+				ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+				Description:  "test description",
+			},
 		},
 	}
 
@@ -502,10 +508,12 @@ func testClusterServiceClassClient(sType server.StorageType, client servicecatal
 		ObjectMeta: metav1.ObjectMeta{Name: sc2Name},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: "test-broker",
-			Bindable:                 true,
-			ExternalName:             sc2Name,
-			ExternalID:               sc2ID,
-			Description:              "test description 2",
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Bindable:     true,
+				ExternalName: sc2Name,
+				ExternalID:   sc2ID,
+				Description:  "test description 2",
+			},
 		},
 	}
 	_, err = serviceClassClient.Create(serviceClass2)
@@ -614,10 +622,12 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
-			Bindable:                 &bindable,
-			ExternalName:             name,
-			ExternalID:               "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
-			Description:              "test description",
+			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+				Bindable:     &bindable,
+				ExternalName: name,
+				ExternalID:   "b8269ab4-7d2d-456d-8c8b-5aab63b321d1",
+				Description:  "test description",
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: "test-serviceclass",
 			},
@@ -712,10 +722,12 @@ func testClusterServicePlanClient(sType server.StorageType, client servicecatalo
 		ObjectMeta: metav1.ObjectMeta{Name: sp2Name},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "test-broker",
-			Bindable:                 &bindable,
-			ExternalName:             sp2Name,
-			ExternalID:               sp2ID,
-			Description:              "test description 2",
+			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+				Bindable:     &bindable,
+				ExternalName: sp2Name,
+				ExternalID:   sp2ID,
+				Description:  "test description 2",
+			},
 			ClusterServiceClassRef: v1beta1.ClusterObjectReference{
 				Name: "test-serviceclass",
 			},

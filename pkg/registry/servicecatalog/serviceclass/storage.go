@@ -35,15 +35,15 @@ import (
 )
 
 var (
-	errNotAClusterServiceClass = errors.New("not a ClusterServiceClass")
+	errNotAServiceClass = errors.New("not a ServiceClass")
 )
 
-// NewSingular returns a new shell of a service class, according to the given namespace and
-// name
+// NewSingular returns a new shell of a service class, according to the
+// given namespace and name.
 func NewSingular(ns, name string) runtime.Object {
-	return &servicecatalog.ClusterServiceClass{
+	return &servicecatalog.ServiceClass{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "ClusterServiceClass",
+			Kind: "ServiceClass",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -52,26 +52,27 @@ func NewSingular(ns, name string) runtime.Object {
 	}
 }
 
-// EmptyObject returns an empty service class
+// EmptyObject returns an empty service class.
 func EmptyObject() runtime.Object {
-	return &servicecatalog.ClusterServiceClass{}
+	return &servicecatalog.ServiceClass{}
 }
 
-// NewList returns a new shell of a service class list
+// NewList returns a new shell of a service class list.
 func NewList() runtime.Object {
-	return &servicecatalog.ClusterServiceClassList{
+	return &servicecatalog.ServiceClassList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "ClusterServiceClassList",
+			Kind: "ServiceClassList",
 		},
-		Items: []servicecatalog.ClusterServiceClass{},
+		Items: []servicecatalog.ServiceClass{},
 	}
 }
 
-// CheckObject returns a non-nil error if obj is not a service class object
+// CheckObject returns a non-nil error if obj is not a service class
+// object.
 func CheckObject(obj runtime.Object) error {
-	_, ok := obj.(*servicecatalog.ClusterServiceClass)
+	_, ok := obj.(*servicecatalog.ServiceClass)
 	if !ok {
-		return errNotAClusterServiceClass
+		return errNotAServiceClass
 	}
 	return nil
 }
@@ -86,8 +87,9 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 	}
 }
 
-// toSelectableFields returns a field set that represents the object for matching purposes.
-func toSelectableFields(serviceClass *servicecatalog.ClusterServiceClass) fields.Set {
+// toSelectableFields returns a field set that represents the object for
+// matching purposes.
+func toSelectableFields(serviceClass *servicecatalog.ServiceClass) fields.Set {
 	// The purpose of allocation with a given number of elements is to reduce
 	// amount of allocations needed to create the fields.Set. If you add any
 	// field here or the number of object-meta related fields changes, this should
@@ -95,7 +97,7 @@ func toSelectableFields(serviceClass *servicecatalog.ClusterServiceClass) fields
 	// You also need to modify
 	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
 	scSpecificFieldsSet := make(fields.Set, 3)
-	scSpecificFieldsSet["spec.clusterServiceBrokerName"] = serviceClass.Spec.ClusterServiceBrokerName
+	scSpecificFieldsSet["spec.serviceBrokerName"] = serviceClass.Spec.ServiceBrokerName
 	scSpecificFieldsSet["spec.externalName"] = serviceClass.Spec.ExternalName
 	scSpecificFieldsSet["spec.externalID"] = serviceClass.Spec.ExternalID
 	return generic.AddObjectMetaFieldsSet(scSpecificFieldsSet, &serviceClass.ObjectMeta, true)
@@ -103,20 +105,20 @@ func toSelectableFields(serviceClass *servicecatalog.ClusterServiceClass) fields
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
 func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
-	serviceclass, ok := obj.(*servicecatalog.ClusterServiceClass)
+	serviceclass, ok := obj.(*servicecatalog.ServiceClass)
 	if !ok {
-		return nil, nil, false, fmt.Errorf("given object is not a ClusterServiceClass")
+		return nil, nil, false, fmt.Errorf("given object is not a ServiceClass")
 	}
 	return labels.Set(serviceclass.ObjectMeta.Labels), toSelectableFields(serviceclass), serviceclass.Initializers != nil, nil
 }
 
-// NewStorage creates a new rest.Storage responsible for accessing ClusterServiceClass
-// resources
+// NewStorage creates a new rest.Storage responsible for accessing
+// ServiceClass resources.
 func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
-		&servicecatalog.ClusterServiceClass{},
+		&servicecatalog.ServiceClass{},
 		prefix,
 		serviceClassRESTStrategies,
 		NewList,
@@ -129,7 +131,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// NewListFunc returns an object capable of storing results of an etcd list.
 		NewListFunc: NewList,
 		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(false),
+		KeyFunc:     opts.KeyFunc(true),
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return scmeta.GetAccessor().Name(obj)
@@ -137,7 +139,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// DefaultQualifiedResource should always be plural
-		DefaultQualifiedResource: servicecatalog.Resource("clusterserviceclasses"),
+		DefaultQualifiedResource: servicecatalog.Resource("serviceclasses"),
 
 		CreateStrategy: serviceClassRESTStrategies,
 		UpdateStrategy: serviceClassRESTStrategies,
@@ -164,9 +166,9 @@ type StatusREST struct {
 	store *registry.Store
 }
 
-// New returns a new ServiceClass
+// New returns a new ServiceClass.
 func (r *StatusREST) New() runtime.Object {
-	return &servicecatalog.ClusterServiceClass{}
+	return &servicecatalog.ServiceClass{}
 }
 
 // Get retrieves the object from the storage. It is required to support Patch

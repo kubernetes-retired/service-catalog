@@ -23,12 +23,13 @@ import (
 	"fmt"
 	"github.com/google/gofuzz"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/satori/go.uuid"
+
 	"k8s.io/apimachinery/pkg/api/testing/fuzzer"
 	genericfuzzer "k8s.io/apimachinery/pkg/apis/meta/fuzzer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 type serviceMetadata struct {
@@ -97,9 +98,14 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
 			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
 		},
+		func(bs *servicecatalog.ServiceBrokerSpec, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			bs.RelistBehavior = servicecatalog.ServiceBrokerRelistBehaviorDuration
+			bs.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
+		},
 		func(is *servicecatalog.ServiceInstanceSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
-			is.ExternalID = uuid.NewV4().String()
+			is.ExternalID = string(uuid.NewUUID())
 			parameters, err := createParameter(c)
 			if err != nil {
 				panic(fmt.Sprintf("Failed to create parameter object: %v", err))
@@ -108,7 +114,7 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 		},
 		func(bs *servicecatalog.ServiceBindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
-			bs.ExternalID = uuid.NewV4().String()
+			bs.ExternalID = string(uuid.NewUUID())
 			// Don't allow the SecretName to be an empty string because
 			// the defaulter for this object (on the server) will set it to
 			// a non-empty string, which means the round-trip checking will
@@ -146,13 +152,34 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			}
 			sc.Spec.ExternalMetadata = metadata
 		},
-		func(sp *servicecatalog.ClusterServicePlan, c fuzz.Continue) {
+		func(sc *servicecatalog.ServiceClass, c fuzz.Continue) {
+			c.FuzzNoCustom(sc)
+			metadata, err := createServiceMetadata(c)
+			if err != nil {
+				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
+			}
+			sc.Spec.ExternalMetadata = metadata
+		},
+		func(csp *servicecatalog.ClusterServicePlan, c fuzz.Continue) {
+			c.FuzzNoCustom(csp)
+			metadata, err := createPlanMetadata(c)
+			if err != nil {
+				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
+			}
+			csp.Spec.ExternalMetadata = metadata
+			csp.Spec.ServiceBindingCreateResponseSchema = metadata
+			csp.Spec.ServiceBindingCreateParameterSchema = metadata
+			csp.Spec.ServiceInstanceCreateParameterSchema = metadata
+			csp.Spec.ServiceInstanceUpdateParameterSchema = metadata
+		},
+		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
 			c.FuzzNoCustom(sp)
 			metadata, err := createPlanMetadata(c)
 			if err != nil {
 				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
 			}
 			sp.Spec.ExternalMetadata = metadata
+			sp.Spec.ServiceBindingCreateResponseSchema = metadata
 			sp.Spec.ServiceBindingCreateParameterSchema = metadata
 			sp.Spec.ServiceInstanceCreateParameterSchema = metadata
 			sp.Spec.ServiceInstanceUpdateParameterSchema = metadata
