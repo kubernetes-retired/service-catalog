@@ -98,8 +98,8 @@ func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.Servicecatal
 	)
 }
 
-// WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given name
-// to exist.
+// WaitForClusterServicePlanToExist waits for the ClusterServicePlan
+// with the given name to exist.
 func WaitForClusterServicePlanToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {

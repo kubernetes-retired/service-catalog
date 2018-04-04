@@ -69,9 +69,20 @@ var _ = framework.ServiceCatalogDescribe("ClusterServiceBroker", func() {
 	})
 
 	It("should become ready", func() {
-		By("Creating a Broker")
+		By("Making sure the ServiceBroker does not exist before creating it")
+		if _, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Get(brokerName, metav1.GetOptions{}); err == nil {
+			By("deleting the ServiceBroker if it does exist")
+			err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(brokerName, nil)
+			Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
 
+			By("Waiting for the ServiceBroker to not exist after deleting it")
+			err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), brokerName)
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		By("Creating a Broker")
 		url := "http://" + brokerName + "." + f.Namespace.Name + ".svc.cluster.local"
+
 		broker, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Create(newTestBroker(brokerName, url))
 		Expect(err).NotTo(HaveOccurred())
 		By("Waiting for Broker to be ready")
