@@ -109,7 +109,9 @@ type CommonServiceBrokerSpec struct {
 
 // CatalogRestrictions holds the restriction for service class and plan.
 type CatalogRestrictions struct {
-	ServicePlan  []string
+	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
+	ServicePlan []string
+	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
 	ServiceClass []string
 }
 
