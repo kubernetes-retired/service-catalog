@@ -50,7 +50,9 @@ const (
 
 	// CatalogRestrictions controls whether the ClusterServiceBroker will use
 	// the catalog restrictions when doing a re-list operation for catalog
-	// ingestion from a broker.
+	// to k8s resource conversion for classes and plans from a broker. New
+	// restrictions will mark pre-existing class and plan resources for delete
+	// just as if they had been removed from the broker's catalog.
 	// owner: @n3wscott
 	// alpha: v0.1.10
 	CatalogRestrictions utilfeature.Feature = "CatalogRestrictions"

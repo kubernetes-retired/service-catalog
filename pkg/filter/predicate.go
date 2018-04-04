@@ -20,19 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// Want to filter the allowed labels.
-// want to use only
-//const (
-//	DoesNotExist Operator = "!"
-//	Equals       Operator = "="
-//	DoubleEquals Operator = "=="
-//	In           Operator = "in"
-//	NotEquals    Operator = "!="
-//	NotIn        Operator = "notin"
-//)
-
-// Predicate is used to test if this rule accepts the properties given.
-// A Predicate wraps a label.Selector allowing us to use selectors.
+// Predicate is used to test if the set of rules accepts the properties given.
+// Predicate wraps label.Selector allowing us to use label selectors.
 type Predicate interface {
 	// Accepts returns true if this predicate accepts the given set of properties.
 	Accepts(Properties) bool
