@@ -151,7 +151,7 @@ func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, n
 }
 
 func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
-	broker, err := c.brokerLister.Get(key)
+	broker, err := c.clusterServiceBrokerLister.Get(key)
 	pcb := pretty.NewContextBuilder(pretty.ClusterServiceBroker, "", key)
 	if errors.IsNotFound(err) {
 		glog.Info(pcb.Message("Not doing work because it has been deleted"))
