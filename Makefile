@@ -130,7 +130,7 @@ $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 
 .PHONY: $(BINDIR)/service-catalog
 service-catalog: $(BINDIR)/service-catalog
-$(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog 
+$(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # This section contains the code generation stuff
@@ -223,9 +223,9 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
 
-verify-docs: .init
+verify-docs: .init docs
 	@echo Running href checker$(SKIP_COMMENT):
-	@$(DOCKER_CMD) verify-links.sh -s .pkg -t $(SKIP_HTTP) .
+	@$(DOCKER_CMD) verify-links.sh -s .pkg -s .bundler -s _plugins -s _includes -t $(SKIP_HTTP) .
 
 verify-generated: .init .generate_exes
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only
@@ -414,3 +414,10 @@ verify-vendor: .init
 test-dep: .init
 	# Test that a downstream consumer of our client library can use dep
 	$(DOCKER_CMD) test/test-dep.sh
+
+.PHONY: docs
+docs:
+	./build/docs.sh generate
+
+docs-preview:
+	./build/docs.sh preview

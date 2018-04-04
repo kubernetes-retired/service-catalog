@@ -1,0 +1,6 @@
+tocs:
+  - install
+  - walkthrough
+  - cli
+  - concepts
+  - docs-home # fallthrough, leave this last

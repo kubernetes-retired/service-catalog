@@ -1,4 +1,9 @@
-# Service Catalog docs
+---
+title: Documentation
+layout: docsportal
+cid: docs-home
+permalink: /docs/
+---
 
 Welcome to the documentation for Service Catalog. This page is an index for
 the articles in here. We recommend you start by reading the 

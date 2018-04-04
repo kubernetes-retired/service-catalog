@@ -1,0 +1,119 @@
+---
+layout: basic
+cid: home
+---
+
+<!--  HERO  -->
+<section id="hero" class="light-text">
+    <main>
+        <div id="headlineWrapper">
+            <h1>Kubernetes Service Catalog</h1>
+            <h5>Bringing the Cloud Back Into Your Cluster</h5>
+        </div>
+        <a href="/walkthrough" id="quickstartButton" class="button">Try Our Walkthrough</a>
+    </main>
+    <!--<div id="vendorStrip" class="light-text">-->
+        <!--<img src="images/logos/viacom_logo.png">-->
+        <!--<img src="images/logos/soundcloud_logo.png">-->
+        <!--<img src="images/logos/redhat_logo.png">-->
+        <!--<img src="images/logos/wepay_logo.png">-->
+        <!--<img src="images/logos/verizon_logo.png">-->
+    <!--</div>-->
+</section>
+
+{% include deprecation-warning.html %}
+
+<!--  OCEAN NODES  -->
+<section id="oceanNodes">
+    <main>
+        <div class="image-wrapper"><img src="images/flower.png"></div>
+        <div class="content">
+            <h3><a href="/concepts/service-catalog">Service Catalog</a> lets you
+                provision cloud services directly from the comfort of native Kubernetes tooling.
+            </h3>
+            <p>
+                Bring the cloud into your cluster and manage everything in "easy mode".
+                Craft a set of manifests that define your application, the services that it relies upon,
+                and seamlessly connect the two.</p>
+        </div>
+    </main>
+    <main>
+        <div class="image-wrapper"><img src="images/scalable.png"></div>
+        <div class="content">
+            <h4>Cluster Meets Cloud</h4>
+            <p>Service Catalog translates that manifest into a request to your cloud's
+                service broker, provisioning resources on your behalf and injecting the
+                credentials back into your containers.</p>
+        </div>
+    </main>
+    <main style="margin-top: 100px">
+        <div class="image-wrapper"><img src="images/osbapi-logo.png" style="max-width:unset;width:600px;margin-left:-200px;"></div>
+        <div class="content">
+            <h4>Open Standards</h4>
+            <p>Service Catalog speaks the language of the Open Service Broker API,<br/>
+                placing the world of cloud-native services at your command.
+            </p>
+        </div>
+    </main>
+</section>
+
+<section id="video">
+    <div class="light-text">
+
+  </div>
+</section>
+
+<section id="features">
+    <main>
+        <h3 class="center">Service Catalog Features</h3>
+
+        <div class="feature-box">
+            <div>
+                <h4><a href="/concepts/service-classes">Cloud Native Services</a></h4>
+                <p>Your cloud native apps deserve a cloud native cluster.
+                    Provision managed services from your cloud provider directly
+                    from native Kubernetes tooling.</p>
+            </div>
+            <div>
+                <h4><a href="/concepts/secrets">Smart Secrets</a></h4>
+                <p>Credentials are parsed and injected into Kubernetes secrets, ready for
+                your app to load as environment variables.</p>
+            </div>
+        </div>
+
+        <div class="feature-box">
+            <div>
+                <h4><a href="/concepts/parameters">Powerful Configuration</a></h4>
+                <p>The same configuration options that you see in your cloud portal
+                are available for configuration through Service Catalog.</p>
+            </div>
+            <div>
+                <h4><a href="/concepts/osbapi">Open Service Broker Compatible</a></h4>
+                <p>Every major cloud provider supports the Open Service Broker standards,
+                so regardless of who's powering your cluster, you will be able to tap into
+                the full suite of services.</p>
+            </div>
+        </div>
+
+        <div class="feature-box">
+            <div>
+                <h4><a href="/community">Vibrant Community</a></h4>
+                <p>Service Catalog is a Kubernetes Special Interest Group (SIG)
+                and is an official incubator project. Lead by a group of developers
+                spanning Microsoft, Google, RedHat and IBM, we are releasing regularly
+                and have many active contributors from the wider community.</p>
+            </div>
+            <div>
+                <h4><a href="/concepts/operator">Operator Friendly</a></h4>
+                <p>Install a broker at the cluster or in a single names, control
+                which services you'd like to make available, and provide sensible
+                defaults for provisioning cloud services.</p>
+            </div>
+        </div>
+    </main>
+</section>
+
+<div id="videoPlayer">
+    <iframe data-url="https://www.youtube.com/embed/of45hYbkIZs?autoplay=1" frameborder="0" allowfullscreen></iframe>
+    <button id="closeButton"></button>
+</div>

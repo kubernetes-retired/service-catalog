@@ -1,4 +1,7 @@
-# Serving Certificates, Authentication, and Authorization
+---
+title: Serving Certificates, Authentication, and Authorization
+layout: docwithnav
+---
 
 This document outlines how the service catalog API server handles
 authentication and authorization.

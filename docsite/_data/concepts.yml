@@ -1,0 +1,6 @@
+bigheader: "Concepts"
+abstract: "Detailed explanations of Service Catalog system concepts and abstractions."
+landing_page: /docs/concepts/
+toc:
+- docs/concepts/index.md
+
